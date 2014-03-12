@@ -57,6 +57,23 @@ def gatk(gatk_jar, ref_path, sample_fpath):
     _call_and_rename(cmdline, sample_fpath)
 
 
+def annotate_hg19(sample_fpath, is_rna=False, is_ensemble=False):
+    ref_name = 'hg19'
+    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
+    snp_eff = '/group/ngs/src/snpEff/snpEff3.5/'
+    gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
+    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
+    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
+    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
+    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
+    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
+
+    annotate(sample_fpath, is_rna, is_ensemble,
+             ref_name, ref_path, snp_eff, gatk_dir,
+             dbsnp_db, cosmic_db, db_nsfp_db,
+             snpeff_datadir, annot_track)
+
+
 def annotate(sample_fpath, is_rna, is_ensemble,
              ref_name, ref_path, snpeff_dirpath, gatk_dirpath,
              dbsnp_db, cosmic_db, db_nsfp_db, snpeff_datadir,
@@ -154,7 +171,8 @@ def split_genotypes(sample_fpath, result_fpath):
 
                 ids = id_field.split(',')
                 alts = alt_field.split(',')
-                assert len(ids) == len(alts), 'Number of IDs is not equal to the number of ALTs: ' + str(i) + ' ' + line
+                assert len(ids) == len(alts),\
+                    'Number of IDs is not equal to the number of ALTs: ' + str(i) + '. ' + line
                 if len(ids) > 1:
                     for id, alt in zip(ids, alts):
                         line = '\t'.join(tokens[:2] + [id] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
@@ -167,23 +185,13 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     rna = len(args) > 4 and args[4].lower() == 'rna'
-    ensemble = len(args) > 3 and args[3].lower() == 'true'
-    do_split_genotypes = len(args) > 2 and args[2].lower() == 'true'
+    ensemble = len(args) > 3 and args[3].lower() == 'ensemble'
+    do_split_genotypes = len(args) > 2 and args[2].lower() == 'split'
     if len(args) < 2:
-        print >> sys.stderr, 'Usage: python filter_snpeff_qsub.py sample.vcf result.vcf [true] [true] [RNA]'
+        print >> sys.stderr, 'Usage: python ' + __file__ + ' sample.vcf result.vcf [split] [ensemble] [rna]'
         exit(1)
     result_fpath = args[1]
     sample_fpath = args[0]
-
-    ref_name = 'hg19'
-    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
-    snp_eff = '/group/ngs/src/snpEff/snpEff3.5/'
-    gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
-    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
-    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
-    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
-    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
     result_basedir = os.path.dirname(result_fpath)
     sample_fname = os.path.basename(sample_fpath)
@@ -210,7 +218,4 @@ if __name__ == '__main__':
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate(sample_fpath, rna, ensemble,
-             ref_name, ref_path, snp_eff, gatk_dir,
-             dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track)
+    annotate_hg19(sample_fpath, rna, ensemble)
