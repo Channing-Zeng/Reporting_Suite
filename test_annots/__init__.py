@@ -2,7 +2,10 @@ import sys
 import os
 import shutil
 
-from filter_and_annotate import annotate_hg19
+from filter_and_annotate import annotate_GRCh37
+
+snp_eff = '/group/ngs/src/snpEff/snpEff3.5/'
+gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -26,4 +29,4 @@ if __name__ == '__main__':
                 annotated_fpath = os.path.join(dirpath, base_name + 'ANNOTATED' + ext)
                 input_fpath = os.path.join(dirpath, fname)
 
-                annotate_hg19(input_fpath)
+                annotate_GRCh37(input_fpath, snp_eff, gatk_dir)
