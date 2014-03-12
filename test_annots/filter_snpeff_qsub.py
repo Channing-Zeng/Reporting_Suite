@@ -143,7 +143,7 @@ def remove_quotes(str):
 
 def split_genotypes(sample_fpath, result_fpath):
     with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
-        for line in vcf:
+        for i, line in enumerate(vcf):
             clean_line = line.strip()
             if not clean_line or clean_line[0] == '#':
                 out.write(line)
@@ -154,7 +154,7 @@ def split_genotypes(sample_fpath, result_fpath):
 
                 ids = id_field.split(',')
                 alts = alt_field.split(',')
-                assert len(ids) == len(alts), 'Number of IDs is not equal to the number of ALTs'
+                assert len(ids) == len(alts), 'Number of IDs is not equal to the number of ALTs: ' + str(i) + ' ' + line
                 if len(ids) > 1:
                     for id, alt in zip(ids, alts):
                         line = '\t'.join(tokens[:2] + [id] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
@@ -192,7 +192,7 @@ if __name__ == '__main__':
 
     if do_split_genotypes:
         split_genotypes(sample_fpath, corrected_fpath)
-    sample_fpath = corrected_fpath
+        sample_fpath = corrected_fpath
 
     if result_fpath != sample_fpath:
         if os.path.exists(result_fpath):
