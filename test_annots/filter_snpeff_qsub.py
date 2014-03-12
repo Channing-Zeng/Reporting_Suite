@@ -142,8 +142,8 @@ def remove_quotes(str):
 
 
 def split_genotypes(vcf_fpath):
-    output = vcf_fpath + '_output'
-    with open(vcf_fpath) as vcf, open(output, 'w') as out:
+    output_fpath = os.path.splitext(vcf_fpath)[0] + '.corrected' + os.path.splitext(vcf_fpath)[1]
+    with open(vcf_fpath) as vcf, open(output_fpath, 'w') as out:
         for line in vcf:
             clean_line = line.strip()
             if not clean_line or clean_line[0] == '#':
@@ -163,9 +163,7 @@ def split_genotypes(vcf_fpath):
                 else:
                     out.write(line)
 
-    os.remove(vcf_fpath)
-    os.rename(output, vcf_fpath)
-    return sample
+    return output_fpath
 
 
 if __name__ == '__main__':
@@ -190,6 +188,9 @@ if __name__ == '__main__':
     snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
+    if do_split_genotypes:
+        sample = split_genotypes(sample)
+
     if result != sample:
         if os.path.exists(result):
             os.remove(result)
@@ -197,9 +198,6 @@ if __name__ == '__main__':
             os.path.realpath(sample) + ' does not exists or is not a file'
         shutil.copyfile(sample, result)
         sample = result
-
-    if do_split_genotypes:
-        sample = split_genotypes(sample)
     exit(1)
 
     print 'Please, run this before start:'
