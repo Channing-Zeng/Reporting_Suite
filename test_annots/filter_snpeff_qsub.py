@@ -141,9 +141,8 @@ def remove_quotes(str):
     return str
 
 
-def split_genotypes(vcf_fpath):
-    output_fpath = os.path.splitext(vcf_fpath)[0] + '.corrected' + os.path.splitext(vcf_fpath)[1]
-    with open(vcf_fpath) as vcf, open(output_fpath, 'w') as out:
+def split_genotypes(sample_fpath, result_fpath):
+    with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
         for line in vcf:
             clean_line = line.strip()
             if not clean_line or clean_line[0] == '#':
@@ -163,8 +162,6 @@ def split_genotypes(vcf_fpath):
                 else:
                     out.write(line)
 
-    return output_fpath
-
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -175,8 +172,8 @@ if __name__ == '__main__':
     if len(args) < 2:
         print >> sys.stderr, 'Usage: python filter_snpeff_qsub.py sample.vcf result.vcf [true] [true] [RNA]'
         exit(1)
-    result = args[1]
-    sample = args[0]
+    result_fpath = args[1]
+    sample_fpath = args[0]
 
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
@@ -188,17 +185,22 @@ if __name__ == '__main__':
     snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
-    if do_split_genotypes:
-        sample = split_genotypes(sample)
+    result_basedir = os.path.dirname(result_fpath)
+    sample_fname = os.path.basename(sample_fpath)
+    corrected_fname = os.path.splitext(sample_fname)[0] + '.corrected' + os.path.splitext(sample_fname)[1]
+    corrected_fpath = os.path.join(result_basedir, corrected_fname)
 
-    if result != sample:
-        if os.path.exists(result):
-            os.remove(result)
-        assert os.path.isfile(os.path.realpath(sample)), \
-            os.path.realpath(sample) + ' does not exists or is not a file'
-        shutil.copyfile(sample, result)
-        sample = result
-    exit(1)
+    if do_split_genotypes:
+        split_genotypes(sample_fpath, corrected_fpath)
+    sample_fpath = corrected_fpath
+
+    if result_fpath != sample_fpath:
+        if os.path.exists(result_fpath):
+            os.remove(result_fpath)
+        assert os.path.isfile(os.path.realpath(sample_fpath)), \
+            os.path.realpath(sample_fpath) + ' does not exists or is not a file'
+        shutil.copyfile(sample_fpath, result_fpath)
+        sample_fpath = result_fpath
 
     print 'Please, run this before start:'
     print '   source /etc/profile.d/modules.sh'
@@ -208,7 +210,7 @@ if __name__ == '__main__':
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate(sample, rna, ensemble,
+    annotate(sample_fpath, rna, ensemble,
              ref_name, ref_path, snp_eff, gatk_dir,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track)
