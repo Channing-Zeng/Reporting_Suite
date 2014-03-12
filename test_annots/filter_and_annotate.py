@@ -15,7 +15,8 @@ def _call(cmdline, stdout=None):
 
 
 def _call_and_rename(cmdline, fpath):
-    output_fpath = fpath + '_output'
+    base_name, ext = os.path.splitext(fpath)
+    output_fpath = base_name + '.tmp' + ext
     _call(cmdline, open(output_fpath, 'w'))
     if os.path.isfile(fpath):
         os.remove(fpath)
