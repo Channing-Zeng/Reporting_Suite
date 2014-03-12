@@ -7,7 +7,7 @@ import sys
 import shutil
 
 
-def _call(cmdline, stdout):
+def _call(cmdline, stdout=None):
     print ''
     print '*' * 70
     print cmdline
@@ -51,10 +51,14 @@ def rna_editing_sites(db, vcf_fpath):
 
 
 def gatk(gatk_jar, ref_path, sample_fpath):
+    output_fpath = sample_fpath + '_output'
     cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
               '-o %s --useAllAnnotations --variant %s' % \
-              (gatk_jar, ref_path, sample_fpath, sample_fpath)
-    _call_and_rename(cmdline, sample_fpath)
+              (gatk_jar, ref_path, output_fpath, sample_fpath)
+    _call(cmdline)
+    if os.path.isfile(sample_fpath):
+        os.remove(sample_fpath)
+    os.rename(output_fpath, sample_fpath)
 
 
 def annotate_hg19(sample_fpath, snp_eff, gatk_dir, is_rna=False, is_ensemble=False):
