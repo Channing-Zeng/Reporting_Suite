@@ -192,8 +192,9 @@ def split_genotypes(sample_fpath, result_fpath):
 
                 ids = id_field.split(',')
                 alts = alt_field.split(',')
-                assert len(ids) == len(alts),\
-                    'Number of IDs is not equal to the number of ALTs: ' + str(i) + '. ' + line
+                if len(ids) != len(alts):
+                    print 'Number of IDs is not equal to the number of ALTs: ' + str(i) + '. ' + line
+                    continue
                 if len(ids) > 1:
                     for id, alt in zip(ids, alts):
                         line = '\t'.join(tokens[:2] + [id] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
@@ -205,9 +206,9 @@ def split_genotypes(sample_fpath, result_fpath):
 if __name__ == '__main__':
     args = sys.argv[1:]
 
-    rna = len(args) > 4 and args[4].lower() == 'rna'
-    ensemble = len(args) > 3 and args[3].lower() == 'ensemble'
-    do_split_genotypes = len(args) > 2 and args[2].lower() == 'split'
+    rna = '-rna' in args
+    ensemble = '-ensemble' in args
+    do_split_genotypes = '-split' in args
     if len(args) < 2:
         print >> sys.stderr, 'Usage: python ' + __file__ + ' sample.vcf result.vcf [split] [ensemble] [rna]'
         exit(1)
