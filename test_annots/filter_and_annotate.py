@@ -22,10 +22,12 @@ def _call_and_rename(cmdline, save_prev, input_fpath, suffix, stdout=True):
         exit(1)
 
     if save_prev:
+        print 'save_prev: now path = ' + output_fpath
         return output_fpath
     else:
         os.remove(input_fpath)
         os.rename(output_fpath, input_fpath)
+        print 'no save_prev: now path = ' + input_fpath
         return input_fpath
 
 
