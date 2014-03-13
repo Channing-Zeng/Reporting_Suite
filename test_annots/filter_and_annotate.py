@@ -87,7 +87,7 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     return _call_and_rename(cmdline, save_prev, vcf_fpath, 'gatk', stdout=False)
 
 
-def annotate_hg19(sample_fpath, save_intermediate, snp_eff, gatk_dir, is_rna=False, is_ensemble=False):
+def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
@@ -97,13 +97,13 @@ def annotate_hg19(sample_fpath, save_intermediate, snp_eff, gatk_dir, is_rna=Fal
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
-             snp_eff, gatk_dir,
+             snp_eff_dir, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track)
 
 
-def annotate_GRCh37(sample_fpath, save_intermediate, snp_eff, gatk_dir, is_rna=False, is_ensemble=False):
+def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
     ref_name = 'GRCh37'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
@@ -113,7 +113,7 @@ def annotate_GRCh37(sample_fpath, save_intermediate, snp_eff, gatk_dir, is_rna=F
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
-             snp_eff, gatk_dir,
+             snp_eff_dir, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track)
@@ -232,7 +232,7 @@ def split_genotypes(sample_fpath, save_intermediate):
         return sample_fpath
 
 
-snp_eff = '/group/ngs/src/snpEff/snpEff3.5/'
+snp_eff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
 gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 
 if __name__ == '__main__':
@@ -280,4 +280,4 @@ if __name__ == '__main__':
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate_hg19(sample_fpath, save_intermediate, snp_eff, gatk_dir, rna, ensemble)
+    annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate, rna, ensemble)
