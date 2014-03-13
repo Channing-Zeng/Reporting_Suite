@@ -14,7 +14,7 @@ def _call_and_rename(cmdline, save_prev, input_fpath, suffix, stdout=True):
     print ''
     print '*' * 70
     print cmdline
-    res = subprocess.call(cmdline.split(), open(output_fpath, 'w') if stdout else None)
+    res = subprocess.call(cmdline.split(), stdout=open(output_fpath, 'w') if stdout else None)
     if res != 0:
         print ''
         print '*' * 70
@@ -247,14 +247,14 @@ if __name__ == '__main__':
             '[-split] [-ensemble] [-rna] [-intermediate] [-to_valid]'
         exit(1)
 
-    sample_fpath = args[0]
+    sample_fpath = os.path.realpath(args[0])
     assert os.path.isfile(sample_fpath), \
-        os.path.realpath(sample_fpath) + ' does not exists or is not a file'
+        sample_fpath + ' does not exists or is not a file'
 
     if len(args) > 1 and args[1] not in flags:
-        result_fpath = args[1]
+        result_fpath = os.path.realpath(args[1])
     else:
-        result_fpath = os.path.join(os.getcwd(), os.path.basename(sample_fpath))
+        result_fpath = sample_fpath
 
     if result_fpath != sample_fpath:
         if os.path.exists(result_fpath):
