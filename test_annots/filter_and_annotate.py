@@ -169,6 +169,8 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
+              '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
+              '"EFF[*].TRID" "EFF[*].RANK"' \
               'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
               'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
               'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
@@ -176,7 +178,9 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
               'dbNSFP_FATHMM_score dbNSFP_Ensembl_geneid dbNSFP_Ensembl_transcriptid ' \
               'dbNSFP_Uniprot_acc dbNSFP_1000Gp1_AC dbNSFP_1000Gp1_AF ' \
               'dbNSFP_ESP6500_AA_AF dbNSFP_ESP6500_EA_AF KGPROD PM PH3 ' \
-              'AB AC AF DP FS GC HRun HaplotypeScore MQ0 QA QD ReadPosRankSum ' \
+              'AB AC AF DP FS GC HRun HaplotypeScore ' \
+              'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
+              'MQ0 QA QD ReadPosRankSum ' \
               'set' % (sample_fpath, snpsift_jar)
 
     sample_fpath = _call_and_rename(cmdline, save_intermediate, sample_fpath, 'extract', stdout=True)
