@@ -209,6 +209,7 @@ def split_genotypes(sample_fpath, result_fpath):
                     print 'Number of IDs is not equal to the number of ALTs: ' + str(i) + '. ' + line
                     continue
                 if len(ids) > 1:
+                    print 'Splitting ' + str(i) + '. ' + line
                     for id, alt in zip(ids, alts):
                         line = '\t'.join(tokens[:2] + [id] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
                         out.write(line)
