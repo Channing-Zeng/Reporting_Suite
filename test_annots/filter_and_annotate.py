@@ -11,7 +11,12 @@ def _call(cmdline, stdout=None):
     print ''
     print '*' * 70
     print cmdline
-    subprocess.call(cmdline.split(), stdout=stdout)
+    res = subprocess.call(cmdline.split(), stdout=stdout)
+    if res != 0:
+        print ''
+        print '*' * 70
+        print 'Command returned status ' + str(res)
+        exit(1)
 
 
 def _call_and_rename(cmdline, fpath):
@@ -127,8 +132,7 @@ def annotate(sample_fpath, is_rna, is_ensemble,
         with open(tmp_fpath) as tmp_f:
             cmdline = 'vcf-subset -c %s -e %s' % \
                       (sample_basename.replace('-ensemble', ''), sample_fpath)
-            print cmdline
-            subprocess.call(cmdline.split(), stdout=tmp_f)
+            _call(cmdline, tmp_f)
 
         os.rename(sample_fpath, sample_basepath + '.combined' + ext)
         os.rename(tmp_fpath, sample_fpath)
@@ -174,13 +178,8 @@ def annotate(sample_fpath, is_rna, is_ensemble,
               'AB AC AF DP FS GC HRun HaplotypeScore MQ0 QA QD ReadPosRankSum ' \
               'set' % (sample_fpath, snpsift_jar)
 
-    print '*' * 70
-    print cmdline
     tsv_fpath = sample_basepath + '.tsv'
-    subprocess.call(
-        cmdline,
-        shell=True,
-        stdout=open(tsv_fpath, 'w'))
+    _call(cmdline, tsv_fpath)
 
 
 def remove_quotes(str):
