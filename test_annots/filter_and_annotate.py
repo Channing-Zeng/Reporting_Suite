@@ -54,9 +54,20 @@ def rna_editing_sites(db, vcf_fpath):
 def gatk(gatk_jar, ref_path, sample_fpath):
     base_name, ext = os.path.splitext(sample_fpath)
     output_fpath = base_name + '.tmp' + ext
+
     cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
               '-o %s --useAllAnnotations --variant %s' % \
               (gatk_jar, ref_path, output_fpath, sample_fpath)
+
+    annotations = [
+        "Coverage", "BaseQualityRankSumTest", "FisherStrand",
+        "GCContent", "HaplotypeScore", "HomopolymerRun",
+        "MappingQualityRankSumTest", "MappingQualityZero",
+        "QualByDepth", "ReadPosRankSumTest", "RMSMappingQuality",
+        "DepthPerAlleleBySample"]
+    for ann in annotations:
+        cmdline += " -A " + ann
+
     _call(cmdline)
     if os.path.isfile(sample_fpath):
         os.remove(sample_fpath)
