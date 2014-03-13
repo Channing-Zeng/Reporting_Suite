@@ -72,11 +72,11 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     output_fpath = base_name + '.gatk' + ext
 
     cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
-              '-o %s --useAllAnnotations --variant %s' % \
+              '-o %s --variant %s' % \
               (gatk_jar, ref_path, output_fpath, vcf_fpath)
 
     annotations = [
-        "Coverage", "BaseQualityRankSumTest", "FisherStrand",
+        "DepthOfCoverage", "BaseQualityRankSumTest", "FisherStrand",
         "GCContent", "HaplotypeScore", "HomopolymerRun",
         "MappingQualityRankSumTest", "MappingQualityZero",
         "QualByDepth", "ReadPosRankSumTest", "RMSMappingQuality",
