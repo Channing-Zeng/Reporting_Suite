@@ -223,6 +223,9 @@ def split_genotypes(sample_fpath, save_intermediate):
         return sample_fpath
 
 
+snp_eff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
+gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
+
 if __name__ == '__main__':
     args = sys.argv[1:]
 
@@ -257,15 +260,15 @@ if __name__ == '__main__':
     sample_basedir = os.path.dirname(sample_fpath)
     sample_basepath, ext = os.path.splitext(sample_fpath)
 
-    if do_split_genotypes:
-        sample_fpath = split_genotypes(sample_fpath, save_intermediate)
+    # if do_split_genotypes:
+    #     sample_fpath = split_genotypes(sample_fpath, save_intermediate)
 
-    # print 'Please, run this before start:'
-    # print '   source /etc/profile.d/modules.sh'
-    # print '   module load java'
-    # print ''
-    # print 'In Waltham, run this as well:'
-    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+    print 'Please, run this before start:'
+    print '   source /etc/profile.d/modules.sh'
+    print '   module load java'
+    print ''
+    print 'In Waltham, run this as well:'
+    print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
+    print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
     annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate, rna, ensemble)
