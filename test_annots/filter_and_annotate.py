@@ -33,7 +33,7 @@ def _call_and_rename(cmdline, input_fpath, suffix, save_prev=False, stdout=True)
 
 def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
     cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db, vcf_fpath)
-    return _call_and_rename(cmdline, save_prev, vcf_fpath, suffix, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, suffix, save_prev, stdout=True)
 
 
 def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
@@ -43,19 +43,19 @@ def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
              'Ensembl_geneid,Ensembl_transcriptid'
 
     cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, annots, db, vcf_fpath)
-    return _call_and_rename(cmdline, save_prev, vcf_fpath, 'db_nsfp', stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', save_prev, stdout=True)
 
 
 def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev):
     cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -cancer ' \
               '-noLog -1 -i vcf -o vcf %s %s' % \
               (snpeff_jar, datadir, ref, vcf_fpath)
-    return _call_and_rename(cmdline, save_prev, vcf_fpath, 'snpEff', stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', save_prev, stdout=True)
 
 
 def rna_editing_sites(db, vcf_fpath, save_prev):
     cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, vcf_fpath)
-    return _call_and_rename(cmdline, save_prev, vcf_fpath, 'edit', stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'edit', save_prev, stdout=True)
 
 
 def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
@@ -75,7 +75,7 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     for ann in annotations:
         cmdline += " -A " + ann
 
-    return _call_and_rename(cmdline, save_prev, vcf_fpath, 'gatk', stdout=False)
+    return _call_and_rename(cmdline, vcf_fpath, 'gatk', save_prev, stdout=False)
 
 
 def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
@@ -126,7 +126,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
         sample_basename, ext = os.path.splitext(sample_fname)
         cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
 
-        sample_fpath = _call_and_rename(cmdline, save_intermediate, sample_fpath, '.ensm', True)
+        sample_fpath = _call_and_rename(cmdline, sample_fpath, '.ensm', save_intermediate, True)
 
     if is_rna:
         sample_basepath, ext = os.path.splitext(sample_fpath)
@@ -174,7 +174,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
               'MQ0 QA QD ReadPosRankSum ' \
               'set' % (sample_fpath, snpsift_jar)
 
-    sample_fpath = _call_and_rename(cmdline, save_intermediate, sample_fpath, 'extract', stdout=True)
+    sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', save_intermediate, stdout=True)
     os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
 
 
