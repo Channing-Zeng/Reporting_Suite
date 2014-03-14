@@ -7,7 +7,7 @@ import sys
 import shutil
 
 
-def _call_and_rename(cmdline, save_prev, input_fpath, suffix, stdout=True):
+def _call_and_rename(cmdline, input_fpath, suffix, save_prev=False, stdout=True):
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
@@ -29,15 +29,6 @@ def _call_and_rename(cmdline, save_prev, input_fpath, suffix, stdout=True):
         os.rename(output_fpath, input_fpath)
         print 'Now processing ' + input_fpath
         return input_fpath
-
-
-# def _call_and_rename(cmdline, fpath):
-#     base_name, ext = os.path.splitext(fpath)
-#     output_fpath = base_name + '.tmp' + ext
-#     _call(cmdline, open(output_fpath, 'w'))
-#     if os.path.isfile(fpath):
-#         os.remove(fpath)
-#     os.rename(output_fpath, fpath)
 
 
 def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
@@ -88,14 +79,6 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
 
 
 def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
-    ref_name = 'hg19'
-    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
-    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
-    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
-    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
-    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
@@ -104,14 +87,6 @@ def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, 
 
 
 def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
-    ref_name = 'GRCh37'
-    ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
-    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
-    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/cosmic-v67_20131024-GRCh37.vcf'
-    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
-    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
@@ -232,9 +207,6 @@ def split_genotypes(sample_fpath, save_intermediate):
         return sample_fpath
 
 
-snp_eff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
-gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
-
 if __name__ == '__main__':
     args = sys.argv[1:]
 
@@ -274,10 +246,10 @@ if __name__ == '__main__':
 
     print 'Please, run this before start:'
     print '   source /etc/profile.d/modules.sh'
-    print '   module load bcbio-nextgen/0.7.6'
-    print ''
-    print 'In Waltham, run this as well:'
-    print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+    print '   module load java'
+    # print ''
+    # print 'In Waltham, run this as well:'
+    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
+    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
     annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate, rna, ensemble)

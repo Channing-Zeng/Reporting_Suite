@@ -1,0 +1,7 @@
+resources:
+  gatk:
+    jvm_opts: ["-Xms750m", "-Xmx2500m"]
+    dir: /opt/az/broadinstitute/gatk/1.6
+  snpeff:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    dir: /group/ngs/src/snpEff/snpEff3.5/

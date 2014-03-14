@@ -1,0 +1,8 @@
+resources:
+  gatk:
+    jvm_opts: ["-Xms750m", "-Xmx2500m"]
+    dir: /usr/local/share/java/gatk
+  snpeff:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    dir: /usr/local/share/java/snpeff
+

@@ -1,0 +1,7 @@
+genome_build: hg19
+reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf
+cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+db_nsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+snpeff_data: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
+rna_edit_sites: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed
