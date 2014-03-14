@@ -79,6 +79,14 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
 
 
 def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
+    ref_name = 'hg19'
+    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
+    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
+    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
+    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
+    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
+    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
+
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
@@ -87,6 +95,14 @@ def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, 
 
 
 def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
+    ref_name = 'GRCh37'
+    ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
+    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
+    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/cosmic-v67_20131024-GRCh37.vcf'
+    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
+    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
+    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
+
     annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
@@ -244,9 +260,9 @@ if __name__ == '__main__':
     if do_split_genotypes:
         sample_fpath = split_genotypes(sample_fpath, save_intermediate)
 
-    print 'Please, run this before start:'
-    print '   source /etc/profile.d/modules.sh'
-    print '   module load java'
+    # print 'Please, run this before start:'
+    # print '   source /etc/profile.d/modules.sh'
+    # print '   module load java'
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
