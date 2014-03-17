@@ -5,3 +5,4 @@ resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     dir: /group/ngs/src/snpEff/snpEff3.5/
+    scripts: /group/ngs/src/snpEff/snpEff3.5/scripts

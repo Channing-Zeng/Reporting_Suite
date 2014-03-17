@@ -5,12 +5,17 @@ import os
 import subprocess
 import sys
 import shutil
+from yaml import load, dump
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 
 
 def log_print(msg='', fpath=None):
     print msg
     if fpath:
-        open(fpath, 'a').write(msg)
+        open(fpath, 'w').write(msg)
 
 
 def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
@@ -86,8 +91,10 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, stdout=False)
 
 
-def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, save_intermediate=False,
-                  log_fpath=None, is_rna=False, is_ensemble=False):
+def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, run_config, log_fpath=None):
+    is_rna = run_config.get('rna', False)
+    is_ensemble = run_config.get('ensemble', False)
+
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
@@ -101,11 +108,13 @@ def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, save_int
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble)
+             log_fpath, True, is_rna, is_ensemble)
 
 
-def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, save_intermediate=False,
-                    log_fpath=None, is_rna=False, is_ensemble=False):
+def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_config, log_fpath=None):
+    is_rna = run_config.get('rna', False)
+    is_ensemble = run_config.get('ensemble', False)
+
     ref_name = 'GRCh37'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
@@ -119,7 +128,7 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, save_i
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble)
+             log_fpath, True, is_rna, is_ensemble)
 
 
 def annotate(sample_fpath,
@@ -225,33 +234,40 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
         return sample_fpath
 
 
-snpeff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
-snpeff_scripts = '/group/ngs/src/snpEff/snpEff3.5/scripts'
-gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
-
 if __name__ == '__main__':
     args = sys.argv[1:]
-
-    flags = ['-rna', '-ensemble', '-split', '-to-valid']
-    rna = '-rna' in args
-    ensemble = '-ensemble' in args
-    do_split_genotypes = '-split' in args
-    # save_intermediate = '-intermediate' in args
-    to_valid = '-to-valid' in args
-
-    if len(args) < 1:
+    if len(args) < 2:
         print >> sys.stderr, \
-            'Usage: python ' + __file__ + ' sample.vcf [result_dir] ' \
-            '[-split] [-ensemble] [-rna] [-to_valid]'
+            'Usage: python ' + __file__ + ' system_info.yaml run_info.yaml'
         exit(1)
 
-    sample_fpath = os.path.realpath(args[0])
+    assert os.path.isfile(args[0]), args[0] + ' does not exist of is a directory.'
+    assert os.path.isfile(args[1]), args[1] + ' does not exist of is a directory.'
+
+    system_config = load(args[0], Loader=Loader)
+    run_config = load(args[1], Loader=Loader)
+
+    try:
+        gatk_dir = system_config['resources']['gatk']['dir']
+    except:
+        print >> sys.stderr, 'Please, provide gatk directory in system config.'
+        exit(1)
+    try:
+        snpeff_dir = system_config['resources']['snpeff']['dir']
+    except:
+        print >> sys.stderr, 'Please, provide snpEff directory in system config.'
+        exit(1)
+    try:
+        snpeff_scripts = system_config['resources']['snpeff']['scripts']
+    except:
+        print >> sys.stderr, 'Please, provide snpEff scripts directory in system config.'
+        exit(1)
+
+    sample_fpath = os.path.realpath(run_config.get('file', None))
     assert os.path.isfile(sample_fpath), sample_fpath + ' does not exists or is not a file.'
 
-    if len(args) > 1 and args[1] not in flags:
-        result_dir = os.path.realpath(args[1])
-    else:
-        result_dir = os.getcwd()
+    result_dir = os.path.realpath(run_config.get('output_dir', os.getcwd))
+    assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
     sample_fname = os.path.basename(sample_fpath)
     sample_basename, ext = os.path.splitext(sample_fname)
@@ -268,16 +284,18 @@ if __name__ == '__main__':
         os.remove(log_fpath)
 
     log_print('Writing into ' + result_dir, log_fpath)
+    log_print('Logging to ' + log_fpath)
 
     print 'Note: please, load modules before start:'
     print '   source /etc/profile.d/modules.sh'
     print '   module load java'
     print '   module load perl'
-    print ''
-    print 'In Waltham, run this as well:'
-    print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+    # print ''
+    # print 'In Waltham, run this as well:'
+    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
+    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
+    do_split_genotypes = run_config.get('split_genotypes', False)
     if do_split_genotypes:
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
@@ -288,5 +306,4 @@ if __name__ == '__main__':
         log_print('Saved to ' + result_fpath, log_fpath)
         log_print('', log_fpath)
 
-    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
-                  log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
+    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, run_config, log_fpath=log_fpath)

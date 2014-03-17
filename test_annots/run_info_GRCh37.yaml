@@ -1,7 +1,11 @@
+file: 'file.vcf'
+output_dir: '.'
+
 genome_build: GRCh37
 reference: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
 ensemble: False
 rna: False
+split_genotypes: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff
