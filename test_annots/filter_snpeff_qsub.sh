@@ -1,5 +1,3 @@
-set -x
-
 #!/bin/bash
 #$ -V
 # #$ -q ngs.q
@@ -15,6 +13,8 @@ set -x
 # Annotation script that takes 1-3 inputs, first being the vcf file name,
 # second being an indicator if the vcf is from bcbio's ensemble pipeline ('true' if true) and
 # third being 'RNA' if the vcf is from the rna-seq mutect pipeline
+
+set -x
 
 source /etc/profile.d/modules.sh
 module load bcbio-nextgen/0.7.6

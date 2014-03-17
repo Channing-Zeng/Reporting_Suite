@@ -26,9 +26,9 @@ def _call_and_rename(cmdline, input_fpath, suffix, save_prev=False, stdout=True)
         return output_fpath
     else:
         os.remove(input_fpath)
-        os.rename(output_fpath, input_fpath)
-        print 'Now processing ' + input_fpath
-        return input_fpath
+        # os.rename(output_fpath, input_fpath)
+        print 'Now processing ' + output_fpath
+        return output_fpath
 
 
 def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
@@ -143,6 +143,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
 
     snpsift_jar = os.path.join(snpeff_dirpath, 'SnpSift.jar')
     snpeff_jar = os.path.join(snpeff_dirpath, 'snpEff.jar')
+    vcfoneperline = os.path.join(snpeff_dirpath, 'vcfEffOnePerLine.pl')
     gatk_jar = os.path.join(gatk_dirpath, 'GenomeAnalysisTK.jar')
 
     sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
@@ -154,9 +155,9 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
     sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate)
 
 
-    cmdline = 'cat %s | ' \
-              'vcfEffOnePerLine.pl | ' \
-              'java -jar %s extractFields - ' \
+    cmdline = 'cat ' + sample_fpath + ' | ' \
+              'perl ' + vcfoneperline + ' | ' \
+              'java -jar ' + snpsift_jar + ' extractFields - ' \
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
@@ -171,8 +172,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
               'dbNSFP_ESP6500_AA_AF dbNSFP_ESP6500_EA_AF KGPROD PM PH3 ' \
               'AB AC AF DP FS GC HRun HaplotypeScore ' \
               'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
-              'MQ0 QA QD ReadPosRankSum ' \
-              'set' % (sample_fpath, snpsift_jar)
+              'MQ0 QA QD ReadPosRankSum '
 
     sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', save_intermediate, stdout=True)
     os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
@@ -199,20 +199,15 @@ def split_genotypes(sample_fpath, save_intermediate):
                 out.write(line)
             else:
                 tokens = line.split()
-                id_field = remove_quotes(tokens[2])
                 alt_field = remove_quotes(tokens[4])
-
-                ids = id_field.split(',')
                 alts = alt_field.split(',')
-                if len(ids) != len(alts):
-                    print 'Number of IDs is not equal to the number of ALTs: ' + str(i) + '. ' + line
-                    continue
-                if len(ids) > 1:
+                if len(alts) > 1:
                     print 'Splitting ' + str(i) + '. ' + line
-                    for id, alt in zip(ids, alts):
-                        line = '\t'.join(tokens[:2] + [id] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
+                    for alt in alts:
+                        line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
                         out.write(line)
                 else:
+                    line = '\t'.join(tokens[:2] + ['.'] + tokens[3:]) + '\n'
                     out.write(line)
 
     if save_intermediate:
@@ -223,7 +218,7 @@ def split_genotypes(sample_fpath, save_intermediate):
         return sample_fpath
 
 
-snp_eff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
+snpeff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
 gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 
 if __name__ == '__main__':
@@ -266,9 +261,10 @@ if __name__ == '__main__':
     print 'Please, run this before start:'
     print '   source /etc/profile.d/modules.sh'
     print '   module load java'
+    print '   module load java'
     print ''
     print 'In Waltham, run this as well:'
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate, rna, ensemble)
+    annotate_hg19(sample_fpath, snpeff_dir, gatk_dir, save_intermediate, rna, ensemble)
