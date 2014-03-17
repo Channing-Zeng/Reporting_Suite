@@ -288,5 +288,5 @@ if __name__ == '__main__':
         log_print('Saved to ' + result_fpath, log_fpath)
         log_print('', log_fpath)
 
-    annotate_GRCh37(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
+    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
                   log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
