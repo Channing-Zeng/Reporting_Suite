@@ -131,12 +131,16 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_co
              log_fpath, True, is_rna, is_ensemble)
 
 
-def annotate(sample_fpath,
-             snp_eff_dirpath, snp_eff_scripts, gatk_dirpath,
-             ref_name, ref_path,
-             dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble):
+def annotate(sample_fpath, log_fpath, config, snp_eff_dirpath, snp_eff_scripts, gatk_dirpath):
+    is_rna = run_config.get('rna', False)
+    is_ensemble = run_config.get('ensemble', False)
+
+    ref_name = config['genome_build']
+    ref_path = config['reference']
+
+
+    cosmic_db = config.get('cosmic']['cosmic']
+
     # sample_dbsnp_fpath = sample_basepath + '.dbsnp' + ext
     # sample_cosmic_fpath = sample_basepath + '.cosmic' + ext
     # sample_snpeff_fpath = sample_basepath + '.snpeff' + ext
@@ -168,10 +172,11 @@ def annotate(sample_fpath,
     vcfoneperline = os.path.join(snp_eff_scripts, 'vcfEffOnePerLine.pl')
     gatk_jar = os.path.join(gatk_dirpath, 'GenomeAnalysisTK.jar')
 
-    sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
-    sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate)
-    sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate)
-    sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
+    dbsnp_db = config.get('db_snp', None)
+    # sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
+    # sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate)
+    # sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate)
+    # sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
     if is_rna:
         sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
     sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate)
