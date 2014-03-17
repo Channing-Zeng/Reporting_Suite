@@ -36,5 +36,6 @@ nosetests.xml
 .pydevproject
 
 .idea/*
+.idea
 test/*
 .DS_Store

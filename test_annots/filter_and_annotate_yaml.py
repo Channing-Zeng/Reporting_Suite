@@ -1,7 +1,9 @@
 # Annotation script that takes 1-3 inputs, first being the vcf file name,
 # second being an indicator if the vcf is from bcbio's ensemble pipeline ('true' if true) and
 # third being 'RNA' if the vcf is from the rna-seq mutect pipeline
+from genericpath import isfile, getsize
 import os
+from os.path import join, splitext
 import subprocess
 import sys
 import shutil
@@ -12,184 +14,231 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-def log_print(msg='', fpath=None):
-    print msg
+def which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
     if fpath:
-        open(fpath, 'w').write(msg)
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None
 
 
-def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
-    basepath, ext = os.path.splitext(input_fpath)
+def check_executable(program):
+    assert which(program), program + ' executable required.'
+
+
+def check_existence(file):
+    assert isfile(file) and getsize(file), file + ' required and does not exist or empty.'
+
+
+run_config = {}
+system_config = {}
+
+
+def log_print(msg=''):
+    print(msg)
+    if 'log' in run_config:
+        open(run_config['log'], 'w').write(msg)
+
+
+def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
+    basepath, ext = splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
-    log_print('', log_fpath)
-    log_print('*' * 70, log_fpath)
-    log_print(cmdline, log_fpath)
-    res = subprocess.call(cmdline.split(),
-                          stdout=open(output_fpath, 'w') if stdout else open(log_fpath, 'a') if log_fpath else None,
-                          stderr=open(log_fpath, 'a') if log_fpath else None)
-    log_print('', log_fpath)
+    if run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath) > 0:
+        log_print(output_fpath + ' exists, reusing')
+        return output_fpath
+
+    log_print('')
+    log_print('*' * 70)
+    log_print(cmdline)
+    res = subprocess.call(
+        cmdline.split(),
+        stdout=open(output_fpath, 'w') if to_stdout else open(run_config['log'], 'a'),
+        stderr=open(run_config['log'], 'a'))
+    log_print('')
     if res != 0:
-        log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
-                  log_fpath)
+        log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
         exit(1)
     else:
-        log_print('Saved to ' + output_fpath, log_fpath)
-        if log_fpath:
-            print 'Log in ' + log_fpath
+        log_print('Saved to ' + output_fpath)
+        print('Log in ' + run_config['log'])
 
-    if not save_prev:
+    if not run_config.get('save_intermediate'):
         os.remove(input_fpath)
-    log_print('Now processing ' + output_fpath, log_fpath)
+    log_print('Now processing ' + output_fpath)
     return output_fpath
 
 
-def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
-    cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, suffix, log_fpath, save_prev, stdout=True)
+def snpsift_annotate(db_name, input_fpath):
+    assert 'snpeff' in system_config['resources']
+    snpeff_config = system_config['resources']['snpeff']
+    check_executable('java')
+    assert dir in snpeff_config, 'Please, provide snpEff directory (dir).'
+    snpeff_dir = snpeff_config['dir']
+    snpsift_jar = join(snpeff_dir, 'SnpSift.jar')
+    check_existence(snpsift_jar)
+
+    db_path = run_config[db_name].get('path')
+    annotations = run_config[db_name].get('annotations')
+
+    cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db_path, input_fpath)
+    return _call_and_rename(cmdline, input_fpath, db_path, to_stdout=True)
 
 
-def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
-    annots = 'SIFT_score,Polyphen2_HVAR_score,Polyphen2_HVAR_pred,LRT_score,LRT_pred,' \
-             'MutationTaster_score,MutationTaster_pred,MutationAssessor_score,' \
-             'MutationAssessor_pred,FATHMM_score,ESP6500_AA_AF,ESP6500_EA_AF,' \
-             'Ensembl_geneid,Ensembl_transcriptid'
+def snpsift_db_nsfp(input_fpath):
+    if 'db_nsfp' not in run_config:
+        return input_fpath
 
-    cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, annots, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', log_fpath, save_prev, stdout=True)
+    assert 'snpeff' in system_config['resources']
+    snpeff_config = system_config['resources']['snpeff']
+    check_executable('java')
+    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
+    snpeff_dir = snpeff_config['dir']
+    snpsift_jar = os.path.join(snpeff_dir, 'SnpSift.jar')
+    check_existence(snpsift_jar)
+
+    db_path = run_config['db_nsfp'].get('path')
+    assert db_path, 'Please, provide a path to db nsfp file in run_config.'
+    annotations = run_config['db_nsfp'].get('annotations', [])
+    ann_line = '"' + ','.join(annotations) + '"'
+
+    cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, ann_line, db_path, input_fpath)
+    return _call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
 
-def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev):
-    cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -cancer ' \
+def snpeff(input_fpath):
+    if 'snpeff' not in run_config:
+        return input_fpath
+
+    assert 'snpeff' in system_config['resources']
+    snpeff_config = system_config['resources']['snpeff']
+    check_executable('java')
+    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
+    snpeff_dir = snpeff_config['dir']
+    snpeff_jar = join(snpeff_dir, 'SnpEff.jar')
+    check_existence(snpeff_jar)
+
+    ref_name = run_config['genome_build']
+    db_path = run_config['snpeff'].get('path')
+    assert db_path, 'Please, provide a path to db nsfp file in run_config.'
+
+    cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -noStats -cancer ' \
               '-noLog -1 -i vcf -o vcf %s %s' % \
-              (snpeff_jar, datadir, ref, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', log_fpath, save_prev, stdout=True)
+              (snpeff_jar, db_path, ref_name, input_fpath)
+
+    return _call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
-def rna_editing_sites(db, vcf_fpath, save_prev):
-    cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'edit', log_fpath, save_prev, stdout=True)
+def rna_editing_sites(db, input_fpath):
+    assert which('vcfannotate'), 'vcfannotate executable required.'
+
+    cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, input_fpath)
+    return _call_and_rename(cmdline, input_fpath, 'edit', to_stdout=True)
 
 
-def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
-    base_name, ext = os.path.splitext(vcf_fpath)
+def gatk(input_fpath):
+    if 'gatk' not in run_config:
+        return input_fpath
+
+    assert 'gatk' in system_config['resources']
+    gatk_config = system_config['resources']['gatk']
+    check_executable('java')
+    assert dir in gatk_config, 'Please, provide gatk directory in the system config (dir).'
+    gatk_dir = gatk_config['dir']
+    gatk_jar = join(gatk_dir, 'GenomeAnalysisTK.jar')
+    check_existence(gatk_jar)
+
+    base_name, ext = os.path.splitext(input_fpath)
     output_fpath = base_name + '.gatk' + ext
+
+    ref_fpath = run_config['reference']
 
     cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
               '-o %s --variant %s' % \
-              (gatk_jar, ref_path, output_fpath, vcf_fpath)
+              (gatk_jar, ref_fpath, output_fpath, input_fpath)
 
-    annotations = [
-        "DepthOfCoverage", "BaseQualityRankSumTest", "FisherStrand",
-        "GCContent", "HaplotypeScore", "HomopolymerRun",
-        "MappingQualityRankSumTest", "MappingQualityZero",
-        "QualByDepth", "ReadPosRankSumTest", "RMSMappingQuality",
-        "DepthPerAlleleBySample"]
-    for ann in annotations:
-        cmdline += " -A " + ann
+    if 'annotations' in gatk_config:
+        annotations = gatk_config['annotations']
+        for ann in annotations:
+            cmdline += " -A " + ann
 
-    return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, stdout=False)
+    return _call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
 
 
-def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, run_config, log_fpath=None):
-    is_rna = run_config.get('rna', False)
-    is_ensemble = run_config.get('ensemble', False)
-
-    ref_name = 'hg19'
-    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
-    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
-    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
-    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
-    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-
-    annotate(sample_fpath,
-             snp_eff_dir, snp_eff_scritps, gatk_dir,
-             ref_name, ref_path,
-             dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track,
-             log_fpath, True, is_rna, is_ensemble)
-
-
-def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_config, log_fpath=None):
-    is_rna = run_config.get('rna', False)
-    is_ensemble = run_config.get('ensemble', False)
-
-    ref_name = 'GRCh37'
-    ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
-    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
-    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/cosmic-v67_20131024-GRCh37.vcf'
-    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
-    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-
-    annotate(sample_fpath,
-             snp_eff_dir, snp_eff_scripts, gatk_dir,
-             ref_name, ref_path,
-             dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track,
-             log_fpath, True, is_rna, is_ensemble)
+#def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, run_config, log_fpath=None):
+#    is_rna = run_config.get('rna', False)
+#    is_ensemble = run_config.get('ensemble', False)
+#
+#    ref_name = 'hg19'
+#    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
+#    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
+#    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
+#    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
+#    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
+#    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
+#
+#    annotate(sample_fpath,
+#             snp_eff_dir, snp_eff_scritps, gatk_dir,
+#             ref_name, ref_path,
+#             dbsnp_db, cosmic_db, db_nsfp_db,
+#             snpeff_datadir, annot_track,
+#             log_fpath, True, is_rna, is_ensemble, reuse)
 
 
-def annotate(sample_fpath, log_fpath, config, snp_eff_dirpath, snp_eff_scripts, ):
-    is_rna = run_config.get('rna', False)
-    is_ensemble = run_config.get('ensemble', False)
-
-    ref_name = config['genome_build']
-    ref_path = config['reference']
-
-
-    cosmic_db = config.get('cosmic']['cosmic']
-
-    # sample_dbsnp_fpath = sample_basepath + '.dbsnp' + ext
-    # sample_cosmic_fpath = sample_basepath + '.cosmic' + ext
-    # sample_snpeff_fpath = sample_basepath + '.snpeff' + ext
-    # sample_dbnsfp_fpath = sample_basepath + '.dbnsf' + ext
-    # sample_rna_edit_sites_fpath = sample_basepath + '.RNAeditSites' + ext
-
-    if is_ensemble:
-        sample_fname = os.path.basename(sample_fpath)
-        sample_basename, ext = os.path.splitext(sample_fname)
-        cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
-
-        sample_fpath = _call_and_rename(cmdline, sample_fpath, '.ensm', log_fpath, save_intermediate, True)
-
-    if is_rna:
-        sample_basepath, ext = os.path.splitext(sample_fpath)
-        pass_sample_fpath = sample_basepath + '.pass' + ext
-        with open(sample_fpath) as sample, open(pass_sample_fpath, 'w') as pass_sample:
-            for line in sample.readlines():
-                if 'REJECT' not in line:
-                    pass_sample.write(line)
-        if save_intermediate:
-            sample_fpath = pass_sample_fpath
-        else:
-            os.remove(sample_fpath)
-            os.rename(pass_sample_fpath, sample_fpath)
-
-    snpsift_jar = os.path.join(snp_eff_dirpath, 'SnpSift.jar')
-    snpeff_jar = os.path.join(snp_eff_dirpath, 'snpEff.jar')
-    vcfoneperline = os.path.join(snp_eff_scripts, 'vcfEffOnePerLine.pl')
-    gatk_jar = os.path.join(gatk_dirpath, 'GenomeAnalysisTK.jar')
-
-    dbsnp_db = config.get('db_snp', None)
-    # sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
-    # sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate)
-    # sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate)
-    # sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
-    if is_rna:
-        sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
-    sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate)
+#def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_config, log_fpath=None):
+#    is_rna = run_config.get('rna', False)
+#    is_ensemble = run_config.get('ensemble', False)
+#
+#    ref_name = 'GRCh37'
+#    ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
+#    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
+#    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/cosmic-v67_20131024-GRCh37.vcf'
+#    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
+#    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
+#    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
+#
+#    annotate(sample_fpath,
+#             snp_eff_dir, snp_eff_scripts, gatk_dir,
+#             ref_name, ref_path,
+#             dbsnp_db, cosmic_db, db_nsfp_db,
+#             snpeff_datadir, annot_track,
+#             log_fpath, True, is_rna, is_ensemble)
 
 
-    cmdline = 'cat ' + sample_fpath + ' | ' \
-              'perl ' + vcfoneperline + ' | ' \
+def extract_fields(input_fpath):
+    check_executable('perl')
+    check_executable('java')
+
+    snpeff_config = system_config['resources'].get('snpeff')
+    assert snpeff_config
+
+    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
+    snpeff_dir = snpeff_config['dir']
+    snpsift_jar = os.path.join(snpeff_dir, 'SnpSift.jar')
+    check_existence(snpsift_jar)
+
+    snpeff_scripts = snpeff_config['scripts']
+    assert snpeff_scripts
+    vcfoneperline = os.path.join(snpeff_scripts, 'vcfEffOnePerLine.pl')
+    check_existence(vcfoneperline)
+
+    cmdline = 'perl ' + vcfoneperline + ' | ' \
               'java -jar ' + snpsift_jar + ' extractFields - ' \
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
               '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
-              '"EFF[*].TRID" "EFF[*].RANK"' \
+              '"EFF[*].TRID" "EFF[*].RANK" ' \
               'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
               'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
               'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
@@ -201,8 +250,84 @@ def annotate(sample_fpath, log_fpath, config, snp_eff_dirpath, snp_eff_scripts, 
               'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
               'MQ0 QA QD ReadPosRankSum '
 
-    sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', log_fpath, save_intermediate, stdout=True)
-    os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
+    basepath, ext = os.path.splitext(input_fpath)
+    output_fpath = basepath + '.extract' + ext
+
+    if run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath):
+        log_print(output_fpath + ' exists, reusing')
+    else:
+        log_print('')
+        log_print('*' * 70)
+        log_print(cmdline)
+        res = subprocess.call(cmdline,
+                              stdin=open(sample_fpath),
+                              stdout=open(output_fpath, 'w'),
+                              stderr=open(run_config['log'], 'a'),
+                              shell=True)
+        log_print('')
+        if res != 0:
+            log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
+            exit(1)
+            # return input_fpath
+        else:
+            log_print('Saved to ' + output_fpath)
+            print('Log in ' + run_config['log'])
+
+        if not run_config.get('save_intermediate'):
+            os.remove(sample_fpath)
+
+    os.rename(sample_fpath, splitext(sample_fpath)[0] + '.tsv')
+
+
+def process_rna(sample_fpath):
+    sample_fname = os.path.basename(sample_fpath)
+    sample_basename, ext = os.path.splitext(sample_fname)
+    check_executable('vcf-subset')
+    cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
+
+    return _call_and_rename(cmdline, sample_fpath, '.ensm', to_stdout=True)
+
+
+def process_ensemble(sample_fpath):
+    sample_basepath, ext = os.path.splitext(sample_fpath)
+    pass_sample_fpath = sample_basepath + '.pass' + ext
+    with open(sample_fpath) as sample, open(pass_sample_fpath, 'w') as pass_sample:
+        for line in sample.readlines():
+            if 'REJECT' not in line:
+                pass_sample.write(line)
+    if run_config.get('save_intermediate'):
+        return pass_sample_fpath
+    else:
+        os.remove(sample_fpath)
+        os.rename(pass_sample_fpath, sample_fpath)
+        return sample_fpath
+
+
+def annotate(sample_fpath):
+    assert 'resources' in system_config
+
+    if run_config.get('rna'):
+        sample_fpath = process_rna(sample_fpath)
+
+    if run_config.get('ensemble'):
+        sample_fpath = process_ensemble(sample_fpath)
+
+    assert 'genome_build' in run_config, 'Please, provide genome build (genome_build).'
+    assert 'reference' in run_config, 'Please, provide path to the reference file (reference).'
+    check_existence(run_config['reference'])
+
+    if 'vcfs' in run_config:
+        for vcf in run_config['vcfs']:
+            sample_fpath = snpsift_annotate(vcf, sample_fpath)
+
+    sample_fpath = snpsift_db_nsfp(sample_fpath)
+
+    #if run_config.get('rna'):
+    #    sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
+
+    sample_fpath = gatk(sample_fpath)
+    sample_fpath = snpeff(sample_fpath)
+    extract_fields(sample_fpath)
 
 
 def remove_quotes(str):
@@ -213,7 +338,7 @@ def remove_quotes(str):
     return str
 
 
-def split_genotypes(sample_fpath, result_fpath, save_intermediate):
+def split_genotypes(sample_fpath, result_fpath):
     with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
         for i, line in enumerate(vcf):
             clean_line = line.strip()
@@ -231,7 +356,7 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
                     line = '\t'.join(tokens[:2] + ['.'] + tokens[3:]) + '\n'
                     out.write(line)
 
-    if save_intermediate:
+    if run_config.get('save_intermediate'):
         return result_fpath
     else:
         os.remove(sample_fpath)
@@ -242,36 +367,18 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
 if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) < 2:
-        print >> sys.stderr, \
-            'Usage: python ' + __file__ + ' system_info.yaml run_info.yaml'
+        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml')
         exit(1)
 
     assert os.path.isfile(args[0]), args[0] + ' does not exist of is a directory.'
     assert os.path.isfile(args[1]), args[1] + ' does not exist of is a directory.'
-
     system_config = load(args[0], Loader=Loader)
     run_config = load(args[1], Loader=Loader)
-
-    try:
-        gatk_dir = system_config['resources']['gatk']['dir']
-    except:
-        print >> sys.stderr, 'Please, provide gatk directory in system config.'
-        exit(1)
-    try:
-        snpeff_dir = system_config['resources']['snpeff']['dir']
-    except:
-        print >> sys.stderr, 'Please, provide snpEff directory in system config.'
-        exit(1)
-    try:
-        snpeff_scripts = system_config['resources']['snpeff']['scripts']
-    except:
-        print >> sys.stderr, 'Please, provide snpEff scripts directory in system config.'
-        exit(1)
 
     sample_fpath = os.path.realpath(run_config.get('file', None))
     assert os.path.isfile(sample_fpath), sample_fpath + ' does not exists or is not a file.'
 
-    result_dir = os.path.realpath(run_config.get('output_dir', os.getcwd))
+    result_dir = os.path.realpath(run_config.get('output_dir', os.getcwd()))
     assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
     sample_fname = os.path.basename(sample_fpath)
@@ -284,31 +391,31 @@ if __name__ == '__main__':
         shutil.copyfile(sample_fpath, new_sample_fpath)
         sample_fpath = new_sample_fpath
 
-    log_fpath = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
-    if os.path.isfile(log_fpath):
-        os.remove(log_fpath)
+    if 'log' not in run_config:
+        run_config['log'] = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
+    if os.path.isfile(run_config['log']):
+        os.remove(run_config['log'])
 
-    log_print('Writing into ' + result_dir, log_fpath)
-    log_print('Logging to ' + log_fpath)
+    log_print('Writing into ' + result_dir)
+    log_print('Logging to ' + run_config['log'])
 
-    print 'Note: please, load modules before start:'
-    print '   source /etc/profile.d/modules.sh'
-    print '   module load java'
-    print '   module load perl'
+    print('Note: please, load modules before start:')
+    print('   source /etc/profile.d/modules.sh')
+    print('   module load java')
+    print('   module load perl')
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    do_split_genotypes = run_config.get('split_genotypes', False)
-    if do_split_genotypes:
+    if run_config.get('split_genotypes'):
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
-        log_print('', log_fpath)
-        log_print('*' * 70, log_fpath)
-        log_print('Splitting genotypes.', log_fpath)
-        sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
-        log_print('Saved to ' + result_fpath, log_fpath)
-        log_print('', log_fpath)
+        log_print('')
+        log_print('*' * 70)
+        log_print('Splitting genotypes.')
+        sample_fpath = split_genotypes(sample_fpath, result_fpath)
+        log_print('Saved to ' + result_fpath)
+        log_print('')
 
-    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, run_config, log_fpath=log_fpath)
+    annotate(sample_fpath)

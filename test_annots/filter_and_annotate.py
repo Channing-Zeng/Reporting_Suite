@@ -8,12 +8,13 @@ import shutil
 
 
 def log_print(msg='', fpath=None):
-    print msg
+    print(msg)
     if fpath:
         open(fpath, 'a').write(msg + '\n')
 
 
-def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, reuse=False, stdout=True):
+def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None,
+                     save_prev=False, reuse=False, stdout=True):
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
@@ -32,11 +33,10 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
         log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
                   log_fpath)
         exit(1)
-        # return input_fpath
     else:
         log_print('Saved to ' + output_fpath, log_fpath)
         if log_fpath:
-            print 'Log in ' + log_fpath
+            print('Log in ' + log_fpath)
 
     if not save_prev:
         os.remove(input_fpath)
@@ -303,14 +303,14 @@ if __name__ == '__main__':
 
     log_print('Writing into ' + result_dir, log_fpath)
 
-    print 'Note: please, load modules before start:'
-    print '   source /etc/profile.d/modules.sh'
-    print '   module load java'
-    print '   module load perl'
-    print ''
-    print 'In Waltham, run this as well:'
-    print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+    print('Note: please, load modules before start')
+    print('   source /etc/profile.d/modules.sh')
+    print('   module load java')
+    print('   module load perl')
+    print('')
+    print('In Waltham, run this as well:')
+    print('   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts')
+    print('   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl')
 
     if do_split_genotypes:
         sample_basepath, ext = os.path.splitext(sample_fpath)
