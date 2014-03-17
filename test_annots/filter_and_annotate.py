@@ -60,7 +60,7 @@ def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev, reuse):
 
 
 def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev, reuse):
-    cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -noStats -t -cancer ' \
+    cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -noStats -cancer ' \
               '-noLog -1 -i vcf -o vcf %s %s' % \
               (snpeff_jar, datadir, ref, vcf_fpath)
     return _call_and_rename(cmdline, vcf_fpath, 'snpEff', log_fpath, save_prev, reuse, stdout=True)
