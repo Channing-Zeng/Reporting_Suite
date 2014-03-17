@@ -27,7 +27,7 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     if res != 0:
         log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
                   log_fpath)
-        exit(1)
+        return input_fpath
     else:
         log_print('Saved to ' + output_fpath, log_fpath)
         if log_fpath:
@@ -288,5 +288,5 @@ if __name__ == '__main__':
         log_print('Saved to ' + result_fpath, log_fpath)
         log_print('', log_fpath)
 
-    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
+    annotate_GRCh37(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
                   log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
