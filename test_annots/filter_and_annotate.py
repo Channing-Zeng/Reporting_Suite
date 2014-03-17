@@ -13,9 +13,13 @@ def log_print(msg='', fpath=None):
         open(fpath, 'a').write(msg + '\n')
 
 
-def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
+def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, reuse=False, stdout=True):
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
+
+    if reuse and os.path.isfile(result_fpath):
+        log_print(result_fpath + ' exists, reusing', log_fpath)
+        return result_fpath
 
     log_print('', log_fpath)
     log_print('*' * 70, log_fpath)
@@ -40,34 +44,34 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     return output_fpath
 
 
-def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
+def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev, reuse):
     cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, suffix, log_fpath, save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, suffix, log_fpath, save_prev, reuse, stdout=True)
 
 
-def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
+def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev, reuse):
     annots = 'SIFT_score,Polyphen2_HVAR_score,Polyphen2_HVAR_pred,LRT_score,LRT_pred,' \
              'MutationTaster_score,MutationTaster_pred,MutationAssessor_score,' \
              'MutationAssessor_pred,FATHMM_score,ESP6500_AA_AF,ESP6500_EA_AF,' \
              'Ensembl_geneid,Ensembl_transcriptid'
 
     cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, annots, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', log_fpath, save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', log_fpath, save_prev, reuse, stdout=True)
 
 
-def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev):
+def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev, reuse):
     cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -noStats -t 20 -cancer ' \
               '-noLog -1 -i vcf -o vcf %s %s' % \
               (snpeff_jar, datadir, ref, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', log_fpath, save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', log_fpath, save_prev, reuse, stdout=True)
 
 
-def rna_editing_sites(db, vcf_fpath, save_prev):
+def rna_editing_sites(db, vcf_fpath, save_prev, reuse):
     cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'edit', log_fpath, save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'edit', log_fpath, save_prev, reuse, stdout=True)
 
 
-def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
+def gatk(gatk_jar, ref_path, vcf_fpath, save_prev, reuse):
     base_name, ext = os.path.splitext(vcf_fpath)
     output_fpath = base_name + '.gatk' + ext
 
@@ -84,11 +88,11 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     for ann in annotations:
         cmdline += " -A " + ann
 
-    return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, stdout=False)
+    return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, reuse, stdout=False)
 
 
 def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, save_intermediate=False,
-                  log_fpath=None, is_rna=False, is_ensemble=False):
+                  log_fpath=None, is_rna=False, is_ensemble=False, reuse=False):
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
@@ -102,11 +106,11 @@ def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, save_int
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble)
+             log_fpath, save_intermediate, is_rna, is_ensemble, reuse)
 
 
 def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, save_intermediate=False,
-                    log_fpath=None, is_rna=False, is_ensemble=False):
+                    log_fpath=None, is_rna=False, is_ensemble=False, reuse=False):
     ref_name = 'GRCh37'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
@@ -120,7 +124,7 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, save_i
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble)
+             log_fpath, save_intermediate, is_rna, is_ensemble, reuse)
 
 
 def annotate(sample_fpath,
@@ -128,7 +132,7 @@ def annotate(sample_fpath,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
-             log_fpath, save_intermediate, is_rna, is_ensemble):
+             log_fpath, save_intermediate, is_rna, is_ensemble, reuse):
     # sample_dbsnp_fpath = sample_basepath + '.dbsnp' + ext
     # sample_cosmic_fpath = sample_basepath + '.cosmic' + ext
     # sample_snpeff_fpath = sample_basepath + '.snpeff' + ext
@@ -160,13 +164,13 @@ def annotate(sample_fpath,
     vcfoneperline = os.path.join(snp_eff_scripts, 'vcfEffOnePerLine.pl')
     gatk_jar = os.path.join(gatk_dirpath, 'GenomeAnalysisTK.jar')
 
-    sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
-    sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate)
-    sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate)
+    sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate, reuse)
+    sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate, reuse)
+    sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate, reuse)
     if is_rna:
-        sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
-    sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate)
-    sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
+        sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate, reuse)
+    sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate, reuse)
+    sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate, reuse)
 
 
     cmdline = 'cat ' + sample_fpath + ' | ' \
@@ -233,12 +237,13 @@ gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 if __name__ == '__main__':
     args = sys.argv[1:]
 
-    flags = ['-rna', '-ensemble', '-split', '-to-valid']
+    flags = ['-rna', '-ensemble', '-split', '-reuse']
     rna = '-rna' in args
     ensemble = '-ensemble' in args
     do_split_genotypes = '-split' in args
+    reuse = '-reuse' in args
     # save_intermediate = '-intermediate' in args
-    to_valid = '-to-valid' in args
+    # to_valid = '-to-valid' in args
 
     if len(args) < 1:
         print >> sys.stderr, \
@@ -282,12 +287,16 @@ if __name__ == '__main__':
     if do_split_genotypes:
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
-        log_print('', log_fpath)
-        log_print('*' * 70, log_fpath)
-        log_print('Splitting genotypes.', log_fpath)
-        sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
-        log_print('Saved to ' + result_fpath, log_fpath)
-        log_print('', log_fpath)
+
+        if reuse and os.path.isfile(result_fpath):
+            log_print(result_fpath + ' exists, reusing', log_fpath)
+        else:
+            log_print('', log_fpath)
+            log_print('*' * 70, log_fpath)
+            log_print('Splitting genotypes.', log_fpath)
+            sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
+            log_print('Saved to ' + result_fpath, log_fpath)
+            log_print('', log_fpath)
 
     annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
-                  log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
+                  log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble, reuse=reuse)
