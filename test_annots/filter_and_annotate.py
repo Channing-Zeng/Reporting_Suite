@@ -214,7 +214,7 @@ def annotate(sample_fpath,
         else:
             log_print('Saved to ' + output_fpath, log_fpath)
             if log_fpath:
-                print 'Log in ' + log_fpath
+                print('Log in ' + log_fpath)
 
         if not save_intermediate:
             os.remove(sample_fpath)

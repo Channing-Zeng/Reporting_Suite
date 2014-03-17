@@ -175,46 +175,6 @@ def gatk(input_fpath):
     return _call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
 
 
-#def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, run_config, log_fpath=None):
-#    is_rna = run_config.get('rna', False)
-#    is_ensemble = run_config.get('ensemble', False)
-#
-#    ref_name = 'hg19'
-#    ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
-#    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
-#    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf'
-#    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-#    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
-#    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-#
-#    annotate(sample_fpath,
-#             snp_eff_dir, snp_eff_scritps, gatk_dir,
-#             ref_name, ref_path,
-#             dbsnp_db, cosmic_db, db_nsfp_db,
-#             snpeff_datadir, annot_track,
-#             log_fpath, True, is_rna, is_ensemble, reuse)
-
-
-#def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_config, log_fpath=None):
-#    is_rna = run_config.get('rna', False)
-#    is_ensemble = run_config.get('ensemble', False)
-#
-#    ref_name = 'GRCh37'
-#    ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
-#    dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
-#    cosmic_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/cosmic-v67_20131024-GRCh37.vcf'
-#    db_nsfp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz'
-#    snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
-#    annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
-#
-#    annotate(sample_fpath,
-#             snp_eff_dir, snp_eff_scripts, gatk_dir,
-#             ref_name, ref_path,
-#             dbsnp_db, cosmic_db, db_nsfp_db,
-#             snpeff_datadir, annot_track,
-#             log_fpath, True, is_rna, is_ensemble)
-
-
 def extract_fields(input_fpath):
     check_executable('perl')
     check_executable('java')
