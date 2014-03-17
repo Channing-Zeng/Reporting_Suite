@@ -25,7 +25,8 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
                           stderr=open(log_fpath, 'a') if log_fpath else None)
     log_print('', log_fpath)
     if res != 0:
-        log_print('Command returned status ' + str(res), log_fpath)
+        log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
+                  log_fpath)
         exit(1)
     else:
         log_print('Saved to ' + output_fpath, log_fpath)
@@ -255,18 +256,18 @@ if __name__ == '__main__':
     sample_fname = os.path.basename(sample_fpath)
     sample_basename, ext = os.path.splitext(sample_fname)
 
-    log_fpath = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
-    if os.path.isfile(log_fpath):
-        os.remove(log_fpath)
-
-    log_print('Writing into ' + result_dir, log_fpath)
-
     if result_dir != os.path.realpath(os.path.dirname(sample_fpath)):
         new_sample_fpath = os.path.join(result_dir, sample_fname)
         if os.path.exists(new_sample_fpath):
             os.remove(new_sample_fpath)
         shutil.copyfile(sample_fpath, new_sample_fpath)
         sample_fpath = new_sample_fpath
+
+    log_fpath = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
+    if os.path.isfile(log_fpath):
+        os.remove(log_fpath)
+
+    log_print('Writing into ' + result_dir, log_fpath)
 
     print 'Note: please, load modules before start:'
     print '   source /etc/profile.d/modules.sh'
