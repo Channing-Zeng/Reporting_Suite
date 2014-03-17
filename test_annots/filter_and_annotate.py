@@ -175,7 +175,7 @@ def annotate(sample_fpath,
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
               '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
-              '"EFF[*].TRID" "EFF[*].RANK"' \
+              '"EFF[*].TRID" "EFF[*].RANK" ' \
               'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
               'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
               'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
