@@ -15,7 +15,7 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     print '*' * 70
     print cmdline
     res = subprocess.call(cmdline.split(),
-                          stdout=open(output_fpath, 'w') if stdout else None,
+                          stdout=open(output_fpath, 'w') if stdout else open(log_fpath, 'a') if log_fpath else None,
                           stderr=open(log_fpath, 'a') if log_fpath else None)
     print ''
     if res != 0:
@@ -79,7 +79,7 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, stdout=False)
 
 
-def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False,
+def annotate_hg19(sample_fpath, snp_eff_dir, snp_eff_scritps, gatk_dir, save_intermediate=False,
                   log_fpath=None, is_rna=False, is_ensemble=False):
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
@@ -90,14 +90,14 @@ def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False,
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
     annotate(sample_fpath,
-             snp_eff_dir, gatk_dir,
+             snp_eff_dir, snp_eff_scritps, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
              log_fpath, save_intermediate, is_rna, is_ensemble)
 
 
-def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False,
+def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, save_intermediate=False,
                     log_fpath=None, is_rna=False, is_ensemble=False):
     ref_name = 'GRCh37'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
@@ -108,7 +108,7 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
     annotate(sample_fpath,
-             snp_eff_dir, gatk_dir,
+             snp_eff_dir, snp_eff_scripts, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
@@ -116,7 +116,7 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False
 
 
 def annotate(sample_fpath,
-             snpeff_dirpath, gatk_dirpath,
+             snp_eff_dirpath, snp_eff_scripts, gatk_dirpath,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
              snpeff_datadir, annot_track,
@@ -147,9 +147,9 @@ def annotate(sample_fpath,
             os.remove(sample_fpath)
             os.rename(pass_sample_fpath, sample_fpath)
 
-    snpsift_jar = os.path.join(snpeff_dirpath, 'SnpSift.jar')
-    snpeff_jar = os.path.join(snpeff_dirpath, 'snpEff.jar')
-    vcfoneperline = os.path.join(snpeff_dirpath, 'vcfEffOnePerLine.pl')
+    snpsift_jar = os.path.join(snp_eff_dirpath, 'SnpSift.jar')
+    snpeff_jar = os.path.join(snp_eff_dirpath, 'snpEff.jar')
+    vcfoneperline = os.path.join(snp_eff_scripts, 'vcfEffOnePerLine.pl')
     gatk_jar = os.path.join(gatk_dirpath, 'GenomeAnalysisTK.jar')
 
     sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
@@ -219,6 +219,7 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
 
 
 snpeff_dir = '/group/ngs/src/snpEff/snpEff3.5/'
+snpeff_scripts = '/group/ngs/src/snpEff/snpEff3.5/scripts'
 gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 
 if __name__ == '__main__':
@@ -259,13 +260,7 @@ if __name__ == '__main__':
     if os.path.isfile(log_fpath):
         os.remove(log_fpath)
 
-    if do_split_genotypes:
-        sample_basepath, ext = os.path.splitext(sample_fpath)
-        result_fpath = sample_basepath + '.split' + ext
-        print 'Splitting genotypes. Writing to ' + result_fpath
-        sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
-
-    print 'Please, run this before start:'
+    print 'Note: please, load modules before start:'
     print '   source /etc/profile.d/modules.sh'
     print '   module load java'
     print '   module load perl'
@@ -274,5 +269,15 @@ if __name__ == '__main__':
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate_hg19(sample_fpath, snpeff_dir, gatk_dir, save_intermediate=True,
+    if do_split_genotypes:
+        sample_basepath, ext = os.path.splitext(sample_fpath)
+        result_fpath = sample_basepath + '.split' + ext
+        print ''
+        print '*' * 70
+        print 'Splitting genotypes.'
+        sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
+        print 'Saved to ' + result_fpath
+        print ''
+
+    annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
                   log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
