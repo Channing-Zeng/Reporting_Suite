@@ -7,33 +7,34 @@ import sys
 import shutil
 
 
-def _call_and_rename(cmdline, input_fpath, suffix, save_prev=False, stdout=True):
+def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
     print ''
     print '*' * 70
     print cmdline
-    res = subprocess.call(cmdline.split(), stdout=open(output_fpath, 'w') if stdout else None)
+    res = subprocess.call(cmdline.split(),
+                          stdout=open(output_fpath, 'w') if stdout else None,
+                          stderr=open(log_fpath, 'a') if log_fpath else None)
+    print ''
     if res != 0:
-        print ''
-        print '*' * 70
         print 'Command returned status ' + str(res)
         exit(1)
-
-    if save_prev:
-        print 'Now processing ' + output_fpath
-        return output_fpath
     else:
+        print 'Saved to ' + output_fpath
+        if log_fpath:
+            print 'Log in ' + log_fpath
+
+    if not save_prev:
         os.remove(input_fpath)
-        # os.rename(output_fpath, input_fpath)
-        print 'Now processing ' + output_fpath
-        return output_fpath
+    print 'Now processing ' + output_fpath
+    return output_fpath
 
 
 def snpsift_annotate(snpsift_jar, db, suffix, vcf_fpath, save_prev):
     cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, suffix, save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, suffix, log_fpath, save_prev, stdout=True)
 
 
 def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
@@ -43,19 +44,19 @@ def snpsift_dbnsfp(snpsift_jar, db, vcf_fpath, save_prev):
              'Ensembl_geneid,Ensembl_transcriptid'
 
     cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, annots, db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'db_nsfp', log_fpath, save_prev, stdout=True)
 
 
 def snpeff(snpeff_jar, datadir, ref, vcf_fpath, save_prev):
     cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -cancer ' \
               '-noLog -1 -i vcf -o vcf %s %s' % \
               (snpeff_jar, datadir, ref, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'snpEff', log_fpath, save_prev, stdout=True)
 
 
 def rna_editing_sites(db, vcf_fpath, save_prev):
     cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, vcf_fpath)
-    return _call_and_rename(cmdline, vcf_fpath, 'edit', save_prev, stdout=True)
+    return _call_and_rename(cmdline, vcf_fpath, 'edit', log_fpath, save_prev, stdout=True)
 
 
 def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
@@ -75,10 +76,11 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev):
     for ann in annotations:
         cmdline += " -A " + ann
 
-    return _call_and_rename(cmdline, vcf_fpath, 'gatk', save_prev, stdout=False)
+    return _call_and_rename(cmdline, vcf_fpath, 'gatk', log_fpath, save_prev, stdout=False)
 
 
-def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
+def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False,
+                  log_fpath=None, is_rna=False, is_ensemble=False):
     ref_name = 'hg19'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf'
@@ -87,14 +89,16 @@ def annotate_hg19(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, 
     snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff'
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
-    annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
+    annotate(sample_fpath,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track)
+             snpeff_datadir, annot_track,
+             log_fpath, save_intermediate, is_rna, is_ensemble)
 
 
-def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False, is_rna=False, is_ensemble=False):
+def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False,
+                    log_fpath=None, is_rna=False, is_ensemble=False):
     ref_name = 'GRCh37'
     ref_path = '/ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa'
     dbsnp_db = '/ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf'
@@ -103,18 +107,20 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, gatk_dir, save_intermediate=False
     snpeff_datadir = '/ngs/reference_data/genomes/Hsapiens/GRCh37/snpeff'
     annot_track = '/ngs/reference_data/genomes/Hsapiens/hg19/variation/Human_AG_all_hg19_INFO.bed'
 
-    annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
+    annotate(sample_fpath,
              snp_eff_dir, gatk_dir,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track)
+             snpeff_datadir, annot_track,
+             log_fpath, save_intermediate, is_rna, is_ensemble)
 
 
-def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
+def annotate(sample_fpath,
              snpeff_dirpath, gatk_dirpath,
              ref_name, ref_path,
              dbsnp_db, cosmic_db, db_nsfp_db,
-             snpeff_datadir, annot_track):
+             snpeff_datadir, annot_track,
+             log_fpath, save_intermediate, is_rna, is_ensemble):
     # sample_dbsnp_fpath = sample_basepath + '.dbsnp' + ext
     # sample_cosmic_fpath = sample_basepath + '.cosmic' + ext
     # sample_snpeff_fpath = sample_basepath + '.snpeff' + ext
@@ -126,7 +132,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
         sample_basename, ext = os.path.splitext(sample_fname)
         cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
 
-        sample_fpath = _call_and_rename(cmdline, sample_fpath, '.ensm', save_intermediate, True)
+        sample_fpath = _call_and_rename(cmdline, sample_fpath, '.ensm', log_fpath, save_intermediate, True)
 
     if is_rna:
         sample_basepath, ext = os.path.splitext(sample_fpath)
@@ -174,7 +180,7 @@ def annotate(sample_fpath, save_intermediate, is_rna, is_ensemble,
               'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
               'MQ0 QA QD ReadPosRankSum '
 
-    sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', save_intermediate, stdout=True)
+    sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', log_fpath, save_intermediate, stdout=True)
     os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
 
 
@@ -186,12 +192,7 @@ def remove_quotes(str):
     return str
 
 
-def split_genotypes(sample_fpath, save_intermediate):
-    print 'Splitting genotypes'
-
-    sample_basepath, ext = os.path.splitext(sample_fpath)
-    result_fpath = sample_basepath + '.split' + ext
-
+def split_genotypes(sample_fpath, result_fpath, save_intermediate):
     with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
         for i, line in enumerate(vcf):
             clean_line = line.strip()
@@ -224,47 +225,55 @@ gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
 if __name__ == '__main__':
     args = sys.argv[1:]
 
-    flags = ['-rna', '-ensemble', '-split', '-intermediate', '-to-valid']
+    flags = ['-rna', '-ensemble', '-split', '-to-valid']
     rna = '-rna' in args
     ensemble = '-ensemble' in args
     do_split_genotypes = '-split' in args
-    save_intermediate = '-intermediate' in args
+    # save_intermediate = '-intermediate' in args
     to_valid = '-to-valid' in args
 
     if len(args) < 1:
         print >> sys.stderr, \
-            'Usage: python ' + __file__ + ' sample.vcf [result.vcf] ' \
-            '[-split] [-ensemble] [-rna] [-intermediate] [-to_valid]'
+            'Usage: python ' + __file__ + ' sample.vcf [result_dir] ' \
+            '[-split] [-ensemble] [-rna] [-to_valid]'
         exit(1)
 
     sample_fpath = os.path.realpath(args[0])
     assert os.path.isfile(sample_fpath), \
-        sample_fpath + ' does not exists or is not a file'
+        sample_fpath + ' does not exists or is not a file.'
 
     if len(args) > 1 and args[1] not in flags:
-        result_fpath = os.path.realpath(args[1])
+        result_dir = os.path.realpath(args[1])
     else:
-        result_fpath = sample_fpath
+        result_dir = os.getcwd()
+    print 'Writing into ' + result_dir
 
-    if result_fpath != sample_fpath:
-        if os.path.exists(result_fpath):
-            os.remove(result_fpath)
-        shutil.copyfile(sample_fpath, result_fpath)
-        sample_fpath = result_fpath
+    if result_dir != os.path.realpath(os.path.dirname(sample_fpath)):
+        sample_name = os.path.basename(sample_fpath)
+        new_sample_fpath = os.path.join(result_dir, sample_name)
+        if os.path.exists(new_sample_fpath):
+            os.remove(new_sample_fpath)
+        shutil.copyfile(sample_fpath, new_sample_fpath)
+        sample_fpath = new_sample_fpath
 
-    sample_basedir = os.path.dirname(sample_fpath)
-    sample_basepath, ext = os.path.splitext(sample_fpath)
+    log_fpath = os.path.join(os.path.dirname(sample_fpath), 'log.txt')
+    if os.path.isfile(log_fpath):
+        os.remove(log_fpath)
 
-    # if do_split_genotypes:
-    #     sample_fpath = split_genotypes(sample_fpath, save_intermediate)
+    if do_split_genotypes:
+        sample_basepath, ext = os.path.splitext(sample_fpath)
+        result_fpath = sample_basepath + '.split' + ext
+        print 'Splitting genotypes. Writing to ' + result_fpath
+        sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
 
     print 'Please, run this before start:'
     print '   source /etc/profile.d/modules.sh'
     print '   module load java'
-    print '   module load java'
+    print '   module load perl'
     print ''
     print 'In Waltham, run this as well:'
     print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotate_hg19(sample_fpath, snpeff_dir, gatk_dir, save_intermediate, rna, ensemble)
+    annotate_hg19(sample_fpath, snpeff_dir, gatk_dir, save_intermediate=True,
+                  log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
