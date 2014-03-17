@@ -17,7 +17,7 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
-    if reuse and os.path.isfile(output_fpath):
+    if reuse and os.path.isfile(output_fpath) and os.path.getsize(output_fpath) > 0:
         log_print(output_fpath + ' exists, reusing', log_fpath)
         return output_fpath
 
@@ -75,7 +75,7 @@ def gatk(gatk_jar, ref_path, vcf_fpath, save_prev, reuse):
     base_name, ext = os.path.splitext(vcf_fpath)
     output_fpath = base_name + '.gatk' + ext
 
-    cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
+    cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator -nt 20 ' \
               '-o %s --variant %s' % \
               (gatk_jar, ref_path, output_fpath, vcf_fpath)
 
@@ -194,7 +194,7 @@ def annotate(sample_fpath,
     basepath, ext = os.path.splitext(sample_fpath)
     output_fpath = basepath + '.extract' + ext
 
-    if reuse and os.path.isfile(output_fpath):
+    if reuse and os.path.isfile(output_fpath) and os.path.getsize(output_fpath) > 0:
         log_print(output_fpath + ' exists, reusing', log_fpath)
     else:
         log_print('', log_fpath)
@@ -316,7 +316,7 @@ if __name__ == '__main__':
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
 
-        if reuse and os.path.isfile(result_fpath):
+        if reuse and os.path.isfile(result_fpath) and os.path.getsize(result_fpath) > 0:
             log_print(result_fpath + ' exists, reusing', log_fpath)
         else:
             log_print('', log_fpath)
