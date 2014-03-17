@@ -7,28 +7,34 @@ import sys
 import shutil
 
 
+def log_print(msg='', fpath=None):
+    print msg
+    if fpath:
+        print >> fpath, msg
+
+
 def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
     basepath, ext = os.path.splitext(input_fpath)
     output_fpath = basepath + '.' + suffix + ext
 
-    print ''
-    print '*' * 70
-    print cmdline
+    log_print('', log_fpath)
+    log_print('*' * 70, log_fpath)
+    log_print(cmdline, log_fpath)
     res = subprocess.call(cmdline.split(),
                           stdout=open(output_fpath, 'w') if stdout else open(log_fpath, 'a') if log_fpath else None,
                           stderr=open(log_fpath, 'a') if log_fpath else None)
-    print ''
+    log_print('', log_fpath)
     if res != 0:
-        print 'Command returned status ' + str(res)
+        log_print('Command returned status ' + str(res), log_fpath)
         exit(1)
     else:
-        print 'Saved to ' + output_fpath
+        log_print('Saved to ' + output_fpath, log_fpath)
         if log_fpath:
             print 'Log in ' + log_fpath
 
     if not save_prev:
         os.remove(input_fpath)
-    print 'Now processing ' + output_fpath
+    log_print('Now processing ' + output_fpath, log_fpath)
     return output_fpath
 
 
@@ -239,26 +245,28 @@ if __name__ == '__main__':
         exit(1)
 
     sample_fpath = os.path.realpath(args[0])
-    assert os.path.isfile(sample_fpath), \
-        sample_fpath + ' does not exists or is not a file.'
+    assert os.path.isfile(sample_fpath), sample_fpath + ' does not exists or is not a file.'
 
     if len(args) > 1 and args[1] not in flags:
         result_dir = os.path.realpath(args[1])
     else:
         result_dir = os.getcwd()
-    print 'Writing into ' + result_dir
+
+    sample_fname = os.path.basename(sample_fpath)
+    sample_basename, ext = os.path.splitext(sample_fname)
+
+    log_fpath = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
+    if os.path.isfile(log_fpath):
+        os.remove(log_fpath)
+
+    log_print('Writing into ' + result_dir, log_fpath)
 
     if result_dir != os.path.realpath(os.path.dirname(sample_fpath)):
-        sample_name = os.path.basename(sample_fpath)
-        new_sample_fpath = os.path.join(result_dir, sample_name)
+        new_sample_fpath = os.path.join(result_dir, sample_fname)
         if os.path.exists(new_sample_fpath):
             os.remove(new_sample_fpath)
         shutil.copyfile(sample_fpath, new_sample_fpath)
         sample_fpath = new_sample_fpath
-
-    log_fpath = os.path.join(os.path.dirname(sample_fpath), 'log.txt')
-    if os.path.isfile(log_fpath):
-        os.remove(log_fpath)
 
     print 'Note: please, load modules before start:'
     print '   source /etc/profile.d/modules.sh'
@@ -272,12 +280,12 @@ if __name__ == '__main__':
     if do_split_genotypes:
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
-        print ''
-        print '*' * 70
-        print 'Splitting genotypes.'
+        log_print('', log_fpath)
+        log_print('*' * 70, log_fpath)
+        log_print('Splitting genotypes.', log_fpath)
         sample_fpath = split_genotypes(sample_fpath, result_fpath, save_intermediate=True)
-        print 'Saved to ' + result_fpath
-        print ''
+        log_print('Saved to ' + result_fpath, log_fpath)
+        log_print('', log_fpath)
 
     annotate_hg19(sample_fpath, snpeff_dir, snpeff_scripts, gatk_dir, save_intermediate=True,
                   log_fpath=log_fpath, is_rna=rna, is_ensemble=ensemble)
