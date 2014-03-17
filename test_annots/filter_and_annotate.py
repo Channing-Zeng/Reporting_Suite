@@ -203,7 +203,6 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
                 alt_field = remove_quotes(tokens[4])
                 alts = alt_field.split(',')
                 if len(alts) > 1:
-                    print 'Splitting ' + str(i) + '. ' + line
                     for alt in alts:
                         line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
                         out.write(line)
