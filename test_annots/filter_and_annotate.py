@@ -162,10 +162,10 @@ def annotate(sample_fpath,
     sample_fpath = snpsift_annotate(snpsift_jar, dbsnp_db, 'dbsnp', sample_fpath, save_intermediate)
     sample_fpath = snpsift_annotate(snpsift_jar, cosmic_db, 'cosmic', sample_fpath, save_intermediate)
     sample_fpath = snpsift_dbnsfp(snpsift_jar, db_nsfp_db, sample_fpath, save_intermediate)
-    sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
     if is_rna:
         sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
     sample_fpath = gatk(gatk_jar, ref_path, sample_fpath, save_intermediate)
+    sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate)
 
 
     cmdline = 'cat ' + sample_fpath + ' | ' \
