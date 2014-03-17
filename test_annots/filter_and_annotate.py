@@ -27,7 +27,8 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     if res != 0:
         log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
                   log_fpath)
-        return input_fpath
+        exit(1)
+        # return input_fpath
     else:
         log_print('Saved to ' + output_fpath, log_fpath)
         if log_fpath:

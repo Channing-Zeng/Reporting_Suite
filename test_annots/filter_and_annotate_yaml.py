@@ -131,7 +131,7 @@ def annotate_GRCh37(sample_fpath, snp_eff_dir, snp_eff_scripts, gatk_dir, run_co
              log_fpath, True, is_rna, is_ensemble)
 
 
-def annotate(sample_fpath, log_fpath, config, snp_eff_dirpath, snp_eff_scripts, gatk_dirpath):
+def annotate(sample_fpath, log_fpath, config, snp_eff_dirpath, snp_eff_scripts, ):
     is_rna = run_config.get('rna', False)
     is_ensemble = run_config.get('ensemble', False)
 
