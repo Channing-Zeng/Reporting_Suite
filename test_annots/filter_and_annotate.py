@@ -18,8 +18,8 @@ def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=Fal
     output_fpath = basepath + '.' + suffix + ext
 
     if reuse and os.path.isfile(output_fpath):
-        log_print(result_fpath + ' exists, reusing', log_fpath)
-        return result_fpath
+        log_print(output_fpath + ' exists, reusing', log_fpath)
+        return output_fpath
 
     log_print('', log_fpath)
     log_print('*' * 70, log_fpath)
