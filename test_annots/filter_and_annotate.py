@@ -173,8 +173,7 @@ def annotate(sample_fpath,
     sample_fpath = snpeff(snpeff_jar, snpeff_datadir, ref_name, sample_fpath, save_intermediate, reuse)
 
 
-    cmdline = 'cat ' + sample_fpath + ' | ' \
-              'perl ' + vcfoneperline + ' | ' \
+    cmdline = 'perl ' + vcfoneperline + ' | ' \
               'java -jar ' + snpsift_jar + ' extractFields - ' \
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
@@ -192,7 +191,38 @@ def annotate(sample_fpath,
               'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
               'MQ0 QA QD ReadPosRankSum '
 
-    sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract', log_fpath, save_intermediate, stdout=True)
+    basepath, ext = os.path.splitext(sample_fpath)
+    output_fpath = basepath + '.extract' + ext
+
+    if reuse and os.path.isfile(result_fpath):
+        log_print(result_fpath + ' exists, reusing', log_fpath)
+        return result_fpath
+
+    log_print('', log_fpath)
+    log_print('*' * 70, log_fpath)
+    log_print(cmdline, log_fpath)
+    res = subprocess.call(cmdline,
+                          stdin=open(sample_fpath),
+                          stdout=open(output_fpath, 'w'),
+                          stderr=open(log_fpath, 'a') if log_fpath else None,
+                          shell=True)
+    log_print('', log_fpath)
+    if res != 0:
+        log_print('Command returned status ' + str(res) + ('. Log in ' + log_fpath if log_fpath else ''),
+                  log_fpath)
+        exit(1)
+        # return input_fpath
+    else:
+        log_print('Saved to ' + output_fpath, log_fpath)
+        if log_fpath:
+            print 'Log in ' + log_fpath
+
+    if not save_intermediate:
+        os.remove(sample_fpath)
+    log_print('Now processing ' + output_fpath, log_fpath)
+
+    # sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract',
+    #                                 log_fpath, save_intermediate, stdout=True)
     os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
 
 
