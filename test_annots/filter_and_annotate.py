@@ -10,7 +10,7 @@ import shutil
 def log_print(msg='', fpath=None):
     print msg
     if fpath:
-        print >> fpath, msg
+        open(fpath, 'w').write(msg)
 
 
 def _call_and_rename(cmdline, input_fpath, suffix, log_fpath=None, save_prev=False, stdout=True):
