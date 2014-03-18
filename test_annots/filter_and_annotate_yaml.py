@@ -318,7 +318,7 @@ class Annotator:
         #{vcfs: {db_snp: {path: '', annotation: []}, cosmic: {path: '', ann:[]}}}
 
         if 'vcfs' in self.run_config:
-            for dbname, conf in self.run_config['vcfs']:
+            for dbname, conf in self.run_config['vcfs'].items():
                 sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
 
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
