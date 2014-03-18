@@ -22,4 +22,4 @@ def __correct_cromosomes(sample_fpath):
 
 
 if __name__ == '__main__':
-    __correct_cromosomes(sys.argv[0])
+    __correct_cromosomes(sys.argv[1])
