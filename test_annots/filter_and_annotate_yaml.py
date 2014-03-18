@@ -65,8 +65,6 @@ def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
         log_print(output_fpath + ' exists, reusing')
         return output_fpath
 
-    log_print('')
-    log_print('*' * 70)
     log_print(cmdline)
 
     res = subprocess.call(
@@ -177,7 +175,7 @@ def gatk(input_fpath):
 
 def extract_fields(input_fpath):
     snpeff_cmline = _get_java_tool_cmdline('snpeff')
-    vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfEffOnePerLine.pl') % ''
+    vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfoneperline') % ''
 
     cmdline = vcfoneperline_cmline + ' | ' + \
               snpeff_cmline + ' extractFields - ' \
