@@ -23,10 +23,11 @@ snpeff:
   - "EFF[*].CODING"
   - "EFF[*].TRID"
   - "EFF[*].RANK"
+#    - om_Cancer
 
 gatk:
   annotations:
-  - Coverage
+  - DepthOfCoverage
   - BaseQualityRankSumTest
   - FisherStrand
   - GCContent

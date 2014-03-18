@@ -140,17 +140,18 @@ class Annotator:
         return executable + ' %s ' + tool_path
 
 
-    def snpsift_annotate(self, db_name, input_fpath):
+    def snpsift_annotate(self, dbname, conf, input_fpath):
         self.log_print('')
         self.log_print('*' * 70)
 
-        db_path = self.run_config['vcfs'][db_name].get('path')
-        annotations = self.run_config['vcfs'][db_name].get('annotations')
+        db_path = conf.get('path')
+        annotations = conf.get('annotations')
         anno_line = ','.join(annotations)
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v -info %s %s %s' % \
+        cmdline = self._get_java_tool_cmdline('snpsift') + \
+                  ' annotate -v -info %s %s %s' % \
                   (anno_line, db_path, input_fpath)
-        return self._call_and_rename(cmdline, input_fpath, db_name, to_stdout=True)
+        return self._call_and_rename(cmdline, input_fpath, dbname, to_stdout=True)
 
 
     def snpsift_db_nsfp(self, input_fpath):
@@ -314,9 +315,11 @@ class Annotator:
         assert 'reference' in self.run_config, 'Please, provide path to the reference file (reference).'
         check_existence(self.run_config['reference'])
 
+        #{vcfs: {db_snp: {path: '', annotation: []}, cosmic: {path: '', ann:[]}}}
+
         if 'vcfs' in self.run_config:
-            for vcf in self.run_config['vcfs']:
-                sample_fpath = self.snpsift_annotate(vcf, sample_fpath)
+            for dbname, conf in self.run_config['vcfs']:
+                sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
 
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
 
