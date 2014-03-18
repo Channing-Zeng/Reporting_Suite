@@ -146,11 +146,9 @@ class Annotator:
 
         db_path = conf.get('path')
         annotations = conf.get('annotations', [])
-        anno_line = ','.join(annotations)
+        anno_line = '-info ' + ','.join(annotations)
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + \
-                  ' annotate -v -info %s %s %s' % \
-                  (anno_line, db_path, input_fpath)
+        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v %s %s %s' % (anno_line, db_path, input_fpath)
         return self._call_and_rename(cmdline, input_fpath, dbname, to_stdout=True)
 
 
@@ -165,9 +163,9 @@ class Annotator:
         assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
-        ann_line = ','.join(annotations)
+        ann_line = '-f ' + ','.join(annotations)
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + ' dbnsfp -f %s -v %s %s' % (ann_line, db_path, input_fpath)
+        cmdline = self._get_java_tool_cmdline('snpsift') + ' dbnsfp %s -v %s %s' % (ann_line, db_path, input_fpath)
         return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
 
@@ -223,11 +221,15 @@ class Annotator:
     def extract_fields(self, input_fpath):
         if 'tsv_fields' not in self.run_config:
             return
+        fields = self.run_config.get('tsv_fields', [])
+        if not fields:
+            return
 
         self.log_print('')
         self.log_print('*' * 70)
 
-        anno_line = ' '.join(self.run_config['tsv_fields'])
+
+        anno_line = ' '.join(fields)
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_tool_cmdline('perl', 'vcfoneperline') % ''
