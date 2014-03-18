@@ -3,7 +3,7 @@
 # third being 'RNA' if the vcf is from the rna-seq mutect pipeline
 from genericpath import isfile, getsize
 import os
-from os.path import join, splitext, basename
+from os.path import join, splitext, basename, realpath
 import subprocess
 import sys
 import shutil
@@ -31,12 +31,6 @@ def which(program):
     return None
 
 
-def log_print(msg=''):
-    print(msg)
-    if 'log' in run_config:
-        open(run_config['log'], 'a').write(msg + '\n')
-
-
 def error(msg):
     sys.stderr.write(msg + '\n')
     exit(1)
@@ -48,253 +42,327 @@ def check_executable(program):
 
 
 def check_existence(file):
-    if not isfile(file) or getsize(file) <= 0:
-        error(file + ' does not exist or is empty.')
+    if not file or not isfile(file) or getsize(file) <= 0:
+        error(file + ' does not exist, is not a file, or is empty.')
 
 
-run_config = {}
-system_config = {}
+class Annotator:
+    def __init__(self, system_config, run_config):
+        self.system_config = system_config
+        self.run_config = run_config
+
+        sample_fpath = self.run_config.get('file', None)
+        assert sample_fpath, 'Run config does not contain field "file".'
+        self.sample_fpath = realpath(sample_fpath)
+        check_existence(self.sample_fpath)
+
+        result_dir = realpath(run_config.get('output_dir', os.getcwd()))
+        assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
+
+        sample_fname = os.path.basename(self.sample_fpath)
+        sample_basename, ext = os.path.splitext(sample_fname)
+
+        if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
+            new_sample_fpath = os.path.join(result_dir, sample_fname)
+            if os.path.exists(new_sample_fpath):
+                os.remove(new_sample_fpath)
+            shutil.copyfile(self.sample_fpath, new_sample_fpath)
+            self.sample_fpath = new_sample_fpath
+
+        if 'log' not in run_config:
+            run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
+        if os.path.isfile(run_config['log']):
+            os.remove(run_config['log'])
+
+        self.log_print('Writing into ' + result_dir)
+        self.log_print('Logging to ' + run_config['log'])
+        self.log_print('')
 
 
-def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
-    basepath, ext = splitext(input_fpath)
-    output_fpath = basepath + '.' + suffix + ext
+    def log_print(self, msg=''):
+        print(msg)
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
 
-    if run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath) > 0:
-        log_print(output_fpath + ' exists, reusing')
+
+    def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True):
+        basepath, ext = splitext(input_fpath)
+        output_fpath = basepath + '.' + suffix + ext
+
+        if self.run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath) > 0:
+            self.log_print(output_fpath + ' exists, reusing')
+            return output_fpath
+
+        self.log_print(cmdline)
+
+        res = subprocess.call(
+            cmdline.split(),
+            stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
+            stderr=open(self.run_config['log'] + '_err', 'w'))
+        if res != 0:
+            with open(self.run_config['log'] + '_err') as err:
+                self.log_print('')
+                self.log_print(err.read())
+                self.log_print('')
+            self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            exit(1)
+        else:
+            with open(self.run_config['log'] + '_err') as err, open(self.run_config['log'], 'a') as log:
+                log.write('')
+                log.write(err.read())
+                log.write('')
+            self.log_print('Saved to ' + output_fpath)
+            print('Log in ' + self.run_config['log'])
+
+        if not self.run_config.get('save_intermediate'):
+            os.remove(input_fpath)
+        self.log_print('Now processing ' + output_fpath)
         return output_fpath
 
-    log_print(cmdline)
 
-    res = subprocess.call(
-        cmdline.split(),
-        stdout=open(output_fpath, 'w') if to_stdout else open(run_config['log'], 'a'),
-        stderr=open(run_config['log'] + '_err', 'w'))
-    if res != 0:
-        with open(run_config['log'] + '_err') as err:
-            log_print('')
-            log_print(err.read())
-            log_print('')
-        log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
-        exit(1)
-    else:
-        with open(run_config['log'] + '_err') as err, open(run_config['log'], 'a') as log:
-            log.write('')
-            log.write(err.read())
-            log.write('')
-        log_print('Saved to ' + output_fpath)
-        print('Log in ' + run_config['log'])
-
-    if not run_config.get('save_intermediate'):
-        os.remove(input_fpath)
-    log_print('Now processing ' + output_fpath)
-    return output_fpath
+    def _get_java_tool_cmdline(self, name):
+        cmdline_pattern = self._get_tool_cmdline('java', name)
+        jvm_opts = self.system_config['resources'][name].get('jvm_opts', [])
+        return cmdline_pattern % (' '.join(jvm_opts) + ' -jar')
 
 
-def _get_java_tool_cmdline(name):
-    cmdline_pattern = _get_tool_cmdline('java', name)
-    jvm_opts = system_config['resources'][name].get('jvm_opts', [])
-    return cmdline_pattern % (' '.join(jvm_opts) + ' -jar')
+    def _get_tool_cmdline(self, executable, name):
+        check_executable(executable)
+        if 'resources' not in self.system_config:
+            error('System config yaml must contain resources section with ' + name + ' path.')
+        if name not in self.system_config['resources']:
+            error('System config resources section must contain ' + name + ' info (with a path to the tool).')
+        tool_config = self.system_config['resources'][name]
+        if 'path' not in tool_config:
+            error(name + ' section in the system config must contain a path to the tool.')
+        tool_path = tool_config['path']
+        check_existence(tool_path)
+        return executable + ' %s ' + tool_path
 
 
-def _get_tool_cmdline(executable, name):
-    check_executable(executable)
-    if 'resources' not in system_config:
-        error('System config yaml must contain resources section with ' + name + ' path.')
-    if name not in system_config['resources']:
-        error('System config resources section must contain ' + name + ' info (with a path to the tool).')
-    tool_config = system_config['resources'][name]
-    if 'path' not in tool_config:
-        error(name + ' section in the system config must contain a path to the tool.')
-    tool_path = tool_config['path']
-    check_existence(tool_path)
-    return executable + ' %s ' + tool_path
+    def snpsift_annotate(self, db_name, input_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
+
+        db_path = self.run_config['vcfs'][db_name].get('path')
+        annotations = self.run_config['vcfs'][db_name].get('annotations')
+
+        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v %s %s' % (db_path, input_fpath)
+        return self._call_and_rename(cmdline, input_fpath, db_name, to_stdout=True)
 
 
-def snpsift_annotate(db_name, input_fpath):
-    log_print('')
-    log_print('*' * 70)
+    def snpsift_db_nsfp(self, input_fpath):
+        if 'db_nsfp' not in self.run_config:
+            return input_fpath
 
-    db_path = run_config['vcfs'][db_name].get('path')
-    annotations = run_config['vcfs'][db_name].get('annotations')
+        self.log_print('')
+        self.log_print('*' * 70)
 
-    cmdline = _get_java_tool_cmdline('snpsift') + ' annotate -v %s %s' % (db_path, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, db_name, to_stdout=True)
+        db_path = self.run_config['db_nsfp'].get('path')
+        assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
+        annotations = self.run_config['db_nsfp'].get('annotations', [])
+        ann_line = ','.join(annotations)
 
-def snpsift_db_nsfp(input_fpath):
-    log_print('')
-    log_print('*' * 70)
-
-    if 'db_nsfp' not in run_config:
-        return input_fpath
-
-    db_path = run_config['db_nsfp'].get('path')
-    assert db_path, 'Please, provide a path to db nsfp file in run_config.'
-
-    annotations = run_config['db_nsfp'].get('annotations', [])
-    ann_line = ','.join(annotations)
-
-    cmdline = _get_java_tool_cmdline('snpsift') + ' dbnsfp -f %s -v %s %s' % (ann_line, db_path, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
+        cmdline = self._get_java_tool_cmdline('snpsift') + ' dbnsfp -f %s -v %s %s' % (ann_line, db_path, input_fpath)
+        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
 
-def snpeff(input_fpath):
-    log_print('')
-    log_print('*' * 70)
+    def snpeff(self, input_fpath):
+        if 'snpeff' not in self.run_config:
+            return input_fpath
 
-    if 'snpeff' not in run_config:
-        return input_fpath
+        self.log_print('')
+        self.log_print('*' * 70)
 
-    ref_name = run_config['genome_build']
+        ref_name = self.run_config['genome_build']
 
-    db_path = run_config['snpeff'].get('path')
-    assert db_path, 'Please, provide a path to db nsfp file in run_config.'
+        db_path = self.run_config['snpeff'].get('path')
+        assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
-    cmdline = _get_java_tool_cmdline('snpeff') + ' eff -dataDir %s -noStats -cancer ' \
-              '-noLog -1 -i vcf -o vcf %s %s' % (db_path, ref_name, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
-
-
-def tracks(track_path, input_fpath):
-    check_executable('vcfannotate')
-
-    field_name = splitext(basename(track_path))[0]
-    cmdline = 'vcfannotate -b %s -k %s %s' % (track_path, field_name, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
+        cmdline = self._get_java_tool_cmdline('snpeff') + ' eff -dataDir %s -noStats -cancer ' \
+                  '-noLog -1 -i vcf -o vcf %s %s' % (db_path, ref_name, input_fpath)
+        return self._call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
-def gatk(input_fpath):
-    log_print('')
-    log_print('*' * 70)
+    def tracks(self, track_path, input_fpath):
+        check_executable('vcfannotate')
 
-    if 'gatk' not in run_config:
-        return input_fpath
-
-    base_name, ext = os.path.splitext(input_fpath)
-    output_fpath = base_name + '.gatk' + ext
-
-    ref_fpath = run_config['reference']
-
-    cmdline = _get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % (ref_fpath, output_fpath, input_fpath)
-
-    annotations = run_config['gatk'].get('annotations', [])
-    for ann in annotations:
-        cmdline += " -A " + ann
-
-    return _call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
+        field_name = splitext(basename(track_path))[0]
+        cmdline = 'vcfannotate -b %s -k %s %s' % (track_path, field_name, input_fpath)
+        return self._call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
 
 
-def extract_fields(input_fpath):
-    log_print('')
-    log_print('*' * 70)
+    def gatk(self, input_fpath):
+        if 'gatk' not in self.run_config:
+            return input_fpath
 
-    snpsift_cmline = _get_java_tool_cmdline('snpsift')
-    vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfoneperline') % ''
+        self.log_print('')
+        self.log_print('*' * 70)
 
-    cmdline = vcfoneperline_cmline + ' | ' + \
-              snpsift_cmline + ' extractFields - ' \
-              'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
-              '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
-              '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
-              '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
-              '"EFF[*].TRID" "EFF[*].RANK" ' \
-              'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
-              'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
-              'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
-              'dbNSFP_MutationAssessor_score dbNSFP_MutationAssessor_pred ' \
-              'dbNSFP_FATHMM_score dbNSFP_Ensembl_geneid dbNSFP_Ensembl_transcriptid ' \
-              'dbNSFP_Uniprot_acc dbNSFP_1000Gp1_AC dbNSFP_1000Gp1_AF ' \
-              'dbNSFP_ESP6500_AA_AF dbNSFP_ESP6500_EA_AF KGPROD PM PH3 ' \
-              'AB AC AF DP FS GC HRun HaplotypeScore ' \
-              'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
-              'MQ0 QA QD ReadPosRankSum '
+        base_name, ext = os.path.splitext(input_fpath)
+        output_fpath = base_name + '.gatk' + ext
 
-    basepath, ext = os.path.splitext(input_fpath)
-    output_fpath = basepath + '.extract' + ext
+        ref_fpath = self.run_config['reference']
 
-    if run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath):
-        log_print(output_fpath + ' exists, reusing')
-    else:
-        log_print(cmdline)
-        res = subprocess.call(cmdline,
-                              stdin=open(input_fpath),
-                              stdout=open(output_fpath, 'w'),
-                              stderr=open(run_config['log'], 'a'),
-                              shell=True)
-        log_print('')
-        if res != 0:
-            log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
-            exit(1)
-            # return input_fpath
+        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % (ref_fpath, output_fpath, input_fpath)
+
+        annotations = self.run_config['gatk'].get('annotations', [])
+        for ann in annotations:
+            cmdline += " -A " + ann
+
+        return self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
+
+
+    def extract_fields(self, input_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
+
+        snpsift_cmline = self._get_java_tool_cmdline('snpsift')
+        vcfoneperline_cmline = self._get_tool_cmdline('perl', 'vcfoneperline') % ''
+
+        cmdline = vcfoneperline_cmline + ' | ' + \
+                  snpsift_cmline + ' extractFields - ' \
+                  'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
+                  '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
+                  '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
+                  '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
+                  '"EFF[*].TRID" "EFF[*].RANK" ' \
+                  'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
+                  'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
+                  'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
+                  'dbNSFP_MutationAssessor_score dbNSFP_MutationAssessor_pred ' \
+                  'dbNSFP_FATHMM_score dbNSFP_Ensembl_geneid dbNSFP_Ensembl_transcriptid ' \
+                  'dbNSFP_Uniprot_acc dbNSFP_1000Gp1_AC dbNSFP_1000Gp1_AF ' \
+                  'dbNSFP_ESP6500_AA_AF dbNSFP_ESP6500_EA_AF KGPROD PM PH3 ' \
+                  'AB AC AF DP FS GC HRun HaplotypeScore ' \
+                  'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
+                  'MQ0 QA QD ReadPosRankSum '
+
+        basepath, ext = os.path.splitext(input_fpath)
+        output_fpath = basepath + '.extract' + ext
+
+        if self.run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath):
+            self.log_print(output_fpath + ' exists, reusing')
         else:
-            log_print('Saved to ' + output_fpath)
-            print('Log in ' + run_config['log'])
+            self.log_print(cmdline)
+            res = subprocess.call(cmdline,
+                                  stdin=open(input_fpath),
+                                  stdout=open(output_fpath, 'w'),
+                                  stderr=open(self.run_config['log'], 'a'),
+                                  shell=True)
+            self.log_print('')
+            if res != 0:
+                self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+                exit(1)
+                # return input_fpath
+            else:
+                self.log_print('Saved to ' + output_fpath)
+                print('Log in ' + self.run_config['log'])
 
-        if not run_config.get('save_intermediate'):
-            os.remove(input_fpath)
+            if not self.run_config.get('save_intermediate'):
+                os.remove(input_fpath)
 
-    os.rename(input_fpath, splitext(input_fpath)[0] + '.tsv')
-    log_print('TSV file is ' + input_fpath)
-    return input_fpath
-
-
-def process_rna(sample_fpath):
-    log_print('')
-    log_print('*' * 70)
-
-    sample_fname = os.path.basename(sample_fpath)
-    sample_basename, ext = os.path.splitext(sample_fname)
-    check_executable('vcf-subset')
-    cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
-
-    return _call_and_rename(cmdline, sample_fpath, '.ensm', to_stdout=True)
-
-
-def process_ensemble(sample_fpath):
-    log_print('')
-    log_print('*' * 70)
-
-    sample_basepath, ext = os.path.splitext(sample_fpath)
-    pass_sample_fpath = sample_basepath + '.pass' + ext
-    with open(sample_fpath) as sample, open(pass_sample_fpath, 'w') as pass_sample:
-        for line in sample.readlines():
-            if 'REJECT' not in line:
-                pass_sample.write(line)
-    if run_config.get('save_intermediate'):
-        return pass_sample_fpath
-    else:
-        os.remove(sample_fpath)
-        os.rename(pass_sample_fpath, sample_fpath)
-        return sample_fpath
+        os.rename(input_fpath, splitext(input_fpath)[0] + '.tsv')
+        self.log_print('TSV file is ' + input_fpath)
+        return input_fpath
 
 
-def annotate(sample_fpath):
-    assert 'resources' in system_config
+    def process_rna(self, sample_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
 
-    if run_config.get('rna'):
-        sample_fpath = process_rna(sample_fpath)
+        sample_fname = os.path.basename(sample_fpath)
+        sample_basename, ext = os.path.splitext(sample_fname)
+        check_executable('vcf-subset')
+        cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
 
-    if run_config.get('ensemble'):
-        sample_fpath = process_ensemble(sample_fpath)
+        return self._call_and_rename(cmdline, sample_fpath, '.ensm', to_stdout=True)
 
-    assert 'genome_build' in run_config, 'Please, provide genome build (genome_build).'
-    assert 'reference' in run_config, 'Please, provide path to the reference file (reference).'
-    check_existence(run_config['reference'])
 
-    if 'vcfs' in run_config:
-        for vcf in run_config['vcfs']:
-            sample_fpath = snpsift_annotate(vcf, sample_fpath)
+    def process_ensemble(self, sample_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
+        self.log_print('Filtering ensemble reject lines.')
 
-    sample_fpath = snpsift_db_nsfp(sample_fpath)
+        sample_basepath, ext = os.path.splitext(sample_fpath)
+        pass_sample_fpath = sample_basepath + '.pass' + ext
+        with open(sample_fpath) as sample, open(pass_sample_fpath, 'w') as pass_sample:
+            for line in sample.readlines():
+                if 'REJECT' not in line:
+                    pass_sample.write(line)
+        if self.run_config.get('save_intermediate'):
+            return pass_sample_fpath
+        else:
+            os.remove(sample_fpath)
+            os.rename(pass_sample_fpath, sample_fpath)
+            return sample_fpath
 
-    if 'tracks' in run_config:
-        for track in run_config['tracks']:
-            sample_fpath = tracks(track, sample_fpath)
 
-    sample_fpath = gatk(sample_fpath)
-    sample_fpath = snpeff(sample_fpath)
-    extract_fields(sample_fpath)
+    def annotate(self):
+        assert 'resources' in self.system_config
+
+        sample_fpath = self.sample_fpath
+
+        if self.run_config.get('split_genotypes'):
+            sample_basepath, ext = os.path.splitext(sample_fpath)
+            result_fpath = sample_basepath + '.split' + ext
+            sample_fpath = self.split_genotypes(sample_fpath, result_fpath)
+            self.log_print('Saved to ' + result_fpath)
+
+        if self.run_config.get('rna'):
+            sample_fpath = self.process_rna(sample_fpath)
+
+        if self.run_config.get('ensemble'):
+            sample_fpath = self.process_ensemble(sample_fpath)
+
+        assert 'genome_build' in self.run_config, 'Please, provide genome build (genome_build).'
+        assert 'reference' in self.run_config, 'Please, provide path to the reference file (reference).'
+        check_existence(self.run_config['reference'])
+
+        if 'vcfs' in self.run_config:
+            for vcf in self.run_config['vcfs']:
+                sample_fpath = self.snpsift_annotate(vcf, sample_fpath)
+
+        sample_fpath = self.snpsift_db_nsfp(sample_fpath)
+
+        if 'tracks' in self.run_config:
+            for track in self.run_config['tracks']:
+                sample_fpath = self.tracks(track, sample_fpath)
+
+        sample_fpath = self.gatk(sample_fpath)
+        sample_fpath = self.snpeff(sample_fpath)
+        self.extract_fields(sample_fpath)
+
+
+    def split_genotypes(self, sample_fpath, result_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
+        self.log_print('Splitting genotypes.')
+
+        with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
+            for i, line in enumerate(vcf):
+                clean_line = line.strip()
+                if not clean_line or clean_line[0] == '#':
+                    out.write(line)
+                else:
+                    tokens = line.split()
+                    alt_field = remove_quotes(tokens[4])
+                    alts = alt_field.split(',')
+                    if len(alts) > 1:
+                        for alt in set(alts):
+                            line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
+                            out.write(line)
+                    else:
+                        line = '\t'.join(tokens[:2] + ['.'] + tokens[3:]) + '\n'
+                        out.write(line)
+
+        if self.run_config.get('save_intermediate'):
+            return result_fpath
+        else:
+            os.remove(sample_fpath)
+            os.rename(result_fpath, sample_fpath)
+            return sample_fpath
 
 
 def remove_quotes(str):
@@ -303,36 +371,6 @@ def remove_quotes(str):
     if str and str[-1] == '"':
         str = str[:-1]
     return str
-
-
-def split_genotypes(sample_fpath, result_fpath):
-    log_print('')
-    log_print('*' * 70)
-
-    log_print('Splitting genotypes.')
-    with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
-        for i, line in enumerate(vcf):
-            clean_line = line.strip()
-            if not clean_line or clean_line[0] == '#':
-                out.write(line)
-            else:
-                tokens = line.split()
-                alt_field = remove_quotes(tokens[4])
-                alts = alt_field.split(',')
-                if len(alts) > 1:
-                    for alt in set(alts):
-                        line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
-                        out.write(line)
-                else:
-                    line = '\t'.join(tokens[:2] + ['.'] + tokens[3:]) + '\n'
-                    out.write(line)
-
-    if run_config.get('save_intermediate'):
-        return result_fpath
-    else:
-        os.remove(sample_fpath)
-        os.rename(result_fpath, sample_fpath)
-        return sample_fpath
 
 
 def main(args):
@@ -347,30 +385,7 @@ def main(args):
     print('Loaded system config ' + args[0])
     print('Loaded run config ' + args[1])
 
-    sample_fpath = os.path.realpath(run_config.get('file', None))
-    assert os.path.isfile(sample_fpath), sample_fpath + ' does not exists or is not a file.'
-
-    result_dir = os.path.realpath(run_config.get('output_dir', os.getcwd()))
-    assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
-
-    sample_fname = os.path.basename(sample_fpath)
-    sample_basename, ext = os.path.splitext(sample_fname)
-
-    if result_dir != os.path.realpath(os.path.dirname(sample_fpath)):
-        new_sample_fpath = os.path.join(result_dir, sample_fname)
-        if os.path.exists(new_sample_fpath):
-            os.remove(new_sample_fpath)
-        shutil.copyfile(sample_fpath, new_sample_fpath)
-        sample_fpath = new_sample_fpath
-
-    if 'log' not in run_config:
-        run_config['log'] = os.path.join(os.path.dirname(sample_fpath), sample_basename + '.log')
-    if os.path.isfile(run_config['log']):
-        os.remove(run_config['log'])
-
-    log_print('Writing into ' + result_dir)
-    log_print('Logging to ' + run_config['log'])
-    log_print('')
+    annotator = Annotator(system_config, run_config)
 
     print('Note: please, load modules before start:')
     print('   source /etc/profile.d/modules.sh')
@@ -381,14 +396,7 @@ def main(args):
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    if run_config.get('split_genotypes'):
-        sample_basepath, ext = os.path.splitext(sample_fpath)
-        result_fpath = sample_basepath + '.split' + ext
-        sample_fpath = split_genotypes(sample_fpath, result_fpath)
-        log_print('Saved to ' + result_fpath)
-        log_print('')
-
-    annotate(sample_fpath)
+    annotator.annotate()
 
 
 if __name__ == '__main__':
