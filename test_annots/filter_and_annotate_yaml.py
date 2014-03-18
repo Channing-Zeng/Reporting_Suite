@@ -174,11 +174,11 @@ def gatk(input_fpath):
 
 
 def extract_fields(input_fpath):
-    snpeff_cmline = _get_java_tool_cmdline('snpeff')
+    snpsift_cmline = _get_java_tool_cmdline('snpsift')
     vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfoneperline') % ''
 
     cmdline = vcfoneperline_cmline + ' | ' + \
-              snpeff_cmline + ' extractFields - ' \
+              snpsift_cmline + ' extractFields - ' \
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
