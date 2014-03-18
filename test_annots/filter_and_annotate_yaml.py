@@ -235,32 +235,24 @@ class Annotator:
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
         basepath, ext = os.path.splitext(input_fpath)
-        output_fpath = basepath + '.extract' + ext
+        tsv_fpath = basepath + '.extract.tsv'
+        if isfile(tsv_fpath):
+            os.remove(tsv_fpath)
 
-        if self.run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath):
-            self.log_print(output_fpath + ' exists, reusing')
+        self.log_print(cmdline)
+        res = subprocess.call(cmdline,
+                              stdin=open(input_fpath),
+                              stdout=open(tsv_fpath, 'w'),
+                              stderr=open(self.run_config['log'], 'a'),
+                              shell=True)
+        self.log_print('')
+        if res != 0:
+            self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            exit(1)
+            # return input_fpath
         else:
-            self.log_print(cmdline)
-            res = subprocess.call(cmdline,
-                                  stdin=open(input_fpath),
-                                  stdout=open(output_fpath, 'w'),
-                                  stderr=open(self.run_config['log'], 'a'),
-                                  shell=True)
-            self.log_print('')
-            if res != 0:
-                self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
-                exit(1)
-                # return input_fpath
-            else:
-                self.log_print('Saved to ' + output_fpath)
-                print('Log in ' + self.run_config['log'])
-
-            if not self.run_config.get('save_intermediate'):
-                os.remove(input_fpath)
-
-        os.rename(input_fpath, splitext(input_fpath)[0] + '.tsv')
-        self.log_print('TSV file is ' + input_fpath)
-        return input_fpath
+            self.log_print('Saved TSV file to ' + tsv_fpath)
+            print('Log in ' + self.run_config['log'])
 
 
     def process_rna(self, sample_fpath):
