@@ -1,5 +1,5 @@
-file: 'input_file.vcf'
-output_dir: '.'
+file: '/Users/vladsaveliev/bcbio/az_scripts/test/12-Promega-gDNA-Control_vars.txt.corrected.vcf'
+output_dir: '/Users/vladsaveliev/bcbio/az_scripts/test/'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

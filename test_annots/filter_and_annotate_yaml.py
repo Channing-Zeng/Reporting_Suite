@@ -33,11 +33,14 @@ def which(program):
 
 
 def check_executable(program):
-    assert which(program), program + ' executable required.'
+    if not which(program):
+        error(program + ' executable required.')
 
 
 def check_existence(file):
-    assert isfile(file) and getsize(file), file + ' required and does not exist or empty.'
+    if not isfile(file) or getsize(file) <= 0:
+        sys.stderr.write(file + ' does not exist or is empty.')
+        exit(1)
 
 
 run_config = {}
@@ -48,6 +51,11 @@ def log_print(msg=''):
     print(msg)
     if 'log' in run_config:
         open(run_config['log'], 'w').write(msg)
+
+
+def error(msg):
+    sys.stderr.write(msg)
+    exit(1)
 
 
 def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
@@ -79,40 +87,45 @@ def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
     return output_fpath
 
 
+def _get_java_tool_cmdline(name):
+    cmdline_pattern = _get_tool_cmdline('java', name)
+    jvm_opts = system_config['resources'][name].get('jvm_opts', [])
+    return cmdline_pattern % (' '.join(jvm_opts) + ' -jar')
+
+
+def _get_tool_cmdline(executable, name):
+    check_executable(executable)
+    if 'resources' not in system_config:
+        error('System config yaml must contain resources section with ' + name + ' path.')
+    if name not in system_config['resources']:
+        error('System config resources section must contain ' + name + ' info (with a path to the tool).')
+    tool_config = system_config['resources'][name]
+    if 'path' not in tool_config:
+        error(name + ' section in the system config must contain a path to the tool.')
+    tool_path = tool_config['path']
+    check_existence(tool_path)
+    return executable + ' %s ' + tool_path
+
+
 def snpsift_annotate(db_name, input_fpath):
-    assert 'snpeff' in system_config['resources']
-    snpeff_config = system_config['resources']['snpeff']
-    check_executable('java')
-    assert dir in snpeff_config, 'Please, provide snpEff directory (dir).'
-    snpeff_dir = snpeff_config['dir']
-    snpsift_jar = join(snpeff_dir, 'SnpSift.jar')
-    check_existence(snpsift_jar)
+    db_path = run_config['vcfs'][db_name].get('path')
+    annotations = run_config['vcfs'][db_name].get('annotations')
 
-    db_path = run_config[db_name].get('path')
-    annotations = run_config[db_name].get('annotations')
-
-    cmdline = 'java -jar %s annotate -v %s %s' % (snpsift_jar, db_path, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, db_path, to_stdout=True)
+    cmdline = _get_java_tool_cmdline('snpsift') + ' annotate -v %s %s' % (db_path, input_fpath)
+    return _call_and_rename(cmdline, input_fpath, db_name, to_stdout=True)
 
 
 def snpsift_db_nsfp(input_fpath):
     if 'db_nsfp' not in run_config:
         return input_fpath
 
-    assert 'snpeff' in system_config['resources']
-    snpeff_config = system_config['resources']['snpeff']
-    check_executable('java')
-    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
-    snpeff_dir = snpeff_config['dir']
-    snpsift_jar = os.path.join(snpeff_dir, 'SnpSift.jar')
-    check_existence(snpsift_jar)
-
     db_path = run_config['db_nsfp'].get('path')
     assert db_path, 'Please, provide a path to db nsfp file in run_config.'
+
     annotations = run_config['db_nsfp'].get('annotations', [])
     ann_line = '"' + ','.join(annotations) + '"'
 
-    cmdline = 'java -jar %s dbnsfp -f %s -v %s %s' % (snpsift_jar, ann_line, db_path, input_fpath)
+    cmdline = _get_java_tool_cmdline('snpsift') + ' dbnsfp -f %s -v %s %s' % (ann_line, db_path, input_fpath)
     return _call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
 
@@ -120,27 +133,18 @@ def snpeff(input_fpath):
     if 'snpeff' not in run_config:
         return input_fpath
 
-    assert 'snpeff' in system_config['resources']
-    snpeff_config = system_config['resources']['snpeff']
-    check_executable('java')
-    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
-    snpeff_dir = snpeff_config['dir']
-    snpeff_jar = join(snpeff_dir, 'SnpEff.jar')
-    check_existence(snpeff_jar)
-
     ref_name = run_config['genome_build']
+
     db_path = run_config['snpeff'].get('path')
     assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
-    cmdline = 'java -Xmx4g -jar %s eff -dataDir %s -noStats -cancer ' \
-              '-noLog -1 -i vcf -o vcf %s %s' % \
-              (snpeff_jar, db_path, ref_name, input_fpath)
-
+    cmdline = _get_java_tool_cmdline('snpeff') + ' eff -dataDir %s -noStats -cancer ' \
+              '-noLog -1 -i vcf -o vcf %s %s' % (db_path, ref_name, input_fpath)
     return _call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
 def rna_editing_sites(db, input_fpath):
-    assert which('vcfannotate'), 'vcfannotate executable required.'
+    check_executable('vcfannotate')
 
     cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, input_fpath)
     return _call_and_rename(cmdline, input_fpath, 'edit', to_stdout=True)
@@ -150,50 +154,26 @@ def gatk(input_fpath):
     if 'gatk' not in run_config:
         return input_fpath
 
-    assert 'gatk' in system_config['resources']
-    gatk_config = system_config['resources']['gatk']
-    check_executable('java')
-    assert dir in gatk_config, 'Please, provide gatk directory in the system config (dir).'
-    gatk_dir = gatk_config['dir']
-    gatk_jar = join(gatk_dir, 'GenomeAnalysisTK.jar')
-    check_existence(gatk_jar)
-
     base_name, ext = os.path.splitext(input_fpath)
     output_fpath = base_name + '.gatk' + ext
 
     ref_fpath = run_config['reference']
 
-    cmdline = 'java -Xmx2g -jar %s -R %s -T VariantAnnotator ' \
-              '-o %s --variant %s' % \
-              (gatk_jar, ref_fpath, output_fpath, input_fpath)
+    cmdline = _get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % (ref_fpath, output_fpath, input_fpath)
 
-    if 'annotations' in gatk_config:
-        annotations = gatk_config['annotations']
-        for ann in annotations:
-            cmdline += " -A " + ann
+    annotations = run_config['db_nsfp'].get('annotations', [])
+    for ann in annotations:
+        cmdline += " -A " + ann
 
     return _call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
 
 
 def extract_fields(input_fpath):
-    check_executable('perl')
-    check_executable('java')
+    snpeff_cmline = _get_java_tool_cmdline('snpeff')
+    vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfEffOnePerLine.pl') % ''
 
-    snpeff_config = system_config['resources'].get('snpeff')
-    assert snpeff_config
-
-    assert dir in snpeff_config, 'Please, provide snpEff directory in the system config (dir).'
-    snpeff_dir = snpeff_config['dir']
-    snpsift_jar = os.path.join(snpeff_dir, 'SnpSift.jar')
-    check_existence(snpsift_jar)
-
-    snpeff_scripts = snpeff_config['scripts']
-    assert snpeff_scripts
-    vcfoneperline = os.path.join(snpeff_scripts, 'vcfEffOnePerLine.pl')
-    check_existence(vcfoneperline)
-
-    cmdline = 'perl ' + vcfoneperline + ' | ' \
-              'java -jar ' + snpsift_jar + ' extractFields - ' \
+    cmdline = vcfoneperline_cmline + ' | ' + \
+              snpeff_cmline + ' extractFields - ' \
               'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
               '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
               '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
@@ -327,13 +307,15 @@ def split_genotypes(sample_fpath, result_fpath):
 if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) < 2:
-        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml')
+        sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml')
         exit(1)
 
     assert os.path.isfile(args[0]), args[0] + ' does not exist of is a directory.'
     assert os.path.isfile(args[1]), args[1] + ' does not exist of is a directory.'
-    system_config = load(args[0], Loader=Loader)
-    run_config = load(args[1], Loader=Loader)
+    system_config = load(open(args[0]), Loader=Loader)
+    run_config = load(open(args[1]), Loader=Loader)
+    print('Loaded system config ' + args[0])
+    print('Loaded run config ' + args[1])
 
     sample_fpath = os.path.realpath(run_config.get('file', None))
     assert os.path.isfile(sample_fpath), sample_fpath + ' does not exists or is not a file.'
@@ -358,6 +340,7 @@ if __name__ == '__main__':
 
     log_print('Writing into ' + result_dir)
     log_print('Logging to ' + run_config['log'])
+    log_print('')
 
     print('Note: please, load modules before start:')
     print('   source /etc/profile.d/modules.sh')

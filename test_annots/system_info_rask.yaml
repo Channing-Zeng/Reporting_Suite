@@ -1,8 +1,12 @@
 resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx2500m"]
-    dir: /opt/az/broadinstitute/gatk/1.6
+    path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
-    dir: /group/ngs/src/snpEff/snpEff3.5/
-    scripts: /group/ngs/src/snpEff/snpEff3.5/scripts
+    path: /group/ngs/src/snpEff/snpEff3.5/snpEff.jar
+  snpsift:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    path: /group/ngs/src/snpEff/snpEff3.5/SnpSift.jar
+  vcfoneperline:
+    path: /group/ngs/src/snpEff/snpEff3.5/scripts/vcfEffOnePerLine.pl
