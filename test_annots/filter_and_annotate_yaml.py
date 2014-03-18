@@ -168,7 +168,7 @@ def gatk(input_fpath):
 
     cmdline = _get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % (ref_fpath, output_fpath, input_fpath)
 
-    annotations = run_config['db_nsfp'].get('annotations', [])
+    annotations = run_config['gatk'].get('annotations', [])
     for ann in annotations:
         cmdline += " -A " + ann
 
