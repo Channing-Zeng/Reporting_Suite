@@ -270,9 +270,6 @@ def process_ensemble(sample_fpath):
 
 
 def annotate(sample_fpath):
-    log_print('')
-    log_print('*' * 70)
-
     assert 'resources' in system_config
 
     if run_config.get('rna'):
