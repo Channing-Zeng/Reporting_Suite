@@ -113,6 +113,9 @@ def _get_tool_cmdline(executable, name):
 
 
 def snpsift_annotate(db_name, input_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     db_path = run_config['vcfs'][db_name].get('path')
     annotations = run_config['vcfs'][db_name].get('annotations')
 
@@ -121,6 +124,9 @@ def snpsift_annotate(db_name, input_fpath):
 
 
 def snpsift_db_nsfp(input_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     if 'db_nsfp' not in run_config:
         return input_fpath
 
@@ -135,6 +141,9 @@ def snpsift_db_nsfp(input_fpath):
 
 
 def snpeff(input_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     if 'snpeff' not in run_config:
         return input_fpath
 
@@ -156,6 +165,9 @@ def rna_editing_sites(db, input_fpath):
 
 
 def gatk(input_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     if 'gatk' not in run_config:
         return input_fpath
 
@@ -174,6 +186,9 @@ def gatk(input_fpath):
 
 
 def extract_fields(input_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     snpsift_cmline = _get_java_tool_cmdline('snpsift')
     vcfoneperline_cmline = _get_tool_cmdline('perl', 'vcfoneperline') % ''
 
@@ -225,6 +240,9 @@ def extract_fields(input_fpath):
 
 
 def process_rna(sample_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     sample_fname = os.path.basename(sample_fpath)
     sample_basename, ext = os.path.splitext(sample_fname)
     check_executable('vcf-subset')
@@ -234,6 +252,9 @@ def process_rna(sample_fpath):
 
 
 def process_ensemble(sample_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     sample_basepath, ext = os.path.splitext(sample_fpath)
     pass_sample_fpath = sample_basepath + '.pass' + ext
     with open(sample_fpath) as sample, open(pass_sample_fpath, 'w') as pass_sample:
@@ -249,6 +270,9 @@ def process_ensemble(sample_fpath):
 
 
 def annotate(sample_fpath):
+    log_print('')
+    log_print('*' * 70)
+
     assert 'resources' in system_config
 
     if run_config.get('rna'):
@@ -284,6 +308,10 @@ def remove_quotes(str):
 
 
 def split_genotypes(sample_fpath, result_fpath):
+    log_print('')
+    log_print('*' * 70)
+
+    log_print('Splitting genotypes.')
     with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
         for i, line in enumerate(vcf):
             clean_line = line.strip()
@@ -359,9 +387,6 @@ if __name__ == '__main__':
     if run_config.get('split_genotypes'):
         sample_basepath, ext = os.path.splitext(sample_fpath)
         result_fpath = sample_basepath + '.split' + ext
-        log_print('')
-        log_print('*' * 70)
-        log_print('Splitting genotypes.')
         sample_fpath = split_genotypes(sample_fpath, result_fpath)
         log_print('Saved to ' + result_fpath)
         log_print('')
