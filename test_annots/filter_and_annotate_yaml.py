@@ -186,6 +186,9 @@ class Annotator:
 
 
     def tracks(self, track_path, input_fpath):
+        self.log_print('')
+        self.log_print('*' * 70)
+
         check_executable('vcfannotate')
 
         field_name = splitext(basename(track_path))[0]

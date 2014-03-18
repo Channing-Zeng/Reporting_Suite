@@ -93,13 +93,13 @@ tracks:
 # RNA Editing (RNA-Seq data)
 # - /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 # CPG Island
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-# Copy Number Variants
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-# Segmental Duplications
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-# Repeats
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+## Copy Number Variants
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+## Segmental Duplications
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+## Repeats
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 
 
 
