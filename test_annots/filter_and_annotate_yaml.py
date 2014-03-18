@@ -145,7 +145,7 @@ class Annotator:
         self.log_print('*' * 70)
 
         db_path = conf.get('path')
-        annotations = conf.get('annotations')
+        annotations = conf.get('annotations', [])
         anno_line = ','.join(annotations)
 
         cmdline = self._get_java_tool_cmdline('snpsift') + \
