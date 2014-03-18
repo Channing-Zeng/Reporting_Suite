@@ -87,13 +87,9 @@ vcfs:
     - AA
     - CDS
 
-#  oncomine:
-#    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
-#    annotations:
-#    - om_Cancer
-#    - om_PATIENT
-#    - om_MutClass
-#    - om_MutClassPC
+  #om(om_Cancer | om_PATIENT | om_MutClass | om_MutClassPC)
+  oncomine:
+    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
 
 # reqires vcfannotate (from bcbio-nextgen)
 tracks:

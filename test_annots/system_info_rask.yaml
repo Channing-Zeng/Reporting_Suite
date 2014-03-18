@@ -1,8 +1,8 @@
 resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx2500m"]
-#    path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
-    path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
+    path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
+#    path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /group/ngs/src/snpEff/snpEff3.5/snpEff.jar
