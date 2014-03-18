@@ -216,11 +216,9 @@ def extract_fields(input_fpath):
     if run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath):
         log_print(output_fpath + ' exists, reusing')
     else:
-        log_print('')
-        log_print('*' * 70)
         log_print(cmdline)
         res = subprocess.call(cmdline,
-                              stdin=open(sample_fpath),
+                              stdin=open(input_fpath),
                               stdout=open(output_fpath, 'w'),
                               stderr=open(run_config['log'], 'a'),
                               shell=True)
@@ -234,9 +232,11 @@ def extract_fields(input_fpath):
             print('Log in ' + run_config['log'])
 
         if not run_config.get('save_intermediate'):
-            os.remove(sample_fpath)
+            os.remove(input_fpath)
 
-    os.rename(sample_fpath, splitext(sample_fpath)[0] + '.tsv')
+    os.rename(input_fpath, splitext(input_fpath)[0] + '.tsv')
+    log_print('TSV file is ' + input_fpath)
+    return input_fpath
 
 
 def process_rna(sample_fpath):
@@ -335,8 +335,7 @@ def split_genotypes(sample_fpath, result_fpath):
         return sample_fpath
 
 
-if __name__ == '__main__':
-    args = sys.argv[1:]
+def main(args):
     if len(args) < 2:
         sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
         exit(1)
@@ -390,3 +389,7 @@ if __name__ == '__main__':
         log_print('')
 
     annotate(sample_fpath)
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
