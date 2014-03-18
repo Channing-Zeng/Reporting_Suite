@@ -81,13 +81,13 @@ vcfs:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     annotations: [ID, CNT, AA, CDS]
 
-  oncomine:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
-    annotations:
-    - om_Cancer
-    - om_PATIENT
-    - om_MutClass
-    - om_MutClassPC
+#  oncomine:
+#    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
+#    annotations:
+#    - om_Cancer
+#    - om_PATIENT
+#    - om_MutClass
+#    - om_MutClassPC
 
 #tracks:
 # RNA Editing (RNA-Seq data)
