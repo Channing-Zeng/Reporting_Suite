@@ -3,7 +3,7 @@
 # third being 'RNA' if the vcf is from the rna-seq mutect pipeline
 from genericpath import isfile, getsize
 import os
-from os.path import join, splitext
+from os.path import join, splitext, basename
 import subprocess
 import sys
 import shutil
@@ -15,7 +15,6 @@ except ImportError:
 
 
 def which(program):
-    import os
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -157,11 +156,12 @@ def snpeff(input_fpath):
     return _call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
-def rna_editing_sites(db, input_fpath):
+def tracks(track_path, input_fpath):
     check_executable('vcfannotate')
 
-    cmdline = 'vcfannotate -b %s -k RNA_editing_site %s' % (db, input_fpath)
-    return _call_and_rename(cmdline, input_fpath, 'edit', to_stdout=True)
+    field_name = splitext(basename(track_path))[0]
+    cmdline = 'vcfannotate -b %s -k %s %s' % (track_path, field_name, input_fpath)
+    return _call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
 
 
 def gatk(input_fpath):
@@ -288,8 +288,9 @@ def annotate(sample_fpath):
 
     sample_fpath = snpsift_db_nsfp(sample_fpath)
 
-    #if run_config.get('rna'):
-    #    sample_fpath = rna_editing_sites(annot_track, sample_fpath, save_intermediate)
+    if 'tracks' in run_config:
+        for track in run_config['tracks']:
+            sample_fpath = tracks(track, sample_fpath)
 
     sample_fpath = gatk(sample_fpath)
     sample_fpath = snpeff(sample_fpath)
