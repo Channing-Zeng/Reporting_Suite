@@ -68,23 +68,26 @@ def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
     log_print('')
     log_print('*' * 70)
     log_print(cmdline)
+
     res = subprocess.call(
         cmdline.split(),
         stdout=open(output_fpath, 'w') if to_stdout else open(run_config['log'], 'a'),
         stderr=open(run_config['log'] + '_err', 'w'))
     if res != 0:
         with open(run_config['log'] + '_err') as err:
+            log_print('')
             log_print(err)
             log_print('')
         log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
         exit(1)
     else:
         with open(run_config['log'] + '_err') as err, open(run_config['log'], 'a') as log:
+            log.write('')
             log.write(err.read())
             log.write('')
         log_print('Saved to ' + output_fpath)
         print('Log in ' + run_config['log'])
-        
+
     if not run_config.get('save_intermediate'):
         os.remove(input_fpath)
     log_print('Now processing ' + output_fpath)
