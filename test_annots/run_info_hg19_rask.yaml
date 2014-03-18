@@ -26,7 +26,7 @@ snpeff:
 
 gatk:
   annotations:
-  - DepthOfCoverage
+  - Coverage
   - BaseQualityRankSumTest
   - FisherStrand
   - GCContent
@@ -89,7 +89,7 @@ vcfs:
     - om_MutClass
     - om_MutClassPC
 
-tracks:
+#tracks:
 # RNA Editing (RNA-Seq data)
 # - /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 # CPG Island
