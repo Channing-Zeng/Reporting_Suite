@@ -146,8 +146,10 @@ class Annotator:
 
         db_path = self.run_config['vcfs'][db_name].get('path')
         annotations = self.run_config['vcfs'][db_name].get('annotations')
+        anno_line = ','.join(annotations)
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v %s %s' % (db_path, input_fpath)
+        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v -info %s %s %s' % \
+                  (anno_line, db_path, input_fpath)
         return self._call_and_rename(cmdline, input_fpath, db_name, to_stdout=True)
 
 
@@ -218,29 +220,18 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
+        if 'tsv_fields' not in self.run_config:
+            return
+
         self.log_print('')
         self.log_print('*' * 70)
+
+        anno_line = ' '.join(self.run_config['tsv_fields'])
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_tool_cmdline('perl', 'vcfoneperline') % ''
 
-        cmdline = vcfoneperline_cmline + ' | ' + \
-                  snpsift_cmline + ' extractFields - ' \
-                  'CHROM POS ID CNT GMAF REF ALT QUAL FILTER TYPE ' \
-                  '"EFF[*].EFFECT" "EFF[*].IMPACT" "EFF[*].CODON" ' \
-                  '"EFF[*].AA" "EFF[*].AA_LEN" "EFF[*].GENE" ' \
-                  '"EFF[*].FUNCLASS" "EFF[*].BIOTYPE" "EFF[*].CODING" ' \
-                  '"EFF[*].TRID" "EFF[*].RANK" ' \
-                  'dbNSFP_SIFT_score dbNSFP_Polyphen2_HVAR_score ' \
-                  'dbNSFP_Polyphen2_HVAR_pred dbNSFP_LRT_score dbNSFP_LRT_pred ' \
-                  'dbNSFP_MutationTaster_score dbNSFP_MutationTaster_pred ' \
-                  'dbNSFP_MutationAssessor_score dbNSFP_MutationAssessor_pred ' \
-                  'dbNSFP_FATHMM_score dbNSFP_Ensembl_geneid dbNSFP_Ensembl_transcriptid ' \
-                  'dbNSFP_Uniprot_acc dbNSFP_1000Gp1_AC dbNSFP_1000Gp1_AF ' \
-                  'dbNSFP_ESP6500_AA_AF dbNSFP_ESP6500_EA_AF KGPROD PM PH3 ' \
-                  'AB AC AF DP FS GC HRun HaplotypeScore ' \
-                  'G5 CDA GMAF GENEINFO OM DB GENE AA CDS ' \
-                  'MQ0 QA QD ReadPosRankSum '
+        cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
         basepath, ext = os.path.splitext(input_fpath)
         output_fpath = basepath + '.extract' + ext
@@ -394,6 +385,7 @@ def main(args):
     print('   source /etc/profile.d/modules.sh')
     print('   module load java')
     print('   module load perl')
+    print('Use "module load bcbio-nextgen" if you want to annotate with bed tracks.')
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'

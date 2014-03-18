@@ -75,11 +75,16 @@ vcfs:
     - OM
     - COMMON
     - CLNSIG
+    - G5
     - dbSNPBuildID
 
   cosmic:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
-    annotations: [ID, CNT, AA, CDS]
+    annotations:
+    - ID
+    - CNT
+    - AA
+    - CDS
 
 #  oncomine:
 #    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
@@ -89,18 +94,19 @@ vcfs:
 #    - om_MutClass
 #    - om_MutClassPC
 
-#tracks:
+# reqires vcfannotate (from bcbio-nextgen)
+tracks:
 # RNA Editing (RNA-Seq data)
 # - /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
-# CPG Island
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-## Copy Number Variants
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-## Segmental Duplications
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-## Repeats
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+#CPG Island
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+# Copy Number Variants
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+# Segmental Duplications
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+# Repeats
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 
-
+tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID", "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred, dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred, dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score, dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC, dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF, KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO, MUT, CDA, GMAF, GENEINFO, KGValidated, OM, COMMON, CLNSIG, dbSNPBuildID, DB, GENE, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
 
 
