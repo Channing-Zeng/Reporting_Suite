@@ -76,7 +76,7 @@ def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
     if res != 0:
         with open(run_config['log'] + '_err') as err:
             log_print('')
-            log_print(err)
+            log_print(err.read())
             log_print('')
         log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
         exit(1)
