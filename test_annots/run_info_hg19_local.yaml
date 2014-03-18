@@ -7,6 +7,7 @@ ensemble: False
 rna: False
 split_genotypes: True
 save_intermediate: True
+reuse: True
 
 #snpeff:
 #  path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
