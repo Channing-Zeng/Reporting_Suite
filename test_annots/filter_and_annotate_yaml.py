@@ -32,21 +32,6 @@ def which(program):
     return None
 
 
-def check_executable(program):
-    if not which(program):
-        error(program + ' executable required.')
-
-
-def check_existence(file):
-    if not isfile(file) or getsize(file) <= 0:
-        sys.stderr.write(file + ' does not exist or is empty.')
-        exit(1)
-
-
-run_config = {}
-system_config = {}
-
-
 def log_print(msg=''):
     print(msg)
     if 'log' in run_config:
@@ -54,8 +39,22 @@ def log_print(msg=''):
 
 
 def error(msg):
-    sys.stderr.write(msg)
+    sys.stderr.write(msg + '\n')
     exit(1)
+
+
+def check_executable(program):
+    if not which(program):
+        error(program + ' executable required.')
+
+
+def check_existence(file):
+    if not isfile(file) or getsize(file) <= 0:
+        error(file + ' does not exist or is empty.')
+
+
+run_config = {}
+system_config = {}
 
 
 def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
@@ -72,15 +71,20 @@ def _call_and_rename(cmdline, input_fpath, suffix, to_stdout=True):
     res = subprocess.call(
         cmdline.split(),
         stdout=open(output_fpath, 'w') if to_stdout else open(run_config['log'], 'a'),
-        stderr=open(run_config['log'], 'a'))
-    log_print('')
+        stderr=open(run_config['log'] + '_err', 'w'))
     if res != 0:
+        with open(run_config['log'] + '_err') as err:
+            log_print(err)
+            log_print('')
         log_print('Command returned status ' + str(res) + ('. Log in ' + run_config['log']))
         exit(1)
     else:
+        with open(run_config['log'] + '_err') as err, open(run_config['log'], 'a') as log:
+            log.write(err.read())
+            log.write('')
         log_print('Saved to ' + output_fpath)
         print('Log in ' + run_config['log'])
-
+        
     if not run_config.get('save_intermediate'):
         os.remove(input_fpath)
     log_print('Now processing ' + output_fpath)
@@ -307,7 +311,7 @@ def split_genotypes(sample_fpath, result_fpath):
 if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) < 2:
-        sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml')
+        sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
         exit(1)
 
     assert os.path.isfile(args[0]), args[0] + ' does not exist of is a directory.'
