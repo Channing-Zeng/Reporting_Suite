@@ -130,7 +130,7 @@ def snpsift_db_nsfp(input_fpath):
     assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
     annotations = run_config['db_nsfp'].get('annotations', [])
-    ann_line = ','.join(['dbNSFP_' + ann for ann in annotations])
+    ann_line = ','.join(annotations)
 
     cmdline = _get_java_tool_cmdline('snpsift') + ' dbnsfp -f %s -v %s %s' % (ann_line, db_path, input_fpath)
     return _call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
