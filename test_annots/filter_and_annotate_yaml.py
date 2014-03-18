@@ -50,7 +50,7 @@ system_config = {}
 def log_print(msg=''):
     print(msg)
     if 'log' in run_config:
-        open(run_config['log'], 'w').write(msg)
+        open(run_config['log'], 'a').write(msg + '\n')
 
 
 def error(msg):
