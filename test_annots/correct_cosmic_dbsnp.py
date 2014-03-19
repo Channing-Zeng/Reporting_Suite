@@ -2,7 +2,7 @@ import sys
 import os
 
 
-def __correct_cromosomes(sample_fpath):
+def __correct_cosmic_dbsnp(sample_fpath):
     result_fpath = sample_fpath + '_tmp'
 
     with open(sample_fpath) as vcf, open(result_fpath, 'w') as out:
@@ -13,7 +13,9 @@ def __correct_cromosomes(sample_fpath):
             else:
                 tokens = line.split()
                 chr_field = tokens[0]
-                line = '\t'.join(['chr' + chr_field] + tokens[1:]) + '\n'
+                if not chr_field.startswith('chr'):
+                    chr_field = 'chr' + chr_field
+                line = '\t'.join([chr_field] + tokens[1] + '.' + tokens[3:]) + '\n'
                 out.write(line)
 
     os.remove(sample_fpath)
@@ -22,4 +24,4 @@ def __correct_cromosomes(sample_fpath):
 
 
 if __name__ == '__main__':
-    __correct_cromosomes(sys.argv[1])
+    __correct_cosmic_dbsnp(sys.argv[1])
