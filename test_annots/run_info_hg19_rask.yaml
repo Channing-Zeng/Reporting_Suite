@@ -27,7 +27,8 @@ snpeff:
 
 gatk:
   annotations:
-  - DepthOfCoverage
+#  - DepthOfCoverage
+#  - Coverage
   - BaseQualityRankSumTest
   - FisherStrand
   - GCContent

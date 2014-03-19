@@ -247,7 +247,6 @@ class Annotator:
                               stdout=open(tsv_fpath, 'w'),
                               stderr=open(self.run_config['log'], 'a'),
                               shell=True)
-        self.log_print('')
         if res != 0:
             self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
             exit(1)
