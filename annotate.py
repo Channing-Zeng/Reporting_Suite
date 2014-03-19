@@ -63,11 +63,22 @@ class Annotator:
         sample_basename, ext = os.path.splitext(sample_fname)
 
         if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
-            new_sample_fpath = os.path.join(result_dir, sample_fname)
+            if run_config.get('save_intermediate'):
+                new_sample_fname = sample_fname
+            else:
+                new_sample_fname = sample_basename + '.anno' + ext
+
+            new_sample_fpath = os.path.join(result_dir, new_sample_fname)
+
             if os.path.exists(new_sample_fpath):
                 os.remove(new_sample_fpath)
             shutil.copyfile(self.sample_fpath, new_sample_fpath)
             self.sample_fpath = new_sample_fpath
+        else:
+            if not run_config.get('save_intermediate'):
+                new_sample_fpath = join(result_dir, sample_basename + '.anno' + ext)
+                shutil.copyfile(self.sample_fpath, new_sample_fpath)
+                self.sample_fpath = new_sample_fpath
 
         if 'log' not in run_config:
             run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
@@ -95,23 +106,26 @@ class Annotator:
 
         self.log_print(cmdline)
 
+        err_fpath = self.run_config['log'] + '_err'
         res = subprocess.call(
             cmdline.split(),
             stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
-            stderr=open(self.run_config['log'] + '_err', 'w'))
+            stderr=open(err_fpath, 'w'))
         if res != 0:
-            with open(self.run_config['log'] + '_err') as err:
+            with open(err_fpath) as err:
                 self.log_print('')
                 self.log_print(err.read())
                 self.log_print('')
             self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
             exit(1)
         else:
-            with open(self.run_config['log'] + '_err') as err, open(self.run_config['log'], 'a') as log:
+            with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
                 log.write('')
                 log.write(err.read())
                 log.write('')
             self.log_print('Saved to ' + output_fpath)
+        if isfile(err_fpath):
+            os.remove(err_fpath)
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)

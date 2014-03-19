@@ -6,7 +6,7 @@ reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 ensemble: False
 rna: False
 split_genotypes: False
-save_intermediate: True
+save_intermediate: False
 reuse: True
 
 snpeff:
