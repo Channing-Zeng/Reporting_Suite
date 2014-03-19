@@ -129,8 +129,11 @@ class Annotator:
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
-        self.log_print('Now processing ' + output_fpath)
-        return output_fpath
+            os.rename(output_fpath, input_fpath)
+            return input_fpath
+        else:
+            self.log_print('Now processing ' + output_fpath)
+            return output_fpath
 
 
     def _get_java_tool_cmdline(self, name):
@@ -222,7 +225,8 @@ class Annotator:
 
         ref_fpath = self.run_config['reference']
 
-        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % (ref_fpath, output_fpath, input_fpath)
+        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % \
+                  (ref_fpath, output_fpath, input_fpath)
 
         annotations = self.run_config['gatk'].get('annotations', [])
         for ann in annotations:
