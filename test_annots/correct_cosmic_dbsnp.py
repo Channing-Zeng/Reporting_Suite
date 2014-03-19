@@ -2,6 +2,14 @@ import sys
 import os
 
 
+def __remove_quotes(str):
+    if str and str[0] == '"':
+        str = str[1:]
+    if str and str[-1] == '"':
+        str = str[:-1]
+    return str
+
+
 def __correct_cosmic_dbsnp(sample_fpath):
     result_fpath = sample_fpath + '_tmp'
 
@@ -15,7 +23,8 @@ def __correct_cosmic_dbsnp(sample_fpath):
                 chr_field = tokens[0]
                 if not chr_field.startswith('chr'):
                     chr_field = 'chr' + chr_field
-                line = '\t'.join([chr_field] + [tokens[1]] + ['.'] + tokens[3:]) + '\n'
+                alls = __remove_quotes(tokens[4])
+                line = '\t'.join([chr_field] + [tokens[1]] + ['.'] + tokens[3:4] + [alls] + tokens[5:]) + '\n'
                 out.write(line)
 
     os.remove(sample_fpath)
