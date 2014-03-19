@@ -123,16 +123,16 @@ class Annotator:
                 log.write('')
                 log.write(err.read())
                 log.write('')
-            self.log_print('Saved to ' + output_fpath)
         if isfile(err_fpath):
             os.remove(err_fpath)
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
             os.rename(output_fpath, input_fpath)
+            self.log_print('Saved to ' + input_fpath)
             return input_fpath
         else:
-            self.log_print('Now processing ' + output_fpath)
+            self.log_print('Saved to ' + output_fpath)
             return output_fpath
 
 
@@ -311,7 +311,7 @@ class Annotator:
             sample_basepath, ext = os.path.splitext(sample_fpath)
             result_fpath = sample_basepath + '.split' + ext
             sample_fpath = self.split_genotypes(sample_fpath, result_fpath)
-            self.log_print('Saved to ' + result_fpath)
+            self.log_print('Saved to ' + sample_fpath)
 
         if self.run_config.get('rna'):
             sample_fpath = self.process_rna(sample_fpath)
@@ -335,6 +335,7 @@ class Annotator:
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
         self.extract_fields(sample_fpath)
+        print('Final VCF in ' + sample_fpath)
         print('Log in ' + self.run_config['log'])
 
 
