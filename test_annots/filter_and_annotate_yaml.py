@@ -224,12 +224,10 @@ class Annotator:
         fields = self.run_config.get('tsv_fields', [])
         if not fields:
             return
+        anno_line = ' '.join(fields)
 
         self.log_print('')
         self.log_print('*' * 70)
-
-
-        anno_line = ' '.join(fields)
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_tool_cmdline('perl', 'vcfoneperline') % ''
@@ -237,7 +235,7 @@ class Annotator:
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
         basepath, ext = os.path.splitext(input_fpath)
-        tsv_fpath = basepath + '.extract.tsv'
+        tsv_fpath = basepath + '.tsv'
         if isfile(tsv_fpath):
             os.remove(tsv_fpath)
 
