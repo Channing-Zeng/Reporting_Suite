@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 
-from filter_and_annotate import annotate_GRCh37
+from no_conf_annotate import annotate_GRCh37
 
 snp_eff = '/group/ngs/src/snpEff/snpEff3.5/'
 gatk_dir = '/opt/az/broadinstitute/gatk/1.6'
