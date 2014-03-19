@@ -307,20 +307,18 @@ class Annotator:
         assert 'reference' in self.run_config, 'Please, provide path to the reference file (reference).'
         check_existence(self.run_config['reference'])
 
-        #{vcfs: {db_snp: {path: '', annotation: []}, cosmic: {path: '', ann:[]}}}
-
+        sample_fpath = self.gatk(sample_fpath)
         if 'vcfs' in self.run_config:
             for dbname, conf in self.run_config['vcfs'].items():
                 sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
-
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
-
+        sample_fpath = self.snpeff(sample_fpath)
+        self.extract_fields(sample_fpath)
+        
         if 'tracks' in self.run_config:
+            print('We do not annotate using tracks now.')
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
-
-        sample_fpath = self.gatk(sample_fpath)
-        sample_fpath = self.snpeff(sample_fpath)
         self.extract_fields(sample_fpath)
 
 
