@@ -112,7 +112,6 @@ class Annotator:
                 log.write(err.read())
                 log.write('')
             self.log_print('Saved to ' + output_fpath)
-            print('Log in ' + self.run_config['log'])
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
@@ -252,7 +251,6 @@ class Annotator:
             # return input_fpath
         else:
             self.log_print('Saved TSV file to ' + tsv_fpath)
-            print('Log in ' + self.run_config['log'])
 
 
     def process_rna(self, sample_fpath):
@@ -316,10 +314,10 @@ class Annotator:
         self.extract_fields(sample_fpath)
         
         if 'tracks' in self.run_config:
-            print('We do not annotate using tracks now.')
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
         self.extract_fields(sample_fpath)
+        print('Log in ' + self.run_config['log'])
 
 
     def split_genotypes(self, sample_fpath, result_fpath):
