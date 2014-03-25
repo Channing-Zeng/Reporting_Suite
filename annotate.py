@@ -1,6 +1,7 @@
 # Annotation script that takes 1-3 inputs, first being the vcf file name,
 # second being an indicator if the vcf is from bcbio's ensemble pipeline ('true' if true) and
 # third being 'RNA' if the vcf is from the rna-seq mutect pipeline
+from distutils.version import LooseVersion
 from genericpath import isfile, getsize
 import os
 from os.path import join, splitext, basename, realpath
@@ -44,6 +45,31 @@ def check_executable(program):
 def check_existence(file):
     if not file or not isfile(file) or getsize(file) <= 0:
         error(file + ' does not exist, is not a file, or is empty.')
+
+
+class closing(object):
+    """Context to automatically close something at the end of a block.
+
+    Code like this:
+
+        with closing(<module>.open(<arguments>)) as f:
+            <block>
+
+    is equivalent to this:
+
+        f = <module>.open(<arguments>)
+        try:
+            <block>
+        finally:
+            f.close()
+
+    """
+    def __init__(self, thing):
+        self.thing = thing
+    def __enter__(self):
+        return self.thing
+    def __exit__(self, *exc_info):
+        self.thing.close()
 
 
 class Annotator:
@@ -199,6 +225,9 @@ class Annotator:
 
         cmdline = self._get_java_tool_cmdline('snpeff') + ' eff -dataDir %s -noStats -cancer ' \
                   '-noLog -1 -i vcf -o vcf %s %s' % (db_path, ref_name, input_fpath)
+
+        if self.run_config['snpeff'].get('canonical'):
+            cmdline += ' -canon'
         return self._call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
@@ -213,6 +242,60 @@ class Annotator:
         return self._call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
 
 
+    def _get_gatk_version(self):
+        cl = self._get_java_tool_cmdline('gatk') + ' -version'
+
+        version = None
+        with closing(subprocess.Popen(cl, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout) as stdout:
+            out = stdout.read().strip()
+            # versions earlier than 2.4 do not have explicit version command,
+            # parse from error output from GATK
+            if out.find("ERROR") >= 0:
+                flag = "The Genome Analysis Toolkit (GATK)"
+                for line in out.split("\n"):
+                    if line.startswith(flag):
+                        version = line.split(flag)[-1].split(",")[0].strip()
+            else:
+                version = out
+        if not version:
+            self.log_print('Warning: could not determine Gatk version, using 1.0')
+            return '1.0'
+        if version.startswith("v"):
+            version = version[1:]
+        return version
+
+    def _gatk_major_version(self):
+        """Retrieve the GATK major version, handling multiple GATK distributions.
+
+        Has special cases for GATK nightly builds, Appistry releases and
+        GATK prior to 2.3.
+        """
+        full_version = self._get_gatk_version()
+        # Working with a recent version if using nightlies
+        if full_version.startswith("nightly-"):
+            return "2.8"
+        parts = full_version.split("-")
+        if len(parts) == 4:
+            appistry_release, version, subversion, githash = parts
+        elif len(parts) == 3:
+            version, subversion, githash = parts
+        # version was not properly implemented in earlier GATKs
+        else:
+            version = "2.3"
+        if version.startswith("v"):
+            version = version[1:]
+        return version
+
+    def _gatk_type(self):
+        """Retrieve type of GATK jar, allowing support for older GATK lite.
+        Returns either `lite` (targeting GATK-lite 2.3.9) or `restricted`,
+        the latest 2.4+ restricted version of GATK.
+        """
+        if LooseVersion(self._gatk_major_version()) > LooseVersion("2.3"):
+            return "restricted"
+        else:
+            return "lite"
+
     def gatk(self, input_fpath):
         if 'gatk' not in self.run_config:
             return input_fpath
@@ -225,11 +308,23 @@ class Annotator:
 
         ref_fpath = self.run_config['reference']
 
-        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s --variant %s' % \
-                  (ref_fpath, output_fpath, input_fpath)
+        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s ' \
+                                                        '--variant %s' % (ref_fpath, output_fpath, input_fpath)
+        bam = self.run_config.get('bam')
+        if bam:
+            cmdline += ' -I ' + bam
 
         annotations = self.run_config['gatk'].get('annotations', [])
         for ann in annotations:
+            if ann == 'DepthOfCoverage' and self._gatk_type() == 'restricted':
+                self.log_print('Notice: in the restricted Gatk version, DepthOfCoverage is renamed to Coverage. '
+                               'Using the name Coverage.')
+                ann = 'Coverage'
+            if ann == 'Coverage' and self._gatk_type() == 'lite':
+                self.log_print('Notice: in the lite Gatk version, the Coverage annotation goes by '
+                               'name of DepthOfCoverage. '
+                               'In the system config, the lite version of Gatk is specified; using DepthOfCoverage.')
+                ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
         return self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)

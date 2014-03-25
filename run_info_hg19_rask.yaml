@@ -3,6 +3,7 @@ output_dir: 'test'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+bam: /ngs/oncology/Analysis/external/EXT_007_WGS_DLBCL/align/1_010314_WGS_DLBCLAligned.out-sort.bam
 ensemble: False
 rna: False
 split_genotypes: False
@@ -11,6 +12,7 @@ reuse: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
+  canonical: False
   annotations:
   - "EFF[*].EFFECT"
   - "EFF[*].IMPACT"
@@ -23,12 +25,10 @@ snpeff:
   - "EFF[*].CODING"
   - "EFF[*].TRID"
   - "EFF[*].RANK"
-#    - om_Cancer
 
 gatk:
   annotations:
-#  - DepthOfCoverage
-#  - Coverage
+  - Coverage
   - BaseQualityRankSumTest
   - FisherStrand
   - GCContent
@@ -105,6 +105,16 @@ tracks:
 # Repeats
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 
-tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID", "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred, dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred, dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score, dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC, dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF, KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO, MUT, CDA, GMAF, GENEINFO, KGValidated, OM, COMMON, CLNSIG, dbSNPBuildID, DB, GENE, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
+tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE,
+            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
+            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
+            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
+            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
+            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
+            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
+            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
+            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
+            MUT, CDA, GMAF, GENEINFO, KGValidated, OM, COMMON, CLNSIG, dbSNPBuildID, DB,
+            GENE, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
 
 
