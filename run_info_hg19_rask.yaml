@@ -3,7 +3,7 @@ output_dir: 'test'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-bam: /ngs/oncology/Analysis/external/EXT_007_WGS_DLBCL/align//SRR292240/1_010314_WGS_DLBCLAligned.out-sort.bam
+#bam: /ngs/oncology/Analysis/external/EXT_007_WGS_DLBCL/align//SRR292240/1_010314_WGS_DLBCLAligned.out-sort.bam
 ensemble: False
 rna: False
 split_genotypes: False
