@@ -80,14 +80,14 @@ class Annotator:
         self.sample_fpath = realpath(sample_fpath)
         check_existence(self.sample_fpath)
 
-        result_dir = realpath(run_config_path.get('output_dir', os.getcwd()))
+        result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
         assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
         sample_fname = os.path.basename(self.sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
 
         if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
-            if run_config_path.get('save_intermediate'):
+            if self.run_config.get('save_intermediate'):
                 new_sample_fname = sample_fname
             else:
                 new_sample_fname = sample_basename + '.anno' + ext
@@ -99,21 +99,21 @@ class Annotator:
             shutil.copyfile(self.sample_fpath, new_sample_fpath)
             self.sample_fpath = new_sample_fpath
         else:
-            if not run_config_path.get('save_intermediate'):
+            if not self.run_config.get('save_intermediate'):
                 new_sample_fpath = join(result_dir, sample_basename + '.anno' + ext)
                 shutil.copyfile(self.sample_fpath, new_sample_fpath)
                 self.sample_fpath = new_sample_fpath
 
-        if 'log' not in run_config_path:
-            run_config_path['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
-        if os.path.isfile(run_config_path['log']):
-            os.remove(run_config_path['log'])
+        if 'log' not in self.run_config:
+            self.run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
+        if os.path.isfile(self.run_config['log']):
+            os.remove(self.run_config['log'])
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
 
         self.log_print('Writing into ' + result_dir)
-        self.log_print('Logging to ' + run_config_path['log'])
+        self.log_print('Logging to ' + self.run_config['log'])
         self.log_print('')
 
 
