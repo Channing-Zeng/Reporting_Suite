@@ -122,6 +122,13 @@ class Annotator:
             open(self.run_config['log'], 'a').write(msg + '\n')
 
 
+    def log_error(self, msg=''):
+        sys.stderr.write(msg + '\n')
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
+        exit(1)
+
+
     def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True):
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
@@ -142,8 +149,7 @@ class Annotator:
                 self.log_print('')
                 self.log_print(err.read())
                 self.log_print('')
-            self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
-            exit(1)
+            self.log_error('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
                 log.write('')
@@ -171,12 +177,12 @@ class Annotator:
     def _get_tool_cmdline(self, executable, name):
         check_executable(executable)
         if 'resources' not in self.system_config:
-            error('System config yaml must contain resources section with ' + name + ' path.')
+            self.log_error('System config yaml must contain resources section with ' + name + ' path.')
         if name not in self.system_config['resources']:
-            error('System config resources section must contain ' + name + ' info (with a path to the tool).')
+            self.log_error('System config resources section must contain ' + name + ' info (with a path to the tool).')
         tool_config = self.system_config['resources'][name]
         if 'path' not in tool_config:
-            error(name + ' section in the system config must contain a path to the tool.')
+            self.log_error(name + ' section in the system config must contain a path to the tool.')
         tool_path = tool_config['path']
         check_existence(tool_path)
         return executable + ' %s ' + tool_path
@@ -315,6 +321,8 @@ class Annotator:
                                                         '--variant %s' % (ref_fpath, output_fpath, input_fpath)
         bam = self.run_config.get('bam')
         if bam:
+            if not isfile(bam):
+                self.log_error('Error. Not such file: ' + bam)
             cmdline += ' -I ' + bam
 
         annotations = self.run_config['gatk'].get('annotations', [])
