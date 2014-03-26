@@ -1,6 +1,5 @@
-# Annotation script that takes 1-3 inputs, first being the vcf file name,
-# second being an indicator if the vcf is from bcbio's ensemble pipeline ('true' if true) and
-# third being 'RNA' if the vcf is from the rna-seq mutect pipeline
+#!/usr/bin/env python
+
 from distutils.version import LooseVersion
 from genericpath import isfile, getsize
 import os
@@ -86,7 +85,7 @@ class Annotator:
         assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
         sample_fname = os.path.basename(self.sample_fpath)
-        sample_basename, ext = os.path.splitext(sample_fname) 
+        sample_basename, ext = os.path.splitext(sample_fname)
 
         if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
             if run_config.get('save_intermediate'):
