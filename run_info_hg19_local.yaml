@@ -26,20 +26,20 @@ reuse: True
 #  - "EFF[*].TRID"
 #  - "EFF[*].RANK"
 
-#gatk:
-#  annotations:
-#  - Coverage
-#  - BaseQualityRankSumTest
-#  - FisherStrand
-#  - GCContent
-#  - HaplotypeScore
-#  - HomopolymerRun
-#  - MappingQualityRankSumTest
-#  - MappingQualityZero
-#  - QualByDepth
-#  - ReadPosRankSumTest
-#  - RMSMappingQuality
-#  - DepthPerAlleleBySample
+gatk:
+  annotations:
+  - Coverage
+  - BaseQualityRankSumTest
+  - FisherStrand
+  - GCContent
+  - HaplotypeScore
+  - HomopolymerRun
+  - MappingQualityRankSumTest
+  - MappingQualityZero
+  - QualByDepth
+  - ReadPosRankSumTest
+  - RMSMappingQuality
+  - DepthPerAlleleBySample
 
 #db_nsfp:
 #  path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
@@ -104,17 +104,17 @@ vcfs:
 #  # Repeats
 #- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 
-tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE,
-            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
-            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
-            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
-            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
-            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
-            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
-            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
-            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
-            MUT, CDA, GMAF, GENEINFO, KGValidated, OM, COMMON, CLNSIG, dbSNPBuildID, DB,
-            GENE, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
+#tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE,
+#            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
+#            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
+#            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
+#            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
+#            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
+#            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
+#            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
+#            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
+#            MUT, CDA, GMAF, GENEINFO, KGValidated, OM, COMMON, CLNSIG, dbSNPBuildID, DB,
+#            GENE, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
 
 
 

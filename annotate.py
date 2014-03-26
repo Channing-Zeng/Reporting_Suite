@@ -243,10 +243,13 @@ class Annotator:
 
 
     def _get_gatk_version(self):
-        cl = self._get_java_tool_cmdline('gatk') + ' -version'
+        cmdline = self._get_java_tool_cmdline('gatk') + ' -version'
 
         version = None
-        with closing(subprocess.Popen(cl, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout) as stdout:
+        with closing(subprocess.Popen(cmdline,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT,
+                                      shell=True).stdout) as stdout:
             out = stdout.read().strip()
             # versions earlier than 2.4 do not have explicit version command,
             # parse from error output from GATK
