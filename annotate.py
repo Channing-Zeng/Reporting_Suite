@@ -489,8 +489,8 @@ def main(args):
         sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
         exit(1)
 
-    system_config_path = open(args[0])
-    run_config_path = open(args[1])
+    system_config_path = args[0]
+    run_config_path = args[1]
     assert os.path.isfile(system_config_path), system_config_path + ' does not exist or is a directory.'
     assert os.path.isfile(run_config_path), run_config_path + ' does not exist or is a directory.'
 
