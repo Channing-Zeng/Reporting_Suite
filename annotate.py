@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 from distutils.version import LooseVersion
-from genericpath import isfile, getsize
 import os
-from os.path import join, splitext, basename, realpath
+from os.path import join, splitext, basename, realpath, isfile, getsize
 import subprocess
 import sys
 import shutil
