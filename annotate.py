@@ -86,7 +86,7 @@ class Annotator:
         assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
         sample_fname = os.path.basename(self.sample_fpath)
-        sample_basename, ext = os.path.splitext(sample_fname)
+        sample_basename, ext = os.path.splitext(sample_fname) 
 
         if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
             if run_config.get('save_intermediate'):
@@ -110,6 +110,9 @@ class Annotator:
             run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
         if os.path.isfile(run_config['log']):
             os.remove(run_config['log'])
+
+        self.log_print('Loaded system config ' + system_config)
+        self.log_print('Loaded run config ' + run_config)
 
         self.log_print('Writing into ' + result_dir)
         self.log_print('Logging to ' + run_config['log'])
@@ -488,12 +491,10 @@ def main(args):
         sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
         exit(1)
 
-    assert os.path.isfile(args[0]), args[0] + ' does not exist of is a directory.'
-    assert os.path.isfile(args[1]), args[1] + ' does not exist of is a directory.'
+    assert os.path.isfile(args[0]), args[0] + ' does not exist or is a directory.'
+    assert os.path.isfile(args[1]), args[1] + ' does not exist or is a directory.'
     system_config = load(open(args[0]), Loader=Loader)
     run_config = load(open(args[1]), Loader=Loader)
-    print('Loaded system config ' + args[0])
-    print('Loaded run config ' + args[1])
 
     annotator = Annotator(system_config, run_config)
 
