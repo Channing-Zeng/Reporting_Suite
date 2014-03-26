@@ -72,23 +72,23 @@ class closing(object):
 
 
 class Annotator:
-    def __init__(self, system_config, run_config):
-        self.system_config = system_config
-        self.run_config = run_config
+    def __init__(self, system_config_path, run_config_path):
+        self.system_config = load(open(system_config_path), Loader=Loader)
+        self.run_config = load(open(run_config_path), Loader=Loader)
 
         sample_fpath = self.run_config.get('file', None)
         assert sample_fpath, 'Run config does not contain field "file".'
         self.sample_fpath = realpath(sample_fpath)
         check_existence(self.sample_fpath)
 
-        result_dir = realpath(run_config.get('output_dir', os.getcwd()))
+        result_dir = realpath(run_config_path.get('output_dir', os.getcwd()))
         assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
 
         sample_fname = os.path.basename(self.sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
 
         if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
-            if run_config.get('save_intermediate'):
+            if run_config_path.get('save_intermediate'):
                 new_sample_fname = sample_fname
             else:
                 new_sample_fname = sample_basename + '.anno' + ext
@@ -100,21 +100,21 @@ class Annotator:
             shutil.copyfile(self.sample_fpath, new_sample_fpath)
             self.sample_fpath = new_sample_fpath
         else:
-            if not run_config.get('save_intermediate'):
+            if not run_config_path.get('save_intermediate'):
                 new_sample_fpath = join(result_dir, sample_basename + '.anno' + ext)
                 shutil.copyfile(self.sample_fpath, new_sample_fpath)
                 self.sample_fpath = new_sample_fpath
 
-        if 'log' not in run_config:
-            run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
-        if os.path.isfile(run_config['log']):
-            os.remove(run_config['log'])
+        if 'log' not in run_config_path:
+            run_config_path['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
+        if os.path.isfile(run_config_path['log']):
+            os.remove(run_config_path['log'])
 
-        self.log_print('Loaded system config ' + system_config)
-        self.log_print('Loaded run config ' + run_config)
+        self.log_print('Loaded system config ' + system_config_path)
+        self.log_print('Loaded run config ' + run_config_path)
 
         self.log_print('Writing into ' + result_dir)
-        self.log_print('Logging to ' + run_config['log'])
+        self.log_print('Logging to ' + run_config_path['log'])
         self.log_print('')
 
 
@@ -490,12 +490,12 @@ def main(args):
         sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
         exit(1)
 
-    assert os.path.isfile(args[0]), args[0] + ' does not exist or is a directory.'
-    assert os.path.isfile(args[1]), args[1] + ' does not exist or is a directory.'
-    system_config = load(open(args[0]), Loader=Loader)
-    run_config = load(open(args[1]), Loader=Loader)
+    system_config_path = open(args[0])
+    run_config_path = open(args[1])
+    assert os.path.isfile(system_config_path), system_config_path + ' does not exist or is a directory.'
+    assert os.path.isfile(run_config_path), run_config_path + ' does not exist or is a directory.'
 
-    annotator = Annotator(system_config, run_config)
+    annotator = Annotator(system_config_path, run_config_path)
 
     print('Note: please, load modules before start:')
     print('   source /etc/profile.d/modules.sh')
