@@ -3,6 +3,8 @@
 
 #--------- Begin command arg parsing ---------
 
+echo $0
+
 CMD=`echo $0 | sed -e 's/^.*\///'`
 DESCR="Run coverage_analysis for all reads and reads filtered to unique starts.
 Results will go to two directories, .../all_reads and .../filtered_reads, or just the

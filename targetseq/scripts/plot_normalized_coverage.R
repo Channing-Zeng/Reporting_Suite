@@ -1,4 +1,7 @@
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
+
+write(sprintf("plot_normalized_coverage.R\n"))
+
 args <- commandArgs(trailingOnly=TRUE)
 
 nFileIn <- ifelse(is.na(args[1]),"coverage_depth.xls",args[1])

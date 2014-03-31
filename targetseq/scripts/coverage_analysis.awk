@@ -1,6 +1,7 @@
 # Copyright (C) 2010 Ion Torrent Systems, Inc. All Rights Reserved
 
 BEGIN {
+  print "scripts/coverage_analysis.awk"
   IGNORECASE=1;
   genome += 0;
   if( genome <= 0 )

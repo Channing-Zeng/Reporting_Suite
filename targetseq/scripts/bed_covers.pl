@@ -3,6 +3,8 @@
 
 #--------- Begin command arg parsing ---------
 
+print "scripts/bed_covers.pl"
+
 (my $CMD = $0) =~ s{^(.*/)+}{};
 my $DESCR = "Create tsv of bed target regions coverage for given pileup file. (Output to STDOUT.)";
 my $USAGE = "Usage:\n\t$CMD [options] <SAM pileup/depth file> <BED file>";

@@ -3,6 +3,8 @@
 
 #--------- Begin command arg parsing ---------
 
+echo $0
+
 CMD=`echo $0 | sed -e 's/^.*\///'`
 DESCR="Create tsv and image files of mapped read coverage to a reference."
 USAGE="USAGE:

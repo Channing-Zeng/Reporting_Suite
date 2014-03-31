@@ -27,6 +27,9 @@
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 # Modified by dfj3 @ EdgeBio - djenkins@edgebio.com
 ###########################################################################
+
+echo $0
+
 VERSION="0.1.3"
 
 source /etc/profile.d/modules.sh

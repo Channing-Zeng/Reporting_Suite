@@ -1,6 +1,7 @@
 #!/bin/bash
 # Copyright (C) 2010 Ion Torrent Systems, Inc. All Rights Reserved
 
+echo $0
 
 print_html_end_javascript()
 {

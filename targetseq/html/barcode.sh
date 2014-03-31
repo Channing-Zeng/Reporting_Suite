@@ -1,6 +1,8 @@
 #!/bin/bash
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 
+echo $0
+
 barcode_load_list ()
 {
     local ROWSUM_NODATA=""

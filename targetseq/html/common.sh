@@ -1,6 +1,8 @@
 #!/bin/bash
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 
+echo $0
+
 write_html_header ()
 {
     local HTML="${RESULTS_DIR}/header"

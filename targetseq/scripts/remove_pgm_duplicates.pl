@@ -3,6 +3,8 @@
 
 #--------- Begin command arg parsing ---------
 
+print "scripts/bed_covers.pl"
+
 (my $CMD = $0) =~ s{^(.*/)+}{};
 my $DESCR = "Remove duplicate reads from a Ion PGM read mapping file.
 The input file can be in BAM or SAM format and does not have to be sorted.

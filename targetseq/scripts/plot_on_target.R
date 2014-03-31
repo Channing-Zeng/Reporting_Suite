@@ -1,4 +1,7 @@
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
+
+write(sprintf("plot_on_target.R\n"))
+
 args <- commandArgs(trailingOnly=TRUE)
 nFileIn <- ifelse(is.na(args[1]),"on_target.xls",args[1])
 nFileOut <- ifelse(is.na(args[2]),"on_target.png",args[2])

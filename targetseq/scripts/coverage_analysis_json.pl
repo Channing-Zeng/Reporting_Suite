@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 
+print "scripts/bed_covers.pl"
+
 use File::Basename;
 
 # get current running script dir
