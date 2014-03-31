@@ -39,3 +39,4 @@ nosetests.xml
 .idea
 test/*
 .DS_Store
+*/.DS_Store
