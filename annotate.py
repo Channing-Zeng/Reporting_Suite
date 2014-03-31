@@ -45,31 +45,6 @@ def check_existence(file):
         error(file + ' does not exist, is not a file, or is empty.')
 
 
-class closing(object):
-    """Context to automatically close something at the end of a block.
-
-    Code like this:
-
-        with closing(<module>.open(<arguments>)) as f:
-            <block>
-
-    is equivalent to this:
-
-        f = <module>.open(<arguments>)
-        try:
-            <block>
-        finally:
-            f.close()
-
-    """
-    def __init__(self, thing):
-        self.thing = thing
-    def __enter__(self):
-        return self.thing
-    def __exit__(self, *exc_info):
-        self.thing.close()
-
-
 class Annotator:
     def __init__(self, system_config_path, run_config_path):
         self.system_config = load(open(system_config_path), Loader=Loader)
@@ -193,11 +168,13 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
+        executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
         annotations = conf.get('annotations', [])
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + ' annotate -v %s %s %s' % (anno_line, db_path, input_fpath)
+        cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
+
         return self._call_and_rename(cmdline, input_fpath, dbname, to_stdout=True)
 
 
@@ -208,15 +185,17 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
+        executable = self._get_java_tool_cmdline('snpsift')
+
         db_path = self.run_config['db_nsfp'].get('path')
         assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
-        cmdline = self._get_java_tool_cmdline('snpsift') + ' dbnsfp %s -v %s %s' % (ann_line, db_path, input_fpath)
-        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
+        cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
 
+        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
     def snpeff(self, input_fpath):
         if 'snpeff' not in self.run_config:
@@ -225,16 +204,27 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
-        ref_name = self.run_config['genome_build']
+        config = self.system_config['snpeff'].get('config')
+        # if config:
+        #     if not isfile(config):
+        #         cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
+        #            '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
+        cmdline = ('{executable} eff -noStats -noLog -1 '
+                   '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
 
+        executable = self._get_java_tool_cmdline('snpeff')
+        ref_name = self.run_config['genome_build']
         db_path = self.run_config['snpeff'].get('path')
         assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
-        cmdline = self._get_java_tool_cmdline('snpeff') + ' eff -dataDir %s -noStats -cancer ' \
-                  '-noLog -1 -i vcf -o vcf %s %s' % (db_path, ref_name, input_fpath)
+        cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
+                   '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
 
-        if self.run_config['snpeff'].get('canonical'):
-            cmdline += ' -canon'
+        if self.run_config['snpeff'].get('clinical_reporting') or self.run_config['snpeff'].get('canonical'):
+            cmdline += ' -canon -hgvs '
+        if self.run_config['snpeff'].get('cancer'):
+            cmdline += ' -cancer'
+
         return self._call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
 
@@ -245,7 +235,9 @@ class Annotator:
         check_executable('vcfannotate')
 
         field_name = splitext(basename(track_path))[0]
-        cmdline = 'vcfannotate -b %s -k %s %s' % (track_path, field_name, input_fpath)
+
+        cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'
+
         return self._call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
 
 
@@ -253,10 +245,10 @@ class Annotator:
         cmdline = self._get_java_tool_cmdline('gatk') + ' -version'
 
         version = None
-        with closing(subprocess.Popen(cmdline,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.STDOUT,
-                                      shell=True).stdout) as stdout:
+        with subprocess.Popen(cmdline,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.STDOUT,
+                              shell=True).stdout as stdout:
             out = stdout.read().strip()
             # versions earlier than 2.4 do not have explicit version command,
             # parse from error output from GATK
@@ -313,13 +305,15 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
+        executable = self._get_java_tool_cmdline('gatk')
+
         base_name, ext = os.path.splitext(input_fpath)
         output_fpath = base_name + '.gatk' + ext
 
         ref_fpath = self.run_config['reference']
 
-        cmdline = self._get_java_tool_cmdline('gatk') + ' -R %s -T VariantAnnotator -o %s ' \
-                                                        '--variant %s' % (ref_fpath, output_fpath, input_fpath)
+        cmdline = ('{executable} -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
+                   ' --variant {input_fpath}').format(**locals())
         bam = self.run_config.get('bam')
         if bam:
             if not isfile(bam):
@@ -339,7 +333,14 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        return self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
+        res = self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
+
+        if isfile(output_fpath + '.idx'):
+            remove(output_fpath + '.idx')
+        if isfile(input_fpath + '.idx'):
+            remove(input_fpath + '.idx')
+
+        return res
 
 
     def extract_fields(self, input_fpath):
@@ -382,10 +383,12 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
+        check_executable('vcf-subset')
+
         sample_fname = os.path.basename(sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
-        check_executable('vcf-subset')
-        cmdline = 'vcf-subset -c %s -e %s' % (sample_basename.replace('-ensemble', ''), sample_fpath)
+        name = sample_basename.replace('-ensemble', '')
+        cmdline = 'vcf-subset -c {name} -e {sample_fpath}'.format(**locals())
 
         return self._call_and_rename(cmdline, sample_fpath, '.ensm', to_stdout=True)
 
@@ -437,7 +440,7 @@ class Annotator:
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
         sample_fpath = self.snpeff(sample_fpath)
         self.extract_fields(sample_fpath)
-        
+
         if 'tracks' in self.run_config:
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)

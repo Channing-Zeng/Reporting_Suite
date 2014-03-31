@@ -5,6 +5,7 @@ resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpeff-3_4/snpEff.jar
+    # config: /usr/local/share/java/snpeff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpeff-3_4/SnpSift.jar

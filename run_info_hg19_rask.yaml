@@ -12,7 +12,9 @@ reuse: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
-  canonical: False
+  clinical_reporting: False
+  cancer: True
+  # config: /usr/local/share/java/snpeff/snpEff.config
   annotations:
   - "EFF[*].EFFECT"
   - "EFF[*].IMPACT"
