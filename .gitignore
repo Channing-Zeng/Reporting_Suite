@@ -40,3 +40,5 @@ nosetests.xml
 test/*
 .DS_Store
 */.DS_Store
+
+targetseq_test
