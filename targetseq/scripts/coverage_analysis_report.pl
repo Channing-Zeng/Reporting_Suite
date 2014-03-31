@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 
-print "scripts/bed_covers.pl"
+print "scripts/bed_covers.pl";
 
 use File::Basename;
 

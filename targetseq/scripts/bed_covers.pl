@@ -2,8 +2,7 @@
 # Copyright (C) 2011 Ion Torrent Systems, Inc. All Rights Reserved
 
 #--------- Begin command arg parsing ---------
-
-print "scripts/bed_covers.pl"
+print "scripts/bed_covers.pl";
 
 (my $CMD = $0) =~ s{^(.*/)+}{};
 my $DESCR = "Create tsv of bed target regions coverage for given pileup file. (Output to STDOUT.)";
@@ -17,6 +16,7 @@ my $genome="";
 my $addGCdata = 0;
 
 my $help = (scalar(@ARGV) == 0);
+
 while( scalar(@ARGV) > 0 )
 {
     last if($ARGV[0] !~ /^-/);

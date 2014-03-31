@@ -3,7 +3,7 @@
 
 #--------- Begin command arg parsing ---------
 
-print "scripts/bed_covers.pl"
+print "scripts/bed_covers.pl";
 
 (my $CMD = $0) =~ s{^(.*/)+}{};
 my $DESCR = "Create tsv list of number of reads to choromosomes.";

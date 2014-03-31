@@ -3,7 +3,7 @@
 
 #--------- Begin command arg parsing ---------
 
-print "scripts/bed_covers.pl"
+print "scripts/bed_covers.pl";
 
 (my $CMD = $0) =~ s{^(.*/)+}{};
 my $DESCR = "Remove duplicate reads from a Ion PGM read mapping file.
