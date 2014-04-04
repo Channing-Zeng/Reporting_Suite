@@ -107,7 +107,8 @@ class Annotator:
         if not which('perl'):
             sys.stderr.write('\nWARNING: Please, run "module load perl"\n')
         if not self._get_tool_cmdline('vcfannotate'):
-            sys.stderr.write('\nPlease, run "module load bcbio-nextgen" if you want to annotate with bed tracks.\n')
+            sys.stderr.write('\nWARNING: Please, run "module load bcbio-nextgen" '
+                             'if you want to annotate with bed tracks.\n')
 
 
     def log_print(self, msg=''):
@@ -147,8 +148,8 @@ class Annotator:
         if self.run_config.get('verbose', True):
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if to_stdout else None,
-                stderr=None)
+                stdout=open(output_fpath, 'w') if to_stdout else subprocess.PIPE,
+                stderr=subprocess.PIPE)
             if res != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
@@ -518,7 +519,8 @@ class Annotator:
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
         self.extract_fields(sample_fpath)
-        print('Final VCF in ' + sample_fpath)
+
+        self.log_print('\nFinal VCF in ' + sample_fpath)
         if 'log' in self.run_config:
             print('Log in ' + self.run_config['log'])
 
