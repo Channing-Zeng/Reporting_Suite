@@ -30,19 +30,14 @@ def which(program):
     return None
 
 
-def error(msg):
-    sys.stderr.write(msg + '\n')
-    exit(1)
-
-
 def check_executable(program):
     if not which(program):
-        error(program + ' executable required.')
+        exit(program + ' executable required.')
 
 
 def check_existence(file):
     if not file or not isfile(file) or getsize(file) <= 0:
-        error(file + ' does not exist, is not a file, or is empty.')
+        exit(file + ' does not exist, is not a file, or is empty.')
 
 
 class Annotator:
@@ -51,12 +46,19 @@ class Annotator:
         self.run_config = load(open(run_config_path), Loader=Loader)
 
         sample_fpath = self.run_config.get('file', None)
-        assert sample_fpath, 'Run config does not contain field "file".'
+        if not sample_fpath:
+            exit('Run config does not contain field "file".')
         self.sample_fpath = realpath(sample_fpath)
         check_existence(self.sample_fpath)
 
         result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
-        assert os.path.isdir(result_dir), result_dir + ' does not exists or is not a directory'
+        if isfile(result_dir):
+            exit(result_dir + ' is a file.')
+        if not exists(result_dir):
+            try:
+                os.mkdir(result_dir)
+            except:
+                sys.stderr.write(result_dir + ' does not exist.')
 
         sample_fname = os.path.basename(self.sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
@@ -99,10 +101,9 @@ class Annotator:
 
 
     def log_error(self, msg=''):
-        sys.stderr.write(msg + '\n')
         if 'log' in self.run_config:
             open(self.run_config['log'], 'a').write(msg + '\n')
-        exit(1)
+        exit(msg)
 
 
     def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True):
@@ -189,7 +190,8 @@ class Annotator:
         executable = self._get_java_tool_cmdline('snpsift')
 
         db_path = self.run_config['db_nsfp'].get('path')
-        assert db_path, 'Please, provide a path to db nsfp file in run_config.'
+        if not db_path:
+            exit('Please, provide a path to db nsfp file in run_config.')
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
@@ -493,9 +495,8 @@ def remove_quotes(str):
 
 def main(args):
     if len(args) < 1:
-        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n'
-                         '    or python ' + __file__ + ' run_info.yaml')
-        exit(1)
+        exit('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n'
+             '    or python ' + __file__ + ' run_info.yaml')
 
     if len(args) == 1:
         run_config_path = args[0]
@@ -506,11 +507,9 @@ def main(args):
         run_config_path = args[1]
 
     if not os.path.isfile(system_config_path):
-        sys.stderr.write(system_config_path + ' does not exist or is a directory.\n')
-        exit(1)
+        exit(system_config_path + ' does not exist or is a directory.\n')
     if not os.path.isfile(run_config_path):
-        sys.stderr.write(run_config_path + ' does not exist or is a directory.\n')
-        exit(1)
+        exit(run_config_path + ' does not exist or is a directory.\n')
 
     annotator = Annotator(system_config_path, run_config_path)
 

@@ -1,5 +1,5 @@
-file: 'test_annots/42-PC9_vars.txt.vcf'
-output_dir: '.'
+file: 'test.vcf'
+output_dir: 'test'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
