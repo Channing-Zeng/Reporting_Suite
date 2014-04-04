@@ -146,6 +146,7 @@ class Annotator:
         to_remove.append(err_fpath)
 
         if self.run_config.get('verbose', True):
+            print('verbose, calling ' + cmdline)
             res = subprocess.call(
                 cmdline.split(),
                 stdout=open(output_fpath, 'w') if to_stdout else subprocess.PIPE)
