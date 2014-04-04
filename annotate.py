@@ -134,11 +134,11 @@ class Annotator:
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
 
-        if 'save_intermediate' in self.run_config \
-                and ('reuse_intermediate' in self.run_config or 'reuse' in self.run_config) \
-                and isfile(output_fpath) and getsize(output_fpath) > 0:
-            self.log_print(output_fpath + ' exists, reusing')
-            return output_fpath
+        if self.run_config.get('save_intermediate') and \
+                (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
+            if isfile(output_fpath) and getsize(output_fpath) > 0:
+                self.log_print(output_fpath + ' exists, reusing')
+                return output_fpath
 
         self.log_print(cmdline)
 
