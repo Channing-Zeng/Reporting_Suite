@@ -140,24 +140,31 @@ class Annotator:
         self.log_print(cmdline)
 
         err_fpath = self.run_config['log'] + '_err'
-        res = subprocess.call(
-            cmdline.split(),
-            stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
-            stderr=open(err_fpath, 'w'))
-        if res != 0 or self.run_config.get('verbose', True):
-            with open(err_fpath) as err:
-                self.log_print('')
-                self.log_print(err.read())
-                self.log_print('')
+        if self.run_config.get('verbose', True):
+            res = subprocess.call(
+                cmdline.split(),
+                stdout=open(output_fpath, 'w') if to_stdout else None,
+                stderr=None)
             if res != 0:
                 self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
-            with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
-                log.write('')
-                log.write(err.read())
-                log.write('')
-        if isfile(err_fpath):
-            os.remove(err_fpath)
+            res = subprocess.call(
+                cmdline.split(),
+                stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
+                stderr=open(err_fpath, 'w'))
+            if res != 0:
+                with open(err_fpath) as err:
+                    self.log_print('')
+                    self.log_print(err.read())
+                    self.log_print('')
+                self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            else:
+                with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
+                    log.write('')
+                    log.write(err.read())
+                    log.write('')
+            if isfile(err_fpath):
+                os.remove(err_fpath)
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
