@@ -84,7 +84,7 @@ vcfs:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
 
 # reqires vcfannotate (from bcbio-nextgen)
-tracks:
+#tracks:
 # RNA Editing (RNA-Seq data)
 # - /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 ##CPG Island

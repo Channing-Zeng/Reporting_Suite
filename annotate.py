@@ -515,7 +515,7 @@ class Annotator:
                 sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
         sample_fpath = self.snpeff(sample_fpath)
-        if 'tracks' in self.run_config:
+        if self.run_config.get('tracks'):
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
         self.extract_fields(sample_fpath)
