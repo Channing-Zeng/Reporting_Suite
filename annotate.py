@@ -90,16 +90,17 @@ class Annotator:
                 shutil.copyfile(self.sample_fpath, new_sample_fpath)
                 self.sample_fpath = new_sample_fpath
 
-        if 'log' not in self.run_config:
+        if 'log' in self.run_config:
             self.run_config['log'] = os.path.join(os.path.dirname(self.sample_fpath), sample_basename + '.log')
-        if os.path.isfile(self.run_config['log']):
-            os.remove(self.run_config['log'])
+            if os.path.isfile(self.run_config['log']):
+                os.remove(self.run_config['log'])
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
         self.log_print('')
         self.log_print('Writing into ' + result_dir)
-        self.log_print('Logging to ' + self.run_config['log'])
+        if 'log' in self.run_config:
+            self.log_print('Logging to ' + self.run_config['log'])
 
         if not which('java'):
             sys.stderr.write('\nWARNING: Please, run "module load java"\n')
@@ -127,7 +128,8 @@ class Annotator:
         sys.stderr.write(msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True):
+    def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True, to_remove=None):
+        to_remove = to_remove or []
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
 
@@ -140,12 +142,17 @@ class Annotator:
         self.log_print(cmdline)
 
         err_fpath = self.run_config['log'] + '_err'
+        to_remove.append(err_fpath)
+
         if self.run_config.get('verbose', True):
             res = subprocess.call(
                 cmdline.split(),
                 stdout=open(output_fpath, 'w') if to_stdout else None,
                 stderr=None)
             if res != 0:
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(to_remove)
                 self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             res = subprocess.call(
@@ -157,14 +164,19 @@ class Annotator:
                     self.log_print('')
                     self.log_print(err.read())
                     self.log_print('')
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(to_remove)
                 self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
             else:
-                with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
-                    log.write('')
-                    log.write(err.read())
-                    log.write('')
-            if isfile(err_fpath):
-                os.remove(err_fpath)
+                if 'log' in self.run_config:
+                    with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
+                        log.write('')
+                        log.write(err.read())
+                        log.write('')
+        for fpath in to_remove:
+            if fpath and isfile(fpath):
+                os.remove(to_remove)
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
@@ -395,13 +407,8 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        res = self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
-
-        if isfile(output_fpath + '.idx'):
-            os.remove(output_fpath + '.idx')
-        if isfile(input_fpath + '.idx'):
-            os.remove(input_fpath + '.idx')
-
+        res = self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False,
+                                    to_remove=[output_fpath + '.idx', input_fpath + '.idx'])
         return res
 
 
@@ -430,9 +437,7 @@ class Annotator:
         res = subprocess.call(cmdline,
                               stdin=open(input_fpath),
                               stdout=open(tsv_fpath, 'w'),
-                              stderr=open(self.run_config['log'], 'a'),
                               shell=True)
-        self.log_print('')
         if res != 0:
             self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
             exit(1)
@@ -514,7 +519,8 @@ class Annotator:
                 sample_fpath = self.tracks(track, sample_fpath)
         self.extract_fields(sample_fpath)
         print('Final VCF in ' + sample_fpath)
-        print('Log in ' + self.run_config['log'])
+        if 'log' in self.run_config:
+            print('Log in ' + self.run_config['log'])
 
 
     def split_genotypes(self, sample_fpath, result_fpath):

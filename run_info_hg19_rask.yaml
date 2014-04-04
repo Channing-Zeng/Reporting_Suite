@@ -9,6 +9,7 @@ rna: False
 split_genotypes: False
 save_intermediate: False
 reuse_intermediate: True
+log: True
 verbose: False
 
 snpeff:
