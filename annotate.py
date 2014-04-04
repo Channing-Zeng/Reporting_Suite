@@ -152,7 +152,7 @@ class Annotator:
             if res != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
-                        os.remove(to_remove)
+                        os.remove(fpath)
                 self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             res = subprocess.call(
@@ -166,7 +166,7 @@ class Annotator:
                     self.log_print('')
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
-                        os.remove(to_remove)
+                        os.remove(fpath)
                 self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
             else:
                 if 'log' in self.run_config:
@@ -176,7 +176,7 @@ class Annotator:
                         log.write('')
         for fpath in to_remove:
             if fpath and isfile(fpath):
-                os.remove(to_remove)
+                os.remove(fpath)
 
         if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
