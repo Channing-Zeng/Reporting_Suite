@@ -144,12 +144,13 @@ class Annotator:
             cmdline.split(),
             stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
             stderr=open(err_fpath, 'w'))
-        if res != 0:
+        if res != 0 or self.run_config.get('verbose', True):
             with open(err_fpath) as err:
                 self.log_print('')
                 self.log_print(err.read())
                 self.log_print('')
-            self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            if res != 0:
+                self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
                 log.write('')
@@ -563,7 +564,7 @@ def main(args):
     if len(args) == 1:
         run_config_path = args[0]
         system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        print 'Warning: Using system_info_rask.yaml as a default tools configutation file.'
+        sys.stderr.write('Warning: Using system_info_rask.yaml as a default tools configutation file.\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
@@ -572,6 +573,11 @@ def main(args):
         exit(system_config_path + ' does not exist or is a directory.\n')
     if not os.path.isfile(run_config_path):
         exit(run_config_path + ' does not exist or is a directory.\n')
+
+    if not system_config_path.endswith('.yaml'):
+        sys.stderr.write(system_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+    if not run_config_path.endswith('.yaml'):
+        sys.stderr.write(run_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
 
     annotator = Annotator(system_config_path, run_config_path)
 
