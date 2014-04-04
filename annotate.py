@@ -266,7 +266,7 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
-        config = self.system_config['snpeff'].get('config')
+        config = self.system_config['resources']['snpeff'].get('config')
         # if config:
         #     if not isfile(config):
         #         cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
