@@ -2,7 +2,7 @@
 
 from distutils.version import LooseVersion
 import os
-from os.path import join, splitext, basename, realpath, isfile, getsize
+from os.path import join, splitext, basename, realpath, isfile, getsize, dirname
 import subprocess
 import sys
 import shutil
@@ -492,14 +492,25 @@ def remove_quotes(str):
 
 
 def main(args):
-    if len(args) < 2:
-        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n')
+    if len(args) < 1:
+        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n'
+                         '    or python ' + __file__ + ' run_info.yaml')
         exit(1)
 
-    system_config_path = args[0]
-    run_config_path = args[1]
-    assert os.path.isfile(system_config_path), system_config_path + ' does not exist or is a directory.'
-    assert os.path.isfile(run_config_path), run_config_path + ' does not exist or is a directory.'
+    if len(args) == 1:
+        run_config_path = args[0]
+        system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
+        print 'Warning: Using system_info_rask.yaml as a default tools configutation file.'
+    else:
+        system_config_path = args[0]
+        run_config_path = args[1]
+
+    if not os.path.isfile(system_config_path):
+        sys.stderr.write(system_config_path + ' does not exist or is a directory.\n')
+        exit(1)
+    if not os.path.isfile(run_config_path):
+        sys.stderr.write(run_config_path + ' does not exist or is a directory.\n')
+        exit(1)
 
     annotator = Annotator(system_config_path, run_config_path)
 
