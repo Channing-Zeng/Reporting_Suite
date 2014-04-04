@@ -296,7 +296,7 @@ class Annotator:
 
         field_name = splitext(basename(track_path))[0]
 
-        cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'
+        cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
         return self._call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
 
