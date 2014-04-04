@@ -100,14 +100,13 @@ class Annotator:
         self.log_print('')
         self.log_print('Writing into ' + result_dir)
         self.log_print('Logging to ' + self.run_config['log'])
-        self.log_print('')
 
         if not which('java'):
-            sys.stderr.write('WARNING: Please, run "module load java"\n')
+            sys.stderr.write('\nWARNING: Please, run "module load java"\n')
         if not which('perl'):
-            sys.stderr.write('WARNING: Please, run "module load perl"\n')
+            sys.stderr.write('\nWARNING: Please, run "module load perl"\n')
         if not self._get_tool_cmdline('vcfannotate'):
-            sys.stderr.write('Please, run "module load bcbio-nextgen" if you want to annotate with bed tracks.\n')
+            sys.stderr.write('\nPlease, run "module load bcbio-nextgen" if you want to annotate with bed tracks.\n')
 
 
     def log_print(self, msg=''):
@@ -480,7 +479,8 @@ class Annotator:
 
 
     def annotate(self):
-        assert 'resources' in self.system_config
+        if not 'resources' in self.system_config:
+            exit('"resources" section in system config required.')
 
         sample_fpath = self.sample_fpath
 
@@ -500,9 +500,8 @@ class Annotator:
             exit('Please, provide genome build (genome_build).')
         if not 'reference' in self.run_config:
             exit('Please, provide path to the reference file (reference).')
-        if not file_exists(self.run_config['reference']):
-            exit()
-
+        if not file_exists(self.run_config['reference'], 'Reference'):
+            exit(1)
 
         sample_fpath = self.gatk(sample_fpath)
         if 'vcfs' in self.run_config:
