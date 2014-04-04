@@ -2,7 +2,7 @@
 
 from distutils.version import LooseVersion
 import os
-from os.path import join, splitext, basename, realpath, isfile, getsize, dirname
+from os.path import join, splitext, basename, realpath, isfile, getsize, dirname, exists
 import subprocess
 import sys
 import shutil
