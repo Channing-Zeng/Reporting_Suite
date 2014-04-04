@@ -110,7 +110,8 @@ class Annotator:
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
 
-        if ('reuse_intermediate' in self.run_config or 'reuse' in self.run_config) \
+        if 'save_intermediate' in self.run_config \
+                and ('reuse_intermediate' in self.run_config or 'reuse' in self.run_config) \
                 and isfile(output_fpath) and getsize(output_fpath) > 0:
             self.log_print(output_fpath + ' exists, reusing')
             return output_fpath
@@ -344,9 +345,9 @@ class Annotator:
         res = self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False)
 
         if isfile(output_fpath + '.idx'):
-            remove(output_fpath + '.idx')
+            os.remove(output_fpath + '.idx')
         if isfile(input_fpath + '.idx'):
-            remove(input_fpath + '.idx')
+            os.remove(input_fpath + '.idx')
 
         return res
 
