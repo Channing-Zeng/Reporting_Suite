@@ -541,10 +541,10 @@ class Annotator:
                     alts = alt_field.split(',')
                     if len(alts) > 1:
                         for alt in set(alts):
-                            line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:]) + '\n'
+                            line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:8]) + '\n'
                             out.write(line)
                     else:
-                        line = '\t'.join(tokens[:2] + ['.'] + tokens[3:]) + '\n'
+                        line = '\t'.join(tokens[:2] + ['.'] + tokens[3:8]) + '\n'
                         out.write(line)
 
         if self.run_config.get('save_intermediate'):
