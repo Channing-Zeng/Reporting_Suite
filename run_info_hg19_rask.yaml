@@ -10,7 +10,7 @@ split_genotypes: False
 save_intermediate: False
 reuse_intermediate: True
 log: True
-verbose: False
+verbose: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
@@ -18,20 +18,20 @@ snpeff:
   cancer: True
   # config: /usr/local/share/java/snpeff/snpEff.config
 
-gatk:
-  annotations:
-  - Coverage
-  - BaseQualityRankSumTest
-  - FisherStrand
-  - GCContent
-  - HaplotypeScore
-  - HomopolymerRun
-  - MappingQualityRankSumTest
-  - MappingQualityZero
-  - QualByDepth
-  - ReadPosRankSumTest
-  - RMSMappingQuality
-  - DepthPerAlleleBySample
+#gatk:
+#  annotations:
+#  - Coverage
+#  - BaseQualityRankSumTest
+#  - FisherStrand
+#  - GCContent
+#  - HaplotypeScore
+#  - HomopolymerRun
+#  - MappingQualityRankSumTest
+#  - MappingQualityZero
+#  - QualByDepth
+#  - ReadPosRankSumTest
+#  - RMSMappingQuality
+#  - DepthPerAlleleBySample
 
 db_nsfp:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
