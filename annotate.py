@@ -32,16 +32,16 @@ def which(program):
 
 def file_exists(fpath, description=''):
     if not fpath:
-        sys.stderr((description + ': f' if description else 'F') + 'ile name is empty.\n')
+        sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
         return False
     if not exists(fpath):
-        sys.stderr((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
     if not isfile(fpath):
-        sys.stderr((description + ': ' if description else '') + fpath + ' not a file.\n')
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' not a file.\n')
         return False
     if getsize(fpath) <= 0:
-        sys.stderr((description + ': ' if description else '') + fpath + ' is empty.\n')
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
         return False
     return True
 
