@@ -30,14 +30,20 @@ def which(program):
     return None
 
 
-def check_executable(program):
-    if not which(program):
-        exit(program + ' executable required.')
-
-
-def check_existence(file):
-    if not file or not isfile(file) or getsize(file) <= 0:
-        exit(file + ' does not exist, is not a file, or is empty.')
+def file_exists(fpath, description=''):
+    if not fpath:
+        sys.stderr((description + ': f' if description else 'F') + 'ile name is empty.\n')
+        return False
+    if not exists(fpath):
+        sys.stderr((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        return False
+    if not isfile(fpath):
+        sys.stderr((description + ': ' if description else '') + fpath + ' not a file.\n')
+        return False
+    if getsize(fpath) <= 0:
+        sys.stderr((description + ': ' if description else '') + fpath + ' is empty.\n')
+        return False
+    return True
 
 
 class Annotator:
@@ -45,20 +51,23 @@ class Annotator:
         self.system_config = load(open(system_config_path), Loader=Loader)
         self.run_config = load(open(run_config_path), Loader=Loader)
 
-        sample_fpath = self.run_config.get('file', None)
-        if not sample_fpath:
+        if not 'file' in self.run_config:
             exit('Run config does not contain field "file".')
+        sample_fpath = self.run_config['file']
         self.sample_fpath = realpath(sample_fpath)
-        check_existence(self.sample_fpath)
+        if not file_exists(self.sample_fpath, 'Sample file'):
+            exit(1)
 
         result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
+        if not result_dir:
+            exit('Result directory path is empty.')
         if isfile(result_dir):
             exit(result_dir + ' is a file.')
         if not exists(result_dir):
             try:
                 os.mkdir(result_dir)
             except:
-                sys.stderr.write(result_dir + ' does not exist.')
+                exit(result_dir + ' does not exist.')
 
         sample_fname = os.path.basename(self.sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
@@ -88,10 +97,17 @@ class Annotator:
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
-
+        self.log_print('')
         self.log_print('Writing into ' + result_dir)
         self.log_print('Logging to ' + self.run_config['log'])
         self.log_print('')
+
+        if not which('java'):
+            sys.stderr.write('WARNING: Please, run "module load java"\n')
+        if not which('perl'):
+            sys.stderr.write('WARNING: Please, run "module load perl"\n')
+        if not self._get_tool_cmdline('vcfannotate'):
+            sys.stderr.write('Please, run "module load bcbio-nextgen" if you want to annotate with bed tracks.\n')
 
 
     def log_print(self, msg=''):
@@ -100,10 +116,16 @@ class Annotator:
             open(self.run_config['log'], 'a').write(msg + '\n')
 
 
-    def log_error(self, msg=''):
+    def log_exit(self, msg=''):
         if 'log' in self.run_config:
             open(self.run_config['log'], 'a').write(msg + '\n')
         exit(msg)
+
+
+    def log_err(self, msg=''):
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
+        sys.stderr.write(msg + '\n')
 
 
     def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True):
@@ -128,7 +150,7 @@ class Annotator:
                 self.log_print('')
                 self.log_print(err.read())
                 self.log_print('')
-            self.log_error('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
                 log.write('')
@@ -148,23 +170,51 @@ class Annotator:
 
 
     def _get_java_tool_cmdline(self, name):
-        cmdline_pattern = self._get_tool_cmdline('java', name)
+        cmdline_template = self._get_script_cmdline_template('java', name)
         jvm_opts = self.system_config['resources'][name].get('jvm_opts', [])
-        return cmdline_pattern % (' '.join(jvm_opts) + ' -jar')
+        return cmdline_template % (' '.join(jvm_opts) + ' -jar')
 
 
-    def _get_tool_cmdline(self, executable, name):
-        check_executable(executable)
+    def _get_script_cmdline_template(self, executable, script_name):
+        if not which(executable):
+            exit(executable + ' executable required, maybe you need '
+                 'to run "module load ' + executable + '"?')
         if 'resources' not in self.system_config:
-            self.log_error('System config yaml must contain resources section with ' + name + ' path.')
-        if name not in self.system_config['resources']:
-            self.log_error('System config resources section must contain ' + name + ' info (with a path to the tool).')
-        tool_config = self.system_config['resources'][name]
+            self.log_exit('System config yaml must contain resources section with '
+                          + script_name + ' path.')
+        if script_name not in self.system_config['resources']:
+            self.log_exit('System config resources section must contain '
+                          + script_name + ' info (with a path to the tool).')
+        tool_config = self.system_config['resources'][script_name]
         if 'path' not in tool_config:
-            self.log_error(name + ' section in the system config must contain a path to the tool.')
+            self.log_exit(script_name + ' section in the system config must contain a path to the tool.')
         tool_path = tool_config['path']
-        check_existence(tool_path)
+        if not file_exists(tool_path, script_name):
+            exit(1)
         return executable + ' %s ' + tool_path
+
+
+    def _get_tool_cmdline(self, tool_name):
+        tool_path = which(tool_name) or None
+
+        if not 'resources' in self.system_config \
+                or tool_name not in self.system_config['resources']\
+                or 'path' not in self.system_config['resources'][tool_name]:
+            if tool_path:
+                return tool_path
+            else:
+                self.log_err(tool_name + ' executable was not found. '
+                             'You can either specify path in the system config, or load into your '
+                             'PATH environment variable.')
+                return None
+
+        tool_path = self.system_config['resources'][tool_name]['path']
+        if file_exists(tool_path, tool_name):
+            return tool_path
+        else:
+            self.log_err(tool_path + ' for ' + tool_name +
+                         ' does not exist or is not a file.')
+            return None
 
 
     def snpsift_annotate(self, dbname, conf, input_fpath):
@@ -239,7 +289,11 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
-        check_executable('vcfannotate')
+        toolpath = self._get_tool_cmdline('vcfannotate')
+        if not toolpath:
+            self.log_err('WARNING: Skipping annotation with tracks: vcfannotate '
+                         'executable not found, you probably need to run "module load bcbio-nextgen"')
+            return
 
         field_name = splitext(basename(track_path))[0]
 
@@ -326,7 +380,7 @@ class Annotator:
         bam = self.run_config.get('bam')
         if bam:
             if not isfile(bam):
-                self.log_error('Error. Not such file: ' + bam)
+                self.log_exit('Error. Not such file: ' + bam)
             cmdline += ' -I ' + bam
 
         annotations = self.run_config['gatk'].get('annotations', [])
@@ -364,7 +418,7 @@ class Annotator:
         self.log_print('*' * 70)
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
-        vcfoneperline_cmline = self._get_tool_cmdline('perl', 'vcfoneperline') % ''
+        vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
 
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
@@ -392,7 +446,11 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
-        check_executable('vcf-subset')
+        cmdline = self._get_tool_cmdline('vcf-subset')
+        if not cmdline:
+            self.log_err('WARNING: vcf-subset executable not found in PATH system config, '
+                         'skipping subset process for ensemble VCF.')
+            return
 
         sample_fname = os.path.basename(sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
@@ -438,9 +496,13 @@ class Annotator:
         if self.run_config.get('ensemble'):
             sample_fpath = self.process_ensemble(sample_fpath)
 
-        assert 'genome_build' in self.run_config, 'Please, provide genome build (genome_build).'
-        assert 'reference' in self.run_config, 'Please, provide path to the reference file (reference).'
-        check_existence(self.run_config['reference'])
+        if not 'genome_build' in self.run_config:
+            exit('Please, provide genome build (genome_build).')
+        if not 'reference' in self.run_config:
+            exit('Please, provide path to the reference file (reference).')
+        if not file_exists(self.run_config['reference']):
+            exit()
+
 
         sample_fpath = self.gatk(sample_fpath)
         if 'vcfs' in self.run_config:
@@ -514,14 +576,6 @@ def main(args):
 
     annotator = Annotator(system_config_path, run_config_path)
 
-    print('Note: please, load modules before start:')
-    print('   source /etc/profile.d/modules.sh')
-    if not which('java'):
-        print('   module load java')
-    if not which('perl'):
-        print('   module load perl')
-    if not which('vcfannotate'):
-        print('Use "module load bcbio-nextgen" if you want to annotate with bed tracks.')
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
