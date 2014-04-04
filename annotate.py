@@ -266,14 +266,6 @@ class Annotator:
         self.log_print('')
         self.log_print('*' * 70)
 
-        config = self.system_config['resources']['snpeff'].get('config')
-        # if config:
-        #     if not isfile(config):
-        #         cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
-        #            '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
-        cmdline = ('{executable} eff -noStats -noLog -1 '
-                   '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
-
         executable = self._get_java_tool_cmdline('snpeff')
         ref_name = self.run_config['genome_build']
         db_path = self.run_config['snpeff'].get('path')
