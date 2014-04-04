@@ -16,7 +16,6 @@ snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
   clinical_reporting: True  # canonical
   cancer: True
-  # config: /usr/local/share/java/snpeff/snpEff.config
 
 #gatk:
 #  annotations:

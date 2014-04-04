@@ -284,7 +284,7 @@ class Annotator:
         db_path = self.run_config['snpeff'].get('path')
         assert db_path, 'Please, provide a path to db nsfp file in run_config.'
 
-        cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
+        cmdline = ('{executable} eff -dataDir {db_path} -noStats -noLog -1 '
                    '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
 
         if self.run_config['snpeff'].get('clinical_reporting') or \
