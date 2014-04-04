@@ -146,17 +146,15 @@ class Annotator:
         to_remove.append(err_fpath)
 
         if self.run_config.get('verbose', True):
-            p = subprocess.Popen(
+            res = subprocess.call(
                 cmdline.split(),
                 stdout=open(output_fpath, 'w') if to_stdout else subprocess.PIPE,
                 stderr=subprocess.PIPE)
-            for line in p.stderr:
-                sys.stdout.write(line)
-            if p.returncode != 0:
+            if res != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                self.log_exit('Command returned status ' + str(p.returncode) + ('. Log in ' + self.run_config['log']))
+                self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
         else:
             res = subprocess.call(
                 cmdline.split(),
