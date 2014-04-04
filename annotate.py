@@ -109,7 +109,8 @@ class Annotator:
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
 
-        if self.run_config.get('reuse') and isfile(output_fpath) and getsize(output_fpath) > 0:
+        if ('reuse_intermediate' in self.run_config or 'reuse' in self.run_config) \
+                and isfile(output_fpath) and getsize(output_fpath) > 0:
             self.log_print(output_fpath + ' exists, reusing')
             return output_fpath
 
@@ -197,6 +198,7 @@ class Annotator:
 
         return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
 
+
     def snpeff(self, input_fpath):
         if 'snpeff' not in self.run_config:
             return input_fpath
@@ -220,10 +222,12 @@ class Annotator:
         cmdline = ('{executable} eff -dataDir {db_path} -noStats -cancer -noLog -1 '
                    '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
 
-        if self.run_config['snpeff'].get('clinical_reporting') or self.run_config['snpeff'].get('canonical'):
+        if self.run_config['snpeff'].get('clinical_reporting') or \
+                self.run_config['snpeff'].get('canonical'):
             cmdline += ' -canon -hgvs '
+
         if self.run_config['snpeff'].get('cancer'):
-            cmdline += ' -cancer'
+            cmdline += ' -cancer '
 
         return self._call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
 
@@ -266,6 +270,7 @@ class Annotator:
             version = version[1:]
         return version
 
+
     def _gatk_major_version(self):
         """Retrieve the GATK major version, handling multiple GATK distributions.
 
@@ -287,6 +292,7 @@ class Annotator:
         if version.startswith("v"):
             version = version[1:]
         return version
+
 
     def _gatk_type(self):
         """Retrieve type of GATK jar, allowing support for older GATK lite.
@@ -439,8 +445,6 @@ class Annotator:
                 sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
         sample_fpath = self.snpsift_db_nsfp(sample_fpath)
         sample_fpath = self.snpeff(sample_fpath)
-        self.extract_fields(sample_fpath)
-
         if 'tracks' in self.run_config:
             for track in self.run_config['tracks']:
                 sample_fpath = self.tracks(track, sample_fpath)
@@ -489,7 +493,7 @@ def remove_quotes(str):
 
 def main(args):
     if len(args) < 2:
-        sys.stderr.write('Usage: python ' + __file__ + ' system_info_local.yaml run_info.yaml\n')
+        sys.stderr.write('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n')
         exit(1)
 
     system_config_path = args[0]
@@ -501,9 +505,12 @@ def main(args):
 
     print('Note: please, load modules before start:')
     print('   source /etc/profile.d/modules.sh')
-    print('   module load java')
-    print('   module load perl')
-    print('Use "module load bcbio-nextgen" if you want to annotate with bed tracks.')
+    if not which('java'):
+        print('   module load java')
+    if not which('perl'):
+        print('   module load perl')
+    if not which('vcfannotate'):
+        print('Use "module load bcbio-nextgen" if you want to annotate with bed tracks.')
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
