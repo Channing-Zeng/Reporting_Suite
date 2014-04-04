@@ -581,7 +581,10 @@ def main(args):
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
     # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
 
-    annotator.annotate()
+    try:
+        annotator.annotate()
+    except KeyboardInterrupt:
+        exit(1)
 
 
 if __name__ == '__main__':
