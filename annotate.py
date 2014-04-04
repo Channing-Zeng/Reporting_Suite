@@ -151,7 +151,7 @@ class Annotator:
                 stdout=open(output_fpath, 'w') if to_stdout else subprocess.PIPE,
                 stderr=subprocess.PIPE)
             for line in p.stderr:
-                print line
+                sys.stdout.write(line)
             if p.returncode != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):

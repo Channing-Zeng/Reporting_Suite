@@ -17,12 +17,12 @@ snpeff:
   clinical_reporting: True  # canonical
   cancer: True
 
-gatk:
-  annotations:
+#gatk:
+#  annotations:
 #  - Coverage
 #  - BaseQualityRankSumTest
 #  - FisherStrand
-  - GCContent
+#  - GCContent
 #  - HaplotypeScore
 #  - HomopolymerRun
 #  - MappingQualityRankSumTest
