@@ -379,7 +379,8 @@ class Annotator:
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               shell=True).stdout as stdout:
-            out = stdout.read().strip()
+            out = stdout.read().split('\n')[-1].strip()
+            print 'out = stdout.read().strip() =', out
             # versions earlier than 2.4 do not have explicit version command,
             # parse from error output from GATK
             if out.find("ERROR") >= 0:
@@ -457,12 +458,12 @@ class Annotator:
         for ann in annotations:
             if ann == 'DepthOfCoverage' and self._gatk_type() == 'restricted':
                 self.log_print('Notice: in the restricted Gatk version, DepthOfCoverage is renamed to Coverage. '
-                               'Using the name Coverage.')
+                               'Using the name Coverage.\n')
                 ann = 'Coverage'
             if ann == 'Coverage' and self._gatk_type() == 'lite':
                 self.log_print('Notice: in the lite Gatk version, the Coverage annotation goes by '
                                'name of DepthOfCoverage. '
-                               'In the system config, the lite version of Gatk is specified; using DepthOfCoverage.')
+                               'In the system config, the lite version of Gatk is specified; using DepthOfCoverage.\n')
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
