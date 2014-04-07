@@ -194,7 +194,7 @@ class Annotator:
 
         self.log_print(cmdline)
 
-        err_fpath = self.run_config['log'] + '_err'
+        err_fpath = os.path.join(os.path.dirname(self.sample_fpath)) + 'annotate_py_err.tmp'
         to_remove.append(err_fpath)
 
         if self.run_config.get('verbose', True):
@@ -206,7 +206,8 @@ class Annotator:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+                self.log_exit('Command returned status ' + str(res) +
+                              ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
         else:
             res = subprocess.call(
                 cmdline.split(),
@@ -220,7 +221,8 @@ class Annotator:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                self.log_exit('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+                self.log_exit('Command returned status ' + str(res) +
+                              ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
             else:
                 if 'log' in self.run_config:
                     with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
@@ -498,7 +500,8 @@ class Annotator:
                               stdout=open(tsv_fpath, 'w'),
                               shell=True)
         if res != 0:
-            self.log_print('Command returned status ' + str(res) + ('. Log in ' + self.run_config['log']))
+            self.log_print('Command returned status ' + str(res) +
+                           ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
             exit(1)
             # return input_fpath
         else:
