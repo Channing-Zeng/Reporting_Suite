@@ -380,9 +380,7 @@ class Annotator:
                               stderr=subprocess.STDOUT,
                               shell=True).stdout as stdout:
             out = stdout.read().strip()
-            print 'out =', out
             last_line = out.split('\n')[-1].strip()
-            print 'out = stdout.read().strip() =', last_line
             # versions earlier than 2.4 do not have explicit version command,
             # parse from error output from GATK
             if out.find("ERROR") >= 0:
