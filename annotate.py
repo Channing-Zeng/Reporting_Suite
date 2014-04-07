@@ -379,17 +379,19 @@ class Annotator:
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               shell=True).stdout as stdout:
-            out = stdout.read().split('\n')[-1].strip()
-            print 'out = stdout.read().strip() =', out
+            out = stdout.read().strip()
+            print 'out =', out
+            last_line = out.split('\n')[-1].strip()
+            print 'out = stdout.read().strip() =', last_line
             # versions earlier than 2.4 do not have explicit version command,
             # parse from error output from GATK
             if out.find("ERROR") >= 0:
                 flag = "The Genome Analysis Toolkit (GATK)"
-                for line in out.split("\n"):
+                for line in last_line.split("\n"):
                     if line.startswith(flag):
                         version = line.split(flag)[-1].split(",")[0].strip()
             else:
-                version = out
+                version = last_line
         if not version:
             self.log_print('Warning: could not determine Gatk version, using 1.0')
             return '1.0'
