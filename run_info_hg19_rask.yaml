@@ -1,20 +1,21 @@
 file: 'test.vcf'
-output_dir: 'test'
+output_dir: '.'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 #bam: /ngs/oncology/Analysis/external/EXT_007_WGS_DLBCL/align/SRR292240/1_010314_WGS_DLBCLAligned.out-sort.bam
-ensemble: False
-rna: False
-split_genotypes: False
-save_intermediate: False
-reuse_intermediate: True
-log: True
+
 verbose: True
+#log: True  # creates <file>.log in <output_dir>
+#save_intermediate: True
+#reuse_intermediate: True
+
+#ensemble: True
+#split_samples: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
-  clinical_reporting: True  # canonical
+  clinical_reporting: True  # canonical transcripts + output in HGVS notation
   cancer: True
 
 gatk:
@@ -83,28 +84,28 @@ vcfs:
   oncomine:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
 
-# reqires vcfannotate (from bcbio-nextgen)
-#tracks:
-# RNA Editing (RNA-Seq data)
-# - /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
-##CPG Island
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-## Copy Number Variants
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-## Segmental Duplications
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-## Repeats
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+tracks:  # requires vcfannotate (from bcbio-nextgen)
+  #CPG Island
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+  # Copy Number Variants
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+  # Segmental Duplications
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+  # Repeats
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+#  #  RNA Editing (RNA-Seq data)
+#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-tsv_fields: [CHROM, POS, ID, CNT, GMAF, REF, ALT, QUAL, FILTER, TYPE,
-            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
-            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
-            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
-            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
-            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
-            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
-            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
-            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
-            OM, COMMON, CLNSIG, dbSNPBuildID, DB, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
+# built automatically from the list of annotations above
+#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO TYPE,
+#            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
+#            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
+#            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
+#            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
+#            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
+#            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
+#            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
+#            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
+#            CNT, GMAF, OM, COMMON, CLNSIG, dbSNPBuildID, DB, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
 
 

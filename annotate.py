@@ -6,11 +6,11 @@ from os.path import join, splitext, basename, realpath, isfile, getsize, dirname
 import subprocess
 import sys
 import shutil
-from yaml import load, dump
+from yaml import load
 try:
-    from yaml import CLoader as Loader, CDumper as Dumper
+    from yaml import CLoader as Loader
 except ImportError:
-    from yaml import Loader, Dumper
+    from yaml import Loader
 
 
 def which(program):
@@ -47,17 +47,7 @@ def file_exists(fpath, description=''):
 
 
 class Annotator:
-    def __init__(self, system_config_path, run_config_path):
-        self.system_config = load(open(system_config_path), Loader=Loader)
-        self.run_config = load(open(run_config_path), Loader=Loader)
-
-        if not 'file' in self.run_config:
-            exit('Run config does not contain field "file".')
-        sample_fpath = self.run_config['file']
-        self.sample_fpath = realpath(sample_fpath)
-        if not file_exists(self.sample_fpath, 'Sample file'):
-            exit(1)
-
+    def _set_up_dir(self):
         result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
         if not result_dir:
             exit('Result directory path is empty.')
@@ -68,17 +58,34 @@ class Annotator:
                 os.mkdir(result_dir)
             except:
                 exit(result_dir + ' does not exist.')
+        self.run_config['output_dir'] = result_dir
+        return result_dir
+
+
+    def __init__(self, system_config_path, run_config_path):
+        self.system_config = load(open(system_config_path), Loader=Loader)
+        self.run_config = load(open(run_config_path), Loader=Loader)
+        self.all_annotations = []
+
+        if not 'file' in self.run_config:
+            exit('Run config does not contain field "file".')
+        sample_fpath = self.run_config['file']
+        self.sample_fpath = realpath(sample_fpath)
+        if not file_exists(self.sample_fpath, 'Sample file'):
+            exit(1)
 
         sample_fname = os.path.basename(self.sample_fpath)
         sample_basename, ext = os.path.splitext(sample_fname)
 
-        if result_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
+        output_dir = self._set_up_dir()
+
+        if output_dir != os.path.realpath(os.path.dirname(self.sample_fpath)):
             if self.run_config.get('save_intermediate'):
                 new_sample_fname = sample_fname
             else:
                 new_sample_fname = sample_basename + '.anno' + ext
 
-            new_sample_fpath = os.path.join(result_dir, new_sample_fname)
+            new_sample_fpath = os.path.join(output_dir, new_sample_fname)
 
             if os.path.exists(new_sample_fpath):
                 os.remove(new_sample_fpath)
@@ -86,7 +93,7 @@ class Annotator:
             self.sample_fpath = new_sample_fpath
         else:
             if not self.run_config.get('save_intermediate'):
-                new_sample_fpath = join(result_dir, sample_basename + '.anno' + ext)
+                new_sample_fpath = join(output_dir, sample_basename + '.anno' + ext)
                 shutil.copyfile(self.sample_fpath, new_sample_fpath)
                 self.sample_fpath = new_sample_fpath
 
@@ -98,7 +105,7 @@ class Annotator:
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
         self.log_print('')
-        self.log_print('Writing into ' + result_dir)
+        self.log_print('Writing into ' + output_dir)
         if 'log' in self.run_config:
             self.log_print('Logging to ' + self.run_config['log'])
 
@@ -109,6 +116,51 @@ class Annotator:
         if not self._get_tool_cmdline('vcfannotate'):
             sys.stderr.write('\nWARNING: Please, run "module load bcbio-nextgen" '
                              'if you want to annotate with bed tracks.\n')
+
+
+    def annotate(self):
+        if not 'resources' in self.system_config:
+            exit('"resources" section in system config required.')
+
+        sample_fpath = self.sample_fpath
+
+        if self.run_config.get('split_genotypes'):
+            sample_basepath, ext = os.path.splitext(sample_fpath)
+            result_fpath = sample_basepath + '.split' + ext
+            sample_fpath = self.split_genotypes(sample_fpath, result_fpath)
+            self.log_print('Saved to ' + sample_fpath)
+
+        if self.run_config.get('split_samples'):
+            #TODO
+            pass
+
+        if self.run_config.get('rna'):
+            sample_fpath = self.process_rna(sample_fpath)
+
+        if self.run_config.get('ensemble'):
+            sample_fpath = self.process_ensemble(sample_fpath)
+
+        if not 'genome_build' in self.run_config:
+            exit('Please, provide genome build (genome_build).')
+        if not 'reference' in self.run_config:
+            exit('Please, provide path to the reference file (reference).')
+        if not file_exists(self.run_config['reference'], 'Reference'):
+            exit(1)
+
+        sample_fpath = self.gatk(sample_fpath)
+        if 'vcfs' in self.run_config:
+            for dbname, conf in self.run_config['vcfs'].items():
+                sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
+        sample_fpath = self.snpsift_db_nsfp(sample_fpath)
+        sample_fpath = self.snpeff(sample_fpath)
+        if self.run_config.get('tracks'):
+            for track in self.run_config['tracks']:
+                sample_fpath = self.tracks(track, sample_fpath)
+        self.extract_fields(sample_fpath)
+
+        self.log_print('\nFinal VCF in ' + sample_fpath)
+        if 'log' in self.run_config:
+            print('Log in ' + self.run_config['log'])
 
 
     def log_print(self, msg=''):
@@ -129,7 +181,7 @@ class Annotator:
         sys.stderr.write(msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, suffix, to_stdout=True, to_remove=None):
+    def _call_and_rename(self, cmdline, input_fpath, suffix, result_to_stdout=True, to_remove=None):
         to_remove = to_remove or []
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
@@ -148,7 +200,7 @@ class Annotator:
         if self.run_config.get('verbose', True):
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if to_stdout else subprocess.PIPE,
+                stdout=open(output_fpath, 'w') if result_to_stdout else subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if res != 0:
                 for fpath in to_remove:
@@ -158,7 +210,7 @@ class Annotator:
         else:
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if to_stdout else open(self.run_config['log'], 'a'),
+                stdout=open(output_fpath, 'w') if result_to_stdout else open(self.run_config['log'], 'a'),
                 stderr=open(err_fpath, 'w'))
             if res != 0:
                 with open(err_fpath) as err:
@@ -244,11 +296,12 @@ class Annotator:
         executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
         annotations = conf.get('annotations', [])
+        self.all_annotations.extend(annotations)
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
 
-        return self._call_and_rename(cmdline, input_fpath, dbname, to_stdout=True)
+        return self._call_and_rename(cmdline, input_fpath, dbname, result_to_stdout=True)
 
 
     def snpsift_db_nsfp(self, input_fpath):
@@ -265,11 +318,12 @@ class Annotator:
             exit('Please, provide a path to db nsfp file in run_config.')
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
+        self.all_annotations.extend(annotations)
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
 
-        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', to_stdout=True)
+        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', result_to_stdout=True)
 
 
     def snpeff(self, input_fpath):
@@ -294,7 +348,7 @@ class Annotator:
         if self.run_config['snpeff'].get('cancer'):
             cmdline += ' -cancer '
 
-        return self._call_and_rename(cmdline, input_fpath, 'snpEff', to_stdout=True)
+        return self._call_and_rename(cmdline, input_fpath, 'snpEff', result_to_stdout=True)
 
 
     def tracks(self, track_path, input_fpath):
@@ -308,10 +362,11 @@ class Annotator:
             return
 
         field_name = splitext(basename(track_path))[0]
+        self.all_annotations.append(field_name)
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-        return self._call_and_rename(cmdline, input_fpath, field_name, to_stdout=True)
+        return self._call_and_rename(cmdline, input_fpath, field_name, result_to_stdout=True)
 
 
     def _get_gatk_version(self):
@@ -396,6 +451,7 @@ class Annotator:
             cmdline += ' -I ' + bam
 
         annotations = self.run_config['gatk'].get('annotations', [])
+        self.all_annotations.extend(annotations)
         for ann in annotations:
             if ann == 'DepthOfCoverage' and self._gatk_type() == 'restricted':
                 self.log_print('Notice: in the restricted Gatk version, DepthOfCoverage is renamed to Coverage. '
@@ -408,15 +464,17 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        res = self._call_and_rename(cmdline, input_fpath, 'gatk', to_stdout=False,
+        res = self._call_and_rename(cmdline, input_fpath, 'gatk', result_to_stdout=False,
                                     to_remove=[output_fpath + '.idx', input_fpath + '.idx'])
         return res
 
 
     def extract_fields(self, input_fpath):
-        if 'tsv_fields' not in self.run_config:
-            return
-        fields = self.run_config.get('tsv_fields', [])
+        fields = self.all_annotations + ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+
+        # if 'tsv_fields' not in self.run_config:
+        #     return
+        # fields = self.run_config.get('tsv_fields', [])
         if not fields:
             return
         anno_line = ' '.join(fields)
@@ -462,7 +520,7 @@ class Annotator:
         name = sample_basename.replace('-ensemble', '')
         cmdline = 'vcf-subset -c {name} -e {sample_fpath}'.format(**locals())
 
-        return self._call_and_rename(cmdline, sample_fpath, '.ensm', to_stdout=True)
+        return self._call_and_rename(cmdline, sample_fpath, '.ensm', result_to_stdout=True)
 
 
     def process_ensemble(self, sample_fpath):
@@ -482,47 +540,6 @@ class Annotator:
             os.remove(sample_fpath)
             os.rename(pass_sample_fpath, sample_fpath)
             return sample_fpath
-
-
-    def annotate(self):
-        if not 'resources' in self.system_config:
-            exit('"resources" section in system config required.')
-
-        sample_fpath = self.sample_fpath
-
-        if self.run_config.get('split_genotypes'):
-            sample_basepath, ext = os.path.splitext(sample_fpath)
-            result_fpath = sample_basepath + '.split' + ext
-            sample_fpath = self.split_genotypes(sample_fpath, result_fpath)
-            self.log_print('Saved to ' + sample_fpath)
-
-        if self.run_config.get('rna'):
-            sample_fpath = self.process_rna(sample_fpath)
-
-        if self.run_config.get('ensemble'):
-            sample_fpath = self.process_ensemble(sample_fpath)
-
-        if not 'genome_build' in self.run_config:
-            exit('Please, provide genome build (genome_build).')
-        if not 'reference' in self.run_config:
-            exit('Please, provide path to the reference file (reference).')
-        if not file_exists(self.run_config['reference'], 'Reference'):
-            exit(1)
-
-        sample_fpath = self.gatk(sample_fpath)
-        if 'vcfs' in self.run_config:
-            for dbname, conf in self.run_config['vcfs'].items():
-                sample_fpath = self.snpsift_annotate(dbname, conf, sample_fpath)
-        sample_fpath = self.snpsift_db_nsfp(sample_fpath)
-        sample_fpath = self.snpeff(sample_fpath)
-        if self.run_config.get('tracks'):
-            for track in self.run_config['tracks']:
-                sample_fpath = self.tracks(track, sample_fpath)
-        self.extract_fields(sample_fpath)
-
-        self.log_print('\nFinal VCF in ' + sample_fpath)
-        if 'log' in self.run_config:
-            print('Log in ' + self.run_config['log'])
 
 
     def split_genotypes(self, sample_fpath, result_fpath):
