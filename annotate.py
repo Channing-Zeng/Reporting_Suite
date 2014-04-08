@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 
+import sys
+if sys.version_info[:2] < (2, 8):
+    sys.stderr.write('Python version 2.5 and higher is supported (you running ' +
+                     '.'.join(map(str, sys.version_info[:3])))
+    exit(1)
+
 from distutils.version import LooseVersion
 import os
 from os.path import join, splitext, basename, realpath, isfile, getsize, dirname, exists
 import subprocess
-import sys
 import shutil
 from yaml import load
 try:
