@@ -146,7 +146,6 @@ class Annotator:
 
         remove_info_field('EFF', sample_fpath)
 
-
         if self.run_config.get('split_genotypes'):
             sample_basepath, ext = os.path.splitext(sample_fpath)
             result_fpath = sample_basepath + '.split' + ext
@@ -517,8 +516,8 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        first_line = open(input_fpath).readline().strip()
-        fields = (first_line[1:].split() +
+        basic_fields = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
+        fields = (basic_fields +
                   filter(None, self.all_fields) +
                   self.run_config.get('additional_tsv_fields', []))
 
