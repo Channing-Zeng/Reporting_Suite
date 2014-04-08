@@ -455,15 +455,19 @@ class Annotator:
         else:
             return "lite"
 
-    gatk_annos = {
+    GATK_ANNOS_DICT = {
+        'Coverage': '',
+        'BaseQualityRankSumTest': '',
         'FisherStrand': 'FS',
         'GCContent': 'GC',
-        'HaplotypeScore': 'HS',
+        'HaplotypeScore': 'HaplotypeScore',
         'HomopolymerRun': 'HRun',
-        'FisherStrand': 'FS',
-        'FisherStrand': 'FS',
-        'FisherStrand': 'FS',
-        'FisherStrand': 'FS',
+        'MappingQualityRankSumTest': 'MQ',
+        'MappingQualityZero': 'MQ0',
+        'QualByDepth': '',
+        'ReadPosRankSumTest': '',
+        'RMSMappingQuality': '',
+        'DepthPerAlleleBySample': '',
     }
 
     def gatk(self, input_fpath):
@@ -508,8 +512,13 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'EFF']\
-                 + self.all_annotations
+        snpeff_fileds = [
+            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON", "EFF[*].AA",
+            "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
+            "EFF[*].RANK"
+        ]
+        fields = (['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] +
+                  snpeff_fileds + self.all_annotations)
 
         if 'tsv_fields' in self.run_config:
             fields = [f for f in self.run_config['tsv_fields'] if f in fields]
