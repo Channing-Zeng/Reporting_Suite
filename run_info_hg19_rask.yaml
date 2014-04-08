@@ -102,15 +102,5 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 # 3. Explicitly defined annotations in this yaml file
 # 4. SnpEff annotaions (EFF...)
 # 5. Track names
-#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, FILTER,
-#            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
-#            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
-#            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
-#            dbNSFP_LRT_score, dbNSFP_LRT_pred, dbNSFP_MutationTaster_score, dbNSFP_MutationTaster_pred,
-#            dbNSFP_MutationAssessor_score, dbNSFP_MutationAssessor_pred, dbNSFP_FATHMM_score,
-#            dbNSFP_Ensembl_geneid, dbNSFP_Ensembl_transcriptid, dbNSFP_Uniprot_acc, dbNSFP_1000Gp1_AC,
-#            dbNSFP_1000Gp1_AF, dbNSFP_ESP6500_AA_AF, dbNSFP_ESP6500_EA_AF,
-#            KGPROD, PM, PH3, AB, AC, AF, DP, FS, GC, HRun, HaplotypeScore, G5, VC, SAO,
-#            CNT, GMAF, OM, COMMON, CLNSIG, dbSNPBuildID, DB, AA, CDS, MQ0, QA, QD, ReadPosRankSum]
-
-
+# 6. The following fields:
+additional_tsv_fields: []

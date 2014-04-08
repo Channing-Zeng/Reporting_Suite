@@ -50,17 +50,6 @@ def file_exists(fpath, description=''):
     return True
 
 
-def read_info_fields(input_fpath):
-    output_fpath = input_fpath + '_tmp'
-    with open(input_fpath) as inp, open(output_fpath, 'w') as out:
-        for l in inp:
-            if l.strip() and l.strip()[0] != '#':
-                fields = l.split('\t')
-                info_line = fields[7]
-                info_pairs = [attr.split('=') for attr in info_line.split(';')]
-
-
-
 def remove_info_field(field_to_del, input_fpath):
     output_fpath = input_fpath + '_tmp'
     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
@@ -155,7 +144,8 @@ class Annotator:
 
         sample_fpath = self.sample_fpath
 
-        self.all_fields.extend(read_info_fields(sample_fpath))
+        remove_info_field('EFF', sample_fpath)
+
 
         if self.run_config.get('split_genotypes'):
             sample_basepath, ext = os.path.splitext(sample_fpath)
@@ -370,11 +360,9 @@ class Annotator:
         self.log_print('*' * 70)
 
         self.all_fields.extend([
-            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON", "EFF[*].AA",
-            "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
-            "EFF[*].RANK"])
-
-        remove_info_field('EFF', input_fpath)
+            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
+            "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE",
+            "EFF[*].CODING", "EFF[*].TRID", "EFF[*].RANK"])
 
         executable = self._get_java_tool_cmdline('snpeff')
         ref_name = self.run_config['genome_build']
@@ -530,10 +518,9 @@ class Annotator:
 
     def extract_fields(self, input_fpath):
         first_line = open(input_fpath).readline().strip()
-        fields = (first_line[1:].split() + filter(None, self.all_fields))
-
-        if 'tsv_fields' in self.run_config:
-            fields = [f for f in self.run_config['tsv_fields'] if f in fields]
+        fields = (first_line[1:].split() +
+                  filter(None, self.all_fields) +
+                  self.run_config.get('additional_tsv_fields', []))
 
         if not fields:
             return
