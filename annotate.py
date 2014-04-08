@@ -217,6 +217,8 @@ class Annotator:
 
         err_fpath = os.path.join(os.path.dirname(self.sample_fpath)) + 'annotate_py_err.tmp'
         to_remove.append(err_fpath)
+        if err_fpath and isfile(err_fpath):
+            os.remove(err_fpath)
 
         if self.run_config.get('verbose', True):
             res = subprocess.call(
@@ -232,8 +234,8 @@ class Annotator:
         else:
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if result_to_stdout else open(self.run_config['log'], 'a'),
-                stderr=open(err_fpath, 'w'))
+                stdout=open(output_fpath, 'w') if result_to_stdout else open(err_fpath, 'a'),
+                stderr=open(err_fpath, 'a'))
             if res != 0:
                 with open(err_fpath) as err:
                     self.log_print('')
@@ -414,7 +416,7 @@ class Annotator:
             else:
                 version = last_line
         if not version:
-            self.log_print('Warning: could not determine Gatk version, using 1.0')
+            self.log_print('WARNING: could not determine Gatk version, using 1.0')
             return '1.0'
         if version.startswith("v"):
             version = version[1:]
@@ -453,6 +455,17 @@ class Annotator:
             return "restricted"
         else:
             return "lite"
+
+    gatk_annos = {
+        'FisherStrand': 'FS',
+        'GCContent': 'GC',
+        'HaplotypeScore': 'HS',
+        'HomopolymerRun': 'HRun',
+        'FisherStrand': 'FS',
+        'FisherStrand': 'FS',
+        'FisherStrand': 'FS',
+        'FisherStrand': 'FS',
+    }
 
     def gatk(self, input_fpath):
         if 'gatk' not in self.run_config:
@@ -614,7 +627,7 @@ def main(args):
     if len(args) == 1:
         run_config_path = args[0]
         system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        sys.stderr.write('Warning: Using system_info_rask.yaml as a default tools configutation file.\n')
+        sys.stderr.write('Notice: Using system_info_rask.yaml as a default tools configutation file.\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
