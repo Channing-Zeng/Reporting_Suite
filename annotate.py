@@ -492,8 +492,7 @@ class Annotator:
             'MappingQualityRankSumTest': 'MQRankSum',
             'MappingQualityZero': 'MQ0',
             'QualByDepth': 'QD',
-            'ReadPosRankSumTest': 'ReadPosRankSum',
-            'DepthPerAlleleBySample': 'DepthPerAlleleBySample',
+            'ReadPosRankSumTest': 'ReadPosRankSum'
         }
 
         annotations = self.run_config['gatk'].get('annotations', [])
@@ -517,9 +516,9 @@ class Annotator:
 
     def extract_fields(self, input_fpath):
         basic_fields = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
-        fields = (basic_fields[:9] + ['"' + f + '"' for f in basic_fields[9:]] +
-                  filter(None, self.all_fields) +
-                  self.run_config.get('additional_tsv_fields', []))
+        fields = set(basic_fields[:9] +
+                     filter(None, self.all_fields) +
+                     self.run_config.get('additional_tsv_fields', []))
 
         if not fields:
             return
