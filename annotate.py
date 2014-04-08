@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import sys
-if sys.version_info[:2] < (2, 8):
+if sys.version_info[:2] < (2, 5):
     sys.stderr.write('Python version 2.5 and higher is supported (you running ' +
-                     '.'.join(map(str, sys.version_info[:3])))
+                     '.'.join(map(str, sys.version_info[:3])) + '\n')
     exit(1)
 
 from distutils.version import LooseVersion
@@ -480,11 +480,12 @@ class Annotator:
     def extract_fields(self, input_fpath):
         fields = self.all_annotations + ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
 
-        # if 'tsv_fields' not in self.run_config:
-        #     return
-        # fields = self.run_config.get('tsv_fields', [])
+        if 'tsv_fields' in self.run_config:
+            fields = [f for f in self.run_config['tsv_fields'] if f in fields]
+
         if not fields:
             return
+
         anno_line = ' '.join(fields)
 
         self.log_print('')
@@ -501,10 +502,7 @@ class Annotator:
             os.remove(tsv_fpath)
 
         self.log_print(cmdline)
-        res = subprocess.call(cmdline,
-                              stdin=open(input_fpath),
-                              stdout=open(tsv_fpath, 'w'),
-                              shell=True)
+        res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
         if res != 0:
             self.log_print('Command returned status ' + str(res) +
                            ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
