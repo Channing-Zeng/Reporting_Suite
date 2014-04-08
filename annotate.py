@@ -4,8 +4,6 @@ import sys
 if sys.version_info[:2] < (2, 5):
     exit('Python version 2.5 and higher is supported (you running ' +
          '.'.join(map(str, sys.version_info[:3])) + ')\n')
-else:
-    sys.stderr.write('Alright')
 
 from distutils.version import LooseVersion
 import os
@@ -498,7 +496,8 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        fields = self.all_annotations + ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+        fields = ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO', 'EFF']\
+                 + self.all_annotations
 
         if 'tsv_fields' in self.run_config:
             fields = [f for f in self.run_config['tsv_fields'] if f in fields]

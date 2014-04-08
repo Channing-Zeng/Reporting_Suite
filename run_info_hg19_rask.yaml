@@ -96,8 +96,12 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-# built automatically from the list of annotations above
-#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO TYPE,
+# By default, built from the following:
+# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, SAMPLE...
+# 2. Explicitly defined annotations above
+# 3. SnpEff annotaions (EFF...)
+# 4. Tracks
+#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, FILTER,
 #            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
 #            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
 #            "EFF[*].RANK", dbNSFP_SIFT_score, dbNSFP_Polyphen2_HVAR_score, dbNSFP_Polyphen2_HVAR_pred,
