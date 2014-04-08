@@ -2,9 +2,10 @@
 
 import sys
 if sys.version_info[:2] < (2, 5):
-    sys.stderr.write('Python version 2.5 and higher is supported (you running ' +
-                     '.'.join(map(str, sys.version_info[:3])) + '\n')
-    exit(1)
+    exit('Python version 2.5 and higher is supported (you running ' +
+         '.'.join(map(str, sys.version_info[:3])) + ')\n')
+else:
+    sys.stderr.write('Alright')
 
 from distutils.version import LooseVersion
 import os
