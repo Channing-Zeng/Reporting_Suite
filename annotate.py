@@ -61,7 +61,7 @@ def remove_info_field(field_to_del, input_fpath):
                 info_pairs = [(field, val) for field, val in info_pairs if field != field_to_del]
                 info_line = ';'.join(k + '=' + v for k, v in info_pairs)
                 fields = fields[:7] + [info_line] + fields[8:]
-                l = '\t'.join(fields) + '\n'
+                l = '\t'.join(fields)
             out.write(l)
     os.rename(output_fpath, input_fpath)
 
