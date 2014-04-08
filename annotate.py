@@ -325,7 +325,7 @@ class Annotator:
             exit('Please, provide a path to db nsfp file in run_config.')
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
-        self.all_annotations.extend(annotations)
+        self.all_annotations.extend(['dbNSFP_' + ann for ann in annotations])
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
