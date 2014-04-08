@@ -50,19 +50,18 @@ def file_exists(fpath, description=''):
     return True
 
 
-def remove_info_field(field_name, input_fpath):
+def remove_info_field(field_to_del, input_fpath):
     output_fpath = input_fpath + '_tmp'
     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
         for l in inp:
             if l.strip() and l.strip()[0] != '#':
                 fields = l.split('\t')
                 info_line = fields[7]
-                info_dict = dict(attr.split('=') for attr in info_line.split(';'))
-                if field_name in info_dict:
-                    del info_dict[field_name]
-                    info_line = ';'.join(k + '=' + v for k, v in info_dict)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    l = '\t'.join(fields) + '\n'
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = [(field, val) for field, val in info_pairs if field != field_to_del]
+                info_line = ';'.join(k + '=' + v for k, v in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                l = '\t'.join(fields) + '\n'
             out.write(l)
     os.rename(output_fpath, input_fpath)
 
@@ -86,7 +85,7 @@ class Annotator:
     def __init__(self, system_config_path, run_config_path):
         self.system_config = load(open(system_config_path), Loader=Loader)
         self.run_config = load(open(run_config_path), Loader=Loader)
-        self.all_annotations = []
+        self.all_fields = []
 
         if not 'file' in self.run_config:
             exit('Run config does not contain field "file".')
@@ -320,7 +319,7 @@ class Annotator:
         executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
         annotations = conf.get('annotations', [])
-        self.all_annotations.extend(annotations)
+        self.all_fields.extend(annotations)
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
@@ -342,7 +341,7 @@ class Annotator:
             exit('Please, provide a path to db nsfp file in run_config.')
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
-        self.all_annotations.extend(['dbNSFP_' + ann for ann in annotations])
+        self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
@@ -356,6 +355,11 @@ class Annotator:
 
         self.log_print('')
         self.log_print('*' * 70)
+
+        self.all_fields.extend([
+            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON", "EFF[*].AA",
+            "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
+            "EFF[*].RANK"])
 
         remove_info_field('EFF', input_fpath)
 
@@ -388,7 +392,7 @@ class Annotator:
             return
 
         field_name = splitext(basename(track_path))[0]
-        self.all_annotations.append(field_name)
+        self.all_fields.append(field_name)
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
@@ -455,21 +459,6 @@ class Annotator:
         else:
             return "lite"
 
-    GATK_ANNOS_DICT = {
-        'Coverage': '',
-        'BaseQualityRankSumTest': '',
-        'FisherStrand': 'FS',
-        'GCContent': 'GC',
-        'HaplotypeScore': 'HaplotypeScore',
-        'HomopolymerRun': 'HRun',
-        'MappingQualityRankSumTest': 'MQ',
-        'MappingQualityZero': 'MQ0',
-        'QualByDepth': '',
-        'ReadPosRankSumTest': '',
-        'RMSMappingQuality': '',
-        'DepthPerAlleleBySample': '',
-    }
-
     def gatk(self, input_fpath):
         if 'gatk' not in self.run_config:
             return input_fpath
@@ -492,8 +481,23 @@ class Annotator:
                 self.log_exit('Error. Not such file: ' + bam)
             cmdline += ' -I ' + bam
 
+        GATK_ANNOS_DICT = {
+            'Coverage': 'DP',
+            'BaseQualityRankSumTest': 'BaseQRankSum',
+            'FisherStrand': 'FS',
+            'GCContent': 'GC',
+            'HaplotypeScore': 'HaplotypeScore',
+            'HomopolymerRun': 'HRun',
+            'RMSMappingQuality': 'MQ',
+            'MappingQualityRankSumTest': 'MQRankSum',
+            'MappingQualityZero': 'MQ0',
+            'QualByDepth': 'QD',
+            'ReadPosRankSumTest': 'ReadPosRankSum',
+            'DepthPerAlleleBySample': 'DepthPerAlleleBySample',
+        }
+
         annotations = self.run_config['gatk'].get('annotations', [])
-        self.all_annotations.extend(annotations)
+        self.all_fields.extend(GATK_ANNOS_DICT.get(ann) for ann in annotations)
         for ann in annotations:
             if ann == 'DepthOfCoverage' and self._gatk_type() == 'restricted':
                 self.log_print('Notice: in the restricted Gatk version, DepthOfCoverage is renamed to Coverage. '
@@ -512,13 +516,8 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        snpeff_fileds = [
-            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON", "EFF[*].AA",
-            "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
-            "EFF[*].RANK"
-        ]
         fields = (['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] +
-                  snpeff_fileds + self.all_annotations)
+                  filter(None, self.all_fields))
 
         if 'tsv_fields' in self.run_config:
             fields = [f for f in self.run_config['tsv_fields'] if f in fields]

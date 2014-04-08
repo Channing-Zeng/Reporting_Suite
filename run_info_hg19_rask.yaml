@@ -26,11 +26,11 @@ gatk:
   - GCContent
   - HaplotypeScore
   - HomopolymerRun
+  - RMSMappingQuality
   - MappingQualityRankSumTest
   - MappingQualityZero
   - QualByDepth
   - ReadPosRankSumTest
-  - RMSMappingQuality
   - DepthPerAlleleBySample
 
 db_nsfp:
