@@ -52,6 +52,23 @@ def file_exists(fpath, description=''):
     return True
 
 
+def remove_info_field(field_name, input_fpath):
+    output_fpath = input_fpath + '_tmp'
+    with open(input_fpath) as inp, open(output_fpath, 'w') as out:
+        for l in inp:
+            if l.strip() and l.strip()[0] != '#':
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_dict = dict(attr.split('=') for attr in info_line.split(';'))
+                if field_name in info_dict:
+                    del info_dict[field_name]
+                    info_line = ';'.join(k + '=' + v for k, v in info_dict)
+                    fields = fields[:7] + [info_line] + fields[8:]
+                    l = '\t'.join(fields) + '\n'
+            out.write(l)
+    os.rename(output_fpath, input_fpath)
+
+
 class Annotator:
     def _set_up_dir(self):
         result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
@@ -340,6 +357,8 @@ class Annotator:
 
         self.log_print('')
         self.log_print('*' * 70)
+
+        remove_info_field('EFF', input_fpath)
 
         executable = self._get_java_tool_cmdline('snpeff')
         ref_name = self.run_config['genome_build']
