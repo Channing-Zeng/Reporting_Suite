@@ -50,6 +50,17 @@ def file_exists(fpath, description=''):
     return True
 
 
+def read_info_fields(input_fpath):
+    output_fpath = input_fpath + '_tmp'
+    with open(input_fpath) as inp, open(output_fpath, 'w') as out:
+        for l in inp:
+            if l.strip() and l.strip()[0] != '#':
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+
+
+
 def remove_info_field(field_to_del, input_fpath):
     output_fpath = input_fpath + '_tmp'
     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
@@ -143,6 +154,8 @@ class Annotator:
             exit('"resources" section in system config required.')
 
         sample_fpath = self.sample_fpath
+
+        self.all_fields.extend(read_info_fields(sample_fpath))
 
         if self.run_config.get('split_genotypes'):
             sample_basepath, ext = os.path.splitext(sample_fpath)
@@ -516,8 +529,8 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        fields = (['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO'] +
-                  filter(None, self.all_fields))
+        first_line = open(input_fpath).readline().strip()
+        fields = (first_line[1:].split() + filter(None, self.all_fields))
 
         if 'tsv_fields' in self.run_config:
             fields = [f for f in self.run_config['tsv_fields'] if f in fields]
@@ -542,6 +555,7 @@ class Annotator:
 
         self.log_print(cmdline)
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
+        self.log_print('')
         if res != 0:
             self.log_print('Command returned status ' + str(res) +
                            ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))

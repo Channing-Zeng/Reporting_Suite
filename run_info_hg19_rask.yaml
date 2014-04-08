@@ -10,7 +10,7 @@ verbose: True
 #save_intermediate: True
 #reuse_intermediate: True
 
-#ensemble: True
+#ensemble: True  # filter REJECT lines
 #split_samples: True
 
 snpeff:
@@ -97,10 +97,11 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
 # By default, built from the following:
-# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, SAMPLE...
-# 2. Explicitly defined annotations above
-# 3. SnpEff annotaions (EFF...)
-# 4. Tracks
+# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, ...
+# 2. INFO fields that existed before annotation
+# 3. Explicitly defined annotations in this yaml file
+# 4. SnpEff annotaions (EFF...)
+# 5. Track names
 #tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, FILTER,
 #            "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN",
 #            "EFF[*].GENE", "EFF[*].FUNCLASS", "EFF[*].BIOTYPE", "EFF[*].CODING", "EFF[*].TRID",
