@@ -223,8 +223,7 @@ class Annotator:
         if self.run_config.get('verbose', True):
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if result_to_stdout else subprocess.PIPE,
-                stderr=subprocess.PIPE)
+                stdout=open(output_fpath, 'w') if result_to_stdout else None)
             if res != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
