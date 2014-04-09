@@ -77,7 +77,7 @@ def remove_annotation(field_to_del, input_fpath):
 def split_samples(input_fpath, sample):
     executable = self._get_java_tool_cmdline('gatk')
     output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
-    cmd = '{executable} -R {ref_fpath} -T SelectVariants ' \
+    cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
           '--variant {input_fpath} -o {new_vcf} -sn {sample}'.format(**locals())
     self._call_and_rename(cmd, input_fpath, suffix=sample, result_to_stdout=False,
                           to_remove=[output_fpath + '.idx', input_fpath + '.idx'])
@@ -134,7 +134,7 @@ class Annotator:
                     exit(1)
             bams = rec['bam_per_sample']
             if bams:
-                bam_fpaths = [fpath for sample, fpath in bams]
+                bam_fpaths = [fpath for sample, fpath in bams.items()]
                 if bam_fpaths:
                     for bam_fpath in bam_fpaths:
                         if not file_exists(bam_fpath, 'Bam file'):
@@ -550,7 +550,7 @@ class Annotator:
 
         ref_fpath = self.run_config['reference']
 
-        cmdline = ('{executable} -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
+        cmdline = ('{executable} -nt 30 -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
                    ' --variant {input_fpath}').format(**locals())
         if bam_fpath:
             cmdline += ' -I ' + bam_fpath
@@ -707,7 +707,7 @@ def main(args):
     if len(args) == 1:
         run_config_path = args[0]
         system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        sys.stderr.write('Notice: Using system_info_rask.yaml as a default tools configutation file.\n')
+        sys.stderr.write('Notice: using system_info_rask.yaml as a default tools configutation file.\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
