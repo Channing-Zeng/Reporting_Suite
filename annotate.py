@@ -66,22 +66,12 @@ def remove_annotation(field_to_del, input_fpath):
                     fields = l.split('\t')
                     info_line = fields[7]
                     info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    info_pairs = filter(lambda pair: pair and pair[1] != field_to_del, info_pairs)
+                    info_pairs = filter(lambda pair: len(pair) < 2 or pair[1] != field_to_del, info_pairs)
                     info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
                     fields = fields[:7] + [info_line] + fields[8:]
                     l = '\t'.join(fields)
             out.write(l)
     os.rename(output_fpath, input_fpath)
-
-
-def split_samples(input_fpath, sample):
-    executable = self._get_java_tool_cmdline('gatk')
-    output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
-    cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-          '--variant {input_fpath} -o {new_vcf} -sn {sample}'.format(**locals())
-    self._call_and_rename(cmd, input_fpath, suffix=sample, result_to_stdout=False,
-                          to_remove=[output_fpath + '.idx', input_fpath + '.idx'])
-    return output_fpath
 
 
 class Annotator:
@@ -106,6 +96,12 @@ class Annotator:
         self.all_fields = []
 
         output_dir = self._set_up_dir()
+        if 'log' in self.run_config:
+            self.log = os.path.join(output_dir, 'log.txt')
+            if os.path.isfile(self.log):
+                os.remove(self.log)
+        else:
+            self.log = None
 
         data = []
         if 'input' not in self.run_config:
@@ -170,8 +166,9 @@ class Annotator:
             if self.run_config.get('split_samples'):
                 # Split VCFs by samples, not taking BAMs into account
                 for sample in samples:
-                    new_vcf = split_samples(inp_fpath, sample)
+                    new_vcf = self.split_samples(inp_fpath, sample)
                     self.data.append({'vcf': new_vcf, 'bam': None})
+                    self.log_print('')
 
             elif not bams:
                 self.data.append(rec)
@@ -191,14 +188,10 @@ class Annotator:
                             if sample not in samples:
                                 exit('ERROR: sample ' + sample + ' is not in VCF. ' +
                                      'Available samples: ' + ', '.join(samples))
-                    for sample, bam_fpath in bams:
-                        new_vcf = split_samples(inp_fpath, sample)
+                    for sample, bam_fpath in bams.items():
+                        new_vcf = self.split_samples(inp_fpath, sample)
                         self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
-
-        if 'log' in self.run_config:
-            self.log = os.path.join(output_dir, 'log.txt')
-            if os.path.isfile(self.log):
-                os.remove(self.log)
+                        self.log_print('')
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
@@ -262,6 +255,18 @@ class Annotator:
             print('Log in ' + self.log)
 
 
+    def split_samples(self, input_fpath, sample):
+        executable = self._get_java_tool_cmdline('gatk')
+        output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
+        ref_fpath = self.run_config['reference']
+        cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
+              '--variant {input_fpath} -o {output_fpath} -sn {sample}'.format(**locals())
+        self._call_and_rename(cmd, input_fpath, suffix=sample, result_to_stdout=False,
+                              to_remove=[output_fpath + '.idx', input_fpath + '.idx'],
+                              rename=False)
+        return output_fpath
+
+
     def log_print(self, msg=''):
         print(msg)
         if self.log:
@@ -280,7 +285,7 @@ class Annotator:
         sys.stderr.write(msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, suffix, result_to_stdout=True, to_remove=None):
+    def _call_and_rename(self, cmdline, input_fpath, suffix, result_to_stdout=True, to_remove=None, rename=True):
         to_remove = to_remove or []
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
@@ -299,14 +304,20 @@ class Annotator:
             os.remove(err_fpath)
 
         if self.run_config.get('verbose', True):
-            res = subprocess.call(
+            proc = subprocess.Popen(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if result_to_stdout else None)
-            if res != 0:
+                stdout=open(output_fpath, 'w') if result_to_stdout else None,
+                stderr=subprocess.STDOUT if not result_to_stdout else None)
+
+            for line in iter(proc.stdout.readline, ''):
+                self.log_print('   ' + line.strip())
+
+            ret_code = proc.wait()
+            if ret_code != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                self.log_exit('Command returned status ' + str(res) +
+                self.log_exit('Command returned status ' + str(ret_code) +
                               ('. Log in ' + self.log if self.log else '.'))
         else:
             res = subprocess.call(
@@ -333,7 +344,7 @@ class Annotator:
             if fpath and isfile(fpath):
                 os.remove(fpath)
 
-        if not self.run_config.get('save_intermediate'):
+        if rename and not self.run_config('save_intermediate'):
             os.remove(input_fpath)
             os.rename(output_fpath, input_fpath)
             self.log_print('Saved to ' + input_fpath)
