@@ -50,18 +50,26 @@ def file_exists(fpath, description=''):
     return True
 
 
-def remove_info_field(field_to_del, input_fpath):
+def remove_annotation(field_to_del, input_fpath):
     output_fpath = input_fpath + '_tmp'
     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
         for l in inp:
-            if l.strip() and l.strip()[0] != '#':
-                fields = l.split('\t')
-                info_line = fields[7]
-                info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                info_pairs = filter(lambda pair: pair and pair[1] != field_to_del, info_pairs)
-                info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
-                fields = fields[:7] + [info_line] + fields[8:]
-                l = '\t'.join(fields)
+            if field_to_del in l:
+                l = l.strip()
+                if l and l.startswith('##INFO='):
+                    try:
+                        if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                            continue
+                    except:
+                        exit('Incorrect VCF at line: ' + l)
+                elif l.strip() and l.strip()[0] != '#':
+                    fields = l.split('\t')
+                    info_line = fields[7]
+                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                    info_pairs = filter(lambda pair: pair and pair[1] != field_to_del, info_pairs)
+                    info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
+                    fields = fields[:7] + [info_line] + fields[8:]
+                    l = '\t'.join(fields)
             out.write(l)
     os.rename(output_fpath, input_fpath)
 
@@ -165,7 +173,7 @@ class Annotator:
         if not 'resources' in self.system_config:
             exit('"resources" section in system config required.')
 
-        remove_info_field('EFF', input_fpath)
+        remove_annotation('EFF', input_fpath)
 
         if self.run_config.get('split_genotypes'):
             base_path, ext = os.path.splitext(input_fpath)
