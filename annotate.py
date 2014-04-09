@@ -74,6 +74,16 @@ def remove_annotation(field_to_del, input_fpath):
     os.rename(output_fpath, input_fpath)
 
 
+def split_samples(input_fpath, sample):
+    executable = self._get_java_tool_cmdline('gatk')
+    output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
+    cmd = '{executable} -R {ref_fpath} -T SelectVariants ' \
+          '--variant {input_fpath} -o {new_vcf} -sn {sample}'.format(**locals())
+    self._call_and_rename(cmd, input_fpath, suffix=sample, result_to_stdout=False,
+                          to_remove=[output_fpath + '.idx', input_fpath + '.idx'])
+    return output_fpath
+
+
 class Annotator:
     def _set_up_dir(self):
         output_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
@@ -152,38 +162,38 @@ class Annotator:
                     rec['vcf'] = new_fpath
                 else:
                     rec['vcf'] = inp_fpath
+            inp_fpath = rec['vcf']
+            basic_fields = next(l.strip()[1:].split() for l in open(inp_fpath)
+                                if l.strip().startswith('#CHROM'))
+            samples = basic_fields[9:]
 
-            if not bams:
+            if self.run_config.get('split_samples'):
+                # Split VCFs by samples, not taking BAMs into account
+                for sample in samples:
+                    new_vcf = split_samples(inp_fpath, sample)
+                    self.data.append({'vcf': new_vcf, 'bam': None})
+
+            elif not bams:
                 self.data.append(rec)
-            else:
-                # Split VCFs by samples
-                inp_fpath = rec['vcf']
-                basic_fields = next(l.strip()[1:].split() for l in open(inp_fpath)
-                                    if l.strip().startswith('#CHROM'))
-                samples = basic_fields[9:]
 
+            else:
+                # Split VCFs by BAMs
                 if (len(samples) == 1 and len(bams) == 0 or
                     len(samples) == 0 and len(bams) == 1 or
                     len(samples) == 0 and len(bams) == 0):
                     rec['bam'] = bams[1] if bams else None
                 else:
-                    if len(samples) != len(bams):
-                        exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
-                             ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
-                    for sample in bams.keys():
-                        if sample not in samples:
-                            exit('ERROR: sample ' + sample + ' is not in VCF. ' +
-                                 'Available samples: ' + ', '.join(samples))
-                    new_vcfs = []
-                    new_bams = []
-                    executable = self._get_java_tool_cmdline('gatk')
+                    if bams:
+                        if len(samples) != len(bams):
+                            exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
+                                 ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
+                        for sample in bams.keys():
+                            if sample not in samples:
+                                exit('ERROR: sample ' + sample + ' is not in VCF. ' +
+                                     'Available samples: ' + ', '.join(samples))
                     for sample, bam_fpath in bams:
-                        new_vcf = splitext(inp_fpath)[0] + '.' + sample + '.vcf'
-                        cmd = '{executable} -R {ref_fpath} -T SelectVariants ' \
-                              '--variant {inp_fpath} -o {new_vcf} -sn {sample}'.format(**locals())
-                        res = self._call_and_rename(cmd, inp_fpath, suffix=sample, result_to_stdout=False,
-                                                    to_remove=[new_vcf + '.idx', inp_fpath + '.idx'])
-                        data.append({'vcf': new_vcf, 'bam': bam_fpath})
+                        new_vcf = split_samples(inp_fpath, sample)
+                        self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
 
         if 'log' in self.run_config:
             self.log = os.path.join(output_dir, 'log.txt')
@@ -206,16 +216,6 @@ class Annotator:
                              'if you want to annotate with bed tracks.\n')
 
 
-    def split_samples(self):
-           # -R ref.fasta \
-           # -T SelectVariants \
-           # --variant input.vcf \
-           # -o output.vcf \
-           # -sn SAMPLE_A_PARC \
-           # -sn SAMPLE_B_ACTG
-        pass
-
-
     def annotate(self):
         for rec in self.data:
             self.annotate_one(rec['vcf'], rec['bam'])
@@ -232,10 +232,6 @@ class Annotator:
             result_fpath = base_path + '.split' + ext
             input_fpath = self.split_genotypes(input_fpath, result_fpath)
             self.log_print('Saved to ' + input_fpath)
-
-        if self.run_config.get('split_samples'):
-            self.split_samples()
-            pass
 
         if self.run_config.get('rna'):
             input_fpath = self.process_rna(input_fpath)
