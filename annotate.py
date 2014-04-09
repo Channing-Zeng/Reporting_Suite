@@ -87,22 +87,32 @@ class Annotator:
         self.run_config = load(open(run_config_path), Loader=Loader)
         self.all_fields = []
 
-        if not 'files' in self.run_config or not 'file' in self.run_config:
-            exit('Run config does not contain field "files".')
-        input_fpaths = self.run_config.get('files', [self.run_config['file']])
-        input_fpaths = map(realpath, input_fpaths)
+        self.inp = []
+        if 'input' not in self.run_config:
+            if 'file' not in self.run_config:
+                exit('ERROR: Run config does not contain "input" section.')
+            self.inp.append({'vcf': realpath(self.run_config['file']), 'bam': self.run_config.get('bam')})
+        else:
+            for rec in self.run_config['input']:
+                if 'vcf' not in rec:
+                    exit('ERROR: Input section does not contain field "vcf".')
+                self.inp.append({'vcf': realpath(rec['vcf']), 'bam': rec.get('bam')})
 
         output_dir = self._set_up_dir()
 
-        self.input_fpaths = []
-        for fpath in input_fpaths:
-            if not file_exists(fpath, 'Input file'):
+        for rec in self.inp:
+            inp_fpath = rec['vcf']
+            bam_fpath = rec['bam']
+            if not file_exists(inp_fpath, 'Input file'):
                 exit(1)
+            if bam_fpath:
+                if not file_exists(bam_fpath, 'Bam file'):
+                    exit(1)
 
-            fname = os.path.basename(fpath)
+            fname = os.path.basename(inp_fpath)
             base_name, ext = os.path.splitext(fname)
 
-            if output_dir != os.path.realpath(os.path.dirname(fpath)):
+            if output_dir != os.path.realpath(os.path.dirname(inp_fpath)):
                 if self.run_config.get('save_intermediate'):
                     new_fname = fname
                 else:
@@ -111,15 +121,15 @@ class Annotator:
 
                 if os.path.exists(new_fpath):
                     os.remove(new_fpath)
-                shutil.copyfile(fpath, new_fpath)
-                self.input_fpaths.append(new_fpath)
+                shutil.copyfile(inp_fpath, new_fpath)
+                rec['vcf'] = new_fpath
             else:
                 if not self.run_config.get('save_intermediate'):
                     new_fpath = join(output_dir, base_name + '.anno' + ext)
-                    shutil.copyfile(fpath, new_fpath)
-                    self.input_fpaths.append(new_fpath)
+                    shutil.copyfile(inp_fpath, new_fpath)
+                    rec['vcf'] = new_fpath
                 else:
-                    self.input_fpaths.append(fpath)
+                    rec['vcf'] = inp_fpath
 
             if 'log' in self.run_config:
                 self.log = os.path.join(output_dir, 'log.txt')
@@ -147,11 +157,11 @@ class Annotator:
 
 
     def annotate(self):
-        for input_fpath in self.input_fpaths:
-            self.annotate_one(input_fpath)
+        for rec in self.inp:
+            self.annotate_one(rec['vcf'], rec['bam'])
 
 
-    def annotate_one(self, input_fpath):
+    def annotate_one(self, input_fpath, bam_fpath):
         if not 'resources' in self.system_config:
             exit('"resources" section in system config required.')
 
@@ -180,7 +190,7 @@ class Annotator:
         if not file_exists(self.run_config['reference'], 'Reference'):
             exit(1)
 
-        input_fpath = self.gatk(input_fpath)
+        input_fpath = self.gatk(input_fpath, bam_fpath)
         if 'vcfs' in self.run_config:
             for dbname, conf in self.run_config['vcfs'].items():
                 input_fpath = self.snpsift_annotate(dbname, conf, input_fpath)
@@ -470,7 +480,7 @@ class Annotator:
         else:
             return "lite"
 
-    def gatk(self, input_fpath):
+    def gatk(self, input_fpath, bam_fpath):
         if 'gatk' not in self.run_config:
             return input_fpath
 
@@ -486,11 +496,8 @@ class Annotator:
 
         cmdline = ('{executable} -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
                    ' --variant {input_fpath}').format(**locals())
-        bam = self.run_config.get('bam')
-        if bam:
-            if not isfile(bam):
-                self.log_exit('Error. Not such file: ' + bam)
-            cmdline += ' -I ' + bam
+        if bam_fpath:
+            cmdline += ' -I ' + bam_fpath
 
         GATK_ANNOS_DICT = {
             'Coverage': 'DP',

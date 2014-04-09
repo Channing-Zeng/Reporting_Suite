@@ -1,9 +1,11 @@
-files: ['test.vcf']
+input:
+  - vcf: test.vcf
+    #bam:
+
 output_dir: '.'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-#bams: []
 
 verbose: True
 #log: True  # creates <file>.log in <output_dir>
