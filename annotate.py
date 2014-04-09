@@ -95,28 +95,42 @@ class Annotator:
         self.run_config = load(open(run_config_path), Loader=Loader)
         self.all_fields = []
 
-        self.inp = []
+        output_dir = self._set_up_dir()
+
+        data = []
         if 'input' not in self.run_config:
             if 'file' not in self.run_config:
                 exit('ERROR: Run config does not contain "input" section.')
-            self.inp.append({'vcf': realpath(self.run_config['file']), 'bam': self.run_config.get('bam')})
+            data.append({'vcf': realpath(self.run_config['file']),
+                         'bam': self.run_config.get('bam'),
+                         'bam_per_sample': None})
         else:
             for rec in self.run_config['input']:
                 if 'vcf' not in rec:
                     exit('ERROR: Input section does not contain field "vcf".')
-                self.inp.append({'vcf': realpath(rec['vcf']), 'bam': rec.get('bam')})
+                data.append({'vcf': realpath(rec['vcf']),
+                             'bam': rec.get('bam'),
+                             'bam_per_sample': rec.get('bams')})
 
-        output_dir = self._set_up_dir()
-
-        for rec in self.inp:
+        self.data = []
+        for rec in data:
+            # Check VCF and BAMs existence
             inp_fpath = rec['vcf']
-            bam_fpath = rec['bam']
             if not file_exists(inp_fpath, 'Input file'):
                 exit(1)
+            bam_fpath = rec['bam']
             if bam_fpath:
                 if not file_exists(bam_fpath, 'Bam file'):
                     exit(1)
+            bams = rec['bam_per_sample']
+            if bams:
+                bam_fpaths = [fpath for sample, fpath in bams]
+                if bam_fpaths:
+                    for bam_fpath in bam_fpaths:
+                        if not file_exists(bam_fpath, 'Bam file'):
+                            exit(1)
 
+            # Move input VCF
             fname = os.path.basename(inp_fpath)
             base_name, ext = os.path.splitext(fname)
 
@@ -139,10 +153,42 @@ class Annotator:
                 else:
                     rec['vcf'] = inp_fpath
 
-            if 'log' in self.run_config:
-                self.log = os.path.join(output_dir, 'log.txt')
-                if os.path.isfile(self.log):
-                    os.remove(self.log)
+            if not bams:
+                self.data.append(rec)
+            else:
+                # Split VCFs by samples
+                inp_fpath = rec['vcf']
+                basic_fields = next(l.strip()[1:].split() for l in open(inp_fpath)
+                                    if l.strip().startswith('#CHROM'))
+                samples = basic_fields[9:]
+
+                if (len(samples) == 1 and len(bams) == 0 or
+                    len(samples) == 0 and len(bams) == 1 or
+                    len(samples) == 0 and len(bams) == 0):
+                    rec['bam'] = bams[1] if bams else None
+                else:
+                    if len(samples) != len(bams):
+                        exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
+                             ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
+                    for sample in bams.keys():
+                        if sample not in samples:
+                            exit('ERROR: sample ' + sample + ' is not in VCF. ' +
+                                 'Available samples: ' + ', '.join(samples))
+                    new_vcfs = []
+                    new_bams = []
+                    executable = self._get_java_tool_cmdline('gatk')
+                    for sample, bam_fpath in bams:
+                        new_vcf = splitext(inp_fpath)[0] + '.' + sample + '.vcf'
+                        cmd = '{executable} -R {ref_fpath} -T SelectVariants ' \
+                              '--variant {inp_fpath} -o {new_vcf} -sn {sample}'.format(**locals())
+                        res = self._call_and_rename(cmd, inp_fpath, suffix=sample, result_to_stdout=False,
+                                                    to_remove=[new_vcf + '.idx', inp_fpath + '.idx'])
+                        data.append({'vcf': new_vcf, 'bam': bam_fpath})
+
+        if 'log' in self.run_config:
+            self.log = os.path.join(output_dir, 'log.txt')
+            if os.path.isfile(self.log):
+                os.remove(self.log)
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
@@ -161,11 +207,17 @@ class Annotator:
 
 
     def split_samples(self):
+           # -R ref.fasta \
+           # -T SelectVariants \
+           # --variant input.vcf \
+           # -o output.vcf \
+           # -sn SAMPLE_A_PARC \
+           # -sn SAMPLE_B_ACTG
         pass
 
 
     def annotate(self):
-        for rec in self.inp:
+        for rec in self.data:
             self.annotate_one(rec['vcf'], rec['bam'])
 
 

@@ -1,6 +1,11 @@
 input:
-  - vcf: test.vcf
+  - vcf: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-freebayes.vcf
     #bam:
+    bams:  # per sample
+      "EOL-1-1": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+      "EOL-1-2": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+      "EOL-1-3": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
+      "EOL-1-4": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
 output_dir: '.'
 
@@ -8,7 +13,7 @@ genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
 #ensemble: True  # filter REJECT lines
-#split_samples: True
+#split_samples: True  # Default if provided multiple BAMs
 
 verbose: True
 #save_intermediate: True
