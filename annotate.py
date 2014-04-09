@@ -256,6 +256,10 @@ class Annotator:
 
 
     def split_samples(self, input_fpath, sample):
+        self.log_print('')
+        self.log_print('-' * 70)
+        self.log_print('Separating sample ' + sample)
+        self.log_print('-' * 70)
         executable = self._get_java_tool_cmdline('gatk')
         output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
         ref_fpath = self.run_config['reference']
@@ -306,8 +310,8 @@ class Annotator:
         if self.run_config.get('verbose', True):
             proc = subprocess.Popen(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if result_to_stdout else None,
-                stderr=subprocess.STDOUT if not result_to_stdout else None)
+                stdout=open(output_fpath, 'w') if result_to_stdout else subprocess.PIPE,
+                stderr=subprocess.STDOUT if not result_to_stdout else subprocess.PIPE)
 
             for line in iter(proc.stdout.readline, ''):
                 self.log_print('   ' + line.strip())
@@ -404,7 +408,9 @@ class Annotator:
 
     def snpsift_annotate(self, dbname, conf, input_fpath):
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('Annotate with ' + dbname)
+        self.log_print('-' * 70)
 
         executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
@@ -422,7 +428,9 @@ class Annotator:
             return input_fpath
 
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('DB SNFP')
+        self.log_print('-' * 70)
 
         executable = self._get_java_tool_cmdline('snpsift')
 
@@ -444,7 +452,9 @@ class Annotator:
             return input_fpath
 
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('SnpEff')
+        self.log_print('-' * 70)
 
         self.all_fields.extend([
             "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
@@ -470,8 +480,12 @@ class Annotator:
 
 
     def tracks(self, track_path, input_fpath):
+        field_name = splitext(basename(track_path))[0]
+
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('Intersecting with ' + field_name)
+        self.log_print('-' * 70)
 
         toolpath = self._get_tool_cmdline('vcfannotate')
         if not toolpath:
@@ -479,7 +493,6 @@ class Annotator:
                          'executable not found, you probably need to run "module load bcbio-nextgen"')
             return
 
-        field_name = splitext(basename(track_path))[0]
         self.all_fields.append(field_name)
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
@@ -552,7 +565,9 @@ class Annotator:
             return input_fpath
 
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('GATK')
+        self.log_print('-' * 70)
 
         executable = self._get_java_tool_cmdline('gatk')
 
@@ -611,7 +626,9 @@ class Annotator:
         anno_line = ' '.join(fields)
 
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
+        self.log_print('Extracting fields')
+        self.log_print('-' * 70)
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
@@ -637,7 +654,7 @@ class Annotator:
 
     def process_rna(self, input_fpath):
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
 
         cmdline = self._get_tool_cmdline('vcf-subset')
         if not cmdline:
@@ -655,7 +672,7 @@ class Annotator:
 
     def process_ensemble(self, input_fpath):
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
         self.log_print('Filtering ensemble reject lines.')
 
         base_path, ext = os.path.splitext(input_fpath)
@@ -674,7 +691,7 @@ class Annotator:
 
     def split_genotypes(self, input_fpath, result_fpath):
         self.log_print('')
-        self.log_print('*' * 70)
+        self.log_print('-' * 70)
         self.log_print('Splitting genotypes.')
 
         with open(input_fpath) as vcf, open(result_fpath, 'w') as out:
@@ -718,7 +735,7 @@ def main(args):
     if len(args) == 1:
         run_config_path = args[0]
         system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        sys.stderr.write('Notice: using system_info_rask.yaml as a default tools configutation file.\n')
+        sys.stderr.write('Notice: using system_info_rask.yaml as a default tools configutation file.\n\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
