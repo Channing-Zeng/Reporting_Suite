@@ -1,9 +1,9 @@
-file: 'test.vcf'
+files: ['test.vcf']
 output_dir: '.'
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-#bam: /ngs/oncology/Analysis/external/EXT_008_OvationSureSelectCompare/OvationSureSelect/work/align/OvationFFPE/1_2014-03-17_OvationSureSelect_test.sorted.bam
+#bams: []
 
 verbose: True
 #log: True  # creates <file>.log in <output_dir>
