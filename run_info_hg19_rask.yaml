@@ -7,13 +7,12 @@ output_dir: '.'
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
-verbose: True
-#log: True  # creates <file>.log in <output_dir>
-#save_intermediate: True
-#reuse_intermediate: True
-
 #ensemble: True  # filter REJECT lines
 #split_samples: True
+
+verbose: True
+#save_intermediate: True
+#reuse_intermediate: True
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
