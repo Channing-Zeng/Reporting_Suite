@@ -50,67 +50,90 @@ def file_exists(fpath, description=''):
     return True
 
 
-def remove_annotation(field_to_del, input_fpath):
+def remove_info_field(field_to_del, input_fpath):
     output_fpath = input_fpath + '_tmp'
     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
         for l in inp:
-            if field_to_del in l:
-                l = l.lstrip()
-                if l and l.startswith('##INFO='):
-                    try:
-                        if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
-                            continue
-                    except:
-                        exit('Incorrect VCF at line: ' + l)
-                elif l.strip() and l.strip()[0] != '#':
-                    fields = l.split('\t')
-                    info_line = fields[7]
-                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                    info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    l = '\t'.join(fields)
+            if l.strip() and l.strip()[0] != '#':
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = [(field, val) for field, val in info_pairs if field != field_to_del]
+                info_line = ';'.join(k + '=' + v for k, v in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                l = '\t'.join(fields)
             out.write(l)
     os.rename(output_fpath, input_fpath)
 
 
 class Annotator:
     def _set_up_dir(self):
-        output_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
-        if not output_dir:
+        result_dir = realpath(self.run_config.get('output_dir', os.getcwd()))
+        if not result_dir:
             exit('Result directory path is empty.')
-        if isfile(output_dir):
-            exit(output_dir + ' is a file.')
-        if not exists(output_dir):
+        if isfile(result_dir):
+            exit(result_dir + ' is a file.')
+        if not exists(result_dir):
             try:
-                os.mkdir(output_dir)
+                os.mkdir(result_dir)
             except:
-                exit(output_dir + ' does not exist.')
-        self.output_dir = output_dir
-        return output_dir
+                exit(result_dir + ' does not exist.')
+        self.run_config['output_dir'] = result_dir
+        return result_dir
 
 
     def __init__(self, system_config_path, run_config_path):
-        self.all_fields = []
-
         self.system_config = load(open(system_config_path), Loader=Loader)
         self.run_config = load(open(run_config_path), Loader=Loader)
+        self.all_fields = []
+
+        if not 'files' in self.run_config:
+            exit('Run config does not contain field "files".')
+        sample_fpaths = self.run_config['files']
+        self.input_fpaths = map(realpath, sample_fpaths)
+        for f in self.input_fpaths:
+            if not file_exists(f, 'Sample file'):
+                exit(1)
 
         output_dir = self._set_up_dir()
 
+        sample_fpaths = []
+        for f in self.input_fpaths:
+            sample_fname = os.path.basename(f)
+            sample_basename, ext = os.path.splitext(sample_fname)
+
+            if output_dir != os.path.realpath(os.path.dirname(f)):
+                if self.run_config.get('save_intermediate'):
+                    new_sample_fname = sample_fname
+                else:
+                    new_sample_fname = sample_basename + '.anno' + ext
+
+                new_sample_fpath = os.path.join(output_dir, new_sample_fname)
+
+                if os.path.exists(new_sample_fpath):
+                    os.remove(new_sample_fpath)
+                shutil.copyfile(f, new_sample_fpath)
+                sample_fpaths.append(new_sample_fpath)
+            else:
+                if not self.run_config.get('save_intermediate'):
+                    new_sample_fpath = join(output_dir, sample_basename + '.anno' + ext)
+                    shutil.copyfile(f, new_sample_fpath)
+                    sample_fpaths.append(new_sample_fpath)
+                else:
+                    sample_fpaths.append(f)
+        self.input_fpaths = sample_fpaths
+
         if 'log' in self.run_config:
-            self.log = os.path.join(output_dir, 'log.txt')
-            if os.path.isfile(self.log):
-                os.remove(self.log)
-        else:
-            self.log = None
+            self.run_config['log'] = os.path.join(output_dir, 'log.txt')
+            if os.path.isfile(self.run_config['log']):
+                os.remove(self.run_config['log'])
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
         self.log_print('')
         self.log_print('Writing into ' + output_dir)
-        if self.log:
-            self.log_print('Logging to ' + self.log)
+        if 'log' in self.run_config:
+            self.log_print('Logging to ' + self.run_config['log'])
 
         if not which('java'):
             sys.stderr.write('\nWARNING: Please, run "module load java"\n')
@@ -120,113 +143,46 @@ class Annotator:
             sys.stderr.write('\nWARNING: Please, run "module load bcbio-nextgen" '
                              'if you want to annotate with bed tracks.\n')
 
-        data = []
-        if 'input' not in self.run_config:
-            if 'file' not in self.run_config:
-                exit('ERROR: Run config does not contain "input" section.')
-            data.append({'vcf': realpath(self.run_config['file']),
-                         'bam': self.run_config.get('bam'),
-                         'bam_per_sample': None})
-        else:
-            for rec in self.run_config['input']:
-                if 'vcf' not in rec:
-                    exit('ERROR: Input section does not contain field "vcf".')
-                data.append({'vcf': realpath(rec['vcf']),
-                             'bam': rec.get('bam'),
-                             'bam_per_sample': rec.get('bams')})
 
-        self.data = []
-        for rec in data:
-            # Check VCF and BAMs existence
-            inp_fpath = rec['vcf']
-            if not file_exists(inp_fpath, 'Input file'):
-                exit(1)
-            bam_fpath = rec['bam']
-            if bam_fpath:
-                if not file_exists(bam_fpath, 'Bam file'):
-                    exit(1)
-            bams = rec['bam_per_sample']
-            if bams:
-                bam_fpaths = [fpath for sample, fpath in bams.items()]
-                if bam_fpaths:
-                    for bam_fpath in bam_fpaths:
-                        if not file_exists(bam_fpath, 'Bam file'):
-                            exit(1)
+    def split_samples(self):
+        new_input_fpaths = set()
+        executable = self._get_java_tool_cmdline('gatk')
 
-            # Move input VCF
-            fname = os.path.basename(inp_fpath)
-            base_name, ext = os.path.splitext(fname)
-
-            if output_dir != os.path.realpath(os.path.dirname(inp_fpath)):
-                if self.run_config.get('save_intermediate'):
-                    new_fname = fname
-                else:
-                    new_fname = base_name + '.anno' + ext
-                new_fpath = os.path.join(output_dir, new_fname)
-
-                if os.path.exists(new_fpath):
-                    os.remove(new_fpath)
-                shutil.copyfile(inp_fpath, new_fpath)
-                rec['vcf'] = new_fpath
+        for fpath in self.input_fpaths:
+            samples = next((l.strip()[1:].split() for l in open(fpath)
+                           if l.strip().startswith('#CHROM')), [])
+            if not samples:
+                new_input_fpaths.add(fpath)
             else:
-                if not self.run_config.get('save_intermediate'):
-                    new_fpath = join(output_dir, base_name + '.anno' + ext)
-                    shutil.copyfile(inp_fpath, new_fpath)
-                    rec['vcf'] = new_fpath
-                else:
-                    rec['vcf'] = inp_fpath
-            inp_fpath = rec['vcf']
-            basic_fields = next(l.strip()[1:].split() for l in open(inp_fpath)
-                                if l.strip().startswith('#CHROM'))
-            samples = basic_fields[9:]
-
-            if self.run_config.get('split_samples'):
-                # Split VCFs by samples, not taking BAMs into account
-                for sample in sorted(samples):
-                    new_vcf = self.split_samples(inp_fpath, sample)
-                    self.data.append({'vcf': new_vcf, 'bam': None})
-                    self.log_print('')
-
-            elif not bams:
-                self.data.append(rec)
-
-            else:
-                # Split VCFs by BAMs
-                if (len(samples) == 1 and len(bams) == 0 or
-                    len(samples) == 0 and len(bams) == 1 or
-                    len(samples) == 0 and len(bams) == 0):
-                    rec['bam'] = bams[1] if bams else None
-                else:
-                    if bams:
-                        if len(samples) != len(bams):
-                            exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
-                                 ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
-                        for sample in bams.keys():
-                            if sample not in samples:
-                                exit('ERROR: sample ' + sample + ' is not in VCF. ' +
-                                     'Available samples: ' + ', '.join(samples))
-                    for sample, bam_fpath in sorted(bams.items()):
-                        new_vcf = self.split_samples(inp_fpath, sample)
-                        self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
-                        self.log_print('')
+                for sample in samples:
+                    new_fpath = splitext(fpath)[0] + '_' + sample + '.vcf'
+                    cmd = '{executable} -T SelectVariants --variant {fpath} -o {new_fpath} -sn {sample}'
+                    cmd = cmd.format(**locals())
+                    self._call_and_rename(cmd, input_fpath=fpath, suffix=sample, result_to_stdout=False)
+                    new_input_fpaths.add(new_fpath)
+        self.input_fpaths = new_input_fpaths
 
 
     def annotate(self):
-        for rec in self.data:
-            self.annotate_one(rec['vcf'], rec['bam'])
+        for fpath in self.input_fpaths:
+            self.annotate_one(fpath)
 
 
-    def annotate_one(self, input_fpath, bam_fpath):
+    def annotate_one(self, input_fpath):
         if not 'resources' in self.system_config:
             exit('"resources" section in system config required.')
 
-        remove_annotation('EFF', input_fpath)
+        remove_info_field('EFF', input_fpath)
 
         if self.run_config.get('split_genotypes'):
-            base_path, ext = os.path.splitext(input_fpath)
-            result_fpath = base_path + '.split' + ext
+            input_basepath, ext = os.path.splitext(input_fpath)
+            result_fpath = input_basepath + '.split' + ext
             input_fpath = self.split_genotypes(input_fpath, result_fpath)
             self.log_print('Saved to ' + input_fpath)
+
+        if self.run_config.get('split_samples'):
+            self.split_samples()
+            pass
 
         if self.run_config.get('rna'):
             input_fpath = self.process_rna(input_fpath)
@@ -241,7 +197,7 @@ class Annotator:
         if not file_exists(self.run_config['reference'], 'Reference'):
             exit(1)
 
-        input_fpath = self.gatk(input_fpath, bam_fpath)
+        input_fpath = self.gatk(input_fpath)
         if 'vcfs' in self.run_config:
             for dbname, conf in self.run_config['vcfs'].items():
                 input_fpath = self.snpsift_annotate(dbname, conf, input_fpath)
@@ -253,44 +209,29 @@ class Annotator:
         self.extract_fields(input_fpath)
 
         self.log_print('\nFinal VCF in ' + input_fpath)
-        if self.log:
-            print('Log in ' + self.log)
-
-
-    def split_samples(self, input_fpath, sample):
-        self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('Separating out sample ' + sample)
-        self.log_print('-' * 70)
-        executable = self._get_java_tool_cmdline('gatk')
-        output_fpath = splitext(input_fpath)[0] + '.' + sample + '.vcf'
-        ref_fpath = self.run_config['reference']
-        cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-              '--variant {input_fpath} -o {output_fpath} -sn {sample}'.format(**locals())
-        self._call_and_rename(cmd, input_fpath, suffix=sample, result_to_stdout=False,
-                              rename=False)
-        return output_fpath
+        if 'log' in self.run_config:
+            print('Log in ' + self.run_config['log'])
 
 
     def log_print(self, msg=''):
         print(msg)
-        if self.log:
-            open(self.log, 'a').write(msg + '\n')
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
 
 
     def log_exit(self, msg=''):
-        if self.log:
-            open(self.log, 'a').write(msg + '\n')
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
         exit(msg)
 
 
     def log_err(self, msg=''):
-        if self.log:
-            open(self.log, 'a').write(msg + '\n')
+        if 'log' in self.run_config:
+            open(self.run_config['log'], 'a').write(msg + '\n')
         sys.stderr.write(msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, suffix, result_to_stdout=True, to_remove=None, rename=True):
+    def _call_and_rename(self, cmdline, input_fpath, suffix, result_to_stdout=True, to_remove=None):
         to_remove = to_remove or []
         basepath, ext = splitext(input_fpath)
         output_fpath = basepath + '.' + suffix + ext
@@ -303,31 +244,21 @@ class Annotator:
 
         self.log_print(cmdline)
 
-        err_fpath = os.path.join(self.output_dir, 'annotate_py_err.tmp')
+        err_fpath = os.path.join(self.run_config['output_dir'], 'annotate_py_err.tmp')
         to_remove.append(err_fpath)
         if err_fpath and isfile(err_fpath):
             os.remove(err_fpath)
 
         if self.run_config.get('verbose', True):
-            proc = subprocess.Popen(
+            res = subprocess.call(
                 cmdline.split(),
-                stdout=open(output_fpath, 'w') if result_to_stdout else subprocess.PIPE,
-                stderr=subprocess.STDOUT if not result_to_stdout else subprocess.PIPE)
-
-            if proc.stdout:
-                for line in iter(proc.stdout.readline, ''):
-                    self.log_print('   ' + line.strip())
-            elif proc.stderr:
-                for line in iter(proc.stderr.readline, ''):
-                    self.log_print('   ' + line.strip())
-
-            ret_code = proc.wait()
-            if ret_code != 0:
+                stdout=open(output_fpath, 'w') if result_to_stdout else None)
+            if res != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                self.log_exit('Command returned status ' + str(ret_code) +
-                              ('. Log in ' + self.log if self.log else '.'))
+                self.log_exit('Command returned status ' + str(res) +
+                              ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
         else:
             res = subprocess.call(
                 cmdline.split(),
@@ -342,10 +273,10 @@ class Annotator:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
                 self.log_exit('Command returned status ' + str(res) +
-                              ('. Log in ' + self.log if self.log else '.'))
+                              ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
             else:
-                if self.log:
-                    with open(err_fpath) as err, open(self.log, 'a') as log:
+                if 'log' in self.run_config:
+                    with open(err_fpath) as err, open(self.run_config['log'], 'a') as log:
                         log.write('')
                         log.write(err.read())
                         log.write('')
@@ -353,7 +284,7 @@ class Annotator:
             if fpath and isfile(fpath):
                 os.remove(fpath)
 
-        if rename and not self.run_config.get('save_intermediate'):
+        if not self.run_config.get('save_intermediate'):
             os.remove(input_fpath)
             os.rename(output_fpath, input_fpath)
             self.log_print('Saved to ' + input_fpath)
@@ -413,9 +344,7 @@ class Annotator:
 
     def snpsift_annotate(self, dbname, conf, input_fpath):
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('Annotate with ' + dbname)
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
@@ -433,9 +362,7 @@ class Annotator:
             return input_fpath
 
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('DB SNFP')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         executable = self._get_java_tool_cmdline('snpsift')
 
@@ -457,9 +384,7 @@ class Annotator:
             return input_fpath
 
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('SnpEff')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         self.all_fields.extend([
             "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
@@ -485,12 +410,8 @@ class Annotator:
 
 
     def tracks(self, track_path, input_fpath):
-        field_name = splitext(basename(track_path))[0]
-
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('Intersecting with ' + field_name)
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         toolpath = self._get_tool_cmdline('vcfannotate')
         if not toolpath:
@@ -498,6 +419,7 @@ class Annotator:
                          'executable not found, you probably need to run "module load bcbio-nextgen"')
             return
 
+        field_name = splitext(basename(track_path))[0]
         self.all_fields.append(field_name)
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
@@ -565,14 +487,12 @@ class Annotator:
         else:
             return "lite"
 
-    def gatk(self, input_fpath, bam_fpath):
+    def gatk(self, input_fpath):
         if 'gatk' not in self.run_config:
             return input_fpath
 
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('GATK')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         executable = self._get_java_tool_cmdline('gatk')
 
@@ -581,10 +501,13 @@ class Annotator:
 
         ref_fpath = self.run_config['reference']
 
-        cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
+        cmdline = ('{executable} -R {ref_fpath} -T VariantAnnotator -o {output_fpath}'
                    ' --variant {input_fpath}').format(**locals())
-        if bam_fpath:
-            cmdline += ' -I ' + bam_fpath
+        bam = self.run_config.get('bam')
+        if bam:
+            if not isfile(bam):
+                self.log_exit('Error. Not such file: ' + bam)
+            cmdline += ' -I ' + bam
 
         GATK_ANNOS_DICT = {
             'Coverage': 'DP',
@@ -621,9 +544,9 @@ class Annotator:
 
     def extract_fields(self, input_fpath):
         basic_fields = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
-        fields = (basic_fields[:9] +
-                  filter(None, self.all_fields) +
-                  self.run_config.get('additional_tsv_fields', []))
+        fields = set(basic_fields[:9] +
+                     filter(None, self.all_fields) +
+                     self.run_config.get('additional_tsv_fields', []))
 
         if not fields:
             return
@@ -631,9 +554,7 @@ class Annotator:
         anno_line = ' '.join(fields)
 
         self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print('Extracting fields')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
@@ -650,7 +571,7 @@ class Annotator:
         self.log_print('')
         if res != 0:
             self.log_print('Command returned status ' + str(res) +
-                           ('. Log in ' + self.log if self.log else '.'))
+                           ('. Log in ' + self.run_config['log'] if 'log' in self.run_config else '.'))
             exit(1)
             # return input_fpath
         else:
@@ -659,7 +580,7 @@ class Annotator:
 
     def process_rna(self, input_fpath):
         self.log_print('')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
 
         cmdline = self._get_tool_cmdline('vcf-subset')
         if not cmdline:
@@ -667,23 +588,23 @@ class Annotator:
                          'skipping subset process for ensemble VCF.')
             return
 
-        input_fname = os.path.basename(input_fpath)
-        base_name, ext = os.path.splitext(input_fname)
-        name = base_name.replace('-ensemble', '')
-        cmdline = 'vcf-subset -c {name} -e {input_fpath}'.format(**locals())
+        sample_fname = os.path.basename(input_fpath)
+        sample_basename, ext = os.path.splitext(sample_fname)
+        name = sample_basename.replace('-ensemble', '')
+        cmdline = 'vcf-subset -c {name} -e {sample_fpath}'.format(**locals())
 
         return self._call_and_rename(cmdline, input_fpath, '.ensm', result_to_stdout=True)
 
 
     def process_ensemble(self, input_fpath):
         self.log_print('')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
         self.log_print('Filtering ensemble reject lines.')
 
-        base_path, ext = os.path.splitext(input_fpath)
-        pass_fpath = base_path + '.pass' + ext
-        with open(input_fpath) as input_f, open(pass_fpath, 'w') as pass_f:
-            for line in input_f.readlines():
+        input_basepath, ext = os.path.splitext(input_fpath)
+        pass_fpath = input_basepath + '.pass' + ext
+        with open(input_fpath) as sample, open(pass_fpath, 'w') as pass_f:
+            for line in sample.readlines():
                 if 'REJECT' not in line:
                     pass_f.write(line)
         if self.run_config.get('save_intermediate'):
@@ -696,7 +617,7 @@ class Annotator:
 
     def split_genotypes(self, input_fpath, result_fpath):
         self.log_print('')
-        self.log_print('-' * 70)
+        self.log_print('*' * 70)
         self.log_print('Splitting genotypes.')
 
         with open(input_fpath) as vcf, open(result_fpath, 'w') as out:
@@ -740,7 +661,7 @@ def main(args):
     if len(args) == 1:
         run_config_path = args[0]
         system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        sys.stderr.write('Notice: using system_info_rask.yaml as a default tools configutation file.\n\n')
+        sys.stderr.write('Notice: Using system_info_rask.yaml as a default tools configutation file.\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
