@@ -1,0 +1,105 @@
+input:
+  - vcf: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ensemble.vcf
+    bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+
+output_dir: ~/annotation_tests/single_bam
+
+genome_build: hg19
+reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+
+#ensemble: True                # filter REJECT lines
+#split_samples: True          # default if provided multiple BAMs
+
+verbose: True                 # prints tools output
+save_intermediate: True      # keeps intermediate VCFs for each step
+#reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+
+snpeff:
+  path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
+  clinical_reporting: True    # canonical transcripts + output in HGVS notation
+  cancer: True
+
+gatk:
+  annotations:                # field names in final VCF:
+  - Coverage                  # DP
+  - BaseQualityRankSumTest    # BaseQRankSum
+  - FisherStrand              # FS
+  - GCContent                 # GC
+  - HaplotypeScore            # HaplotypeScore
+  - HomopolymerRun            # HRun
+  - RMSMappingQuality         # MQ
+  - MappingQualityRankSumTest # MQRankSum
+  - MappingQualityZero        # MQ0
+  - QualByDepth               # QD
+  - ReadPosRankSumTest        # ReadPosRankSum
+
+db_nsfp:
+  path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+  annotations:
+  - SIFT_score
+  - Polyphen2_HVAR_score
+  - Polyphen2_HVAR_pred
+  - LRT_score
+  - LRT_pred
+  - MutationTaster_score
+  - MutationTaster_pred
+  - MutationAssessor_score
+  - MutationAssessor_pred
+  - FATHMM_score
+  - Ensembl_geneid
+  - Ensembl_transcriptid
+  - Uniprot_acc
+  - 1000Gp1_AC
+  - 1000Gp1_AF
+  - ESP6500_AA_AF
+  - ESP6500_EA_AF
+
+vcfs:
+  db_snp:
+    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf
+    annotations:
+    - ID
+    - SAO
+    - VC
+    - PM
+    - MUT
+    - HD
+    - KGValidated
+    - PH3
+    - OM
+    - COMMON
+    - CLNSIG
+    - G5
+    - dbSNPBuildID
+
+  cosmic:
+    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+    annotations:
+    - ID
+    - CNT
+    - AA
+    - CDS
+
+  #om(om_Cancer | om_PATIENT | om_MutClass | om_MutClassPC)
+  oncomine:
+    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
+
+tracks:  # requires vcfannotate (from bcbio-nextgen)
+  #CPG Island
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+  # Copy Number Variants
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+  # Segmental Duplications
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+  # Repeats
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+#  #  RNA Editing (RNA-Seq data)
+#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
+
+# By default, is built from the following:
+# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
+# 2. Explicitly defined annotations in this yaml file
+# 3. SnpEff annotaions (EFF...)
+# 4. Track names
+# 5. Additional fields:
+additional_tsv_fields: []

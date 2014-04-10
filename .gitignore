@@ -37,8 +37,6 @@ nosetests.xml
 
 .idea/*
 .idea
-test/*
 .DS_Store
 */.DS_Store
 
-targetseq_test
