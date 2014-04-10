@@ -9,7 +9,7 @@ input:
       "EOL-1-3": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
       "EOL-1-4": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
-output_dir: ~/annotation_tests/multiple_vcfs
+output_dir: test/multiple_vcfs
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
@@ -20,6 +20,7 @@ reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 verbose: True                 # prints tools output
 #save_intermediate: True      # keeps intermediate VCFs for each step
 #reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+log: True  # save log and yaml
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff

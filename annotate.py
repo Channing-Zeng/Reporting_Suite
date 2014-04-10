@@ -100,6 +100,8 @@ class Annotator:
             self.log = os.path.join(output_dir, 'log.txt')
             if os.path.isfile(self.log):
                 os.remove(self.log)
+
+            shutil.copy(run_config_path, output_dir)
         else:
             self.log = None
 

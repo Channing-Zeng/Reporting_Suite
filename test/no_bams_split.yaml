@@ -1,7 +1,7 @@
 input:
   - vcf: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-freebayes.vcf
 
-output_dir: ~/annotation_tests/no_bams_split
+output_dir: test/no_bams_split
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
@@ -12,6 +12,7 @@ split_samples: True          # default if provided multiple BAMs
 verbose: True                 # prints tools output
 save_intermediate: True      # keeps intermediate VCFs for each step
 #reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+log: True  # save log and yaml
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
