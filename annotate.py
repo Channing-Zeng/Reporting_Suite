@@ -188,7 +188,7 @@ class Annotator:
                         self.log_exit('ERROR: sample ' + sample + ' is not in VCF ' + inp_fpath + '\n'
                                       'Available samples: ' + ', '.join(samples))
                 for sample in samples:
-                    bam_fpath = bams.get(sample)
+                    bam_fpath = bams.get(sample) if bams else None
                     new_vcf = self.split_samples(inp_fpath, sample)
                     self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
             else:
