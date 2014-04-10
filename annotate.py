@@ -178,33 +178,18 @@ class Annotator:
                                 if l.strip().startswith('#CHROM'))
             samples = basic_fields[9:]
 
-            if self.run_config.get('split_samples'):
-                # Split VCFs by samples, not taking BAMs into account
-                for sample in sorted(samples):
+            # Split by samples
+            if bams or self.run_config.get('split_samples'):
+                for sample in (bams.keys() if bams else []):
+                    if sample not in samples:
+                        exit('ERROR: sample ' + sample + ' is not in VCF. ' +
+                             'Available samples: ' + ', '.join(samples))
+                for sample in samples:
+                    bam_fpath = bams.get(sample)
                     new_vcf = self.split_samples(inp_fpath, sample)
-                    self.data.append({'vcf': new_vcf, 'bam': None})
-
-            elif not bams:
-                self.data.append(rec)
-
+                    self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
             else:
-                # Split VCFs by BAMs
-                if (len(samples) == 1 and len(bams) == 0 or
-                    len(samples) == 0 and len(bams) == 1 or
-                    len(samples) == 0 and len(bams) == 0):
-                    rec['bam'] = bams[1] if bams else None
-                else:
-                    if bams:
-                        # if len(samples) != len(bams):
-                        #     exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
-                        #          ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
-                        for sample, bam_fpath in sorted(bams.items()):
-                            if sample not in samples:
-                                exit('ERROR: sample ' + sample + ' is not in VCF. ' +
-                                     'Available samples: ' + ', '.join(samples))
-                            new_vcf = self.split_samples(inp_fpath, sample)
-                            self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
-                            self.log_print('')
+                self.data.append({'vcf': inp_fpath, 'bam': bam_fpath})
 
 
     def annotate(self):
