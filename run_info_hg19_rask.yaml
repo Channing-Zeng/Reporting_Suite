@@ -37,7 +37,6 @@ gatk:
   - MappingQualityZero        # MQ0
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
-  - set
   - Type
   - QA
   - GENE
