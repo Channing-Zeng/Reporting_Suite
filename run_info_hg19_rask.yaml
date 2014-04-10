@@ -109,7 +109,7 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, EntrezID, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].BIOTYPE", "EFF[*].RANK", FORMAT, BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, Type, QA, GENE, AB, AC, AF, GMAF,  SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG,, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
+tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, EntrezID, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].BIOTYPE", "EFF[*].RANK", FORMAT, BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, Type, QA, GENE, AB, AC, AF, GMAF, SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
 # 2. Explicitly defined annotations in this yaml file
