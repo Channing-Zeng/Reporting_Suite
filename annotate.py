@@ -185,7 +185,7 @@ class Annotator:
             if bams or self.run_config.get('split_samples'):
                 for sample in (bams.keys() if bams else []):
                     if sample not in samples:
-                        self.log_exit('ERROR: sample ' + sample + ' is not in VCF ' + inp_fpath + '. '
+                        self.log_exit('ERROR: sample ' + sample + ' is not in VCF ' + inp_fpath + '\n'
                                       'Available samples: ' + ', '.join(samples))
                 for sample in samples:
                     bam_fpath = bams.get(sample)
