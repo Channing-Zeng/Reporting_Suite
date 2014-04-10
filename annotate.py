@@ -91,8 +91,6 @@ class Annotator:
 
 
     def __init__(self, system_config_path, run_config_path):
-        self.all_fields = []
-
         self.system_config = load(open(system_config_path), Loader=Loader)
         self.run_config = load(open(run_config_path), Loader=Loader)
 
@@ -185,7 +183,6 @@ class Annotator:
                 for sample in sorted(samples):
                     new_vcf = self.split_samples(inp_fpath, sample)
                     self.data.append({'vcf': new_vcf, 'bam': None})
-                    self.log_print('')
 
             elif not bams:
                 self.data.append(rec)
@@ -198,17 +195,16 @@ class Annotator:
                     rec['bam'] = bams[1] if bams else None
                 else:
                     if bams:
-                        if len(samples) != len(bams):
-                            exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
-                                 ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
-                        for sample in bams.keys():
+                        # if len(samples) != len(bams):
+                        #     exit('ERROR: number of samples in ' + inp_fpath + ' (' + str(len(samples)) + ') ' +
+                        #          ' does not correspond to the number of BAMs (' + str(len(bams)) + ')')
+                        for sample, bam_fpath in sorted(bams.items()):
                             if sample not in samples:
                                 exit('ERROR: sample ' + sample + ' is not in VCF. ' +
                                      'Available samples: ' + ', '.join(samples))
-                    for sample, bam_fpath in sorted(bams.items()):
-                        new_vcf = self.split_samples(inp_fpath, sample)
-                        self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
-                        self.log_print('')
+                            new_vcf = self.split_samples(inp_fpath, sample)
+                            self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
+                            self.log_print('')
 
 
     def annotate(self):
@@ -219,6 +215,8 @@ class Annotator:
     def annotate_one(self, input_fpath, bam_fpath):
         if not 'resources' in self.system_config:
             exit('"resources" section in system config required.')
+
+        self.all_fields = []
 
         remove_annotation('EFF', input_fpath)
 
