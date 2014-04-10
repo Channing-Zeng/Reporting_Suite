@@ -61,7 +61,7 @@ def remove_annotation(field_to_del, input_fpath):
                         if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
                             continue
                     except:
-                        exit('Incorrect VCF at line: ' + l)
+                        self.log_exit('Incorrect VCF at line: ' + l)
                 elif l.strip() and l.strip()[0] != '#':
                     fields = l.split('\t')
                     info_line = fields[7]
@@ -111,6 +111,7 @@ class Annotator:
         self.log_print('Writing into ' + output_dir)
         if self.log:
             self.log_print('Logging to ' + self.log)
+        self.log_print('')
 
         if not which('java'):
             sys.stderr.write('\nWARNING: Please, run "module load java"\n')
@@ -123,14 +124,14 @@ class Annotator:
         data = []
         if 'input' not in self.run_config:
             if 'file' not in self.run_config:
-                exit('ERROR: Run config does not contain "input" section.')
+                self.log_exit('ERROR: Run config does not contain "input" section.')
             data.append({'vcf': realpath(self.run_config['file']),
                          'bam': self.run_config.get('bam'),
                          'bam_per_sample': None})
         else:
             for rec in self.run_config['input']:
                 if 'vcf' not in rec:
-                    exit('ERROR: Input section does not contain field "vcf".')
+                    self.log_exit('ERROR: Input section does not contain field "vcf".')
                 data.append({'vcf': realpath(rec['vcf']),
                              'bam': rec.get('bam'),
                              'bam_per_sample': rec.get('bams')})
@@ -184,8 +185,8 @@ class Annotator:
             if bams or self.run_config.get('split_samples'):
                 for sample in (bams.keys() if bams else []):
                     if sample not in samples:
-                        exit('ERROR: sample ' + sample + ' is not in VCF. ' +
-                             'Available samples: ' + ', '.join(samples))
+                        self.log_exit('ERROR: sample ' + sample + ' is not in VCF ' + inp_fpath + '. '
+                                      'Available samples: ' + ', '.join(samples))
                 for sample in samples:
                     bam_fpath = bams.get(sample)
                     new_vcf = self.split_samples(inp_fpath, sample)
@@ -201,7 +202,7 @@ class Annotator:
 
     def annotate_one(self, input_fpath, bam_fpath):
         if not 'resources' in self.system_config:
-            exit('"resources" section in system config required.')
+            self.log_exit('"resources" section in system config required.')
 
         self.all_fields = []
 
@@ -220,9 +221,9 @@ class Annotator:
             input_fpath = self.process_ensemble(input_fpath)
 
         if not 'genome_build' in self.run_config:
-            exit('Please, provide genome build (genome_build).')
+            self.log_exit('Please, provide genome build (genome_build).')
         if not 'reference' in self.run_config:
-            exit('Please, provide path to the reference file (reference).')
+            self.log_exit('Please, provide path to the reference file (reference).')
         if not file_exists(self.run_config['reference'], 'Reference'):
             exit(1)
 
@@ -426,7 +427,7 @@ class Annotator:
 
         db_path = self.run_config['db_nsfp'].get('path')
         if not db_path:
-            exit('Please, provide a path to db nsfp file in run_config.')
+            self.log_exit('Please, provide a path to db nsfp file in run_config.')
 
         annotations = self.run_config['db_nsfp'].get('annotations', [])
         self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
