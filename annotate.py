@@ -449,8 +449,8 @@ class Annotator:
 
         self.all_fields.extend([
             "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
-            "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].BIOTYPE",
-            "EFF[*].CODING", "EFF[*].TRID", "EFF[*].RANK"])
+            "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
+            "EFF[*].TRID", "EFF[*].RANK"])
 
         executable = self._get_java_tool_cmdline('snpeff')
         ref_name = self.run_config['genome_build']
@@ -606,10 +606,17 @@ class Annotator:
 
 
     def extract_fields(self, input_fpath):
-        basic_fields = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
-        fields = (basic_fields[:9] +
-                  filter(None, self.all_fields) +
-                  self.run_config.get('additional_tsv_fields', []))
+        first_line = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
+        basic_fields = [f for f in first_line[:9] if f != 'INFO']
+        manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
+
+        fields = None
+
+        manual_tsv_fields = self.run_config.get('tsv_fields')
+        if manual_tsv_fields:
+            fields = [f for f in manual_tsv_fields if f in basic_fields + manual_annots]
+        else:
+            fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
 
         if not fields:
             return

@@ -97,7 +97,7 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-# By default, is built from the following:
+# Built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
 # 2. Explicitly defined annotations in this yaml file
 # 3. SnpEff annotaions (EFF...)

@@ -1,5 +1,5 @@
 input:
-  - vcf: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ensemble.vcf
+  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
     #bam:
     bams:    # one per sample; will split VCF
       "EOL-1-1": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
@@ -7,7 +7,7 @@ input:
       "EOL-1-3": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
       "EOL-1-4": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
-output_dir: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/anno_split
+output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_10apr
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
@@ -16,7 +16,7 @@ ensemble: True                # filter REJECT lines
 #split_samples: True          # default if provided multiple BAMs
 
 verbose: True                 # prints tools output
-#save_intermediate: True      # keeps intermediate VCFs for each step
+save_intermediate: True      # keeps intermediate VCFs for each step
 #reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
 snpeff:
@@ -37,6 +37,13 @@ gatk:
   - MappingQualityZero        # MQ0
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
+  - set
+  - Type
+  - QA
+  - GENE
+  - AB
+  - AC
+  - AF
 
 db_nsfp:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
@@ -51,6 +58,7 @@ db_nsfp:
   - MutationAssessor_score
   - MutationAssessor_pred
   - FATHMM_score
+  - EntrezID
   - Ensembl_geneid
   - Ensembl_transcriptid
   - Uniprot_acc
@@ -61,13 +69,12 @@ db_nsfp:
 
 vcfs:
   db_snp:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_137.vcf
+    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
     annotations:
     - ID
     - SAO
     - VC
     - PM
-    - MUT
     - HD
     - KGValidated
     - PH3
@@ -76,6 +83,7 @@ vcfs:
     - CLNSIG
     - G5
     - dbSNPBuildID
+    - GMAF
 
   cosmic:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
@@ -90,7 +98,7 @@ vcfs:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
 
 tracks:  # requires vcfannotate (from bcbio-nextgen)
-  #CPG Island
+  #CpG Island
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
   # Copy Number Variants
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
@@ -101,10 +109,11 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-# By default, is built from the following:
+tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, EntrezID, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, EFF[*].BIOTYPE,  EFF[*].RANK, FORMAT, BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, Type, QA, GENE, AB, AC, AF, GMAF,  SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG,, G5, SIFT_score,  Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
+# Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
 # 2. Explicitly defined annotations in this yaml file
 # 3. SnpEff annotaions (EFF...)
 # 4. Track names
 # 5. Additional fields:
-additional_tsv_fields: []
+#additional_tsv_fields: []
