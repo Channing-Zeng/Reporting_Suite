@@ -663,7 +663,7 @@ class Annotator:
 
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
-            fields = [f for f, descr in manual_tsv_fields]
+            fields = [rec.keys()[0] for rec in manual_tsv_fields]
         else:
             fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
         if not fields:
@@ -689,7 +689,8 @@ class Annotator:
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
 
         if manual_tsv_fields:
-            tsv_fpath = self.rename_fileds(tsv_fpath, dict(manual_tsv_fields))
+            field_map = dict((rec.keys()[0], rec.values()[1]) for rec in manual_tsv_fields)
+            tsv_fpath = self.rename_fileds(tsv_fpath, field_map)
 
         tsv_fpath = self.correct_tabs(tsv_fpath)
 
