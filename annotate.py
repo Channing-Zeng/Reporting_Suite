@@ -629,6 +629,8 @@ class Annotator:
             with open(tsv_fpath) as f:
                 for i, l in enumerate(f):
                     if i != 0:
+                        while '\t\t' in l:
+                            l.replace('\t\t', '\t.\t')
                         f.write(l)
 
 
