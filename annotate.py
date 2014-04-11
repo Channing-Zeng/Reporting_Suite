@@ -237,9 +237,9 @@ class Annotator:
             for track in self.run_config['tracks']:
                 input_fpath = self.tracks(track, input_fpath)
 
-        self.filter_fields(input_fpath)
+        input_fpath = self.filter_fields(input_fpath)
 
-        self.extract_fields(input_fpath)
+        input_fpath = self.extract_fields(input_fpath)
 
         self.log_print('\nFinal VCF in ' + input_fpath)
         if self.log:
@@ -608,13 +608,35 @@ class Annotator:
         return res
 
 
+    def rename_fileds(self, tsv_fpath):
+        self.log_print('')
+        self.log_print('-' * 70)
+        self.log_print('Renaming fields.')
+
+        field_map = self.run_config.get('field_map')
+        if not field_map:
+            return tsv_fpath
+
+        with open(tsv_fpath) as f:
+            first_line = f.readline()[1:]
+        fields = first_line.split()
+        new_fields = [field_map[f] for f in fields]
+        new_line = '#' + '\t'.join(new_fields)
+
+        with open(splitext(tsv_fpath)[0] + '.renamed' + '.tsv') as out:
+            out.write(new_line + '\n')
+            with open(tsv_fpath) as f:
+                for i, l in enumerate(f):
+                    if i != 0:
+                        f.write(l)
+
+
     def extract_fields(self, input_fpath):
         first_line = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
         basic_fields = [f for f in first_line[:9] if f != 'INFO']
         manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
 
         fields = None
-
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
             fields = [f for f in manual_tsv_fields if f in basic_fields + manual_annots]
@@ -643,6 +665,9 @@ class Annotator:
 
         self.log_print(cmdline)
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
+
+        # self.rename_fileds(tsv_fpath)
+
         self.log_print('')
         if res != 0:
             self.log_print('Command returned status ' + str(res) +
@@ -651,6 +676,7 @@ class Annotator:
             # return input_fpath
         else:
             self.log_print('Saved TSV file to ' + tsv_fpath)
+        return tsv_fpath
 
 
     def process_rna(self, input_fpath):
@@ -721,6 +747,10 @@ class Annotator:
 
 
     def filter_fields(self, input_fpath):
+        self.log_print('')
+        self.log_print('-' * 70)
+        self.log_print('Filtering incorrect fields.')
+
         output_fpath = input_fpath + '.FILT'
         with open(input_fpath) as inp, open(output_fpath, 'w') as out:
             for l in inp:
