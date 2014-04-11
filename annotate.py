@@ -506,7 +506,7 @@ class Annotator:
 
         # Set TRUE or FALSE for tracks
         corr_out_fpath = out_fpath + '_tmp'
-        with open(input_fpath) as inp, open(corr_out_fpath, 'w') as out:
+        with open(out_fpath) as inp, open(corr_out_fpath, 'w') as out:
             for l in inp:
                 if field_name in l:
                     l = l.lstrip()
@@ -521,7 +521,8 @@ class Annotator:
                         fields = fields[:7] + [info_line] + fields[8:]
                         l = '\t'.join(fields)
                 out.write(l)
-        os.rename(corr_out_fpath, input_fpath)
+        os.rename(corr_out_fpath, out_fpath)
+        return out_fpath
 
 
     def _get_gatk_version(self):
