@@ -62,17 +62,14 @@ vcfs:
     - SAO
     - VC
     - PM
-    - MUT
     - HD
-    - KGValidated
+    - KGPROD
     - PH3
     - OM
     - CAF
     - COMMON
-    - CLNSIG
     - dbSNPBuildID
     - G5
-    - MAF
     - CDA
 
   cosmic:
@@ -149,15 +146,15 @@ tsv_fields:
   - SAO                    : VariantAlleleOrigin
   - VC                     : VariationClass
   - PM                     : VariantIsPrecious
-  - MUT                    : CitedMutation
+#  - MUT                    : CitedMutation
   - HD                     : PresentInDBGap
-  - KGValidated            : 1000GenomesValidated
+  - KGPROD                 : Has1000GenomeSubmission
   - PH3                    : HapMapValidated
   - OM                     : InOMIM
   - COMMON                 : CommonVariant
-  - CLNSIG                 : ClinicalSignificance
+#  - CLNSIG                 : ClinicalSignificance
   - G5                     : 5%MAFinPopulationsCAF
-  - MAF                    : GlobalMinorAlleleFrequency
+#  - MAF                    : GlobalMinorAlleleFrequency
   - CDA                    : InClinicalDiagnosticAssay
   - SIFT_score             : SiftScore
   - Polyphen2_HVAR_score   : PolyPhen2Score
