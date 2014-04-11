@@ -120,7 +120,7 @@ tsv_fields:
   - "EFF[*].EFFECT"        : Effect
   - "EFF[*].IMPACT"        : Impact
   - "EFF[*].FUNCLASS"      : FunctionalClass
-  - "EFF[*].CODING"        : Coding egion
+  - "EFF[*].CODING"        : CodingRegion
   - "EFF[*].CODON"         : Codon
   - "EFF[*].AA"            : AminoAcid
   - "EFF[*].AA_LEN"        : AminoAcidLength
