@@ -614,10 +614,6 @@ class Annotator:
         self.log_print('Renaming fields.')
         self.log_print('-' * 70)
 
-        field_map = self.run_config.get('field_map')
-        if not field_map:
-            return tsv_fpath
-
         with open(tsv_fpath) as f:
             first_line = f.readline()[1:]
         fields = first_line.split()
