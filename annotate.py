@@ -502,7 +502,26 @@ class Annotator:
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-        return self._call_and_rename(cmdline, input_fpath, field_name, result_to_stdout=True)
+        out_fpath = self._call_and_rename(cmdline, input_fpath, field_name, result_to_stdout=True)
+
+        # Set TRUE or FALSE for tracks
+        corr_out_fpath = out_fpath + '_tmp'
+        with open(input_fpath) as inp, open(corr_out_fpath, 'w') as out:
+            for l in inp:
+                if field_name in l:
+                    l = l.lstrip()
+                    if l.strip() and l.strip()[0] != '#':
+                        fields = l.split('\t')
+                        info_line = fields[7]
+                        info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                        info_pairs = [[pair[0], ('TRUE' if pair[1] else 'FALSE')]
+                                      if pair[0] == field_name and len(pair) > 1
+                                      else pair for pair in info_pairs]
+                        info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
+                        fields = fields[:7] + [info_line] + fields[8:]
+                        l = '\t'.join(fields)
+                out.write(l)
+        os.rename(corr_out_fpath, input_fpath)
 
 
     def _get_gatk_version(self):

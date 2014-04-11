@@ -62,17 +62,14 @@ vcfs:
     - SAO
     - VC
     - PM
-    - MUT
     - HD
-    - KGValidated
+    - KGPROD
     - PH3
     - OM
     - CAF
     - COMMON
-    - CLNSIG
     - dbSNPBuildID
     - G5
-    - MAF
     - CDA
 
   cosmic:
@@ -108,81 +105,81 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, om, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].RANK", BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, TYPE, QA, GENE, AB, AC, AF, GMAF, SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
 
 tsv_fields:
-  - CHROM                  : Chromosome
-  - POS                    : Position
-  - ID                     : ID
-  - REF                    : REF
-  - ALT                    : ALT
-  - QUAL                   : QualityScore
-  - DP                     : Depth
-  - FILTER                 : Filter
-  - dbSNPBuildID           : dbSNPBuildID
-  - "EFF[*].EFFECT"        : Effect
-  - "EFF[*].IMPACT"        : Impact
-  - "EFF[*].FUNCLASS"      : FunctionalClass
-  - "EFF[*].CODING"        : CodingRegion
-  - "EFF[*].CODON"         : Codon
-  - "EFF[*].AA"            : AminoAcid
-  - "EFF[*].AA_LEN"        : AminoAcidLength
-  - CNT                    : CountInCosmic
-  - AA                     : AminoAcidInCosmic
-  - CDS                    : CDSInCosmic
-  - om_Cancer              : OncomineCancer
-  - om_PATIENT             : OncominePatient
-  - om_MutClass            : OncomineMutClass
-  - om_MutClassPC          : OncomineMutClassPC
-  - "EFF[*].GENE"          : Gene
-  - Ensembl_geneid         : EnsembleGeneID
-  - Ensembl_transcriptid   : EnsembleTranscriptID
-  - Uniprot_acc            : UniprotAccession
-  - "EFF[*].RANK"          : Rank
-  - BaseQRankSum           : BaseQailityRankSum
-  - FS                     : FischerScore
-  - GC                     : GC
-  - HaplotypeScore         : HaplotypeScore
-  - HRun                   : HomopolymerRunSize
-  - MQ                     : MappingQuality
-  - MQRankSum              : MQualityRankSum
-  - MQ0                    : TotalMappingQualityZeroReads
-  - QD                     : QualityByDepth
-  - ReadPosRankSum         : ReadPosRankSum
-  - SAO                    : VariantAlleleOrigin
-  - VC                     : VariationClass
-  - PM                     : VariantIsPrecious
-  - MUT                    : CitedMutation
-  - HD                     : PresentInDBGap
-  - KGValidated            : 1000GenomesValidated
-  - PH3                    : HapMapValidated
-  - OM                     : InOMIM
-  - COMMON                 : CommonVariant
-  - CLNSIG                 : ClinicalSignificance
-  - G5                     : 5%MAFinPopulationsCAF
-  - MAF                    : GlobalMinorAlleleFrequency
-  - CDA                    : InClinicalDiagnosticAssay
-  - SIFT_score             : SiftScore
-  - Polyphen2_HVAR_score   : PolyPhen2Score
-  - Polyphen2_HVAR_pred    : PolyPhen2Prediction
-  - LRT_score              : LrtScore
-  - LRT_pred               : LrtPrediction
-  - MutationTaster_score   : MutationTasterScore
-  - MutationTaster_pred    : MutationTasterPrediction
-  - MutationAssessor_score : MutationAssessorScore
-  - MutationAssessor_pred  : MutationAssessorPrediction
-  - FATHMM_score           : FATHMMScore
-  - Ensembl_geneid         : EnsemblGeneID
-  - Ensembl_transcriptid   : EnsemblTranscriptID
-  - Uniprot_acc            : UniportAccNumber
-  - 1000Gp1_AC             : 1000GenomesAlleleCount
-  - 1000Gp1_AF             : 1000GenomesAlleleFrequency
-  - ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
-  - ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - AB                     : AlleleBbalanceTtHeterozygousSites
-  - TYPE                   : AlleleType
-  - set                    : SourceVCF_ForMergedRecInCombineVariants
-  - cpgIslandExt           : CPGIsland
-  - genomicSuperDups       : GenomicDuplication
-  - rptmk                  : KnownRepeat
-  - dgvMerged              : KnownCopyNumber
+  - CHROM                         : Chromosome
+  - POS                           : Position
+  - ID                            : ID
+  - REF                           : REF
+  - ALT                           : ALT
+  - QUAL                          : QualityScore
+  - DP                            : Depth
+  - FILTER                        : Filter
+  - dbSNPBuildID                  : dbSNPBuildID
+  - "EFF[*].EFFECT"               : Effect
+  - "EFF[*].IMPACT"               : Impact
+  - "EFF[*].FUNCLASS"             : FunctionalClass
+  - "EFF[*].CODING"               : CodingRegion
+  - "EFF[*].CODON"                : Codon
+  - "EFF[*].AA"                   : AminoAcid
+  - "EFF[*].AA_LEN"               : AminoAcidLength
+  - CNT                           : CountInCosmic
+  - AA                            : AminoAcidInCosmic
+  - CDS                           : CDSInCosmic
+  - om_Cancer                     : OncomineCancer
+  - om_PATIENT                    : OncominePatient
+  - om_MutClass                   : OncomineMutClass
+  - om_MutClassPC                 : OncomineMutClassPC
+  - "EFF[*].GENE"                 : Gene
+  - Ensembl_geneid                : EnsembleGeneID
+  - Ensembl_transcriptid          : EnsembleTranscriptID
+  - Uniprot_acc                   : UniprotAccession
+  - "EFF[*].RANK"                 : Rank
+  - BaseQRankSum                  : BaseQailityRankSum
+  - FS                            : FischerScore
+  - GC                            : GC
+  - HaplotypeScore                : HaplotypeScore
+  - HRun                          : HomopolymerRunSize
+  - MQ                            : MappingQuality
+  - MQRankSum                     : MQualityRankSum
+  - MQ0                           : TotalMappingQualityZeroReads
+  - QD                            : QualityByDepth
+  - ReadPosRankSum                : ReadPosRankSum
+  - SAO                           : VariantAlleleOrigin
+  - VC                            : VariationClass
+  - PM                            : VariantIsPrecious
+#  - MUT                           : CitedMutation
+  - HD                            : PresentInDBGap
+  - KGPROD                        : Has1000GenomeSubmission
+  - PH3                           : HapMapValidated
+  - OM                            : InOMIM
+  - COMMON                        : CommonVariant
+#  - CLNSIG                        : ClinicalSignificance
+  - G5                            : 5%MAFinPopulationsCAF
+#  - MAF                           : GlobalMinorAlleleFrequency
+  - CDA                           : InClinicalDiagnosticAssay
+  - dbNSFP_SIFT_score             : SiftScore
+  - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
+  - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
+  - dbNSFP_LRT_score              : LrtScore
+  - dbNSFP_LRT_pred               : LrtPrediction
+  - dbNSFP_MutationTaster_score   : MutationTasterScore
+  - dbNSFP_MutationTaster_pred    : MutationTasterPrediction
+  - dbNSFP_MutationAssessor_score : MutationAssessorScore
+  - dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
+  - dbNSFP_FATHMM_score           : FATHMMScore
+  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
+  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
+  - dbNSFP_Uniprot_acc            : UniportAccNumber
+  - dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
+  - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
+  - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
+  - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
+  - AB                            : AlleleBbalanceTtHeterozygousSites
+  - TYPE                          : AlleleType
+  - set                           : SourceVCF_ForMergedRecInCombineVariants
+  - cpgIslandExt                  : CPGIsland
+  - genomicSuperDups              : GenomicDuplication
+  - rptmk                         : KnownRepeat
+  - dgvMerged                     : KnownCopyNumber
 
 #  QA: "SumOfQualityInAlternateObservations
 #  GENE,
@@ -199,4 +196,3 @@ tsv_fields:
 # 4. Track names
 # 5. Additional fields:
 #additional_tsv_fields: []
-
