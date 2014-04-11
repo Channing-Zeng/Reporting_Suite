@@ -737,7 +737,7 @@ class Annotator:
                                 if p[1].startswith('.,'):
                                     p[1] = p[1][2:]
                                 new_info_pairs.append('='.join(p))
-                        info_line = ';'.join(info_pairs)
+                        info_line = ';'.join(new_info_pairs)
                         fields = fields[:7] + [info_line] + fields[8:]
                         l = '\t'.join(fields)
                 out.write(l)
