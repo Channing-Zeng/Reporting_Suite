@@ -106,75 +106,75 @@ tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].E
 
 #, VariantAlleleOrigin.     VariationClass     VariantIsPrecious     CitedMutation     PresentInDBGap     1000GenomesValidated     HapMapValidated     InOmim     CommonVariant     ClinicalSignificance     5%MAFinPopulations     ID     SiftScore     PolyPhen2Score     PolyPhen2Prediction     LrtScore     LrtPrediction     MutationTasterScore     MutationTasterPrediction     MutationAssessorScore     MutationAssessorPrediction     FATHMMScore     1000GenomesAlleleCount     1000GenomesAlleleFrequency     ESP6500AfricanAmericanAlleleFrequency     ESP6500EuropeanAmericanAlleleFrequency     CPGIsland     KnownCopyNumber     GenomicDuplication     KnownRepeat]
 
-field_map:
-  CHROM: Chromosome
-  POS: Position
-  ID: ID
-  REF: REF
-  ALT: ALT
-  QUAL: QualityScore
-  DP: Depth
-  FILTER: Filter
-  dbSNPBuildID: dbSNPBuildID
-  "EFF[*].EFFECT": Effect
-  "EFF[*].IMPACT": Impact
-  "EFF[*].FUNCLASS": Functional Class
-  "EFF[*].CODING": Coding Region
-  "EFF[*].CODON": Codon
-  "EFF[*].AA" Amino Acid
-  "EFF[*].AA_LEN": AminoAcidLength
-  om: Oncomine
-  CNT: CountInCosmic
-  AAL: AminoAcidInCosmic
-  CDS: CDSInCosmic
-  GENE: Gene
-  Ensembl_geneid,
-  Ensembl_transcriptid,
-  Uniprot_acc,
-  "EFF[*].BIOTYPE",
-  "EFF[*].RANK",
-  FORMAT,
-  BaseQailityRankSum,
-  FS,
-  GC,
-  HaplotypeScore,
-  HRun,
-  MQ,
-  MQRankSum,
-  MQ0,
-  QD,
-  ReadPosRankSum,
-  set,
-  TYPE,
-  QA,
-  GENE,
-  AB,
-  AC,
-  AF,
-  GMAF,
-  SAO,
-  VC,
-  PM,
-  HD,
-  KGValidated,
-  PH3,
-  OM,
-  COMMON,
-  CLNSIG,
-  G5,
-  SIFT_score,
-  Polyphen2_HVAR_score,
-  Polyphen2_HVAR_pred,
-  LRT_score, LRT_pred,
-  MutationTaster_score,
-  MutationTaster_pred,
-  MutationAssessor_score,
-  MutationAssessor_pred,
-  FATHMM_score,
-  1000Gp1_AC,
-  1000Gp1_AF,
-  ESP6500_AA_AF,
-  ESP6500_EA_AF
+#field_map:
+#  CHROM: Chromosome
+#  POS: Position
+#  ID: ID
+#  REF: REF
+#  ALT: ALT
+#  QUAL: QualityScore
+#  DP: Depth
+#  FILTER: Filter
+#  dbSNPBuildID: dbSNPBuildID
+#  "EFF[*].EFFECT": Effect
+#  "EFF[*].IMPACT": Impact
+#  "EFF[*].FUNCLASS": Functional Class
+#  "EFF[*].CODING": Coding Region
+#  "EFF[*].CODON": Codon
+#  "EFF[*].AA" Amino Acid
+#  "EFF[*].AA_LEN": AminoAcidLength
+#  om: Oncomine
+#  CNT: CountInCosmic
+#  AAL: AminoAcidInCosmic
+#  CDS: CDSInCosmic
+#  GENE: Gene
+#  Ensembl_geneid,
+#  Ensembl_transcriptid,
+#  Uniprot_acc,
+#  "EFF[*].BIOTYPE",
+#  "EFF[*].RANK",
+#  FORMAT,
+#  BaseQailityRankSum,
+#  FS,
+#  GC,
+#  HaplotypeScore,
+#  HRun,
+#  MQ,
+#  MQRankSum,
+#  MQ0,
+#  QD,
+#  ReadPosRankSum,
+#  set,
+#  TYPE,
+#  QA,
+#  GENE,
+#  AB,
+#  AC,
+#  AF,
+#  GMAF,
+#  SAO,
+#  VC,
+#  PM,
+#  HD,
+#  KGValidated,
+#  PH3,
+#  OM,
+#  COMMON,
+#  CLNSIG,
+#  G5,
+#  SIFT_score,
+#  Polyphen2_HVAR_score,
+#  Polyphen2_HVAR_pred,
+#  LRT_score, LRT_pred,
+#  MutationTaster_score,
+#  MutationTaster_pred,
+#  MutationAssessor_score,
+#  MutationAssessor_pred,
+#  FATHMM_score,
+#  1000Gp1_AC,
+#  1000Gp1_AF,
+#  ESP6500_AA_AF,
+#  ESP6500_EA_AF
 
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
