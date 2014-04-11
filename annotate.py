@@ -676,7 +676,7 @@ class Annotator:
             first_line = f.readline()[1:]
         fields = first_line.split()
         new_fields = [field_map[f] for f in fields]
-        new_line = '#' + '\t'.join(new_fields)
+        new_line = '\t'.join(new_fields)
 
         out_fpath = splitext(tsv_fpath)[0] + '.renamed' + '.tsv'
         with open(out_fpath, 'w') as out:

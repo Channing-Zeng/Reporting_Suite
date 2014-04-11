@@ -173,7 +173,7 @@ tsv_fields:
   - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
   - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - AB                            : AlleleBbalanceTtHeterozygousSites
+  - AB                            : AlleleBalanceAtHeterozygousSites
   - TYPE                          : AlleleType
   - set                           : SourceVCF_ForMergedRecInCombineVariants
   - cpgIslandExt                  : CPGIsland
