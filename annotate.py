@@ -239,7 +239,18 @@ class Annotator:
 
         input_fpath = self.filter_fields(input_fpath)
 
-        input_fpath = self.extract_fields(input_fpath)
+        tsv_fpath = self.extract_fields(input_fpath)
+
+        manual_tsv_fields = self.run_config.get('tsv_fields')
+        if manual_tsv_fields:
+            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
+            tsv_fpath = self.rename_fields(tsv_fpath, field_map)
+            self.log_print('Saved final TSV file with nice names to ' + tsv_fpath)
+
+        if self.run_config.get('save_intermediate'):
+            corr_tsv_fpath = self.correct_tabs(tsv_fpath)
+            self.log_print('TSV file with dots to ' + corr_tsv_fpath)
+            self.log_print('View with "column -t ' + corr_tsv_fpath + ' | less -S')
 
         self.log_print('\nFinal VCF in ' + input_fpath)
         if self.log:
@@ -608,7 +619,7 @@ class Annotator:
         return res
 
 
-    def rename_fileds(self, tsv_fpath, field_map):
+    def rename_fields(self, tsv_fpath, field_map):
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Renaming fields.')
@@ -644,15 +655,21 @@ class Annotator:
                     l = l.replace('\t\t', '\t.\t')
                 out.write(l)
 
-        if self.run_config.get('save_intermediate'):
-            return out_fpath
-        else:
-            os.remove(tsv_fpath)
-            os.rename(out_fpath, tsv_fpath)
-            return tsv_fpath
+        return out_fpath
 
 
     def extract_fields(self, input_fpath):
+        tsv_fpath = os.path.splitext(input_fpath)[0] + '.tsv'
+
+        if self.run_config.get('save_intermediate') and \
+            (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
+            if isfile(tsv_fpath) and getsize(tsv_fpath) > 0:
+                self.log_print(tsv_fpath + ' exists, reusing')
+                return tsv_fpath
+        else:
+            if isfile(tsv_fpath):
+                os.remove(tsv_fpath)
+
         first_line = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
         basic_fields = [f for f in first_line[:9] if f != 'INFO']
         manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
@@ -677,18 +694,8 @@ class Annotator:
 
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
-        tsv_fpath = os.path.splitext(input_fpath)[0] + '.tsv'
-        if isfile(tsv_fpath):
-            os.remove(tsv_fpath)
-
         self.log_print(cmdline)
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
-
-        if manual_tsv_fields:
-            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
-            tsv_fpath = self.rename_fileds(tsv_fpath, field_map)
-
-        tsv_fpath = self.correct_tabs(tsv_fpath)
 
         self.log_print('')
         if res != 0:
@@ -726,26 +733,39 @@ class Annotator:
         self.log_print('-' * 70)
 
         base_path, ext = os.path.splitext(input_fpath)
-        pass_fpath = base_path + '.pass' + ext
-        with open(input_fpath) as input_f, open(pass_fpath, 'w') as pass_f:
+        output_fpath = base_path + '.pass' + ext
+
+        if self.run_config.get('save_intermediate') and \
+            (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
+            if isfile(output_fpath) and getsize(output_fpath) > 0:
+                self.log_print(output_fpath + ' exists, reusing')
+                return output_fpath
+
+        with open(input_fpath) as input_f, open(output_fpath, 'w') as pass_f:
             for line in input_f.readlines():
                 if 'REJECT' not in line:
                     pass_f.write(line)
         if self.run_config.get('save_intermediate'):
-            return pass_fpath
+            return output_fpath
         else:
             os.remove(input_fpath)
-            os.rename(pass_fpath, input_fpath)
+            os.rename(output_fpath, input_fpath)
             return input_fpath
 
 
-    def split_genotypes(self, input_fpath, result_fpath):
+    def split_genotypes(self, input_fpath, output_fpath):
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Splitting genotypes.')
         self.log_print('-' * 70)
 
-        with open(input_fpath) as vcf, open(result_fpath, 'w') as out:
+        if self.run_config.get('save_intermediate') and \
+            (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
+            if isfile(output_fpath) and getsize(output_fpath) > 0:
+                self.log_print(output_fpath + ' exists, reusing')
+                return output_fpath
+
+        with open(input_fpath) as vcf, open(output_fpath, 'w') as out:
             for i, line in enumerate(vcf):
                 clean_line = line.strip()
                 if not clean_line or clean_line[0] == '#':
@@ -763,10 +783,10 @@ class Annotator:
                         out.write(line)
 
         if self.run_config.get('save_intermediate'):
-            return result_fpath
+            return output_fpath
         else:
             os.remove(input_fpath)
-            os.rename(result_fpath, input_fpath)
+            os.rename(output_fpath, input_fpath)
             return input_fpath
 
 
@@ -777,6 +797,13 @@ class Annotator:
         self.log_print('-' * 70)
 
         output_fpath = splitext(input_fpath)[0] + '.filt.vcf'
+
+        if self.run_config.get('save_intermediate') and \
+            (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
+            if isfile(output_fpath) and getsize(output_fpath) > 0:
+                self.log_print(output_fpath + ' exists, reusing')
+                return output_fpath
+
         with open(input_fpath) as inp, open(output_fpath, 'w') as out:
             for l in inp:
                 if l.strip() and l.strip()[0] != '#':
