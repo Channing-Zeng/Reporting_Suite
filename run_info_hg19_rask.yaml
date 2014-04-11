@@ -37,6 +37,7 @@ gatk:
   - MappingQualityZero        # MQ0
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
+  - Gene
 
 db_nsfp:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
@@ -67,16 +68,18 @@ vcfs:
     - SAO
     - VC
     - PM
-    - HD
     - MUT
+    - HD
     - KGValidated
     - PH3
     - OM
+    - CAF
     - COMMON
     - CLNSIG
-    - G5
     - dbSNPBuildID
-    - GMAF
+    - G5
+    - MAF
+    - CDA
 
   cosmic:
     path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
@@ -102,77 +105,95 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
-tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, om, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].RANK", BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, TYPE, QA, GENE, AB, AC, AF, GMAF, SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
+#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, om, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].RANK", BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, TYPE, QA, GENE, AB, AC, AF, GMAF, SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
 
-#, VariantAlleleOrigin.     VariationClass     VariantIsPrecious     CitedMutation     PresentInDBGap     1000GenomesValidated     HapMapValidated     InOmim     CommonVariant     ClinicalSignificance     5%MAFinPopulations     ID     SiftScore     PolyPhen2Score     PolyPhen2Prediction     LrtScore     LrtPrediction     MutationTasterScore     MutationTasterPrediction     MutationAssessorScore     MutationAssessorPrediction     FATHMMScore     1000GenomesAlleleCount     1000GenomesAlleleFrequency     ESP6500AfricanAmericanAlleleFrequency     ESP6500EuropeanAmericanAlleleFrequency     CPGIsland     KnownCopyNumber     GenomicDuplication     KnownRepeat]
+tsv_fields:
+  - [CHROM                  , Chromosome]
+  - [POS                    , Position]
+  - [ID                     , ID]
+  - [REF                    , REF]
+  - [ALT                    , ALT]
+  - [QUAL                   , QualityScore]
+  - [DP                     , Depth]
+  - [FILTER                 , Filter]
+  - [dbSNPBuildID           , dbSNPBuildID]
+  - ["EFF[*].EFFECT"        , Effect]
+  - ["EFF[*].IMPACT"        , Impact]
+  - ["EFF[*].FUNCLASS"      , Functional Class]
+  - ["EFF[*].CODING"        , Coding Region]
+  - ["EFF[*].CODON"         , Codon]
+  - ["EFF[*].AA"            , AminoAcid]
+  - ["EFF[*].AA_LEN"        , AminoAcidLength]
 
-#field_map:
-#  CHROM:                Chromosome
-#  POS:                  Position
-#  ID:                   ID
-#  REF:                  REF
-#  ALT:                  ALT
-#  QUAL:                 QualityScore
-#  DP:                   Depth
-#  FILTER:               Filter
-#  dbSNPBuildID:         dbSNPBuildID
-#  "EFF[*].EFFECT":      Effect
-#  "EFF[*].IMPACT":      Impact
-#  "EFF[*].FUNCLASS":    Functional Class
-#  "EFF[*].CODING":      Coding Region
-#  "EFF[*].CODON":       Codon
-#  "EFF[*].AA":          AminoAcid
-#  "EFF[*].AA_LEN":      AminoAcidLength
-#  om:                   Oncomine
-#  CNT:                  CountInCosmic
-#  AAL:                  AminoAcidInCosmic
-#  CDS:                  CDSInCosmic
-#  GENE:                 Gene
-#  Ensembl_geneid:       EnsembleGeneID
-#  Ensembl_transcriptid: EnsembleTranscriptID
-#  Uniprot_acc:          UniprotAccession
-#  "EFF[*].RANK":        Rank
-#  BaseQailityRankSum:   BaseQailityRankSum
-#  FS:                   FischerScore
-#  GC:                   GC
-#  HaplotypeScore:       HaplotypeScore
-#  HRun:                 HomopolymerRunSize
-#  MQ:                   MappingQuality
-#  MQRankSum:            MQualityRankSum
-#  MQ0:                  TotalMappingQualityZeroReads
-#  QD:                   QualityByDepth
-#  ReadPosRankSum:       ReadPosRankSum
-#  set,
-#  TYPE,
-#  QA,
+  - [om                     , Oncomine]
+  - [CNT                    , CountInCosmic]
+  - [AA                     , AminoAcidInCosmic]
+  - [CDS                    , CDSInCosmic]
+
+  - ["EFF[*].GENE"          , Gene]
+
+  - [Ensembl_geneid         , EnsembleGeneID]
+  - [Ensembl_transcriptid   , EnsembleTranscriptID]
+  - [Uniprot_acc            , UniprotAccession]
+  - ["EFF[*].RANK"          , Rank]
+  - [BaseQailityRankSum     , BaseQailityRankSum]
+  - [FS                     , FischerScore]
+  - [GC                     , GC]
+  - [HaplotypeScore         , HaplotypeScore]
+  - [HRun                   , HomopolymerRunSize]
+  - [MQ                     , MappingQuality]
+  - [MQRankSum              , MQualityRankSum]
+  - [MQ0                    , TotalMappingQualityZeroReads]
+  - [QD                     , QualityByDepth]
+  - [ReadPosRankSum         , ReadPosRankSum]
+
+  - [SAO                    , VariantAlleleOrigin]
+  - [VC                     , VariationClass]
+  - [PM                     , VariantIsPrecious]
+  - [MUT                    , CitedMutation]
+  - [HD                     , PresentInDBGap]
+  - [KGValidated            , 1000GenomesValidated]
+  - [PH3                    , HapMapValidated]
+  - [OM                     , InOMIM]
+  - [COMMON                 , CommonVariant]
+  - [CLNSIG                 , ClinicalSignificance]
+  - [G5                     , 5%MAFinPopulationsCAF ]
+  - [MAF                    , GlobalMinorAlleleFrequency]
+  - [CDA                    , InClinicalDiagnosticAssay]
+
+  - [SIFT_score             , SiftScore]
+  - [Polyphen2_HVAR_score   , PolyPhen2Score]
+  - [Polyphen2_HVAR_pred    , PolyPhen2Prediction]
+  - [LRT_score              , LrtScore]
+  - [LRT_pred               , LrtPrediction]
+  - [MutationTaster_score   , MutationTasterScore]
+  - [MutationTaster_pred    , MutationTasterPrediction]
+  - [MutationAssessor_score , MutationAssessorScore]
+  - [MutationAssessor_pred  , MutationAssessorPrediction]
+  - [FATHMM_score           , FATHMMScore]
+  - [Ensembl_geneid         , EnsemblGeneID]
+  - [Ensembl_transcriptid   , EnsemblTranscriptID]
+  - [Uniprot_acc            , UniportAccNumber]
+  - [1000Gp1_AC             , 1000GenomesAlleleCount]
+  - [1000Gp1_AF             , 1000GenomesAlleleFrequency]
+  - [ESP6500_AA_AF          , ESP6500AfricanAmericanAlleleFrequency]
+  - [ESP6500_EA_AF          , ESP6500EuropeanAmericanAlleleFrequency]
+
+  - [AB                     , AlleleBbalanceTtHeterozygousSites]
+  - [TYPE                   , AlleleType]
+  - [set                    , SourceVCF_ForMergedRecInCombineVariants]
+  - [cpgIslandExt           , CPGIsland]
+  - [dgvMerged              , KnownCopyNumber]
+  - [genomicSuperDups       , GenomicDuplication]
+  - [rptmk                  , KnownRepeat],
+
+#  QA: "SumOfQualityInAlternateObservations
 #  GENE,
 #  AB,
 #  AC,
 #  AF,
 #  GMAF,
-#  SAO,
-#  VC,
-#  PM,
-#  HD,
-#  KGValidated,
-#  PH3,
-#  OM,
-#  COMMON,
-#  CLNSIG,
-#  G5,
-#  SIFT_score,
-#  Polyphen2_HVAR_score,
-#  Polyphen2_HVAR_pred,
-#  LRT_score, LRT_pred,
-#  MutationTaster_score,
-#  MutationTaster_pred,
-#  MutationAssessor_score,
-#  MutationAssessor_pred,
-#  FATHMM_score,
-#  1000Gp1_AC,
-#  1000Gp1_AF,
-#  ESP6500_AA_AF,
-#  ESP6500_EA_AF
+#  set:
 
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT

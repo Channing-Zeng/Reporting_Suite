@@ -608,7 +608,7 @@ class Annotator:
         return res
 
 
-    def rename_fileds(self, tsv_fpath):
+    def rename_fileds(self, tsv_fpath, field_map):
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Renaming fields.')
@@ -624,14 +624,36 @@ class Annotator:
         new_fields = [field_map[f] for f in fields]
         new_line = '#' + '\t'.join(new_fields)
 
-        with open(splitext(tsv_fpath)[0] + '.renamed' + '.tsv') as out:
+        out_fpath = splitext(tsv_fpath)[0] + '.renamed' + '.tsv'
+        with open(out_fpath, 'w') as out:
             out.write(new_line + '\n')
             with open(tsv_fpath) as f:
                 for i, l in enumerate(f):
                     if i != 0:
-                        while '\t\t' in l:
-                            l = l.replace('\t\t', '\t.\t')
-                        f.write(l)
+                        out.write(l)
+
+        if self.run_config.get('save_intermediate'):
+            return out_fpath
+        else:
+            os.remove(tsv_fpath)
+            os.rename(out_fpath, tsv_fpath)
+            return tsv_fpath
+
+
+    def correct_tabs(self, tsv_fpath):
+        out_fpath = splitext(tsv_fpath)[0] + '.tabs' + '.tsv'
+        with open(out_fpath, 'w') as out, open(tsv_fpath) as inp:
+            for l in inp:
+                while '\t\t' in l:
+                    l = l.replace('\t\t', '\t.\t')
+                out.write(l)
+
+        if self.run_config.get('save_intermediate'):
+            return out_fpath
+        else:
+            os.remove(tsv_fpath)
+            os.rename(out_fpath, tsv_fpath)
+            return tsv_fpath
 
 
     def extract_fields(self, input_fpath):
@@ -641,7 +663,7 @@ class Annotator:
 
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
-            fields = [f for f in manual_tsv_fields] # if f in basic_fields + manual_annots]
+            fields = [f for f, descr in manual_tsv_fields]
         else:
             fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
         if not fields:
@@ -666,7 +688,10 @@ class Annotator:
         self.log_print(cmdline)
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
 
-        # self.rename_fileds(tsv_fpath)
+        if manual_tsv_fields:
+            tsv_fpath = self.rename_fileds(tsv_fpath, dict(manual_tsv_fields))
+
+        tsv_fpath = self.correct_tabs(tsv_fpath)
 
         self.log_print('')
         if res != 0:
