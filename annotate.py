@@ -639,7 +639,7 @@ class Annotator:
 
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
-            fields = [f for f in manual_tsv_fields if f in basic_fields + manual_annots]
+            fields = [f for f in manual_tsv_fields] # if f in basic_fields + manual_annots]
         else:
             fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
         if not fields:
