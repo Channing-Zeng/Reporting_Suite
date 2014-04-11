@@ -168,7 +168,7 @@ tsv_fields:
 #  - CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
 #  - MAF                           : GlobalMinorAlleleFrequency
-  - CDA                           : InClinicalDiagnosticAssay
+#  - CDA                           : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
   - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
