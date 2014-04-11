@@ -612,6 +612,7 @@ class Annotator:
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Renaming fields.')
+        self.log_print('-' * 70)
 
         field_map = self.run_config.get('field_map')
         if not field_map:
@@ -636,13 +637,11 @@ class Annotator:
         basic_fields = [f for f in first_line[:9] if f != 'INFO']
         manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
 
-        fields = None
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
             fields = [f for f in manual_tsv_fields if f in basic_fields + manual_annots]
         else:
             fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
-
         if not fields:
             return
 
@@ -658,8 +657,7 @@ class Annotator:
 
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
-        basepath, ext = os.path.splitext(input_fpath)
-        tsv_fpath = basepath + '.tsv'
+        tsv_fpath = os.path.splitext(input_fpath)[0] + '.tsv'
         if isfile(tsv_fpath):
             os.remove(tsv_fpath)
 
@@ -701,6 +699,7 @@ class Annotator:
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Filtering ensemble reject lines.')
+        self.log_print('-' * 70)
 
         base_path, ext = os.path.splitext(input_fpath)
         pass_fpath = base_path + '.pass' + ext
@@ -720,6 +719,7 @@ class Annotator:
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Splitting genotypes.')
+        self.log_print('-' * 70)
 
         with open(input_fpath) as vcf, open(result_fpath, 'w') as out:
             for i, line in enumerate(vcf):
@@ -750,8 +750,9 @@ class Annotator:
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Filtering incorrect fields.')
+        self.log_print('-' * 70)
 
-        output_fpath = input_fpath + '.FILT'
+        output_fpath = splitext(input_fpath)[0] + '.filt.vcf'
         with open(input_fpath) as inp, open(output_fpath, 'w') as out:
             for l in inp:
                 if l.strip() and l.strip()[0] != '#':

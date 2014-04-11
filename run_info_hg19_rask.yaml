@@ -108,12 +108,12 @@ tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].E
 
 #field_map:
 #  CHROM: Chromosome
-#  POS:
-#  ID:
-#  REF,
-#  ALT,
-#  QUAL,
-#  DP,
+#  POS: Position
+#  ID: ID
+#  REF: REF
+#  ALT: ALT
+#  QUAL: QualityScore
+#  DP: Depth
 #  FILTER,
 #  dbSNPBuildID,
 #  "EFF[*].EFFECT",
