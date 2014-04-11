@@ -119,8 +119,8 @@ tsv_fields:
   - dbSNPBuildID           : dbSNPBuildID
   - "EFF[*].EFFECT"        : Effect
   - "EFF[*].IMPACT"        : Impact
-  - "EFF[*].FUNCLASS"      : Functional Class
-  - "EFF[*].CODING"        : Coding Region
+  - "EFF[*].FUNCLASS"      : FunctionalClass
+  - "EFF[*].CODING"        : Coding egion
   - "EFF[*].CODON"         : Codon
   - "EFF[*].AA"            : AminoAcid
   - "EFF[*].AA_LEN"        : AminoAcidLength
