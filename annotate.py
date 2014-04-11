@@ -689,7 +689,7 @@ class Annotator:
         res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
 
         if manual_tsv_fields:
-            field_map = dict((rec.keys()[0], rec.values()[1]) for rec in manual_tsv_fields)
+            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
             tsv_fpath = self.rename_fileds(tsv_fpath, field_map)
 
         tsv_fpath = self.correct_tabs(tsv_fpath)
