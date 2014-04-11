@@ -236,6 +236,9 @@ class Annotator:
         if self.run_config.get('tracks'):
             for track in self.run_config['tracks']:
                 input_fpath = self.tracks(track, input_fpath)
+
+        self.filter_fields(input_fpath)
+
         self.extract_fields(input_fpath)
 
         self.log_print('\nFinal VCF in ' + input_fpath)
@@ -714,6 +717,36 @@ class Annotator:
         else:
             os.remove(input_fpath)
             os.rename(result_fpath, input_fpath)
+            return input_fpath
+
+
+    def filter_fields(self, input_fpath):
+        output_fpath = input_fpath + '.FILT'
+        with open(input_fpath) as inp, open(output_fpath, 'w') as out:
+            for l in inp:
+                if l.strip() and l.strip()[0] != '#':
+                    if ',.' in l or '.,' in l:
+                        fields = l.split('\t')
+                        info_line = fields[7]
+                        info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                        new_info_pairs = []
+                        for p in info_pairs:
+                            if len(p) == 2:
+                                if p[1].endswith(',.'):
+                                    p[1] = p[1][:-2]
+                                if p[1].startswith('.,'):
+                                    p[1] = p[1][2:]
+                                new_info_pairs.append('='.join(p))
+                        info_line = ';'.join(info_pairs)
+                        fields = fields[:7] + [info_line] + fields[8:]
+                        l = '\t'.join(fields)
+                out.write(l)
+
+        if self.run_config.get('save_intermediate'):
+            return output_fpath
+        else:
+            os.remove(input_fpath)
+            os.rename(output_fpath, input_fpath)
             return input_fpath
 
 
