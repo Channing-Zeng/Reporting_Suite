@@ -129,9 +129,9 @@ tsv_fields:
   - om_MutClass                   : OncomineMutClass
   - om_MutClassPC                 : OncomineMutClassPC
   - "EFF[*].GENE"                 : Gene
-  - Ensembl_geneid                : EnsembleGeneID
-  - Ensembl_transcriptid          : EnsembleTranscriptID
-  - Uniprot_acc                   : UniprotAccession
+  - dbNSFP_Ensembl_geneid         : EnsembleGeneID
+  - dbNSFP_Ensembl_transcriptid   : EnsembleTranscriptID
+  - dbNSFP_Uniprot_acc            : UniprotAccession
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
