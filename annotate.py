@@ -630,7 +630,7 @@ class Annotator:
                 for i, l in enumerate(f):
                     if i != 0:
                         while '\t\t' in l:
-                            l.replace('\t\t', '\t.\t')
+                            l = l.replace('\t\t', '\t.\t')
                         f.write(l)
 
 
