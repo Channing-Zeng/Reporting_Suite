@@ -748,6 +748,7 @@ class Annotator:
         self.log_print('-' * 70)
 
         format_fields = set()
+        tmp_vcf = None
         # Split FORMAT
         if sample_name:
             tmp_vcf = vcf_fpath + '_tmp'
@@ -757,25 +758,28 @@ class Annotator:
                         out.write(l)
                         continue
                     vals = l.strip().split('\t')
+                    if len(vals) <= 9:
+                        out.write(l)
+                        continue
                     info = vals[8]
                     format_fields = vals[8].split(':')
-                    if len(vals) <= 9:
-                        exit('\t'.join(vals))
                     sample_fields = vals[9].split(':')
                     for f, s in zip(format_fields, sample_fields):
                         info += ';' + f + '=' + s
                         format_fields.append(f)
                     l = '\t'.join(vals[:8] + [info])
                     out.write(l + '\n')
-            os.remove(vcf_fpath)
-            os.rename(tmp_vcf, vcf_fpath)
 
         anno_line = ' '.join(fields + format_fields)
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
         self.log_print(cmdline)
-        res = subprocess.call(cmdline, stdin=open(vcf_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
+        res = subprocess.call(cmdline,
+                              stdin=open(tmp_vcf or vcf_fpath),
+                              stdout=open(tsv_fpath, 'w'), shell=True)
+        if tmp_vcf:
+            os.remove(tmp_vcf)
 
         self.log_print('')
         if res != 0:
