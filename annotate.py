@@ -211,7 +211,7 @@ class Annotator:
             self.log_print('')
             self.log_print('')
             self.log_print('*' * 70)
-            msg = '*' * 3 + 'Sample ' + sample_name
+            msg = '*' * 3 + ' Sample ' + sample_name
             self.log_print(msg + ('*' * (70 - len(msg)) if len(msg) >= 70 else ''))
             self.log_print('VCF: ' + input_fpath)
             if bam_fpath:
@@ -263,7 +263,7 @@ class Annotator:
         if self.run_config.get('save_intermediate'):
             corr_tsv_fpath = self.correct_tabs(tsv_fpath)
             self.log_print('TSV file with dots to ' + corr_tsv_fpath)
-            self.log_print('View with "column -t ' + corr_tsv_fpath + ' | less -S')
+            self.log_print('View with the commandline:  column -t ' + corr_tsv_fpath + ' | less -S')
 
         self.log_print('\nFinal VCF in ' + input_fpath)
         if self.log:
@@ -537,7 +537,8 @@ class Annotator:
         toolpath = self._get_tool_cmdline('vcfannotate')
         if not toolpath:
             self.log_err('WARNING: Skipping annotation with tracks: vcfannotate '
-                         'executable not found, you probably need to run ". /group/ngs/bin/bcbio-prod.sh"')
+                         'executable not found, you probably need to '
+                         'run the commandline:  . /group/ngs/bin/bcbio-prod.sh"')
             return
 
         self.all_fields.append(field_name)
@@ -763,13 +764,13 @@ class Annotator:
                     if len(vals) <= 9:
                         out.write(l)
                         continue
-                    info = vals[8]
+                    info = vals[7]
                     format_fields = vals[8].split(':')
                     sample_fields = vals[9].split(':')
                     for f, s in zip(format_fields, sample_fields):
                         info += ';' + f + '=' + s
                         format_fields.append(f)
-                    l = '\t'.join(vals[:8] + [info])
+                    l = '\t'.join(vals[:7] + [info])
                     out.write(l + '\n')
 
         anno_line = ' '.join(fields + list(format_fields))
