@@ -114,12 +114,12 @@ class Annotator:
         self.log_print('')
 
         if not which('java'):
-            sys.stderr.write('Warning: Java not found. You may want to run "module load java"\n\n')
+            sys.stderr.write('* Warning: Java not found. You may want to run "module load java"\n\n')
         if not which('perl'):
-            sys.stderr.write('Warning: Perl not found. You may want to run "module load perl"\n\n')
+            sys.stderr.write('* Warning: Perl not found. You may want to run "module load perl"\n\n')
         if not self._get_tool_cmdline('vcfannotate',
                                       extra_warn='You may want to load BCBio with ". /group/ngs/bin/bcbio-prod.sh"'):
-            sys.stderr.write('Warning: Skipping annotation with bed tracks.\n')
+            sys.stderr.write('* Warning: skipping annotation with bed tracks.\n')
 
         data = []
         if 'input' not in self.run_config:
