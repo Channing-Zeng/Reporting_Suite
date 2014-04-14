@@ -208,10 +208,11 @@ class Annotator:
 
         if sample_name:
             self.log_print('')
+            self.log_print('')
             self.log_print('*' * 70)
-            self.log_print('* Sample ' + sample_name)
-            self.log_print('* VCF: ' + input_fpath)
-            self.log_print('* BAM: ' + bam_fpath)
+            self.log_print('Sample ' + sample_name)
+            self.log_print('VCF: ' + input_fpath)
+            self.log_print('BAM: ' + bam_fpath)
 
         self.all_fields = []
 
