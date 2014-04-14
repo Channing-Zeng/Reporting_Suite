@@ -244,8 +244,11 @@ class Annotator:
         if 'vcfs' in self.run_config:
             for dbname, conf in self.run_config['vcfs'].items():
                 input_fpath = self.snpsift_annotate(dbname, conf, input_fpath)
+
         input_fpath = self.snpsift_db_nsfp(input_fpath)
+
         input_fpath = self.snpeff(input_fpath)
+
         if self.run_config.get('tracks'):
             for track in self.run_config['tracks']:
                 input_fpath = self.tracks(track, input_fpath)
@@ -261,7 +264,7 @@ class Annotator:
             self.log_print('Saved final TSV file with nice names to ' + tsv_fpath)
 
         if self.run_config.get('save_intermediate'):
-            corr_tsv_fpath = self.correct_tabs(tsv_fpath)
+            corr_tsv_fpath = correct_tabs(tsv_fpath)
             self.log_print('TSV file with dots to ' + corr_tsv_fpath)
             self.log_print('View with the commandline:  column -t ' + corr_tsv_fpath + ' | less -S')
 
@@ -426,28 +429,6 @@ class Annotator:
             return None
 
 
-    # def corr_oncomine(self, input_fpath):
-    #     output_fpath = input_fpath + '_tmp'
-    #     with open(input_fpath) as inp, open(output_fpath, 'w') as out:
-    #         for l in inp:
-    #             if 'om_Cancer' in l:
-    #                 l = l.lstrip()
-    #                 if l.strip() and l.strip()[0] != '#':
-    #                     fields = l.split('\t')
-    #                     info_line = fields[7]
-    #                     info_pairs = [attr.split('=') for attr in info_line.split(';')]
-    #                     info_pairs = [[pair[0], ('TRUE' if pair[1] else 'FALSE')]
-    #                                   if pair[0] == field_name and len(pair) > 1
-    #                                   else pair for pair in info_pairs]
-    #                     info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
-    #                     fields = fields[:7] + [info_line] + fields[8:]
-    #                     l = '\t'.join(fields)
-    #             out.write(l)
-    #     os.rename(corr_out_fpath, out_fpath)
-    #     return out_fpath
-
-
-
     def snpsift_annotate(self, dbname, conf, input_fpath):
         self.log_print('')
         self.log_print('-' * 70)
@@ -464,9 +445,13 @@ class Annotator:
 
         output_fpath = self._call_and_rename(cmdline, input_fpath, dbname, result_to_stdout=True)
 
-        # if dbname == 'oncomine':
-        #     return self.corr_oncomine(output_fpath)
-        # else:
+        corr_out_fpath = output_fpath + '_tmp'
+        with open(output_fpath) as inp, open(corr_out_fpath, 'w') as out:
+            for l in inp:
+                if l and not l.strip().startswith('#'):
+                    l = l.replace(' ', '_')
+                out.write(l)
+        os.rename(corr_out_fpath, output_fpath)
         return output_fpath
 
 
@@ -710,17 +695,6 @@ class Annotator:
             return tsv_fpath
 
 
-    def correct_tabs(self, tsv_fpath):
-        out_fpath = splitext(tsv_fpath)[0] + '.tabs' + '.tsv'
-        with open(out_fpath, 'w') as out, open(tsv_fpath) as inp:
-            for l in inp:
-                while '\t\t' in l:
-                    l = l.replace('\t\t', '\t.\t')
-                out.write(l)
-
-        return out_fpath
-
-
     def extract_fields(self, vcf_fpath, sample_name=None):
         tsv_fpath = os.path.splitext(vcf_fpath)[0] + '.tsv'
 
@@ -768,8 +742,10 @@ class Annotator:
                     format_fields = vals[8].split(':')
                     sample_fields = vals[9].split(':')
                     for f, s in zip(format_fields, sample_fields):
-                        info += ';' + f + '=' + s
-                        format_fields.append(f)
+                        if f not in 'DP', 'MQ':
+                            f = 'gt_' + f
+                            info += ';' + f + '=' + s
+                            format_fields.append(f)
                     l = '\t'.join(vals[:7] + [info])
                     out.write(l + '\n')
 
@@ -781,8 +757,8 @@ class Annotator:
         res = subprocess.call(cmdline,
                               stdin=open(tmp_vcf or vcf_fpath),
                               stdout=open(tsv_fpath, 'w'), shell=True)
-        # if tmp_vcf:
-        #     os.remove(tmp_vcf)
+        if tmp_vcf:
+            os.remove(tmp_vcf)
 
         self.log_print('')
         if res != 0:
@@ -941,6 +917,17 @@ class Annotator:
     #     os.remove(tsv_fpath)
     #     os.rename(output_fpath, tsv_fpath)
     #     return tsv_fpath
+
+
+def correct_tabs(tsv_fpath):
+    out_fpath = splitext(tsv_fpath)[0] + '.tabs' + '.tsv'
+    with open(out_fpath, 'w') as out, open(tsv_fpath) as inp:
+        for l in inp:
+            while '\t\t' in l:
+                l = l.replace('\t\t', '\t.\t')
+            out.write(l)
+
+    return out_fpath
 
 
 def remove_quotes(str):
