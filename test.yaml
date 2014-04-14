@@ -16,11 +16,6 @@ verbose: True                 # prints tools output
 save_intermediate: True      # keeps intermediate VCFs for each step
 reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
-snpeff:
-  path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff
-  clinical_reporting: True    # canonical transcripts + output in HGVS notation
-  cancer: True
-
 gatk:
   annotations:                # field names in final VCF:
   - Coverage                  # DP
@@ -92,6 +87,7 @@ vcfs:
     - om_MutClass
     - om_MutClassPC
 
+
 tracks:  # requires vcfannotate (from bcbio-nextgen)
   #CpG Island
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
@@ -103,8 +99,6 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
-
-#tsv_fields: [CHROM, POS, ID, REF, ALT, QUAL, DP, FILTER, dbSNPBuildID, "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODING", "EFF[*].CODON", "EFF[*].AA", "EFF[*].AA_LEN", CNT, AA, CDS, GENE, om, Ensembl_geneid, Ensembl_transcriptid, Uniprot_acc, "EFF[*].RANK", BaseQailityRankSum, FS, GC, HaplotypeScore, HRun, MQ, MQRankSum, MQ0, QD, ReadPosRankSum, set, TYPE, QA, GENE, AB, AC, AF, GMAF, SAO, VC, PM, HD, KGValidated, PH3, OM, COMMON, CLNSIG, G5, SIFT_score, Polyphen2_HVAR_score, Polyphen2_HVAR_pred, LRT_score, LRT_pred, MutationTaster_score, MutationTaster_pred, MutationAssessor_score, MutationAssessor_pred, FATHMM_score, 1000Gp1_AC, 1000Gp1_AF, ESP6500_AA_AF, ESP6500_EA_AF]
 
 tsv_fields:
   - CHROM                         : Chromosome
@@ -144,10 +138,26 @@ tsv_fields:
   - MQRankSum                     : MQualityRankSum
   - MQ0                           : TotalMappingQualityZeroReads
   - QD                            : QualityByDepth
-  - QA                            : AlternateQualSum
   - ReadPosRankSum                : ReadPosRankSum
+
+  # format - sample
+  - gt_GT:                        : Genotype
+  - gt_FT:                        : GenotypeWasCalled
+  - gt_GL:                        : GenotypeLikelihoods
+  - gt_GLE:                       : GenotypeLikelihoodsOfHeterogeneousPloidy
+  - gt_PL:                        : GenotypeLikelihoods_PhredScaled
+  - gt_GP:                        : GenotypePosteriorProbs_PhredScaled
+  - gt_GQ:                        : ConditionalGenotypeQuality
+  - gt_HQ:                        : HaplotypeQualities
+  - gt_PS:                        : PhaseSet
+  - gt_PQ:                        : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+  - gt_EC:                        : ExpAlleleCounts
+
+  # dbsnp
   - SAO                           : VariantAlleleOrigin
+  - AB                            : AlleleBalanceAtHeterozygousSites
   - VC                            : VariationClass
+  - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
 #  - MUT                           : CitedMutation
   - HD                            : PresentInDBGap
@@ -176,15 +186,12 @@ tsv_fields:
   - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
   - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - AB                            : AlleleBalanceAtHeterozygousSites
-  - TYPE                          : AlleleType
   - set                           : SourceVCF_ForMergedRecInCombineVariants
   - cpgIslandExt                  : CPGIsland
   - genomicSuperDups              : GenomicDuplication
   - rptmk                         : KnownRepeat
   - dgvMerged                     : KnownCopyNumber
 
-#  QA: "SumOfQualityInAlternateObservations
 #  GENE,
 #  AB,
 #  AC,
@@ -193,7 +200,7 @@ tsv_fields:
 #  set:
 
 # Or built from the following:
-# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT
+# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
 # 2. Explicitly defined annotations in this yaml file
 # 3. SnpEff annotaions (EFF...)
 # 4. Track names
