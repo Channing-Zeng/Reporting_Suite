@@ -779,8 +779,8 @@ class Annotator:
         res = subprocess.call(cmdline,
                               stdin=open(tmp_vcf or vcf_fpath),
                               stdout=open(tsv_fpath, 'w'), shell=True)
-        if tmp_vcf:
-            os.remove(tmp_vcf)
+        # if tmp_vcf:
+        #     os.remove(tmp_vcf)
 
         self.log_print('')
         if res != 0:
