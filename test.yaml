@@ -32,7 +32,6 @@ gatk:
   - RMSMappingQuality         # MQ
   - MappingQualityRankSumTest # MQRankSum
   - MappingQualityZero        # MQ0
-  - SumOfQualityInAlternateObservations # QA
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
 
