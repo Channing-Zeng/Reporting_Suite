@@ -139,7 +139,6 @@ tsv_fields:
   - MQ0                           : TotalMappingQualityZeroReads
   - QD                            : QualityByDepth
   - ReadPosRankSum                : ReadPosRankSum
-
   # format - sample
   - gt_GT:                        : Genotype
   - gt_FT:                        : GenotypeWasCalled
@@ -152,7 +151,6 @@ tsv_fields:
   - gt_PS:                        : PhaseSet
   - gt_PQ:                        : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
   - gt_EC:                        : ExpAlleleCounts
-
   # dbsnp
   - SAO                           : VariantAlleleOrigin
   - AB                            : AlleleBalanceAtHeterozygousSites
