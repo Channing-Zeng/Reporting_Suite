@@ -707,18 +707,6 @@ class Annotator:
             if isfile(tsv_fpath):
                 os.remove(tsv_fpath)
 
-        first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
-        basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
-        manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
-
-        manual_tsv_fields = self.run_config.get('tsv_fields')
-        if manual_tsv_fields:
-            fields = [rec.keys()[0] for rec in manual_tsv_fields]
-        else:
-            fields = (basic_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
-        if not fields:
-            return
-
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Extracting fields')
@@ -749,7 +737,16 @@ class Annotator:
                     l = '\t'.join(vals[:7] + [info])
                     out.write(l + '\n')
 
-        anno_line = ' '.join(fields + list(format_fields))
+        manual_tsv_fields = self.run_config.get('tsv_fields')
+        if manual_tsv_fields:
+            fields = [rec.keys()[0] for rec in manual_tsv_fields]
+        else:
+            first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
+            basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
+            manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
+            fields = (basic_fields + format_fields + manual_annots + self.run_config.get('additional_tsv_fields', []))
+
+        anno_line = ' '.join(fields)
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line

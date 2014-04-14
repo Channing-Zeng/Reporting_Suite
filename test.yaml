@@ -13,8 +13,14 @@ ensemble: True                # filter REJECT lines
 #split_samples: True          # default if provided multiple BAMs
 
 verbose: True                 # prints tools output
-#save_intermediate: True      # keeps intermediate VCFs for each step
-#reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+save_intermediate: True      # keeps intermediate VCFs for each step
+reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+parallel: True    
+
+snpeff:
+  path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
+  clinical_reporting: True    # canonical transcripts + output in HGVS notation
+  cancer: True
 
 gatk:
   annotations:                # field names in final VCF:
@@ -77,9 +83,7 @@ vcfs:
     - AA
     - CDS
 
-  #om(om_Cancer | om_PATIENT | om_MutClass | om_MutClassPC)
   oncomine:
-#    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
     path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     annotations:
     - om_Cancer
@@ -140,18 +144,23 @@ tsv_fields:
   - QD                            : QualityByDepth
   - ReadPosRankSum                : ReadPosRankSum
 
-  # format - sample
+  # FORMAT fields for the sample
   - gt_GT                         : Genotype
-  - gt_FT                         : GenotypeWasCalled
-  - gt_GL                         : GenotypeLikelihoods
-  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+  #- gt_FT                         : GenotypeWasCalled
+  #- gt_GL                         : GenotypeLikelihoods
+  #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
   - gt_PL                         : GenotypeLikelihoods_PhredScaled
-  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
-  - gt_GQ                         : ConditionalGenotypeQuality
-  - gt_HQ                         : HaplotypeQualities
-  - gt_PS                         : PhaseSet
-  - gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-  - gt_EC                         : ExpAlleleCounts
+  #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
+  #- gt_GQ                         : ConditionalGenotypeQuality
+  #- gt_HQ                         : HaplotypeQualities
+  #- gt_PS                         : PhaseSet
+  #- gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+  #- gt_EC                         : ExpAlleleCounts
+  - gt_AD                         : AllelicDepthsForRefAndAlt
+  #- gt_AO                         : AlleleObservationCount       
+  #- gt_QA                         : QualitySumForAltObservations                  
+  #- gt_QR                         : QualitySumForRefObservations
+  #- gt_RO                         : RefAlleleObservationCount
 
   # dbsnp
   - SAO                           : VariantAlleleOrigin
@@ -159,16 +168,16 @@ tsv_fields:
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
-#  - MUT                           : CitedMutation
+  #- MUT                           : CitedMutation
   - HD                            : PresentInDBGap
   - KGPROD                        : Has1000GenomeSubmission
   - PH3                           : HapMapValidated
   - OM                            : InOMIM
   - COMMON                        : CommonVariant
-#  - CLNSIG                        : ClinicalSignificance
+  #- CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
-#  - MAF                           : GlobalMinorAlleleFrequency
-#  - CDA                           : InClinicalDiagnosticAssay
+  #- MAF                           : GlobalMinorAlleleFrequency
+  #- CDA                           : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
   - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
@@ -192,12 +201,6 @@ tsv_fields:
   - rptmk                         : KnownRepeat
   - dgvMerged                     : KnownCopyNumber
 
-#  GENE,
-#  AB,
-#  AC,
-#  AF,
-#  GMAF,
-#  set:
 
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
