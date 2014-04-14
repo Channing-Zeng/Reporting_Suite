@@ -114,12 +114,12 @@ class Annotator:
         self.log_print('')
 
         if not which('java'):
-            sys.stderr.write('\nWARNING: Please, run "module load java"\n')
+            sys.stderr.write('WARNING: Please, run "module load java"\n\n')
         if not which('perl'):
-            sys.stderr.write('\nWARNING: Please, run "module load perl"\n')
-        if not self._get_tool_cmdline('vcfannotate'):
-            sys.stderr.write('\nWARNING: Please, run "module load bcbio-nextgen" '
-                             'if you want to annotate with bed tracks.\n')
+            sys.stderr.write('WARNING: Please, run "module load perl"\n\n')
+        if not self._get_tool_cmdline('vcfannotate',
+                                      extra_warn='You may want to load BCBio with ". /group/ngs/bin/bcbio-prod.sh"'):
+            sys.stderr.write('Skipping annotation with bed tracks.\n')
 
         data = []
         if 'input' not in self.run_config:
@@ -388,7 +388,7 @@ class Annotator:
         return executable + ' %s ' + tool_path
 
 
-    def _get_tool_cmdline(self, tool_name):
+    def _get_tool_cmdline(self, tool_name, extra_warn=''):
         tool_path = which(tool_name) or None
 
         if not 'resources' in self.system_config \
@@ -400,6 +400,8 @@ class Annotator:
                 self.log_err(tool_name + ' executable was not found. '
                              'You can either specify path in the system config, or load into your '
                              'PATH environment variable.')
+                if extra_warn:
+                    self.log_err(extra_warn)
                 return None
 
         tool_path = self.system_config['resources'][tool_name]['path']
@@ -522,7 +524,7 @@ class Annotator:
         toolpath = self._get_tool_cmdline('vcfannotate')
         if not toolpath:
             self.log_err('WARNING: Skipping annotation with tracks: vcfannotate '
-                         'executable not found, you probably need to run "module load bcbio-nextgen"')
+                         'executable not found, you probably need to run ". /group/ngs/bin/bcbio-prod.sh"')
             return
 
         self.all_fields.append(field_name)
