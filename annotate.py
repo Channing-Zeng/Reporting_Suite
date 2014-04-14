@@ -211,6 +211,7 @@ class Annotator:
             self.log_print('')
             self.log_print('')
             self.log_print('*' * 70)
+            self.log_print('*' * 70)
             self.log_print('Sample ' + sample_name)
             self.log_print('VCF: ' + input_fpath)
             self.log_print('BAM: ' + bam_fpath)
@@ -688,7 +689,7 @@ class Annotator:
         with open(tsv_fpath) as f:
             first_line = f.readline()[1:]
         fields = first_line.split()
-        new_fields = [field_map[f] for f in fields]
+        new_fields = [field_map.get(f, f) for f in fields]
         new_line = '\t'.join(new_fields)
 
         out_fpath = splitext(tsv_fpath)[0] + '.renamed' + '.tsv'
