@@ -114,9 +114,11 @@ class Annotator:
         self.log_print('')
 
         if not which('java'):
-            sys.stderr.write('* Warning: Java not found. You may want to run "module load java"\n\n')
+            sys.stderr.write('* Warning: Java not found. You may want to run "module load java", '
+                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n\n')
         if not which('perl'):
-            sys.stderr.write('* Warning: Perl not found. You may want to run "module load perl"\n\n')
+            sys.stderr.write('* Warning: Perl not found. You may want to run "module load perl", '
+                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n\n')
         if not self._get_tool_cmdline('vcfannotate',
                                       extra_warn='You may want to load BCBio with ". /group/ngs/bin/bcbio-prod.sh"'):
             sys.stderr.write('* Warning: skipping annotation with bed tracks.\n')
@@ -190,19 +192,25 @@ class Annotator:
                 for sample in samples:
                     bam_fpath = bams.get(sample) if bams else None
                     new_vcf = self.split_samples(inp_fpath, sample)
-                    self.data.append({'vcf': new_vcf, 'bam': bam_fpath})
+                    self.data.append({'name': sample, 'vcf': new_vcf, 'bam': bam_fpath})
             else:
                 self.data.append({'vcf': inp_fpath, 'bam': bam_fpath})
 
 
     def annotate(self):
         for rec in self.data:
-            self.annotate_one(rec['vcf'], rec['bam'])
+            self.annotate_one(rec['vcf'], rec['bam'], rec.get('name'))
 
 
-    def annotate_one(self, input_fpath, bam_fpath):
+    def annotate_one(self, input_fpath, bam_fpath, sample_name=None):
         if not 'resources' in self.system_config:
             self.log_exit('"resources" section in system config required.')
+
+        if sample_name:
+            self.log_print('*' * 70)
+            self.log_print('Sample ' + sample_name)
+            self.log_print('VCF: ' + input_fpath)
+            self.log_print('BAM: ' + bam_fpath)
 
         self.all_fields = []
 
