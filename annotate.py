@@ -194,7 +194,8 @@ class Annotator:
                     new_vcf = self.split_samples(inp_fpath, sample)
                     self.data.append({'name': sample, 'vcf': new_vcf, 'bam': bam_fpath})
             else:
-                self.data.append({'vcf': inp_fpath, 'bam': bam_fpath})
+                self.data.append({'vcf': inp_fpath, 'bam': bam_fpath,
+                                  'name': samples[0] if len(samples) == 1 else None})
 
 
     def annotate(self):
@@ -750,7 +751,7 @@ class Annotator:
         # Split FORMAT
         if sample_name:
             tmp_vcf = vcf_fpath + '_tmp'
-            with open(vcf_fpath) as inp, open(tmp_vcf) as out:
+            with open(vcf_fpath) as inp, open(tmp_vcf, 'w') as out:
                 for l in inp:
                     if not l or l.startswith('#'):
                         out.write(l)
@@ -763,7 +764,7 @@ class Annotator:
                         info += ';' + f + '=' + s
                         format_fields.append(f)
                     l = '\t'.join(vals[:8] + [info])
-                    tmp_vcf.write(l + '\n')
+                    out.write(l + '\n')
             os.remove(vcf_fpath)
             os.rename(tmp_vcf, vcf_fpath)
             vcf_fpath = tmp_vcf
