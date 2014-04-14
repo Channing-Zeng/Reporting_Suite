@@ -767,7 +767,6 @@ class Annotator:
                     out.write(l + '\n')
             os.remove(vcf_fpath)
             os.rename(tmp_vcf, vcf_fpath)
-            vcf_fpath = tmp_vcf
 
         anno_line = ' '.join(fields + format_fields)
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')

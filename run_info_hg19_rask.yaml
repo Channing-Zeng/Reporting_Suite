@@ -43,7 +43,6 @@ gatk:
   - RMSMappingQuality         # MQ
   - MappingQualityRankSumTest # MQRankSum
   - MappingQualityZero        # MQ0
-
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
 
@@ -103,6 +102,7 @@ vcfs:
     - om_PATIENT
     - om_MutClass
     - om_MutClassPC
+
 
 tracks:  # requires vcfannotate (from bcbio-nextgen)
   #CpG Island
