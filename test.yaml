@@ -139,18 +139,20 @@ tsv_fields:
   - MQ0                           : TotalMappingQualityZeroReads
   - QD                            : QualityByDepth
   - ReadPosRankSum                : ReadPosRankSum
+
   # format - sample
-  - gt_GT:                        : Genotype
-  - gt_FT:                        : GenotypeWasCalled
-  - gt_GL:                        : GenotypeLikelihoods
-  - gt_GLE:                       : GenotypeLikelihoodsOfHeterogeneousPloidy
-  - gt_PL:                        : GenotypeLikelihoods_PhredScaled
-  - gt_GP:                        : GenotypePosteriorProbs_PhredScaled
-  - gt_GQ:                        : ConditionalGenotypeQuality
-  - gt_HQ:                        : HaplotypeQualities
-  - gt_PS:                        : PhaseSet
-  - gt_PQ:                        : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-  - gt_EC:                        : ExpAlleleCounts
+  - gt_GT                         : Genotype
+  - gt_FT                         : GenotypeWasCalled
+  - gt_GL                         : GenotypeLikelihoods
+  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+  - gt_PL                         : GenotypeLikelihoods_PhredScaled
+  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
+  - gt_GQ                         : ConditionalGenotypeQuality
+  - gt_HQ                         : HaplotypeQualities
+  - gt_PS                         : PhaseSet
+  - gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+  - gt_EC                         : ExpAlleleCounts
+
   # dbsnp
   - SAO                           : VariantAlleleOrigin
   - AB                            : AlleleBalanceAtHeterozygousSites
