@@ -770,7 +770,7 @@ class Annotator:
                     l = '\t'.join(vals[:8] + [info])
                     out.write(l + '\n')
 
-        anno_line = ' '.join(fields + format_fields)
+        anno_line = ' '.join(fields + list(format_fields))
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
