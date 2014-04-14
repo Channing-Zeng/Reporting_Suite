@@ -251,9 +251,6 @@ class Annotator:
 
         tsv_fpath = self.extract_fields(input_fpath, sample_name)
 
-        if sample_name:
-            tsv_fpath = self.split_format(tsv_fpath, sample_name)
-
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
             field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
