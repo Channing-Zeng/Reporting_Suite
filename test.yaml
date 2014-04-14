@@ -13,8 +13,8 @@ ensemble: True                # filter REJECT lines
 #split_samples: True          # default if provided multiple BAMs
 
 verbose: True                 # prints tools output
-save_intermediate: True      # keeps intermediate VCFs for each step
-reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
+#save_intermediate: True      # keeps intermediate VCFs for each step
+#reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
 gatk:
   annotations:                # field names in final VCF:
