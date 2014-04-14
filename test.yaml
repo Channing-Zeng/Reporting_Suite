@@ -144,6 +144,7 @@ tsv_fields:
   - MQRankSum                     : MQualityRankSum
   - MQ0                           : TotalMappingQualityZeroReads
   - QD                            : QualityByDepth
+  - QA                            : AlternateQualSum
   - ReadPosRankSum                : ReadPosRankSum
   - SAO                           : VariantAlleleOrigin
   - VC                            : VariationClass

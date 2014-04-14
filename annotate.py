@@ -249,7 +249,10 @@ class Annotator:
 
         input_fpath = self.filter_fields(input_fpath)
 
-        tsv_fpath = self.extract_fields(input_fpath)
+        tsv_fpath = self.extract_fields(input_fpath, sample_name)
+
+        if sample_name:
+            tsv_fpath = self.split_format(tsv_fpath, sample_name)
 
         manual_tsv_fields = self.run_config.get('tsv_fields')
         if manual_tsv_fields:
@@ -717,8 +720,8 @@ class Annotator:
         return out_fpath
 
 
-    def extract_fields(self, input_fpath):
-        tsv_fpath = os.path.splitext(input_fpath)[0] + '.tsv'
+    def extract_fields(self, vcf_fpath, sample_name=None):
+        tsv_fpath = os.path.splitext(vcf_fpath)[0] + '.tsv'
 
         if self.run_config.get('save_intermediate') and \
             (self.run_config.get('reuse_intermediate') or self.run_config.get('reuse')):
@@ -729,8 +732,8 @@ class Annotator:
             if isfile(tsv_fpath):
                 os.remove(tsv_fpath)
 
-        first_line = next(l.strip()[1:].split() for l in open(input_fpath) if l.strip().startswith('#CHROM'))
-        basic_fields = [f for f in first_line[:9] if f != 'INFO']
+        first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
+        basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
         manual_annots = filter(lambda f: f and f != 'ID', self.all_fields)
 
         manual_tsv_fields = self.run_config.get('tsv_fields')
@@ -741,29 +744,45 @@ class Annotator:
         if not fields:
             return
 
-        anno_line = ' '.join(fields)
-
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print('Extracting fields')
         self.log_print('-' * 70)
 
+        format_fields = set()
+        # Split FORMAT
+        if sample_name:
+            tmp_vcf = vcf_fpath + '_tmp'
+            with open(vcf_fpath) as inp, open(tmp_vcf) as out:
+                for l in inp:
+                    if not l or l.startswith('#'):
+                        out.write(l)
+                        continue
+                    vals = l.strip().split('\t')
+                    info = vals[8]
+                    format_fields = vals[8].split(':')
+                    sample_fields = vals[9].split(':')
+                    for f, s in zip(format_fields, sample_fields):
+                        info += ';' + f + '=' + s
+                        format_fields.append(f)
+                    l = '\t'.join(vals[:8] + [info])
+                    tmp_vcf.write(l + '\n')
+            os.remove(vcf_fpath)
+            os.rename(tmp_vcf, vcf_fpath)
+            vcf_fpath = tmp_vcf
+
+        anno_line = ' '.join(fields + format_fields)
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
-
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
-
         self.log_print(cmdline)
-        res = subprocess.call(cmdline, stdin=open(input_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
+        res = subprocess.call(cmdline, stdin=open(vcf_fpath), stdout=open(tsv_fpath, 'w'), shell=True)
 
         self.log_print('')
         if res != 0:
-            self.log_print('Command returned status ' + str(res) +
-                           ('. Log in ' + self.log if self.log else '.'))
-            exit(1)
-            # return input_fpath
-        else:
-            self.log_print('Saved TSV file to ' + tsv_fpath)
+            self.log_exit('Command returned status ' + str(res) +
+                          ('. Log in ' + self.log if self.log else '.'))
+        self.log_print('Saved TSV file to ' + tsv_fpath)
         return tsv_fpath
 
 
@@ -889,6 +908,33 @@ class Annotator:
             os.remove(input_fpath)
             os.rename(output_fpath, input_fpath)
             return input_fpath
+
+
+    # def split_format(self, tsv_fpath, sample_name):
+    #     output_fpath = splitext(tsv_fpath)[0] + '_tmp'
+    #
+    #     with open(tsv_fpath) as inp, open(output_fpath, 'w') as out:
+    #         for i, l in enumerate(inp):
+    #             if i != 0 and l.strip() and l.strip()[0] != '#':
+    #                 fields = l.split('\t')
+    #                 info_line = fields[7]
+    #                 info_pairs = [attr.split('=') for attr in info_line.split(';')]
+    #                 new_info_pairs = []
+    #                 for p in info_pairs:
+    #                     if len(p) == 2:
+    #                         if p[1].endswith(',.'):
+    #                             p[1] = p[1][:-2]
+    #                         if p[1].startswith('.,'):
+    #                             p[1] = p[1][2:]
+    #                         new_info_pairs.append('='.join(p))
+    #                 info_line = ';'.join(new_info_pairs)
+    #                 fields = fields[:7] + [info_line] + fields[8:]
+    #                 l = '\t'.join(fields)
+    #             out.write(l)
+    #
+    #     os.remove(tsv_fpath)
+    #     os.rename(output_fpath, tsv_fpath)
+    #     return tsv_fpath
 
 
 def remove_quotes(str):
