@@ -759,7 +759,7 @@ class Annotator:
                     vals = l.strip().split('\t')
                     info = vals[8]
                     format_fields = vals[8].split(':')
-                    if len(vals) < 9:
+                    if len(vals) <= 9:
                         exit('\t'.join(vals))
                     sample_fields = vals[9].split(':')
                     for f, s in zip(format_fields, sample_fields):
