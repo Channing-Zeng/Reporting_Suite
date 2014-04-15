@@ -37,28 +37,6 @@ def verify_file(fpath, description=''):
     return True
 
 
-def remove_annotation(field_to_del, input_fpath):
-    def proc_line(l):
-        if field_to_del in l:
-            if l and l.startswith('##INFO='):
-                try:
-                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
-                        return None
-                except:
-                    self.log_exit('Incorrect VCF at line: ' + l)
-            elif l.strip() and l.strip()[0] != '#':
-                fields = l.split('\t')
-                info_line = fields[7]
-                info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                info_line = ';'.join('='.join(pair) if len(pair) == 2
-                                     else pair[0] for pair in info_pairs)
-                fields = fields[:7] + [info_line] + fields[8:]
-                return '\t'.join(fields)
-        return l
-    return self.iterate_file(input_fpath, proc_line)
-
-
 class Annotator:
     def introduce_step(self, name):
         self.log_print('')
@@ -244,7 +222,6 @@ class Annotator:
                     self.annotate_one(sample, name)
                     for name, sample in self.samples)
 
-
     def annotate_one(self, sample, sample_name):
         if sample_name:
             self.log_print('')
@@ -259,7 +236,7 @@ class Annotator:
         vcf_fpath = sample['vcf']
         # sample['fields'] = []
 
-        remove_annotation('EFF', vcf_fpath)
+        self.remove_annotation('EFF', vcf_fpath)
 
         if self.run_cnf.get('split_genotypes'):
             vcf_fpath = self.split_genotypes(vcf_fpath)
@@ -302,6 +279,29 @@ class Annotator:
         self.log_print('Final VCF in ' + vcf_fpath)
         if self.log:
             print('Log in ' + self.log)
+
+
+    def remove_annotation(field_to_del, input_fpath):
+        def proc_line(l):
+            if field_to_del in l:
+                if l and l.startswith('##INFO='):
+                    try:
+                        if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                            return None
+                    except:
+                        self.log_exit('Incorrect VCF at line: ' + l)
+                elif l.strip() and l.strip()[0] != '#':
+                    fields = l.split('\t')
+                    info_line = fields[7]
+                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                    info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
+                    info_line = ';'.join('='.join(pair) if len(pair) == 2
+                                         else pair[0] for pair in info_pairs)
+                    fields = fields[:7] + [info_line] + fields[8:]
+                    return '\t'.join(fields)
+            return l
+        return self.iterate_file(input_fpath, proc_line)
+
 
 
     def extract_sample(self, input_fpath, sample):
