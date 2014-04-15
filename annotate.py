@@ -310,11 +310,10 @@ class Annotator:
         executable = self._get_java_tool_cmdline('gatk')
         ref_fpath = self.run_cnf['reference']
         output_fpath = add_suffix(input_fpath, sample)
-        with file_transaction(output_fpath) as tx_out_fpath:
-            cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-                  '--variant {input_fpath} -o {output_fpath} -sn {sample}'.format(**locals())
-            self._call_and_rename(cmd, input_fpath, suffix=sample,
-                                  result_to_stdout=False, rename=False)
+        cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
+              '--variant {input_fpath} -sn {sample}'.format(**locals())
+        self._call_and_rename(cmd, input_fpath, suffix=sample,
+                              result_to_stdout=False, rename=False)
         return output_fpath
 
 
@@ -347,8 +346,6 @@ class Annotator:
                 self.log_print(output_fpath + ' exists, reusing')
                 return output_fpath
 
-        self.log_print(cmdline)
-
         err_fpath = os.path.join(self.output_dir, 'annotate_py_err.tmp')
         to_remove.append(err_fpath)
         if err_fpath and isfile(err_fpath):
@@ -357,6 +354,9 @@ class Annotator:
         with file_transaction(output_fpath) as tx_out_fpath:
             if not result_to_stdout:
                 cmdline += ' -o ' + tx_out_fpath
+                self.log_print(cmdline)
+            else:
+                self.log_print(cmdline + ' > ' + tx_out_fpath)                
 
             if self.run_cnf.get('verbose', True):
                 proc = subprocess.Popen(
