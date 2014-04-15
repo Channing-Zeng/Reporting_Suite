@@ -281,7 +281,7 @@ class Annotator:
             print('Log in ' + self.log)
 
 
-    def remove_annotation(field_to_del, input_fpath):
+    def remove_annotation(self, field_to_del, input_fpath):
         def proc_line(l):
             if field_to_del in l:
                 if l and l.startswith('##INFO='):
