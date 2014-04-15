@@ -38,28 +38,25 @@ def verify_file(fpath, description=''):
 
 
 def remove_annotation(field_to_del, input_fpath):
-    output_fpath = add_suffix(input_fpath, 'tmp')
-    with open(input_fpath) as inp, file_transaction(output_fpath) as tx_out:
-        for l in inp:
-            if field_to_del in l:
-                l = l.lstrip()
-                if l and l.startswith('##INFO='):
-                    try:
-                        if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
-                            continue
-                    except:
-                        self.log_exit('Incorrect VCF at line: ' + l)
-                elif l.strip() and l.strip()[0] != '#':
-                    fields = l.split('\t')
-                    info_line = fields[7]
-                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                    info_line = ';'.join('='.join(pair) if len(pair) == 2
-                                         else pair[0] for pair in info_pairs)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    l = '\t'.join(fields)
-            tx_out.write(l)
-    os.rename(output_fpath, input_fpath)
+    def proc_line(l):
+        if field_to_del in l:
+            if l and l.startswith('##INFO='):
+                try:
+                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                        return None
+                except:
+                    self.log_exit('Incorrect VCF at line: ' + l)
+            elif l.strip() and l.strip()[0] != '#':
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
+                info_line = ';'.join('='.join(pair) if len(pair) == 2
+                                     else pair[0] for pair in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                return '\t'.join(fields)
+        return l
+    return self.iterate_file(input_fpath, proc_line)
 
 
 class Annotator:
@@ -791,7 +788,9 @@ class Annotator:
                 for i, line in enumerate(vcf):
                     clean_line = line.strip()
                     if clean_line:
-                        out.write(proc_line_fun(clean_line) + '\n')
+                        new_l = proc_line_fun(clean_line)
+                        if new_l is not None:
+                            out.write(new_l + '\n')
                     else:
                         out.write(line)
 
