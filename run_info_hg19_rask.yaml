@@ -1,18 +1,27 @@
 input:
-  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
-    bams:
-      EOL-1-1: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
-      EOL-1-2: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
-      EOL-1-3: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
-      EOL-1-4: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
+#  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
+#    bams:
+#      EOL-1-1: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+#      EOL-1-2: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+#      EOL-1-3: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
+#      EOL-1-4: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
+#
+#  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/annotate/Will-1-gatk.vcf
+#    bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
+#
+#  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/annotate/SU-DHL-2-gatk.vcf
+#    bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
+#
+#  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate/HLY-1-gatk.vcf
+#    bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
 
-  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/annotate/Will-1-gatk.vcf
+  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr/Will-1-gatk.pass.gatk.vcf
     bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
 
-  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/annotate/SU-DHL-2-gatk.vcf
+  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr/SU-DHL-2-gatk.pass.gatk.vcf
     bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
 
-  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate/HLY-1-gatk.vcf
+  - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr/HLY-1-gatk.pass.gatk.vcf
     bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
 
 output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr
@@ -35,17 +44,17 @@ snpeff:
 
 gatk:
   annotations:                # Field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
+#  - Coverage                  # DP
+#  - BaseQualityRankSumTest    # BaseQRankSum
+#  - FisherStrand              # FS
+#  - GCContent                 # GC
+#  - HaplotypeScore            # HaplotypeScore
+#  - HomopolymerRun            # HRun
+#  - RMSMappingQuality         # MQ
+#  - MappingQualityRankSumTest # MQRankSum
+#  - MappingQualityZero        # MQ0
+#  - QualByDepth               # QD
+#  - ReadPosRankSumTest        # ReadPosRankSum
   - AlleleBalanceBySample     # AlleleBalanceBySample
 
 db_nsfp:
