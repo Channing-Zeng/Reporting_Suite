@@ -1,10 +1,10 @@
 input:
   - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
-    bams:    # one per sample; will split VCF
-      "EOL-1-1": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
-      "EOL-1-2": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
-      "EOL-1-3": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
-      "EOL-1-4": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
+    bams:
+      EOL-1-1: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+      EOL-1-2: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+      EOL-1-3: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
+      EOL-1-4: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
   - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/annotate/Will-1-gatk.vcf
     bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
@@ -20,21 +20,21 @@ output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT060
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
-ensemble: True                # filter REJECT lines
-#split_samples: True          # default if provided multiple BAMs
+filter_reject: True           # Filters variants with REJECT in the FILTER field
+#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
-verbose: True                 # prints tools output
-# save_intermediate: True      # keeps intermediate VCFs for each step
-# reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
-parallel: True               # process samples in parallel
+verbose: True                 # Prints tools output
+# save_intermediate: True      # Leeps intermediate VCFs for each step
+# reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
-  clinical_reporting: True    # canonical transcripts + output in HGVS notation
+  clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
 
 gatk:
-  annotations:                # field names in final VCF:
+  annotations:                # Field names in final VCF:
   - Coverage                  # DP
   - BaseQualityRankSumTest    # BaseQRankSum
   - FisherStrand              # FS
