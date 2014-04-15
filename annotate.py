@@ -479,6 +479,7 @@ class Annotator:
         def proc_line(line):
             if not line.startswith('#'):
                 line = line.replace(' ', '_')
+                assert ' ' not in line
             return line
         output_fpath = self.iterate_file(output_fpath, proc_line, 'spaces')
         return output_fpath
