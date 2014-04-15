@@ -46,6 +46,7 @@ gatk:
   - MappingQualityZero        # MQ0
   - QualByDepth               # QD
   - ReadPosRankSumTest        # ReadPosRankSum
+  - AlleleBalanceBySample     # AlleleBalanceBySample
 
 db_nsfp:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
@@ -125,10 +126,14 @@ tsv_fields:
   - DP                            : Depth
   - FILTER                        : Filter
   - dbSNPBuildID                  : dbSNPBuildID
+
   - "EFF[*].EFFECT"               : Effect
   - "EFF[*].IMPACT"               : Impact
   - "EFF[*].FUNCLASS"             : FunctionalClass
   - "EFF[*].CODING"               : CodingRegion
+  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
+  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
+  - dbNSFP_Uniprot_acc            : UniportAccNumber
   - "EFF[*].CODON"                : Codon
   - "EFF[*].AA"                   : AminoAcid
   - "EFF[*].AA_LEN"               : AminoAcidLength
@@ -140,9 +145,6 @@ tsv_fields:
   - om_MutClass                   : OncomineMutClass
   - om_MutClassPC                 : OncomineMutClassPC
   - "EFF[*].GENE"                 : Gene
-  - dbNSFP_Ensembl_geneid         : EnsembleGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsembleTranscriptID
-  - dbNSFP_Uniprot_acc            : UniprotAccession
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
@@ -175,7 +177,7 @@ tsv_fields:
 
   # dbsnp
   - SAO                           : VariantAlleleOrigin
-  - AB                            : AlleleBalanceAtHeterozygousSites
+  - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
@@ -199,9 +201,6 @@ tsv_fields:
   - dbNSFP_MutationAssessor_score : MutationAssessorScore
   - dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
   - dbNSFP_FATHMM_score           : FATHMMScore
-  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
-  - dbNSFP_Uniprot_acc            : UniportAccNumber
   - dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
   - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency

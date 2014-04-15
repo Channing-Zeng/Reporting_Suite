@@ -729,6 +729,8 @@ class Annotator:
                 sample_fields = vals[9].split(':')
                 for f, s in zip(format_fields, sample_fields):
                     if f not in ['DP', 'MQ']:
+                        if f == 'GT':
+                            s = '"' + s + '"'
                         f = 'gt_' + f
                         info += ';' + f + '=' + s
                         all_format_fields.add(f)
