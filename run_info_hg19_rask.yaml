@@ -56,7 +56,6 @@ gatk:
 #  - QualByDepth               # QD
 #  - ReadPosRankSumTest        # ReadPosRankSum
   - AlleleBalanceBySample      # AB
-  - AlleleType                 # TYPE
 
 db_nsfp:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
