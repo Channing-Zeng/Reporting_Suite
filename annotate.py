@@ -215,12 +215,12 @@ class Annotator:
                 self.log_print('Joblib not found. You may want samples to be processed '
                                'in parallel, in this case, make sure python joblib intalled. '
                                '(pip install joblib).')
-                for name, sample in self.samples:
+                for name, sample in self.samples.items():
                     self.annotate_one(sample, name)
             else:
                 Parallel(n_jobs=len(self.samples))(
                     self.annotate_one(sample, name)
-                    for name, sample in self.samples)
+                    for name, sample in self.samples.items())
 
     def annotate_one(self, sample, sample_name):
         if sample_name:
