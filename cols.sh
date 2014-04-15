@@ -1,3 +1,3 @@
 #!/bin/bash
 
-dots.py $1 | columnt -t | less -S
+dots.py $1 | column -t | less -S
