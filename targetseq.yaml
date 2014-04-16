@@ -1,0 +1,54 @@
+
+# Number of mapped reads	1,625,036
+# Number of reads on target	1,021,939
+# Percent reads on target	62.89%
+# Percent reads on padded target	89.93%
+# Total aligned base reads	61,749,848
+# Total base reads on target	33,727,151
+# Percent base reads on target	54.62%
+# Bases in targeted reference	1,140,710
+# Bases covered (at least 1x)	1,052,115
+# Average base coverage depth	29.57
+# Maximum base read depth	307
+# Average base read depth	32.06
+# Std.Dev base read depth	27.31
+# Target coverage at 1x	92.233%
+# Target coverage at 5x	83.661%
+# Target coverage at 10x	72.896%
+# Target coverage at 20x	54.553%
+# Target coverage at 50x	19.890%
+# Target coverage at 100x	2.552%
+# Target coverage at 500x	0.000%
+# Target coverage at 1000x	0.000%
+# Target coverage at 2500x	0.000%
+# Target coverage at 5000x	0.000%
+# Target coverage at 10000x	0.000%
+
+# Number of mapped reads
+# samtools view -c -F 4 aln.bam
+#
+# Number of reads on target
+# samtools view -c -F 4 aln.bam -L reg.bed
+
+# Total aligned base reads
+# samtools depth aln.bam | awk '{c+=$3} END {print c}'
+
+# Total base reads on target
+# samtools depth aln.bam -b reg.bed | awk '{c+=$3} END {print c}'
+
+# Percent base reads on target
+# Percent reads on target
+# Percent reads on padded target
+
+# Bases in targeted reference
+# awk 'BEGIN {gs = 0} {gs \+= $3-$2} END {print gs}' "reg.bed"
+
+# Bases covered (at least 1x)
+# Average base coverage depth
+# Maximum base read depth
+# Average base read depth
+# Std.Dev base read depth
+
+# Target coverage at 1x, 5x,..
+# samtools depth -b reg.bed aln.bam 2> /dev/null > starts.pileup
+# then coverage_analysis.awk

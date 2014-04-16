@@ -847,14 +847,14 @@ class Annotator:
         return self.iterate_file(input_fpath, proc_line, 'filt')
 
 
-def dots_to_empty_cells(tsv_fpath):
-    """Put dots instead of empty cells in order to view TSV with column -t
-    """
-    def proc_line(l):
-        while '\t\t' in l:
-            l = l.replace('\t\t', '\t.\t')
-        return l
-    return self.iterate_file(tsv_fpath, proc_line, 'tabs')
+    def dots_to_empty_cells(self, tsv_fpath):
+        """Put dots instead of empty cells in order to view TSV with column -t
+        """
+        def proc_line(l):
+            while '\t\t' in l:
+                l = l.replace('\t\t', '\t.\t')
+            return l
+        return self.iterate_file(tsv_fpath, proc_line, 'tabs')
 
 
 def remove_quotes(s):

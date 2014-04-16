@@ -3,30 +3,27 @@
 import sys
 from os.path import join, splitext, basename, realpath, isfile, getsize, dirname, exists
 
-# Number of mapped reads	1,625,036
-# Number of reads on target	1,021,939
-# Percent reads on target	62.89%
-# Percent reads on padded target	89.93%
-# Total aligned base reads	61,749,848
-# Total base reads on target	33,727,151
-# Percent base reads on target	54.62%
-# Bases in targeted reference	1,140,710
-# Bases covered (at least 1x)	1,052,115
-# Average base coverage depth	29.57
-# Maximum base read depth	307
-# Average base read depth	32.06
-# Std.Dev base read depth	27.31
-# Target coverage at 1x	92.233%
-# Target coverage at 5x	83.661%
-# Target coverage at 10x	72.896%
-# Target coverage at 20x	54.553%
-# Target coverage at 50x	19.890%
-# Target coverage at 100x	2.552%
-# Target coverage at 500x	0.000%
-# Target coverage at 1000x	0.000%
-# Target coverage at 2500x	0.000%
-# Target coverage at 5000x	0.000%
-# Target coverage at 10000x	0.000%
+
+class TargetSeqAnalyzer:
+    def __init__(self, bam, bed, ref, pad=500):
+        self.bam = bam
+        self.bed = bed
+        self.ref = ref
+        self.pad = pad
+
+        self.reads = None
+        self.target_reads = None
+        self.percent_target_reads = None
+        self.percent_padded_target_reads = None
+
+        self.read_bases = None
+        self.target_read_bases = None
+        self.percent_target_read_bases = None
+
+        self.reference_target_bases = None
+        self.covered_bases
+
+
 
 
 def main(args):
@@ -34,6 +31,26 @@ def main(args):
     bed = args[1]
     ref = args[2]
     pad = args[3] if len(args) > 2 else 500
+
+    ts = TargetSeqAnalyzer(bam, bed, ref, pad)
+
+    with open('report.txt') as rep:
+        rep.write('Number of mapped reads\t%d\n' % ts._reads())
+        rep.write('Number of reads on target\t%d\n' % ts._target_reads())
+        rep.write('Percent reads on target\t%d\n' % ts._())
+        rep.write('Percent reads on padded target\t%d\n' % ts._number_mapped_reads())
+        rep.write('Total aligned base reads\t%d\n' % ts._number_mapped_reads())
+        rep.write('Total base reads on target\t%d\n' % ts._number_mapped_reads())
+        rep.write('Percent base reads on target\t%d\n' % ts._number_mapped_reads())
+        rep.write('Bases in targeted reference\t%d\n' % ts._number_mapped_reads())
+        rep.write('Bases covered (at least 1x)\t%d\n' % ts._number_mapped_reads())
+        rep.write('Average base coverage depth\t%d\n' % ts._number_mapped_reads())
+        rep.write('Maximum base read depth\t%d\n' % ts._number_mapped_reads())
+        rep.write('Average base read depth\t%d\n' % ts._number_mapped_reads())
+        rep.write('Std.Dev base read depth\t%d\n' % ts._number_mapped_reads())
+        for x in [1, 5, 10, 20, 50, 100, 500, 1000, 2500, 5000, 10000]:
+            rep.write('Target coverage at %dx\t%d\n' % (x, ts._target_cov_at(x)))
+
 
 
 if __name__ == '__main__':
