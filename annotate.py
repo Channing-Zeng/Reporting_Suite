@@ -764,10 +764,12 @@ class Annotator:
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
-        self.log_print(cmdline + ' < ' + (tmp_vcf or vcf_fpath) + ' > ' + tsv_fpath)
-        res = subprocess.call(cmdline,
-                              stdin=open(tmp_vcf or vcf_fpath),
-                              stdout=open(tsv_fpath, 'w'), shell=True)
+
+        with file_transaction(tsv_fpath) as tx_tsv_fpath:
+            self.log_print(cmdline + ' < ' + (tmp_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
+            res = subprocess.call(cmdline,
+                                  stdin=open(tmp_vcf or vcf_fpath),
+                                  stdout=open(tx_tsv_fpath, 'w'), shell=True)
 
         if tmp_vcf:
             os.remove(tmp_vcf)
