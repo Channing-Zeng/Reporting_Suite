@@ -155,7 +155,9 @@ class Annotator:
 
 
     def _split_samples(self, vcf_fpath, bams):
+        print 'split samples'
         samples = self._read_samples(vcf_fpath)
+        print len(samples)
 
         for sample in (bams.keys() if bams else []):
             if sample not in samples:
@@ -192,7 +194,8 @@ class Annotator:
 
         self._check_executable()
 
-        for rec in self._read_input():
+        inp = self._read_input()
+        for rec in inp:
             inp_fpath, bams, bam_fpath = self._check_file_for_rec(rec)
 
             inp_fpath = rec['vcf'] = self._copy_to_final_dir(inp_fpath)
@@ -201,7 +204,10 @@ class Annotator:
             if bams or self.run_cnf.get('split_samples'):
                 self._split_samples(inp_fpath, bams)
             else:
-                self.samples[None] = {'vcf': inp_fpath, 'bam': bam_fpath}
+                if len(inp) == 1:
+                    self.samples[None] = {'vcf': inp_fpath, 'bam': bam_fpath}
+                else:
+                    self.samples[inp_fpath] = {'vcf': inp_fpath, 'bam': bam_fpath}
 
 
     def annotate(self):
@@ -209,18 +215,21 @@ class Annotator:
             name, sample = self.samples.items()[0]
             self.annotate_one(sample, name)
         else:
-            try:
-                from joblib import Parallel
-            except ImportError:
-                self.log_print('Joblib not found. You may want samples to be processed '
-                               'in parallel, in this case, make sure python joblib intalled. '
-                               '(pip install joblib).')
+            if self.run_cnf.get('parallel'):
+                try:
+                    from joblib import Parallel, delayed
+                except ImportError:
+                    self.log_print(
+                        'Joblib not found. You may want samples to be processed '
+                        'in parallel, in this case, make sure python joblib intalled. '
+                        '(pip install joblib).')
+                else:
+                    Parallel(n_jobs=len(self.samples)) \
+                            (delayed(self.annotate_one) \
+                                    (sample, name) for name, sample in self.samples.items())
+            else:
                 for name, sample in self.samples.items():
                     self.annotate_one(sample, name)
-            else:
-                Parallel(n_jobs=len(self.samples))(
-                    self.annotate_one(sample, name)
-                    for name, sample in self.samples.items())
 
     def annotate_one(self, sample, sample_name):
         if sample_name:
@@ -236,23 +245,25 @@ class Annotator:
         vcf_fpath = sample['vcf']
         # sample['fields'] = []
 
-        self.remove_annotation('EFF', vcf_fpath)
-
         if self.run_cnf.get('split_genotypes'):
             vcf_fpath = self.split_genotypes(vcf_fpath)
 
         if self.run_cnf.get('ensemble'):
             vcf_fpath = self.process_ensemble(vcf_fpath)
 
-        vcf_fpath = self.gatk(vcf_fpath, sample['bam'])
+        if 'gatk' in self.run_cnf:
+            vcf_fpath = self.gatk(vcf_fpath, sample['bam'])
 
         if 'vcfs' in self.run_cnf:
             for dbname, conf in self.run_cnf['vcfs'].items():
                 vcf_fpath = self.snpsift_annotate(dbname, conf, vcf_fpath)
 
-        vcf_fpath = self.snpsift_db_nsfp(vcf_fpath)
+        if 'db_nsfp' in self.run_cnf:
+            vcf_fpath = self.snpsift_db_nsfp(vcf_fpath)
 
-        vcf_fpath = self.snpeff(vcf_fpath)
+        if 'snpeff' in self.run_cnf:
+            self.remove_annotation('EFF', vcf_fpath)
+            vcf_fpath = self.snpeff(vcf_fpath)
 
         if self.run_cnf.get('tracks'):
             for track in self.run_cnf['tracks']:
@@ -261,19 +272,19 @@ class Annotator:
         vcf_fpath = self.filter_fields(vcf_fpath)
 
         tsv_fpath = self.extract_fields(vcf_fpath, sample_name)
+        if tsv_fpath:
+            manual_tsv_fields = self.run_cnf.get('tsv_fields')
+            if manual_tsv_fields:
+                field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
+                tsv_fpath = self.rename_fields(tsv_fpath, field_map)
+                self.log_print('Saved final TSV file with nice names to ' + tsv_fpath)
 
-        manual_tsv_fields = self.run_cnf.get('tsv_fields')
-        if manual_tsv_fields:
-            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
-            tsv_fpath = self.rename_fields(tsv_fpath, field_map)
-            self.log_print('Saved final TSV file with nice names to ' + tsv_fpath)
-
-        if self.run_cnf.get('save_intermediate'):
-            corr_tsv_fpath = dots_to_empty_cells(tsv_fpath)
-            self.log_print('')
-            self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
-            self.log_print('View with the commandline:')
-            self.log_print('    column -t ' + corr_tsv_fpath + ' | less -S')
+            if self.run_cnf.get('save_intermediate'):
+                corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
+                self.log_print('')
+                self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
+                self.log_print('View with the commandline:')
+                self.log_print('    column -t ' + corr_tsv_fpath + ' | less -S')
 
         self.log_print('')
         self.log_print('Final VCF in ' + vcf_fpath)
@@ -356,7 +367,7 @@ class Annotator:
                 cmdline += ' -o ' + tx_out_fpath
                 self.log_print(cmdline)
             else:
-                self.log_print(cmdline + ' > ' + tx_out_fpath)                
+                self.log_print(cmdline + ' > ' + tx_out_fpath)
 
             if self.run_cnf.get('verbose', True):
                 proc = subprocess.Popen(
@@ -753,11 +764,11 @@ class Annotator:
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
         vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
-        self.log_print(cmdline)
-        with file_transaction(tsv_fpath) as tx_tsv_fpath:
-            res = subprocess.call(cmdline,
-                                  stdin=open(tmp_vcf or vcf_fpath),
-                                  stdout=open(tx_tsv_fpath, 'w'), shell=True)
+        self.log_print(cmdline + ' < ' + (tmp_vcf or vcf_fpath) + ' > ' + tsv_fpath)
+        res = subprocess.call(cmdline,
+                              stdin=open(tmp_vcf or vcf_fpath),
+                              stdout=open(tsv_fpath, 'w'), shell=True)
+
         if tmp_vcf:
             os.remove(tmp_vcf)
 

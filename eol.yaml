@@ -1,108 +1,30 @@
 input:
-- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
-  bams:    # one per sample; will split VCF
-    "EOL-1-1": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
-    "EOL-1-2": /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+- vcf: EOL-1-ensemble.EOL-1-1.pass.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.filt.vcf
+  bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+- vcf: EOL-1-ensemble.EOL-1-2.pass.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.filt.vcf
+  bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+- vcf: EOL-1-ensemble.EOL-1-3.pass.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.filt.vcf
+  bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
+- vcf: EOL-1-ensemble.EOL-1-4.pass.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.filt.vcf
+  bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
-output_dir: /users/klpf990/anno_test_result
+output_dir: . #/gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
-ensemble: True                # filter REJECT lines
-#split_samples: True          # default if provided multiple BAMs
+filter_reject: True           # Filters variants with REJECT in the FILTER field
+#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
-verbose: True                 # prints tools output
-save_intermediate: True      # keeps intermediate VCFs for each step
-reuse_intermediate: True     # if an intermediate VCFs exists and is not empty, skip a step and reuse the file
-parallel: True    
+verbose: True                 # Prints tools output
+save_intermediate: True      # Leeps intermediate VCFs for each step
+#reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+#parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
   path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
-  clinical_reporting: True    # canonical transcripts + output in HGVS notation
+  clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
-
-gatk:
-  annotations:                # field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
-
-db_nsfp:
-  path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-  annotations:
-  - SIFT_score
-  - Polyphen2_HVAR_score
-  - Polyphen2_HVAR_pred
-  - LRT_score
-  - LRT_pred
-  - MutationTaster_score
-  - MutationTaster_pred
-  - MutationAssessor_score
-  - MutationAssessor_pred
-  - FATHMM_score
-  - Ensembl_geneid
-  - Ensembl_transcriptid
-  - Uniprot_acc
-  - 1000Gp1_AC
-  - 1000Gp1_AF
-  - ESP6500_AA_AF
-  - ESP6500_EA_AF
-
-vcfs:
-  db_snp:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
-    annotations:
-    - ID
-    - SAO
-    - VC
-    - PM
-    - HD
-    - KGPROD
-    - PH3
-    - OM
-    - CAF
-    - COMMON
-    - dbSNPBuildID
-    - G5
-    - CDA
-
-  cosmic:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
-    annotations:
-    - ID
-    - CNT
-    - AA
-    - CDS
-
-  oncomine:
-    path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
-    annotations:
-    - om_Cancer
-    - om_PATIENT
-    - om_MutClass
-    - om_MutClassPC
-
-
-tracks:  # requires vcfannotate (from bcbio-nextgen)
-  #CpG Island
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-  # Copy Number Variants
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-  # Segmental Duplications
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-  # Repeats
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
-#  #  RNA Editing (RNA-Seq data)
-#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
 tsv_fields:
   - CHROM                         : Chromosome
@@ -114,10 +36,14 @@ tsv_fields:
   - DP                            : Depth
   - FILTER                        : Filter
   - dbSNPBuildID                  : dbSNPBuildID
+
   - "EFF[*].EFFECT"               : Effect
   - "EFF[*].IMPACT"               : Impact
   - "EFF[*].FUNCLASS"             : FunctionalClass
   - "EFF[*].CODING"               : CodingRegion
+  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
+  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
+  - dbNSFP_Uniprot_acc            : UniportAccNumber
   - "EFF[*].CODON"                : Codon
   - "EFF[*].AA"                   : AminoAcid
   - "EFF[*].AA_LEN"               : AminoAcidLength
@@ -129,9 +55,6 @@ tsv_fields:
   - om_MutClass                   : OncomineMutClass
   - om_MutClassPC                 : OncomineMutClassPC
   - "EFF[*].GENE"                 : Gene
-  - dbNSFP_Ensembl_geneid         : EnsembleGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsembleTranscriptID
-  - dbNSFP_Uniprot_acc            : UniprotAccession
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
@@ -164,7 +87,7 @@ tsv_fields:
 
   # dbsnp
   - SAO                           : VariantAlleleOrigin
-  - AB                            : AlleleBalanceAtHeterozygousSites
+  - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
@@ -188,14 +111,11 @@ tsv_fields:
   - dbNSFP_MutationAssessor_score : MutationAssessorScore
   - dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
   - dbNSFP_FATHMM_score           : FATHMMScore
-  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
-  - dbNSFP_Uniprot_acc            : UniportAccNumber
   - dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
   - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
   - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - set                           : SourceVCF_ForMergedRecInCombineVariants
+  - set                           : SourceVCF_forMergedRecInCombineVariants
   - cpgIslandExt                  : CPGIsland
   - genomicSuperDups              : GenomicDuplication
   - rptmk                         : KnownRepeat
