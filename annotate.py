@@ -726,28 +726,25 @@ class Annotator:
 
         all_format_fields = set()
         # Split FORMAT field and sample fields
-        if sample_name:
-            def proc_line(l):
-                if l.startswith('#'):
-                    return l
-                vals = l.strip().split('\t')
-                if len(vals) <= 9:
-                    return l
-                info = vals[7]
-                format_fields = vals[8].split(':')
-                sample_fields = vals[9].split(':')
-                for f, s in zip(format_fields, sample_fields):
-                    if f not in ['DP', 'MQ']:
-                        if f == 'GT':
-                            s = '"' + s + '"'
-                        f = 'gt_' + f
-                        info += ';' + f + '=' + s
-                        all_format_fields.add(f)
-                l = '\t'.join(vals[:7] + [info])
+        def proc_line(l):
+            if l.startswith('#'):
                 return l
-            tmp_vcf = self.iterate_file(vcf_fpath, proc_line)
-        else:
-            tmp_vcf = None
+            vals = l.strip().split('\t')
+            if len(vals) <= 9:
+                return l
+            info = vals[7]
+            format_fields = vals[8].split(':')
+            sample_fields = vals[9].split(':')
+            for f, s in zip(format_fields, sample_fields):
+                if f not in ['DP', 'MQ']:
+                    if f == 'GT':
+                        s = '"' + s + '"'
+                    f = 'gt_' + f
+                    info += ';' + f + '=' + s
+                    all_format_fields.add(f)
+            l = '\t'.join(vals[:7] + [info])
+            return l
+        tmp_vcf = self.iterate_file(vcf_fpath, proc_line)
 
         manual_tsv_fields = self.run_cnf.get('tsv_fields')
         if manual_tsv_fields:

@@ -6,11 +6,11 @@ input:
 #    EOL-1-3: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
 #    EOL-1-4: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
 
-- vcf: AML_02-freebayes.Will-1.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.vcf
-  bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
-- vcf: AML_02-freebayes.SU-DHL-2.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.vcf
-  bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
-- vcf: AML_02-freebayes.HLY-1.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.filt.renamed.tabs.tsv
+#- vcf: AML_02-freebayes.Will-1.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.vcf
+#  bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
+#- vcf: AML_02-freebayes.SU-DHL-2.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.vcf
+#  bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
+- vcf: AML_02-freebayes.HLY-1.gatk.db_snp.oncomine.cosmic.db_nsfp.snpEff.cpgIslandExt.dgvMerged.genomicSuperDups.rptmk.vcf
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
 
 output_dir: .
@@ -157,18 +157,18 @@ tsv_fields:
   - ReadPosRankSum                : ReadPosRankSum
 
   # FORMAT fields for the sample
-  - gt_GT                         : Genotype
+  #- gt_GT                         : Genotype
   #- gt_FT                         : GenotypeWasCalled
   #- gt_GL                         : GenotypeLikelihoods
   #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-  - gt_PL                         : GenotypeLikelihoods_PhredScaled
+  #- gt_PL                         : GenotypeLikelihoods_PhredScaled
   #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
   #- gt_GQ                         : ConditionalGenotypeQuality
   #- gt_HQ                         : HaplotypeQualities
   #- gt_PS                         : PhaseSet
   #- gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
   #- gt_EC                         : ExpAlleleCounts
-  - gt_AD                         : AllelicDepthsForRefAndAlt
+  #- gt_AD                         : AllelicDepthsForRefAndAlt
   #- gt_AO                         : AlleleObservationCount
   #- gt_QA                         : QualitySumForAltObservations
   #- gt_QR                         : QualitySumForRefObservations
