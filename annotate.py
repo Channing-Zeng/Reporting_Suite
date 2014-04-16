@@ -478,7 +478,7 @@ class Annotator:
                 line = line.replace(' ', '_')
                 assert ' ' not in line
             return line
-        output_fpath = self.iterate_file(output_fpath, proc_line, 'spaces')
+        output_fpath = self.iterate_file(output_fpath, proc_line)
         return output_fpath
 
 
