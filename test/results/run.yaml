@@ -1,21 +1,11 @@
 input:
-- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
-  bams:
-    EOL-1-1: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
-    EOL-1-2: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
-    EOL-1-3: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
-    EOL-1-4: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
+- vcf: test/S1-variants.vcf
+- vcf: test/S1-variants.vcf
 
-- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/2014-04-01_AML_02/AML_02-freebayes.vcf
-  bams:
-    Will-1: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
-    SU-DHL-2: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
-    HLY-1: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
-
-output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/anno_11apr
+output_dir: test/results
 
 genome_build: hg19
-reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+reference: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
 
 filter_reject: True           # Filters variants with REJECT in the FILTER field
 #split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
@@ -26,7 +16,7 @@ reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, 
 parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
-  path: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
+  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
   clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
 
@@ -46,30 +36,30 @@ gatk:
   - DepthPerAlleleBySample
   - AlleleBalanceBySample     # AB
 
-db_nsfp:
-  path: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-  annotations:
-  - SIFT_score
-  - Polyphen2_HVAR_score
-  - Polyphen2_HVAR_pred
-  - LRT_score
-  - LRT_pred
-  - MutationTaster_score
-  - MutationTaster_pred
-  - MutationAssessor_score
-  - MutationAssessor_pred
-  - FATHMM_score
-  - Ensembl_geneid
-  - Ensembl_transcriptid
-  - Uniprot_acc
-  - 1000Gp1_AC
-  - 1000Gp1_AF
-  - ESP6500_AA_AF
-  - ESP6500_EA_AF
+#db_nsfp:
+#  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
+#  annotations:
+#  - SIFT_score
+#  - Polyphen2_HVAR_score
+#  - Polyphen2_HVAR_pred
+#  - LRT_score
+#  - LRT_pred
+#  - MutationTaster_score
+#  - MutationTaster_pred
+#  - MutationAssessor_score
+#  - MutationAssessor_pred
+#  - FATHMM_score
+#  - Ensembl_geneid
+#  - Ensembl_transcriptid
+#  - Uniprot_acc
+#  - 1000Gp1_AC
+#  - 1000Gp1_AF
+#  - ESP6500_AA_AF
+#  - ESP6500_EA_AF
 
 vcfs:
   db_snp:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
+    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
     annotations:
     - ID
     - SAO
@@ -86,31 +76,23 @@ vcfs:
     - CDA
 
   cosmic:
-    path: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
     annotations:
     - ID
     - CNT
     - AA
     - CDS
 
-  oncomine:
-    path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
-    annotations:
-    - om_Cancer
-    - om_PATIENT
-    - om_MutClass
-    - om_MutClassPC
 
-
-tracks:  # requires vcfannotate (from bcbio-nextgen)
-  #CpG Island
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-  # Copy Number Variants
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-  # Segmental Duplications
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-  # Repeats
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+#tracks:  # requires vcfannotate (from bcbio-nextgen)
+#  #CpG Island
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+#  # Copy Number Variants
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+#  # Segmental Duplications
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+#  # Repeats
+#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
@@ -138,10 +120,6 @@ tsv_fields:
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic
-  - om_Cancer                     : OncomineCancer
-  - om_PATIENT                    : OncominePatient
-  - om_MutClass                   : OncomineMutClass
-  - om_MutClassPC                 : OncomineMutClassPC
   - "EFF[*].GENE"                 : Gene
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
@@ -157,21 +135,21 @@ tsv_fields:
 
   # FORMAT fields for the sample
   - gt_GT                         : Genotype
-#  - gt_FT                         : GenotypeWasCalled
-#  - gt_GL                         : GenotypeLikelihoods
-#  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+  #- gt_FT                         : GenotypeWasCalled
+  #- gt_GL                         : GenotypeLikelihoods
+  #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
   - gt_PL                         : GenotypeLikelihoods_PhredScaled
-#  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
-#  - gt_GQ                         : ConditionalGenotypeQuality
-#  - gt_HQ                         : HaplotypeQualities
-#  - gt_PS                         : PhaseSet
-#  - gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-#  - gt_EC                         : ExpAlleleCounts
+  #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
+  #- gt_GQ                         : ConditionalGenotypeQuality
+  #- gt_HQ                         : HaplotypeQualities
+  #- gt_PS                         : PhaseSet
+  #- gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+  #- gt_EC                         : ExpAlleleCounts
   - gt_AD                         : AllelicDepthsForRefAndAlt
-#  - gt_AO                         : AlleleObservationCount
-#  - gt_QA                         : QualitySumForAltObservations
-#  - gt_QR                         : QualitySumForRefObservations
-#  - gt_RO                         : RefAlleleObservationCount
+  #- gt_AO                         : AlleleObservationCount
+  #- gt_QA                         : QualitySumForAltObservations
+  #- gt_QR                         : QualitySumForRefObservations
+  #- gt_RO                         : RefAlleleObservationCount
 
   # dbsnp
   - SAO                           : VariantAlleleOrigin
@@ -179,16 +157,16 @@ tsv_fields:
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
-#  - MUT                           : CitedMutation
+  #- MUT                           : CitedMutation
   - HD                            : PresentInDBGap
   - KGPROD                        : Has1000GenomeSubmission
   - PH3                           : HapMapValidated
   - OM                            : InOMIM
   - COMMON                        : CommonVariant
-#  - CLNSIG                        : ClinicalSignificance
+  #- CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
-#  - MAF                           : GlobalMinorAlleleFrequency
-#  - CDA                           : InClinicalDiagnosticAssay
+  #- MAF                           : GlobalMinorAlleleFrequency
+  #- CDA                           : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
   - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
@@ -204,16 +182,12 @@ tsv_fields:
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
   - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
   - set                           : SourceVCF_forMergedRecInCombineVariants
-  - cpgIslandExt                  : CPGIsland
-  - genomicSuperDups              : GenomicDuplication
-  - rptmk                         : KnownRepeat
-  - dgvMerged                     : KnownCopyNumber
 
 
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
 # 2. Explicitly defined annotations in this yaml file
-# 3. Alla SnpEff annotaions (EFF...)
-# 4. Track names (cpgIslandExt, rptmk,,)
+# 3. SnpEff annotaions (EFF...)
+# 4. Track names
 # 5. Additional fields:
 #additional_tsv_fields: []

@@ -8,7 +8,6 @@ if sys.version_info[:2] < (2, 5):
 import subprocess
 import shutil
 import os
-
 from os.path import join, splitext, basename, realpath, isfile, getsize, dirname, exists
 from distutils.version import LooseVersion
 from yaml import load
@@ -37,36 +36,48 @@ def verify_file(fpath, description=''):
     return True
 
 
+def safe_mkdir(dirpath, descriptive_name):
+    if not dirpath:
+        exit(descriptive_name + ' path is empty.')
+    if isfile(dirpath):
+        exit(descriptive_name + ' ' + dirpath + ' is a file.')
+    if not exists(dirpath):
+        try:
+            os.mkdir(dirpath)
+        except OSError:
+            exit('Parent directory for ' + descriptive_name +
+                 ' ' + dirpath + ' probably does not exist.')
+
+
 class Annotator:
-    def introduce_step(self, name):
+    def step_greetings(self, name):
         self.log_print('')
         self.log_print('-' * 70)
         self.log_print(name)
         self.log_print('-' * 70)
 
 
-    def _set_up_dir(self):
-        output_dir = realpath(self.run_cnf.get('output_dir', os.getcwd()))
-        if not output_dir:
-            exit('Result directory path is empty.')
-        if isfile(output_dir):
-            exit(output_dir + ' is a file.')
-        if not exists(output_dir):
-            try:
-                os.mkdir(output_dir)
-            except:
-                exit(output_dir + ' does not exist.')
-        self.output_dir = output_dir
-        return output_dir
+    def _set_up_output_dir(self):
+        output_dirpath = realpath(self.run_cnf.get('output_dir', os.getcwd()))
+        safe_mkdir(output_dirpath, 'output_dir')
+        self.output_dir = output_dirpath
+
+        if self.run_cnf.get('save_intermediate'):
+            intermediate_dirpath = join(self.output_dir, 'intermediate')
+            safe_mkdir(intermediate_dirpath, 'intermediate directory')
+            self.intermediate_dir = intermediate_dirpath
+
+        return output_dirpath
 
 
-    def _set_up_log(self):
-        self.log = os.path.join(self.output_dir, 'log.txt')
-        if os.path.isfile(self.log):
-            os.remove(self.log)
+    def _set_up_logfile(self):
+        if self.run_cnf.get('save_intermediate'):
+            self.log = join(self.intermediate_dir, 'log.txt')
+            if os.path.isfile(self.log):
+                os.remove(self.log)
 
 
-    def _check_reference(self):
+    def _check_reference_file(self):
         if not 'genome_build' in self.run_cnf:
             self.log_exit('Please, provide genome build (genome_build).')
         if not 'reference' in self.run_cnf:
@@ -75,7 +86,7 @@ class Annotator:
             exit(1)
 
 
-    def _check_executable(self):
+    def _check_executables(self):
         if not which('java'):
             sys.stderr.write('* Warning: Java not found. You may want to run "module load java", '
                              'or better ". /group/ngs/bin/bcbio-prod.sh"\n\n')
@@ -90,8 +101,8 @@ class Annotator:
 
     def _read_input(self):
         data = []
-
         if 'input' not in self.run_cnf:
+            # Old config, for back-compability
             if 'file' not in self.run_cnf:
                 self.log_exit('ERROR: Run config does not contain "input" section.')
             data.append({'vcf': realpath(self.run_cnf['file']),
@@ -107,7 +118,8 @@ class Annotator:
         return data
 
 
-    def _check_file_for_rec(self, rec):
+    @staticmethod
+    def _check_files_for_input_record(rec):
         inp_fpath = rec['vcf']
         if not verify_file(inp_fpath, 'Input file'):
             exit(1)
@@ -125,7 +137,7 @@ class Annotator:
         return inp_fpath, bams, bam_fpath
 
 
-    def _copy_to_final_dir(self, inp_fpath):
+    def _copy_vcf_to_final_dir(self, inp_fpath):
         fname = basename(inp_fpath)
 
         if self.output_dir != realpath(dirname(inp_fpath)):
@@ -148,16 +160,15 @@ class Annotator:
                 return inp_fpath
 
 
-    def _read_samples(self, vcf_fpath):
+    @staticmethod
+    def _read_sample_names_from_vcf(vcf_fpath):
         basic_fields = next(l.strip()[1:].split() for l in open(vcf_fpath)
                             if l.strip().startswith('#CHROM'))
         return basic_fields[9:]
 
 
-    def _split_samples(self, vcf_fpath, bams):
-        print 'split samples'
-        samples = self._read_samples(vcf_fpath)
-        print len(samples)
+    def _split_vcf_by_samples(self, vcf_fpath, bams):
+        samples = self._read_sample_names_from_vcf(vcf_fpath)
 
         for sample in (bams.keys() if bams else []):
             if sample not in samples:
@@ -172,16 +183,17 @@ class Annotator:
     def __init__(self, system_config_path, run_config_path):
         self.sys_cnf = load(open(system_config_path), Loader=Loader)
         self.run_cnf = load(open(run_config_path), Loader=Loader)
+        self.output_dir = None
+        self.intermediate_dir = None
         self.log = None
         self.samples = dict()
 
         if not 'resources' in self.sys_cnf:
             self.log_exit('"resources" section in system config required.')
 
-        self._set_up_dir()
-
-        if 'log' in self.run_cnf:
-            self._set_up_log()
+        self._set_up_output_dir()
+        self._set_up_logfile()
+        if self.run_cnf.get('save_intermediate'):
             shutil.copy(run_config_path, self.output_dir)
 
         self.log_print('Loaded system config ' + system_config_path)
@@ -192,17 +204,17 @@ class Annotator:
             self.log_print('Logging to ' + self.log)
         self.log_print('')
 
-        self._check_executable()
+        self._check_executables()
 
         inp = self._read_input()
         for rec in inp:
-            inp_fpath, bams, bam_fpath = self._check_file_for_rec(rec)
+            inp_fpath, bams, bam_fpath = self._check_files_for_input_record(rec)
 
-            inp_fpath = rec['vcf'] = self._copy_to_final_dir(inp_fpath)
+            inp_fpath = rec['vcf'] = self._copy_vcf_to_final_dir(inp_fpath)
 
             # Split by samples
             if bams or self.run_cnf.get('split_samples'):
-                self._split_samples(inp_fpath, bams)
+                self._split_vcf_by_samples(inp_fpath, bams)
             else:
                 if len(inp) == 1:
                     self.samples[None] = {'vcf': inp_fpath, 'bam': bam_fpath}
@@ -212,8 +224,8 @@ class Annotator:
 
     def annotate(self):
         if len(self.samples) == 1:
-            name, sample = self.samples.items()[0]
-            self.annotate_one(sample, name)
+            sample_name, sample_files = self.samples.items()[0]
+            self.annotate_one(sample_name, sample_files)
         else:
             if self.run_cnf.get('parallel'):
                 try:
@@ -224,25 +236,44 @@ class Annotator:
                         'in parallel, in this case, make sure python joblib intalled. '
                         '(pip install joblib).')
                 else:
-                    Parallel(n_jobs=len(self.samples)) \
-                            (delayed(self.annotate_one) \
-                                    (sample, name) for name, sample in self.samples.items())
-            else:
-                for name, sample in self.samples.items():
-                    self.annotate_one(sample, name)
+                    annotate_one = lambda this, sample_name, sample_files: \
+                        this.annotate_one(sample_name, sample_files)
 
-    def annotate_one(self, sample, sample_name):
+                    Parallel(n_jobs=len(self.samples)) \
+                            (delayed(annotate_one) \
+                                    (self, sample_name, sample_files)
+                             for sample_name, sample_files in self.samples.items())
+            else:
+                for sample_name, sample_files in self.samples.items():
+                    self.annotate_one(sample_name, sample_files)
+
+
+# def annotate_one(sys_cnf, run_cnf, sample_name, sample_files):
+#     SingleAnnotator()
+#
+#
+# class SingleAnnotator:
+#     def __init__(self, sys_cnf, run_cnf, output_dir, log, sample_name, sample_files):
+#         self.sys_cnf = sys_cnf
+#         self.run_cnf = run_cnf
+#         self.output_dir = output_dir
+#         self.log = log
+#         self.sample_name = sample_name
+#         self.sample_files = sample_files
+
+
+    def annotate_one(self, sample_name, sample_files):
         if sample_name:
             self.log_print('')
             self.log_print('')
             self.log_print('*' * 70)
             msg = '*' * 3 + ' Sample ' + sample_name + ' '
             self.log_print(msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
-            self.log_print('VCF: ' + sample['vcf'])
-            if sample.get('bam'):
-                self.log_print('BAM: ' + sample['bam'])
+            self.log_print('VCF: ' + sample_files['vcf'])
+            if sample_files.get('bam'):
+                self.log_print('BAM: ' + sample_files['bam'])
 
-        vcf_fpath = sample['vcf']
+        vcf_fpath = sample_files['vcf']
         # sample['fields'] = []
 
         if self.run_cnf.get('split_genotypes'):
@@ -252,7 +283,7 @@ class Annotator:
             vcf_fpath = self.process_ensemble(vcf_fpath)
 
         if 'gatk' in self.run_cnf:
-            vcf_fpath = self.gatk(vcf_fpath, sample['bam'])
+            vcf_fpath = self.gatk(vcf_fpath, sample_files['bam'])
 
         if 'vcfs' in self.run_cnf:
             for dbname, conf in self.run_cnf['vcfs'].items():
@@ -299,7 +330,7 @@ class Annotator:
                     try:
                         if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
                             return None
-                    except:
+                    except IndexError:
                         self.log_exit('Incorrect VCF at line: ' + l)
                 elif not l.startswith('#'):
                     fields = l.split('\t')
@@ -316,7 +347,7 @@ class Annotator:
 
 
     def extract_sample(self, input_fpath, sample):
-        self.introduce_step('Separating out sample ' + sample)
+        self.step_greetings('Separating out sample ' + sample)
 
         executable = self._get_java_tool_cmdline('gatk')
         ref_fpath = self.run_cnf['reference']
@@ -474,7 +505,7 @@ class Annotator:
 
 
     def snpsift_annotate(self, dbname, conf, input_fpath):
-        self.introduce_step('Annotate with ' + dbname)
+        self.step_greetings('Annotate with ' + dbname)
 
         executable = self._get_java_tool_cmdline('snpsift')
         db_path = conf.get('path')
@@ -497,7 +528,7 @@ class Annotator:
         if 'db_nsfp' not in self.run_cnf:
             return input_fpath
 
-        self.introduce_step('DB SNFP')
+        self.step_greetings('DB SNFP')
 
         executable = self._get_java_tool_cmdline('snpsift')
 
@@ -517,7 +548,7 @@ class Annotator:
         if 'snpeff' not in self.run_cnf:
             return input_fpath
 
-        self.introduce_step('SnpEff')
+        self.step_greetings('SnpEff')
 
         # self.all_fields.extend([
         #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
@@ -545,7 +576,7 @@ class Annotator:
     def tracks(self, track_path, input_fpath):
         field_name = splitext(basename(track_path))[0]
 
-        self.introduce_step('Intersecting with ' + field_name)
+        self.step_greetings('Intersecting with ' + field_name)
 
         toolpath = self._get_tool_cmdline('vcfannotate')
         if not toolpath:
@@ -641,7 +672,7 @@ class Annotator:
         if 'gatk' not in self.run_cnf:
             return input_fpath
 
-        self.introduce_step('GATK')
+        self.step_greetings('GATK')
 
         executable = self._get_java_tool_cmdline('gatk')
 
@@ -689,7 +720,7 @@ class Annotator:
 
 
     def rename_fields(self, tsv_fpath, field_map):
-        self.introduce_step('Renaming fields.')
+        self.step_greetings('Renaming fields.')
 
         with open(tsv_fpath) as f:
             first_line = f.readline()[1:]
@@ -722,7 +753,7 @@ class Annotator:
                 self.log_print(tsv_fpath + ' exists, reusing')
                 return tsv_fpath
 
-        self.introduce_step('Extracting fields')
+        self.step_greetings('Extracting fields')
 
         all_format_fields = set()
         # Split FORMAT field and sample fields
@@ -780,7 +811,7 @@ class Annotator:
 
 
     def process_ensemble(self, input_fpath):
-        self.introduce_step('Extracting dataset by filename, filtering ensemble reject line.')
+        self.step_greetings('Extracting dataset by filename, filtering ensemble reject line.')
         return self.iterate_file(input_fpath, lambda l: 'REJECT' not in l, 'pass')
 
 
@@ -812,7 +843,7 @@ class Annotator:
 
 
     def split_genotypes(self, input_fpath):
-        self.introduce_step('Splitting genotypes.')
+        self.step_greetings('Splitting genotypes.')
 
         def proc_line(line):
             if line.startswith('#'):
@@ -833,7 +864,7 @@ class Annotator:
 
 
     def filter_fields(self, input_fpath):
-        self.introduce_step('Filtering incorrect fields.')
+        self.step_greetings('Filtering incorrect fields.')
 
         def proc_line(line):
             if not line.startswith('#'):

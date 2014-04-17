@@ -1,0 +1,100 @@
+Loaded system config /vagrant/variantannotation/system_info_local.yaml
+Loaded run config /vagrant/variantannotation/test/run.yaml
+
+Writing into /vagrant/variantannotation/test/results
+Logging to /vagrant/variantannotation/test/results/intermediate/log.txt
+
+
+
+**********************************************************************
+*** Sample /vagrant/variantannotation/test/results/S1-variants.vcf ***
+VCF: /vagrant/variantannotation/test/results/S1-variants.vcf
+
+----------------------------------------------------------------------
+GATK
+----------------------------------------------------------------------
+WARNING: could not determine Gatk version, using 1.0
+Notice: in the lite Gatk version, the Coverage annotation goes by name of DepthOfCoverage. In the system config, the lite version of Gatk is specified; using DepthOfCoverage.
+
+java -Xms750m -Xmx2500m -jar /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar -nt 20 -R /vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantAnnotator --variant /vagrant/variantannotation/test/results/S1-variants.vcf -A DepthOfCoverage -A BaseQualityRankSumTest -A FisherStrand -A GCContent -A HaplotypeScore -A HomopolymerRun -A RMSMappingQuality -A MappingQualityRankSumTest -A MappingQualityZero -A QualByDepth -A ReadPosRankSumTest -A DepthPerAlleleBySample -A AlleleBalanceBySample -o /vagrant/variantannotation/test/results/tx/tmpjVtOvC/S1-variants.gatk.vcf
+   INFO  16:18:02,841 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  16:18:02,844 HelpFormatter - The Genome Analysis Toolkit (GATK) v2.3-9-gdcdccbb, Compiled 2013/01/11 20:03:13
+   INFO  16:18:02,845 HelpFormatter - Copyright (c) 2010 The Broad Institute
+   INFO  16:18:02,845 HelpFormatter - For support and documentation go to http://www.broadinstitute.org/gatk
+   INFO  16:18:02,848 HelpFormatter - Program Args: -nt 20 -R /vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantAnnotator --variant /vagrant/variantannotation/test/results/S1-variants.vcf -A DepthOfCoverage -A BaseQualityRankSumTest -A FisherStrand -A GCContent -A HaplotypeScore -A HomopolymerRun -A RMSMappingQuality -A MappingQualityRankSumTest -A MappingQualityZero -A QualByDepth -A ReadPosRankSumTest -A DepthPerAlleleBySample -A AlleleBalanceBySample -o /vagrant/variantannotation/test/results/tx/tmpjVtOvC/S1-variants.gatk.vcf
+   INFO  16:18:02,848 HelpFormatter - Date/Time: 2014/04/17 16:18:02
+   INFO  16:18:02,848 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  16:18:02,848 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  16:18:02,869 ArgumentTypeDescriptor - Dynamically determined type of /vagrant/variantannotation/test/results/S1-variants.vcf to be VCF
+   INFO  16:18:02,895 GenomeAnalysisEngine - Strictness is SILENT
+   INFO  16:18:03,016 GenomeAnalysisEngine - Downsampling Settings: Method: BY_SAMPLE, Target Coverage: 1000, Using the new downsampling implementation
+   INFO  16:18:03,031 RMDTrackBuilder - Creating Tribble index in memory for file /vagrant/variantannotation/test/results/S1-variants.vcf
+   INFO  16:18:03,078 RMDTrackBuilder - Writing Tribble index to disk for file /vagrant/variantannotation/test/results/S1-variants.vcf.idx
+   INFO  16:18:03,100 MicroScheduler - Running the GATK in parallel mode with 20 total threads, 1 CPU thread(s) for each of 20 data thread(s), of 1 processors available on this machine
+   WARN  16:18:03,102 MicroScheduler - Number of requested GATK threads 20 is more than the number of available processors on this machine 1
+   INFO  16:18:03,111 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
+   INFO  16:18:03,113 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
+   INFO  16:18:03,415 RMDTrackBuilder - Loading Tribble index from disk for file /vagrant/variantannotation/test/results/S1-variants.vcf
+   INFO  16:18:06,301 VariantAnnotator - Processed 12 loci.
+   
+   INFO  16:18:06,317 ProgressMeter -            done        3.66e+04    3.2 s       87.6 s    100.0%         3.2 s     0.0 s
+   INFO  16:18:06,319 ProgressMeter - Total runtime 3.21 secs, 0.05 min, 0.00 hours
+   INFO  16:18:08,698 GATKRunReport - Uploaded run statistics report to AWS S3
+Saved to /vagrant/variantannotation/test/results/S1-variants.gatk.vcf
+
+----------------------------------------------------------------------
+Annotate with db_snp
+----------------------------------------------------------------------
+java -Xms750m -Xmx6g -jar /usr/local/share/java/snpeff-3_4/SnpSift.jar annotate -v -info ID,SAO,VC,PM,HD,KGPROD,PH3,OM,CAF,COMMON,dbSNPBuildID,G5,CDA /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf /vagrant/variantannotation/test/results/S1-variants.gatk.vcf > /vagrant/variantannotation/test/results/tx/tmpAiv5rb/S1-variants.gatk.db_snp.vcf
+   00:00:00.000	Annotating entries from: 'null'
+   Index: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
+   index:	chrM	34113
+   index:	chrM	9082
+   00:00:00.154	Chromosome: 'M'
+   WARNING: Chromosome '22' not found in database.
+   WARNING: Chromosome '22' not found in database.
+   00:00:00.207	Done.
+   Total annotated entries : 1
+   Total entries           : 12
+   Percent                 : 8.33%
+   Errors (bad references) : 0
+Saved to /vagrant/variantannotation/test/results/S1-variants.gatk.db_snp.vcf
+
+----------------------------------------------------------------------
+Annotate with cosmic
+----------------------------------------------------------------------
+java -Xms750m -Xmx6g -jar /usr/local/share/java/snpeff-3_4/SnpSift.jar annotate -v -info ID,CNT,AA,CDS /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf /vagrant/variantannotation/test/results/S1-variants.gatk.db_snp.vcf > /vagrant/variantannotation/test/results/tx/tmpRDuCLE/S1-variants.gatk.db_snp.cosmic.vcf
+   00:00:00.000	Annotating entries from: 'null'
+   Index: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+   index:	chrM	51347
+   index:	chrM	8971
+   00:00:00.247	Chromosome: 'M'
+   WARNING: Chromosome '22' not found in database.
+   WARNING: Chromosome '22' not found in database.
+   00:00:00.268	Done.
+   Total annotated entries : 0
+   Total entries           : 12
+   Percent                 : 0.00%
+   Errors (bad references) : 0
+Saved to /vagrant/variantannotation/test/results/S1-variants.gatk.db_snp.cosmic.vcf
+
+----------------------------------------------------------------------
+SnpEff
+----------------------------------------------------------------------
+java -Xms750m -Xmx6g -jar /usr/local/share/java/snpeff-3_4/snpEff.jar eff -dataDir /vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff -noStats -noLog -1 -i vcf -o vcf hg19 /vagrant/variantannotation/test/results/S1-variants.gatk.db_snp.cosmic.vcf -canon -hgvs  -cancer  > /vagrant/variantannotation/test/results/tx/tmpHFC4xm/S1-variants.gatk.db_snp.cosmic.snpEff.vcf
+   
+   WARNINGS: Some warning were detected
+   Warning type	Number of warnings
+   WARNING_TRANSCRIPT_INCOMPLETE	2
+   
+   
+Saved to /vagrant/variantannotation/test/results/S1-variants.gatk.db_snp.cosmic.snpEff.vcf
+
+----------------------------------------------------------------------
+Filtering incorrect fields.
+----------------------------------------------------------------------
+
+----------------------------------------------------------------------
+Extracting fields
+----------------------------------------------------------------------
+System config resources section must contain vcfoneperline info (with a path to the tool).
