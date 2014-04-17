@@ -17,7 +17,7 @@ try:
 except ImportError:
     from yaml import Loader
 
-from src.bcbio_utils import which, splitext_plus, add_suffix, file_exists
+from src.utils import which, splitext_plus, add_suffix, file_exists
 from src.transaction import file_transaction
 
 

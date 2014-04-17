@@ -11,7 +11,7 @@ import tempfile
 
 import contextlib
 
-from bcbio import utils
+import utils
 
 @contextlib.contextmanager
 def file_transaction(*rollback_files):

@@ -157,21 +157,21 @@ tsv_fields:
 
   # FORMAT fields for the sample
   - gt_GT                         : Genotype
-  #- gt_FT                         : GenotypeWasCalled
-  #- gt_GL                         : GenotypeLikelihoods
-  #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+#  - gt_FT                         : GenotypeWasCalled
+#  - gt_GL                         : GenotypeLikelihoods
+#  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
   - gt_PL                         : GenotypeLikelihoods_PhredScaled
-  #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
-  #- gt_GQ                         : ConditionalGenotypeQuality
-  #- gt_HQ                         : HaplotypeQualities
-  #- gt_PS                         : PhaseSet
-  #- gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-  #- gt_EC                         : ExpAlleleCounts
+#  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
+#  - gt_GQ                         : ConditionalGenotypeQuality
+#  - gt_HQ                         : HaplotypeQualities
+#  - gt_PS                         : PhaseSet
+#  - gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+#  - gt_EC                         : ExpAlleleCounts
   - gt_AD                         : AllelicDepthsForRefAndAlt
-  #- gt_AO                         : AlleleObservationCount       
-  #- gt_QA                         : QualitySumForAltObservations                  
-  #- gt_QR                         : QualitySumForRefObservations
-  #- gt_RO                         : RefAlleleObservationCount
+#  - gt_AO                         : AlleleObservationCount
+#  - gt_QA                         : QualitySumForAltObservations
+#  - gt_QR                         : QualitySumForRefObservations
+#  - gt_RO                         : RefAlleleObservationCount
 
   # dbsnp
   - SAO                           : VariantAlleleOrigin
@@ -179,16 +179,16 @@ tsv_fields:
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
-  #- MUT                           : CitedMutation
+#  - MUT                           : CitedMutation
   - HD                            : PresentInDBGap
   - KGPROD                        : Has1000GenomeSubmission
   - PH3                           : HapMapValidated
   - OM                            : InOMIM
   - COMMON                        : CommonVariant
-  #- CLNSIG                        : ClinicalSignificance
+#  - CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
-  #- MAF                           : GlobalMinorAlleleFrequency
-  #- CDA                           : InClinicalDiagnosticAssay
+#  - MAF                           : GlobalMinorAlleleFrequency
+#  - CDA                           : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
   - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
@@ -213,7 +213,7 @@ tsv_fields:
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
 # 2. Explicitly defined annotations in this yaml file
-# 3. SnpEff annotaions (EFF...)
-# 4. Track names
+# 3. Alla SnpEff annotaions (EFF...)
+# 4. Track names (cpgIslandExt, rptmk,,)
 # 5. Additional fields:
 #additional_tsv_fields: []
