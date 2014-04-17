@@ -12,7 +12,7 @@ input:
     SU-DHL-2: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
     HLY-1: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
 
-output_dir: annotate_ensemble
+output_dir: annotate
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

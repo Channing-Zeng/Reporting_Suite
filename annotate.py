@@ -893,10 +893,15 @@ def main(args):
     if not os.path.isfile(run_config_path):
         exit(run_config_path + ' does not exist or is a directory.\n')
 
+    to_exit = False
     if not system_config_path.endswith('.yaml'):
         sys.stderr.write(system_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+        to_exit = True
     if not run_config_path.endswith('.yaml'):
         sys.stderr.write(run_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+        to_exit = True
+    if to_exit:
+        exit()
 
     annotator = Annotator(system_config_path, run_config_path)
 
