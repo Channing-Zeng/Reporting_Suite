@@ -1,6 +1,6 @@
 input:
-- vcf: test/S1-variants.vcf
-- vcf: test/S1-variants.vcf
+- vcf: test/S1.vcf
+- vcf: test/S2.vcf
 
 output_dir: test/results
 
@@ -13,7 +13,7 @@ filter_reject: True           # Filters variants with REJECT in the FILTER field
 verbose: True                 # Prints tools output
 save_intermediate: True      # Leeps intermediate VCFs for each step
 reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-parallel: True                # Process samples in parallel (requires joblib python package)
+#parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
   path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
@@ -83,7 +83,8 @@ vcfs:
     - AA
     - CDS
 
-
+tracks:
+- /vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
 #tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #CpG Island
 #- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
@@ -111,9 +112,6 @@ tsv_fields:
   - "EFF[*].IMPACT"               : Impact
   - "EFF[*].FUNCLASS"             : FunctionalClass
   - "EFF[*].CODING"               : CodingRegion
-  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
-  - dbNSFP_Uniprot_acc            : UniportAccNumber
   - "EFF[*].CODON"                : Codon
   - "EFF[*].AA"                   : AminoAcid
   - "EFF[*].AA_LEN"               : AminoAcidLength
@@ -167,22 +165,8 @@ tsv_fields:
   - G5                            : 5%MAFinPopulationsCAF
   #- MAF                           : GlobalMinorAlleleFrequency
   #- CDA                           : InClinicalDiagnosticAssay
-  - dbNSFP_SIFT_score             : SiftScore
-  - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
-  - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
-  - dbNSFP_LRT_score              : LrtScore
-  - dbNSFP_LRT_pred               : LrtPrediction
-  - dbNSFP_MutationTaster_score   : MutationTasterScore
-  - dbNSFP_MutationTaster_pred    : MutationTasterPrediction
-  - dbNSFP_MutationAssessor_score : MutationAssessorScore
-  - dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
-  - dbNSFP_FATHMM_score           : FATHMMScore
-  - dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
-  - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
-  - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
-  - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
   - set                           : SourceVCF_forMergedRecInCombineVariants
-
+  - analysis_blocks               : analysis_blocks
 
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO

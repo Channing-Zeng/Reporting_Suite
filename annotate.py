@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from genericpath import isdir
 
 import sys
 if sys.version_info[:2] < (2, 5):
@@ -88,15 +89,15 @@ class Annotator:
 
     def _check_executables(self):
         if not which('java'):
-            sys.stderr.write('* Warning: Java not found. You may want to run "module load java", '
-                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n\n')
+            sys.stderr.write('\n* Warning: Java not found. You may want to run "module load java", '
+                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
         if not which('perl'):
-            sys.stderr.write('* Warning: Perl not found. You may want to run "module load perl", '
-                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n\n')
+            sys.stderr.write('\n* Warning: Perl not found. You may want to run "module load perl", '
+                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
         if not self._get_tool_cmdline('vcfannotate',
                                       extra_warn='You may want to load BCBio '
                                                  'with ". /group/ngs/bin/bcbio-prod.sh"'):
-            sys.stderr.write('* Warning: skipping annotation with bed tracks.\n')
+            sys.stderr.write('\n* Warning: skipping annotation with bed tracks.\n')
 
 
     def _read_input(self):
@@ -168,16 +169,16 @@ class Annotator:
 
 
     def _split_vcf_by_samples(self, vcf_fpath, bams):
-        samples = self._read_sample_names_from_vcf(vcf_fpath)
+        sample_names = self._read_sample_names_from_vcf(vcf_fpath)
 
-        for sample in (bams.keys() if bams else []):
-            if sample not in samples:
-                self.log_exit('ERROR: sample ' + sample + ' is not in VCF ' + vcf_fpath + '\n'
-                              'Available samples: ' + ', '.join(samples))
-        for sample in samples:
-            bam_fpath = bams.get(sample) if bams else None
-            new_vcf = self.extract_sample(vcf_fpath, sample)
-            self.samples[sample] = {'vcf': new_vcf, 'bam': bam_fpath}
+        for sample_name in (bams.keys() if bams else []):
+            if sample_name not in sample_names:
+                self.log_exit('ERROR: sample ' + sample_name + ' is not in VCF ' + vcf_fpath + '\n'
+                              'Available samples: ' + ', '.join(sample_names))
+        for sample_name in sample_names:
+            bam_fpath = bams.get(sample_name) if bams else None
+            new_vcf = self.extract_sample(vcf_fpath, sample_name)
+            self.samples[sample_name] = {'vcf': new_vcf, 'bam': bam_fpath}
 
 
     def __init__(self, system_config_path, run_config_path):
@@ -202,7 +203,6 @@ class Annotator:
         self.log_print('Writing into ' + self.output_dir)
         if self.log:
             self.log_print('Logging to ' + self.log)
-        self.log_print('')
 
         self._check_executables()
 
@@ -232,7 +232,7 @@ class Annotator:
                     from joblib import Parallel, delayed
                 except ImportError:
                     self.log_print(
-                        'Joblib not found. You may want samples to be processed '
+                        '\nWARNING: Joblib not found. You may want samples to be processed '
                         'in parallel, in this case, make sure python joblib intalled. '
                         '(pip install joblib).')
                 else:
@@ -264,7 +264,6 @@ class Annotator:
 
     def annotate_one(self, sample_name, sample_files):
         if sample_name:
-            self.log_print('')
             self.log_print('')
             self.log_print('*' * 70)
             msg = '*' * 3 + ' Sample ' + sample_name + ' '
@@ -303,22 +302,34 @@ class Annotator:
         vcf_fpath = self.filter_fields(vcf_fpath)
 
         tsv_fpath = self.extract_fields(vcf_fpath, sample_name)
-        if tsv_fpath:
-            manual_tsv_fields = self.run_cnf.get('tsv_fields')
-            if manual_tsv_fields:
-                field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
-                tsv_fpath = self.rename_fields(tsv_fpath, field_map)
-                self.log_print('Saved final TSV file with nice names to ' + tsv_fpath)
 
+        manual_tsv_fields = self.run_cnf.get('tsv_fields')
+
+        if manual_tsv_fields:
+            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
             if self.run_cnf.get('save_intermediate'):
-                corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
-                self.log_print('')
-                self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
-                self.log_print('View with the commandline:')
-                self.log_print('    column -t ' + corr_tsv_fpath + ' | less -S')
+                self.log_print('Saved TSV file to ' + tsv_fpath)
+            tsv_fpath = self.rename_fields(tsv_fpath, field_map)
+            if self.run_cnf.get('save_intermediate'):
+                self.log_print('Saved TSV file with nice names to ' + tsv_fpath)
+            # else:
+                # self.log_print('Saved TSV file to ' + tsv_fpath)
+        # else:
+            # self.log_print('Saved TSV file to ' + tsv_fpath)
+
+        # if self.run_cnf.get('save_intermediate'):
+        #     corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
+        #     self.log_print('')
+        #     self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
+        #     self.log_print('View with the commandline:')
+        #     self.log_print('column -t ' + corr_tsv_fpath + ' | less -S')
+
+        if isdir(join(self.output_dir, 'tx')):
+            shutil.rmtree(join(self.output_dir, 'tx'))
 
         self.log_print('')
-        self.log_print('Final VCF in ' + vcf_fpath)
+        self.log_print('Saved final VCF to ' + vcf_fpath)
+        self.log_print('Saved final TSV to ' + tsv_fpath)
         if self.log:
             print('Log in ' + self.log)
 
@@ -345,7 +356,6 @@ class Annotator:
         return self.iterate_file(input_fpath, proc_line)
 
 
-
     def extract_sample(self, input_fpath, sample):
         self.step_greetings('Separating out sample ' + sample)
 
@@ -353,7 +363,7 @@ class Annotator:
         ref_fpath = self.run_cnf['reference']
         output_fpath = add_suffix(input_fpath, sample)
         cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-              '--variant {input_fpath} -sn {sample}'.format(**locals())
+              '--variant {input_fpath} -sn {sample} -o {output_fpath}'.format(**locals())
         self._call_and_rename(cmd, input_fpath, suffix=sample,
                               result_to_stdout=False, rename=False)
         return output_fpath
@@ -367,14 +377,14 @@ class Annotator:
 
     def log_exit(self, msg=''):
         if self.log:
-            open(self.log, 'a').write(msg + '\n')
+            open(self.log, 'a').write('\n' + msg + '\n')
         exit(msg)
 
 
     def log_err(self, msg=''):
         if self.log:
-            open(self.log, 'a').write(msg + '\n')
-        sys.stderr.write(msg + '\n')
+            open(self.log, 'a').write('\n' + msg + '\n')
+        sys.stderr.write('\n' + msg + '\n')
 
 
     def _call_and_rename(self, cmdline, input_fpath, suffix,
@@ -720,7 +730,8 @@ class Annotator:
 
 
     def rename_fields(self, tsv_fpath, field_map):
-        self.step_greetings('Renaming fields.')
+        if self.run_cnf.get('save_intermediate'):
+            self.step_greetings('Renaming fields.')
 
         with open(tsv_fpath) as f:
             first_line = f.readline()[1:]
@@ -728,7 +739,11 @@ class Annotator:
         new_fields = [field_map.get(f, f) for f in fields]
         new_first_line = '\t'.join(new_fields)
 
-        out_fpath = add_suffix(tsv_fpath, 'renamed')
+        if self.run_cnf.get('save_intermediate'):
+            out_fpath = add_suffix(tsv_fpath, 'renamed')
+        else:
+            out_fpath = tsv_fpath
+
         with file_transaction(out_fpath) as tx_out_fpath:
             with open(tx_out_fpath, 'w') as out:
                 out.write(new_first_line + '\n')
@@ -745,6 +760,8 @@ class Annotator:
 
 
     def extract_fields(self, vcf_fpath, sample_name=None):
+        self.step_greetings('Extracting fields')
+
         name, _ = splitext_plus(vcf_fpath)
         tsv_fpath = name + '.tsv'
 
@@ -753,9 +770,8 @@ class Annotator:
                 self.log_print(tsv_fpath + ' exists, reusing')
                 return tsv_fpath
 
-        self.step_greetings('Extracting fields')
-
         all_format_fields = set()
+
         # Split FORMAT field and sample fields
         def proc_line(l):
             if l.startswith('#'):
@@ -790,7 +806,11 @@ class Annotator:
 
         anno_line = ' '.join(fields)
         snpsift_cmline = self._get_java_tool_cmdline('snpsift')
-        vcfoneperline_cmline = self._get_script_cmdline_template('perl', 'vcfoneperline') % ''
+
+        if not which('perl'):
+            exit('Perl executable required, maybe you need to run "module load perl"?')
+        src_fpath = join(dirname(realpath(__file__)), 'src')
+        vcfoneperline_cmline = 'perl ' + join(src_fpath, 'vcfOnePerLine.pl')
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
         with file_transaction(tsv_fpath) as tx_tsv_fpath:
@@ -806,7 +826,6 @@ class Annotator:
         if res != 0:
             self.log_exit('Command returned status ' + str(res) +
                           ('. Log in ' + self.log if self.log else '.'))
-        self.log_print('Saved TSV file to ' + tsv_fpath)
         return tsv_fpath
 
 
@@ -885,7 +904,7 @@ class Annotator:
                     return '\t'.join(fields)
             return line
 
-        return self.iterate_file(input_fpath, proc_line, 'filt')
+        return self.iterate_file(input_fpath, proc_line)
 
 
     def dots_to_empty_cells(self, tsv_fpath):
@@ -895,7 +914,7 @@ class Annotator:
             while '\t\t' in l:
                 l = l.replace('\t\t', '\t.\t')
             return l
-        return self.iterate_file(tsv_fpath, proc_line, 'tabs')
+        return self.iterate_file(tsv_fpath, proc_line, 'dots')
 
 
 def remove_quotes(s):

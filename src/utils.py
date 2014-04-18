@@ -496,7 +496,7 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-    return None
+    return True
 
 def reservoir_sample(stream, num_items, item_parser=lambda x: x):
     """
