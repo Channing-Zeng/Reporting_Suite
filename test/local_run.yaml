@@ -5,10 +5,10 @@ input:
 output_dir: test/results
 
 genome_build: hg19
-reference: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
+reference: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
 
 filter_reject: True           # Filters variants with REJECT in the FILTER field
-#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
+split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
 verbose: True                 # Prints tools output
 save_intermediate: True      # Leeps intermediate VCFs for each step
@@ -16,7 +16,7 @@ reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, 
 #parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
-  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
+  path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
   clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
 
@@ -59,7 +59,7 @@ gatk:
 
 vcfs:
   db_snp:
-    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
+    path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
     annotations:
     - ID
     - SAO
@@ -76,7 +76,7 @@ vcfs:
     - CDA
 
   cosmic:
-    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+    path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
     annotations:
     - ID
     - CNT
@@ -84,7 +84,7 @@ vcfs:
     - CDS
 
 tracks:
-- /vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
+- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
 #tracks:  # requires vcfannotate (from bcbio-nextgen)
 #  #CpG Island
 #- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed

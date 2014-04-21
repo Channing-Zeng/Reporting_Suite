@@ -10,6 +10,7 @@ import itertools
 import functools
 import random
 import ConfigParser
+from os.path import join
 try:
     from concurrent import futures
 except ImportError:

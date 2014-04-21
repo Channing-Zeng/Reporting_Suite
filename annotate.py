@@ -145,7 +145,7 @@ class Annotator:
             if self.run_cnf.get('save_intermediate'):
                 new_fname = fname
             else:
-                new_fname = add_suffix(fname, 'anno')
+                new_fname = make_intermediate(fname, 'anno')
             new_fpath = join(self.output_dir, new_fname)
 
             if os.path.exists(new_fpath):
@@ -154,7 +154,7 @@ class Annotator:
             return new_fpath
         else:
             if not self.run_cnf.get('save_intermediate'):
-                new_fpath = join(self.output_dir, add_suffix(fname, 'anno'))
+                new_fpath = join(self.output_dir, make_intermediate(fname, 'anno'))
                 shutil.copyfile(inp_fpath, new_fpath)
                 return new_fpath
             else:
@@ -168,9 +168,7 @@ class Annotator:
         return basic_fields[9:]
 
 
-    def _split_vcf_by_samples(self, vcf_fpath, bams):
-        sample_names = self._read_sample_names_from_vcf(vcf_fpath)
-
+    def _split_vcf_by_samples(self, vcf_fpath, sample_names, bams):
         for sample_name in (bams.keys() if bams else []):
             if sample_name not in sample_names:
                 self.log_exit('ERROR: sample ' + sample_name + ' is not in VCF ' + vcf_fpath + '\n'
@@ -213,13 +211,13 @@ class Annotator:
             inp_fpath = rec['vcf'] = self._copy_vcf_to_final_dir(inp_fpath)
 
             # Split by samples
-            if bams or self.run_cnf.get('split_samples'):
-                self._split_vcf_by_samples(inp_fpath, bams)
+            sample_names = self._read_sample_names_from_vcf(inp_fpath)
+
+            if (bams or self.run_cnf.get('split_samples')) and len(sample_names) > 1:
+                self._split_vcf_by_samples(inp_fpath, sample_names, bams)
             else:
-                if len(inp) == 1:
-                    self.samples[None] = {'vcf': inp_fpath, 'bam': bam_fpath}
-                else:
-                    self.samples[inp_fpath] = {'vcf': inp_fpath, 'bam': bam_fpath}
+                sample_name = splitext(basename(inp_fpath))[0]
+                self.samples[sample_name] = {'vcf': inp_fpath, 'bam': bam_fpath}
 
 
     def annotate(self):
@@ -237,7 +235,7 @@ class Annotator:
                         '(pip install joblib).')
                 else:
                     annotate_one = lambda this, sample_name, sample_files: \
-                        this.annotate_one(sample_name, sample_files)
+                        this.annotate_one(sample_name, sample_files, multiple_samples=True)
 
                     Parallel(n_jobs=len(self.samples)) \
                             (delayed(annotate_one) \
@@ -245,7 +243,7 @@ class Annotator:
                              for sample_name, sample_files in self.samples.items())
             else:
                 for sample_name, sample_files in self.samples.items():
-                    self.annotate_one(sample_name, sample_files)
+                    self.annotate_one(sample_name, sample_files, multiple_samples=True)
 
 
 # def annotate_one(sys_cnf, run_cnf, sample_name, sample_files):
@@ -262,8 +260,8 @@ class Annotator:
 #         self.sample_files = sample_files
 
 
-    def annotate_one(self, sample_name, sample_files):
-        if sample_name:
+    def annotate_one(self, sample_name, sample_files, multiple_samples=False):
+        if multiple_samples:
             self.log_print('')
             self.log_print('*' * 70)
             msg = '*' * 3 + ' Sample ' + sample_name + ' '
@@ -356,17 +354,26 @@ class Annotator:
         return self.iterate_file(input_fpath, proc_line)
 
 
-    def extract_sample(self, input_fpath, sample):
-        self.step_greetings('Separating out sample ' + sample)
+    def extract_sample(self, input_fpath, samplename):
+        self.step_greetings('Separating out sample ' + samplename)
 
+        print self._get_gatk_version()
         executable = self._get_java_tool_cmdline('gatk')
         ref_fpath = self.run_cnf['reference']
-        output_fpath = add_suffix(input_fpath, sample)
+
+        corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
+        output_fpath = self.make_intermediate(input_fpath, corr_samplename)
+
         cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-              '--variant {input_fpath} -sn {sample} -o {output_fpath}'.format(**locals())
-        self._call_and_rename(cmd, input_fpath, suffix=sample,
+              '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
+        self._call_and_rename(cmd, input_fpath, output_fpath,
                               result_to_stdout=False, rename=False)
         return output_fpath
+
+
+    def make_intermediate(self, fname, suf):
+        output_fpath = add_suffix(fname, suf)
+        return join(self.intermediate_dir, output_fpath)
 
 
     def log_print(self, msg=''):
@@ -387,11 +394,9 @@ class Annotator:
         sys.stderr.write('\n' + msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, suffix,
+    def _call_and_rename(self, cmdline, input_fpath, output_fpath,
                          result_to_stdout=True, to_remove=None, rename=True):
         to_remove = to_remove or []
-
-        output_fpath = add_suffix(input_fpath, suffix)
 
         if self.run_cnf.get('save_intermediate') and self.run_cnf.get('reuse_intermediate'):
             if file_exists(output_fpath):
@@ -404,11 +409,10 @@ class Annotator:
             os.remove(err_fpath)
 
         with file_transaction(output_fpath) as tx_out_fpath:
-            if not result_to_stdout:
-                cmdline += ' -o ' + tx_out_fpath
-                self.log_print(cmdline)
-            else:
+            if result_to_stdout:
                 self.log_print(cmdline + ' > ' + tx_out_fpath)
+            else:
+                self.log_print(cmdline.replace(output_fpath, tx_out_fpath))
 
             if self.run_cnf.get('verbose', True):
                 proc = subprocess.Popen(
@@ -466,7 +470,7 @@ class Annotator:
 
     def _get_java_tool_cmdline(self, name):
         cmdline_template = self._get_script_cmdline_template('java', name)
-        jvm_opts = self.sys_cnf['resources'][name].get('jvm_opts', [])
+        jvm_opts = self.sys_cnf['resources'][name].get('jvm_opts', []) + ['']
         return cmdline_template % (' '.join(jvm_opts) + ' -jar')
 
 
@@ -523,8 +527,9 @@ class Annotator:
         # self.all_fields.extend(annotations)
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
         cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-        output_fpath = self._call_and_rename(cmdline, input_fpath, dbname, result_to_stdout=True)
-
+        output_fpath = make_intermediate(input_fpath, dbname)
+        output_fpath = self._call_and_rename(cmdline, input_fpath,
+                                             output_fpath, result_to_stdout=True)
         def proc_line(line):
             if not line.startswith('#'):
                 line = line.replace(' ', '_')
@@ -551,7 +556,8 @@ class Annotator:
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
-        return self._call_and_rename(cmdline, input_fpath, 'db_nsfp', result_to_stdout=True)
+        output_fpath = make_intermediate(input_fpath, 'db_nsfp')
+        return self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
 
 
     def snpeff(self, input_fpath):
@@ -580,7 +586,9 @@ class Annotator:
         if self.run_cnf['snpeff'].get('cancer'):
             cmdline += ' -cancer '
 
-        return self._call_and_rename(cmdline, input_fpath, 'snpEff', result_to_stdout=True)
+        output_fpath = make_intermediate(input_fpath, 'snpEff')
+        return self._call_and_rename(cmdline, input_fpath, output_fpath,
+                                     result_to_stdout=True)
 
 
     def tracks(self, track_path, input_fpath):
@@ -599,7 +607,8 @@ class Annotator:
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-        out_fpath = self._call_and_rename(cmdline, input_fpath, field_name, result_to_stdout=True)
+        output_fpath = make_intermediate(input_fpath, field_name)
+        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
 
         # Set TRUE or FALSE for tracks
         def proc_line(line):
@@ -615,7 +624,7 @@ class Annotator:
                     fields = fields[:7] + [info_line] + fields[8:]
                     return '\t'.join(fields)
             return line
-        return self.iterate_file(out_fpath, proc_line)
+        return self.iterate_file(output_fpath, proc_line)
 
 
     def _get_gatk_version(self):
@@ -686,7 +695,7 @@ class Annotator:
 
         executable = self._get_java_tool_cmdline('gatk')
 
-        output_fpath = add_suffix(input_fpath, 'gatk')
+        output_fpath = make_intermediate(input_fpath, 'gatk')
 
         ref_fpath = self.run_cnf['reference']
 
@@ -723,7 +732,8 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        return self._call_and_rename(cmdline, input_fpath, 'gatk',
+        output_fpath = make_intermediate(input_fpath, 'gatk')
+        return self._call_and_rename(cmdline, input_fpath, output_fpath,
                                      result_to_stdout=False,
                                      to_remove=[output_fpath + '.idx',
                                                 input_fpath + '.idx'])
@@ -740,7 +750,7 @@ class Annotator:
         new_first_line = '\t'.join(new_fields)
 
         if self.run_cnf.get('save_intermediate'):
-            out_fpath = add_suffix(tsv_fpath, 'renamed')
+            out_fpath = make_intermediate(tsv_fpath, 'renamed')
         else:
             out_fpath = tsv_fpath
 
@@ -835,7 +845,7 @@ class Annotator:
 
 
     def iterate_file(self, input_fpath, proc_line_fun, suffix=None):
-        output_fpath = add_suffix(input_fpath, suffix or 'tmp')
+        output_fpath = make_intermediate(input_fpath, suffix or 'tmp')
 
         if suffix and self.run_cnf.get('save_intermediate') \
                 and self.run_cnf.get('reuse_intermediate'):
