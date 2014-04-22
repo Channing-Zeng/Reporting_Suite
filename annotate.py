@@ -105,20 +105,31 @@ class Annotator:
 
     def _read_input(self):
         data = []
-        if 'input' not in self.run_cnf:
-            # Old config, for back-compability
-            if 'file' not in self.run_cnf:
-                self.log_exit('ERROR: Run config does not contain "input" section.')
-            data.append({'vcf': realpath(self.run_cnf['file']),
-                         'bam': self.run_cnf.get('bam'),
-                         'bam_per_sample': None})
-        else:
-            for rec in self.run_cnf['input']:
-                if 'vcf' not in rec:
-                    self.log_exit('ERROR: Input section does not contain field "vcf".')
-                data.append({'vcf': realpath(rec['vcf']),
-                             'bam': rec.get('bam'),
-                             'bam_per_sample': rec.get('bams')})
+        # if 'input' not in self.run_cnf:
+        #     # Old config, for back-compability
+        #     if 'file' not in self.run_cnf:
+        #         self.log_exit('ERROR: Run config does not contain "input" section.')
+        #     data.append({'vcf': realpath(self.run_cnf['file']),
+        #                  'bam': self.run_cnf.get('bam'),
+        #                  'bam_per_sample': None})
+        # else:
+
+        all_output_dir = self.run_cnf.get('output_dir', os.getcwd())
+
+        for rec in self.run_cnf['input']:
+            if 'vcf' not in rec:
+                self.log_exit('ERROR: Input section does not contain field "vcf".')
+
+            vcf_output_dir = self.run_cnf.get('output_dir', all_output_dir)
+
+            if 'samples' not in rec.get('samples'):
+                
+
+            for sample_name, sample = rec['samples'].items():
+                data['sample_name'] = {
+                    'vcf': realpath(rec['vcf']),
+                    'bam': rec.get('bam'),
+                    'bam_per_sample': rec.get('bams')})
         return data
 
 
