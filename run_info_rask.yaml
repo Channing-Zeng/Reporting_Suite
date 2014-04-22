@@ -117,9 +117,9 @@ tracks:  # requires vcfannotate (from bcbio-nextgen)
 tsv_fields:
   - CHROM                         : Chromosome
   - POS                           : Position
-  - ID                            : ID
   - REF                           : REF
   - ALT                           : ALT
+  - ID                            : ID
   - QUAL                          : QualityScore
   - DP                            : Depth
   - FILTER                        : Filter
@@ -129,6 +129,7 @@ tsv_fields:
   - "EFF[*].IMPACT"               : Impact
   - "EFF[*].FUNCLASS"             : FunctionalClass
   - "EFF[*].CODING"               : CodingRegion
+  - "EFF[*].GENE"                 : Gene
   - dbNSFP_Ensembl_geneid         : EnsemblGeneID
   - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
   - dbNSFP_Uniprot_acc            : UniportAccNumber
@@ -142,7 +143,6 @@ tsv_fields:
   - om_PATIENT                    : OncominePatient
   - om_MutClass                   : OncomineMutClass
   - om_MutClassPC                 : OncomineMutClassPC
-  - "EFF[*].GENE"                 : Gene
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
@@ -203,11 +203,11 @@ tsv_fields:
   - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
   - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
   - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - set                           : SourceVCF_forMergedRecInCombineVariants
   - cpgIslandExt                  : CPGIsland
   - genomicSuperDups              : GenomicDuplication
   - rptmk                         : KnownRepeat
   - dgvMerged                     : KnownCopyNumber
+  - set                           : SourceVCF_forMergedRecInCombineVariants
 
 
 # Or built from the following:

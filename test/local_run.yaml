@@ -100,9 +100,9 @@ tracks:
 tsv_fields:
   - CHROM                         : Chromosome
   - POS                           : Position
-  - ID                            : ID
   - REF                           : REF
   - ALT                           : ALT
+  - ID                            : ID
   - QUAL                          : QualityScore
   - DP                            : Depth
   - FILTER                        : Filter
@@ -112,13 +112,13 @@ tsv_fields:
   - "EFF[*].IMPACT"               : Impact
   - "EFF[*].FUNCLASS"             : FunctionalClass
   - "EFF[*].CODING"               : CodingRegion
+  - "EFF[*].GENE"                 : Gene
   - "EFF[*].CODON"                : Codon
   - "EFF[*].AA"                   : AminoAcid
   - "EFF[*].AA_LEN"               : AminoAcidLength
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic
-  - "EFF[*].GENE"                 : Gene
   - "EFF[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
