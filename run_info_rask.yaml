@@ -13,6 +13,7 @@ input:
     EOL-1-4:
       bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
       output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/final/EOL-1-4/annotate
+    # if there are any other samples inside this VCF, output_dir is inherited
 
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/2014-04-01_AML_02/AML_02-ensemble.vcf
   samples:
@@ -27,12 +28,11 @@ input:
       output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate
 
 #output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/annotation
+filter_reject: True           # Filters variants with REJECT in the FILTER field
+#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
 genome_build: hg19
 reference: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-
-filter_reject: True           # Filters variants with REJECT in the FILTER field
-#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
 verbose: True                 # Prints tools output
 save_intermediate: True      # Leeps intermediate VCFs for each step
