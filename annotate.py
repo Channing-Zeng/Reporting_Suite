@@ -50,6 +50,10 @@ def safe_mkdir(dirpath, descriptive_name):
                  ' ' + dirpath + ' probably does not exist.')
 
 
+def _annotate_one(this, sample_name, sample_files):
+    return this.annotate_one(sample_name, sample_files, multiple_samples=True)
+
+
 class Annotator:
     def step_greetings(self, name):
         self.log_print('')
@@ -63,10 +67,9 @@ class Annotator:
         safe_mkdir(output_dirpath, 'output_dir')
         self.output_dir = output_dirpath
 
-        if self.run_cnf.get('save_intermediate'):
-            intermediate_dirpath = join(self.output_dir, 'intermediate')
-            safe_mkdir(intermediate_dirpath, 'intermediate directory')
-            self.intermediate_dir = intermediate_dirpath
+        intermediate_dirpath = join(self.output_dir, 'intermediate')
+        safe_mkdir(intermediate_dirpath, 'intermediate directory')
+        self.intermediate_dir = intermediate_dirpath
 
         return output_dirpath
 
@@ -141,24 +144,23 @@ class Annotator:
     def _copy_vcf_to_final_dir(self, inp_fpath):
         fname = basename(inp_fpath)
 
-        if self.output_dir != realpath(dirname(inp_fpath)):
-            if self.run_cnf.get('save_intermediate'):
-                new_fname = fname
-            else:
-                new_fname = make_intermediate(fname, 'anno')
-            new_fpath = join(self.output_dir, new_fname)
-
-            if os.path.exists(new_fpath):
-                os.remove(new_fpath)
-            shutil.copyfile(inp_fpath, new_fpath)
-            return new_fpath
-        else:
-            if not self.run_cnf.get('save_intermediate'):
-                new_fpath = join(self.output_dir, make_intermediate(fname, 'anno'))
-                shutil.copyfile(inp_fpath, new_fpath)
-                return new_fpath
-            else:
-                return inp_fpath
+        # if self.output_dir != realpath(dirname(inp_fpath)):
+            # if self.run_cnf.get('save_intermediate'):
+            # new_fname = fname
+            # else:
+            #     new_fname = self.make_intermediate(fname, 'anno')
+        new_fpath = join(self.intermediate_dir, fname)
+        if os.path.exists(new_fpath):
+            os.remove(new_fpath)
+        shutil.copyfile(inp_fpath, new_fpath)
+        return new_fpath
+        # else:
+        #     if not self.run_cnf.get('save_intermediate'):
+        #         new_fpath = join(self.output_dir, self.make_intermediate(fname, 'anno'))
+        #         shutil.copyfile(inp_fpath, new_fpath)
+        #         return new_fpath
+        #     else:
+        #         return inp_fpath
 
 
     @staticmethod
@@ -186,6 +188,7 @@ class Annotator:
         self.intermediate_dir = None
         self.log = None
         self.samples = dict()
+        self.verbose = False
 
         if not 'resources' in self.sys_cnf:
             self.log_exit('"resources" section in system config required.')
@@ -193,7 +196,7 @@ class Annotator:
         self._set_up_output_dir()
         self._set_up_logfile()
         if self.run_cnf.get('save_intermediate'):
-            shutil.copy(run_config_path, self.output_dir)
+            shutil.copy(run_config_path, self.intermediate_dir)
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
@@ -201,6 +204,8 @@ class Annotator:
         self.log_print('Writing into ' + self.output_dir)
         if self.log:
             self.log_print('Logging to ' + self.log)
+
+        self.verbose = self.run_cnf.get('verbose', True)
 
         self._check_executables()
 
@@ -225,25 +230,40 @@ class Annotator:
             sample_name, sample_files = self.samples.items()[0]
             self.annotate_one(sample_name, sample_files)
         else:
+            results = []
             if self.run_cnf.get('parallel'):
                 try:
                     from joblib import Parallel, delayed
                 except ImportError:
-                    self.log_print(
-                        '\nWARNING: Joblib not found. You may want samples to be processed '
+                    self.log_exit(
+                        '\nERROR: Joblib not found. You may want samples to be processed '
                         'in parallel, in this case, make sure python joblib intalled. '
                         '(pip install joblib).')
                 else:
-                    annotate_one = lambda this, sample_name, sample_files: \
-                        this.annotate_one(sample_name, sample_files, multiple_samples=True)
+                    self.verbose = False
 
-                    Parallel(n_jobs=len(self.samples)) \
-                            (delayed(annotate_one) \
-                                    (self, sample_name, sample_files)
-                             for sample_name, sample_files in self.samples.items())
+                    results = Parallel(n_jobs=len(self.samples)) \
+                        (delayed(_annotate_one) \
+                                (self, sample_name, sample_files)
+                            for sample_name, sample_files in self.samples.items())
             else:
-                for sample_name, sample_files in self.samples.items():
-                    self.annotate_one(sample_name, sample_files, multiple_samples=True)
+                for sample_name, sample_files in self.samples:
+                    vcf, tsv = self.annotate_one(sample_name, sample_files, multiple_samples=True)
+                    results.append([vcf, tsv])
+
+            self.log_print('')
+            self.log_print('*' * 70)
+            self.log_print('Results for each samples:')
+            for sample_name, (vcf, tsv) in zip(self.samples.keys(), results):
+                self.log_print(sample_name + ':')
+                self.log_print('  ' + vcf)
+                self.log_print('  ' + tsv)
+
+        if isdir(join(self.intermediate_dir, 'tx')):
+            shutil.rmtree(join(self.intermediate_dir, 'tx'))
+
+        if not self.run_cnf.get('save_intermediate') and isdir(self.intermediate_dir):
+            shutil.rmtree(self.intermediate_dir)
 
 
 # def annotate_one(sys_cnf, run_cnf, sample_name, sample_files):
@@ -270,14 +290,14 @@ class Annotator:
             if sample_files.get('bam'):
                 self.log_print('BAM: ' + sample_files['bam'])
 
-        vcf_fpath = sample_files['vcf']
+        vcf_fpath = original_vcf_fpath = sample_files['vcf']
         # sample['fields'] = []
 
         if self.run_cnf.get('split_genotypes'):
             vcf_fpath = self.split_genotypes(vcf_fpath)
 
         if self.run_cnf.get('ensemble'):
-            vcf_fpath = self.process_ensemble(vcf_fpath)
+            vcf_fpath = self.filter_ensemble(vcf_fpath)
 
         if 'gatk' in self.run_cnf:
             vcf_fpath = self.gatk(vcf_fpath, sample_files['bam'])
@@ -299,10 +319,17 @@ class Annotator:
 
         vcf_fpath = self.filter_fields(vcf_fpath)
 
+        # Copying final VCF
+        final_fname = add_suffix(basename(original_vcf_fpath), 'anno')
+        final_vcf_fpath = join(self.output_dir, final_fname)
+        if isfile(final_vcf_fpath):
+            os.remove(final_vcf_fpath)
+        shutil.copyfile(vcf_fpath, final_vcf_fpath)
+
+        # making TSV
         tsv_fpath = self.extract_fields(vcf_fpath, sample_name)
 
         manual_tsv_fields = self.run_cnf.get('tsv_fields')
-
         if manual_tsv_fields:
             field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
             if self.run_cnf.get('save_intermediate'):
@@ -315,6 +342,12 @@ class Annotator:
         # else:
             # self.log_print('Saved TSV file to ' + tsv_fpath)
 
+        # Copying final TSV
+        final_tsv_fpath = splitext_plus(final_vcf_fpath)[0] + '.tsv'
+        if isfile(final_tsv_fpath):
+            os.remove(final_tsv_fpath)
+        shutil.copyfile(tsv_fpath, final_tsv_fpath)
+
         # if self.run_cnf.get('save_intermediate'):
         #     corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
         #     self.log_print('')
@@ -322,14 +355,13 @@ class Annotator:
         #     self.log_print('View with the commandline:')
         #     self.log_print('column -t ' + corr_tsv_fpath + ' | less -S')
 
-        if isdir(join(self.output_dir, 'tx')):
-            shutil.rmtree(join(self.output_dir, 'tx'))
-
         self.log_print('')
-        self.log_print('Saved final VCF to ' + vcf_fpath)
-        self.log_print('Saved final TSV to ' + tsv_fpath)
+        self.log_print('Saved final VCF to ' + final_vcf_fpath)
+        self.log_print('Saved final TSV to ' + final_tsv_fpath)
         if self.log:
             print('Log in ' + self.log)
+
+        return final_vcf_fpath, final_tsv_fpath
 
 
     def remove_annotation(self, field_to_del, input_fpath):
@@ -362,18 +394,19 @@ class Annotator:
         ref_fpath = self.run_cnf['reference']
 
         corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-        output_fpath = self.make_intermediate(input_fpath, corr_samplename)
+        output_fpath = self.intermediate_fname(input_fpath, suf=corr_samplename)
 
         cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
               '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
         self._call_and_rename(cmd, input_fpath, output_fpath,
-                              result_to_stdout=False, rename=False)
+                              result_to_stdout=False,
+                              keep_original_if_not_save_intermediate=True)
         return output_fpath
 
 
-    def make_intermediate(self, fname, suf):
-        output_fpath = add_suffix(fname, suf)
-        return join(self.intermediate_dir, output_fpath)
+    def intermediate_fname(self, fname, suf):
+        output_fname = add_suffix(fname, suf)
+        return join(self.intermediate_dir, basename(output_fname))
 
 
     def log_print(self, msg=''):
@@ -395,7 +428,8 @@ class Annotator:
 
 
     def _call_and_rename(self, cmdline, input_fpath, output_fpath,
-                         result_to_stdout=True, to_remove=None, rename=True):
+                         result_to_stdout=True, to_remove=None,
+                         keep_original_if_not_save_intermediate=False):
         to_remove = to_remove or []
 
         if self.run_cnf.get('save_intermediate') and self.run_cnf.get('reuse_intermediate'):
@@ -403,7 +437,7 @@ class Annotator:
                 self.log_print(output_fpath + ' exists, reusing')
                 return output_fpath
 
-        err_fpath = os.path.join(self.output_dir, 'annotate_py_err.tmp')
+        err_fpath = os.path.join(self.output_dir, input_fpath + 'annotate_py_err.tmp')
         to_remove.append(err_fpath)
         if err_fpath and isfile(err_fpath):
             os.remove(err_fpath)
@@ -412,9 +446,10 @@ class Annotator:
             if result_to_stdout:
                 self.log_print(cmdline + ' > ' + tx_out_fpath)
             else:
-                self.log_print(cmdline.replace(output_fpath, tx_out_fpath))
+                cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                self.log_print(cmdline)
 
-            if self.run_cnf.get('verbose', True):
+            if self.verbose:
                 proc = subprocess.Popen(
                     cmdline.split(),
                     stdout=open(tx_out_fpath, 'w') if result_to_stdout else subprocess.PIPE,
@@ -455,17 +490,15 @@ class Annotator:
                             log.write('')
                             log.write(err.read())
                             log.write('')
-            for fpath in to_remove:
-                if fpath and isfile(fpath):
-                    os.remove(fpath)
 
-        if rename and not self.run_cnf.get('save_intermediate'):
-            os.rename(output_fpath, input_fpath)
-            self.log_print('Saved to ' + input_fpath)
-            return input_fpath
-        else:
-            self.log_print('Saved to ' + output_fpath)
-            return output_fpath
+        for fpath in to_remove:
+            if fpath and isfile(fpath):
+                os.remove(fpath)
+
+        if not self.run_cnf.get('save_intermediate') and keep_original_if_not_save_intermediate:
+            os.remove(input_fpath)
+        self.log_print('Saved to ' + output_fpath)
+        return output_fpath
 
 
     def _get_java_tool_cmdline(self, name):
@@ -527,7 +560,7 @@ class Annotator:
         # self.all_fields.extend(annotations)
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
         cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-        output_fpath = make_intermediate(input_fpath, dbname)
+        output_fpath = self.intermediate_fname(input_fpath, dbname)
         output_fpath = self._call_and_rename(cmdline, input_fpath,
                                              output_fpath, result_to_stdout=True)
         def proc_line(line):
@@ -556,7 +589,7 @@ class Annotator:
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
-        output_fpath = make_intermediate(input_fpath, 'db_nsfp')
+        output_fpath = self.intermediate_fname(input_fpath, 'db_nsfp')
         return self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
 
 
@@ -586,7 +619,7 @@ class Annotator:
         if self.run_cnf['snpeff'].get('cancer'):
             cmdline += ' -cancer '
 
-        output_fpath = make_intermediate(input_fpath, 'snpEff')
+        output_fpath = self.intermediate_fname(input_fpath, 'snpEff')
         return self._call_and_rename(cmdline, input_fpath, output_fpath,
                                      result_to_stdout=True)
 
@@ -607,7 +640,7 @@ class Annotator:
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-        output_fpath = make_intermediate(input_fpath, field_name)
+        output_fpath = self.intermediate_fname(input_fpath, field_name)
         output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
 
         # Set TRUE or FALSE for tracks
@@ -695,12 +728,12 @@ class Annotator:
 
         executable = self._get_java_tool_cmdline('gatk')
 
-        output_fpath = make_intermediate(input_fpath, 'gatk')
+        output_fpath = self.intermediate_fname(input_fpath, 'gatk')
 
         ref_fpath = self.run_cnf['reference']
 
         cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantAnnotator'
-                   ' --variant {input_fpath}').format(**locals())
+                   ' --variant {input_fpath} -o {output_fpath}').format(**locals())
         if bam_fpath:
             cmdline += ' -I ' + bam_fpath
 
@@ -732,41 +765,41 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        output_fpath = make_intermediate(input_fpath, 'gatk')
+        output_fpath = self.intermediate_fname(input_fpath, 'gatk')
         return self._call_and_rename(cmdline, input_fpath, output_fpath,
                                      result_to_stdout=False,
                                      to_remove=[output_fpath + '.idx',
                                                 input_fpath + '.idx'])
 
 
-    def rename_fields(self, tsv_fpath, field_map):
+    def rename_fields(self, inp_tsv_fpath, field_map):
         if self.run_cnf.get('save_intermediate'):
             self.step_greetings('Renaming fields.')
 
-        with open(tsv_fpath) as f:
+        with open(inp_tsv_fpath) as f:
             first_line = f.readline()[1:]
         fields = first_line.split()
         new_fields = [field_map.get(f, f) for f in fields]
         new_first_line = '\t'.join(new_fields)
 
         if self.run_cnf.get('save_intermediate'):
-            out_fpath = make_intermediate(tsv_fpath, 'renamed')
+            out_tsv_fpath = self.intermediate_fname(inp_tsv_fpath, 'renamed')
         else:
-            out_fpath = tsv_fpath
+            out_tsv_fpath = inp_tsv_fpath
 
-        with file_transaction(out_fpath) as tx_out_fpath:
+        with file_transaction(out_tsv_fpath) as tx_out_fpath:
             with open(tx_out_fpath, 'w') as out:
                 out.write(new_first_line + '\n')
-                with open(tsv_fpath) as f:
+                with open(inp_tsv_fpath) as f:
                     for i, l in enumerate(f):
                         if i >= 1:
                             out.write(l)
 
-        if self.run_cnf.get('save_intermediate'):
-            return out_fpath
+        if not self.run_cnf.get('save_intermediate'):
+            os.rename(out_tsv_fpath, inp_tsv_fpath)
+            return inp_tsv_fpath
         else:
-            os.rename(out_fpath, tsv_fpath)
-            return tsv_fpath
+            return out_tsv_fpath
 
 
     def extract_fields(self, vcf_fpath, sample_name=None):
@@ -801,7 +834,8 @@ class Annotator:
                     all_format_fields.add(f)
             l = '\t'.join(vals[:7] + [info])
             return l
-        tmp_vcf = self.iterate_file(vcf_fpath, proc_line)
+        split_format_fields_vcf = self.iterate_file(vcf_fpath, proc_line, 'split_format_fields',
+                                                    keep_original_if_not_save_intermediate=True)
 
         manual_tsv_fields = self.run_cnf.get('tsv_fields')
         if manual_tsv_fields:
@@ -824,13 +858,13 @@ class Annotator:
         cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
         with file_transaction(tsv_fpath) as tx_tsv_fpath:
-            self.log_print(cmdline + ' < ' + (tmp_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
+            self.log_print(cmdline + ' < ' + (split_format_fields_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
             res = subprocess.call(cmdline,
-                                  stdin=open(tmp_vcf or vcf_fpath),
+                                  stdin=open(split_format_fields_vcf or vcf_fpath),
                                   stdout=open(tx_tsv_fpath, 'w'), shell=True)
 
-        if tmp_vcf:
-            os.remove(tmp_vcf)
+        if split_format_fields_vcf:
+            os.remove(split_format_fields_vcf)
 
         self.log_print('')
         if res != 0:
@@ -839,13 +873,14 @@ class Annotator:
         return tsv_fpath
 
 
-    def process_ensemble(self, input_fpath):
+    def filter_ensemble(self, input_fpath):
         self.step_greetings('Extracting dataset by filename, filtering ensemble reject line.')
         return self.iterate_file(input_fpath, lambda l: 'REJECT' not in l, 'pass')
 
 
-    def iterate_file(self, input_fpath, proc_line_fun, suffix=None):
-        output_fpath = make_intermediate(input_fpath, suffix or 'tmp')
+    def iterate_file(self, input_fpath, proc_line_fun, suffix=None,
+                     keep_original_if_not_save_intermediate=False):
+        output_fpath = self.intermediate_fname(input_fpath, suf=suffix or 'tmp')
 
         if suffix and self.run_cnf.get('save_intermediate') \
                 and self.run_cnf.get('reuse_intermediate'):
@@ -864,11 +899,15 @@ class Annotator:
                     else:
                         out.write(line)
 
-        if suffix and self.run_cnf.get('save_intermediate'):
-            return output_fpath
-        else:
+        if not suffix:
             os.rename(output_fpath, input_fpath)
-            return input_fpath
+            output_fpath = input_fpath
+        else:
+            if not self.run_cnf.get('save_intermediate') and\
+                    not keep_original_if_not_save_intermediate:
+                os.remove(input_fpath)
+        self.log_print('Saved to ' + output_fpath)
+        return output_fpath
 
 
     def split_genotypes(self, input_fpath):

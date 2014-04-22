@@ -10,10 +10,10 @@ reference: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq
 filter_reject: True           # Filters variants with REJECT in the FILTER field
 split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
-verbose: True                 # Prints tools output
+verbose: True                 # Prints tools output to stdout (if not in parallel)
 save_intermediate: True      # Leeps intermediate VCFs for each step
 reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-#parallel: True                # Process samples in parallel (requires joblib python package)
+parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
   path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
