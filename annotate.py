@@ -55,9 +55,9 @@ def _annotate_one(this, sample_name, sample_files):
     return this.annotate_one(sample_name, sample_files, multiple_samples=True)
 
 
-def intermediate_fname(interm_dir, fname, suf):
+def intermediate_fname(work_dir, fname, suf):
     output_fname = add_suffix(fname, suf)
-    return join(interm_dir, basename(output_fname))
+    return join(work_dir, basename(output_fname))
 
 
 class Annotator:
@@ -70,7 +70,7 @@ class Annotator:
 
     # def _set_up_logfile(self):
     #     if self.run_cnf.get('save_intermediate'):
-    #         self.log = join(self.intermediate_dir, 'log.txt')
+    #         self.log = join(self.work_dir, 'log.txt')
     #         if os.path.isfile(self.log):
     #             os.remove(self.log)
 
@@ -101,7 +101,7 @@ class Annotator:
         if 'input' not in self.run_cnf:
             self.log_exit('ERROR: Run config does not contain "input" section.')
 
-        common_options = {
+        common_conf = {
             'output_dir': self.run_cnf.get('output_dir', os.getcwd()),
             'filter_reject': self.run_cnf.get('filter_reject', False),
             'split_samples': self.run_cnf.get('split_samples', False),
@@ -111,30 +111,32 @@ class Annotator:
 
         all_samples = OrderedDict()
 
-        for rec in self.run_cnf['input']:
-            if 'vcf' not in rec:
+        for vcf_conf in self.run_cnf['input']:
+            if 'vcf' not in vcf_conf:
                 self.log_exit('ERROR: Input section does not contain field "vcf".')
-            vcf = rec['vcf']
-            if not verify_file(vcf, 'Input file'): exit(1)
+            vcf = vcf_conf['vcf']
+            if not verify_file(vcf, 'Input file'):
+                exit(1)
 
-            rec.update(common_options.update(rec))
+            join_parent_conf(vcf_conf, common_conf)
 
             # multiple samples
-            if 'samples' in rec or rec.get('split_samples'):
+            if 'samples' in vcf_conf or vcf_conf.get('split_samples'):
                 # check bams if exist
-                if 'samples' in rec:
-                    for header_sample_name, sample_data in rec['samples'].items():
-                        sample_data.update(rec.update(sample_data))
-                        bam = sample_data.get('bam')
+                if 'samples' in vcf_conf:
+                    for header_sample_name, sample_conf in vcf_conf['samples'].items():
+                        join_parent_conf(sample_conf, vcf_conf)
+
+                        bam = sample_conf.get('bam')
                         if bam and not verify_file(bam, 'Bam file'):
                             exit(1)
 
-                rec_samples = rec.get('samples') or OrderedDict()
+                rec_samples = vcf_conf.get('samples') or OrderedDict()
                 vcf_header_samples = self._read_sample_names_from_vcf(vcf)
 
                 # compare input sample names to vcf header
                 if rec_samples:
-                    for input_sample_name, sample_data in rec_samples.items():
+                    for input_sample_name, sample_conf in rec_samples.items():
                         if input_sample_name not in vcf_header_samples:
                             self.log_exit('ERROR: sample ' + input_sample_name +
                                           ' is not in VCF header ' + vcf_header_samples + '\n'
@@ -142,7 +144,7 @@ class Annotator:
                 # split vcf
                 for header_sample_name in vcf_header_samples:
                     if header_sample_name not in rec_samples:
-                        rec_samples[header_sample_name] = dict()
+                        rec_samples[header_sample_name] = dict(vcf_conf)
                     if header_sample_name in all_samples:
                         self.log_exit('ERROR: duplicated sample name: ' + header_sample_name)
 
@@ -151,27 +153,27 @@ class Annotator:
 
                     output_dirpath = realpath(data['output_dir'])
                     safe_mkdir(output_dirpath, 'output_dir for ' + header_sample_name)
-                    interm_dirpath = join(output_dirpath, 'intermediate')
-                    safe_mkdir(interm_dirpath, 'intermediate directory')
-                    data['intermediate_dir'] = interm_dirpath
+                    work_dirpath = join(output_dirpath, 'intermediate')
+                    safe_mkdir(work_dirpath, 'intermediate directory')
+                    data['work_dir'] = work_dirpath
 
-                    extracted_vcf = self.extract_sample(vcf, header_sample_name, interm_dirpath)
+                    extracted_vcf = self.extract_sample(vcf, header_sample_name, work_dirpath)
                     rec_samples[header_sample_name]['vcf'] = extracted_vcf
 
             else:  # single sample
-                if 'bam' in rec:
-                    if not verify_file(rec['bam']):
+                if 'bam' in vcf_conf:
+                    if not verify_file(vcf_conf['bam']):
                         exit(1)
 
                 sample_name = splitext(basename(vcf))[0]
 
-                output_dirpath = realpath(rec['output_dir'])
+                output_dirpath = realpath(vcf_conf['output_dir'])
                 safe_mkdir(output_dirpath, 'output_dir for ' + sample_name)
-                interm_dirpath = join(output_dirpath, 'intermediate')
-                safe_mkdir(interm_dirpath, 'intermediate directory')
-                rec['intermediate_dir'] = interm_dirpath
+                work_dirpath = join(output_dirpath, 'intermediate')
+                safe_mkdir(work_dirpath, 'intermediate directory')
+                vcf_conf['work_dir'] = work_dirpath
 
-                all_samples[sample_name] = rec
+                all_samples[sample_name] = vcf_conf
 
         return all_samples
 
@@ -184,7 +186,7 @@ class Annotator:
     #         # new_fname = fname
     #         # else:
     #         #     new_fname = self.make_intermediate(fname, 'anno')
-    #     new_fpath = join(self.intermediate_dir, fname)
+    #     new_fpath = join(self.work_dir, fname)
     #     if os.path.exists(new_fpath):
     #         os.remove(new_fpath)
     #     shutil.copyfile(inp_fpath, new_fpath)
@@ -205,16 +207,16 @@ class Annotator:
         return basic_fields[9:]
 
 
-    def _split_vcf_by_samples(self, vcf_fpath, sample_names, bams):
-        for bam_sample_name in (bams.keys() if bams else []):
-            if bam_sample_name not in sample_names:
-                self.log_exit('ERROR: sample ' + bam_sample_name +
-                              ' is not in VCF ' + vcf_fpath + '\n'
-                              'Available samples: ' + ', '.join(sample_names))
-        for sample_name in sample_names:
-            bam_fpath = bams.get(sample_name) if bams else None
-            new_vcf = self.extract_sample(vcf_fpath, sample_name)
-            self.samples[sample_name] = {'vcf': new_vcf, 'bam': bam_fpath}
+    # def _split_vcf_by_samples(self, vcf_fpath, sample_names, bams):
+    #     for bam_sample_name in (bams.keys() if bams else []):
+    #         if bam_sample_name not in sample_names:
+    #             self.log_exit('ERROR: sample ' + bam_sample_name +
+    #                           ' is not in VCF ' + vcf_fpath + '\n'
+    #                           'Available samples: ' + ', '.join(sample_names))
+    #     for sample_name in sample_names:
+    #         bam_fpath = bams.get(sample_name) if bams else None
+    #         new_vcf = self.extract_sample(vcf_fpath, sample_name)
+    #         self.samples[sample_name] = {'vcf': new_vcf, 'bam': bam_fpath}
 
 
     def __init__(self, system_config_path, run_config_path):
@@ -228,7 +230,7 @@ class Annotator:
             self.log_exit('"resources" section in system config required.')
 
         # if self.run_cnf.get('save_intermediate'):
-        #     shutil.copy(run_config_path, self.intermediate_dir)
+        #     shutil.copy(run_config_path, self.work_dir)
 
         self.log_print('Loaded system config ' + system_config_path)
         self.log_print('Loaded run config ' + run_config_path)
@@ -260,7 +262,7 @@ class Annotator:
                                 (self, sample_name, sample_data)
                             for sample_name, sample_data in self.samples.items())
             else:
-                for sample_name, sample_data in self.samples:
+                for sample_name, sample_data in self.samples.items():
                     vcf, tsv = self.annotate_one(sample_name, sample_data,
                                                  multiple_samples=True)
                     results.append([vcf, tsv])
@@ -274,15 +276,15 @@ class Annotator:
                 self.log_print('  ' + tsv)
 
         for name, data in self.samples.items():
-            interm_dirpath = data['intermediate_dir']
-            tx_dirpath = join(interm_dirpath, 'tx')
+            work_dirpath = data['work_dir']
+            tx_dirpath = join(work_dirpath, 'tx')
 
             if isdir(tx_dirpath):
                 shutil.rmtree(tx_dirpath)
 
             if not self.run_cnf.get('save_intermediate') \
-                    and isdir(interm_dirpath):
-                shutil.rmtree(interm_dirpath)
+                    and isdir(work_dirpath):
+                shutil.rmtree(work_dirpath)
 
 
     def annotate_one(self, sample_name, sample_data, multiple_samples=False):
@@ -297,7 +299,7 @@ class Annotator:
 
         vcf_fpath = original_vcf_fpath = sample_data['vcf']
         # sample['fields'] = []
-        interm_dir = sample_data['intermediate_dir']
+        work_dir = sample_data['work_dir']
 
         if self.run_cnf.get('split_genotypes'):
             vcf_fpath = self.split_genotypes(vcf_fpath)
@@ -306,24 +308,24 @@ class Annotator:
             vcf_fpath = self.filter_ensemble(vcf_fpath)
 
         if 'gatk' in self.run_cnf:
-            vcf_fpath = self.gatk(vcf_fpath, sample_data['bam'])
+            vcf_fpath = self.gatk(vcf_fpath, sample_data.get('bam'), work_dir)
 
         if 'vcfs' in self.run_cnf:
             for dbname, conf in self.run_cnf['vcfs'].items():
-                vcf_fpath = self.snpsift_annotate(dbname, conf, vcf_fpath, interm_dir)
+                vcf_fpath = self.snpsift_annotate(dbname, conf, vcf_fpath, work_dir)
 
         if 'db_nsfp' in self.run_cnf:
-            vcf_fpath = self.snpsift_db_nsfp(vcf_fpath)
+            vcf_fpath = self.snpsift_db_nsfp(vcf_fpath, work_dir)
 
         if 'snpeff' in self.run_cnf:
-            self.remove_annotation('EFF', vcf_fpath)
-            vcf_fpath = self.snpeff(vcf_fpath)
+            self.remove_annotation('EFF', vcf_fpath, work_dir)
+            vcf_fpath = self.snpeff(vcf_fpath, work_dir)
 
         if self.run_cnf.get('tracks'):
             for track in self.run_cnf['tracks']:
-                vcf_fpath = self.tracks(track, vcf_fpath)
+                vcf_fpath = self.tracks(track, vcf_fpath, work_dir)
 
-        vcf_fpath = self.filter_fields(vcf_fpath)
+        vcf_fpath = self.filter_fields(vcf_fpath, work_dir)
 
         # Copying final VCF
         final_fname = add_suffix(basename(original_vcf_fpath), 'anno')
@@ -333,14 +335,14 @@ class Annotator:
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
         # making TSV
-        tsv_fpath = self.extract_fields(vcf_fpath, sample_name)
+        tsv_fpath = self.extract_fields(vcf_fpath, work_dir, sample_name)
 
         manual_tsv_fields = self.run_cnf.get('tsv_fields')
         if manual_tsv_fields:
             field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
             if self.run_cnf.get('save_intermediate'):
                 self.log_print('Saved TSV file to ' + tsv_fpath)
-            tsv_fpath = self.rename_fields(tsv_fpath, field_map)
+            tsv_fpath = self.rename_fields(tsv_fpath, field_map, work_dir)
             if self.run_cnf.get('save_intermediate'):
                 self.log_print('Saved TSV file with nice names to ' + tsv_fpath)
             # else:
@@ -370,7 +372,7 @@ class Annotator:
         return final_vcf_fpath, final_tsv_fpath
 
 
-    def remove_annotation(self, field_to_del, input_fpath):
+    def remove_annotation(self, field_to_del, input_fpath, work_dir):
         def proc_line(l):
             if field_to_del in l:
                 if l.startswith('##INFO='):
@@ -389,10 +391,10 @@ class Annotator:
                     fields = fields[:7] + [info_line] + fields[8:]
                     return '\t'.join(fields)
             return l
-        return self.iterate_file(input_fpath, proc_line)
+        return self.iterate_file(input_fpath, proc_line, work_dir)
 
 
-    def extract_sample(self, input_fpath, samplename, interm_dir):
+    def extract_sample(self, input_fpath, samplename, work_dir):
         self.step_greetings('Separating out sample ' + samplename)
 
         print self._get_gatk_version()
@@ -400,11 +402,11 @@ class Annotator:
         ref_fpath = self.run_cnf['reference']
 
         corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-        output_fpath = intermediate_fname(interm_dir, input_fpath, suf=corr_samplename)
+        output_fpath = intermediate_fname(work_dir, input_fpath, suf=corr_samplename)
 
         cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
               '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
-        self._call_and_rename(cmd, input_fpath, output_fpath, interm_dir,
+        self._call_and_rename(cmd, input_fpath, output_fpath, work_dir,
                               result_to_stdout=False,
                               keep_original_if_not_save_intermediate=True)
         return output_fpath
@@ -428,7 +430,7 @@ class Annotator:
         sys.stderr.write('\n' + msg + '\n')
 
 
-    def _call_and_rename(self, cmdline, input_fpath, output_fpath, interm_dir,
+    def _call_and_rename(self, cmdline, input_fpath, output_fpath, work_dir,
                          result_to_stdout=True, to_remove=None,
                          keep_original_if_not_save_intermediate=False):
         to_remove = to_remove or []
@@ -438,7 +440,7 @@ class Annotator:
                 self.log_print(output_fpath + ' exists, reusing')
                 return output_fpath
 
-        err_fpath = os.path.join(interm_dir, input_fpath + 'annotate_py_err.tmp')
+        err_fpath = os.path.join(work_dir, input_fpath + 'annotate_py_err.tmp')
         to_remove.append(err_fpath)
         if err_fpath and isfile(err_fpath):
             os.remove(err_fpath)
@@ -552,7 +554,7 @@ class Annotator:
             return None
 
 
-    def snpsift_annotate(self, dbname, conf, input_fpath, interm_dir):
+    def snpsift_annotate(self, dbname, conf, input_fpath, work_dir):
         self.step_greetings('Annotate with ' + dbname)
 
         executable = self._get_java_tool_cmdline('snpsift')
@@ -561,20 +563,19 @@ class Annotator:
         # self.all_fields.extend(annotations)
         anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
         cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-        output_fpath = intermediate_fname(interm_dir, input_fpath, dbname)
-        output_fpath = self._call_and_rename(cmdline, input_fpath,
-                                             output_fpath, interm_dir,
-                                             result_to_stdout=True)
+        output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
+        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath,
+                                             work_dir, result_to_stdout=True)
         def proc_line(line):
             if not line.startswith('#'):
                 line = line.replace(' ', '_')
                 assert ' ' not in line
             return line
-        output_fpath = self.iterate_file(output_fpath, proc_line)
+        output_fpath = self.iterate_file(output_fpath, proc_line, work_dir)
         return output_fpath
 
 
-    def snpsift_db_nsfp(self, input_fpath):
+    def snpsift_db_nsfp(self, input_fpath, work_dir):
         if 'db_nsfp' not in self.run_cnf:
             return input_fpath
 
@@ -591,11 +592,12 @@ class Annotator:
         ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
         cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
-        output_fpath = intermediate_fname(input_fpath, 'db_nsfp')
-        return self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
+        output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
+        return self._call_and_rename(cmdline, input_fpath, output_fpath, work_dir,
+                                     result_to_stdout=True)
 
 
-    def snpeff(self, input_fpath):
+    def snpeff(self, input_fpath, work_dir):
         if 'snpeff' not in self.run_cnf:
             return input_fpath
 
@@ -621,12 +623,12 @@ class Annotator:
         if self.run_cnf['snpeff'].get('cancer'):
             cmdline += ' -cancer '
 
-        output_fpath = intermediate_fname(input_fpath, 'snpEff')
-        return self._call_and_rename(cmdline, input_fpath, output_fpath,
+        output_fpath = intermediate_fname(input_fpath, 'snpEff', work_dir)
+        return self._call_and_rename(cmdline, input_fpath, output_fpath, work_dir,
                                      result_to_stdout=True)
 
 
-    def tracks(self, track_path, input_fpath):
+    def tracks(self, track_path, input_fpath, work_dir):
         field_name = splitext(basename(track_path))[0]
 
         self.step_greetings('Intersecting with ' + field_name)
@@ -642,8 +644,9 @@ class Annotator:
 
         cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-        output_fpath = intermediate_fname(input_fpath, field_name)
-        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath, result_to_stdout=True)
+        output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
+        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath,
+                                             work_dir, result_to_stdout=True)
 
         # Set TRUE or FALSE for tracks
         def proc_line(line):
@@ -659,7 +662,7 @@ class Annotator:
                     fields = fields[:7] + [info_line] + fields[8:]
                     return '\t'.join(fields)
             return line
-        return self.iterate_file(output_fpath, proc_line)
+        return self.iterate_file(output_fpath, proc_line, work_dir)
 
 
     def _get_gatk_version(self):
@@ -722,7 +725,7 @@ class Annotator:
         else:
             return "lite"
 
-    def gatk(self, input_fpath, bam_fpath):
+    def gatk(self, input_fpath, bam_fpath, work_dir):
         if 'gatk' not in self.run_cnf:
             return input_fpath
 
@@ -730,7 +733,7 @@ class Annotator:
 
         executable = self._get_java_tool_cmdline('gatk')
 
-        output_fpath = intermediate_fname(input_fpath, 'gatk')
+        output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
 
         ref_fpath = self.run_cnf['reference']
 
@@ -767,14 +770,14 @@ class Annotator:
                 ann = 'DepthOfCoverage'
             cmdline += " -A " + ann
 
-        output_fpath = intermediate_fname(input_fpath, 'gatk')
+        output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
         return self._call_and_rename(cmdline, input_fpath, output_fpath,
-                                     result_to_stdout=False,
+                                     work_dir, result_to_stdout=False,
                                      to_remove=[output_fpath + '.idx',
                                                 input_fpath + '.idx'])
 
 
-    def rename_fields(self, inp_tsv_fpath, field_map):
+    def rename_fields(self, inp_tsv_fpath, field_map, work_dir):
         if self.run_cnf.get('save_intermediate'):
             self.step_greetings('Renaming fields.')
 
@@ -785,7 +788,7 @@ class Annotator:
         new_first_line = '\t'.join(new_fields)
 
         if self.run_cnf.get('save_intermediate'):
-            out_tsv_fpath = intermediate_fname(inp_tsv_fpath, 'renamed')
+            out_tsv_fpath = intermediate_fname(work_dir, inp_tsv_fpath, 'renamed')
         else:
             out_tsv_fpath = inp_tsv_fpath
 
@@ -804,7 +807,7 @@ class Annotator:
             return out_tsv_fpath
 
 
-    def extract_fields(self, vcf_fpath, sample_name=None):
+    def extract_fields(self, vcf_fpath, work_dir, sample_name=None):
         self.step_greetings('Extracting fields')
 
         name, _ = splitext_plus(vcf_fpath)
@@ -836,7 +839,7 @@ class Annotator:
                     all_format_fields.add(f)
             l = '\t'.join(vals[:7] + [info])
             return l
-        split_format_fields_vcf = self.iterate_file(vcf_fpath, proc_line, 'split_format_fields',
+        split_format_fields_vcf = self.iterate_file(vcf_fpath, proc_line, work_dir, 'split_format_fields',
                                                     keep_original_if_not_save_intermediate=True)
 
         manual_tsv_fields = self.run_cnf.get('tsv_fields')
@@ -880,9 +883,9 @@ class Annotator:
         return self.iterate_file(input_fpath, lambda l: 'REJECT' not in l, 'pass')
 
 
-    def iterate_file(self, input_fpath, proc_line_fun, suffix=None,
+    def iterate_file(self, input_fpath, proc_line_fun, work_dir, suffix=None,
                      keep_original_if_not_save_intermediate=False):
-        output_fpath = intermediate_fname(input_fpath, suf=suffix or 'tmp')
+        output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
 
         if suffix and self.run_cnf.get('save_intermediate') \
                 and self.run_cnf.get('reuse_intermediate'):
@@ -933,7 +936,7 @@ class Annotator:
         return self.iterate_file(input_fpath, proc_line, 'split_gt')
 
 
-    def filter_fields(self, input_fpath):
+    def filter_fields(self, input_fpath, work_dir):
         self.step_greetings('Filtering incorrect fields.')
 
         def proc_line(line):
@@ -955,7 +958,7 @@ class Annotator:
                     return '\t'.join(fields)
             return line
 
-        return self.iterate_file(input_fpath, proc_line)
+        return self.iterate_file(input_fpath, proc_line, work_dir)
 
 
     def dots_to_empty_cells(self, tsv_fpath):
@@ -966,6 +969,13 @@ class Annotator:
                 l = l.replace('\t\t', '\t.\t')
             return l
         return self.iterate_file(tsv_fpath, proc_line, 'dots')
+
+
+def join_parent_conf(child_conf, parent_conf):
+    bc = parent_conf.copy()
+    bc.update(child_conf)
+    child_conf.update(bc)
+    return child_conf
 
 
 def remove_quotes(s):
