@@ -1,5 +1,5 @@
 details:
-- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
+- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ensemble.vcf
   samples:
     EOL-1-1:
       bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
