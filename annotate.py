@@ -497,7 +497,7 @@ def snpsift_db_nsfp(cnf, input_fpath, work_dir):
 
     executable = _get_java_tool_cmdline(cnf, 'snpsift')
 
-    db_path = cnf['genomes'].get('dbnsfp')
+    db_path = cnf['genome'].get('dbnsfp')
     if not db_path:
         critical(cnf['log'], 'Please, provide a path to DB NSFP file in '
                  'the "genomes" section in the system config.')
