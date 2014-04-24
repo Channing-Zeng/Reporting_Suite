@@ -82,7 +82,7 @@ def _parse_gatk_report(report_filename, databases, novelty, metrics):
     for line in open(report_filename):
         if not line.strip():
             continue
-        if line.startswith('#'): # comment line
+        if line.startswith('#'):  # comment line
             comments_section = True
             continue
         elif comments_section:
@@ -110,7 +110,7 @@ def _parse_gatk_report(report_filename, databases, novelty, metrics):
 
 
 def _make_final_report(report_dict, report_filename, sample_name,
-                        databases, novelty, metrics):
+                       databases, novelty, metrics):
     header = ['Metric', 'Novelty'] + databases + ['Average']
     full_report = [header]
     for cur_metric in metrics:
@@ -118,7 +118,7 @@ def _make_final_report(report_dict, report_filename, sample_name,
             cur_row = [cur_metric, cur_novelty]
             sum = 0.0
             for cur_database in databases:
-                if cur_metric == 'variantRatePerBp': # confusing name and value format
+                if cur_metric == 'variantRatePerBp':  # confusing name and value format
                     cur_row[0] = 'basesPerVariant'
                     cur_row.append("%.2f" % float(report_dict[cur_metric][cur_database][cur_novelty]))
                 else:
@@ -473,7 +473,7 @@ def snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
         if not verify_file(db_path):
             exit()
 
-    annotations = cnf[dbname].get('annotations')
+    annotations = vcf_conf.get('annotations')
     # all_fields.extend(annotations)
     anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
@@ -1032,9 +1032,9 @@ def _check_quality_control_config(cnf):
 
     if 'metrics' not in qc_cnf:
         qc_cnf['metircs'] = [
-           'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+            'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
         info('Warning: no metrics for quality control, using '
              'default ' + ', '.join(qc_cnf['metircs']))
 
