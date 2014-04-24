@@ -1,22 +1,44 @@
-input:
-- vcf: test/chr1.vcf
-- vcf: test/chr1.vcf
+details:
+- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/EOL-1-ensemble.vcf
+  samples:
+    EOL-1-1:
+      bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-1/EOL-1-1-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/final/EOL-1-1/annotate
+    EOL-1-2:
+      bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-2/EOL-1-2-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/final/EOL-1-2/annotate
+    EOL-1-3:
+      bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-3/EOL-1-3-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/final/EOL-1-3/annotate
+    EOL-1-4:
+      bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/final/EOL-1-4/annotate
+    # if there are any other samples inside this VCF, output_dir is inherited
 
-output_dir: test/results
+- vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/2014-04-01_AML_02/AML_02-ensemble.vcf
+  samples:
+    Will-1:
+      bam:        /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/Will-1-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/Will-1/annotate
+    SU-DHL-2:
+      bam:        /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/SU-DHL-2-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/SU-DHL-2/annotate
+    HLY-1:
+      bam:        /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
+      output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate
 
-genome_build: hg19
-reference: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
-
+#output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/annotation
 filter_reject: True           # Filters variants with REJECT in the FILTER field
 #split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
+genome: hg19                 # loads from hg19_rask.yaml
+
 verbose: True                 # Prints tools output
-save_intermediate: True      # Leeps intermediate VCFs for each step
+keep_intermediate: True      # Keeps intermediate VCFs for each step
 reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-#parallel: True                # Process samples in parallel (requires joblib python package)
+parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
-  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
   clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
 
@@ -36,8 +58,7 @@ gatk:
   - DepthPerAlleleBySample
   - AlleleBalanceBySample     # AB
 
-db_nsfp:
-  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
+dbnsfp:
   annotations:
   - SIFT_score
   - Polyphen2_HVAR_score
@@ -57,42 +78,48 @@ db_nsfp:
   - ESP6500_AA_AF
   - ESP6500_EA_AF
 
-vcfs:
-  db_snp:
-    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
+dbsnp:
+  annotations:
+  - ID
+  - SAO
+  - VC
+  - PM
+  - HD
+  - KGPROD
+  - PH3
+  - OM
+  - CAF
+  - COMMON
+  - dbSNPBuildID
+  - G5
+  - CDA
+
+cosmic:
+  annotations:
+  - ID
+  - CNT
+  - AA
+  - CDS
+
+custom_vcfs:
+  oncomine:
+    path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     annotations:
-    - ID
-    - SAO
-    - VC
-    - PM
-    - HD
-    - KGPROD
-    - PH3
-    - OM
-    - CAF
-    - COMMON
-    - dbSNPBuildID
-    - G5
-    - CDA
-
-  cosmic:
-    path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-    annotations:
-    - ID
-    - CNT
-    - AA
-    - CDS
+    - om_Cancer
+    - om_PATIENT
+    - om_MutClass
+    - om_MutClassPC
 
 
-#tracks:  # requires vcfannotate (from bcbio-nextgen)
-#  #CpG Island
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-#  # Copy Number Variants
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-#  # Segmental Duplications
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-#  # Repeats
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
+tracks:  # requires vcfannotate (from bcbio-nextgen)
+  #CpG Island
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
+  # Copy Number Variants
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
+  # Segmental Duplications
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
+  # Repeats
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
 #  #  RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
@@ -191,10 +218,11 @@ tsv_fields:
   - dgvMerged                     : KnownCopyNumber
   - set                           : SourceVCF_forMergedRecInCombineVariants
 
+
 # Or built from the following:
 # 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
 # 2. Explicitly defined annotations in this yaml file
-# 3. SnpEff annotaions (EFF...)
-# 4. Track names
+# 3. Alla SnpEff annotaions (EFF...)
+# 4. Track names (cpgIslandExt, rptmk,,)
 # 5. Additional fields:
 #additional_tsv_fields: []

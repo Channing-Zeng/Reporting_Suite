@@ -9,3 +9,11 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpEff/SnpSift.jar
+
+genomes:
+  hg19:
+    seq: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
+    dbsnp: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
+    cosmic: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+    # dbnsfp: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
+    snpeff: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path

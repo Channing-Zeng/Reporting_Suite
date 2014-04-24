@@ -1,22 +1,22 @@
-input:
+details:
 - vcf: test/S1.vcf
 - vcf: test/S2.vcf
 
 output_dir: test/results
 
-genome_build: hg19
-reference: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
+genome: hg19
 
 filter_reject: True           # Filters variants with REJECT in the FILTER field
-split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
+split_samples: True          # Creates separate VCF for each sample.
+                             # Default if provided with multiple BAMs.
 
 verbose: True                 # Prints tools output to stdout (if not in parallel)
-save_intermediate: True      # Leeps intermediate VCFs for each step
-reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+keep_intermediate: True      # Keeps intermediate VCFs for each step
+reuse_intermediate: True     # If an intermediate VCFs exists and is not empty,
+                             # skip a step and reuse the file
 #parallel: True                # Process samples in parallel (requires joblib python package)
 
 snpeff:
-  path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
   clinical_reporting: True    # Canonical transcripts + output in HGVS notation
   cancer: True
 
@@ -37,7 +37,6 @@ gatk:
   - AlleleBalanceBySample     # AB
 
 #db_nsfp:
-#  path: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
 #  annotations:
 #  - SIFT_score
 #  - Polyphen2_HVAR_score
@@ -57,31 +56,28 @@ gatk:
 #  - ESP6500_AA_AF
 #  - ESP6500_EA_AF
 
-vcfs:
-  db_snp:
-    path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
-    annotations:
-    - ID
-    - SAO
-    - VC
-    - PM
-    - HD
-    - KGPROD
-    - PH3
-    - OM
-    - CAF
-    - COMMON
-    - dbSNPBuildID
-    - G5
-    - CDA
+db_snp:
+  annotations:
+  - ID
+  - SAO
+  - VC
+  - PM
+  - HD
+  - KGPROD
+  - PH3
+  - OM
+  - CAF
+  - COMMON
+  - dbSNPBuildID
+  - G5
+  - CDA
 
-  cosmic:
-    path: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-    annotations:
-    - ID
-    - CNT
-    - AA
-    - CDS
+cosmic:
+  annotations:
+  - ID
+  - CNT
+  - AA
+  - CDS
 
 tracks:
 - /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
@@ -141,7 +137,9 @@ tsv_fields:
   #- gt_GQ                         : ConditionalGenotypeQuality
   #- gt_HQ                         : HaplotypeQualities
   #- gt_PS                         : PhaseSet
-  #- gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+  #- gt_PQ                         : PhasingQuality      # phred-scaled probability
+                                                         # that alleles are ordered
+                                                         # incorrectly in a heterozygote
   #- gt_EC                         : ExpAlleleCounts
   - gt_AD                         : AllelicDepthsForRefAndAlt
   #- gt_AO                         : AlleleObservationCount

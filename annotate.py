@@ -10,965 +10,726 @@ if sys.version_info[:2] < (2, 5):
 import subprocess
 import shutil
 import os
-from os.path import join, splitext, basename, realpath, isfile, getsize, dirname, exists
-from distutils.version import LooseVersion
-from yaml import load
+from os.path import join, splitext, basename, realpath, isfile, dirname
+from yaml import load, dump
 try:
-    from yaml import CLoader as Loader
+    from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
-    from yaml import Loader
+    from yaml import Loader, Dumper
 
 from src.utils import which, splitext_plus, add_suffix, file_exists
 from src.transaction import file_transaction
+from src.my_utils import get_gatk_type, err, critical, info, \
+    intermediate_fname, verify_file, safe_mkdir, remove_quotes
 
 
-def verify_file(fpath, description=''):
-    if not fpath:
-        sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
-        return False
-    if not exists(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
-        return False
-    if not isfile(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' not a file.\n')
-        return False
-    if getsize(fpath) <= 0:
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
-        return False
-    return True
+def annotate(samples, parallel=False):
+    if len(samples) == 1:
+        sample_name, sample_cnf = samples.items()[0]
+        annotate_one(sample_name, sample_cnf)
+    else:
+        results = []
+        if parallel:
+            try:
+                from joblib import Parallel, delayed
+            except ImportError:
+                critical(
+                    '\nERROR: Joblib not found. You may want samples to be processed '
+                    'in parallel, in this case, make sure python joblib intalled. '
+                    '(pip install joblib).')
+            else:
+                for sample_name, sample_cnf in samples.items():
+                    sample_cnf['verbose'] = False
 
-
-def safe_mkdir(dirpath, descriptive_name):
-    if not dirpath:
-        exit(descriptive_name + ' path is empty.')
-    if isfile(dirpath):
-        exit(descriptive_name + ' ' + dirpath + ' is a file.')
-    if not exists(dirpath):
-        try:
-            os.mkdir(dirpath)
-        except OSError:
-            exit('Parent directory for ' + descriptive_name +
-                 ' ' + dirpath + ' probably does not exist.')
-
-
-def _annotate_one(this, sample_name, sample_files):
-    return this.annotate_one(sample_name, sample_files, multiple_samples=True)
-
-
-def intermediate_fname(work_dir, fname, suf):
-    output_fname = add_suffix(fname, suf)
-    return join(work_dir, basename(output_fname))
-
-
-class Annotator:
-    def step_greetings(self, name):
-        self.log_print('')
-        self.log_print('-' * 70)
-        self.log_print(name)
-        self.log_print('-' * 70)
-
-
-    # def _set_up_logfile(self):
-    #     if self.run_cnf.get('save_intermediate'):
-    #         self.log = join(self.work_dir, 'log.txt')
-    #         if os.path.isfile(self.log):
-    #             os.remove(self.log)
-
-
-    def _check_reference_file(self):
-        if not 'genome_build' in self.run_cnf:
-            self.log_exit('Please, provide genome build (genome_build).')
-        if not 'reference' in self.run_cnf:
-            self.log_exit('Please, provide path to the reference file (reference).')
-        if not verify_file(self.run_cnf['reference'], 'Reference'):
-            exit(1)
-
-
-    def _check_executables(self):
-        if not which('java'):
-            sys.stderr.write('\n* Warning: Java not found. You may want to run "module load java", '
-                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
-        if not which('perl'):
-            sys.stderr.write('\n* Warning: Perl not found. You may want to run "module load perl", '
-                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
-        if not self._get_tool_cmdline('vcfannotate',
-                                      extra_warn='You may want to load BCBio '
-                                                 'with ". /group/ngs/bin/bcbio-prod.sh"'):
-            sys.stderr.write('\n* Warning: skipping annotation with bed tracks.\n')
-
-
-    def _process_input(self):
-        if 'input' not in self.run_cnf:
-            self.log_exit('ERROR: Run config does not contain "input" section.')
-
-        common_conf = {
-            'output_dir': self.run_cnf.get('output_dir', os.getcwd()),
-            'filter_reject': self.run_cnf.get('filter_reject', False),
-            'split_samples': self.run_cnf.get('split_samples', False),
-            'genome_build': self.run_cnf.get('genome_build', None),
-            'reference': self.run_cnf.get('reference', None),
-        }
-
-        all_samples = OrderedDict()
-
-        for vcf_conf in self.run_cnf['input']:
-            if 'vcf' not in vcf_conf:
-                self.log_exit('ERROR: Input section does not contain field "vcf".')
-            vcf = vcf_conf['vcf']
-            if not verify_file(vcf, 'Input file'):
-                exit(1)
-
-            join_parent_conf(vcf_conf, common_conf)
-
-            # multiple samples
-            if 'samples' in vcf_conf or vcf_conf.get('split_samples'):
-                # check bams if exist
-                if 'samples' in vcf_conf:
-                    for header_sample_name, sample_conf in vcf_conf['samples'].items():
-                        join_parent_conf(sample_conf, vcf_conf)
-
-                        bam = sample_conf.get('bam')
-                        if bam and not verify_file(bam, 'Bam file'):
-                            exit(1)
-
-                rec_samples = vcf_conf.get('samples') or OrderedDict()
-                vcf_header_samples = self._read_sample_names_from_vcf(vcf)
-
-                # compare input sample names to vcf header
-                if rec_samples:
-                    for input_sample_name, sample_conf in rec_samples.items():
-                        if input_sample_name not in vcf_header_samples:
-                            self.log_exit('ERROR: sample ' + input_sample_name +
-                                          ' is not in VCF header ' + vcf_header_samples + '\n'
-                                          'Available samples: ' + ', '.join(vcf_header_samples))
-                # split vcf
-                for header_sample_name in vcf_header_samples:
-                    if header_sample_name not in rec_samples:
-                        rec_samples[header_sample_name] = dict(vcf_conf)
-                    if header_sample_name in all_samples:
-                        self.log_exit('ERROR: duplicated sample name: ' + header_sample_name)
-
-                    data = rec_samples[header_sample_name]
-                    all_samples[header_sample_name] = data
-
-                    output_dirpath = realpath(data['output_dir'])
-                    safe_mkdir(output_dirpath, 'output_dir for ' + header_sample_name)
-                    work_dirpath = join(output_dirpath, 'intermediate')
-                    safe_mkdir(work_dirpath, 'intermediate directory')
-                    data['work_dir'] = work_dirpath
-
-                    extracted_vcf = self.extract_sample(vcf, header_sample_name, work_dirpath)
-                    rec_samples[header_sample_name]['vcf'] = extracted_vcf
-
-            else:  # single sample
-                if 'bam' in vcf_conf:
-                    if not verify_file(vcf_conf['bam']):
-                        exit(1)
-
-                sample_name = splitext(basename(vcf))[0]
-
-                output_dirpath = realpath(vcf_conf['output_dir'])
-                safe_mkdir(output_dirpath, 'output_dir for ' + sample_name)
-                work_dirpath = join(output_dirpath, 'intermediate')
-                safe_mkdir(work_dirpath, 'intermediate directory')
-                vcf_conf['work_dir'] = work_dirpath
-
-                all_samples[sample_name] = vcf_conf
-
-        return all_samples
-
-
-    # def _copy_vcf_to_final_dir(self, inp_fpath):
-    #     fname = basename(inp_fpath)
-    #
-    #     # if self.output_dir != realpath(dirname(inp_fpath)):
-    #         # if self.run_cnf.get('save_intermediate'):
-    #         # new_fname = fname
-    #         # else:
-    #         #     new_fname = self.make_intermediate(fname, 'anno')
-    #     new_fpath = join(self.work_dir, fname)
-    #     if os.path.exists(new_fpath):
-    #         os.remove(new_fpath)
-    #     shutil.copyfile(inp_fpath, new_fpath)
-    #     return new_fpath
-    #     # else:
-    #     #     if not self.run_cnf.get('save_intermediate'):
-    #     #         new_fpath = join(self.output_dir, self.make_intermediate(fname, 'anno'))
-    #     #         shutil.copyfile(inp_fpath, new_fpath)
-    #     #         return new_fpath
-    #     #     else:
-    #     #         return inp_fpath
-
-
-    @staticmethod
-    def _read_sample_names_from_vcf(vcf_fpath):
-        basic_fields = next(l.strip()[1:].split() for l in open(vcf_fpath)
-                            if l.strip().startswith('#CHROM'))
-        return basic_fields[9:]
-
-
-    # def _split_vcf_by_samples(self, vcf_fpath, sample_names, bams):
-    #     for bam_sample_name in (bams.keys() if bams else []):
-    #         if bam_sample_name not in sample_names:
-    #             self.log_exit('ERROR: sample ' + bam_sample_name +
-    #                           ' is not in VCF ' + vcf_fpath + '\n'
-    #                           'Available samples: ' + ', '.join(sample_names))
-    #     for sample_name in sample_names:
-    #         bam_fpath = bams.get(sample_name) if bams else None
-    #         new_vcf = self.extract_sample(vcf_fpath, sample_name)
-    #         self.samples[sample_name] = {'vcf': new_vcf, 'bam': bam_fpath}
-
-
-    def __init__(self, system_config_path, run_config_path):
-        self.sys_cnf = load(open(system_config_path), Loader=Loader)
-        self.run_cnf = load(open(run_config_path), Loader=Loader)
-
-        self.log = None
-        self.verbose = self.run_cnf.get('verbose', True)
-
-        if not 'resources' in self.sys_cnf:
-            self.log_exit('"resources" section in system config required.')
-
-        # if self.run_cnf.get('save_intermediate'):
-        #     shutil.copy(run_config_path, self.work_dir)
-
-        self.log_print('Loaded system config ' + system_config_path)
-        self.log_print('Loaded run config ' + run_config_path)
-
-        self._check_executables()
-
-        self.samples = self._process_input()
-
-
-    def annotate(self):
-        if len(self.samples) == 1:
-            sample_name, sample_data = self.samples.items()[0]
-            self.annotate_one(sample_name, sample_data)
+                results = Parallel(n_jobs=len(samples)) \
+                    (delayed(annotate_one) \
+                            (sample_name, sample_cnf, multiple_samples=True)
+                        for sample_name, sample_cnf in samples.items())
         else:
-            results = []
-            if self.run_cnf.get('parallel'):
+            for sample_name, sample_cnf in samples.items():
+                vcf, tsv = annotate_one(sample_name, sample_cnf,
+                                        multiple_samples=True)
+                results.append([vcf, tsv])
+
+        info('')
+        info('*' * 70)
+        info('Results for each samples:')
+        for (sample_name, cnf), (vcf, tsv) in zip(samples.items(), results):
+            info(cnf['log'], sample_name + ':')
+            info(cnf['log'], '  ' + vcf)
+            info(cnf['log'], '  ' + tsv)
+
+    for name, data in samples.items():
+        work_dirpath = data['work_dir']
+        tx_dirpath = join(work_dirpath, 'tx')
+
+        if isdir(tx_dirpath):
+            shutil.rmtree(tx_dirpath)
+
+        if not data.get('keep_intermediate') \
+                and isdir(work_dirpath):
+            shutil.rmtree(work_dirpath)
+
+
+def annotate_one(sample_name, cnf, multiple_samples=False):
+    if cnf.get('keep_intermediate'):
+        cnf['log'] = join(cnf['work_dir'], sample_name + '_log.txt')
+        if isfile(cnf['log']):
+            os.remove(cnf['log'])
+
+        with open(join(cnf['work_dir'], sample_name + '_config.yaml'), 'w') as f:
+            f.write(dump(cnf, Dumper=Dumper))
+        if os.path.isfile(self.log):
+            os.remove(self.log)
+
+    if multiple_samples:
+        info('')
+        info('*' * 70)
+        msg = '*' * 3 + ' Sample ' + sample_name + ' '
+        info(cnf['log'], msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
+        info(cnf['log'], 'VCF: ' + cnf['vcf'])
+        if cnf.get('bam'):
+            info(cnf['log'], 'BAM: ' + cnf['bam'])
+
+    vcf_fpath = original_vcf_fpath = cnf['vcf']
+    # sample['fields'] = []
+    work_dir = cnf['work_dir']
+
+    if cnf.get('split_genotypes'):
+        vcf_fpath = split_genotypes(cnf, vcf_fpath)
+
+    if cnf.get('ensemble'):
+        vcf_fpath = filter_ensemble(cnf, vcf_fpath)
+
+    if 'gatk' in cnf:
+        vcf_fpath = gatk(cnf, vcf_fpath, cnf.get('bam'), work_dir)
+
+    if 'dbsnp' in cnf:
+        vcf_fpath = snpsift_annotate(cnf, cnf['dbsnp'],
+                                     'dbsnp', vcf_fpath, work_dir)
+    if 'cosmic' in cnf:
+        vcf_fpath = snpsift_annotate(cnf, cnf['cosmic'],
+                                     'cosmic', vcf_fpath, work_dir)
+    if 'custom_vcfs' in cnf:
+        for dbname, vcf_conf in cnf['custom_vcfs'].items():
+            vcf_fpath = snpsift_annotate(cnf, vcf_conf, dbname,
+                                         vcf_fpath, work_dir)
+
+    if 'dbnsfp' in cnf:
+        vcf_fpath = snpsift_db_nsfp(cnf, vcf_fpath, work_dir)
+
+    if 'snpeff' in cnf:
+        remove_annotation(cnf, 'EFF', vcf_fpath, work_dir)
+        vcf_fpath = snpeff(cnf, vcf_fpath, work_dir)
+
+    if cnf.get('tracks'):
+        for track in cnf['tracks']:
+            vcf_fpath = tracks(cnf, track, vcf_fpath, work_dir)
+
+    vcf_fpath = filter_fields(cnf, vcf_fpath, work_dir)
+
+    # Copying final VCF
+    final_fname = add_suffix(basename(original_vcf_fpath), 'anno')
+    final_vcf_fpath = join(cnf['output_dir'], final_fname)
+    if isfile(final_vcf_fpath):
+        os.remove(final_vcf_fpath)
+    shutil.copyfile(vcf_fpath, final_vcf_fpath)
+
+    # making TSV
+    tsv_fpath = extract_fields(cnf, vcf_fpath, work_dir, sample_name)
+
+    manual_tsv_fields = cnf.get('tsv_fields')
+    if manual_tsv_fields:
+        field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
+        if cnf.get('keep_intermediate'):
+            info(cnf['log'], 'Saved TSV file to ' + tsv_fpath)
+        tsv_fpath = rename_fields(cnf, tsv_fpath, field_map, work_dir)
+        if cnf.get('keep_intermediate'):
+            info(cnf['log'], 'Saved TSV file with nice names to ' + tsv_fpath)
+
+    # Copying final TSV
+    final_tsv_fpath = splitext_plus(final_vcf_fpath)[0] + '.tsv'
+    if isfile(final_tsv_fpath):
+        os.remove(final_tsv_fpath)
+    shutil.copyfile(tsv_fpath, final_tsv_fpath)
+
+    # if self.run_cnf.get('keep_intermediate'):
+    #     corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
+    #     self.log_print('')
+    #     self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
+    #     self.log_print('View with the commandline:')
+    #     self.log_print('column -t ' + corr_tsv_fpath + ' | less -S')
+
+    info(cnf['log'], '')
+    info(cnf['log'], 'Saved final VCF to ' + final_vcf_fpath)
+    info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
+
+    return final_vcf_fpath, final_tsv_fpath
+
+
+def remove_annotation(cnf, field_to_del, input_fpath, work_dir):
+    def proc_line(l):
+        if field_to_del in l:
+            if l.startswith('##INFO='):
                 try:
-                    from joblib import Parallel, delayed
-                except ImportError:
-                    self.log_exit(
-                        '\nERROR: Joblib not found. You may want samples to be processed '
-                        'in parallel, in this case, make sure python joblib intalled. '
-                        '(pip install joblib).')
-                else:
-                    self.verbose = False
+                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                        return None
+                except IndexError:
+                    critical(cnf['log'], 'Incorrect VCF at line: ' + l)
+            elif not l.startswith('#'):
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
+                info_line = ';'.join('='.join(pair) if len(pair) == 2
+                                     else pair[0] for pair in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                return '\t'.join(fields)
+        return l
+    return iterate_file(cnf, input_fpath, proc_line, work_dir)
 
-                    results = Parallel(n_jobs=len(self.samples)) \
-                        (delayed(_annotate_one) \
-                                (self, sample_name, sample_data)
-                            for sample_name, sample_data in self.samples.items())
+
+def extract_sample(cnf, input_fpath, samplename, work_dir):
+    step_greetings(cnf, 'Separating out sample ' + samplename)
+
+    executable = _get_java_tool_cmdline(cnf, 'gatk')
+    ref_fpath = cnf['genome']['seq']
+
+    corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
+    output_fpath = intermediate_fname(work_dir, input_fpath, suf=corr_samplename)
+
+    cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
+          '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
+    _call_and_rename(cnf, cmd, input_fpath, output_fpath, work_dir,
+                     result_to_stdout=False,
+                     keep_original_if_not_keep_intermediate=True)
+    return output_fpath
+
+
+def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
+                     result_to_stdout=True, to_remove=None,
+                     keep_original_if_not_keep_intermediate=False):
+    to_remove = to_remove or []
+
+    if cnf.get('keep_intermediate') and cnf.get('reuse_intermediate'):
+        if file_exists(output_fpath):
+            info(cnf['log'], output_fpath + ' exists, reusing')
+            return output_fpath
+
+    err_fpath = os.path.join(work_dir, input_fpath + 'annotate_py_err.tmp')
+    to_remove.append(err_fpath)
+    if err_fpath and isfile(err_fpath):
+        os.remove(err_fpath)
+
+    with file_transaction(output_fpath) as tx_out_fpath:
+        if result_to_stdout:
+            info(cnf['log'], cmdline + ' > ' + tx_out_fpath)
+        else:
+            cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+            info(cnf['log'], cmdline)
+
+        if cnf['verbose']:
+            proc = subprocess.Popen(
+                cmdline.split(),
+                stdout=open(tx_out_fpath, 'w') if result_to_stdout else subprocess.PIPE,
+                stderr=subprocess.STDOUT if not result_to_stdout else subprocess.PIPE)
+
+            if proc.stdout:
+                for line in iter(proc.stdout.readline, ''):
+                    info(cnf['log'], '   ' + line.strip())
+            elif proc.stderr:
+                for line in iter(proc.stderr.readline, ''):
+                    info(cnf['log'], '   ' + line.strip())
+
+            ret_code = proc.wait()
+            if ret_code != 0:
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(fpath)
+                critical(cnf['log'], 'Command returned status ' + str(ret_code) +
+                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+        else:
+            res = subprocess.call(
+                cmdline.split(),
+                stdout=open(tx_out_fpath, 'w') if result_to_stdout else open(err_fpath, 'a'),
+                stderr=open(err_fpath, 'a'))
+            if res != 0:
+                with open(err_fpath) as err_f:
+                    info(cnf['log'], '')
+                    info(cnf['log'], err_f.read())
+                    info(cnf['log'], '')
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(fpath)
+                critical(cnf['log'], 'Command returned status ' + str(res) +
+                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
-                for sample_name, sample_data in self.samples.items():
-                    vcf, tsv = self.annotate_one(sample_name, sample_data,
-                                                 multiple_samples=True)
-                    results.append([vcf, tsv])
+                if 'log' in cnf:
+                    with open(err_fpath) as err_f, \
+                         open(cnf['log'], 'a') as log_f:
+                        log_f.write('')
+                        log_f.write(err_f.read())
+                        log_f.write('')
 
-            self.log_print('')
-            self.log_print('*' * 70)
-            self.log_print('Results for each samples:')
-            for sample_name, (vcf, tsv) in zip(self.samples.keys(), results):
-                self.log_print(sample_name + ':')
-                self.log_print('  ' + vcf)
-                self.log_print('  ' + tsv)
+    for fpath in to_remove:
+        if fpath and isfile(fpath):
+            os.remove(fpath)
 
-        for name, data in self.samples.items():
-            work_dirpath = data['work_dir']
-            tx_dirpath = join(work_dirpath, 'tx')
-
-            if isdir(tx_dirpath):
-                shutil.rmtree(tx_dirpath)
-
-            if not self.run_cnf.get('save_intermediate') \
-                    and isdir(work_dirpath):
-                shutil.rmtree(work_dirpath)
+    if not cnf.get('keep_intermediate') and keep_original_if_not_keep_intermediate:
+        os.remove(input_fpath)
+    info(cnf['log'], 'Saved to ' + output_fpath)
+    return output_fpath
 
 
-    def annotate_one(self, sample_name, sample_data, multiple_samples=False):
-        if multiple_samples:
-            self.log_print('')
-            self.log_print('*' * 70)
-            msg = '*' * 3 + ' Sample ' + sample_name + ' '
-            self.log_print(msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
-            self.log_print('VCF: ' + sample_data['vcf'])
-            if sample_data.get('bam'):
-                self.log_print('BAM: ' + sample_data['bam'])
-
-        vcf_fpath = original_vcf_fpath = sample_data['vcf']
-        # sample['fields'] = []
-        work_dir = sample_data['work_dir']
-
-        if self.run_cnf.get('split_genotypes'):
-            vcf_fpath = self.split_genotypes(vcf_fpath)
-
-        if self.run_cnf.get('ensemble'):
-            vcf_fpath = self.filter_ensemble(vcf_fpath)
-
-        if 'gatk' in self.run_cnf:
-            vcf_fpath = self.gatk(vcf_fpath, sample_data.get('bam'), work_dir)
-
-        if 'vcfs' in self.run_cnf:
-            for dbname, conf in self.run_cnf['vcfs'].items():
-                vcf_fpath = self.snpsift_annotate(dbname, conf, vcf_fpath, work_dir)
-
-        if 'db_nsfp' in self.run_cnf:
-            vcf_fpath = self.snpsift_db_nsfp(vcf_fpath, work_dir)
-
-        if 'snpeff' in self.run_cnf:
-            self.remove_annotation('EFF', vcf_fpath, work_dir)
-            vcf_fpath = self.snpeff(vcf_fpath, work_dir)
-
-        if self.run_cnf.get('tracks'):
-            for track in self.run_cnf['tracks']:
-                vcf_fpath = self.tracks(track, vcf_fpath, work_dir)
-
-        vcf_fpath = self.filter_fields(vcf_fpath, work_dir)
-
-        # Copying final VCF
-        final_fname = add_suffix(basename(original_vcf_fpath), 'anno')
-        final_vcf_fpath = join(sample_data['output_dir'], final_fname)
-        if isfile(final_vcf_fpath):
-            os.remove(final_vcf_fpath)
-        shutil.copyfile(vcf_fpath, final_vcf_fpath)
-
-        # making TSV
-        tsv_fpath = self.extract_fields(vcf_fpath, work_dir, sample_name)
-
-        manual_tsv_fields = self.run_cnf.get('tsv_fields')
-        if manual_tsv_fields:
-            field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
-            if self.run_cnf.get('save_intermediate'):
-                self.log_print('Saved TSV file to ' + tsv_fpath)
-            tsv_fpath = self.rename_fields(tsv_fpath, field_map, work_dir)
-            if self.run_cnf.get('save_intermediate'):
-                self.log_print('Saved TSV file with nice names to ' + tsv_fpath)
-            # else:
-                # self.log_print('Saved TSV file to ' + tsv_fpath)
-        # else:
-            # self.log_print('Saved TSV file to ' + tsv_fpath)
-
-        # Copying final TSV
-        final_tsv_fpath = splitext_plus(final_vcf_fpath)[0] + '.tsv'
-        if isfile(final_tsv_fpath):
-            os.remove(final_tsv_fpath)
-        shutil.copyfile(tsv_fpath, final_tsv_fpath)
-
-        # if self.run_cnf.get('save_intermediate'):
-        #     corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
-        #     self.log_print('')
-        #     self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
-        #     self.log_print('View with the commandline:')
-        #     self.log_print('column -t ' + corr_tsv_fpath + ' | less -S')
-
-        self.log_print('')
-        self.log_print('Saved final VCF to ' + final_vcf_fpath)
-        self.log_print('Saved final TSV to ' + final_tsv_fpath)
-        if self.log:
-            print('Log in ' + self.log)
-
-        return final_vcf_fpath, final_tsv_fpath
+def _get_java_tool_cmdline(cnf, name):
+    cmdline_template = _get_script_cmdline_template(cnf, 'java', name)
+    jvm_opts = cnf['resources'][name].get('jvm_opts', []) + ['']
+    return cmdline_template % (' '.join(jvm_opts) + ' -jar')
 
 
-    def remove_annotation(self, field_to_del, input_fpath, work_dir):
-        def proc_line(l):
-            if field_to_del in l:
-                if l.startswith('##INFO='):
-                    try:
-                        if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
-                            return None
-                    except IndexError:
-                        self.log_exit('Incorrect VCF at line: ' + l)
-                elif not l.startswith('#'):
-                    fields = l.split('\t')
-                    info_line = fields[7]
-                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                    info_line = ';'.join('='.join(pair) if len(pair) == 2
-                                         else pair[0] for pair in info_pairs)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    return '\t'.join(fields)
+def _get_script_cmdline_template(cnf, executable, script_name):
+    if not which(executable):
+        exit(executable + ' executable required, maybe you need '
+             'to run "module load ' + executable + '"?')
+    if 'resources' not in cnf:
+        critical(cnf['log'], 'System config yaml must contain resources section with '
+                 + script_name + ' path.')
+    if script_name not in cnf['resources']:
+        critical(cnf['log'], 'System config resources section must contain '
+                 + script_name + ' info (with a path to the tool).')
+    tool_config = cnf['resources'][script_name]
+    if 'path' not in tool_config:
+        critical(script_name + ' section in the system config must contain a path to the tool.')
+    tool_path = tool_config['path']
+    if not verify_file(tool_path, script_name):
+        exit(1)
+    return executable + ' %s ' + tool_path
+
+
+def snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
+    step_greetings(cnf, 'Annotate with ' + dbname)
+
+    executable = _get_java_tool_cmdline(cnf, 'snpsift')
+
+    db_path = cnf['genome'].get(dbname)
+    if not db_path:
+        db_path = vcf_conf.get('path')
+        if not db_path:
+            critical(cnf['log'], 'Please, privide a path to ' + dbname + ' in the run config '
+                     '("path:" field), or in the "genomes" section in the system config')
+        if not verify_file(db_path):
+            exit()
+
+    annotations = cnf[dbname].get('annotations')
+    # all_fields.extend(annotations)
+    anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
+    cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
+    output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
+    output_fpath = _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
+                                    work_dir, result_to_stdout=True)
+    def proc_line(line):
+        if not line.startswith('#'):
+            line = line.replace(' ', '_')
+            assert ' ' not in line
+        return line
+    output_fpath = iterate_file(cnf, output_fpath, proc_line, work_dir)
+    return output_fpath
+
+
+def snpsift_db_nsfp(cnf, input_fpath, work_dir):
+    if 'dbnsfp' not in cnf:
+        return input_fpath
+
+    step_greetings(cnf, 'DB SNFP')
+
+    executable = _get_java_tool_cmdline(cnf, 'snpsift')
+
+    db_path = cnf['genomes'].get('dbnsfp')
+    if not db_path:
+        critical(cnf['log'], 'Please, provide a path to DB NSFP file in '
+                 'the "genomes" section in the system config.')
+
+    annotations = cnf['dbnsfp'].get('annotations', [])
+    # self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
+    ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
+
+    cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
+    output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
+    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
+                            result_to_stdout=True)
+
+
+def snpeff(cnf, input_fpath, work_dir):
+    if 'snpeff' not in cnf:
+        return input_fpath
+
+    step_greetings(cnf, 'SnpEff')
+
+    # self.all_fields.extend([
+    #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
+    #     "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
+    #     "EFF[*].TRID", "EFF[*].RANK"])
+
+    executable = _get_java_tool_cmdline(cnf, 'snpeff')
+    ref_name = cnf['genome']['name']
+    db_path = cnf['genome'].get('snpeff')
+    if not db_path:
+        critical(cnf['log'], 'Please, provide a path to SnpEff data in '
+                 'the "genomes" section in the system config.')
+
+    cmdline = ('{executable} eff -dataDir {db_path} -noStats -noLog -1 '
+               '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
+
+    if cnf['snpeff'].get('clinical_reporting') or \
+            cnf['snpeff'].get('canonical'):
+        cmdline += ' -canon -hgvs '
+
+    if cnf['snpeff'].get('cancer'):
+        cmdline += ' -cancer '
+
+    output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
+    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
+                            result_to_stdout=True)
+
+
+def tracks(cnf, track_path, input_fpath, work_dir):
+    field_name = splitext(basename(track_path))[0]
+
+    step_greetings(cnf, 'Intersecting with ' + field_name)
+
+    toolpath = _get_tool_cmdline(cnf, 'vcfannotate')
+    if not toolpath:
+        err(cnf['log'], 'WARNING: Skipping annotation with tracks: vcfannotate '
+            'executable not found, you probably need to '
+            'run the commandline:  . /group/ngs/bin/bcbio-prod.sh"')
+        return
+
+    # self.all_fields.append(field_name)
+
+    cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
+
+    output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
+    output_fpath = _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
+                                    work_dir, result_to_stdout=True)
+
+    # Set TRUE or FALSE for tracks
+    def proc_line(line):
+        if field_name in line:
+            if not line.startswith('#'):
+                fields = line.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = [[pair[0], ('TRUE' if pair[1] else 'FALSE')]
+                              if pair[0] == field_name and len(pair) > 1
+                              else pair for pair in info_pairs]
+                info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                return '\t'.join(fields)
+        return line
+    return iterate_file(cnf, output_fpath, proc_line, work_dir)
+
+
+def gatk(cnf, input_fpath, bam_fpath, work_dir):
+    if 'gatk' not in cnf:
+        return input_fpath
+
+    step_greetings(cnf, 'GATK')
+
+    executable = _get_java_tool_cmdline(cnf, 'gatk')
+
+    output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
+
+    ref_fpath = cnf['genome']['seq']
+
+    cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantAnnotator'
+               ' --variant {input_fpath} -o {output_fpath}').format(**locals())
+    if bam_fpath:
+        cmdline += ' -I ' + bam_fpath
+
+    gatk_annos_dict = {
+        'Coverage': 'DP',
+        'BaseQualityRankSumTest': 'BaseQRankSum',
+        'FisherStrand': 'FS',
+        'GCContent': 'GC',
+        'HaplotypeScore': 'HaplotypeScore',
+        'HomopolymerRun': 'HRun',
+        'RMSMappingQuality': 'MQ',
+        'MappingQualityRankSumTest': 'MQRankSum',
+        'MappingQualityZero': 'MQ0',
+        'QualByDepth': 'QD',
+        'ReadPosRankSumTest': 'ReadPosRankSum'
+    }
+    annotations = cnf['gatk'].get('annotations', [])
+
+    # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
+    gatk_type = get_gatk_type(_get_java_tool_cmdline(cnf, 'gatk'))
+    for ann in annotations:
+        if ann == 'DepthOfCoverage' and gatk_type == 'restricted':
+            info(cnf['log'], 'Notice: in the restricted Gatk version, DepthOfCoverage '
+                 'is renamed to Coverage. Using the name Coverage.\n')
+            ann = 'Coverage'
+        if ann == 'Coverage' and gatk_type == 'lite':
+            info(cnf['log'], 'Notice: in the lite Gatk version, the Coverage annotation '
+                 'goes by name of DepthOfCoverage. '
+                 'In the system config, the lite version of Gatk is '
+                 'specified; using DepthOfCoverage.\n')
+            ann = 'DepthOfCoverage'
+        cmdline += " -A " + ann
+
+    output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
+    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
+                            work_dir, result_to_stdout=False,
+                            to_remove=[output_fpath + '.idx',
+                                       input_fpath + '.idx'])
+
+
+def rename_fields(cnf, inp_tsv_fpath, field_map, work_dir):
+    if cnf.get('keep_intermediate'):
+        step_greetings(cnf, 'Renaming fields.')
+
+    with open(inp_tsv_fpath) as f:
+        first_line = f.readline()[1:]
+    fields = first_line.split()
+    new_fields = [field_map.get(f, f) for f in fields]
+    new_first_line = '\t'.join(new_fields)
+
+    if cnf.get('keep_intermediate'):
+        out_tsv_fpath = intermediate_fname(work_dir, inp_tsv_fpath, 'renamed')
+    else:
+        out_tsv_fpath = inp_tsv_fpath
+
+    with file_transaction(out_tsv_fpath) as tx_out_fpath:
+        with open(tx_out_fpath, 'w') as out:
+            out.write(new_first_line + '\n')
+            with open(inp_tsv_fpath) as f:
+                for i, l in enumerate(f):
+                    if i >= 1:
+                        out.write(l)
+
+    if not cnf.get('keep_intermediate'):
+        os.rename(out_tsv_fpath, inp_tsv_fpath)
+        return inp_tsv_fpath
+    else:
+        return out_tsv_fpath
+
+
+def extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
+    step_greetings(cnf, 'Extracting fields')
+
+    name, _ = splitext_plus(vcf_fpath)
+    tsv_fpath = name + '.tsv'
+
+    if cnf.get('keep_intermediate') and cnf.get('reuse_intermediate'):
+        if file_exists(tsv_fpath):
+            info(cnf['log'], tsv_fpath + ' exists, reusing')
+            return tsv_fpath
+
+    all_format_fields = set()
+
+    # Split FORMAT field and sample fields
+    def proc_line(l):
+        if l.startswith('#'):
             return l
-        return self.iterate_file(input_fpath, proc_line, work_dir)
+        vals = l.strip().split('\t')
+        if len(vals) <= 9:
+            return l
+        info_field = vals[7]
+        format_fields = vals[8].split(':')
+        sample_fields = vals[9].split(':')
+        for f, s in zip(format_fields, sample_fields):
+            if f not in ['DP', 'MQ']:
+                if f == 'GT':
+                    s = '"' + s + '"'
+                f = 'gt_' + f
+                info_field += ';' + f + '=' + s
+                all_format_fields.add(f)
+        l = '\t'.join(vals[:7] + [info_field])
+        return l
+    split_format_fields_vcf = iterate_file(cnf, vcf_fpath, proc_line, work_dir,
+                                           'split_format_fields',
+                                           keep_original_if_not_keep_intermediate=True)
+
+    manual_tsv_fields = cnf.get('tsv_fields')
+    if manual_tsv_fields:
+        fields = [rec.keys()[0] for rec in manual_tsv_fields]
+    # else:
+        # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
+        # basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
+        # manual_annots = filter(lambda f: f and f != 'ID', all_fields)
+        # fields = (basic_fields + all_format_fields + manual_annots + self.run_cnf.get('additional_tsv_fields', []))
+    else:
+        return None
+
+    anno_line = ' '.join(fields)
+    snpsift_cmline = _get_java_tool_cmdline(cnf, 'snpsift')
+
+    if not which('perl'):
+        exit('Perl executable required, maybe you need to run "module load perl"?')
+    src_fpath = join(dirname(realpath(__file__)), 'src')
+    vcfoneperline_cmline = 'perl ' + join(src_fpath, 'vcfOnePerLine.pl')
+    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
+
+    with file_transaction(tsv_fpath) as tx_tsv_fpath:
+        info(cnf['log'], cmdline + ' < ' + (split_format_fields_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
+        res = subprocess.call(cmdline,
+                              stdin=open(split_format_fields_vcf or vcf_fpath),
+                              stdout=open(tx_tsv_fpath, 'w'), shell=True)
+
+    if split_format_fields_vcf:
+        os.remove(split_format_fields_vcf)
+
+    info(cnf['log'], '')
+    if res != 0:
+        critical(cnf['log'], 'Command returned status ' + str(res) +
+                 ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+    return tsv_fpath
 
 
-    def extract_sample(self, input_fpath, samplename, work_dir):
-        self.step_greetings('Separating out sample ' + samplename)
-
-        print self._get_gatk_version()
-        executable = self._get_java_tool_cmdline('gatk')
-        ref_fpath = self.run_cnf['reference']
-
-        corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-        output_fpath = intermediate_fname(work_dir, input_fpath, suf=corr_samplename)
-
-        cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-              '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
-        self._call_and_rename(cmd, input_fpath, output_fpath, work_dir,
-                              result_to_stdout=False,
-                              keep_original_if_not_save_intermediate=True)
-        return output_fpath
+def filter_ensemble(cnf, input_fpath):
+    step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
+    return iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
 
 
-    def log_print(self, msg=''):
-        print(msg)
-        if self.log:
-            open(self.log, 'a').write(msg + '\n')
+def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
+                 keep_original_if_not_keep_intermediate=False):
+    output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
 
+    if suffix and cnf.get('keep_intermediate') \
+            and cnf.get('reuse_intermediate'):
+        if file_exists(output_fpath):
+            info(cnf['log'], output_fpath + ' exists, reusing')
+            return output_fpath
 
-    def log_exit(self, msg=''):
-        if self.log:
-            open(self.log, 'a').write('\n' + msg + '\n')
-        exit(msg)
-
-
-    def log_err(self, msg=''):
-        if self.log:
-            open(self.log, 'a').write('\n' + msg + '\n')
-        sys.stderr.write('\n' + msg + '\n')
-
-
-    def _call_and_rename(self, cmdline, input_fpath, output_fpath, work_dir,
-                         result_to_stdout=True, to_remove=None,
-                         keep_original_if_not_save_intermediate=False):
-        to_remove = to_remove or []
-
-        if self.run_cnf.get('save_intermediate') and self.run_cnf.get('reuse_intermediate'):
-            if file_exists(output_fpath):
-                self.log_print(output_fpath + ' exists, reusing')
-                return output_fpath
-
-        err_fpath = os.path.join(work_dir, input_fpath + 'annotate_py_err.tmp')
-        to_remove.append(err_fpath)
-        if err_fpath and isfile(err_fpath):
-            os.remove(err_fpath)
-
-        with file_transaction(output_fpath) as tx_out_fpath:
-            if result_to_stdout:
-                self.log_print(cmdline + ' > ' + tx_out_fpath)
-            else:
-                cmdline = cmdline.replace(output_fpath, tx_out_fpath)
-                self.log_print(cmdline)
-
-            if self.verbose:
-                proc = subprocess.Popen(
-                    cmdline.split(),
-                    stdout=open(tx_out_fpath, 'w') if result_to_stdout else subprocess.PIPE,
-                    stderr=subprocess.STDOUT if not result_to_stdout else subprocess.PIPE)
-
-                if proc.stdout:
-                    for line in iter(proc.stdout.readline, ''):
-                        self.log_print('   ' + line.strip())
-                elif proc.stderr:
-                    for line in iter(proc.stderr.readline, ''):
-                        self.log_print('   ' + line.strip())
-
-                ret_code = proc.wait()
-                if ret_code != 0:
-                    for fpath in to_remove:
-                        if fpath and isfile(fpath):
-                            os.remove(fpath)
-                    self.log_exit('Command returned status ' + str(ret_code) +
-                                  ('. Log in ' + self.log if self.log else '.'))
-            else:
-                res = subprocess.call(
-                    cmdline.split(),
-                    stdout=open(tx_out_fpath, 'w') if result_to_stdout else open(err_fpath, 'a'),
-                    stderr=open(err_fpath, 'a'))
-                if res != 0:
-                    with open(err_fpath) as err:
-                        self.log_print('')
-                        self.log_print(err.read())
-                        self.log_print('')
-                    for fpath in to_remove:
-                        if fpath and isfile(fpath):
-                            os.remove(fpath)
-                    self.log_exit('Command returned status ' + str(res) +
-                                  ('. Log in ' + self.log if self.log else '.'))
+    with file_transaction(output_fpath) as tx_fpath:
+        with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
+            for i, line in enumerate(vcf):
+                clean_line = line.strip()
+                if clean_line:
+                    new_l = proc_line_fun(clean_line)
+                    if new_l is not None:
+                        out.write(new_l + '\n')
                 else:
-                    if self.log:
-                        with open(err_fpath) as err, open(self.log, 'a') as log:
-                            log.write('')
-                            log.write(err.read())
-                            log.write('')
+                    out.write(line)
 
-        for fpath in to_remove:
-            if fpath and isfile(fpath):
-                os.remove(fpath)
-
-        if not self.run_cnf.get('save_intermediate') and keep_original_if_not_save_intermediate:
+    if not suffix:
+        os.rename(output_fpath, input_fpath)
+        output_fpath = input_fpath
+    else:
+        if not cnf.get('keep_intermediate') and\
+                not keep_original_if_not_keep_intermediate:
             os.remove(input_fpath)
-        self.log_print('Saved to ' + output_fpath)
-        return output_fpath
+    info(cnf['log'], 'Saved to ' + output_fpath)
+    return output_fpath
 
 
-    def _get_java_tool_cmdline(self, name):
-        cmdline_template = self._get_script_cmdline_template('java', name)
-        jvm_opts = self.sys_cnf['resources'][name].get('jvm_opts', []) + ['']
-        return cmdline_template % (' '.join(jvm_opts) + ' -jar')
+def split_genotypes(cnf, input_fpath):
+    step_greetings(cnf, 'Splitting genotypes.')
 
-
-    def _get_script_cmdline_template(self, executable, script_name):
-        if not which(executable):
-            exit(executable + ' executable required, maybe you need '
-                 'to run "module load ' + executable + '"?')
-        if 'resources' not in self.sys_cnf:
-            self.log_exit('System config yaml must contain resources section with '
-                          + script_name + ' path.')
-        if script_name not in self.sys_cnf['resources']:
-            self.log_exit('System config resources section must contain '
-                          + script_name + ' info (with a path to the tool).')
-        tool_config = self.sys_cnf['resources'][script_name]
-        if 'path' not in tool_config:
-            self.log_exit(script_name + ' section in the system config must contain a path to the tool.')
-        tool_path = tool_config['path']
-        if not verify_file(tool_path, script_name):
-            exit(1)
-        return executable + ' %s ' + tool_path
-
-
-    def _get_tool_cmdline(self, tool_name, extra_warn=''):
-        tool_path = which(tool_name) or None
-
-        if not 'resources' in self.sys_cnf \
-                or tool_name not in self.sys_cnf['resources'] \
-                or 'path' not in self.sys_cnf['resources'][tool_name]:
-            if tool_path:
-                return tool_path
+    def proc_line(line):
+        if line.startswith('#'):
+            return line
+        else:
+            tokens = line.split()
+            alt_field = remove_quotes(tokens[4])
+            alts = alt_field.split(',')
+            if len(alts) > 1:
+                for alt in set(alts):
+                    line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:8])
+                    return line
             else:
-                self.log_err(tool_name + ' executable was not found. '
-                             'You can either specify path in the system config, or load into your '
-                             'PATH environment variable.')
-                if extra_warn:
-                    self.log_err(extra_warn)
-                return None
+                line = '\t'.join(tokens[:2] + ['.'] + tokens[3:8])
+                return line
 
-        tool_path = self.sys_cnf['resources'][tool_name]['path']
-        if verify_file(tool_path, tool_name):
+    return iterate_file(cnf, input_fpath, proc_line, 'split_gt')
+
+
+def filter_fields(cnf, input_fpath, work_dir):
+    step_greetings(cnf, 'Filtering incorrect fields.')
+
+    def proc_line(line):
+        if not line.startswith('#'):
+            if ',.' in line or '.,' in line:
+                fields = line.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                new_info_pairs = []
+                for p in info_pairs:
+                    if len(p) == 2:
+                        if p[1].endswith(',.'):
+                            p[1] = p[1][:-2]
+                        if p[1].startswith('.,'):
+                            p[1] = p[1][2:]
+                        new_info_pairs.append('='.join(p))
+                info_line = ';'.join(new_info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                return '\t'.join(fields)
+        return line
+
+    return iterate_file(cnf, input_fpath, proc_line, work_dir)
+
+
+def step_greetings(cnf, name):
+    info(cnf['log'], '')
+    info(cnf['log'], '-' * 70)
+    info(cnf['log'], name)
+    info(cnf['log'], '-' * 70)
+
+
+def _check_system_resources(cnf):
+    to_exit = False
+    if not which('java'):
+        err(cnf['log'], '\n* Warning: Java not found. You may want to run "module load java", '
+            'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
+        to_exit = True
+
+    if not which('perl'):
+        err(cnf['log'], '\n* Warning: Perl not found. You may want to run "module load perl", '
+            'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
+    if not _get_tool_cmdline(cnf, 'vcfannotate',
+                             extra_warn='You may want to load BCBio '
+                                        'with ". /group/ngs/bin/bcbio-prod.sh"'):
+        err(cnf['log'], '\n* Warning: skipping annotation with bed tracks.\n')
+
+    # print ''
+    # print 'In Waltham, run this as well:'
+    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
+    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+
+    resources = cnf.get('resources', None)
+    if not resources:
+        critical(cnf['log'], 'No "resources" section in system config.')
+
+    for name, data in resources.items():
+        if 'path' in data:
+            if not verify_file(data['path'], name):
+                to_exit = True
+
+    if to_exit:
+        exit()
+
+
+def _get_tool_cmdline(sys_cnf, tool_name, extra_warn=''):
+    tool_path = which(tool_name) or None
+
+    if not 'resources' in sys_cnf \
+            or tool_name not in sys_cnf['resources'] \
+            or 'path' not in sys_cnf['resources'][tool_name]:
+        if tool_path:
             return tool_path
         else:
-            self.log_err(tool_path + ' for ' + tool_name +
-                         ' does not exist or is not a file.')
+            err(tool_name + ' executable was not found. '
+                'You can either specify path in the system config, or load into your '
+                'PATH environment variable.')
+            if extra_warn:
+                err(extra_warn)
             return None
 
-
-    def snpsift_annotate(self, dbname, conf, input_fpath, work_dir):
-        self.step_greetings('Annotate with ' + dbname)
-
-        executable = self._get_java_tool_cmdline('snpsift')
-        db_path = conf.get('path')
-        annotations = conf.get('annotations', [])
-        # self.all_fields.extend(annotations)
-        anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
-        cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-        output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
-        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath,
-                                             work_dir, result_to_stdout=True)
-        def proc_line(line):
-            if not line.startswith('#'):
-                line = line.replace(' ', '_')
-                assert ' ' not in line
-            return line
-        output_fpath = self.iterate_file(output_fpath, proc_line, work_dir)
-        return output_fpath
-
-
-    def snpsift_db_nsfp(self, input_fpath, work_dir):
-        if 'db_nsfp' not in self.run_cnf:
-            return input_fpath
-
-        self.step_greetings('DB SNFP')
-
-        executable = self._get_java_tool_cmdline('snpsift')
-
-        db_path = self.run_cnf['db_nsfp'].get('path')
-        if not db_path:
-            self.log_exit('Please, provide a path to db nsfp file in run_config.')
-
-        annotations = self.run_cnf['db_nsfp'].get('annotations', [])
-        # self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
-        ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
-
-        cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
-        output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
-        return self._call_and_rename(cmdline, input_fpath, output_fpath, work_dir,
-                                     result_to_stdout=True)
-
-
-    def snpeff(self, input_fpath, work_dir):
-        if 'snpeff' not in self.run_cnf:
-            return input_fpath
-
-        self.step_greetings('SnpEff')
-
-        # self.all_fields.extend([
-        #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
-        #     "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
-        #     "EFF[*].TRID", "EFF[*].RANK"])
-
-        executable = self._get_java_tool_cmdline('snpeff')
-        ref_name = self.run_cnf['genome_build']
-        db_path = self.run_cnf['snpeff'].get('path')
-        assert db_path, 'Please, provide a path to db nsfp file in run_config.'
-
-        cmdline = ('{executable} eff -dataDir {db_path} -noStats -noLog -1 '
-                   '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
-
-        if self.run_cnf['snpeff'].get('clinical_reporting') or \
-                self.run_cnf['snpeff'].get('canonical'):
-            cmdline += ' -canon -hgvs '
-
-        if self.run_cnf['snpeff'].get('cancer'):
-            cmdline += ' -cancer '
-
-        output_fpath = intermediate_fname(input_fpath, 'snpEff', work_dir)
-        return self._call_and_rename(cmdline, input_fpath, output_fpath, work_dir,
-                                     result_to_stdout=True)
-
-
-    def tracks(self, track_path, input_fpath, work_dir):
-        field_name = splitext(basename(track_path))[0]
-
-        self.step_greetings('Intersecting with ' + field_name)
-
-        toolpath = self._get_tool_cmdline('vcfannotate')
-        if not toolpath:
-            self.log_err('WARNING: Skipping annotation with tracks: vcfannotate '
-                         'executable not found, you probably need to '
-                         'run the commandline:  . /group/ngs/bin/bcbio-prod.sh"')
-            return
-
-        # self.all_fields.append(field_name)
-
-        cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
-
-        output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
-        output_fpath = self._call_and_rename(cmdline, input_fpath, output_fpath,
-                                             work_dir, result_to_stdout=True)
-
-        # Set TRUE or FALSE for tracks
-        def proc_line(line):
-            if field_name in line:
-                if not line.startswith('#'):
-                    fields = line.split('\t')
-                    info_line = fields[7]
-                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    info_pairs = [[pair[0], ('TRUE' if pair[1] else 'FALSE')]
-                                  if pair[0] == field_name and len(pair) > 1
-                                  else pair for pair in info_pairs]
-                    info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    return '\t'.join(fields)
-            return line
-        return self.iterate_file(output_fpath, proc_line, work_dir)
-
-
-    def _get_gatk_version(self):
-        cmdline = self._get_java_tool_cmdline('gatk') + ' -version'
-
-        version = None
-        with subprocess.Popen(cmdline,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT,
-                              shell=True).stdout as stdout:
-            out = stdout.read().strip()
-            last_line = out.split('\n')[-1].strip()
-            # versions earlier than 2.4 do not have explicit version command,
-            # parse from error output from GATK
-            if out.find("ERROR") >= 0:
-                flag = "The Genome Analysis Toolkit (GATK)"
-                for line in last_line.split("\n"):
-                    if line.startswith(flag):
-                        version = line.split(flag)[-1].split(",")[0].strip()
-            else:
-                version = last_line
-        if not version:
-            self.log_print('WARNING: could not determine Gatk version, using 1.0')
-            return '1.0'
-        if version.startswith("v"):
-            version = version[1:]
-        return version
-
-
-    def _gatk_major_version(self):
-        """Retrieve the GATK major version, handling multiple GATK distributions.
-
-        Has special cases for GATK nightly builds, Appistry releases and
-        GATK prior to 2.3.
-        """
-        full_version = self._get_gatk_version()
-        # Working with a recent version if using nightlies
-        if full_version.startswith("nightly-"):
-            return "2.8"
-        parts = full_version.split("-")
-        if len(parts) == 4:
-            appistry_release, version, subversion, githash = parts
-        elif len(parts) == 3:
-            version, subversion, githash = parts
-        # version was not properly implemented in earlier GATKs
-        else:
-            version = "2.3"
-        if version.startswith("v"):
-            version = version[1:]
-        return version
-
-
-    def _gatk_type(self):
-        """Retrieve type of GATK jar, allowing support for older GATK lite.
-        Returns either `lite` (targeting GATK-lite 2.3.9) or `restricted`,
-        the latest 2.4+ restricted version of GATK.
-        """
-        if LooseVersion(self._gatk_major_version()) > LooseVersion("2.3"):
-            return "restricted"
-        else:
-            return "lite"
-
-    def gatk(self, input_fpath, bam_fpath, work_dir):
-        if 'gatk' not in self.run_cnf:
-            return input_fpath
-
-        self.step_greetings('GATK')
-
-        executable = self._get_java_tool_cmdline('gatk')
-
-        output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
-
-        ref_fpath = self.run_cnf['reference']
-
-        cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantAnnotator'
-                   ' --variant {input_fpath} -o {output_fpath}').format(**locals())
-        if bam_fpath:
-            cmdline += ' -I ' + bam_fpath
-
-        gatk_annos_dict = {
-            'Coverage': 'DP',
-            'BaseQualityRankSumTest': 'BaseQRankSum',
-            'FisherStrand': 'FS',
-            'GCContent': 'GC',
-            'HaplotypeScore': 'HaplotypeScore',
-            'HomopolymerRun': 'HRun',
-            'RMSMappingQuality': 'MQ',
-            'MappingQualityRankSumTest': 'MQRankSum',
-            'MappingQualityZero': 'MQ0',
-            'QualByDepth': 'QD',
-            'ReadPosRankSumTest': 'ReadPosRankSum'
-        }
-        annotations = self.run_cnf['gatk'].get('annotations', [])
-
-        # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
-        for ann in annotations:
-            if ann == 'DepthOfCoverage' and self._gatk_type() == 'restricted':
-                self.log_print('Notice: in the restricted Gatk version, DepthOfCoverage is renamed to Coverage. '
-                               'Using the name Coverage.\n')
-                ann = 'Coverage'
-            if ann == 'Coverage' and self._gatk_type() == 'lite':
-                self.log_print('Notice: in the lite Gatk version, the Coverage annotation goes by '
-                               'name of DepthOfCoverage. '
-                               'In the system config, the lite version of Gatk is specified; using DepthOfCoverage.\n')
-                ann = 'DepthOfCoverage'
-            cmdline += " -A " + ann
-
-        output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
-        return self._call_and_rename(cmdline, input_fpath, output_fpath,
-                                     work_dir, result_to_stdout=False,
-                                     to_remove=[output_fpath + '.idx',
-                                                input_fpath + '.idx'])
-
-
-    def rename_fields(self, inp_tsv_fpath, field_map, work_dir):
-        if self.run_cnf.get('save_intermediate'):
-            self.step_greetings('Renaming fields.')
-
-        with open(inp_tsv_fpath) as f:
-            first_line = f.readline()[1:]
-        fields = first_line.split()
-        new_fields = [field_map.get(f, f) for f in fields]
-        new_first_line = '\t'.join(new_fields)
-
-        if self.run_cnf.get('save_intermediate'):
-            out_tsv_fpath = intermediate_fname(work_dir, inp_tsv_fpath, 'renamed')
-        else:
-            out_tsv_fpath = inp_tsv_fpath
-
-        with file_transaction(out_tsv_fpath) as tx_out_fpath:
-            with open(tx_out_fpath, 'w') as out:
-                out.write(new_first_line + '\n')
-                with open(inp_tsv_fpath) as f:
-                    for i, l in enumerate(f):
-                        if i >= 1:
-                            out.write(l)
-
-        if not self.run_cnf.get('save_intermediate'):
-            os.rename(out_tsv_fpath, inp_tsv_fpath)
-            return inp_tsv_fpath
-        else:
-            return out_tsv_fpath
-
-
-    def extract_fields(self, vcf_fpath, work_dir, sample_name=None):
-        self.step_greetings('Extracting fields')
-
-        name, _ = splitext_plus(vcf_fpath)
-        tsv_fpath = name + '.tsv'
-
-        if self.run_cnf.get('save_intermediate') and self.run_cnf.get('reuse_intermediate'):
-            if file_exists(tsv_fpath):
-                self.log_print(tsv_fpath + ' exists, reusing')
-                return tsv_fpath
-
-        all_format_fields = set()
-
-        # Split FORMAT field and sample fields
-        def proc_line(l):
-            if l.startswith('#'):
-                return l
-            vals = l.strip().split('\t')
-            if len(vals) <= 9:
-                return l
-            info = vals[7]
-            format_fields = vals[8].split(':')
-            sample_fields = vals[9].split(':')
-            for f, s in zip(format_fields, sample_fields):
-                if f not in ['DP', 'MQ']:
-                    if f == 'GT':
-                        s = '"' + s + '"'
-                    f = 'gt_' + f
-                    info += ';' + f + '=' + s
-                    all_format_fields.add(f)
-            l = '\t'.join(vals[:7] + [info])
-            return l
-        split_format_fields_vcf = self.iterate_file(vcf_fpath, proc_line, work_dir, 'split_format_fields',
-                                                    keep_original_if_not_save_intermediate=True)
-
-        manual_tsv_fields = self.run_cnf.get('tsv_fields')
-        if manual_tsv_fields:
-            fields = [rec.keys()[0] for rec in manual_tsv_fields]
-        # else:
-            # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
-            # basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
-            # manual_annots = filter(lambda f: f and f != 'ID', all_fields)
-            # fields = (basic_fields + all_format_fields + manual_annots + self.run_cnf.get('additional_tsv_fields', []))
-        else:
-            return None
-
-        anno_line = ' '.join(fields)
-        snpsift_cmline = self._get_java_tool_cmdline('snpsift')
-
-        if not which('perl'):
-            exit('Perl executable required, maybe you need to run "module load perl"?')
-        src_fpath = join(dirname(realpath(__file__)), 'src')
-        vcfoneperline_cmline = 'perl ' + join(src_fpath, 'vcfOnePerLine.pl')
-        cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
-
-        with file_transaction(tsv_fpath) as tx_tsv_fpath:
-            self.log_print(cmdline + ' < ' + (split_format_fields_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
-            res = subprocess.call(cmdline,
-                                  stdin=open(split_format_fields_vcf or vcf_fpath),
-                                  stdout=open(tx_tsv_fpath, 'w'), shell=True)
-
-        if split_format_fields_vcf:
-            os.remove(split_format_fields_vcf)
-
-        self.log_print('')
-        if res != 0:
-            self.log_exit('Command returned status ' + str(res) +
-                          ('. Log in ' + self.log if self.log else '.'))
-        return tsv_fpath
-
-
-    def filter_ensemble(self, input_fpath):
-        self.step_greetings('Extracting dataset by filename, filtering ensemble reject line.')
-        return self.iterate_file(input_fpath, lambda l: 'REJECT' not in l, 'pass')
-
-
-    def iterate_file(self, input_fpath, proc_line_fun, work_dir, suffix=None,
-                     keep_original_if_not_save_intermediate=False):
-        output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
-
-        if suffix and self.run_cnf.get('save_intermediate') \
-                and self.run_cnf.get('reuse_intermediate'):
-            if file_exists(output_fpath):
-                self.log_print(output_fpath + ' exists, reusing')
-                return output_fpath
-
-        with file_transaction(output_fpath) as tx_fpath:
-            with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
-                for i, line in enumerate(vcf):
-                    clean_line = line.strip()
-                    if clean_line:
-                        new_l = proc_line_fun(clean_line)
-                        if new_l is not None:
-                            out.write(new_l + '\n')
-                    else:
-                        out.write(line)
-
-        if not suffix:
-            os.rename(output_fpath, input_fpath)
-            output_fpath = input_fpath
-        else:
-            if not self.run_cnf.get('save_intermediate') and\
-                    not keep_original_if_not_save_intermediate:
-                os.remove(input_fpath)
-        self.log_print('Saved to ' + output_fpath)
-        return output_fpath
-
-
-    def split_genotypes(self, input_fpath):
-        self.step_greetings('Splitting genotypes.')
-
-        def proc_line(line):
-            if line.startswith('#'):
-                return line
-            else:
-                tokens = line.split()
-                alt_field = remove_quotes(tokens[4])
-                alts = alt_field.split(',')
-                if len(alts) > 1:
-                    for alt in set(alts):
-                        line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:8])
-                        return line
-                else:
-                    line = '\t'.join(tokens[:2] + ['.'] + tokens[3:8])
-                    return line
-
-        return self.iterate_file(input_fpath, proc_line, 'split_gt')
-
-
-    def filter_fields(self, input_fpath, work_dir):
-        self.step_greetings('Filtering incorrect fields.')
-
-        def proc_line(line):
-            if not line.startswith('#'):
-                if ',.' in line or '.,' in line:
-                    fields = line.split('\t')
-                    info_line = fields[7]
-                    info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                    new_info_pairs = []
-                    for p in info_pairs:
-                        if len(p) == 2:
-                            if p[1].endswith(',.'):
-                                p[1] = p[1][:-2]
-                            if p[1].startswith('.,'):
-                                p[1] = p[1][2:]
-                            new_info_pairs.append('='.join(p))
-                    info_line = ';'.join(new_info_pairs)
-                    fields = fields[:7] + [info_line] + fields[8:]
-                    return '\t'.join(fields)
-            return line
-
-        return self.iterate_file(input_fpath, proc_line, work_dir)
-
-
-    def dots_to_empty_cells(self, tsv_fpath):
-        """Put dots instead of empty cells in order to view TSV with column -t
-        """
-        def proc_line(l):
-            while '\t\t' in l:
-                l = l.replace('\t\t', '\t.\t')
-            return l
-        return self.iterate_file(tsv_fpath, proc_line, 'dots')
+    tool_path = sys_cnf['resources'][tool_name]['path']
+    if verify_file(tool_path, tool_name):
+        return tool_path
+    else:
+        err(tool_path + ' for ' + tool_name + ' does not exist or is not a file.')
+        return None
 
 
 def join_parent_conf(child_conf, parent_conf):
@@ -978,18 +739,156 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
-def remove_quotes(s):
-    if s and s[0] == '"':
-        s = s[1:]
-    if s and s[-1] == '"':
-        s = s[:-1]
-    return s
+def _read_samples_info(cnf):
+    if 'details' not in cnf:
+        critical(cnf['log'], 'ERROR: Run config does not contain "details" section.')
+
+    cnf['output_dir'] = cnf.get('output_dir', os.getcwd())
+    cnf['filter_reject'] = cnf.get('filter_reject', False)
+    cnf['split_samples'] = cnf.get('split_samples', False)
+
+    all_samples = OrderedDict()
+
+    details = cnf['details']
+    del cnf['details']
+
+    for vcf_conf in details:
+        if 'vcf' not in vcf_conf:
+            critical(cnf['log'], 'ERROR: A section in details does not contain field "vcf".')
+        vcf = vcf_conf['vcf']
+        if not verify_file(vcf, 'Input file'):
+            exit(1)
+
+        join_parent_conf(vcf_conf, cnf)
+
+        # multiple samples
+        if 'samples' in vcf_conf or vcf_conf.get('split_samples'):
+            # check bams if exist
+            if 'samples' in vcf_conf:
+                for header_sample_name, sample_conf in vcf_conf['samples'].items():
+                    join_parent_conf(sample_conf, vcf_conf)
+
+                    bam = sample_conf.get('bam')
+                    if bam and not verify_file(bam, 'Bam file'):
+                        exit()
+
+            rec_samples = vcf_conf.get('samples') or OrderedDict()
+            vcf_header_samples = _read_sample_names_from_vcf(vcf)
+
+            # compare input sample names to vcf header
+            if rec_samples:
+                for input_sample_name, sample_conf in rec_samples.items():
+                    if input_sample_name not in vcf_header_samples:
+                        critical(cnf['log'], 'ERROR: sample ' + input_sample_name +
+                                 ' is not in VCF header ' + vcf_header_samples + '\n'
+                                 'Available samples: ' + ', '.join(vcf_header_samples))
+            # split vcf
+            for header_sample_name in vcf_header_samples:
+                if header_sample_name not in rec_samples:
+                    rec_samples[header_sample_name] = dict(vcf_conf)
+                if header_sample_name in all_samples:
+                    critical(cnf['log'], 'ERROR: duplicated sample name: ' + header_sample_name)
+
+                data = rec_samples[header_sample_name]
+                all_samples[header_sample_name] = data
+
+                output_dirpath = realpath(data['output_dir'])
+                safe_mkdir(output_dirpath, 'output_dir for ' + header_sample_name)
+                work_dirpath = join(output_dirpath, 'intermediate')
+                safe_mkdir(work_dirpath, 'intermediate directory')
+                data['work_dir'] = work_dirpath
+
+                extracted_vcf = extract_sample(cnf, vcf, header_sample_name, work_dirpath)
+                rec_samples[header_sample_name]['vcf'] = extracted_vcf
+
+        else:  # single sample
+            if 'bam' in vcf_conf:
+                if not verify_file(vcf_conf['bam']):
+                    exit()
+
+            sample_name = splitext(basename(vcf))[0]
+
+            output_dirpath = realpath(vcf_conf['output_dir'])
+            safe_mkdir(output_dirpath, 'output_dir for ' + sample_name)
+            work_dirpath = join(output_dirpath, 'intermediate')
+            safe_mkdir(work_dirpath, 'intermediate directory')
+            vcf_conf['work_dir'] = work_dirpath
+
+            all_samples[sample_name] = vcf_conf
+
+    return all_samples
+
+
+# def _copy_vcf_to_final_dir(self, inp_fpath):
+#     fname = basename(inp_fpath)
+#
+#     # if self.output_dir != realpath(dirname(inp_fpath)):
+#         # if self.run_cnf.get('keep_intermediate'):
+#         # new_fname = fname
+#         # else:
+#         #     new_fname = self.make_intermediate(fname, 'anno')
+#     new_fpath = join(self.work_dir, fname)
+#     if os.path.exists(new_fpath):
+#         os.remove(new_fpath)
+#     shutil.copyfile(inp_fpath, new_fpath)
+#     return new_fpath
+#     # else:
+#     #     if not self.run_cnf.get('keep_intermediate'):
+#     #         new_fpath = join(self.output_dir, self.make_intermediate(fname, 'anno'))
+#     #         shutil.copyfile(inp_fpath, new_fpath)
+#     #         return new_fpath
+#     #     else:
+#     #         return inp_fpath
+
+
+def _read_sample_names_from_vcf(vcf_fpath):
+    basic_fields = next(l.strip()[1:].split() for l in open(vcf_fpath)
+                        if l.strip().startswith('#CHROM'))
+    return basic_fields[9:]
+
+
+def load_genome_resources(cnf):
+    if 'genome' not in cnf:
+        critical(cnf['log'], '"genome" is not specified in run config.')
+    if 'genomes' not in cnf:
+        critical(cnf['log'], '"genomes" section is not specified in system config.')
+    genome_name = cnf['genome']
+    if genome_name not in cnf['genomes']:
+        critical(genome_name + ' is not in "genomes section" of system config.')
+
+    genome_cnf = cnf['genomes'][genome_name].copy()
+    cnf['genome'] = genome_cnf
+    del cnf['genomes']
+    genome_cnf['name'] = genome_name
+
+    if 'seq' not in genome_cnf:
+        critical(cnf['log'], 'Please, provide path to the reference file (seq).')
+    if not verify_file(genome_cnf['seq'], 'Reference seq'):
+        exit(1)
+
+    info(cnf['log'], 'Loaded resources for ' + genome_cnf['name'])
+
+
+def process_config(system_config_path, run_config_path):
+    sys_cnf = load(open(system_config_path), Loader=Loader)
+    run_cnf = load(open(run_config_path), Loader=Loader)
+
+    info('Loaded system config ' + system_config_path)
+    info('Loaded run config ' + run_config_path)
+
+    config = dict(run_cnf.items() + sys_cnf.items())
+
+    _check_system_resources(config)
+
+    load_genome_resources(config)
+
+    return config, _read_samples_info(config)
 
 
 def main(args):
     if len(args) < 1:
-        exit('Usage: python ' + __file__ + ' system_info.yaml run_info.yaml\n'
-             '    or python ' + __file__ + ' run_info.yaml')
+        exit('Usage: python ' + __file__ + ' run_info.yaml\n'
+             '    or python ' + __file__ + ' system_info.yaml run_info.yaml')
 
     if len(args) == 1:
         run_config_path = args[0]
@@ -1014,17 +913,11 @@ def main(args):
     if to_exit:
         exit()
 
-    annotator = Annotator(system_config_path, run_config_path)
-
-    # print ''
-    # print 'In Waltham, run this as well:'
-    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
-
+    config, samples = process_config(system_config_path, run_config_path)
     try:
-        annotator.annotate()
+        annotate(samples, config.get('parallel'))
     except KeyboardInterrupt:
-        exit(1)
+        exit()
 
 
 if __name__ == '__main__':
