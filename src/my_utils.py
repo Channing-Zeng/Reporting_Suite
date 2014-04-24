@@ -3,8 +3,9 @@ import subprocess
 import os
 from os.path import join, basename, isfile, getsize, exists
 from distutils.version import LooseVersion
-from annotate import iterate_file
-from src.utils import add_suffix
+
+from src.transaction import file_transaction
+from src.utils import add_suffix, file_exists
 
 
 def _get_gatk_version(tool_cmdline):
@@ -69,15 +70,16 @@ def get_gatk_type(tool_cmdline):
 
 
 def err(log, msg=None):
-    if not msg:
+    if msg is None:
         msg, log = log, None
     if log:
         open(log, 'a').write('\n' + msg + '\n')
     sys.stderr.write('\n' + msg + '\n')
+    sys.stderr.flush()
 
 
 def critical(log, msg=None):
-    if not msg:
+    if msg is None:
         msg, log = log, None
     if log:
         open(log, 'a').write('\n' + msg + '\n')
@@ -85,7 +87,7 @@ def critical(log, msg=None):
 
 
 def info(log, msg=None):
-    if not msg:
+    if msg is None:
         msg, log = log, None
     print(msg)
     if log:
@@ -127,6 +129,38 @@ def safe_mkdir(dirpath, descriptive_name):
         except OSError:
             exit('Parent directory for ' + descriptive_name +
                  ' ' + dirpath + ' probably does not exist.')
+
+
+def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
+                 keep_original_if_not_keep_intermediate=False):
+    output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
+
+    if suffix and cnf.get('keep_intermediate') \
+            and cnf.get('reuse_intermediate'):
+        if file_exists(output_fpath):
+            info(cnf['log'], output_fpath + ' exists, reusing')
+            return output_fpath
+
+    with file_transaction(output_fpath) as tx_fpath:
+        with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
+            for i, line in enumerate(vcf):
+                clean_line = line.strip()
+                if clean_line:
+                    new_l = proc_line_fun(clean_line)
+                    if new_l is not None:
+                        out.write(new_l + '\n')
+                else:
+                    out.write(line)
+
+    if not suffix:
+        os.rename(output_fpath, input_fpath)
+        output_fpath = input_fpath
+    else:
+        if not cnf.get('keep_intermediate') and\
+                not keep_original_if_not_keep_intermediate:
+            os.remove(input_fpath)
+    info(cnf['log'], 'Saved to ' + output_fpath)
+    return output_fpath
 
 
 def intermediate_fname(work_dir, fname, suf):

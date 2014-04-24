@@ -1,16 +1,10 @@
 #!/usr/bin/env python
-from collections import OrderedDict
-from genericpath import isdir
-
 import sys
-if sys.version_info[:2] < (2, 5):
-    exit('Python version 2.5 and higher is supported (you running ' +
-         '.'.join(map(str, sys.version_info[:3])) + ')\n')
-
 import subprocess
 import shutil
 import os
-from os.path import join, splitext, basename, realpath, isfile, dirname
+from os.path import join, splitext, basename, realpath, isdir, isfile, dirname
+from collections import OrderedDict
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -20,7 +14,7 @@ except ImportError:
 from src.utils import which, splitext_plus, add_suffix, file_exists
 from src.transaction import file_transaction
 from src.my_utils import get_gatk_type, err, critical, info, \
-    intermediate_fname, verify_file, safe_mkdir, remove_quotes
+    intermediate_fname, verify_file, safe_mkdir, remove_quotes, iterate_file
 
 
 def annotate(samples, parallel=False):
@@ -79,8 +73,6 @@ def annotate_one(sample_name, cnf, multiple_samples=False):
 
         with open(join(cnf['work_dir'], sample_name + '_config.yaml'), 'w') as f:
             f.write(dump(cnf, Dumper=Dumper))
-        if os.path.isfile(self.log):
-            os.remove(self.log)
 
     if multiple_samples:
         info('')
@@ -213,7 +205,7 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
 
     if cnf.get('keep_intermediate') and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
-            info(cnf['log'], output_fpath + ' exists, reusing')
+            info(cnf.get('log'), output_fpath + ' exists, reusing')
             return output_fpath
 
     err_fpath = os.path.join(work_dir, input_fpath + 'annotate_py_err.tmp')
@@ -223,10 +215,10 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
 
     with file_transaction(output_fpath) as tx_out_fpath:
         if result_to_stdout:
-            info(cnf['log'], cmdline + ' > ' + tx_out_fpath)
+            info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
         else:
             cmdline = cmdline.replace(output_fpath, tx_out_fpath)
-            info(cnf['log'], cmdline)
+            info(cnf.get('log'), cmdline)
 
         if cnf['verbose']:
             proc = subprocess.Popen(
@@ -236,17 +228,17 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
 
             if proc.stdout:
                 for line in iter(proc.stdout.readline, ''):
-                    info(cnf['log'], '   ' + line.strip())
+                    info(cnf.get('log'), '   ' + line.strip())
             elif proc.stderr:
                 for line in iter(proc.stderr.readline, ''):
-                    info(cnf['log'], '   ' + line.strip())
+                    info(cnf.get('log'), '   ' + line.strip())
 
             ret_code = proc.wait()
             if ret_code != 0:
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                critical(cnf['log'], 'Command returned status ' + str(ret_code) +
+                critical(cnf.get('log'), 'Command returned status ' + str(ret_code) +
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
         else:
             res = subprocess.call(
@@ -255,18 +247,18 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
                 stderr=open(err_fpath, 'a'))
             if res != 0:
                 with open(err_fpath) as err_f:
-                    info(cnf['log'], '')
-                    info(cnf['log'], err_f.read())
-                    info(cnf['log'], '')
+                    info(cnf.get('log'), '')
+                    info(cnf.get('log'), err_f.read())
+                    info(cnf.get('log'), '')
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                critical(cnf['log'], 'Command returned status ' + str(res) +
+                critical(cnf.get('log'), 'Command returned status ' + str(res) +
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
                 if 'log' in cnf:
                     with open(err_fpath) as err_f, \
-                         open(cnf['log'], 'a') as log_f:
+                         open(cnf.get('log'), 'a') as log_f:
                         log_f.write('')
                         log_f.write(err_f.read())
                         log_f.write('')
@@ -277,7 +269,7 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
 
     if not cnf.get('keep_intermediate') and keep_original_if_not_keep_intermediate:
         os.remove(input_fpath)
-    info(cnf['log'], 'Saved to ' + output_fpath)
+    info(cnf.get('log'), 'Saved to ' + output_fpath)
     return output_fpath
 
 
@@ -422,7 +414,8 @@ def tracks(cnf, track_path, input_fpath, work_dir):
                 info_pairs = [[pair[0], ('TRUE' if pair[1] else 'FALSE')]
                               if pair[0] == field_name and len(pair) > 1
                               else pair for pair in info_pairs]
-                info_line = ';'.join('='.join(pair) if len(pair) == 2 else pair[0] for pair in info_pairs)
+                info_line = ';'.join('='.join(pair) if len(pair) == 2
+                                     else pair[0] for pair in info_pairs)
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
         return line
@@ -553,10 +546,13 @@ def extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     if manual_tsv_fields:
         fields = [rec.keys()[0] for rec in manual_tsv_fields]
     # else:
-        # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath) if l.strip().startswith('#CHROM'))
-        # basic_fields = [f for f in first_line[:9] if f != 'INFO' and f != 'FORMAT' and f != sample_name]
+        # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
+        #   if l.strip().startswith('#CHROM'))
+        # basic_fields = [f for f in first_line[:9] if f != 'INFO'
+        #   and f != 'FORMAT' and f != sample_name]
         # manual_annots = filter(lambda f: f and f != 'ID', all_fields)
-        # fields = (basic_fields + all_format_fields + manual_annots + self.run_cnf.get('additional_tsv_fields', []))
+        # fields = (basic_fields + all_format_fields + manual_annots +
+        #    self.run_cnf.get('additional_tsv_fields', []))
     else:
         return None
 
@@ -570,7 +566,8 @@ def extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
     with file_transaction(tsv_fpath) as tx_tsv_fpath:
-        info(cnf['log'], cmdline + ' < ' + (split_format_fields_vcf or vcf_fpath) + ' > ' + tx_tsv_fpath)
+        info(cnf['log'], cmdline + ' < ' + (split_format_fields_vcf
+                                            or vcf_fpath) + ' > ' + tx_tsv_fpath)
         res = subprocess.call(cmdline,
                               stdin=open(split_format_fields_vcf or vcf_fpath),
                               stdout=open(tx_tsv_fpath, 'w'), shell=True)
@@ -588,38 +585,6 @@ def extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 def filter_ensemble(cnf, input_fpath):
     step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
     return iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
-
-
-def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
-                 keep_original_if_not_keep_intermediate=False):
-    output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
-
-    if suffix and cnf.get('keep_intermediate') \
-            and cnf.get('reuse_intermediate'):
-        if file_exists(output_fpath):
-            info(cnf['log'], output_fpath + ' exists, reusing')
-            return output_fpath
-
-    with file_transaction(output_fpath) as tx_fpath:
-        with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
-            for i, line in enumerate(vcf):
-                clean_line = line.strip()
-                if clean_line:
-                    new_l = proc_line_fun(clean_line)
-                    if new_l is not None:
-                        out.write(new_l + '\n')
-                else:
-                    out.write(line)
-
-    if not suffix:
-        os.rename(output_fpath, input_fpath)
-        output_fpath = input_fpath
-    else:
-        if not cnf.get('keep_intermediate') and\
-                not keep_original_if_not_keep_intermediate:
-            os.remove(input_fpath)
-    info(cnf['log'], 'Saved to ' + output_fpath)
-    return output_fpath
 
 
 def split_genotypes(cnf, input_fpath):
@@ -669,10 +634,10 @@ def filter_fields(cnf, input_fpath, work_dir):
 
 
 def step_greetings(cnf, name):
-    info(cnf['log'], '')
-    info(cnf['log'], '-' * 70)
-    info(cnf['log'], name)
-    info(cnf['log'], '-' * 70)
+    info(cnf.get('log'), '')
+    info(cnf.get('log'), '-' * 70)
+    info(cnf.get('log'), name)
+    info(cnf.get('log'), '-' * 70)
 
 
 def _check_system_resources(cnf):
@@ -693,7 +658,8 @@ def _check_system_resources(cnf):
     # print ''
     # print 'In Waltham, run this as well:'
     # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
-    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/stable/0.7.6/tooldir/lib/perl5/site_perl'
+    # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/'
+    #       'stable/0.7.6/tooldir/lib/perl5/site_perl'
 
     resources = cnf.get('resources', None)
     if not resources:
@@ -787,7 +753,8 @@ def _read_samples_info(cnf):
                 if header_sample_name not in rec_samples:
                     rec_samples[header_sample_name] = dict(vcf_conf)
                 if header_sample_name in all_samples:
-                    critical(cnf['log'], 'ERROR: duplicated sample name: ' + header_sample_name)
+                    critical(cnf['log'], 'ERROR: duplicated sample name: '
+                                         + header_sample_name)
 
                 data = rec_samples[header_sample_name]
                 all_samples[header_sample_name] = data
@@ -866,7 +833,7 @@ def load_genome_resources(cnf):
     if not verify_file(genome_cnf['seq'], 'Reference seq'):
         exit(1)
 
-    info(cnf['log'], 'Loaded resources for ' + genome_cnf['name'])
+    info('Loaded resources for ' + genome_cnf['name'])
 
 
 def process_config(system_config_path, run_config_path):
@@ -890,10 +857,16 @@ def main(args):
         exit('Usage: python ' + __file__ + ' run_info.yaml\n'
              '    or python ' + __file__ + ' system_info.yaml run_info.yaml')
 
+    if sys.version_info[:2] < (2, 5):
+        exit('Python version 2.5 and higher is supported (you are running ' +
+             '.'.join(map(str, sys.version_info[:3])) + ')\n')
+
     if len(args) == 1:
         run_config_path = args[0]
-        system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
-        sys.stderr.write('Notice: using system_info_rask.yaml as a default tools configutation file.\n\n')
+        system_config_path = join(dirname(realpath(__file__)),
+                                  'system_info_rask.yaml')
+        sys.stderr.write('Notice: using system_info_rask.yaml as a default'
+                         ' tools configutation file.\n\n')
     else:
         system_config_path = args[0]
         run_config_path = args[1]
@@ -905,10 +878,12 @@ def main(args):
 
     to_exit = False
     if not system_config_path.endswith('.yaml'):
-        sys.stderr.write(system_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+        sys.stderr.write(system_config_path + ' does not end with .yaml, '
+                                              'maybe incorrect parameter?\n')
         to_exit = True
     if not run_config_path.endswith('.yaml'):
-        sys.stderr.write(run_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+        sys.stderr.write(run_config_path + ' does not end with .yaml,'
+                                           ' maybe incorrect parameter?\n')
         to_exit = True
     if to_exit:
         exit()
