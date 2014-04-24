@@ -12,9 +12,9 @@ resources:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /group/ngs/src/snpEff/SnpSift.jar
   bcbfools:
-    path: /group/ngs/src/bcftools
+    path: /group/ngs/src/bcftools/bcftools
   bcf_plot_stats:
-    path: /group/ngs/src/plot-vcfstats
+    path: /group/ngs/src/bcftools/plot-vcfstats
 
 genomes:
   hg19:
