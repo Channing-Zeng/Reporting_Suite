@@ -1045,7 +1045,7 @@ def _check_quality_control_config(cnf):
             err('Empty field for quality_control databases')
             to_exit = True
         elif file_exists(db):
-            if not verify_file(db):
+            if not verify_file(db, 'Vcf'):
                 to_exit = True
             dbs_dict[basename(db)] = db
         elif db not in cnf['genome']:
