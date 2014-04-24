@@ -52,8 +52,10 @@ def annotate(samples, parallel=False):
             info(cnf['log'], sample_name + ':')
             info(cnf['log'], '  ' + vcf)
             info(cnf['log'], '  ' + tsv)
-            info(cnf['log'], '  ' + qc_txt)
-            info(cnf['log'], '  ' + qc_plots)
+            if qc_txt:
+                info(cnf['log'], '  ' + qc_txt)
+            if qc_plots:
+                info(cnf['log'], '  ' + qc_plots)
 
     for name, data in samples.items():
         work_dirpath = data['work_dir']
@@ -305,7 +307,6 @@ def annotate_one(sample_name, cnf, multiple_samples=False):
     if 'quality_control' in cnf:
         txt_report_fpath = gatk_qc(cnf, final_vcf_fpath)
         plots_dirpath = bcftools_qc(cnf, final_vcf_fpath)
-
         info(cnf['log'], 'Saved quality control text report to ' + txt_report_fpath)
         info(cnf['log'], 'Saved quality control plots to ' + plots_dirpath)
 
@@ -365,9 +366,9 @@ def _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
             info(cnf.get('log'), output_fpath + ' exists, reusing')
             return output_fpath
 
-    err_f = None
+    err_fpath = None
     if cnf.get('work_dir'):
-        err_f, err_fpath = tempfile.mkstemp(dir=cnf.get('work_dir'), prefix='err_tmp')
+        _, err_fpath = tempfile.mkstemp(dir=cnf.get('work_dir'), prefix='err_tmp')
         to_remove.append(err_fpath)
 
     with file_transaction(output_fpath) as tx_out_fpath:
@@ -400,12 +401,13 @@ def _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
         else:
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(tx_out_fpath, 'w') if stdout_to_outputfile else os.fdopen(err_f, 'a'),
-                stderr=os.fdopen(err_f, 'a'))
+                stdout=open(tx_out_fpath, 'w') if stdout_to_outputfile else
+                    (open(err_fpath, 'a') if err_fpath else None),
+                stderr=open(err_fpath, 'a') if err_fpath else None)
             if res != 0:
-                with os.fdopen(err_f) as err_ff:
+                with open(err_fpath) as err_f:
                     info(cnf.get('log'), '')
-                    info(cnf.get('log'), err_ff.read())
+                    info(cnf.get('log'), err_f.read())
                     info(cnf.get('log'), '')
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
@@ -413,15 +415,13 @@ def _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
                 critical(cnf.get('log'), 'Command returned status ' + str(res) +
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
-                if 'log' in cnf:
-                    with os.fdopen(err_f, 'a') as err_ff, \
+                if 'log' in cnf and err_fpath:
+                    with open(err_fpath, 'a') as err_f, \
                          open(cnf.get('log'), 'a') as log_f:
                         log_f.write('')
-                        log_f.write(err_ff.read())
+                        log_f.write(err_f.read())
                         log_f.write('')
 
-    if err_f:
-        err_f.close()
     for fpath in to_remove:
         if fpath and isfile(fpath):
             os.remove(fpath)
