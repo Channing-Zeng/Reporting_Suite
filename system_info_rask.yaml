@@ -13,6 +13,8 @@ resources:
     path: /group/ngs/src/snpEff/SnpSift.jar
   bcbfools:
     path: /group/ngs/src/bcftools
+  bcf_plot_stats:
+    path: /group/ngs/src/plot-vcfstats
 
 genomes:
   hg19:
