@@ -36,7 +36,7 @@ genome: hg19                 # loads from hg19_rask.yaml
 verbose: True                 # Prints tools output
 keep_intermediate: True      # Keeps intermediate VCFs for each step
 reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-#parallel: True                # Process samples in parallel (requires joblib python package)
+parallel: True                # Process samples in parallel (requires joblib python package)
 
 #quality_control:
 #  databases: ['dbsnp', 'cosmic', '1000genomes']
