@@ -1,7 +1,7 @@
 import sys
 import subprocess
 import os
-from os.path import join, basename, isfile, getsize, exists
+from os.path import join, basename, isfile, isdir, getsize, exists
 from distutils.version import LooseVersion
 
 from src.transaction import file_transaction
@@ -110,10 +110,23 @@ def verify_file(fpath, description=''):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
     if not isfile(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' not a file.\n')
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a file.\n')
         return False
     if getsize(fpath) <= 0:
         sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
+        return False
+    return True
+
+
+def verify_dir(fpath, description=''):
+    if not fpath:
+        sys.stderr.write((description + ': d' if description else 'D') + 'ir name is empty.\n')
+        return False
+    if not exists(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        return False
+    if not isdir(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a directory.\n')
         return False
     return True
 
@@ -159,7 +172,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
         if not cnf.get('keep_intermediate') and\
                 not keep_original_if_not_keep_intermediate:
             os.remove(input_fpath)
-    info(cnf['log'], 'Saved to ' + output_fpath)
+    info(cnf.get('log'), 'Saved to ' + output_fpath)
     return output_fpath
 
 

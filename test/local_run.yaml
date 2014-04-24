@@ -11,8 +11,8 @@ split_samples: True          # Creates separate VCF for each sample.
                              # Default if provided with multiple BAMs.
 
 verbose: True                 # Prints tools output to stdout (if not in parallel)
-keep_intermediate: True      # Keeps intermediate VCFs for each step
-reuse_intermediate: True     # If an intermediate VCFs exists and is not empty,
+#keep_intermediate: True      # Keeps intermediate VCFs for each step
+#reuse_intermediate: True     # If an intermediate VCFs exists and is not empty,
                              # skip a step and reuse the file
 #parallel: True                # Process samples in parallel (requires joblib python package)
 

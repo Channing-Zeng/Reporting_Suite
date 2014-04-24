@@ -39,7 +39,7 @@ def _call(cmdline, log_filename=None):
 
 
 def run_gatk(input_filename, output_dir, gatk_dir, 
-         ref_path, dbsnp_db, cosmic_db, oneKG_db, intervals_bed=None):
+             ref_path, dbsnp_db, cosmic_db, oneKG_db, intervals_bed=None):
     report_filename = os.path.join(output_dir, 'gatk.report')
     log_filename = os.path.join(output_dir, 'gatk.log')
 

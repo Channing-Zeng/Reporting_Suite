@@ -27,7 +27,7 @@ details:
       bam:        /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
       output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate
 
-#output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/annotation
+# output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/annotation
 filter_reject: True           # Filters variants with REJECT in the FILTER field
 #split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
 
@@ -37,6 +37,13 @@ verbose: True                 # Prints tools output
 #keep_intermediate: True      # Keeps intermediate VCFs for each step
 #reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 parallel: True                # Process samples in parallel (requires joblib python package)
+
+#quality_control:
+#  databases: ['dbsnp', 'cosmic', '1000genomes']
+#  novelty: ['all', 'known', 'novel']
+#  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+#           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+#           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 snpeff:
   clinical_reporting: True    # Canonical transcripts + output in HGVS notation
@@ -109,7 +116,6 @@ custom_vcfs:
     - om_PATIENT
     - om_MutClass
     - om_MutClassPC
-
 
 tracks:  # requires vcfannotate (from bcbio-nextgen)
   #CpG Island
@@ -217,12 +223,3 @@ tsv_fields:
   - rptmk                         : KnownRepeat
   - dgvMerged                     : KnownCopyNumber
   - set                           : SourceVCF_forMergedRecInCombineVariants
-
-
-# Or built from the following:
-# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
-# 2. Explicitly defined annotations in this yaml file
-# 3. Alla SnpEff annotaions (EFF...)
-# 4. Track names (cpgIslandExt, rptmk,,)
-# 5. Additional fields:
-#additional_tsv_fields: []

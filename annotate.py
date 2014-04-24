@@ -5,6 +5,7 @@ import shutil
 import os
 from os.path import join, splitext, basename, realpath, isdir, isfile, dirname
 from collections import OrderedDict
+import tempfile
 from yaml import load, dump
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -14,7 +15,7 @@ except ImportError:
 from src.utils import which, splitext_plus, add_suffix, file_exists
 from src.transaction import file_transaction
 from src.my_utils import get_gatk_type, err, critical, info, \
-    intermediate_fname, verify_file, safe_mkdir, remove_quotes, iterate_file
+    intermediate_fname, verify_file, safe_mkdir, remove_quotes, iterate_file, verify_dir
 
 
 def annotate(samples, parallel=False):
@@ -41,17 +42,18 @@ def annotate(samples, parallel=False):
                         for sample_name, sample_cnf in samples.items())
         else:
             for sample_name, sample_cnf in samples.items():
-                vcf, tsv = annotate_one(sample_name, sample_cnf,
-                                        multiple_samples=True)
-                results.append([vcf, tsv])
+                results.append(
+                    annotate_one(sample_name, sample_cnf, multiple_samples=True))
 
         info('')
         info('*' * 70)
         info('Results for each samples:')
-        for (sample_name, cnf), (vcf, tsv) in zip(samples.items(), results):
+        for (sample_name, cnf), (vcf, tsv, qc_txt, qc_plots) in zip(samples.items(), results):
             info(cnf['log'], sample_name + ':')
             info(cnf['log'], '  ' + vcf)
             info(cnf['log'], '  ' + tsv)
+            info(cnf['log'], '  ' + qc_txt)
+            info(cnf['log'], '  ' + qc_plots)
 
     for name, data in samples.items():
         work_dirpath = data['work_dir']
@@ -65,6 +67,157 @@ def annotate(samples, parallel=False):
             shutil.rmtree(work_dirpath)
 
 
+def _parse_gatk_report(report_filename, databases, novelty, metrics):
+    database_col_name = 'CompRod'
+    database_col_id = None
+    novelty_col_name = 'Novelty'
+    novelty_col_id = None
+
+    report = dict()
+    comments_section = False
+    cur_header = []
+    cur_metrics_ids = []
+    for line in open(report_filename):
+        if not line.strip():
+            continue
+        if line.startswith('#'): # comment line
+            comments_section = True
+            continue
+        elif comments_section:
+            comments_section = False
+            cur_header = line.split()
+            cur_metrics_ids = []
+            database_col_id = cur_header.index(database_col_name)
+            novelty_col_id = cur_header.index(novelty_col_name)
+            for metric in metrics:
+                if metric in cur_header:
+                    cur_metrics_ids.append(cur_header.index(metric))
+                    if metric not in report:
+                        report[metric] = dict()
+        elif cur_metrics_ids:  # process lines only if there are metrics in current section
+            values = line.split()
+            cur_database = values[database_col_id]
+            cur_novelty = values[novelty_col_id]
+            if (cur_database not in databases) or (cur_novelty not in novelty):
+                continue
+            for metric_id in cur_metrics_ids:
+                if cur_database not in report[cur_header[metric_id]]:
+                    report[cur_header[metric_id]][cur_database] = dict()
+                report[cur_header[metric_id]][cur_database][cur_novelty] = values[metric_id]
+    return report
+
+
+def _make_final_report(report_dict, report_filename, sample_name,
+                        databases, novelty, metrics):
+    header = ['Metric', 'Novelty'] + databases + ['Average']
+    full_report = [header]
+    for cur_metric in metrics:
+        for cur_novelty in novelty:
+            cur_row = [cur_metric, cur_novelty]
+            sum = 0.0
+            for cur_database in databases:
+                if cur_metric == 'variantRatePerBp': # confusing name and value format
+                    cur_row[0] = 'basesPerVariant'
+                    cur_row.append("%.2f" % float(report_dict[cur_metric][cur_database][cur_novelty]))
+                else:
+                    cur_row.append(report_dict[cur_metric][cur_database][cur_novelty])
+                sum += float(cur_row[-1])
+            average = sum / len(databases)
+            cur_row.append("%.2f" % average)
+            full_report.append(cur_row)
+
+    col_widths = [0] * len(header)
+    for row in full_report:
+        for id, value in enumerate(row):
+            col_widths[id] = max(len(value), col_widths[id])
+
+    out = open(report_filename, 'w')
+    out.write('Sample name: ' + sample_name + '\n\n')
+    for row in full_report:
+        out.write('  '.join('%-*s' % (col_width, value) for col_width, value in zip(col_widths, row)) + "\r\n")
+    out.close()
+
+
+def _get_plots_from_bcftools(bcftools_report_dir, output_dir):
+    original_plots_names = ['indels.0.png', 'substitutions.0.png']
+    final_plots_names = ['indels.png', 'substitution.png']
+    for id, original_plot in enumerate(original_plots_names):
+        plot_src_filename = join(bcftools_report_dir, original_plot)
+        plot_dst_filename = join(output_dir, final_plots_names[id])
+        if os.path.exists(plot_src_filename):
+            shutil.copyfile(plot_src_filename, plot_dst_filename)
+
+
+def bcftools_qc(cnf, vcf_fpath):
+    step_greetings(cnf, 'Quality control plots')
+
+    work_dir = cnf['work_dir']
+
+    gzipped_fpath = join(work_dir, os.path.basename(vcf_fpath) + '.gz')
+    cmdline = 'bgzip %s -c ' % vcf_fpath
+    with file_transaction(gzipped_fpath) as tx:
+        subprocess.call(cmdline.split(), stdout=tx)
+
+    tbi_fpath = gzipped_fpath + '.tbi'
+    cmdline = 'tabix -p vcf %s ' % gzipped_fpath
+    with file_transaction(tbi_fpath) as tx:
+        subprocess.call(cmdline.split(), stdout=tx)
+
+    bcftools = _get_tool_cmdline(cnf, 'bcftools')
+    plot_vcfstats = _get_tool_cmdline(cnf, 'plot-vcfstats')
+    text_report_fpath = join(work_dir, 'bcftools.report')
+    viz_report_dir = join(work_dir, 'viz_report/')
+
+    cmdline = '%s stats %s ' % (bcftools, gzipped_fpath)
+    with file_transaction(text_report_fpath) as tx:
+        subprocess.call(cmdline.split(), stdout=tx)
+
+    cmdline = '%s -s %s -p %s --no-PDF ' % (plot_vcfstats, text_report_fpath, viz_report_dir)
+    subprocess.call(cmdline.split())
+
+    _get_plots_from_bcftools(viz_report_dir, cnf['output_dir'])
+    return viz_report_dir
+
+
+def gatk_qc(cnf, vcf_fpath):
+    step_greetings(cnf, 'Quality control reports')
+
+    log = cnf['log']
+    work_dir = cnf['work_dir']
+
+    qc_cnf = cnf['quality_control']
+    databases = qc_cnf.get('database_vcfs')
+    novelty = qc_cnf.get('novelty')
+    metrics = qc_cnf.get('metrics')
+
+    executable = _get_java_tool_cmdline(cnf, 'gatk')
+    ref_fpath = cnf['genome']['seq']
+    report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
+
+    cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
+               ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
+
+    if 'dbsnp' in databases:
+        cmdline += ' -D ' + databases['dbsnp']
+        del databases['dbsnp']
+    for db_name, db_path in databases.items():
+        cmdline += ' -comp:' + db_name + ' ' + db_path
+
+    _call_and_remove(
+        cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
+        to_remove=[vcf_fpath + '.idx'],
+        keep_original_if_not_keep_intermediate=True)
+
+    report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
+
+    final_report_fpath = join(cnf['output_dir'], cnf['name'] + '.qc.txt')
+
+    _make_final_report(report, final_report_fpath, cnf['name'],
+                       databases.keys(), novelty, metrics)
+    return final_report_fpath
+
+
+
 def annotate_one(sample_name, cnf, multiple_samples=False):
     if cnf.get('keep_intermediate'):
         cnf['log'] = join(cnf['work_dir'], sample_name + '_log.txt')
@@ -73,15 +226,17 @@ def annotate_one(sample_name, cnf, multiple_samples=False):
 
         with open(join(cnf['work_dir'], sample_name + '_config.yaml'), 'w') as f:
             f.write(dump(cnf, Dumper=Dumper))
+    else:
+        cnf['log'] = None
 
     if multiple_samples:
         info('')
         info('*' * 70)
         msg = '*' * 3 + ' Sample ' + sample_name + ' '
-        info(cnf['log'], msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
-        info(cnf['log'], 'VCF: ' + cnf['vcf'])
+        info(cnf.get('log'), msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
+        info(cnf.get('log'), 'VCF: ' + cnf['vcf'])
         if cnf.get('bam'):
-            info(cnf['log'], 'BAM: ' + cnf['bam'])
+            info(cnf.get('log'), 'BAM: ' + cnf['bam'])
 
     vcf_fpath = original_vcf_fpath = cnf['vcf']
     # sample['fields'] = []
@@ -145,18 +300,20 @@ def annotate_one(sample_name, cnf, multiple_samples=False):
         os.remove(final_tsv_fpath)
     shutil.copyfile(tsv_fpath, final_tsv_fpath)
 
-    # if self.run_cnf.get('keep_intermediate'):
-    #     corr_tsv_fpath = self.dots_to_empty_cells(tsv_fpath)
-    #     self.log_print('')
-    #     self.log_print('TSV file with dots saved to ' + corr_tsv_fpath)
-    #     self.log_print('View with the commandline:')
-    #     self.log_print('column -t ' + corr_tsv_fpath + ' | less -S')
+    txt_report_fpath = None
+    plots_dirpath = None
+    if 'quality_control' in cnf:
+        txt_report_fpath = gatk_qc(cnf, final_vcf_fpath)
+        plots_dirpath = bcftools_qc(cnf, final_vcf_fpath)
+
+        info(cnf['log'], 'Saved quality control text report to ' + txt_report_fpath)
+        info(cnf['log'], 'Saved quality control plots to ' + plots_dirpath)
 
     info(cnf['log'], '')
     info(cnf['log'], 'Saved final VCF to ' + final_vcf_fpath)
     info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
 
-    return final_vcf_fpath, final_tsv_fpath
+    return final_vcf_fpath, final_tsv_fpath, txt_report_fpath, plots_dirpath
 
 
 def remove_annotation(cnf, field_to_del, input_fpath, work_dir):
@@ -192,14 +349,14 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
 
     cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
           '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
-    _call_and_rename(cnf, cmd, input_fpath, output_fpath, work_dir,
-                     result_to_stdout=False,
+    _call_and_remove(cnf, cmd, input_fpath, output_fpath,
+                     stdout_to_outputfile=False,
                      keep_original_if_not_keep_intermediate=True)
     return output_fpath
 
 
-def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
-                     result_to_stdout=True, to_remove=None,
+def _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                     stdout_to_outputfile=True, to_remove=None,
                      keep_original_if_not_keep_intermediate=False):
     to_remove = to_remove or []
 
@@ -208,13 +365,13 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
             info(cnf.get('log'), output_fpath + ' exists, reusing')
             return output_fpath
 
-    err_fpath = os.path.join(work_dir, input_fpath + 'annotate_py_err.tmp')
-    to_remove.append(err_fpath)
-    if err_fpath and isfile(err_fpath):
-        os.remove(err_fpath)
+    err_f = None
+    if cnf.get('work_dir'):
+        err_f, err_fpath = tempfile.mkstemp(dir=cnf.get('work_dir'), prefix='err_tmp')
+        to_remove.append(err_fpath)
 
     with file_transaction(output_fpath) as tx_out_fpath:
-        if result_to_stdout:
+        if stdout_to_outputfile:
             info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
         else:
             cmdline = cmdline.replace(output_fpath, tx_out_fpath)
@@ -223,8 +380,8 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
         if cnf['verbose']:
             proc = subprocess.Popen(
                 cmdline.split(),
-                stdout=open(tx_out_fpath, 'w') if result_to_stdout else subprocess.PIPE,
-                stderr=subprocess.STDOUT if not result_to_stdout else subprocess.PIPE)
+                stdout=open(tx_out_fpath, 'w') if stdout_to_outputfile else subprocess.PIPE,
+                stderr=subprocess.STDOUT if not stdout_to_outputfile else subprocess.PIPE)
 
             if proc.stdout:
                 for line in iter(proc.stdout.readline, ''):
@@ -243,12 +400,12 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
         else:
             res = subprocess.call(
                 cmdline.split(),
-                stdout=open(tx_out_fpath, 'w') if result_to_stdout else open(err_fpath, 'a'),
-                stderr=open(err_fpath, 'a'))
+                stdout=open(tx_out_fpath, 'w') if stdout_to_outputfile else os.fdopen(err_f, 'a'),
+                stderr=os.fdopen(err_f, 'a'))
             if res != 0:
-                with open(err_fpath) as err_f:
+                with os.fdopen(err_f) as err_ff:
                     info(cnf.get('log'), '')
-                    info(cnf.get('log'), err_f.read())
+                    info(cnf.get('log'), err_ff.read())
                     info(cnf.get('log'), '')
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
@@ -257,17 +414,21 @@ def _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
                 if 'log' in cnf:
-                    with open(err_fpath) as err_f, \
+                    with os.fdopen(err_f, 'a') as err_ff, \
                          open(cnf.get('log'), 'a') as log_f:
                         log_f.write('')
-                        log_f.write(err_f.read())
+                        log_f.write(err_ff.read())
                         log_f.write('')
 
+    if err_f:
+        err_f.close()
     for fpath in to_remove:
         if fpath and isfile(fpath):
             os.remove(fpath)
 
-    if not cnf.get('keep_intermediate') and keep_original_if_not_keep_intermediate:
+    if (not cnf.get('keep_intermediate') and
+        not keep_original_if_not_keep_intermediate and
+            input_fpath):
         os.remove(input_fpath)
     info(cnf.get('log'), 'Saved to ' + output_fpath)
     return output_fpath
@@ -317,8 +478,8 @@ def snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
     anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
-    output_fpath = _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
-                                    work_dir, result_to_stdout=True)
+    output_fpath = _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                                    stdout_to_outputfile=True)
     def proc_line(line):
         if not line.startswith('#'):
             line = line.replace(' ', '_')
@@ -347,8 +508,8 @@ def snpsift_db_nsfp(cnf, input_fpath, work_dir):
 
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
-    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
-                            result_to_stdout=True)
+    return _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                            stdout_to_outputfile=True)
 
 
 def snpeff(cnf, input_fpath, work_dir):
@@ -380,8 +541,8 @@ def snpeff(cnf, input_fpath, work_dir):
         cmdline += ' -cancer '
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
-    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath, work_dir,
-                            result_to_stdout=True)
+    return _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                            stdout_to_outputfile=True)
 
 
 def tracks(cnf, track_path, input_fpath, work_dir):
@@ -401,8 +562,8 @@ def tracks(cnf, track_path, input_fpath, work_dir):
     cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
     output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
-    output_fpath = _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
-                                    work_dir, result_to_stdout=True)
+    output_fpath = _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                                    stdout_to_outputfile=True)
 
     # Set TRUE or FALSE for tracks
     def proc_line(line):
@@ -470,8 +631,8 @@ def gatk(cnf, input_fpath, bam_fpath, work_dir):
         cmdline += " -A " + ann
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
-    return _call_and_rename(cnf, cmdline, input_fpath, output_fpath,
-                            work_dir, result_to_stdout=False,
+    return _call_and_remove(cnf, cmdline, input_fpath, output_fpath,
+                            stdout_to_outputfile=False,
                             to_remove=[output_fpath + '.idx',
                                        input_fpath + '.idx'])
 
@@ -721,8 +882,8 @@ def _read_samples_info(cnf):
     for vcf_conf in details:
         if 'vcf' not in vcf_conf:
             critical(cnf['log'], 'ERROR: A section in details does not contain field "vcf".')
-        vcf = vcf_conf['vcf']
-        if not verify_file(vcf, 'Input file'):
+        orig_vcf = vcf_conf['vcf']
+        if not verify_file(orig_vcf, 'Input file'):
             exit(1)
 
         join_parent_conf(vcf_conf, cnf)
@@ -739,7 +900,7 @@ def _read_samples_info(cnf):
                         exit()
 
             rec_samples = vcf_conf.get('samples') or OrderedDict()
-            vcf_header_samples = _read_sample_names_from_vcf(vcf)
+            vcf_header_samples = _read_sample_names_from_vcf(orig_vcf)
 
             # compare input sample names to vcf header
             if rec_samples:
@@ -765,7 +926,7 @@ def _read_samples_info(cnf):
                 safe_mkdir(work_dirpath, 'intermediate directory')
                 data['work_dir'] = work_dirpath
 
-                extracted_vcf = extract_sample(cnf, vcf, header_sample_name, work_dirpath)
+                extracted_vcf = extract_sample(cnf, orig_vcf, header_sample_name, work_dirpath)
                 rec_samples[header_sample_name]['vcf'] = extracted_vcf
 
         else:  # single sample
@@ -773,7 +934,7 @@ def _read_samples_info(cnf):
                 if not verify_file(vcf_conf['bam']):
                     exit()
 
-            sample_name = splitext(basename(vcf))[0]
+            sample_name = splitext(basename(orig_vcf))[0]
 
             output_dirpath = realpath(vcf_conf['output_dir'])
             safe_mkdir(output_dirpath, 'output_dir for ' + sample_name)
@@ -782,6 +943,9 @@ def _read_samples_info(cnf):
             vcf_conf['work_dir'] = work_dirpath
 
             all_samples[sample_name] = vcf_conf
+
+    for name, cnf in all_samples.items():
+        cnf['name'] = name
 
     return all_samples
 
@@ -814,26 +978,87 @@ def _read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def load_genome_resources(cnf):
+def _load_genome_resources(cnf):
     if 'genome' not in cnf:
-        critical(cnf['log'], '"genome" is not specified in run config.')
+        critical('"genome" is not specified in run config.')
     if 'genomes' not in cnf:
-        critical(cnf['log'], '"genomes" section is not specified in system config.')
+        critical('"genomes" section is not specified in system config.')
     genome_name = cnf['genome']
     if genome_name not in cnf['genomes']:
         critical(genome_name + ' is not in "genomes section" of system config.')
 
     genome_cnf = cnf['genomes'][genome_name].copy()
+
+    to_exit = False
+
+    if 'seq' not in genome_cnf:
+        err('Please, provide path to the reference file (seq).')
+        to_exit = True
+
+    if not verify_file(genome_cnf['seq'], 'Reference seq'):
+        to_exit = True
+
+    for f in 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
+        if f in genome_cnf:
+            if not verify_file(genome_cnf[f], f):
+                to_exit = True
+    if 'snpeff' in genome_cnf:
+        if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
+            to_exit = True
+
+    if to_exit:
+        exit(1)
+
     cnf['genome'] = genome_cnf
     del cnf['genomes']
     genome_cnf['name'] = genome_name
 
-    if 'seq' not in genome_cnf:
-        critical(cnf['log'], 'Please, provide path to the reference file (seq).')
-    if not verify_file(genome_cnf['seq'], 'Reference seq'):
-        exit(1)
-
     info('Loaded resources for ' + genome_cnf['name'])
+
+
+def _check_quality_control_config(cnf):
+    qc_cnf = cnf.get('quality_control')
+    if not qc_cnf:
+        return
+
+    if 'databases' not in qc_cnf:
+        qc_cnf['databases'] = ['dbsnp']
+        info('Warning: not databases for quality control, using [dbsnp]')
+
+    if 'novelty' not in qc_cnf:
+        qc_cnf['novelty'] = ['all', 'known', 'novel']
+        info('Warning: no novelty specified for quality control, '
+             'using default ' + ', '.join(qc_cnf['novelty']))
+
+    if 'metrics' not in qc_cnf:
+        qc_cnf['metircs'] = [
+           'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+        info('Warning: no metrics for quality control, using '
+             'default ' + ', '.join(qc_cnf['metircs']))
+
+    to_exit = False
+    dbs_dict = {}
+    for db in qc_cnf['databases']:
+        if not db:
+            err('Empty field for quality_control databases')
+            to_exit = True
+        elif file_exists(db):
+            if not verify_file(db):
+                to_exit = True
+            dbs_dict[basename(db)] = db
+        elif db not in cnf['genome']:
+            to_exit = True
+            err(cnf['log'], db + ' for variant qc is not in ')
+        else:
+            dbs_dict[db] = cnf['genome'][db]
+
+    if to_exit:
+        exit()
+
+    qc_cnf['database_vcfs'] = dbs_dict
+    print str(dbs_dict)
 
 
 def process_config(system_config_path, run_config_path):
@@ -842,14 +1067,22 @@ def process_config(system_config_path, run_config_path):
 
     info('Loaded system config ' + system_config_path)
     info('Loaded run config ' + run_config_path)
-
     config = dict(run_cnf.items() + sys_cnf.items())
+
+    info('')
+    info('Checking configs...')
 
     _check_system_resources(config)
 
-    load_genome_resources(config)
+    _load_genome_resources(config)
 
-    return config, _read_samples_info(config)
+    if 'quality_control' in config:
+        _check_quality_control_config(config)
+
+    samples = _read_samples_info(config)
+
+    info('Configs checked.')
+    return config, samples
 
 
 def main(args):
@@ -857,7 +1090,7 @@ def main(args):
         exit('Usage: python ' + __file__ + ' run_info.yaml\n'
              '    or python ' + __file__ + ' system_info.yaml run_info.yaml')
 
-    if sys.version_info[:2] < (2, 5):
+    if (2, 5) > sys.version_info[:2] >= (3, 0):
         exit('Python version 2.5 and higher is supported (you are running ' +
              '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
