@@ -58,7 +58,6 @@ quality_control:
 
 ## Annotation with various tools.
 ## If no "annotations:" section specified, all annotations will be applied
->>>>>>> refactoring, qc
 gatk:
   annotations:                ## Field names in final VCF:
   - Coverage                  ## DP

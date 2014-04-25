@@ -18,8 +18,8 @@ quality_control:
   databases: ['dbsnp', 'cosmic']
   novelty: ['all', 'known', 'novel']
   metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 gatk:
   annotations:                # Field names in final VCF:

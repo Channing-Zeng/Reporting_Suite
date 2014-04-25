@@ -91,7 +91,8 @@ def _check_quality_control_config(cnf):
             dbs_dict[basename(db)] = db
         elif db not in cnf['genome']:
             to_exit = True
-            err(cnf['log'], db + ' for variant qc is not in ')
+            err(cnf.get('log'), db + ' for variant qc is not found '
+                                     'in genome resources in system config.')
         else:
             dbs_dict[db] = cnf['genome'][db]
 
