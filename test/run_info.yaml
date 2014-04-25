@@ -6,19 +6,20 @@ output_dir: test/results
 
 genome: hg19
 
-filter_reject: True           # Filters variants with REJECT in the FILTER field
-split_samples: True          # Creates separate VCF for each sample.
-                             # Default if provided with multiple BAMs.
+filter_reject: True
+split_samples: True
 
-verbose: True                 # Prints tools output to stdout (if not in parallel)
-keep_intermediate: True      # Keeps intermediate VCFs for each step
-reuse_intermediate: True     # If an intermediate VCFs exists and is not empty,
-                             # skip a step and reuse the file
-#parallel: True                # Process samples in parallel (requires joblib python package)
+verbose: True
+#keep_intermediate: True
+#reuse_intermediate: True
+parallel: True
 
-snpeff:
-  clinical_reporting: True    # Canonical transcripts + output in HGVS notation
-  cancer: True
+quality_control:
+  databases: ['dbsnp', 'cosmic']
+  novelty: ['all', 'known', 'novel']
+  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 gatk:
   annotations:                # Field names in final VCF:
@@ -79,19 +80,12 @@ cosmic:
   - AA
   - CDS
 
+snpeff:
+  clinical_reporting: True
+  cancer: True
+
 tracks:
 - /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
-#tracks:  # requires vcfannotate (from bcbio-nextgen)
-#  #CpG Island
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-#  # Copy Number Variants
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-#  # Segmental Duplications
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-#  # Repeats
-#- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
-#  #  RNA Editing (RNA-Seq data)
-#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
 tsv_fields:
   - CHROM                         : Chromosome
@@ -165,11 +159,3 @@ tsv_fields:
   #- CDA                           : InClinicalDiagnosticAssay
   - set                           : SourceVCF_forMergedRecInCombineVariants
   - analysis_blocks               : analysis_blocks
-
-# Or built from the following:
-# 1. CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO
-# 2. Explicitly defined annotations in this yaml file
-# 3. SnpEff annotaions (EFF...)
-# 4. Track names
-# 5. Additional fields:
-#additional_tsv_fields: []

@@ -9,6 +9,11 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpEff/SnpSift.jar
+  bcbfools:
+    path: /Users/vladsaveliev/bin/bcftools/bcftools
+  plot_vcfstats:
+    path: /Users/vladsaveliev/bin/bcftools/plot-vcfstats
+
 
 genomes:
   hg19:

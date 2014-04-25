@@ -13,7 +13,7 @@ resources:
     path: /group/ngs/src/snpEff/SnpSift.jar
   bcbfools:
     path: /group/ngs/src/bcftools/bcftools
-  bcf_plot_stats:
+  plot_vcfstats:
     path: /group/ngs/src/bcftools/plot-vcfstats
 
 genomes:

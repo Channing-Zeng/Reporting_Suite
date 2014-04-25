@@ -13,7 +13,7 @@ details:
     EOL-1-4:
       bam: /ngs/oncology/analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/EOL-1-4-ready.bam
       output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/EOL-1-4/annotate
-    # if there are any other samples inside this VCF, output_dir is inherited
+      ## If there are any other samples found inside this VCF, output_dir is inherited
 
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/2014-04-01_AML_02/AML_02-ensemble.vcf
   samples:
@@ -27,43 +27,53 @@ details:
       bam:        /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/HLY-1-ready.bam
       output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/AML_02/final/HLY-1/annotate
 
-# output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0023_PIM_CL/F13TSFEUHT0603-02_Huszar/EOL-1/final/2014-03-31_EOL-1/annotation
-filter_reject: True           # Filters variants with REJECT in the FILTER field
-#split_samples: True          # Creates separate VCF for each sample. Default if provided with multiple BAMs.
+## Inside an output directory the following will be created:
+## <sample_name>.anno.vcf
+## <sample_name>.anno.tsv
+## <sample_name>.qc.txt
+## <sample_name>.qc_plots/
 
-genome: hg19                 # loads from hg19_rask.yaml
+## The following parameters can be also specified for particular VCFs or for samples:
+#output_dir: annotation/
+filter_reject: True           ## Filters variants with REJECT in the FILTER field
+#split_samples: True          ## Creates separate VCF for each sample.
+                              ## Default when multiple BAMs are provided.
 
-verbose: True                 # Prints tools output
-keep_intermediate: True      # Keeps intermediate VCFs for each step
-reuse_intermediate: True     # If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-parallel: True                # Process samples in parallel (requires joblib python package)
+genome: hg19                  ## loads from "genomes" section from system_config yaml
 
-#quality_control:
-#  databases: ['dbsnp', 'cosmic', '1000genomes']
-#  novelty: ['all', 'known', 'novel']
-#  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-#           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-#           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+verbose: True                 ## Prints tools output
+keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
+reuse_intermediate: True      ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+parallel: True                ## Process samples in parallel (requires "joblib" python package)
 
-snpeff:
-  clinical_reporting: True    # Canonical transcripts + output in HGVS notation
-  cancer: True
+## Quality control variants:
+## GATK for database concordance and other metrics
+## BCFtools for plots
+quality_control:
+  databases: ['dbsnp', 'cosmic', '1000genomes']
+  novelty: ['all', 'known', 'novel']
+  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
+## Annotation with various tools.
+## If no "annotations:" section specified, all annotations will be applied
+>>>>>>> refactoring, qc
 gatk:
-  annotations:                # Field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
+  annotations:                ## Field names in final VCF:
+  - Coverage                  ## DP
+  - BaseQualityRankSumTest    ## BaseQRankSum
+  - FisherStrand              ## FS
+  - GCContent                 ## GC
+  - HaplotypeScore            ## HaplotypeScore
+  - HomopolymerRun            ## HRun
+  - RMSMappingQuality         ## MQ
+  - MappingQualityRankSumTest ## MQRankSum
+  - MappingQualityZero        ## MQ0
+  - QualByDepth               ## QD
+  - ReadPosRankSumTest        ## ReadPosRankSum
   - DepthPerAlleleBySample
-  - AlleleBalanceBySample     # AB
+  - AlleleBalanceBySample     ## AB
 
 dbnsfp:
   annotations:
@@ -117,16 +127,21 @@ custom_vcfs:
     - om_MutClass
     - om_MutClassPC
 
-tracks:  # requires vcfannotate (from bcbio-nextgen)
-  #CpG Island
+snpeff:
+  clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+  cancer: True
+  ## no "annotations" section here, always applied all annotations
+
+tracks:   ## requires vcfannotate (from bcbio-nextgen)
+  ## CpG Island
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-  # Copy Number Variants
+  ## Copy Number Variants
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-  # Segmental Duplications
+  ## Segmental Duplications
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-  # Repeats
+  ## Repeats
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
-#  #  RNA Editing (RNA-Seq data)
+  ## RNA Editing (RNA-Seq data)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
 tsv_fields:
@@ -170,7 +185,7 @@ tsv_fields:
   - QD                            : QualityByDepth
   - ReadPosRankSum                : ReadPosRankSum
 
-  # FORMAT fields for the sample
+  ## FORMAT fields for the sample
   - gt_GT                         : Genotype
 #  - gt_FT                         : GenotypeWasCalled
 #  - gt_GL                         : GenotypeLikelihoods
@@ -180,7 +195,7 @@ tsv_fields:
 #  - gt_GQ                         : ConditionalGenotypeQuality
 #  - gt_HQ                         : HaplotypeQualities
 #  - gt_PS                         : PhaseSet
-#  - gt_PQ                         : PhasingQuality      # phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+#  - gt_PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #  - gt_EC                         : ExpAlleleCounts
   - gt_AD                         : AllelicDepthsForRefAndAlt
 #  - gt_AO                         : AlleleObservationCount
@@ -188,7 +203,7 @@ tsv_fields:
 #  - gt_QR                         : QualitySumForRefObservations
 #  - gt_RO                         : RefAlleleObservationCount
 
-  # dbsnp
+  ## dbsnp
   - SAO                           : VariantAlleleOrigin
   - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
   - VC                            : VariationClass
