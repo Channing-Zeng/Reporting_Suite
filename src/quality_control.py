@@ -121,11 +121,11 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
     cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
     call(cnf, cmdline, None, tbi_fpath)
 
-    text_report_fpath = join(work_dir, 'bcftools.report')
+    text_report_fpath = join(work_dir, cnf['name'] + '_bcftools.report')
     cmdline = '{bcftools} stats {gzipped_fpath}'.format(**locals())
     call(cnf, cmdline, None, text_report_fpath, to_remove=[gzipped_fpath, tbi_fpath])
 
-    viz_report_dir = join(work_dir, 'qc_plots/')
+    viz_report_dir = join(work_dir, cnf['name'] + '_qc_plots/')
     if file_exists(viz_report_dir):
         shutil.rmtree(viz_report_dir)
     mkdir(viz_report_dir)
