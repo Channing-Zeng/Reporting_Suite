@@ -168,7 +168,7 @@ def _read_samples_info(common_cnf):
                 if not verify_file(vcf_conf['bam']):
                     exit()
             cnf = vcf_conf
-            cnf['name'] = splitext_plus(basename(cnf['vcf']))
+            cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
             _set_up_work_dir(cnf)
 
             work_vcf = join(cnf['work_dir'], cnf['name'] + '.vcf')
