@@ -216,7 +216,7 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
                 if cnf.get('log') and err_fpath:
-                    with open(err_fpath, 'a') as err_f, \
+                    with open(err_fpath) as err_f, \
                          open(cnf.get('log'), 'a') as log_f:
                         log_f.write('')
                         log_f.write(err_f.read())
