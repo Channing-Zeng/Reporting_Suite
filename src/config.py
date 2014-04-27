@@ -177,6 +177,7 @@ def _read_samples_info(common_cnf):
             else:
                 with open_gzipsafe(cnf['vcf']) as inp, open(work_vcf, 'w') as out:
                     out.write(inp.read())
+            cnf['vcf'] = work_vcf
 
             all_samples[cnf['name']] = cnf
 

@@ -1,7 +1,7 @@
 from genericpath import isfile
 import subprocess
 import os
-from os.path import dirname, realpath, join
+from os.path import dirname, realpath, join, basename
 import shutil
 
 from src.transaction import file_transaction
@@ -23,7 +23,8 @@ def make_tsv(cnf, vcf_fpath):
             info(cnf['log'], 'Saved TSV file with nice names to ' + tsv_fpath)
 
     # Copying final TSV
-    final_tsv_fpath = splitext_plus(cnf['vcf'])[0] + '.anno.tsv'
+    final_tsv_fname = splitext_plus(basename(cnf['vcf']))[0] + '.anno.tsv'
+    final_tsv_fpath = join(cnf['output_dir'], final_tsv_fname)
     if isfile(final_tsv_fpath):
         os.remove(final_tsv_fpath)
     shutil.copyfile(tsv_fpath, final_tsv_fpath)

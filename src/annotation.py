@@ -46,8 +46,8 @@ def run_annotators(cnf, vcf_fpath):
     vcf_fpath = _filter_fields(cnf, vcf_fpath, work_dir)
 
     # Copying final VCF
-    final_fname = add_suffix(basename(cnf['vcf']), 'anno')
-    final_vcf_fpath = join(cnf['output_dir'], final_fname)
+    final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
+    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
     shutil.copyfile(vcf_fpath, final_vcf_fpath)
