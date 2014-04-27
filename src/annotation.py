@@ -160,7 +160,7 @@ def _snpeff(cnf, input_fpath, work_dir):
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
     return call(cnf, cmdline, input_fpath, output_fpath,
-                            stdout_to_outputfile=True)
+                stdout_to_outputfile=True)
 
 
 def _tracks(cnf, track_path, input_fpath, work_dir):
@@ -181,7 +181,7 @@ def _tracks(cnf, track_path, input_fpath, work_dir):
 
     output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
     output_fpath = call(cnf, cmdline, input_fpath, output_fpath,
-                                    stdout_to_outputfile=True)
+                        stdout_to_outputfile=True)
 
     # Set TRUE or FALSE for tracks
     def proc_line(line):
