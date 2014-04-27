@@ -1,6 +1,7 @@
 import os
 from os.path import splitext, basename, join, realpath
 from collections import OrderedDict
+import shutil
 
 from yaml import load
 try:
@@ -9,7 +10,7 @@ except ImportError:
     from yaml import Loader
 
 from src.quality_control import _check_quality_control_config
-from src.utils import which
+from src.utils import which, open_gzipsafe, file_exists, splitext_plus
 from src.my_utils import get_tool_cmdline, err, critical, verify_file,\
     join_parent_conf, info, step_greetings, get_java_tool_cmdline, intermediate_fname, \
     call, safe_mkdir, verify_dir
@@ -167,13 +168,17 @@ def _read_samples_info(common_cnf):
                 if not verify_file(vcf_conf['bam']):
                     exit()
             cnf = vcf_conf
-            cnf['name'] = splitext(basename(cnf['vcf']))[0]
+            cnf['name'] = splitext_plus(basename(cnf['vcf']))
             _set_up_work_dir(cnf)
 
-            all_samples[cnf['name']] = cnf
+            work_vcf = join(cnf['work_dir'], cnf['name'] + '.vcf')
+            if file_exists(work_vcf) and cnf.get('reuse_intermediate'):
+                pass
+            else:
+                with open_gzipsafe(cnf['vcf']) as inp, open(work_vcf, 'w') as out:
+                    out.write(inp.read())
 
-    for name, cnf in all_samples.items():
-        cnf['name'] = name
+            all_samples[cnf['name']] = cnf
 
     return all_samples
 
@@ -187,10 +192,13 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
     ref_fpath = cnf['genome']['seq']
 
     corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-    output_fpath = intermediate_fname(work_dir, input_fpath, suf=corr_samplename)
+
+    output_fname = splitext_plus(input_fpath)[0] + corr_samplename + '.vcf'
+    output_fpath = join(work_dir, output_fname)
 
     cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-          '--variant {input_fpath} -sn {samplename} -o {output_fpath}'.format(**locals())
+          '--variant {input_fpath} -sn {samplename} ' \
+          '-o {output_fpath}'.format(**locals())
     call(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
          to_remove=[input_fpath + '.idx'])
     return output_fpath
