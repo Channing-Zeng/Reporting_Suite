@@ -28,9 +28,9 @@ def run_annotators(cnf, vcf_fpath):
         vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'],
                                       'cosmic', vcf_fpath, work_dir)
     if 'custom_vcfs' in cnf:
-        for dbname, vcf_conf in cnf['custom_vcfs'].items():
+        for dbname, custom_conf in cnf['custom_vcfs'].items():
             vcf_fpath = _snpsift_annotate(
-                cnf, vcf_conf, dbname, vcf_fpath, work_dir)
+                cnf, custom_conf, dbname, vcf_fpath, work_dir)
 
     if 'dbnsfp' in cnf:
         vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath, work_dir)
@@ -91,7 +91,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
         if not verify_file(db_path):
             exit()
 
-    annotations = cnf[dbname].get('annotations')
+    annotations = vcf_conf.get('annotations')
     # all_fields.extend(annotations)
     anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
