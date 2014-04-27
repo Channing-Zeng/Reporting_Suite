@@ -2,7 +2,7 @@ details:
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/D1-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/D1-ready.bam
   output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/annotation
-  
+
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/D2-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/D2-ready.bam
   output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/annotation

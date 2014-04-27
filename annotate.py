@@ -139,10 +139,11 @@ def annotate_one(cnf, multiple_samples=False):
     if 'quality_control' in cnf:
         qc_report_fpath, qc_plots_fpaths = quality_control(cnf, qc_dir, final_vcf_fpath)
 
-    final_vcf_fpath = relpath(final_vcf_fpath, os.getcwd())
-    final_tsv_fpath = relpath(final_tsv_fpath, os.getcwd())
-    qc_report_fpath = relpath(qc_report_fpath, os.getcwd())
-    qc_plots_fpaths = [relpath(fpath, os.getcwd()) for fpath in qc_plots_fpaths]
+    # final_vcf_fpath = relpath(final_vcf_fpath, os.getcwd())
+    # final_tsv_fpath = relpath(final_tsv_fpath, os.getcwd())
+    # qc_report_fpath = relpath(qc_report_fpath, os.getcwd())
+    # qc_dir = relpath(qc_dir, os.getcwd())
+    # qc_plots_fpaths = [relpath(fpath, os.getcwd()) for fpath in qc_plots_fpaths]
 
     info(cnf['log'], '')
     info(cnf['log'], '*' * 70)
