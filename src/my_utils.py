@@ -163,18 +163,19 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
     def do(cmdline, tx_out_fpath=None):
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
-        if tx_out_fpath:
-            if stdout_to_outputfile:
-                info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
-                stdout = open(tx_out_fpath, 'w')
-                stderr = subprocess.PIPE
-            else:
-                cmdline = cmdline.replace(output_fpath, tx_out_fpath)
-                info(cnf.get('log'), cmdline)
-                stdout = subprocess.PIPE
-                stderr = subprocess.STDOUT
 
         if cnf['verbose']:
+            if tx_out_fpath:
+                if stdout_to_outputfile:
+                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
+                    stdout = open(tx_out_fpath, 'w')
+                    stderr = subprocess.PIPE
+                else:
+                    cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                    info(cnf.get('log'), cmdline)
+                    stdout = subprocess.PIPE
+                    stderr = subprocess.STDOUT
+
             proc = subprocess.Popen(cmdline.split(), stdout=stdout, stderr=stderr)
 
             if proc.stdout:
@@ -201,7 +202,7 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     cmdline = cmdline.replace(output_fpath, tx_out_fpath)
                     info(cnf.get('log'), cmdline)
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
-                    stderr = open('/dev/null')
+                    stderr = subprocess.STDOUT
 
             res = subprocess.call(cmdline.split(), stdout=stdout, stderr=stderr)
             if res != 0:
