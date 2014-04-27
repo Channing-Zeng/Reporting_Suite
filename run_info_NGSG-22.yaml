@@ -1,16 +1,27 @@
 details:
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/D1-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/D1-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D1/final/D1/annotation
+  
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/D2-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/D2-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D2/final/D2/annotation
+
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D5/final/D5/D5-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D5/final/D5/D5-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D5/final/D5/annotation
+
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D6/final/D6/D6-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D6/final/D6/D6-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D6/final/D6/annotation
+
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D7/final/D7/D7-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D7/final/D7/D7-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D7/final/D7/annotation
+
 - vcf: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D8/final/D8/D8-gatk.vcf.gz
   bam: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D8/final/D8/D8-ready.bam
+  output_dir: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/D8/final/D8/annotation
 
 ## Inside an output directory the following will be created:
 ## <sample_name>.anno.vcf
