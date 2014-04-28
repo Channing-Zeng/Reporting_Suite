@@ -1,31 +1,18 @@
-# Reports summarizer takes at least 2 inputs (output summary report file name and list of reports file names)
-#
-import os
-import subprocess
-import sys
-import shutil
 from collections import OrderedDict
 
-SUPPORTED_PYTHON_VERSIONS = ['2.7']
-DEBUG_MODE = False  # whether to save temp files or not
-
-database = 'Cosmic'
+database = 'cosmic'
 novelty = 'all'
 metrics_header = 'Metric'
 novelty_header = 'Novelty'
 sample_header = 'Sample name:'
 
 
-def error(msg, prefix="Error"):
-    sys.stderr.write(prefix + " " + msg + "\n")
-    sys.stderr.flush()
-    sys.exit(1)
-
-
-def check_python_version():
-    if sys.version[0:3] not in SUPPORTED_PYTHON_VERSIONS:
-        error('Python version ' + sys.version[0:3] + ' is not supported!\n' + \
-              'Supported versions are ' + ', '.join(SUPPORTED_PYTHON_VERSIONS))
+def summarize_qc(input_reports, output_summary_fpath):
+    full_report = [['Sample']]
+    for report in input_reports:
+        sample_name, report_dict = _parse_report(report)
+        _add_to_full_report(full_report, sample_name, report_dict)
+    _print_full_report(full_report, output_summary_fpath)
 
 
 def _parse_report(report_filename):
@@ -86,32 +73,7 @@ def _print_full_report(report, report_filename):
 
     out = open(report_filename, 'w')
     for row in report:
-        out.write('  '.join('%-*s' % (col_width, value) for col_width, value in zip(col_widths, row)) + "\r\n")
+        out.write('  '.join('%-*s' % (col_width, value)
+                            for col_width, value in zip(col_widths, row))
+                  + "\r\n")
     out.close()
-
-
-def summarize_qc(input_reports, output_summary_fpath):
-    full_report = [['Sample']]
-    for report in input_reports:
-        sample_name, report_dict = _parse_report(report)
-        _add_to_full_report(full_report, sample_name, report_dict)
-    _print_full_report(full_report, output_summary_fpath)
-
-
-# if __name__ == '__main__':
-#     args = sys.argv[1:]
-#
-#     if len(args) < 2:
-#         error('Usage: python ' + str(sys.argv[0]) + ' summary_report_filename [sample_report_filename]', prefix='')
-#     check_python_version()
-#
-#     summary_filename = args[0]
-#     input_reports = args[1:]
-#
-#     print("Started!")
-#     full_report = [['Sample']]
-#     for report in input_reports:
-#         sample_name, report_dict = parse_report(report)
-#         add_to_full_report(full_report, sample_name, report_dict)
-#     print_full_report(full_report, summary_filename)
-#     print("Finished!")

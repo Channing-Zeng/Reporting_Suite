@@ -21,6 +21,8 @@ quality_control:
             'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
             'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
+qc_summary_output: test/results/variant_qc_report.txt
+
 gatk:
   annotations:                # Field names in final VCF:
   - Coverage                  # DP

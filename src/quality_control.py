@@ -1,11 +1,11 @@
 from genericpath import isfile
 import shutil
 from os import mkdir
-from os.path import basename, join, isdir
+from os.path import basename, join, isdir, dirname
 
 from src.utils import file_exists
 from src.my_utils import info, err, verify_file, step_greetings, \
-    get_tool_cmdline, get_java_tool_cmdline, call
+    get_tool_cmdline, get_java_tool_cmdline, call, verify_dir
 
 
 def quality_control(cnf, qc_dir, vcf_fpath):
@@ -99,6 +99,12 @@ def _check_quality_control_config(cnf):
         exit()
 
     qc_cnf['database_vcfs'] = dbs_dict
+
+    if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
+        qc_output_fpath = qc_cnf.get('summary_output') or cnf.get('qc_summary_output')
+        summary_output_dir = dirname(qc_output_fpath)
+        if not verify_dir(summary_output_dir):
+            exit()
 
 
 def bcftools_qc(cnf, qc_dir, vcf_fpath):

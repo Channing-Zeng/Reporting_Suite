@@ -1,7 +1,6 @@
 import os
-from os.path import splitext, basename, join, realpath
+from os.path import basename, join, realpath
 from collections import OrderedDict
-import shutil
 
 from yaml import load
 try:
@@ -12,8 +11,7 @@ except ImportError:
 from src.quality_control import _check_quality_control_config
 from src.utils import which, open_gzipsafe, file_exists, splitext_plus
 from src.my_utils import get_tool_cmdline, err, critical, verify_file,\
-    join_parent_conf, info, step_greetings, get_java_tool_cmdline, intermediate_fname, \
-    call, safe_mkdir, verify_dir
+    join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir
 
 
 def process_config(system_config_path, run_config_path):
@@ -99,8 +97,8 @@ def _check_system_resources(cnf):
         err(cnf['log'], '\n* Warning: Perl not found. You may want to run "module load perl", '
             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
     if not get_tool_cmdline(cnf, 'vcfannotate',
-                             extra_warn='You may want to load BCBio '
-                                        'with ". /group/ngs/bin/bcbio-prod.sh"'):
+                            extra_warn='You may want to load BCBio '
+                                       'with ". /group/ngs/bin/bcbio-prod.sh"'):
         err(cnf['log'], '\n* Warning: skipping annotation with bed tracks.\n')
 
     # print ''

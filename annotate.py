@@ -2,10 +2,11 @@
 import sys
 import shutil
 import os
-from os.path import join, realpath, isdir, isfile, dirname, relpath
+from os.path import join, realpath, isdir, isfile, dirname
 
 from yaml import dump
 from src.config import process_config
+from src.summarize import summarize_qc
 from src.tsv import make_tsv
 try:
     from yaml import CDumper as Dumper
@@ -13,7 +14,7 @@ except ImportError:
     from yaml import Dumper
 
 from src.annotation import run_annotators
-from src.quality_control import bcftools_qc, gatk_qc, quality_control
+from src.quality_control import quality_control
 from src.my_utils import critical, info
 
 
@@ -22,8 +23,8 @@ def main(args):
         exit('Usage: python ' + __file__ + ' run_info.yaml\n'
              '    or python ' + __file__ + ' system_info.yaml run_info.yaml')
 
-    if (2, 5) > sys.version_info[:2] >= (3, 0):
-        exit('Python version 2.5 and higher is supported (you are running ' +
+    if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+        exit('Python version 2.7 and higher is supported (you are running ' +
              '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
     if len(args) == 1:
@@ -55,18 +56,18 @@ def main(args):
 
     config, samples = process_config(system_config_path, run_config_path)
     try:
-        annotate(samples, config.get('parallel'))
+        annotate(config, samples)
     except KeyboardInterrupt:
         exit()
 
 
-def annotate(samples, parallel=False):
+def annotate(cnf, samples):
     if len(samples) == 1:
         sample_name, sample_cnf = samples.items()[0]
         annotate_one(sample_cnf)
     else:
         results = []
-        if parallel:
+        if cnf.get('parallel'):
             try:
                 from joblib import Parallel, delayed
             except ImportError:
@@ -86,8 +87,6 @@ def annotate(samples, parallel=False):
                 results.append(
                     annotate_one(sample_cnf, multiple_samples=True))
 
-        
-
         info('')
         info('*' * 70)
         info('Results for each sample:')
@@ -100,6 +99,14 @@ def annotate(samples, parallel=False):
                 info(cnf['log'], '  ' + qc_report)
                 info(cnf['log'], '  ' + qc_dir)
 
+        qc_cnf = cnf.get('quality_control')
+        if qc_cnf and 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
+            qc_output_fpath = cnf.get('qc_summary_output') or qc_cnf.get('summary_output')
+            summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
+            info(cnf['log'], 'Variant QC summary:')
+            info(cnf['log'], '  ' + qc_output_fpath)
+
+    # Cleaning
     for name, data in samples.items():
         work_dirpath = data['work_dir']
         tx_dirpath = join(work_dirpath, 'tx')

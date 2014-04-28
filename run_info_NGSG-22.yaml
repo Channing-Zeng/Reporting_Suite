@@ -52,6 +52,8 @@ quality_control:
            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
+qc_summary_output: /gpfs/ngs/oncology/Analysis/bioscience/Bio_0018_Ptx25/Exome/variant_qc_report.txt
+
 ## Annotation with various tools.
 ## If no "annotations:" section specified, all annotations will be applied
 gatk:
