@@ -95,8 +95,8 @@ def annotate(samples, parallel=False):
             info(cnf['log'], '  ' + vcf)
             info(cnf['log'], '  ' + tsv)
             if qc_dir:
-                info(cnf['log'], '  qc report: ' + qc_report)
-                info(cnf['log'], '  qc plots: ' + qc_dir)
+                info(cnf['log'], '  ' + qc_report)
+                info(cnf['log'], '  ' + qc_dir)
 
     for name, data in samples.items():
         work_dirpath = data['work_dir']
