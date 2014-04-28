@@ -41,8 +41,12 @@ def process_config(system_config_path, run_config_path):
 
 
 def _read_sample_names_from_vcf(vcf_fpath):
-    basic_fields = next(l.strip()[1:].split() for l in open(vcf_fpath)
-                        if l.strip().startswith('#CHROM'))
+    basic_fields = next((l.strip()[1:].split() for l in open(vcf_fpath)
+                        if l.strip().startswith('#CHROM')), None)
+    if not basic_fields:
+        critical('Error: no VCF header in ' + vcf_fpath)
+    if len(basic_fields) < 9:
+        return []
     return basic_fields[9:]
 
 

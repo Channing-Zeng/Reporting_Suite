@@ -86,6 +86,8 @@ def annotate(samples, parallel=False):
                 results.append(
                     annotate_one(sample_cnf, multiple_samples=True))
 
+        
+
         info('')
         info('*' * 70)
         info('Results for each sample:')

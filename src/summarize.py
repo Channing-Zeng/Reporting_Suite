@@ -1,5 +1,5 @@
 # Reports summarizer takes at least 2 inputs (output summary report file name and list of reports file names)
-# 
+#
 import os
 import subprocess
 import sys
@@ -28,7 +28,7 @@ def check_python_version():
               'Supported versions are ' + ', '.join(SUPPORTED_PYTHON_VERSIONS))
 
 
-def parse_report(report_filename):
+def _parse_report(report_filename):
     report_handler = open(report_filename, 'r')
     sample_name = ''
     report_dict = OrderedDict()
@@ -65,7 +65,7 @@ def parse_report(report_filename):
     return sample_name, report_dict
 
 
-def add_to_full_report(full_report, sample_name, report_dict):
+def _add_to_full_report(full_report, sample_name, report_dict):
     full_report[0].append(sample_name)
     if len(full_report) == 1:
         empty_report = True
@@ -78,7 +78,7 @@ def add_to_full_report(full_report, sample_name, report_dict):
         full_report[id + 1].append(value)
 
 
-def print_full_report(report, report_filename):
+def _print_full_report(report, report_filename):
     col_widths = [0] * len(report[0])
     for row in report:
         for id, value in enumerate(row):
@@ -93,9 +93,9 @@ def print_full_report(report, report_filename):
 def summarize_qc(input_reports, output_summary_fpath):
     full_report = [['Sample']]
     for report in input_reports:
-        sample_name, report_dict = parse_report(report)
-        add_to_full_report(full_report, sample_name, report_dict)
-    print_full_report(full_report, output_summary_fpath)
+        sample_name, report_dict = _parse_report(report)
+        _add_to_full_report(full_report, sample_name, report_dict)
+    _print_full_report(full_report, output_summary_fpath)
 
 
 # if __name__ == '__main__':
