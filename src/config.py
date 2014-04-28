@@ -175,10 +175,7 @@ def _read_samples_info(common_cnf):
 
             cnf = vcf_conf
 
-            if len(vcf_header_samples) == 1:
-                cnf['name'] = vcf_header_samples[0]
-            else:
-                cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
+            cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
 
             _set_up_work_dir(cnf)
 
