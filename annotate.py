@@ -89,12 +89,14 @@ def annotate(samples, parallel=False):
         info('')
         info('*' * 70)
         info('Results for each sample:')
-        for (sample_name, cnf), (vcf, tsv, qc_dir) in zip(samples.items(), results):
+        for (sample_name, cnf), (vcf, tsv, qc_dir, qc_report, qc_plots) \
+                in zip(samples.items(), results):
             info(cnf['log'], sample_name + ':')
             info(cnf['log'], '  ' + vcf)
             info(cnf['log'], '  ' + tsv)
             if qc_dir:
-                info(cnf['log'], '  qc: ' + qc_dir)
+                info(cnf['log'], '  qc report: ' + qc_report)
+                info(cnf['log'], '  qc plots: ' + qc_dir)
 
     for name, data in samples.items():
         work_dirpath = data['work_dir']
@@ -135,7 +137,7 @@ def annotate_one(cnf, multiple_samples=False):
 
     qc_report_fpath = None
     qc_plots_fpaths = None
-    qc_dir = join(cnf['output_dir'], cnf['name'] + '_qc')
+    qc_dir = join(cnf['output_dir'], 'qc')
     if 'quality_control' in cnf:
         qc_report_fpath, qc_plots_fpaths = quality_control(cnf, qc_dir, final_vcf_fpath)
 
@@ -151,11 +153,11 @@ def annotate_one(cnf, multiple_samples=False):
     info(cnf['log'], 'Saved final VCF to ' + final_vcf_fpath)
     info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
     if qc_report_fpath:
-        info(cnf['log'], 'Saved quality control report to ' + qc_report_fpath)
+        info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
-        info(cnf['log'], 'Saved quality control plots: ' + ', '.join(qc_plots_fpaths))
+        info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
 
-    return final_vcf_fpath, final_tsv_fpath, qc_dir
+    return final_vcf_fpath, final_tsv_fpath, qc_dir, qc_report_fpath, qc_plots_fpaths
 
 
 if __name__ == '__main__':

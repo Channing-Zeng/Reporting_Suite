@@ -1,7 +1,7 @@
 from genericpath import isfile
 import shutil
 from os import mkdir
-from os.path import basename, join
+from os.path import basename, join, isdir
 
 from src.utils import file_exists
 from src.my_utils import info, err, verify_file, step_greetings, \
@@ -12,9 +12,8 @@ def quality_control(cnf, qc_dir, vcf_fpath):
     if 'quality_control' not in cnf:
         return None, None
 
-    if file_exists(qc_dir):
-        shutil.rmtree(qc_dir)
-    mkdir(qc_dir)
+    if not isdir(qc_dir):
+        mkdir(qc_dir)
 
     qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
     qc_plots_fpaths = bcftools_qc(cnf, qc_dir, vcf_fpath)
@@ -50,7 +49,7 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
 
     report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
 
-    final_report_fpath = join(qc_dir, cnf['name'] + '.qc.report')
+    final_report_fpath = join(qc_dir, cnf['name'] + '_qc.report')
 
     _make_final_report(report, final_report_fpath, cnf['name'],
                        databases.keys(), novelty, metrics)
@@ -133,7 +132,7 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
     cmdline = '{plot_vcfstats} -s {text_report_fpath} -p {viz_report_dir} ' \
               '--no-PDF'.format(**locals())
     call(cnf, cmdline, text_report_fpath, None, output_is_file=False)
-    return _get_plots_from_bcftools(viz_report_dir, qc_dir)
+    return _get_plots_from_bcftools(cnf, viz_report_dir, qc_dir)
 
 
 def _parse_gatk_report(report_filename, databases, novelty, metrics):
@@ -208,9 +207,9 @@ def _make_final_report(report_dict, report_filename, sample_name,
     out.close()
 
 
-def _get_plots_from_bcftools(bcftools_report_dir, output_dir):
+def _get_plots_from_bcftools(cnf, bcftools_report_dir, output_dir):
     original_plots_names = ['indels.0.png', 'substitutions.0.png']
-    final_plots_names = ['indels.png', 'substitution.png']
+    final_plots_names = [cnf['name'] + '_indels.png', cnf['name'] + '_substitution.png']
     for i, original_plot in enumerate(original_plots_names):
         plot_src_filename = join(bcftools_report_dir, original_plot)
         plot_dst_filename = join(output_dir, final_plots_names[i])

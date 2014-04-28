@@ -146,7 +146,9 @@ def _read_samples_info(common_cnf):
         vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
 
         # MULTIPLE SAMPELS
-        if 'samples' in vcf_conf or vcf_conf.get('split_samples'):
+        if 'samples' in vcf_conf \
+                or vcf_conf.get('split_samples') \
+                or len(vcf_header_samples) == 0:
             sample_cnfs = _verify_sample_info(vcf_conf, vcf_header_samples)
 
             for header_sample_name in vcf_header_samples:
@@ -201,7 +203,7 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
 
     corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
 
-    output_fname = splitext_plus(input_fpath)[0] + corr_samplename + '.vcf'
+    output_fname = splitext_plus(input_fpath)[0] + '.' + corr_samplename + '.vcf'
     output_fpath = join(work_dir, output_fname)
 
     cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \

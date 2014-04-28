@@ -35,8 +35,8 @@ def make_tsv(cnf, vcf_fpath):
 def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     step_greetings(cnf, 'Extracting fields')
 
-    name, _ = splitext_plus(vcf_fpath)
-    tsv_fpath = name + '.tsv'
+    name, _ = splitext_plus(basename(vcf_fpath))
+    tsv_fpath = join(work_dir, name + '.tsv')
 
     if cnf.get('reuse_intermediate'):
         if file_exists(tsv_fpath):

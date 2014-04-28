@@ -10,9 +10,9 @@ filter_reject: True
 split_samples: True
 
 verbose: True
-#keep_intermediate: True
-#reuse_intermediate: True
-parallel: True
+keep_intermediate: True
+reuse_intermediate: True
+#parallel: True
 
 quality_control:
   databases: ['dbsnp', 'cosmic']
