@@ -88,13 +88,13 @@ def annotate(samples, parallel=False):
 
         info('')
         info('*' * 70)
-        info('Results for each sample')
-        for (sample_name, cnf), (vcf, tsv, qc) in zip(samples.items(), results):
+        info('Results for each sample:')
+        for (sample_name, cnf), (vcf, tsv, qc_dir) in zip(samples.items(), results):
             info(cnf['log'], sample_name + ':')
             info(cnf['log'], '  ' + vcf)
             info(cnf['log'], '  ' + tsv)
-            if qc:
-                info(cnf['log'], '  qc: ' + qc)
+            if qc_dir:
+                info(cnf['log'], '  qc: ' + qc_dir)
 
     for name, data in samples.items():
         work_dirpath = data['work_dir']

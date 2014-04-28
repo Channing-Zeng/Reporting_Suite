@@ -5,7 +5,7 @@ from os.path import basename, join
 
 from src.utils import file_exists
 from src.my_utils import info, err, verify_file, step_greetings, \
-    get_tool_cmdline, get_java_tool_cmdline, call, critical
+    get_tool_cmdline, get_java_tool_cmdline, call
 
 
 def quality_control(cnf, qc_dir, vcf_fpath):

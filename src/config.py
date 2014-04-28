@@ -143,9 +143,10 @@ def _read_samples_info(common_cnf):
 
         join_parent_conf(vcf_conf, common_cnf)
 
+        vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
+
         # MULTIPLE SAMPELS
         if 'samples' in vcf_conf or vcf_conf.get('split_samples'):
-            vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
             sample_cnfs = _verify_sample_info(vcf_conf, vcf_header_samples)
 
             for header_sample_name in vcf_header_samples:
@@ -167,8 +168,14 @@ def _read_samples_info(common_cnf):
             if 'bam' in vcf_conf:
                 if not verify_file(vcf_conf['bam']):
                     exit()
+
             cnf = vcf_conf
-            cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
+
+            if len(vcf_header_samples) == 1:
+                cnf['name'] = vcf_header_samples[0]
+            else:
+                cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
+
             _set_up_work_dir(cnf)
 
             work_vcf = join(cnf['work_dir'], cnf['name'] + '.vcf')
