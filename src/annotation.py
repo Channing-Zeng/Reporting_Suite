@@ -263,7 +263,9 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
 
 def _filter_ensemble(cnf, input_fpath):
     step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
-    return iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
+    output_fpath = iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
+    info(cnf.get('log'), 'Saved to ' + output_fpath)
+    return output_fpath
 
 
 def _split_genotypes(cnf, input_fpath):
@@ -284,7 +286,9 @@ def _split_genotypes(cnf, input_fpath):
                 line = '\t'.join(tokens[:2] + ['.'] + tokens[3:8])
                 return line
 
-    return iterate_file(cnf, input_fpath, proc_line, 'split_gt')
+    output_fpath = iterate_file(cnf, input_fpath, proc_line, 'split_gt')
+    info(cnf.get('log'), 'Saved to ' + output_fpath)
+    return output_fpath
 
 
 def _filter_fields(cnf, input_fpath, work_dir):

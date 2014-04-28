@@ -113,7 +113,6 @@ def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
             not keep_original_if_not_keep_intermediate and
                 input_fpath):
             os.remove(input_fpath)
-    info(cnf.get('log'), 'Saved to ' + output_fpath)
     return output_fpath
 
 
