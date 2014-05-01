@@ -60,6 +60,7 @@ def _load_genome_resources(cnf):
         genome_cnf = cnf['genomes'][genome_name].copy()
     else:
         genome_cnf = genome_name
+        genome_name = genome_cnf['name']
 
     to_exit = False
 
