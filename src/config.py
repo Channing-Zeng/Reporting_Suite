@@ -54,10 +54,12 @@ def _load_genome_resources(cnf):
     if 'genomes' not in cnf:
         critical('"genomes" section is not specified in system config.')
     genome_name = cnf['genome']
-    if genome_name not in cnf['genomes']:
+    if isinstance(genome_name, basestring) \
+            and genome_name not in cnf['genomes']:
         critical(genome_name + ' is not in "genomes section" of system config.')
-
-    genome_cnf = cnf['genomes'][genome_name].copy()
+        genome_cnf = cnf['genomes'][genome_name].copy()
+    else:
+        genome_cnf = genome_name
 
     to_exit = False
 
