@@ -1,11 +1,11 @@
 from genericpath import isfile
 import shutil
-from os import mkdir
+from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname
 
 from src.utils import file_exists
 from src.my_utils import info, err, verify_file, step_greetings, \
-    get_tool_cmdline, get_java_tool_cmdline, call, verify_dir
+    get_tool_cmdline, get_java_tool_cmdline, call, verify_dir, critical
 
 
 def quality_control(cnf, qc_dir, vcf_fpath):
@@ -38,9 +38,9 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
     cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
                ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
 
-    if 'dbsnp' in databases:
-        cmdline += ' -D ' + databases['dbsnp']
-        del databases['dbsnp']
+    # if 'dbsnp' in databases:
+    #     cmdline += ' -D ' + databases['dbsnp']
+    #     del databases['dbsnp']
     for db_name, db_path in databases.items():
         cmdline += ' -comp:' + db_name + ' ' + db_path
 
@@ -103,7 +103,13 @@ def _check_quality_control_config(cnf):
     if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
         qc_output_fpath = qc_cnf.get('summary_output') or cnf.get('qc_summary_output')
         summary_output_dir = dirname(qc_output_fpath)
-        if not verify_dir(summary_output_dir):
+        if not isdir(summary_output_dir):
+            try:
+                makedirs(summary_output_dir)
+            except OSError:
+                critical('ERROR: cannot create directory for '
+                         'qc summary report: ' + summary_output_dir)
+        if not verify_dir(summary_output_dir, 'qc_summary_output'):
             exit()
 
 

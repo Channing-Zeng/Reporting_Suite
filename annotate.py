@@ -108,7 +108,8 @@ def annotate(cnf, samples):
                 in zip(samples.items(), results):
             info(cnf['log'], sample_name + ':')
             info(cnf['log'], '  ' + vcf)
-            info(cnf['log'], '  ' + tsv)
+            if tsv:
+                info(cnf['log'], '  ' + tsv)
             if qc_dir:
                 info(cnf['log'], '  ' + qc_report)
                 info(cnf['log'], '  ' + qc_dir)
@@ -156,7 +157,9 @@ def annotate_one(cnf, multiple_samples=False):
 
     final_vcf_fpath = run_annotators(cnf, cnf['vcf'])
 
-    final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
+    final_tsv_fpath = None
+    if 'tsv_fields' in cnf:
+        final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
 
     qc_report_fpath = None
     qc_plots_fpaths = None
@@ -174,7 +177,8 @@ def annotate_one(cnf, multiple_samples=False):
     info(cnf['log'], '*' * 70)
     info(cnf['log'], cnf['name'])
     info(cnf['log'], 'Saved final VCF to ' + final_vcf_fpath)
-    info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
+    if final_tsv_fpath:
+        info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
     if qc_report_fpath:
         info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:

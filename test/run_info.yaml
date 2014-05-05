@@ -7,7 +7,6 @@ output_dir: test/results
 genome: hg19
 
 filter_reject: True
-split_samples: True
 
 verbose: True
 keep_intermediate: True
@@ -23,141 +22,141 @@ quality_control:
 
 qc_summary_output: test/results/variant_qc_report.txt
 
-gatk:
-  annotations:                # Field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
-  - DepthPerAlleleBySample
-  - AlleleBalanceBySample     # AB
-
-#db_nsfp:
+#gatk:
+#  annotations:                # Field names in final VCF:
+#  - Coverage                  # DP
+#  - BaseQualityRankSumTest    # BaseQRankSum
+#  - FisherStrand              # FS
+#  - GCContent                 # GC
+#  - HaplotypeScore            # HaplotypeScore
+#  - HomopolymerRun            # HRun
+#  - RMSMappingQuality         # MQ
+#  - MappingQualityRankSumTest # MQRankSum
+#  - MappingQualityZero        # MQ0
+#  - QualByDepth               # QD
+#  - ReadPosRankSumTest        # ReadPosRankSum
+#  - DepthPerAlleleBySample
+#  - AlleleBalanceBySample     # AB
+#
+##db_nsfp:
+##  annotations:
+##  - SIFT_score
+##  - Polyphen2_HVAR_score
+##  - Polyphen2_HVAR_pred
+##  - LRT_score
+##  - LRT_pred
+##  - MutationTaster_score
+##  - MutationTaster_pred
+##  - MutationAssessor_score
+##  - MutationAssessor_pred
+##  - FATHMM_score
+##  - Ensembl_geneid
+##  - Ensembl_transcriptid
+##  - Uniprot_acc
+##  - 1000Gp1_AC
+##  - 1000Gp1_AF
+##  - ESP6500_AA_AF
+##  - ESP6500_EA_AF
+#
+#db_snp:
 #  annotations:
-#  - SIFT_score
-#  - Polyphen2_HVAR_score
-#  - Polyphen2_HVAR_pred
-#  - LRT_score
-#  - LRT_pred
-#  - MutationTaster_score
-#  - MutationTaster_pred
-#  - MutationAssessor_score
-#  - MutationAssessor_pred
-#  - FATHMM_score
-#  - Ensembl_geneid
-#  - Ensembl_transcriptid
-#  - Uniprot_acc
-#  - 1000Gp1_AC
-#  - 1000Gp1_AF
-#  - ESP6500_AA_AF
-#  - ESP6500_EA_AF
-
-db_snp:
-  annotations:
-  - ID
-  - SAO
-  - VC
-  - PM
-  - HD
-  - KGPROD
-  - PH3
-  - OM
-  - CAF
-  - COMMON
-  - dbSNPBuildID
-  - G5
-  - CDA
-
-cosmic:
-  annotations:
-  - ID
-  - CNT
-  - AA
-  - CDS
-
-snpeff:
-  clinical_reporting: True
-  cancer: True
-
-tracks:
-- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
-
-tsv_fields:
-  - CHROM                         : Chromosome
-  - POS                           : Position
-  - REF                           : REF
-  - ALT                           : ALT
-  - ID                            : ID
-  - QUAL                          : QualityScore
-  - DP                            : Depth
-  - FILTER                        : Filter
-  - dbSNPBuildID                  : dbSNPBuildID
-
-  - "EFF[*].EFFECT"               : Effect
-  - "EFF[*].IMPACT"               : Impact
-  - "EFF[*].FUNCLASS"             : FunctionalClass
-  - "EFF[*].CODING"               : CodingRegion
-  - "EFF[*].GENE"                 : Gene
-  - "EFF[*].CODON"                : Codon
-  - "EFF[*].AA"                   : AminoAcid
-  - "EFF[*].AA_LEN"               : AminoAcidLength
-  - CNT                           : CountInCosmic
-  - AA                            : AminoAcidInCosmic
-  - CDS                           : CDSInCosmic
-  - "EFF[*].RANK"                 : Rank
-  - BaseQRankSum                  : BaseQailityRankSum
-  - FS                            : FischerScore
-  - GC                            : GC
-  - HaplotypeScore                : HaplotypeScore
-  - HRun                          : HomopolymerRunSize
-  - MQ                            : MappingQuality
-  - MQRankSum                     : MQualityRankSum
-  - MQ0                           : TotalMappingQualityZeroReads
-  - QD                            : QualityByDepth
-  - ReadPosRankSum                : ReadPosRankSum
-
-  # FORMAT fields for the sample
-  - gt_GT                         : Genotype
-  #- gt_FT                         : GenotypeWasCalled
-  #- gt_GL                         : GenotypeLikelihoods
-  #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-  - gt_PL                         : GenotypeLikelihoods_PhredScaled
-  #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
-  #- gt_GQ                         : ConditionalGenotypeQuality
-  #- gt_HQ                         : HaplotypeQualities
-  #- gt_PS                         : PhaseSet
-  #- gt_PQ                         : PhasingQuality      # phred-scaled probability
-                                                         # that alleles are ordered
-                                                         # incorrectly in a heterozygote
-  #- gt_EC                         : ExpAlleleCounts
-  - gt_AD                         : AllelicDepthsForRefAndAlt
-  #- gt_AO                         : AlleleObservationCount
-  #- gt_QA                         : QualitySumForAltObservations
-  #- gt_QR                         : QualitySumForRefObservations
-  #- gt_RO                         : RefAlleleObservationCount
-
-  # dbsnp
-  - SAO                           : VariantAlleleOrigin
-  - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
-  - VC                            : VariationClass
-  - TYPE                          : AlleleType
-  - PM                            : VariantIsPrecious
-  #- MUT                           : CitedMutation
-  - HD                            : PresentInDBGap
-  - KGPROD                        : Has1000GenomeSubmission
-  - PH3                           : HapMapValidated
-  - OM                            : InOMIM
-  - COMMON                        : CommonVariant
-  #- CLNSIG                        : ClinicalSignificance
-  - G5                            : 5%MAFinPopulationsCAF
-  #- MAF                           : GlobalMinorAlleleFrequency
-  #- CDA                           : InClinicalDiagnosticAssay
-  - set                           : SourceVCF_forMergedRecInCombineVariants
-  - analysis_blocks               : analysis_blocks
+#  - ID
+#  - SAO
+#  - VC
+#  - PM
+#  - HD
+#  - KGPROD
+#  - PH3
+#  - OM
+#  - CAF
+#  - COMMON
+#  - dbSNPBuildID
+#  - G5
+#  - CDA
+#
+#cosmic:
+#  annotations:
+#  - ID
+#  - CNT
+#  - AA
+#  - CDS
+#
+#snpeff:
+#  clinical_reporting: True
+#  cancer: True
+#
+#tracks:
+#- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
+#
+#tsv_fields:
+#  - CHROM                         : Chromosome
+#  - POS                           : Position
+#  - REF                           : REF
+#  - ALT                           : ALT
+#  - ID                            : ID
+#  - QUAL                          : QualityScore
+#  - DP                            : Depth
+#  - FILTER                        : Filter
+#  - dbSNPBuildID                  : dbSNPBuildID
+#
+#  - "EFF[*].EFFECT"               : Effect
+#  - "EFF[*].IMPACT"               : Impact
+#  - "EFF[*].FUNCLASS"             : FunctionalClass
+#  - "EFF[*].CODING"               : CodingRegion
+#  - "EFF[*].GENE"                 : Gene
+#  - "EFF[*].CODON"                : Codon
+#  - "EFF[*].AA"                   : AminoAcid
+#  - "EFF[*].AA_LEN"               : AminoAcidLength
+#  - CNT                           : CountInCosmic
+#  - AA                            : AminoAcidInCosmic
+#  - CDS                           : CDSInCosmic
+#  - "EFF[*].RANK"                 : Rank
+#  - BaseQRankSum                  : BaseQailityRankSum
+#  - FS                            : FischerScore
+#  - GC                            : GC
+#  - HaplotypeScore                : HaplotypeScore
+#  - HRun                          : HomopolymerRunSize
+#  - MQ                            : MappingQuality
+#  - MQRankSum                     : MQualityRankSum
+#  - MQ0                           : TotalMappingQualityZeroReads
+#  - QD                            : QualityByDepth
+#  - ReadPosRankSum                : ReadPosRankSum
+#
+#  # FORMAT fields for the sample
+#  - gt_GT                         : Genotype
+#  #- gt_FT                         : GenotypeWasCalled
+#  #- gt_GL                         : GenotypeLikelihoods
+#  #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+#  - gt_PL                         : GenotypeLikelihoods_PhredScaled
+#  #- gt_GP                         : GenotypePosteriorProbs_PhredScaled
+#  #- gt_GQ                         : ConditionalGenotypeQuality
+#  #- gt_HQ                         : HaplotypeQualities
+#  #- gt_PS                         : PhaseSet
+#  #- gt_PQ                         : PhasingQuality      # phred-scaled probability
+#                                                         # that alleles are ordered
+#                                                         # incorrectly in a heterozygote
+#  #- gt_EC                         : ExpAlleleCounts
+#  - gt_AD                         : AllelicDepthsForRefAndAlt
+#  #- gt_AO                         : AlleleObservationCount
+#  #- gt_QA                         : QualitySumForAltObservations
+#  #- gt_QR                         : QualitySumForRefObservations
+#  #- gt_RO                         : RefAlleleObservationCount
+#
+#  # dbsnp
+#  - SAO                           : VariantAlleleOrigin
+#  - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
+#  - VC                            : VariationClass
+#  - TYPE                          : AlleleType
+#  - PM                            : VariantIsPrecious
+#  #- MUT                           : CitedMutation
+#  - HD                            : PresentInDBGap
+#  - KGPROD                        : Has1000GenomeSubmission
+#  - PH3                           : HapMapValidated
+#  - OM                            : InOMIM
+#  - COMMON                        : CommonVariant
+#  #- CLNSIG                        : ClinicalSignificance
+#  - G5                            : 5%MAFinPopulationsCAF
+#  #- MAF                           : GlobalMinorAlleleFrequency
+#  #- CDA                           : InClinicalDiagnosticAssay
+#  - set                           : SourceVCF_forMergedRecInCombineVariants
+#  - analysis_blocks               : analysis_blocks

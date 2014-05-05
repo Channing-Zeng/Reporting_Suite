@@ -1,5 +1,5 @@
 import os
-from os.path import basename, join, realpath
+from os.path import basename, join, realpath, expanduser
 from collections import OrderedDict
 
 from yaml import load
@@ -67,16 +67,20 @@ def _load_genome_resources(cnf):
         err('Please, provide path to the reference file (seq).')
         to_exit = True
 
-    if not verify_file(genome_cnf['seq'], 'Reference seq'):
-        to_exit = True
 
-    for f in 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
-        if f in genome_cnf:
-            if not verify_file(genome_cnf[f], f):
-                to_exit = True
-    if 'snpeff' in genome_cnf:
-        if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
-            to_exit = True
+    # genome_cnf['seq'] = expanduser(genome_cnf['seq'])
+    # if not verify_file(genome_cnf['seq'], 'Reference seq'):
+    #     to_exit = True
+    #
+    # for f in 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
+    #     if f in genome_cnf:
+    #         genome_cnf[f] = expanduser(genome_cnf[f])
+    #         if not verify_file(genome_cnf[f], f):
+    #             to_exit = True
+    # if 'snpeff' in genome_cnf:
+    #     genome_cnf['snpeff'] = expanduser(genome_cnf['snpeff'])
+    #     if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
+    #         to_exit = True
 
     if to_exit:
         exit(1)
@@ -115,6 +119,7 @@ def _check_system_resources(cnf):
 
     for name, data in resources.items():
         if 'path' in data:
+            data['path'] = expanduser(data['path'])
             if not verify_file(data['path'], name):
                 to_exit = True
 
@@ -136,11 +141,11 @@ def _read_samples_info(common_cnf, options):
         critical('ERROR: Provide input VCF by --vcf '
                  'or specify "details" section in run config.')
     if options.vcf:
-        vcf_conf = {'vcf': options.vcf}
+        vcf_conf = {'vcf': expanduser(options.vcf)}
         if options.bam:
-            vcf_conf['bam'] = options.bam
+            vcf_conf['bam'] = expanduser(options.bam)
         if options.output_dir:
-            vcf_conf['output_dir'] = options.output_dir
+            vcf_conf['output_dir'] = expanduser(options.output_dir)
         details = [vcf_conf]
 
     all_samples = OrderedDict()
@@ -148,6 +153,7 @@ def _read_samples_info(common_cnf, options):
     for vcf_conf in details:
         if 'vcf' not in vcf_conf:
             critical('ERROR: A section in details does not contain field "vcf".')
+        vcf_conf['vcf'] = expanduser(vcf_conf['vcf'])
         if not verify_file(vcf_conf['vcf'], 'Input file'):
             exit(1)
 
@@ -178,6 +184,7 @@ def _read_samples_info(common_cnf, options):
         # SINGLE SAMPLE
         else:
             if 'bam' in vcf_conf:
+                vcf_conf['bam'] = expanduser(vcf_conf['bam'])
                 if not verify_file(vcf_conf['bam']):
                     exit()
 
@@ -222,6 +229,7 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
 
 
 def _set_up_work_dir(cnf):
+    cnf['output_dir'] = expanduser(cnf['output_dir'])
     output_dirpath = realpath(cnf['output_dir'])
     safe_mkdir(output_dirpath, 'output_dir for ' + cnf['name'])
     work_dirpath = join(output_dirpath, 'work')
@@ -238,8 +246,9 @@ def _verify_sample_info(vcf_conf, vcf_header_samples):
             join_parent_conf(sample_conf, vcf_conf)
 
             bam = sample_conf.get('bam')
-            if bam and not verify_file(bam, 'Bam file'):
+            if bam and not verify_file(expanduser(bam), 'Bam file'):
                 exit()
+            sample_conf['bam'] = expanduser(bam)
 
     sample_cnfs = vcf_conf.get('samples') or OrderedDict()
 
