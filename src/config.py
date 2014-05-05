@@ -14,7 +14,7 @@ from src.my_utils import get_tool_cmdline, err, critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir
 
 
-def process_config(system_config_path, run_config_path):
+def process_config(system_config_path, run_config_path, options):
     sys_cnf = load(open(system_config_path), Loader=Loader)
     run_cnf = load(open(run_config_path), Loader=Loader)
 
@@ -32,7 +32,7 @@ def process_config(system_config_path, run_config_path):
     if 'quality_control' in config:
         _check_quality_control_config(config)
 
-    samples = _read_samples_info(config)
+    samples = _read_samples_info(config, options)
 
     info('Configs checked.')
     return config, samples
@@ -91,17 +91,17 @@ def _load_genome_resources(cnf):
 def _check_system_resources(cnf):
     to_exit = False
     if not which('java'):
-        err(cnf['log'], '\n* Warning: Java not found. You may want to run "module load java", '
+        err(cnf.get('log'), '\n* Warning: Java not found. You may want to run "module load java", '
             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
         to_exit = True
 
     if not which('perl'):
-        err(cnf['log'], '\n* Warning: Perl not found. You may want to run "module load perl", '
+        err(cnf.get('log'), '\n* Warning: Perl not found. You may want to run "module load perl", '
             'or better ". /group/ngs/bin/bcbio-prod.sh"\n')
     if not get_tool_cmdline(cnf, 'vcfannotate',
                             extra_warn='You may want to load BCBio '
                                        'with ". /group/ngs/bin/bcbio-prod.sh"'):
-        err(cnf['log'], '\n* Warning: skipping annotation with bed tracks.\n')
+        err(cnf.get('log'), '\n* Warning: skipping annotation with bed tracks.\n')
 
     # print ''
     # print 'In Waltham, run this as well:'
@@ -111,7 +111,7 @@ def _check_system_resources(cnf):
 
     resources = cnf.get('resources', None)
     if not resources:
-        critical(cnf['log'], 'No "resources" section in system config.')
+        critical(cnf.get('log'), 'No "resources" section in system config.')
 
     for name, data in resources.items():
         if 'path' in data:
@@ -122,22 +122,28 @@ def _check_system_resources(cnf):
         exit()
 
 
-def _read_samples_info(common_cnf):
+def _read_samples_info(common_cnf, options):
     info('')
     info('Processing input details...')
-
-    if 'details' not in common_cnf:
-        critical('ERROR: Run config does not contain "details" section.')
 
     common_cnf['output_dir'] = common_cnf.get('output_dir', os.getcwd())
     common_cnf['filter_reject'] = common_cnf.get('filter_reject', False)
     common_cnf['split_samples'] = common_cnf.get('split_samples', False)
     common_cnf['log'] = None
 
-    all_samples = OrderedDict()
+    details = common_cnf.get('details')
+    if not details and not options.vcf:
+        critical('ERROR: Provide input VCF by --vcf '
+                 'or specify "details" section in run config.')
+    if options.vcf:
+        vcf_conf = {'vcf': options.vcf}
+        if options.bam:
+            vcf_conf['bam'] = options.bam
+        if options.output_dir:
+            vcf_conf['output_dir'] = options.output_dir
+        details = [vcf_conf]
 
-    details = common_cnf['details']
-    del common_cnf['details']
+    all_samples = OrderedDict()
 
     for vcf_conf in details:
         if 'vcf' not in vcf_conf:

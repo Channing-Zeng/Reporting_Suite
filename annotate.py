@@ -3,8 +3,9 @@ import sys
 import shutil
 import os
 from os.path import join, realpath, isdir, isfile, dirname
-
+from optparse import OptionParser
 from yaml import dump
+
 from src.config import process_config
 from src.summarize import summarize_qc
 from src.tsv import make_tsv
@@ -20,17 +21,30 @@ from src.my_utils import critical, info
 
 def main(args):
     if len(args) < 1:
-        exit('Usage: python ' + __file__ + ' run_info.yaml\n'
-             '    or python ' + __file__ + ' system_info.yaml run_info.yaml')
+        exit('Usage: python ' + __file__ + ' [system_info.yaml] [run_info.yaml] '
+                                           '--vcf variants.vcf [--bam align.bam] '
+                                           '[-o outout_directory]\n'
+             '    or python ' + __file__ + ' [system_info.yaml] run_info.yaml')
 
     if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
         exit('Python version 2.7 and higher is supported (you are running ' +
              '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
-    if len(args) == 1:
+    parser = OptionParser()
+    parser.add_option('--vcf', dest='vcf', help='variants to annotate', metavar='FILE')
+    parser.add_option('--bam', dest='bam', help='used to generate some annotations by GATK', metavar='FILE')
+    parser.add_option('-o', dest='output_dir', metavar='DIR')
+    (options, args) = parser.parse_args()
+
+    system_config_path = join(dirname(realpath(__file__)), 'system_info_rask.yaml')
+    run_config_path = join(dirname(realpath(__file__)), 'run_info.yaml')
+    if len(args) < 1:
+        sys.stderr.write('Notice: using run_info.yaml as a default'
+                         ' annotation configutation file.\n\n')
+    else:
         run_config_path = args[0]
-        system_config_path = join(dirname(realpath(__file__)),
-                                  'system_info_rask.yaml')
+
+    if len(args) < 2:
         sys.stderr.write('Notice: using system_info_rask.yaml as a default'
                          ' tools configutation file.\n\n')
     else:
@@ -54,7 +68,7 @@ def main(args):
     if to_exit:
         exit()
 
-    config, samples = process_config(system_config_path, run_config_path)
+    config, samples = process_config(system_config_path, run_config_path, options)
     try:
         annotate(config, samples)
     except KeyboardInterrupt:
