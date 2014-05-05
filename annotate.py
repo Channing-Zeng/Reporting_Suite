@@ -16,7 +16,7 @@ except ImportError:
 
 from src.annotation import run_annotators
 from src.quality_control import quality_control
-from src.my_utils import critical, info
+from src.my_utils import critical, info, iterate_file, step_greetings
 
 
 def main(args):
@@ -107,7 +107,8 @@ def annotate(cnf, samples):
         for (sample_name, cnf), (vcf, tsv, qc_dir, qc_report, qc_plots) \
                 in zip(samples.items(), results):
             info(cnf['log'], sample_name + ':')
-            info(cnf['log'], '  ' + vcf)
+            if vcf:
+                info(cnf['log'], '  ' + vcf)
             if tsv:
                 info(cnf['log'], '  ' + tsv)
             if qc_dir:
@@ -134,6 +135,13 @@ def annotate(cnf, samples):
             shutil.rmtree(work_dirpath)
 
 
+def _filter_ensemble(cnf, input_fpath):
+    step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
+    output_fpath = iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
+    info(cnf.get('log'), 'Saved to ' + output_fpath)
+    return output_fpath
+
+
 def annotate_one(cnf, multiple_samples=False):
     if cnf.get('keep_intermediate'):
         cnf['log'] = join(cnf['work_dir'], cnf['name'] + '_log.txt')
@@ -155,17 +163,21 @@ def annotate_one(cnf, multiple_samples=False):
         if cnf.get('bam'):
             info(cnf.get('log'), 'BAM: ' + cnf['bam'])
 
-    final_vcf_fpath = run_annotators(cnf, cnf['vcf'])
-
-    final_tsv_fpath = None
-    if 'tsv_fields' in cnf:
-        final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
+    vcf_fpath = cnf['vcf']
+    if cnf.get('ensemble'):
+        vcf_fpath = _filter_ensemble(cnf, vcf_fpath)
 
     qc_report_fpath = None
     qc_plots_fpaths = None
     qc_dir = join(cnf['output_dir'], 'qc')
     if 'quality_control' in cnf:
-        qc_report_fpath, qc_plots_fpaths = quality_control(cnf, qc_dir, final_vcf_fpath)
+        qc_report_fpath, qc_plots_fpaths = quality_control(cnf, qc_dir, vcf_fpath)
+
+    anno_vcf_fpath = run_annotators(cnf, vcf_fpath)
+
+    anno_tsv_fpath = None
+    if anno_vcf_fpath and 'tsv_fields' in cnf:
+        anno_tsv_fpath = make_tsv(cnf, anno_vcf_fpath)
 
     # final_vcf_fpath = relpath(final_vcf_fpath, os.getcwd())
     # final_tsv_fpath = relpath(final_tsv_fpath, os.getcwd())
@@ -176,15 +188,16 @@ def annotate_one(cnf, multiple_samples=False):
     info(cnf['log'], '')
     info(cnf['log'], '*' * 70)
     info(cnf['log'], cnf['name'])
-    info(cnf['log'], 'Saved final VCF to ' + final_vcf_fpath)
-    if final_tsv_fpath:
-        info(cnf['log'], 'Saved final TSV to ' + final_tsv_fpath)
+    if anno_vcf_fpath:
+        info(cnf['log'], 'Saved final VCF to ' + anno_vcf_fpath)
+    if anno_tsv_fpath:
+        info(cnf['log'], 'Saved final TSV to ' + anno_tsv_fpath)
     if qc_report_fpath:
         info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
         info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
 
-    return final_vcf_fpath, final_tsv_fpath, qc_dir, qc_report_fpath, qc_plots_fpaths
+    return anno_vcf_fpath, anno_tsv_fpath, qc_dir, qc_report_fpath, qc_plots_fpaths
 
 
 if __name__ == '__main__':

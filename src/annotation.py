@@ -12,47 +12,52 @@ from src.utils import add_suffix, file_exists
 def run_annotators(cnf, vcf_fpath):
     work_dir = cnf['work_dir']
 
-    if cnf.get('split_genotypes'):
-        vcf_fpath = _split_genotypes(cnf, vcf_fpath)
-
-    if cnf.get('ensemble'):
-        vcf_fpath = _filter_ensemble(cnf, vcf_fpath)
+    annotated = False
 
     if 'gatk' in cnf:
+        annotated = True
         vcf_fpath = _gatk(cnf, vcf_fpath, cnf.get('bam'), work_dir)
 
     if 'dbsnp' in cnf:
+        annotated = True
         vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'],
                                       'dbsnp', vcf_fpath, work_dir)
     if 'cosmic' in cnf:
+        annotated = True
         vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'],
                                       'cosmic', vcf_fpath, work_dir)
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
+            annotated = True
             vcf_fpath = _snpsift_annotate(
                 cnf, custom_conf, dbname, vcf_fpath, work_dir)
 
     if 'dbnsfp' in cnf:
+        annotated = True
         vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath, work_dir)
 
     if 'snpeff' in cnf:
+        annotated = True
         _remove_annotation(cnf, 'EFF', vcf_fpath, work_dir)
         vcf_fpath = _snpeff(cnf, vcf_fpath, work_dir)
 
     if cnf.get('tracks'):
         for track in cnf['tracks']:
+            annotated = True
             vcf_fpath = _tracks(cnf, track, vcf_fpath, work_dir)
 
-    vcf_fpath = _filter_fields(cnf, vcf_fpath, work_dir)
+    if annotated:
+        vcf_fpath = _filter_fields(cnf, vcf_fpath, work_dir)
 
-    # Copying final VCF
-    final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
-    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
-    if isfile(final_vcf_fpath):
-        os.remove(final_vcf_fpath)
-    shutil.copyfile(vcf_fpath, final_vcf_fpath)
-
-    return final_vcf_fpath
+        # Copying final VCF
+        final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
+        final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
+        if isfile(final_vcf_fpath):
+            os.remove(final_vcf_fpath)
+        shutil.copyfile(vcf_fpath, final_vcf_fpath)
+        return final_vcf_fpath
+    else:
+        return None
 
 
 def _remove_annotation(cnf, field_to_del, input_fpath, work_dir):
@@ -259,36 +264,6 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
                 stdout_to_outputfile=False,
                 to_remove=[output_fpath + '.idx',
                            input_fpath + '.idx'])
-
-
-def _filter_ensemble(cnf, input_fpath):
-    step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
-    output_fpath = iterate_file(cnf, input_fpath, lambda l: 'REJECT' not in l, 'pass')
-    info(cnf.get('log'), 'Saved to ' + output_fpath)
-    return output_fpath
-
-
-def _split_genotypes(cnf, input_fpath):
-    step_greetings(cnf, 'Splitting genotypes.')
-
-    def proc_line(line):
-        if line.startswith('#'):
-            return line
-        else:
-            tokens = line.split()
-            alt_field = remove_quotes(tokens[4])
-            alts = alt_field.split(',')
-            if len(alts) > 1:
-                for alt in set(alts):
-                    line = '\t'.join(tokens[:2] + ['.'] + [tokens[3]] + [alt] + tokens[5:8])
-                    return line
-            else:
-                line = '\t'.join(tokens[:2] + ['.'] + tokens[3:8])
-                return line
-
-    output_fpath = iterate_file(cnf, input_fpath, proc_line, 'split_gt')
-    info(cnf.get('log'), 'Saved to ' + output_fpath)
-    return output_fpath
 
 
 def _filter_fields(cnf, input_fpath, work_dir):

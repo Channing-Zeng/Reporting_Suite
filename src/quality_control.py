@@ -38,11 +38,11 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
     cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
                ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
 
-    # if 'dbsnp' in databases:
-    #     cmdline += ' -D ' + databases['dbsnp']
-    #     del databases['dbsnp']
+    if 'dbsnp' in databases:
+        cmdline += ' -D ' + databases['dbsnp']
     for db_name, db_path in databases.items():
-        cmdline += ' -comp:' + db_name + ' ' + db_path
+        if not db_name == 'dbsnp':
+            cmdline += ' -comp:' + db_name + ' ' + db_path
 
     call(cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
          to_remove=[vcf_fpath + '.idx'])
