@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import subprocess
 import tempfile
@@ -275,7 +276,7 @@ def join_parent_conf(child_conf, parent_conf):
 def step_greetings(cnf, name):
     info(cnf.get('log'), '')
     info(cnf.get('log'), '-' * 70)
-    info(cnf.get('log'), name)
+    info(cnf.get('log'), datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '. ' + name)
     info(cnf.get('log'), '-' * 70)
 
 

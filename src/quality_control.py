@@ -1,4 +1,3 @@
-from genericpath import isfile
 import shutil
 from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname
@@ -8,55 +7,7 @@ from src.my_utils import info, err, verify_file, step_greetings, \
     get_tool_cmdline, get_java_tool_cmdline, call, verify_dir, critical
 
 
-def quality_control(cnf, qc_dir, vcf_fpath):
-    if 'quality_control' not in cnf:
-        return None, None
-
-    if not isdir(qc_dir):
-        mkdir(qc_dir)
-
-    qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
-    qc_plots_fpaths = bcftools_qc(cnf, qc_dir, vcf_fpath)
-    return qc_report_fpath, qc_plots_fpaths
-
-
-def gatk_qc(cnf, qc_dir, vcf_fpath):
-    step_greetings(cnf, 'Quality control reports')
-
-    log = cnf['log']
-    work_dir = cnf['work_dir']
-
-    qc_cnf = cnf['quality_control']
-    databases = qc_cnf.get('database_vcfs')
-    novelty = qc_cnf.get('novelty')
-    metrics = qc_cnf.get('metrics')
-
-    executable = get_java_tool_cmdline(cnf, 'gatk')
-    ref_fpath = cnf['genome']['seq']
-    report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
-
-    cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
-               ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
-
-    if 'dbsnp' in databases:
-        cmdline += ' -D ' + databases['dbsnp']
-    for db_name, db_path in databases.items():
-        if not db_name == 'dbsnp':
-            cmdline += ' -comp:' + db_name + ' ' + db_path
-
-    call(cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
-         to_remove=[vcf_fpath + '.idx'])
-
-    report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
-
-    final_report_fpath = join(qc_dir, cnf['name'] + '_qc.report')
-
-    _make_final_report(report, final_report_fpath, cnf['name'],
-                       databases.keys(), novelty, metrics)
-    return final_report_fpath
-
-
-def _check_quality_control_config(cnf):
+def check_quality_control_config(cnf):
     qc_cnf = cnf.get('quality_control')
     if not qc_cnf:
         return
@@ -111,6 +62,54 @@ def _check_quality_control_config(cnf):
                          'qc summary report: ' + summary_output_dir)
         if not verify_dir(summary_output_dir, 'qc_summary_output'):
             exit()
+
+
+def quality_control(cnf, qc_dir, vcf_fpath):
+    if 'quality_control' not in cnf:
+        return None, None
+
+    if not isdir(qc_dir):
+        mkdir(qc_dir)
+
+    qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
+    qc_plots_fpaths = bcftools_qc(cnf, qc_dir, vcf_fpath)
+    return qc_report_fpath, qc_plots_fpaths
+
+
+def gatk_qc(cnf, qc_dir, vcf_fpath):
+    step_greetings(cnf, 'Quality control reports')
+
+    log = cnf['log']
+    work_dir = cnf['work_dir']
+
+    qc_cnf = cnf['quality_control']
+    databases = qc_cnf.get('database_vcfs')
+    novelty = qc_cnf.get('novelty')
+    metrics = qc_cnf.get('metrics')
+
+    executable = get_java_tool_cmdline(cnf, 'gatk')
+    ref_fpath = cnf['genome']['seq']
+    report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
+
+    cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
+               ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
+
+    if 'dbsnp' in databases:
+        cmdline += ' -D ' + databases['dbsnp']
+    for db_name, db_path in databases.items():
+        if not db_name == 'dbsnp':
+            cmdline += ' -comp:' + db_name + ' ' + db_path
+
+    call(cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
+         to_remove=[vcf_fpath + '.idx'])
+
+    report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
+
+    final_report_fpath = join(qc_dir, cnf['name'] + '_qc.report')
+
+    _make_final_report(report, final_report_fpath, cnf['name'],
+                       databases.keys(), novelty, metrics)
+    return final_report_fpath
 
 
 def bcftools_qc(cnf, qc_dir, vcf_fpath):

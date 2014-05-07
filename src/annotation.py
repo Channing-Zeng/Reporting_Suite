@@ -57,6 +57,7 @@ def run_annotators(cnf, vcf_fpath):
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
         return final_vcf_fpath
     else:
+        info('No annotations were run on ' + vcf_fpath + '. Please, specify some in run_info.')
         return None
 
 
@@ -176,13 +177,13 @@ def _tracks(cnf, track_path, input_fpath, work_dir):
     toolpath = get_tool_cmdline(cnf, 'vcfannotate')
     if not toolpath:
         err(cnf['log'], 'WARNING: Skipping annotation with tracks: vcfannotate '
-            'executable not found, you probably need to '
-            'run the commandline:  . /group/ngs/bin/bcbio-prod.sh"')
+            'executable not found, you probably need to specify path in system_config, or '
+            'run load bcbio:  . /group/ngs/bin/bcbio-prod.sh"')
         return
 
     # self.all_fields.append(field_name)
 
-    cmdline = 'vcfannotate -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
+    cmdline = '{toolpath} -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
     output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
     output_fpath = call(cnf, cmdline, input_fpath, output_fpath,

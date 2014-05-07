@@ -1,8 +1,6 @@
 ## Inside the output directory the following will be created:
 ## <sample_name>.anno.vcf
 ## <sample_name>.anno.tsv
-## <sample_name>.qc.txt
-## <sample_name>.qc_plots/
 
 filter_reject: True           ## Filters variants with REJECT in the FILTER field
 #split_samples: True          ## Creates separate VCF for each sample.
@@ -15,15 +13,6 @@ keep_intermediate: True       ## Keeps "work_dir" with intermediate files for ea
 reuse_intermediate: True      ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 parallel: False               ## Process samples in parallel (requires "joblib" python package)
 
-## Quality control variants:
-## GATK for database concordance and other metrics
-## BCFtools for plots
-quality_control:
-  databases: ['dbsnp', 'cosmic', '1000genomes']
-  novelty: ['all', 'known', 'novel']
-  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 ## Annotation with various tools.
 ## If no "annotations:" section specified, all annotations will be applied

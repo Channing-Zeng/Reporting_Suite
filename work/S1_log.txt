@@ -1,0 +1,46 @@
+
+----------------------------------------------------------------------
+2014-05-07 21:46:31. Quality control reports
+----------------------------------------------------------------------
+java -Xms750m -Xmx2500m  -jar /usr/local/share/java/gatk/GenomeAnalysisTK.jar -nt 20 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf -o /Users/vladsaveliev/vagrant/variantannotation/work/tx/tmpuf2BUP/S1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+   INFO  21:46:36,871 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  21:46:36,876 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.1-1-g07a4bf8, Compiled 2014/03/18 06:09:21
+   INFO  21:46:36,876 HelpFormatter - Copyright (c) 2010 The Broad Institute
+   INFO  21:46:36,876 HelpFormatter - For support and documentation go to http://www.broadinstitute.org/gatk
+   INFO  21:46:36,880 HelpFormatter - Program Args: -nt 20 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf -o /Users/vladsaveliev/vagrant/variantannotation/work/tx/tmpuf2BUP/S1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+   INFO  21:46:37,222 HelpFormatter - Executing as vladsaveliev@Vladislavs-MacBook-Air-2.local on Mac OS X 10.9.2 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.7.0_55-b13.
+   INFO  21:46:37,222 HelpFormatter - Date/Time: 2014/05/07 21:46:36
+   INFO  21:46:37,223 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  21:46:37,223 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  21:46:37,713 GenomeAnalysisEngine - Strictness is SILENT
+   INFO  21:46:37,787 GenomeAnalysisEngine - Downsampling Settings: Method: BY_SAMPLE, Target Coverage: 1000
+   INFO  21:46:37,871 RMDTrackBuilder - Writing Tribble index to disk for file /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf.idx
+   INFO  21:46:37,912 MicroScheduler - Running the GATK in parallel mode with 20 total threads, 1 CPU thread(s) for each of 20 data thread(s), of 4 processors available on this machine
+   WARN  21:46:37,913 MicroScheduler - Number of requested GATK threads 20 is more than the number of available processors on this machine 4
+   INFO  21:46:38,008 GenomeAnalysisEngine - Preparing for traversal
+   INFO  21:46:38,009 GenomeAnalysisEngine - Done preparing for traversal
+   INFO  21:46:38,010 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
+   INFO  21:46:38,010 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
+   INFO  21:46:38,030 VariantEval - Creating 6 combinatorial stratification states
+   INFO  21:46:38,340 VariantEval - Finalizing variant report
+   INFO  21:46:38,890 ProgressMeter -            done        7.22e+02    0.0 s       20.3 m     45.7%         0.0 s     0.0 s
+   INFO  21:46:38,891 ProgressMeter - Total runtime 0.88 secs, 0.01 min, 0.00 hours
+   INFO  21:46:41,443 GATKRunReport - Uploaded run statistics report to AWS S3
+Saved to /Users/vladsaveliev/vagrant/variantannotation/work/S1_gatk.report
+
+----------------------------------------------------------------------
+2014-05-07 21:46:41. Quality control plots
+----------------------------------------------------------------------
+/usr/local/bin/bgzip -c /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf > /Users/vladsaveliev/vagrant/variantannotation/work/tx/tmpHbXzHc/S1.vcf.gz
+Saved to /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf.gz
+/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf.gz > /Users/vladsaveliev/vagrant/variantannotation/work/tx/tmpnKSxom/S1.vcf.gz.tbi
+Saved to /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf.gz.tbi
+/usr/local/bin/bcftools stats /Users/vladsaveliev/vagrant/variantannotation/work/S1.vcf.gz > /Users/vladsaveliev/vagrant/variantannotation/work/tx/tmp5tv2Kt/S1_bcftools.report
+Saved to /Users/vladsaveliev/vagrant/variantannotation/work/S1_bcftools.report
+   Parsing vcfstats output: /Users/vladsaveliev/vagrant/variantannotation/work/S1_bcftools.report
+   Plotting graphs: python /Users/vladsaveliev/vagrant/variantannotation/work/S1_qc_plots/plot.py
+
+**********************************************************************
+S1
+Saved QC report to /Users/vladsaveliev/vagrant/variantannotation/qc/S1_qc.report
+Saved QC plots are in: /Users/vladsaveliev/vagrant/variantannotation/qc/S1_indels.png, /Users/vladsaveliev/vagrant/variantannotation/qc/S1_substitution.png

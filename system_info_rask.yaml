@@ -15,12 +15,19 @@ resources:
     path: /group/ngs/src/bcftools/bcftools
   plot_vcfstats:
     path: /group/ngs/src/bcftools/plot-vcfstats
+  vcfannotate:
+    path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/Cellar/vcflib/2014-02-19/bin/vcfannotate
 
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
     snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
+
+    chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed                            gene data
+    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
