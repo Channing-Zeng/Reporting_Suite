@@ -33,9 +33,8 @@ def main(args):
 
 
 def process_one(cnf, vcf_fpath):
-    qc_dir = join(cnf['output_dir'], 'qc')
     if 'quality_control' in cnf:
-        return quality_control(cnf, qc_dir, vcf_fpath)
+        return quality_control(cnf, cnf['output_dir'], vcf_fpath)
     else:
         return None, None
 
