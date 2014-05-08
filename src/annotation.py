@@ -154,7 +154,7 @@ def _snpeff(cnf, input_fpath, work_dir):
         critical(cnf['log'], 'Please, provide a path to SnpEff data in '
                  'the "genomes" section in the system config.')
 
-    cmdline = ('{executable} eff -dataDir {db_path} -noLog -1 '
+    cmdline = ('{executable} eff -dataDir {db_path} -noStats -noLog -1 '
                '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
 
     if cnf['snpeff'].get('clinical_reporting') or \
