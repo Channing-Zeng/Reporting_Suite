@@ -88,10 +88,11 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
     metrics = qc_cnf.get('metrics')
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
+    gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
     ref_fpath = cnf['genome']['seq']
     report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
 
-    cmdline = ('{executable} -nt 20 -R {ref_fpath} -T VariantEval'
+    cmdline = ('{executable} {gatk_opts_line} -R {ref_fpath} -T VariantEval'
                ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
 
     if 'dbsnp' in databases:

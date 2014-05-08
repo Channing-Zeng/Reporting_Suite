@@ -23,3 +23,6 @@ quality_control:
   metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+
+gatk:
+  options: ['-dt NONE', '-nt 1']

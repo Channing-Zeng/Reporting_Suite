@@ -214,7 +214,7 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
     step_greetings(cnf, 'GATK')
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
-
+    gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
     output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
 
     # duplicating this from "call" function to avoid calling gatk version
@@ -225,7 +225,7 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
 
     ref_fpath = cnf['genome']['seq']
 
-    cmdline = ('{executable} -dt NONE -R {ref_fpath} -T VariantAnnotator'
+    cmdline = ('{executable} {gatk_opts_line} -R {ref_fpath} -T VariantAnnotator'
                ' --variant {input_fpath} -o {output_fpath}').format(**locals())
     if bam_fpath:
         cmdline += ' -I ' + bam_fpath

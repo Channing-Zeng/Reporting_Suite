@@ -14,6 +14,7 @@ keep_intermediate: True
 #parallel: True
 
 gatk:
+  options: ['-dt NONE', '-nt 1']
   annotations:                # Field names in final VCF:
   - Coverage                  # DP
   - BaseQualityRankSumTest    # BaseQRankSum

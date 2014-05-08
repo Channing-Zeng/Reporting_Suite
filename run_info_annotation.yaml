@@ -17,6 +17,7 @@ parallel: False               ## Process samples in parallel (requires "joblib" 
 ## Annotation with various tools.
 ## If no "annotations:" section specified, all annotations will be applied
 gatk:
+  options: ['-dt NONE', '-nt 1']
   annotations:                ## Field names in final VCF:
   - Coverage                  ## DP
   - BaseQualityRankSumTest    ## BaseQRankSum
