@@ -13,65 +13,64 @@ keep_intermediate: True
 #reuse_intermediate: True
 #parallel: True
 
+gatk:
+  annotations:                # Field names in final VCF:
+  - Coverage                  # DP
+  - BaseQualityRankSumTest    # BaseQRankSum
+  - FisherStrand              # FS
+  - GCContent                 # GC
+  - HaplotypeScore            # HaplotypeScore
+  - HomopolymerRun            # HRun
+  - RMSMappingQuality         # MQ
+  - MappingQualityRankSumTest # MQRankSum
+  - MappingQualityZero        # MQ0
+  - QualByDepth               # QD
+  - ReadPosRankSumTest        # ReadPosRankSum
+  - DepthPerAlleleBySample
+  - AlleleBalanceBySample     # AB
 
-#gatk:
-#  annotations:                # Field names in final VCF:
-#  - Coverage                  # DP
-#  - BaseQualityRankSumTest    # BaseQRankSum
-#  - FisherStrand              # FS
-#  - GCContent                 # GC
-#  - HaplotypeScore            # HaplotypeScore
-#  - HomopolymerRun            # HRun
-#  - RMSMappingQuality         # MQ
-#  - MappingQualityRankSumTest # MQRankSum
-#  - MappingQualityZero        # MQ0
-#  - QualByDepth               # QD
-#  - ReadPosRankSumTest        # ReadPosRankSum
-#  - DepthPerAlleleBySample
-#  - AlleleBalanceBySample     # AB
-#
-##db_nsfp:
-##  annotations:
-##  - SIFT_score
-##  - Polyphen2_HVAR_score
-##  - Polyphen2_HVAR_pred
-##  - LRT_score
-##  - LRT_pred
-##  - MutationTaster_score
-##  - MutationTaster_pred
-##  - MutationAssessor_score
-##  - MutationAssessor_pred
-##  - FATHMM_score
-##  - Ensembl_geneid
-##  - Ensembl_transcriptid
-##  - Uniprot_acc
-##  - 1000Gp1_AC
-##  - 1000Gp1_AF
-##  - ESP6500_AA_AF
-##  - ESP6500_EA_AF
-#
-#db_snp:
+#db_nsfp:
 #  annotations:
-#  - ID
-#  - SAO
-#  - VC
-#  - PM
-#  - HD
-#  - KGPROD
-#  - PH3
-#  - OM
-#  - CAF
-#  - COMMON
-#  - dbSNPBuildID
-#  - G5
-#  - CDA
-#
-#cosmic:
-#  annotations:
-#  - ID
-#  - CNT
-#  - AA
-#  - CDS
+#  - SIFT_score
+#  - Polyphen2_HVAR_score
+#  - Polyphen2_HVAR_pred
+#  - LRT_score
+#  - LRT_pred
+#  - MutationTaster_score
+#  - MutationTaster_pred
+#  - MutationAssessor_score
+#  - MutationAssessor_pred
+#  - FATHMM_score
+#  - Ensembl_geneid
+#  - Ensembl_transcriptid
+#  - Uniprot_acc
+#  - 1000Gp1_AC
+#  - 1000Gp1_AF
+#  - ESP6500_AA_AF
+#  - ESP6500_EA_AF
+
+db_snp:
+  annotations:
+  - ID
+  - SAO
+  - VC
+  - PM
+  - HD
+  - KGPROD
+  - PH3
+  - OM
+  - CAF
+  - COMMON
+  - dbSNPBuildID
+  - G5
+  - CDA
+
+cosmic:
+  annotations:
+  - ID
+  - CNT
+  - AA
+  - CDS
 
 snpeff:
   clinical_reporting: True
