@@ -39,7 +39,11 @@ def run_annotators(cnf, vcf_fpath):
     if 'snpeff' in cnf:
         annotated = True
         _remove_annotation(cnf, 'EFF', vcf_fpath, work_dir)
-        vcf_fpath = _snpeff(cnf, vcf_fpath, work_dir)
+        vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath, work_dir)
+        if file_exists(summary_fpath):
+            shutil.move(summary_fpath, cnf['output_dir'])
+        if file_exists(genes_fpath):
+            shutil.move(genes_fpath, cnf['output_dir'])
 
     if cnf.get('tracks'):
         for track in cnf['tracks']:
@@ -55,6 +59,7 @@ def run_annotators(cnf, vcf_fpath):
         if isfile(final_vcf_fpath):
             os.remove(final_vcf_fpath)
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
+
         return final_vcf_fpath
     else:
         info('No annotations were run on ' + vcf_fpath + '. Please, specify some in run_info.')
@@ -130,15 +135,16 @@ def _snpsift_db_nsfp(cnf, input_fpath, work_dir):
     # self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
     ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
-    cmdline = '{executable} dbnsfp {ann_line} -v {db_path} {input_fpath}'.format(**locals())
+    cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
+              '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
     return call(cnf, cmdline, input_fpath, output_fpath,
-                            stdout_to_outputfile=True)
+                stdout_to_outputfile=True)
 
 
 def _snpeff(cnf, input_fpath, work_dir):
     if 'snpeff' not in cnf:
-        return input_fpath
+        return input_fpath, None, None
 
     step_greetings(cnf, 'SnpEff')
 
@@ -154,8 +160,10 @@ def _snpeff(cnf, input_fpath, work_dir):
         critical(cnf['log'], 'Please, provide a path to SnpEff data in '
                  'the "genomes" section in the system config.')
 
-    cmdline = ('{executable} eff -noStats -dataDir {db_path} -noLog -1 '
-               '-i vcf -o vcf {ref_name} {input_fpath}').format(**locals())
+    stats_fpath = join(work_dir, cnf['name'] + '.snpEff_summary.html')
+    cmdline = ('{executable} eff -dataDir {db_path} -stats {stats_fpath} '
+               '-csvStats -noLog -1 -i vcf -o vcf {ref_name} '
+               '{input_fpath}').format(**locals())
 
     if cnf['snpeff'].get('clinical_reporting') or \
             cnf['snpeff'].get('canonical'):
@@ -166,7 +174,8 @@ def _snpeff(cnf, input_fpath, work_dir):
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
     return call(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=True)
+                stdout_to_outputfile=True), \
+        stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
 
 
 def _tracks(cnf, track_path, input_fpath, work_dir):

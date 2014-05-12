@@ -27,6 +27,7 @@ from datetime import datetime
 # take folder name as a sample name ( first column on the report)
 # give user an option to select type of the report to run ????
 from src.main import common_main
+from src.my_utils import verify_file, critical
 
 _header = ['Sample', 'Chr', 'Start', 'End', 'Exome Num',
            'Direction', 'Length', 'MeanDepth']
@@ -37,26 +38,47 @@ def main(args):
         'targetcov',
         opts=[
             (['--bam'], 'align.bam', {
-             'dest': ['bam'],
+             'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
 
             (['--capture', '--capture'], 'capture.bed', {
-             'dest': ['capture'],
+             'dest': 'capture',
              'help': ''}),
 
             (['--padding'], '250', {
-             'dest': ['padding'],
+             'dest': 'padding',
              'help': '',
              'default': 250}),
         ])
 
-    genes_bed = config['genome']['genes']
-    exons_bed = config['genome']['exons']
-    chr_len_fpath = config['genome']['chr_lengths']
+    genes_bed = config.get('genes')
+    if not genes_bed:
+        genes_bed = config['genome'].get('genes')
+    if not verify_file(genes_bed):
+        critical('Specify genes bed in system info or in run info.')
+
+    exons_bed = config.get('exons')
+    if not exons_bed:
+        exons_bed = config['genome'].get('exons')
+    if not verify_file(exons_bed):
+        critical('Specify exons bed in system info or in run info.')
+
+    chr_len_fpath = config.get('chr_lengths')
+    if not chr_len_fpath:
+        chr_len_fpath = config['genome'].get('chr_lengths')
+    if not verify_file(chr_len_fpath):
+        critical('Specify chromosome lengths for the genome'
+                 ' in system info or in run info.')
+
     depth_thresholds = config['depth_thresholds']
 
-    bam = options.bam
-    capture = options.capture
+    bam = options.get('bam')
+    if not verify_file(bam, 'bam'):
+        critical('Specify bam file by --bam option.')
+
+    capture = options.get('capture', 'capture')
+    if not verify_file(capture):
+        critical('Specify capture file by --capture option.')
 
     run_header_report(capture, bam, chr_len_fpath, depth_thresholds, padding=250)
 
@@ -318,3 +340,6 @@ def run_cov_exomes_report(gene_bed, exome_bed, capture_bed, bam):
             write_report_line(bam, base_name, out, bed_line)
 
 # _gene_exome,bed_path_capture,bam_path)
+
+if __name__ == '__main__':
+    main(sys.argv)
