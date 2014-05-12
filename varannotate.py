@@ -27,6 +27,7 @@ def main(args):
         ])
 
     samples = read_samples_info_and_split(config, options)
+
     try:
         run_all(config, samples, process_one, finalize_one, finalize_all)
     except KeyboardInterrupt:

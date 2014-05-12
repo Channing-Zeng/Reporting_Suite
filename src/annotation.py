@@ -40,6 +40,10 @@ def run_annotators(cnf, vcf_fpath):
         annotated = True
         _remove_annotation(cnf, 'EFF', vcf_fpath, work_dir)
         vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath, work_dir)
+        if isfile(join(cnf['output_dir'], summary_fpath)):
+            os.remove(join(cnf['output_dir'], summary_fpath))
+        if isfile(join(cnf['output_dir'], genes_fpath)):
+            os.remove(join(cnf['output_dir'], genes_fpath))
         if file_exists(summary_fpath):
             shutil.move(summary_fpath, cnf['output_dir'])
         if file_exists(genes_fpath):

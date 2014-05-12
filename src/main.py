@@ -169,6 +169,11 @@ def read_samples_info_and_split(common_cnf, options):
 
             all_samples[cnf['name']] = cnf
 
+    if not all_samples:
+        print 'No samples.'
+    else:
+        info('Using samples: ' + ', '.join(all_samples) + '.')
+
     return all_samples
 
 
