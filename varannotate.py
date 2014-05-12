@@ -26,8 +26,7 @@ def main(args):
              'help': 'used to generate some annotations by GATK'}),
         ])
 
-
-    var_fpath = options.get('var')
+    var_fpath = options.get('vcf')
     if var_fpath:
         print 'Using variants ' + var_fpath
     bam_fpath = options.get('bam')
