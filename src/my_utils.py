@@ -3,7 +3,7 @@ import sys
 import subprocess
 import tempfile
 import os
-from os.path import join, basename, isfile, isdir, getsize, exists
+from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
 from distutils.version import LooseVersion
 import shutil
 
@@ -48,6 +48,7 @@ def verify_file(fpath, description=''):
     if not fpath:
         sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
         return False
+    fpath = expanduser(fpath)
     if not exists(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
@@ -64,6 +65,7 @@ def verify_dir(fpath, description=''):
     if not fpath:
         sys.stderr.write((description + ': d' if description else 'D') + 'ir name is empty.\n')
         return False
+    fpath = expanduser(fpath)
     if not exists(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
@@ -273,7 +275,15 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
-def step_greetings(cnf, name):
+def step_greetings(cnf, name=None):
+    if name is None:
+        name = cnf
+        cnf = dict()
+    if name is None:
+        name = ''
+    if cnf is None:
+        cnf = dict()
+
     info(cnf.get('log'), '')
     info(cnf.get('log'), '-' * 70)
     info(cnf.get('log'), datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '  ' + name)

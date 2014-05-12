@@ -43,3 +43,4 @@ nosetests.xml
 test/results
 test/results/
 test/results/*
+test/targetcov_results/*

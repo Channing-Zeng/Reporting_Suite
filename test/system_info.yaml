@@ -23,6 +23,6 @@ genomes:
     # dbnsfp: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
     snpeff: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
 
-    chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
-    genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed                            gene data
-    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
+    chr_lengths: ~/chr_lengths_hg19.txt
+    genes: ~/UCSC_canonical.sorted.bed
+    exons: ~/UCSC_exons_modif_canonical.sorted.bed

@@ -16,7 +16,7 @@ from yaml import dump, load
 try:
     from yaml import CDumper as Dumper, CLoader as Loader
 except ImportError:
-    from yaml import Dumper
+    from yaml import Dumper, Loader
 
 
 def common_main(name, opts):
