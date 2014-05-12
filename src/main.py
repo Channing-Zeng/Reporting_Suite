@@ -127,10 +127,7 @@ def read_samples_info_and_split(common_cnf, options):
         vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
 
         # MULTIPLE SAMPELS
-        if 'samples' in vcf_conf \
-                or vcf_conf.get('split_samples') \
-                or len(vcf_header_samples) == 0:
-
+        if ('samples' in vcf_conf or vcf_conf.get('split_samples')) and len(vcf_header_samples) == 0:
             sample_cnfs = _verify_sample_info(vcf_conf, vcf_header_samples)
 
             for header_sample_name in vcf_header_samples:
