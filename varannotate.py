@@ -26,6 +26,17 @@ def main(args):
              'help': 'used to generate some annotations by GATK'}),
         ])
 
+
+    var_fpath = options.get('var')
+    if var_fpath:
+        print 'Using variants ' + var_fpath
+    bam_fpath = options.get('bam')
+    if bam_fpath:
+        print 'Using bam ' + bam_fpath
+    output_dir = options.get('output_dir')
+    if output_dir:
+        print 'Saving to ' + output_dir
+
     samples = read_samples_info_and_split(config, options)
 
     try:
