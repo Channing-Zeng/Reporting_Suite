@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from genericpath import isdir
 import numpy
 
@@ -117,37 +117,38 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
             v_number_of_reads = int(number_of_reads(bam))
             out.write(format_integer('Number of reads', v_number_of_reads))
             v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-            out.write(format_integer('Percent mapped reads', v_percent_mapped))
+            out.write(format_percent('Percent mapped reads', v_percent_mapped))
 
             v_reads_on_target = int(reads_on_targ(capture_bed, bam))
             out.write(format_integer('Number of reads on target', v_reads_on_target))
-            vpercent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
-            out.write(format_integer('Percent reads on target', vpercent_on_target))
+            v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
+            out.write(format_percent('Percent reads on target', v_percent_on_target))
 
             padded_bed = get_padded_bed_file(capture_bed, chr_len_fpath, padding, work_dir)
-            v_padded_reads_on_targ = int(reads_on_targ(padded_bed, bam))
-            v_percent_on_padded = 100.0 * v_padded_reads_on_targ / v_mapped_reads if v_mapped_reads else None
-            out.write(format_integer('Percent reads on padded target', v_percent_on_padded))
+            v_reads_on_padded_targ = int(reads_on_targ(padded_bed, bam))
+            v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
+            out.write(format_percent('Percent reads on padded target', v_percent_on_padded))
 
             v_aligned_read_bases = total_aligned_base_reads(bam)
             out.write(format_integer('Total aligned base reads', v_aligned_read_bases))
 
             bases_per_depth, v_covd_ref_bases_on_targ, v_read_bases_on_targ, max_depth = \
                 get_analytics_target_depth(capture_bed, bam, depth_thresholds)
+
             out.write(format_integer('Total base reads on target', v_read_bases_on_targ))
 
             v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
                 if v_aligned_read_bases else None
             v_avg_cov_depth = v_read_bases_on_targ / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else None
             out.write(format_percent('Percent base reads on target', v_percent_read_bases_on_targ))
-            out.write(format_integer('Bases in targeted reference ', v_covd_ref_bases_on_targ))
+            out.write(format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ))
             # out.write(format_integer('Bases covered (at least 1x) ', target_groups[0][1]))
-            out.write(format_percent('Average coverage depth ', v_avg_cov_depth))
+            out.write(format_percent('Average coverage depth', v_avg_cov_depth))
             out.write(format_integer('Maximum read depth', max_depth))
 
             for depth, num in bases_per_depth.items():
-                cov_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else '-'
-                out.write(format_integer('Target coverage at ' + str(depth) + 'x', cov_at))
+                cov_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else None
+                out.write(format_percent('Target coverage at ' + str(depth) + 'x', cov_at))
 
     print('')
     print('*' * 70)
@@ -186,11 +187,11 @@ def _call(cmdline, output_fpath=None):
             subprocess.call(cmdline.split(), stdout=open(tx, 'w'))
 
 
-def _call_and_open_stdout(cmdline, stdout=subprocess.PIPE):
+def _call_and_open_stdout(cmdline):
     print('')
     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print(cmdline)
-    return subprocess.Popen(cmdline.split(), stdout=stdout)
+    return subprocess.Popen(cmdline.split(), stdout=subprocess.PIPE)
 
 
 def _call_check_output(cmdline, stdout=subprocess.PIPE):
@@ -217,45 +218,45 @@ def gnu_sort(bed_path, work_dir):
 
 
 def samtool_depth_range(bam_path, region):
-    cmdline = 'samtools depth {bam_path} -r {region}'.format(**locals())
-    return _call_and_open_stdout(cmdline, stdout=subprocess.PIPE)
+    cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
+    return _call_and_open_stdout(cmdline)
 
 
 def intersect_bed(bed_path_gene, bed_path_capture, work_dir):
     cmdline = 'intersectBed -a {bed_path_gene} -b {bed_path_capture} -u'.format(**locals())
-    output_fpath = intermediate_fname(work_dir, bed_path_gene, 'intersect')
+    output_fpath = intermediate_fname(work_dir, bed_path_gene, 'capture')
     _call(cmdline, output_fpath)
     return output_fpath
 
 
 def number_of_mapped_reads(bam):
     cmdline = 'samtools view -c -F 4 {bam}'.format(**locals())
-    res = _call_check_output(cmdline, stdout=subprocess.PIPE)
+    res = _call_check_output(cmdline)
     return res
 
 
 def number_of_unmapped_reads(bam):
     cmdline = 'samtools view -c -f 4 {bam}'.format(**locals())
-    res = _call_check_output(cmdline, stdout=subprocess.PIPE)
+    res = _call_check_output(cmdline)
     return res
 
 
 def number_of_reads(bam):
     cmdline = 'samtools view -c {bam}'.format(**locals())
-    res = _call_check_output(cmdline, stdout=subprocess.PIPE)
+    res = _call_check_output(cmdline)
     return res
 
 
 def reads_on_targ(bed, bam):
-    cmdline = 'samtools view -c -F 4 {bam} -L {bed}'.format(**locals())
-    res = _call_check_output(cmdline, stdout=subprocess.PIPE)
+    cmdline = 'samtools view -c -F 4 -L {bed} {bam}'.format(**locals())
+    res = _call_check_output(cmdline)
     return res
 
 
 # TODO very slow
 def total_aligned_base_reads(bam):
     cmdline = 'samtools depth {bam}'.format(**locals())
-    proc = _call_and_open_stdout(cmdline, stdout=subprocess.PIPE)
+    proc = _call_and_open_stdout(cmdline)
     count = 0
     while True:
         coverage_line = proc.stdout.readline()
@@ -269,13 +270,13 @@ def total_aligned_base_reads(bam):
 
 # TODO very slow too
 def get_analytics_target_depth(bed, bam, depth_thresholds):
-    cmdline = 'samtools depth {bam} -b {bed}'.format(**locals())
-    proc = _call_and_open_stdout(cmdline, stdout=subprocess.PIPE)
+    cmdline = 'samtools depth -b {bed} {bam}'.format(**locals())
+    proc = _call_and_open_stdout(cmdline)
     covered_bases = 0
     total_reads_on_target = 0
     max_depth = 0
 
-    bases_per_depth = {depth: 0 for depth in depth_thresholds}
+    bases_per_depth = OrderedDict([(depth_thres, 0) for depth_thres in depth_thresholds])
 
     for coverage_line in proc.stdout:
         if coverage_line != '':
@@ -286,9 +287,9 @@ def get_analytics_target_depth(bed, bam, depth_thresholds):
                 max_depth = depth_value
             covered_bases += 1
 
-            for depth in bases_per_depth.keys():
-                if depth and depth_value >= bases_per_depth[depth]:
-                    bases_per_depth[depth] += 1
+            for depth_thres in depth_thresholds:
+                if depth_value >= depth_thres:
+                    bases_per_depth[depth_thres] += 1
         else:
             break
 
@@ -299,7 +300,8 @@ def get_analytics_target_depth(bed, bam, depth_thresholds):
 def get_padded_bed_file(bed, genome, padding, work_dir):
     cmdline = 'bedtools slop -i {bed} -g {genome} -b {padding}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, bed, 'padded')
-    return _call(cmdline, output_fpath)
+    _call(cmdline, output_fpath)
+    return output_fpath
 
 
 def count_by_group(depth_values, depth_thresholds):

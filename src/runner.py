@@ -41,10 +41,11 @@ def run_all(cnf, samples, process_one, finalize_one, finalize_all):
                     run_one(sample_cnf, process_one, finalize_one,
                             multiple_samples=True))
 
-        info('')
-        info('*' * 70)
-        info('Results for each sample:')
-        finalize_all(cnf, samples, results)
+        if samples:
+            info('')
+            info('*' * 70)
+            info('Results for each sample:')
+            finalize_all(cnf, samples, results)
 
     # Cleaning
     for name, data in samples.items():
