@@ -25,4 +25,4 @@ genomes:
 
     chr_lengths: data/chr_lengths_hg19.txt
     genes: data/UCSC_canonical.sorted.bed
-    exons: data/UCSC_exons_modif_canonical.sorted.bed
+    exons: data/test_exons.bed
