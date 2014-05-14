@@ -106,49 +106,56 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     base_name, ext = splitext(basename(bam))
     result_fpath = join(output_dir, base_name + '.' + 'summary.report')
 
-    with file_transaction(result_fpath) as tx:
-        with open(tx, 'w') as out:
-            v_mapped_reads = int(number_of_mapped_reads(bam))
-            out.write(format_integer('Number of mapped reads', v_mapped_reads))
+    stats = []
 
-            v_unmapped_reads = int(number_of_unmapped_reads(bam))
-            out.write(format_integer('Number of unmapped reads', v_unmapped_reads))
+    v_mapped_reads = int(number_of_mapped_reads(bam))
+    stats.append(format_integer('Number of mapped reads', v_mapped_reads))
 
-            v_number_of_reads = int(number_of_reads(bam))
-            out.write(format_integer('Number of reads', v_number_of_reads))
-            v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-            out.write(format_percent('Percent mapped reads', v_percent_mapped))
+    v_unmapped_reads = int(number_of_unmapped_reads(bam))
+    stats.append(format_integer('Number of unmapped reads', v_unmapped_reads))
 
-            v_reads_on_target = int(reads_on_targ(capture_bed, bam))
-            out.write(format_integer('Number of reads on target', v_reads_on_target))
-            v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
-            out.write(format_percent('Percent reads on target', v_percent_on_target))
+    v_number_of_reads = int(number_of_reads(bam))
+    stats.append(format_integer('Number of reads', v_number_of_reads))
+    v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
+    stats.append(format_decimal('Percent mapped reads', v_percent_mapped, '%'))
 
-            padded_bed = get_padded_bed_file(capture_bed, chr_len_fpath, padding, work_dir)
-            v_reads_on_padded_targ = int(reads_on_targ(padded_bed, bam))
-            v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
-            out.write(format_percent('Percent reads on padded target', v_percent_on_padded))
+    v_reads_on_target = int(reads_on_targ(capture_bed, bam))
+    stats.append(format_integer('Number of reads on target', v_reads_on_target))
+    v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
+    stats.append(format_decimal('Percent reads on target', v_percent_on_target, '%'))
 
-            v_aligned_read_bases = total_aligned_base_reads(bam)
-            out.write(format_integer('Total aligned base reads', v_aligned_read_bases))
+    padded_bed = get_padded_bed_file(capture_bed, chr_len_fpath, padding, work_dir)
+    v_reads_on_padded_targ = int(reads_on_targ(padded_bed, bam))
+    v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
+    stats.append(format_decimal('Percent reads on padded target', v_percent_on_padded, '%'))
 
-            bases_per_depth, v_covd_ref_bases_on_targ, v_read_bases_on_targ, max_depth = \
-                get_analytics_target_depth(capture_bed, bam, depth_thresholds)
+    v_aligned_read_bases = total_aligned_base_reads(bam)
+    stats.append(format_integer('Total aligned bases in reads', v_aligned_read_bases))
 
-            out.write(format_integer('Total base reads on target', v_read_bases_on_targ))
+    bases_per_depth, v_covd_ref_bases_on_targ, v_read_bases_on_targ, max_depth = \
+        get_analytics_target_depth(capture_bed, bam, depth_thresholds)
 
-            v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
-                if v_aligned_read_bases else None
-            v_avg_cov_depth = v_read_bases_on_targ / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else None
-            out.write(format_percent('Percent base reads on target', v_percent_read_bases_on_targ))
-            out.write(format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ))
-            # out.write(format_integer('Bases covered (at least 1x) ', target_groups[0][1]))
-            out.write(format_percent('Average coverage depth', v_avg_cov_depth))
-            out.write(format_integer('Maximum read depth', max_depth))
+    stats.append(format_integer('Total bases in reads on target', v_read_bases_on_targ))
 
-            for depth, num in bases_per_depth.items():
-                cov_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else None
-                out.write(format_percent('Target coverage at ' + str(depth) + 'x', cov_at))
+    v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
+        if v_aligned_read_bases else None
+    stats.append(format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'))
+    v_avg_cov_depth = v_read_bases_on_targ / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else None
+    stats.append(format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ))
+    stats.append(format_integer('Bases covered (at least 1x)', bases_per_depth[1]))
+    stats.append(format_decimal('Average coverage depth', v_avg_cov_depth))
+    stats.append(format_integer('Maximum read depth', max_depth))
+
+    for depth, num in bases_per_depth.items():
+        covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
+        stats.append(format_decimal('Target covered at ' + str(depth) + 'x', covd_at, '%'))
+
+    max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
+    with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
+        for l in stats:
+            text, val = l.rsplit(':', 1)
+            spaces = ' ' * (max_len - len(text) + 1)
+            out.write(text + spaces + val + '\n')
 
     print('')
     print('*' * 70)
@@ -328,18 +335,18 @@ def get_depth_by_bed_range(bam, region):
     return depths
 
 
-def format_integer(name, value):
-    if value:
-        return '{0}: {1}\n'.format(name, value)
+def format_integer(name, value, unit=''):
+    if value is not None:
+        return '{name}: {value}{unit}'.format(**locals())
     else:
-        return '{0}: -\n'.format(name)
+        return '{name}: -'.format(**locals())
 
 
-def format_percent(name, value):
-    if value:
-        return '{0}: {1:.2f}\n'.format(name, value)
+def format_decimal(name, value, unit=''):
+    if value is not None:
+        return '{name}: {value:.2f}{unit}'.format(**locals())
     else:
-        return '{0}: -\n'.format(name)
+        return '{name}: -'.format(**locals())
 
 
 def mean(ints):
