@@ -54,40 +54,40 @@ def main(args):
         ])
 
     genes_bed = cnf.get('genes') or cnf['genome'].get('genes')
+    exons_bed = cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
+    chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
+    capture_bed = options.get('capture') or cnf.get('capture')
+    bam = options.get('bam') or cnf.get('bam')
+
+    genes_bed = expanduser(genes_bed)
+    exons_bed = expanduser(exons_bed)
+    chr_len_fpath = expanduser(chr_len_fpath)
+    bam = expanduser(bam)
+    capture_bed = expanduser(capture_bed)
+
     if not genes_bed:
         critical('Specify sorted genes bed file in system info or in run info.')
-    genes_bed = expanduser(genes_bed)
-    if not verify_file(genes_bed):
-        exit()
-
-    exons_bed = cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
     if not exons_bed:
         critical('Specify sorted exons bed file in system info or in run info.')
-    exons_bed = expanduser(exons_bed)
-    if not verify_file(exons_bed):
-        exit()
-
-    chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
     if not chr_len_fpath:
         critical('Specify chromosome lengths for the genome'
                  ' in system info or in run info.')
-    chr_len_fpath = expanduser(chr_len_fpath)
-    if not verify_file(chr_len_fpath):
-        exit()
-
-    bam = options.get('bam') or cnf.get('bam')
     if not bam:
         critical('Specify bam file by --bam option or in run_config.')
-    bam = expanduser(bam)
-    if not verify_file(bam):
-        exit()
-
-    capture_bed = options.get('capture') or cnf.get('capture')
     if not capture_bed:
         critical('Specify capture file by --capture option or in run_config.')
-    capture_bed = expanduser(capture_bed)
-    if not verify_file(capture_bed):
-        exit()
+
+    print('using genes ' + genes_bed)
+    print('using exons ' + exons_bed)
+    print('using chr lengths ' + chr_len_fpath)
+    print('using bam ' + bam)
+    print('using capture panel ' + capture_bed)
+
+    if not verify_file(genes_bed): exit()
+    if not verify_file(exons_bed): exit()
+    if not verify_file(chr_len_fpath): exit()
+    if not verify_file(bam): exit()
+    if not verify_file(capture_bed): exit()
 
     depth_thresholds = cnf['depth_thresholds']
     padding = options.get('padding', cnf.get('padding', 250))
@@ -196,19 +196,15 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_
 
     with file_transaction(out_fpath) as tx:
         with open(tx, 'w') as out:
-            print(header)
-            print(max_lengths)
             for h, l in zip(header, max_lengths):
                 sys.stdout.write(h + ' ' * (l - len(h) + 2))
                 out.write(h + ' ' * (l - len(h) + 2))
-            print('')
             out.write('\n')
 
             for line_vals in all_values:
                 for v, l in zip(line_vals, max_lengths):
                     out.write(v + ' ' * (l - len(v) + 2))
                 out.write('\n')
-
     print('')
     print('*' * 70)
     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
