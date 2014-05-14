@@ -35,7 +35,6 @@ from src.transaction import file_transaction
 from src.utils import splitext_plus
 
 
-
 def main(args):
     cnf, options = common_main(
         'targetcov',
@@ -160,26 +159,55 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     print('Done. Report: ' + result_fpath)
 
 
-# def run_cov_exomes_report(output_dir, work_dir, capture_bed, bam, genes_bed, exons_bed, depth_thresholds):
-#
-#     base_name, ext = splitext(basename(bam))
-#     result_fpath = join(output_dir, base_name + '.' + 'exons.report')
-#
-#     capture_in_genes_bed = intersect_bed(genes_bed, capture_bed, work_dir)
-#     exome_in_capture_in_gene_bed = intersect_bed(exons_bed, capture_in_genes_bed, work_dir)
-#
-#     with file_transaction(result_fpath) as tx:
-#         with open(exome_in_capture_in_gene_bed) as bed, \
-#              open(tx, 'w') as out:
-#
-#             out.write('\t'.join(_header) + '\n')
-#             for bed_line in bed.readlines():
-#                 write_report_line(bam, base_name, depth_thresholds, out, bed_line)
-#
-#     print('')
-#     print('*' * 70)
-#     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-#     print('Done. Report: ' + result_fpath)
+def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_bed=None, exons_bed=None):
+    sample_name, _ = splitext(basename(bam))
+
+    if genes_bed and exons_bed:
+        step_greetings('Coverage report for exons in capture and genes')
+        out_fpath = join(output_dir, sample_name + '.exome_cov.report')
+    else:
+        step_greetings('Coverage report')
+        out_fpath = join(output_dir, sample_name + '.cov.report')
+
+    # bed_sorted_path = gnu_sort(capture_bed, work_dir)
+
+    bed = capture_bed
+    if genes_bed:
+        bed = intersect_bed(genes_bed, bed, work_dir)
+    if exons_bed:
+        bed = intersect_bed(exons_bed, bed, work_dir)
+
+    header = (['Sample', 'Chr', 'Start', 'End', 'RegionSize', 'MeanDepth']
+              + map(str, depth_threshs))
+    max_lengths = map(len, header)
+
+    all_values = []
+    with open(bed) as bed_f:
+        for line in (l.strip() for l in bed_f if l and l.strip()):
+            line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
+            all_values.append(line_vals)
+            max_lengths = map(max, izip(max_lengths,
+                                        chain(map(len, line_vals), repeat(0))))
+
+    with file_transaction(out_fpath) as tx:
+        with open(tx, 'w') as out:
+            print(header)
+            print(max_lengths)
+            for h, l in zip(header, max_lengths):
+                sys.stdout.write(h + ' ' * (l - len(h) + 2))
+                out.write(h + ' ' * (l - len(h) + 2))
+            print('')
+            out.write('\n')
+
+            for line_vals in all_values:
+                for v, l in zip(line_vals, max_lengths):
+                    out.write(v + ' ' * (l - len(v) + 2))
+                out.write('\n')
+
+    print('')
+    print('*' * 70)
+    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    print('Done. Report: ' + out_fpath)
 
 
 def _call(cmdline, output_fpath=None):
@@ -356,98 +384,12 @@ def get_report_line_values(bam, sample_name, depth_threshs, bed_line):
     depths = get_depth_by_bed_range(bam, region_for_samtools)
     region_size = (int(end) - int(start)) + 1
 
-    # out_line = ''
-    # nice_line = ''
-    # for l, val in izip(chain([len(str(groups_total))], max_lengths),
-    #                    chain([group_nunber], vals)):
-    #     out_line += str(val) + '\t'
-    #     nice_line += str(val) + ' ' * (l - len(str(val))) + '\t'
-    # out_line = out_line.strip()
-    # nice_line = nice_line.strip()
-    # if out_line:
-    #     out_f.write(out_line + '\n')
-    # if nice_line:
-    #     nice_f.write(nice_line + '\n')
-
     vals = [sample_name, chrom, start, end, str(region_size)]
 
-    # if len(depths) > 0:
     avg_depth_str = '{0:.2f}'.format(mean(depths) if depths else 0.0)
     by_depth = bps_by_depth(depths, depth_threshs)
     by_depth_str = ['{0:.2f}'.format(c) for c in by_depth]
     return vals + [avg_depth_str] + by_depth_str
-    # else:
-    #     return vals + ['-']
-# '\t'.join([sample_name, line, length, mean, start_end_count] + start_end_count)
-
-
-def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_bed=None, exons_bed=None):
-    sample_name, _ = splitext(basename(bam))
-
-    if genes_bed and exons_bed:
-        step_greetings('Coverage report for exons in capture and genes')
-        out_fpath = join(output_dir, sample_name + '.exome_cov.report')
-    else:
-        step_greetings('Coverage report')
-        out_fpath = join(output_dir, sample_name + '.cov.report')
-
-    # out_path = base_name + '.' + 'report'
-
-    # print('Creating report path: ' + out_path)
-
-    # bed_sorted_path = gnu_sort(capture_bed, work_dir)
-
-    bed = capture_bed
-    if genes_bed:
-        bed = intersect_bed(genes_bed, bed, work_dir)
-    if exons_bed:
-        bed = intersect_bed(exons_bed, bed, work_dir)
-
-    header = (['Sample', 'Chr', 'Start', 'End', 'RegionSize', 'MeanDepth']
-              + map(str, depth_threshs))
-    max_lengths = map(len, header)
-
-    all_values = []
-    with open(bed) as bed_f:
-        for line in (l.strip() for l in bed_f if l and l.strip()):
-            line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
-            all_values.append(line_vals)
-            max_lengths = map(max, izip(max_lengths,
-                                        chain(map(len, line_vals), repeat(0))))
-
-    with file_transaction(out_fpath) as tx:
-        with open(tx, 'w') as out:
-            print(header)
-            print(max_lengths)
-            for h, l in zip(header, max_lengths):
-                sys.stdout.write(h + ' ' * (l - len(h) + 2))
-                out.write(h + ' ' * (l - len(h) + 2))
-            print('')
-            out.write('\n')
-
-            for line_vals in all_values:
-                for v, l in zip(line_vals, max_lengths):
-                    out.write(v + ' ' * (l - len(v) + 2))
-                out.write('\n')
-
-    print('')
-    print('*' * 70)
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print('Done. Report: ' + out_fpath)
-
-
-# def run_cov_gene_report(gene_bed, capture_bed, bam, depth_thresholds, work_dir):
-#     base_name, ext = os.path.splitext(bam)
-#     output_path = base_name + '.' + 'gene.report'
-#
-#     # a_bed_sorted = gnu_sort(a_bed)
-#     # b_bed_sorted = gnu_sort(b_bed)
-#     int_bed = intersect_bed(gene_bed, capture_bed, work_dir)
-#
-#     with open(int_bed) as bed, open(output_path, 'w') as out:
-#         out.write('\t'.join(_header) + '\n')
-#         for bed_line in bed.readlines():
-#             write_report_line(bam, base_name, depth_thresholds, out, bed_line)
 
 
 if __name__ == '__main__':
