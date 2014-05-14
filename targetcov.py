@@ -43,7 +43,7 @@ def main(args):
              'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
 
-            (['--capture', '--capture'], 'capture.bed', {
+            (['--capture', '--bed'], 'capture.bed', {
              'dest': 'capture',
              'help': ''}),
 
@@ -53,34 +53,39 @@ def main(args):
              'default': 250}),
         ])
 
-    genes_bed = cnf.get('genes')
+    genes_bed = cnf.get('genes') or cnf['genome'].get('genes')
     if not genes_bed:
-        genes_bed = expanduser(cnf['genome'].get('genes'))
-    if not verify_file(genes_bed):
         critical('Specify sorted genes bed file in system info or in run info.')
+    genes_bed = expanduser(genes_bed)
+    if not verify_file(genes_bed):
+        exit()
 
-    exons_bed = cnf.get('exons')
+    exons_bed = cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
     if not exons_bed:
-        exons_bed = expanduser(cnf['genome'].get('exons'))
-    if not verify_file(exons_bed):
         critical('Specify sorted exons bed file in system info or in run info.')
+    exons_bed = expanduser(exons_bed)
+    if not verify_file(exons_bed):
+        exit()
 
-    chr_len_fpath = cnf.get('chr_lengths')
+    chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
     if not chr_len_fpath:
-        chr_len_fpath = expanduser(cnf['genome'].get('chr_lengths'))
-    if not verify_file(chr_len_fpath):
         critical('Specify chromosome lengths for the genome'
                  ' in system info or in run info.')
+    chr_len_fpath = expanduser(chr_len_fpath)
+    if not verify_file(chr_len_fpath):
+        exit()
 
-    bam = expanduser(options.get('bam', cnf.get('bam')))
+    bam = options.get('bam') or cnf.get('bam')
     if not bam:
         critical('Specify bam file by --bam option or in run_config.')
+    bam = expanduser(bam)
     if not verify_file(bam):
         exit()
 
-    capture_bed = expanduser(options.get('capture', cnf.get('capture')))
+    capture_bed = options.get('capture') or cnf.get('capture')
     if not capture_bed:
         critical('Specify capture file by --capture option or in run_config.')
+    capture_bed = expanduser(capture_bed)
     if not verify_file(capture_bed):
         exit()
 
