@@ -47,13 +47,17 @@ def main(args):
              'dest': 'capture',
              'help': ''}),
 
+            (['--genes', '--genes'], 'genes.bed', {
+             'dest': 'genes',
+             'help': ''}),
+
             (['--padding'], '250', {
              'dest': 'padding',
              'help': '',
              'default': 250}),
         ])
 
-    genes_bed = cnf.get('genes') or cnf['genome'].get('genes')
+    genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
     exons_bed = cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
     chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
     capture_bed = options.get('capture') or cnf.get('capture')
