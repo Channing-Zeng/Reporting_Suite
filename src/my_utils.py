@@ -183,7 +183,8 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
 
-            proc = subprocess.Popen(cmdline, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin))
+            proc = subprocess.Popen(cmdline, shell=True, stdout=stdout, stderr=stderr,
+                                    stdin=open(stdin) if stdin else None)
 
             # PRINT STDOUT AND STDERR
             if proc.stdout:
@@ -215,7 +216,8 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
 
-            res = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin))
+            res = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr,
+                                  stdin=open(stdin) if stdin else None)
 
             # PRINT STDOUT AND STDERR
             if res != 0:
