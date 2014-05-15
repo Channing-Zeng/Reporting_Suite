@@ -6,6 +6,7 @@ import os
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
 from distutils.version import LooseVersion
 import shutil
+import re
 
 from src.transaction import file_transaction
 from src.utils import add_suffix, file_exists, which
@@ -42,6 +43,27 @@ def remove_quotes(s):
     if s and s[-1] == '"':
         s = s[:-1]
     return s
+
+
+def _tryint(s):
+    try:
+        return int(s)
+    except:
+        return s
+
+
+def _alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
+    """
+    return [_tryint(c) for c in re.split('([0-9]+)', s)]
+
+
+def human_sorted(l):
+    """ Sort the given list in the way that humans expect.
+    """
+    l.sort(key=_alphanum_key)
+    return l
 
 
 def verify_file(fpath, description=''):

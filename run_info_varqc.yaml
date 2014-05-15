@@ -23,6 +23,7 @@ quality_control:
   metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+  variants_distribution_scale: 1000  ## in kilobases
 
 gatk:
   options: ['-dt NONE', '-nt 1']
