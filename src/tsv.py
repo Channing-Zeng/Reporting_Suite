@@ -7,7 +7,7 @@ import shutil
 from src.transaction import file_transaction
 from src.utils import which, splitext_plus, file_exists
 from src.my_utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
-    intermediate_fname, info
+    intermediate_fname, info, call
 
 
 def make_tsv(cnf, vcf_fpath):
@@ -64,7 +64,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 all_format_fields.add(f)
         l = '\t'.join(vals[:7] + [info_field])
         return l
-    split_format_fields_vcf = iterate_file(cnf, vcf_fpath, proc_line, work_dir,
+    splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, work_dir,
         'split_format_fields', keep_original_if_not_keep_intermediate=True)
 
     manual_tsv_fields = cnf.get('tsv_fields')
@@ -88,22 +88,48 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         exit('Perl executable required, maybe you need to run "module load perl"?')
     src_fpath = join(dirname(realpath(__file__)))
     vcfoneperline_cmline = 'perl ' + join(src_fpath, 'vcfOnePerLine.pl')
-    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
-    with file_transaction(tsv_fpath) as tx_tsv_fpath:
-        info(cnf['log'], cmdline + ' < ' + (split_format_fields_vcf
-                                            or vcf_fpath) + ' > ' + tx_tsv_fpath)
-        res = subprocess.call(cmdline,
-                              stdin=open(split_format_fields_vcf or vcf_fpath),
-                              stdout=open(tx_tsv_fpath, 'w'), shell=True)
+    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + \
+              ' extractFields - ' + anno_line
 
-    if split_format_fields_vcf:
-        os.remove(split_format_fields_vcf)
+    call(cnf, cmdline, None, tsv_fpath,
+         stdin=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
+         to_remove=[splitted_FORMAT_column_vcf_fpath])
 
-    info(cnf['log'], '')
-    if res != 0:
-        critical(cnf['log'], 'Command returned status ' + str(res) +
-                 ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+    # REMOVE NON-EMPTY
+    with open(tsv_fpath) as tsv:
+        names, col_counts = None, None
+        for i, l in enumerate(tsv):
+            if i == 0:
+                names = [v for v in l.split('\t') if v != '\n']
+                col_counts = [0 for name in names]
+            else:
+                values = (v for v in l.split('\t') if v != '\n')
+                for i, v in enumerate(values):
+                    if v:
+                        col_counts[i] += 1
+
+    with file_transaction(tsv_fpath) as tx:
+        with open(tx, 'w') as out, open(tsv_fpath) as f:
+            for l in f:
+                out.write('\t'.join([v for i, v in enumerate(l.split('\t'))
+                                     if v == '\n' or col_counts[i]]))
+
+    # with file_transaction(tsv_fpath) as tx_tsv_fpath:
+    #     info(cnf['log'], cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
+    #                                         or vcf_fpath) + ' > ' + tx_tsv_fpath)
+    #     res = subprocess.call(cmdline,
+    #                           stdin=open(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
+    #                           stdout=open(tx_tsv_fpath, 'w'), shell=True)
+
+    # if splitted_FORMAT_column_vcf_fpath:
+    #     os.remove(splitted_FORMAT_column_vcf_fpath)
+
+    # info(cnf['log'], '')
+    # if res != 0:
+    #     critical(cnf['log'], 'Command returned status ' + str(res) +
+    #              ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+
     return tsv_fpath
 
 

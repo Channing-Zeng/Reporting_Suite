@@ -144,9 +144,11 @@ def get_tool_cmdline(sys_cnf, tool_name, extra_warn=''):
 
 
 def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
-         stdout_to_outputfile=True, to_remove=None, output_is_file=True):
+         stdout_to_outputfile=True, to_remove=None, output_is_file=True,
+         stdin=None):
     to_remove = to_remove or []
 
+    # MAYBE REUSE?
     if output_fpath and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
             info(cnf.get('log'), output_fpath + ' exists, reusing')
@@ -157,29 +159,33 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
         else:
             shutil.rmtree(output_fpath)
 
+    # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
     err_fpath = None
     if cnf.get('work_dir'):
         _, err_fpath = tempfile.mkstemp(dir=cnf.get('work_dir'), prefix='err_tmp')
         to_remove.append(err_fpath)
 
+    # RUN AND PRINT OUTPUT
     def do(cmdline, tx_out_fpath=None):
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
 
         if cnf['verbose']:
             if tx_out_fpath:
+                # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
+                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath + (' < ' + stdin if stdin else ''))
                     stdout = open(tx_out_fpath, 'w')
                     stderr = subprocess.PIPE
                 else:
                     cmdline = cmdline.replace(output_fpath, tx_out_fpath)
-                    info(cnf.get('log'), cmdline)
+                    info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
 
-            proc = subprocess.Popen(cmdline.split(), stdout=stdout, stderr=stderr)
+            proc = subprocess.Popen(cmdline, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin))
 
+            # PRINT STDOUT AND STDERR
             if proc.stdout:
                 for line in iter(proc.stdout.readline, ''):
                     info(cnf.get('log'), '   ' + line.strip())
@@ -187,6 +193,7 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                 for line in iter(proc.stderr.readline, ''):
                     info(cnf.get('log'), '   ' + line.strip())
 
+            # CHECK RES CODE
             ret_code = proc.wait()
             if ret_code != 0:
                 for fpath in to_remove:
@@ -194,19 +201,23 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                         os.remove(fpath)
                 critical(cnf.get('log'), 'Command returned status ' + str(ret_code) +
                          ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
-        else:
+
+        else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
             if tx_out_fpath:
+                # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath)
+                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath + (' < ' + stdin if stdin else ''))
                     stdout = open(tx_out_fpath, 'w')
                     stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                 else:
                     cmdline = cmdline.replace(output_fpath, tx_out_fpath)
-                    info(cnf.get('log'), cmdline)
+                    info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
 
-            res = subprocess.call(cmdline.split(), stdout=stdout, stderr=stderr)
+            res = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin))
+
+            # PRINT STDOUT AND STDERR
             if res != 0:
                 with open(err_fpath) as err_f:
                     info(cnf.get('log'), '')
@@ -231,6 +242,7 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
     else:
         do(cmdline)
 
+    # REMOVE UNNESESSARY
     for fpath in to_remove:
         if fpath and isfile(fpath):
             os.remove(fpath)

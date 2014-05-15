@@ -1,3 +1,4 @@
 #!/bin/bash
 
-dots.py $1 | column -t | less -S
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+$DIR/dots.py $1 | column -t | less -S
