@@ -9,7 +9,7 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpEff/SnpSift.jar
-  bcbfools:
+  bcftools:
     path: ~/bin/bcftools/bcftools
   plot_vcfstats:
     path: ~/bin/bcftools/plot-vcfstats

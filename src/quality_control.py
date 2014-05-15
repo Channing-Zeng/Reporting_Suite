@@ -37,7 +37,7 @@ def check_quality_control_config(cnf):
 
     if 'variants_distribution_scale' not in qc_cnf:
         qc_cnf['variants_distribution_scale'] = 1000
-        info('Warning: no variants per genome scale specified for quality control, '
+        info('Warning: no variants distribution scale specified for quality control, '
              'using default ' + str(qc_cnf['variants_distribution_scale']))
 
     to_exit = False

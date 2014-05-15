@@ -11,7 +11,7 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /group/ngs/src/snpEff/SnpSift.jar
-  bcbfools:
+  bcftools:
     path: /group/ngs/src/bcftools/bcftools
   plot_vcfstats:
     path: /group/ngs/src/bcftools/plot-vcfstats
