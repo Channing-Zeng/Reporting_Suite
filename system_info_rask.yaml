@@ -1,15 +1,15 @@
 resources:
   gatk:
-    jvm_opts: ["-Xms750m", "-Xmx6g", "-Djava.io.tmpdir=/scratch/tmp"]
+    jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
 #    path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
 #    path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /group/ngs/src/snpEff/snpEff.jar
     # config: /usr/local/share/java/snpeff/snpEff.config
   snpsift:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /group/ngs/src/snpEff/SnpSift.jar
   bcbfools:
     path: /group/ngs/src/bcftools/bcftools
