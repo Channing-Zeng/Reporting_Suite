@@ -40,25 +40,25 @@ def main(args):
         'targetcov',
         opts=[
             (['--bam'], 'align.bam', {
-             'dest': 'bam',
-             'help': 'used to generate some annotations by GATK'}),
+                'dest': 'bam',
+                'help': 'used to generate some annotations by GATK'}),
 
             (['--capture', '--bed'], 'capture.bed', {
-             'dest': 'capture',
-             'help': ''}),
+                'dest': 'capture',
+                'help': ''}),
 
             (['--genes', '--genes'], 'genes.bed', {
-             'dest': 'genes',
-             'help': ''}),
+                'dest': 'genes',
+                'help': ''}),
 
             (['--exons', '--exons'], 'exons.bed', {
-             'dest': 'exons',
-             'help': ''}),
+                'dest': 'exons',
+                'help': ''}),
 
             (['--padding'], '250', {
-             'dest': 'padding',
-             'help': '',
-             'default': 250}),
+                'dest': 'padding',
+                'help': '',
+                'default': 250}),
         ])
 
     genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
@@ -91,15 +91,17 @@ def main(args):
     print('using bam ' + bam)
     print('using capture panel ' + capture_bed)
 
-    if not verify_file(genes_bed): exit()
-    if not verify_file(exons_bed): exit()
-    if not verify_file(chr_len_fpath): exit()
-    if not verify_file(bam): exit()
-    if not verify_file(capture_bed): exit()
+    if not verify_file(genes_bed): exit(1)
+    if not verify_file(exons_bed): exit(1)
+    if not verify_file(chr_len_fpath): exit(1)
+    if not verify_file(bam): exit(1)
+    if not verify_file(capture_bed): exit(1)
 
     depth_thresholds = cnf['depth_thresholds']
     padding = options.get('padding', cnf.get('padding', 250))
-    output_dir = expanduser(options.get('output_dir', cnf.get('output_dir', os.getcwd())))
+    output_dir = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
+    assert output_dir
+    output_dir = expanduser(output_dir)
 
     work_dir = join(output_dir, 'work')
     if isdir(work_dir):
@@ -384,7 +386,7 @@ def format_decimal(name, value, unit=''):
 
 
 def mean(ints):
-    return float(sum(ints))/len(ints) if len(ints) > 0 else float('nan')
+    return float(sum(ints)) / len(ints) if len(ints) > 0 else float('nan')
 
 
 def get_report_line_values(bam, sample_name, depth_threshs, bed_line):
