@@ -20,10 +20,6 @@ except ImportError:
 
 
 def common_main(name, opts):
-    if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-        exit('Python version 2.7 and higher is supported (you are running ' +
-             '.'.join(map(str, sys.version_info[:3])) + ')\n')
-
     # options
     parser = OptionParser(
         usage='python ' + __file__ +

@@ -13,6 +13,11 @@ from src.quality_control import quality_control, check_quality_control_config
 from src.my_utils import info
 
 
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
+     '.'.join(map(str, sys.version_info[:3])) + ')\n')
+
+
 def main(args):
     config, options = common_main(
         'varqc',

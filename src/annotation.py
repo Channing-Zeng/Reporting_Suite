@@ -9,6 +9,9 @@ from src.my_utils import critical, iterate_file, step_greetings, get_java_tool_c
 from src.utils import add_suffix, file_exists
 
 
+all_fields = []
+
+
 def run_annotators(cnf, vcf_fpath):
     work_dir = cnf['work_dir']
 
@@ -136,7 +139,9 @@ def _snpsift_db_nsfp(cnf, input_fpath, work_dir):
                  'the "genomes" section in the system config.')
 
     annotations = cnf['dbnsfp'].get('annotations', [])
-    # self.all_fields.extend(['dbNSFP_' + ann for ann in annotations])
+
+    all_fields.extend(['dbNSFP_' + ann for ann in annotations])
+
     ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
@@ -152,10 +157,10 @@ def _snpeff(cnf, input_fpath, work_dir):
 
     step_greetings(cnf, 'SnpEff')
 
-    # self.all_fields.extend([
-    #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
-    #     "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
-    #     "EFF[*].TRID", "EFF[*].RANK"])
+    self.all_fields.extend([
+        "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
+        "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
+        "EFF[*].TRID", "EFF[*].RANK"])
 
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
