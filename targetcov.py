@@ -67,12 +67,6 @@ def main(args):
     capture_bed = options.get('capture') or cnf.get('capture')
     bam = options.get('bam') or cnf.get('bam')
 
-    genes_bed = expanduser(genes_bed)
-    exons_bed = expanduser(exons_bed)
-    chr_len_fpath = expanduser(chr_len_fpath)
-    bam = expanduser(bam)
-    capture_bed = expanduser(capture_bed)
-
     if not genes_bed:
         critical('Specify sorted genes bed file in system info or in run info.')
     if not exons_bed:
@@ -91,6 +85,12 @@ def main(args):
     print('using bam ' + bam)
     print('using capture panel ' + capture_bed)
 
+    genes_bed = expanduser(genes_bed)
+    exons_bed = expanduser(exons_bed)
+    chr_len_fpath = expanduser(chr_len_fpath)
+    bam = expanduser(bam)
+    capture_bed = expanduser(capture_bed)
+
     if not verify_file(genes_bed): exit(1)
     if not verify_file(exons_bed): exit(1)
     if not verify_file(chr_len_fpath): exit(1)
@@ -100,7 +100,7 @@ def main(args):
     depth_thresholds = cnf['depth_thresholds']
     padding = options.get('padding', cnf.get('padding', 250))
     output_dir = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
-    assert output_dir
+    print('writing to output dir ' + output_dir)
     output_dir = expanduser(output_dir)
 
     work_dir = join(output_dir, 'work')
