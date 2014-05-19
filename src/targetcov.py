@@ -48,8 +48,9 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
 
-    bases_per_depth, v_covd_ref_bases_on_targ, max_depth = \
-        get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
+    bases_per_depth, v_covd_ref_bases_on_targ, max_depth, \
+        bases_per_depth_per_region, percent_per_depth_per_region = \
+            get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
     #     if v_aligned_read_bases else None
@@ -87,8 +88,12 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print('Done. Report: ' + result_fpath)
 
+    return bases_per_depth_per_region, percent_per_depth_per_region
 
-def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_bed=None, exons_bed=None):
+
+def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
+                   bases_per_depth_per_region, percent_per_depth_per_region,
+                   genes_bed=None, exons_bed=None):
     sample_name, _ = splitext(basename(bam))
 
     if genes_bed and exons_bed:
@@ -111,12 +116,29 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_
     max_lengths = map(len, header)
 
     all_values = []
-    with open(bed) as bed_f:
-        for line in (l.strip() for l in bed_f if l and l.strip()):
-            line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
-            all_values.append(line_vals)
-            max_lengths = map(max, izip(max_lengths,
-                                        chain(map(len, line_vals), repeat(0))))
+    # with open(bed) as bed_f:
+    #     for line in (l.strip() for l in bed_f if l and l.strip()):
+    #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
+    #         # all_values.append(line_vals)
+    #         max_lengths = map(max, izip(max_lengths,
+    #                                     chain(map(len, line_vals), repeat(0))))
+
+    for region, percent_by_depths in percent_per_depth_per_region.items():
+        # for depth, num in bases_per_depth.items():
+        #     covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
+        #     line_vals.append(covd_at + '%'))
+        line_tokens = region.split() #+ [avg_depth_str] + by_depth_str
+
+        for depth_thres, percent in percent_by_depths.items():
+            line_tokens.append('{0:.2f}'.format(percent))
+
+        # avg_depth_str = '{0:.2f}'.format(mean(depths) if depths else 0.0)
+
+
+        all_values.append(line_tokens)
+        max_lengths = map(max, izip(max_lengths,
+                                    chain(map(len, line_tokens), repeat(0))))
+
 
     with file_transaction(out_fpath) as tx:
         with open(tx, 'w') as out:
@@ -125,8 +147,8 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs, genes_
                 out.write(h + ' ' * (l - len(h) + 2))
             out.write('\n')
 
-            for line_vals in all_values:
-                for v, l in zip(line_vals, max_lengths):
+            for line_tokens in all_values:
+                for v, l in zip(line_tokens, max_lengths):
                     out.write(v + ' ' * (l - len(v) + 2))
                 out.write('\n')
     print('')
@@ -173,11 +195,7 @@ def gnu_sort(bed_path, work_dir):
     output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
     _call(cmdline, output_fpath)
     return output_fpath
-
-
-def samtool_depth_range(bam_path, region):
-    cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
-    return _call_and_open_stdout(cmdline)
+#
 
 
 def intersect_bed(bed1, bed2, work_dir):
@@ -226,15 +244,69 @@ def number_bases_in_aligned_reads(bam):
     return count
 
 
+def samtool_depth_range(bam_path, region):
+    cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
+    return _call_and_open_stdout(cmdline)
+
+
+#
+# def samtool_depth_range_fast(bam_path, region):
+#     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
+#     return _call_and_open_stdout(cmdline)
+
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       10      4       99      0.0404040
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       11      14      99      0.1414141
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       12      2       99      0.0202020
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       13      2       99      0.0202020
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       14      5       99      0.0505050
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       15      17      99      0.1717172
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       16      8       99      0.0808081
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       17      19      99      0.1919192
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       18      25      99      0.2525252
+# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       19      3       99      0.0303030
+# chr17   62006793        62006835        NM_000626_cds_1_0_chr17_62006794_r      0       -       5       12      42      0.2857143
+# chr17   62006793        62006835        NM_000626_cds_1_0_chr17_62006794_r      0       -       6       30      42      0.7142857
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       7       15      119     0.1260504
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       8       5       119     0.0420168
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       9       5       119     0.0420168
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       10      44      119     0.3697479
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       11      11      119     0.0924370
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       12      26      119     0.2184874
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       13      6       119     0.0504202
+# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       14      7       119     0.0588235
+# chr17   62007433        62007745        NM_000626_cds_3_0_chr17_62007434_r      0       -       3       10      312     0.0320513
+# chr17   62007433        62007745        NM_000626_cds_3_0_chr17_62007434_r      0       -       4       10      312     0.0320513
+
 def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
     proc = _call_and_open_stdout(cmdline)
     covered_bases = 0
     max_depth = 0
 
-    bases_per_depth = OrderedDict([(depth_thres, 0) for depth_thres in depth_thresholds])
+    bases_per_depth_all = OrderedDict([(depth_thres, 0) for depth_thres in depth_thresholds])
+
+    bases_per_depth_per_region = OrderedDict()
+    percent_per_depth_per_region = OrderedDict()
 
     for line in proc.stdout:
+        if line.startswith('#'):
+            continue
+
+        tokens = line.split()
+        region_tokens = '\t'.join(tokens[:4])
+        depth, bases_for_depth, _, percent_for_depth = tokens[-4:]
+
+
+        if region_tokens not in bases_per_depth_per_region:
+            bases_per_depth_per_region[region_tokens] = bases_per_depth_all.copy()
+            percent_per_depth_per_region[region_tokens] = bases_per_depth_all.copy()
+
+        for depth_thres in depth_thresholds:
+            if depth >= depth_thres:
+                bases_per_depth_per_region[region_tokens][depth_thres] += float(bases_for_depth)
+                percent_per_depth_per_region[region_tokens][depth_thres] += 100.0 * float(percent_for_depth)
+
+
         if line and line.startswith('all'):
             _, depth, bases, reg_size, percent_on_depth = line.strip().split('\t')
             # print(line)
@@ -247,9 +319,10 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
             for depth_thres in depth_thresholds:
                 if depth >= depth_thres:
-                    bases_per_depth[depth_thres] += bases
+                    bases_per_depth_all[depth_thres] += bases
 
-    return bases_per_depth, covered_bases, max_depth
+    return bases_per_depth_all, covered_bases, max_depth, \
+           bases_per_depth_per_region, percent_per_depth_per_region
 
 
 # TODO how to pass the data stream to samtools vs. creating file
