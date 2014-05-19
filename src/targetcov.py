@@ -25,7 +25,7 @@ from datetime import datetime
 # yaml
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
-from src.my_utils import step_greetings, intermediate_fname
+from src.my_utils import step_greetings, intermediate_fname, timestamp
 from src.transaction import file_transaction
 from src.utils import splitext_plus
 
@@ -124,7 +124,7 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
         #     line_vals.append(covd_at + '%'))
         region_tokens = region.split()
         if i == 0:
-            header = (['Sample', 'Chr', 'Start', 'End'] + [''] * len(region_tokens) - 1 + 1)
+            header = (['Sample', 'Chr', 'Start', 'End'] + ([''] * len(region_tokens) - 1 + 1))
             header += ['RegionSize', 'MeanDepth'] + map(str, depth_threshs)
             max_lengths = map(len, header)
 
@@ -300,7 +300,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
 
         if region_line not in bases_per_depth_per_region:
-            print(region_line)
+            print(timestamp() + ' ' + region_line)
             bases_per_depth_per_region[region_line] = bases_per_depth_all.copy()
             percent_per_depth_per_region[region_line] = percent_per_depth_all.copy()
 

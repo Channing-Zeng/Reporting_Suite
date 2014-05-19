@@ -311,6 +311,10 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
+def timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def step_greetings(cnf, name=None):
     if name is None:
         name = cnf
