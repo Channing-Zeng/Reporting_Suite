@@ -294,7 +294,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             continue
 
         tokens = line.split()
-        region_tokens = tokens[:-4] + tokens[-2]
+        region_tokens = tokens[:-4] + [tokens[-2]]
         depth, bases_for_depth, _, percent_for_depth = tokens[-4:]
 
 
