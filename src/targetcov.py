@@ -57,20 +57,20 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     # v_avg_cov_depth = float(v_read_bases_on_targ) / v_covd_ref_bases_on_targ \
     #     if v_covd_ref_bases_on_targ else None
 
-    stats = [format_integer('Number of mapped reads', v_mapped_reads),
-             format_integer('Number of unmapped reads', v_unmapped_reads),
-             format_integer('Number of reads', v_number_of_reads),
-             format_decimal('Percent mapped reads', v_percent_mapped, '%'),
-             format_integer('Number of reads on target', v_reads_on_target),
-             format_decimal('Percent reads on target', v_percent_on_target, '%'),
-             format_decimal('Percent reads on padded target', v_percent_on_padded, '%'),
-             # format_integer('Total aligned bases in reads', v_aligned_read_bases),
-             # format_integer('Total bases in reads on target', v_read_bases_on_targ),
-             # format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'),
-             format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ),
-             format_integer('Bases covered (at least 1x)', bases_per_depth[1]),
-             # format_decimal('Average coverage depth', v_avg_cov_depth),
-             format_integer('Maximum read depth', max_depth)]
+    # stats = [format_integer('Number of mapped reads', v_mapped_reads),
+    #          format_integer('Number of unmapped reads', v_unmapped_reads),
+    #          format_integer('Number of reads', v_number_of_reads),
+    #          format_decimal('Percent mapped reads', v_percent_mapped, '%'),
+    #          format_integer('Number of reads on target', v_reads_on_target),
+    #          format_decimal('Percent reads on target', v_percent_on_target, '%'),
+    #          format_decimal('Percent reads on padded target', v_percent_on_padded, '%'),
+    #          # format_integer('Total aligned bases in reads', v_aligned_read_bases),
+    #          # format_integer('Total bases in reads on target', v_read_bases_on_targ),
+    #          # format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'),
+    #          format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ),
+    #          format_integer('Bases covered (at least 1x)', bases_per_depth[1]),
+    #          # format_decimal('Average coverage depth', v_avg_cov_depth),
+    #          format_integer('Maximum read depth', max_depth)]
 
     for depth, num in bases_per_depth.items():
         covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
