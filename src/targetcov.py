@@ -124,7 +124,7 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
         #     line_vals.append(covd_at + '%'))
         region_tokens = region.split()
         if i == 0:
-            header = (['Sample', 'Chr', 'Start', 'End'] + ([''] * len(region_tokens) - 1 + 1))
+            header = (['Sample', 'Chr', 'Start', 'End'] + ([''] * (len(region_tokens) - 1 + 1)))
             header += ['RegionSize', 'MeanDepth'] + map(str, depth_threshs)
             max_lengths = map(len, header)
 
