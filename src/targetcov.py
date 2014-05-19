@@ -38,14 +38,14 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
 
     padded_bed = get_padded_bed_file(capture_bed, chr_len_fpath, padding, work_dir)
 
-    v_mapped_reads = number_of_mapped_reads(bam)
-    v_unmapped_reads = number_of_unmapped_reads(bam)
-    v_number_of_reads = number_of_reads(bam)
-    v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-    v_reads_on_target = number_reads_on_target(capture_bed, bam)
-    v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
-    v_reads_on_padded_targ = number_reads_on_target(padded_bed, bam)
-    v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
+    # v_mapped_reads = number_of_mapped_reads(bam)
+    # v_unmapped_reads = number_of_unmapped_reads(bam)
+    # v_number_of_reads = number_of_reads(bam)
+    # v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
+    # v_reads_on_target = number_reads_on_target(capture_bed, bam)
+    # v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
+    # v_reads_on_padded_targ = number_reads_on_target(padded_bed, bam)
+    # v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
 
     bases_per_depth, v_covd_ref_bases_on_targ, max_depth, \
