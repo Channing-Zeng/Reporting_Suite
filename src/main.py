@@ -33,6 +33,7 @@ def common_main(name, opts):
     for args, _, kwargs in opts:
         parser.add_option(*args, **kwargs)
     parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR')
+    parser.add_option('--nt', '-t', dest='threads', help='number of threads to run GATK')
     (options, args) = parser.parse_args()
 
     # configs
@@ -81,6 +82,17 @@ def common_main(name, opts):
 
     _check_system_resources(config)
     _load_genome_resources(config)
+
+    if options.threads:
+        if 'gatk' in config:
+            gatk_opts = config['gatk'].get('options', [])
+            new_opts = []
+            for opt in gatk_opts:
+                if opt.startswith('-nt '):
+                    new_opts.append('-nt ' + options.threads)
+                else:
+                    new_opts.append(opt)
+            config['gatk']['options'] = new_opts
 
     return config, options.__dict__
 

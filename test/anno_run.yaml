@@ -10,7 +10,7 @@ filter_reject: True
 
 verbose: True
 keep_intermediate: True
-reuse_intermediate: True
+#reuse_intermediate: True
 #parallel: True
 
 gatk:

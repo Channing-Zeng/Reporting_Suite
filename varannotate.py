@@ -40,7 +40,7 @@ def main(args):
     output_dir = options.get('output_dir')
     if output_dir:
         print 'Saving to ' + output_dir
-
+    
     samples = read_samples_info_and_split(config, options)
 
     try:
