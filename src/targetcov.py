@@ -295,17 +295,19 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
         tokens = line.split()
         region_tokens = tokens[:-4] + [tokens[-2]]
+        region_line = '\t'.join(region_tokens)
         depth, bases_for_depth, _, percent_for_depth = tokens[-4:]
 
 
-        if region_tokens not in bases_per_depth_per_region:
-            bases_per_depth_per_region[region_tokens] = bases_per_depth_all.copy()
-            percent_per_depth_per_region[region_tokens] = percent_per_depth_all.copy()
+        if region_line not in bases_per_depth_per_region:
+            print(region_line)
+            bases_per_depth_per_region[region_line] = bases_per_depth_all.copy()
+            percent_per_depth_per_region[region_line] = percent_per_depth_all.copy()
 
         for depth_thres in depth_thresholds:
             if depth >= depth_thres:
-                bases_per_depth_per_region[region_tokens][depth_thres] += float(bases_for_depth)
-                percent_per_depth_per_region[region_tokens][depth_thres] += float(percent_for_depth) * 100.0
+                bases_per_depth_per_region[region_line][depth_thres] += float(bases_for_depth)
+                percent_per_depth_per_region[region_line][depth_thres] += float(percent_for_depth) * 100.0
 
 
         if line and line.startswith('all'):
