@@ -141,10 +141,10 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
         line_tokens += ['{0:.2f}'.format(avg_depth)]
 
         for depth_thres, bases in bp_per_depths.items():
-            if 1 == 0:
+            if int(region_size) == 0:
                 percent_str = '-'
             else:
-                percent = float(bases) / 1
+                percent = 100.0 * float(bases) / int(region_size)
                 percent_str = '{0:.2f}%'.format(percent) if percent != 0 else '0'
             line_tokens.append(percent_str)
 
