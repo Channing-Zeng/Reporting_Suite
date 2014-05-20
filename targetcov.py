@@ -25,8 +25,8 @@ from os.path import join, expanduser
 # give user an option to select type of the report to run ????
 from shutil import rmtree
 from source.main import common_main
-from source.my_utils import verify_file, critical
-from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast
+from source.my_utils import verify_file, critical, step_greetings
+from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast, intersect_bed
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -121,8 +121,9 @@ def main(args):
 
     print('')
 
+    #########################################
     bases_per_depth_per_region, max_depth = \
-            get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
+        get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
     bases_per_depth_all, sum_of_all_coverages = bases_per_depth_per_region.items()[0][1]
 
@@ -131,9 +132,19 @@ def main(args):
                           bases_per_depth_all, sum_of_all_coverages, max_depth)
 
     if not options.get('only_summary'):
-        run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region)
+        step_greetings('Coverage report for regions')
 
-        run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, genes_bed, exons_bed)
+        bed = capture_bed
+        if genes_bed:
+            bed = intersect_bed(genes_bed, capture_bed, work_dir)
+        if exons_bed:
+            bed = intersect_bed(exons_bed, genes_bed, work_dir)
+
+        bases_per_depth_per_region, max_depth = \
+            get_target_depth_analytics_fast(bed, bam, depth_thresholds)
+
+        run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,
+                       bases_per_depth_per_region)
 
 
 if __name__ == '__main__':

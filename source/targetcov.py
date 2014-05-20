@@ -92,24 +92,13 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     log('Result: ' + result_fpath)
 
 
-def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
-                   bases_per_depth_per_region, genes_bed=None, exons_bed=None):
+def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
+                   bases_per_depth_per_region):
     sample_name, _ = splitext(basename(bam))
 
-    if genes_bed and exons_bed:
-        step_greetings('Coverage report for exons in capture and genes')
-        out_fpath = join(output_dir, sample_name + '.exome_cov.report')
-    else:
-        step_greetings('Coverage report')
-        out_fpath = join(output_dir, sample_name + '.cov.report')
+    out_fpath = join(output_dir, sample_name + '.cov.report')
 
     # bed_sorted_path = gnu_sort(capture_bed, work_dir)
-
-    bed = capture_bed
-    if genes_bed:
-        bed = intersect_bed(genes_bed, bed, work_dir)
-    if exons_bed:
-        bed = intersect_bed(exons_bed, bed, work_dir)
 
     header, max_lengths = None, None
 
