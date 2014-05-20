@@ -305,6 +305,8 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     _prev_region_size = 0
     _prev_region_depth_sum = 0
 
+    regions_number = 0
+
     for line in proc.stdout:
         if not line.strip() or line.startswith('#'):
             continue
@@ -336,7 +338,8 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
         if region_line not in bases_per_depth_per_region:
             set_avg_depth_for_prev_region()
 
-            print(timestamp() + ' ' + region_line)
+            regions_number += 1
+
             bases_per_depth_per_region[region_line] = [bases_per_depth_all.copy(), None]
             _prev_region_line = region_line
             _prev_region_depth_sum = 0
@@ -348,6 +351,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             if depth >= depth_thres:
                 bases_per_depth_per_region[region_line][0][depth_thres] += float(bases_for_depth)
 
+    print(timestamp() + ' Processed ' + str(regions_number) + ' regions.')
 
     return bases_per_depth_all, covered_bases, max_depth, \
            bases_per_depth_per_region
