@@ -30,6 +30,11 @@ from source.transaction import file_transaction
 from source.utils import splitext_plus
 
 
+
+def log(msg=''):
+    print(timestamp() + msg)
+
+
 def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding,
                       bases_per_depth, sum_of_all_coverages, max_depth):
     step_greetings('Target coverage summary report')
@@ -50,7 +55,6 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
 
     v_covd_ref_bases_on_targ = bases_per_depth[1]
-    print(v_covd_ref_bases_on_targ)
     v_read_bases_on_targ = sum_of_all_coverages
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
@@ -84,10 +88,8 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
             spaces = ' ' * (max_len - len(text) + 1)
             out.write(text + spaces + val + '\n')
 
-    print('')
-    print('*' * 70)
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print('Done. Report: ' + result_fpath)
+    log('')
+    log('Result: ' + result_fpath)
 
 
 def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
@@ -150,6 +152,11 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
         all_values.append(line_tokens)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_tokens), repeat(0))))
 
+        if i > 0 and i % 1000 == 0:
+            log('processed %i regions' % (i + 1))
+    if i % 1000 != 0:
+        log('processed %i regions' % (i + 1))
+
 
     with file_transaction(out_fpath) as tx:
         with open(tx, 'w') as out:
@@ -161,32 +168,26 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
                 for v, l in zip(line_tokens, max_lengths):
                     out.write(v + ' ' * (l - len(v) + 2))
                 out.write('\n')
-    print('')
-    print('*' * 70)
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print('Done. Report: ' + out_fpath)
+
+    log('')
+    log('Result: ' + out_fpath)
 
 
 def _call(cmdline, output_fpath=None):
-    print('')
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print(cmdline + (' > ' + output_fpath if output_fpath else ''))
+    log(datetime.now().strftime("%Y-%m-%d %H:%M:%S  ") +
+          cmdline + (' > ' + output_fpath if output_fpath else ''))
     if output_fpath:
         with file_transaction(output_fpath) as tx:
             subprocess.call(cmdline.split(), stdout=open(tx, 'w'))
 
 
 def _call_and_open_stdout(cmdline):
-    print('')
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print(cmdline)
+    log(cmdline)
     return subprocess.Popen(cmdline.split(), stdout=subprocess.PIPE)
 
 
 def _call_check_output(cmdline, stdout=subprocess.PIPE):
-    print('')
-    print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    print(cmdline)
+    log(cmdline)
     return subprocess.check_output(cmdline.split())
 
 
@@ -259,7 +260,7 @@ def number_bases_in_aligned_reads(bam):
 #     return _call_and_open_stdout(cmdline)
 
 
-#
+
 # def samtool_depth_range_fast(bam_path, region):
 #     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
 #     return _call_and_open_stdout(cmdline)
@@ -348,7 +349,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             if depth >= depth_thres:
                 bases_per_depth_per_region[region_line][0][depth_thres] += float(bases_for_depth)
 
-    print(timestamp() + ' Processed ' + str(regions_number) + ' regions.')
+    log('processed ' + str(regions_number) + ' regions.')
 
     return bases_per_depth_per_region, max_depth
 

@@ -119,6 +119,8 @@ def main(args):
         rmtree(work_dir)
     os.makedirs(work_dir)
 
+    print('')
+
     bases_per_depth_per_region, max_depth = \
             get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 

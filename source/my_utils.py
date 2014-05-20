@@ -312,7 +312,7 @@ def join_parent_conf(child_conf, parent_conf):
 
 
 def timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
 
 
 def step_greetings(cnf, name=None):
@@ -326,7 +326,7 @@ def step_greetings(cnf, name=None):
 
     info(cnf.get('log'), '')
     info(cnf.get('log'), '-' * 70)
-    info(cnf.get('log'), datetime.now().strftime("%Y-%m-%d %H:%M:%S") + '  ' + name)
+    info(cnf.get('log'), timestamp() + name)
     info(cnf.get('log'), '-' * 70)
 
 
