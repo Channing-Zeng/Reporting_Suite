@@ -1,4 +1,4 @@
-resrcs:
+resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
