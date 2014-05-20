@@ -26,7 +26,7 @@ from os.path import join, expanduser
 from shutil import rmtree
 from src.main import common_main
 from src.my_utils import verify_file, critical
-from src.targetcov import run_cov_report, run_header_report
+from src.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -58,6 +58,18 @@ def main(args):
                 'dest': 'padding',
                 'help': '',
                 'default': 250}),
+
+            (['--only-summary'], '', {
+                'dest': 'only_summary',
+                'help': '',
+                'action': 'store_true',
+                'default': False}),
+
+            (['--only-regions'], '', {
+                'dest': 'only_regions',
+                'help': '',
+                'action': 'store_true',
+                'default': False}),
         ])
 
     genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
@@ -107,11 +119,19 @@ def main(args):
         rmtree(work_dir)
     os.makedirs(work_dir)
 
-    bases_per_depth_per_region = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding)
+    bases_per_depth_per_region, max_depth = \
+            get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
-    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region)
+    bases_per_depth_all, sum_of_all_coverages = bases_per_depth_per_region.items()[0][1]
 
-    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, genes_bed, exons_bed)
+    if not options.get('only_regions'):
+        run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding,
+                          bases_per_depth_all, sum_of_all_coverages, max_depth)
+
+    if not options.get('only_summary'):
+        run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region)
+
+        run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, genes_bed, exons_bed)
 
 
 if __name__ == '__main__':
