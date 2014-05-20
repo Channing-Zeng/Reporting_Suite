@@ -122,14 +122,16 @@ def main(args):
     print('')
 
     #########################################
-    bases_per_depth_per_region, max_depth = \
+    bases_per_depth_per_region, max_depth, total_bed_size = \
         get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
-    bases_per_depth_all, sum_of_all_coverages = bases_per_depth_per_region.items()[0][1]
+    bases_per_depth_all, all_avg_depth, all_std_dev = bases_per_depth_per_region.items()[0][1]
 
     if not options.get('only_regions'):
-        run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding,
-                          bases_per_depth_all, sum_of_all_coverages, max_depth)
+        run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
+                          depth_thresholds, padding,
+                          bases_per_depth_all, all_avg_depth, all_std_dev,
+                          max_depth, total_bed_size)
 
     if not options.get('only_summary'):
         step_greetings('Coverage report for regions')
@@ -140,7 +142,7 @@ def main(args):
         if exons_bed:
             bed = intersect_bed(exons_bed, genes_bed, work_dir)
 
-        bases_per_depth_per_region, max_depth = \
+        bases_per_depth_per_region, max_depth, _ = \
             get_target_depth_analytics_fast(bed, bam, depth_thresholds)
 
         run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,

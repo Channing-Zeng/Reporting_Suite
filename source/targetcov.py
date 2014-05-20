@@ -25,6 +25,7 @@ from datetime import datetime
 # yaml
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
+import math
 from source.my_utils import step_greetings, intermediate_fname, timestamp
 from source.transaction import file_transaction
 from source.utils import splitext_plus
@@ -35,51 +36,53 @@ def log(msg=''):
     print(timestamp() + msg)
 
 
-def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding,
-                      bases_per_depth, sum_of_all_coverages, max_depth):
+def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
+                      depth_thresholds, padding,
+                      bases_per_depth, avg_depth, std_dev,
+                      max_depth, total_bed_size):
     step_greetings('Target coverage summary report')
 
     base_name, ext = splitext(basename(bam))
     result_fpath = join(output_dir, base_name + '.' + 'summary.report')
 
-    padded_bed = get_padded_bed_file(capture_bed, chr_len_fpath, padding, work_dir)
+    padded_bed = get_padded_bed_file(bed, chr_len_fpath, padding, work_dir)
 
     v_mapped_reads = number_of_mapped_reads(bam)
     v_unmapped_reads = number_of_unmapped_reads(bam)
     v_number_of_reads = number_of_reads(bam)
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-    v_reads_on_target = number_reads_on_target(capture_bed, bam)
-    v_percent_on_target = 100.0 * v_reads_on_target / v_mapped_reads if v_mapped_reads else None
-    v_reads_on_padded_targ = number_reads_on_target(padded_bed, bam)
+    v_mapped_reads_on_target = number_mapped_reads_on_target(bed, bam)
+    v_percent_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
+    v_reads_on_padded_targ = number_mapped_reads_on_target(padded_bed, bam)
     v_percent_on_padded = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
 
-    v_covd_ref_bases_on_targ = bases_per_depth[1]
-    v_read_bases_on_targ = sum_of_all_coverages
+    v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
     #     if v_aligned_read_bases else None
-    v_avg_cov_depth = float(v_read_bases_on_targ) / v_covd_ref_bases_on_targ \
-        if v_covd_ref_bases_on_targ else None
+    # v_avg_cov_depth = float(v_read_bases_on_targ) / v_covd_ref_bases_on_targ \
+    #     if v_covd_ref_bases_on_targ else None
 
-    stats = [format_integer('Number of mapped reads', v_mapped_reads),
-             format_integer('Number of unmapped reads', v_unmapped_reads),
-             format_integer('Number of reads', v_number_of_reads),
-             format_decimal('Percent mapped reads', v_percent_mapped, '%'),
-             format_integer('Number of reads on target', v_reads_on_target),
-             format_decimal('Percent reads on target', v_percent_on_target, '%'),
-             format_decimal('Percent reads on padded target', v_percent_on_padded, '%'),
+    stats = [format_integer('Reads', v_number_of_reads),
+             format_integer('Mapped reads', v_mapped_reads),
+             format_integer('Unmapped reads', v_unmapped_reads),
+             format_decimal('Part of reads that mapped', v_percent_mapped, '%'),
+             format_integer('Mapped reads on target', v_mapped_reads_on_target),
+             format_decimal('Part of mapped reads that are on target', v_percent_on_target, '%'),
+             format_decimal('Part of mapped reads on padded target', v_percent_on_padded, '%'),
              # format_integer('Total aligned bases in reads', v_aligned_read_bases),
-             format_integer('Total bases in reads on target', v_read_bases_on_targ),
+             format_integer('Total bases on target', total_bed_size),
+             format_integer('Total bases of reads on target', v_read_bases_on_targ),
              # format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'),
-             format_integer('Bases in targeted reference', v_covd_ref_bases_on_targ),
-             format_integer('Bases covered (at least 1x)', bases_per_depth[1]),
-             format_decimal('Average coverage depth', v_avg_cov_depth),
-             format_integer('Maximum read depth', max_depth)]
+             # format_integer('Bases covered (at least 1x) in target', bases_per_depth[1]),
+             format_decimal('Average target coverage depth', avg_depth),
+             format_decimal('Std. dev. of target coverage depth', std_dev),
+             format_integer('Maximum target coverage depth', max_depth)]
 
-    for depth, num in bases_per_depth.items():
-        covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
-        stats.append(format_decimal('Target covered at ' + str(depth) + 'x', covd_at, '%'))
+    for depth, bases in bases_per_depth.items():
+        percent = 100.0 * bases / total_bed_size if total_bed_size else 0
+        stats.append(format_decimal('Target covered at ' + str(depth) + 'x', percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
     with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
@@ -107,10 +110,10 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
     #     for line in (l.strip() for l in bed_f if l and l.strip()):
     #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
-    required_fields_start = ['#Sample', 'Chr', 'Start', 'End']
-    required_fields_end = ['Size', 'AvgDepth'] + map(str, depth_threshs)
+    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Gene']
+    required_fields_end = ['Size', 'AvgDepth', 'StdDev'] + map(str, depth_threshs)
 
-    for i, (region, (bp_per_depths, avg_depth)) in enumerate(bases_per_depth_per_region.items()):
+    for i, (region, (bp_per_depths, avg_depth, std_dev)) in enumerate(bases_per_depth_per_region.items()):
         # for depth, num in bases_per_depth.items():
         #     covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
         #     line_vals.append(covd_at + '%'))
@@ -129,6 +132,7 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
         line_tokens += ['-'] * (len(header) - len(line_tokens) - len(required_fields_end))
         line_tokens += [region_size]
         line_tokens += ['{0:.2f}'.format(avg_depth)]
+        line_tokens += ['{0:.2f}'.format(std_dev)]
 
         for depth_thres, bases in bp_per_depths.items():
             if int(region_size) == 0:
@@ -195,7 +199,13 @@ def gnu_sort(bed_path, work_dir):
     output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
     _call(cmdline, output_fpath)
     return output_fpath
-#
+
+
+# def total_bed_length(bed_fpath):
+#     cmdline = 'cat {bed} | awk -F"\t" ' \
+#               '"BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}"'.format(**locals())
+#     return int(_call_check_output(cmdline))
+
 
 
 def intersect_bed(bed1, bed2, work_dir):
@@ -225,7 +235,7 @@ def number_of_reads(bam):
     return int(res)
 
 
-def number_reads_on_target(bed, bam):
+def number_mapped_reads_on_target(bed, bam):
     cmdline = 'samtools view -c -F 4 -L {bed} {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
@@ -282,6 +292,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
     proc = _call_and_open_stdout(cmdline)
     max_depth = 0
+    total_size = 0
 
     # bases_per_depth_all = OrderedDict([(depth_thres, 0) for depth_thres in depth_thresholds])
     # percent_per_depth_all = OrderedDict([(depth_thres, 0.0) for depth_thres in depth_thresholds])
@@ -289,9 +300,9 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     bases_per_depth_per_region = OrderedDict()
     # percent_per_depth_per_region = OrderedDict()
 
+    _prev_region_bases_by_depths = []
     _prev_region_line = None
     _prev_region_size = 0
-    _prev_region_depth_sum = 0
 
     regions_number = 0
 
@@ -301,8 +312,18 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
         def set_avg_depth_for_prev_region():
             if _prev_region_size and _prev_region_line:
-                avg_depth = _prev_region_depth_sum / _prev_region_size
+                depth_sum = sum(depth * bases_for_depth
+                                for depth, bases_for_depth
+                                in _prev_region_bases_by_depths)
+                avg_depth = depth_sum / _prev_region_size
+
+                sum_of_sq_var = sum((depth - avg_depth)**2 * bases_for_depth
+                                    for depth, bases_for_depth
+                                    in _prev_region_bases_by_depths)
+                std_dev = math.sqrt(sum_of_sq_var / _prev_region_size)
+
                 bases_per_depth_per_region[_prev_region_line][1] = avg_depth
+                bases_per_depth_per_region[_prev_region_line][2] = std_dev
 
         tokens = line.strip().split('\t')
         depth, bases_for_depth, region_size = map(int, tokens[-4:-1])
@@ -312,6 +333,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             set_avg_depth_for_prev_region()
             region_tokens = [tokens[0]] + region_tokens
             max_depth = max(max_depth, depth)
+            total_size += bases_for_depth
 
             # for depth_thres in depth_thresholds:
             #     if depth >= depth_thres:
@@ -326,13 +348,16 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             regions_number += 1
 
             bases_per_depth_per_region[region_line] = \
-                [OrderedDict([(depth_thres, 0.0) for depth_thres in depth_thresholds]),
+                [OrderedDict([(depth_thres, 0.0) for depth_thres
+                              in depth_thresholds]),
+                 None,
                  None]
+            _prev_region_bases_by_depths = []
             _prev_region_line = region_line
-            _prev_region_depth_sum = 0
             _prev_region_size = region_size
 
-        _prev_region_depth_sum += depth * bases_for_depth
+        _prev_region_bases_by_depths.append((depth, bases_for_depth))
+        # _prev_region_sum_of_sq_var += bases_for_depth * depth -
 
         for depth_thres in depth_thresholds:
             if depth >= depth_thres:
@@ -340,7 +365,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
     log('processed ' + str(regions_number) + ' regions.')
 
-    return bases_per_depth_per_region, max_depth
+    return bases_per_depth_per_region, max_depth, total_size
 
 
 # TODO how to pass the data stream to samtools vs. creating file
