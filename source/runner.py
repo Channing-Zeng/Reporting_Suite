@@ -9,7 +9,7 @@ try:
 except ImportError:
     from yaml import Dumper
 
-from src.my_utils import critical, info, iterate_file, step_greetings
+from source.my_utils import critical, info, iterate_file, step_greetings
 
 
 def run_all(cnf, samples, process_one, finalize_one, finalize_all):

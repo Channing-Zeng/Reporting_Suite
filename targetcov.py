@@ -24,9 +24,9 @@ from os.path import join, expanduser
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
 from shutil import rmtree
-from src.main import common_main
-from src.my_utils import verify_file, critical
-from src.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast
+from source.main import common_main
+from source.my_utils import verify_file, critical
+from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):

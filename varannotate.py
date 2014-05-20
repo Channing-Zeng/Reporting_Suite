@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 import sys
 
-from src.main import common_main, read_samples_info_and_split
-from src.runner import run_all
-from src.tsv import make_tsv
+from source.main import common_main, read_samples_info_and_split
+from source.runner import run_all
+from source.tsv import make_tsv
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
 
-from src.annotation import run_annotators
-from src.my_utils import info
+from source.annotation import run_annotators
+from source.my_utils import info
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):

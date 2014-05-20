@@ -25,9 +25,9 @@ from datetime import datetime
 # yaml
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
-from src.my_utils import step_greetings, intermediate_fname, timestamp
-from src.transaction import file_transaction
-from src.utils import splitext_plus
+from source.my_utils import step_greetings, intermediate_fname, timestamp
+from source.transaction import file_transaction
+from source.utils import splitext_plus
 
 
 def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding,

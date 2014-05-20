@@ -6,11 +6,11 @@ from os.path import join, realpath, isdir, isfile, dirname, basename, join, real
 from optparse import OptionParser
 from collections import OrderedDict
 
-from src.utils import which, open_gzipsafe, file_exists, splitext_plus
-from src.my_utils import get_tool_cmdline, err, critical, verify_file,\
+from source.utils import which, open_gzipsafe, file_exists, splitext_plus
+from source.my_utils import get_tool_cmdline, err, critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir
-from src.summarize import summarize_qc
-from src.tsv import make_tsv
+from source.summarize import summarize_qc
+from source.tsv import make_tsv
 
 from yaml import dump, load
 try:
@@ -266,7 +266,7 @@ def _check_system_tools():
 
     # print ''
     # print 'In Waltham, run this as well:'
-    # print '   export PATH=$PATH:/group/ngs/src/snpEff/snpEff3.5/scripts'
+    # print '   export PATH=$PATH:/group/ngs/source/snpEff/snpEff3.5/scripts'
     # print '   export PERL5LIB=$PERL5LIB:/opt/az/local/bcbio-nextgen/'
     #       'stable/0.7.6/tooldir/lib/perl5/site_perl'
     if to_exit:

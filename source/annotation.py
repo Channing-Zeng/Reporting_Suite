@@ -3,10 +3,10 @@ from os.path import splitext, basename, join
 import os
 import shutil
 
-from src.my_utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
+from source.my_utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
     verify_file, intermediate_fname, call, get_tool_cmdline, \
     err, get_gatk_type, info, remove_quotes
-from src.utils import add_suffix, file_exists
+from source.utils import add_suffix, file_exists
 
 
 def run_annotators(cnf, vcf_fpath):

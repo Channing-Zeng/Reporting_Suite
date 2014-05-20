@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 from os.path import join
 import sys
-from src.main import common_main, read_samples_info_and_split
-from src.runner import run_all
-from src.summarize import summarize_qc
+from source.main import common_main, read_samples_info_and_split
+from source.runner import run_all
+from source.summarize import summarize_qc
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
 
-from src.quality_control import quality_control, check_quality_control_config
-from src.my_utils import info
+from source.quality_control import quality_control, check_quality_control_config
+from source.my_utils import info
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):

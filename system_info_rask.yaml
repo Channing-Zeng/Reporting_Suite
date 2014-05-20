@@ -1,22 +1,22 @@
 resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
-    path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
-#    path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
+    path: /group/ngs/source/GenomeAnalysisTK/GenomeAnalysisTK.jar
+#    path: /group/ngs/source/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
 #    path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/snpEff.jar
+    path: /group/ngs/source/snpEff/snpEff.jar
     # config: /usr/local/share/java/snpeff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/SnpSift.jar
+    path: /group/ngs/source/snpEff/SnpSift.jar
   bcftools:
-    path: /group/ngs/src/bcftools/bcftools
+    path: /group/ngs/source/bcftools/bcftools
   plot_vcfstats:
-    path: /group/ngs/src/bcftools/plot-vcfstats
+    path: /group/ngs/source/bcftools/plot-vcfstats
   vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/Cellar/vcflib/2014-02-19/bin/vcfannotate
+    path: /group/ngs/source/bcbio-nextgen/0.7.8/rhel5-x64/Cellar/vcflib/2014-02-19/bin/vcfannotate
 
 genomes:
   hg19:

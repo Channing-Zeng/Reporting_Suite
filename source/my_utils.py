@@ -8,8 +8,8 @@ from distutils.version import LooseVersion
 import shutil
 import re
 
-from src.transaction import file_transaction
-from src.utils import add_suffix, file_exists, which
+from source.transaction import file_transaction
+from source.utils import add_suffix, file_exists, which
 
 
 def err(log, msg=None):
