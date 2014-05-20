@@ -30,4 +30,4 @@ genomes:
 
     chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
-    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
+    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonical_sorted.bed
