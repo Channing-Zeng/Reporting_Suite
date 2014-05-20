@@ -49,7 +49,7 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
 
     bases_per_depth, v_covd_ref_bases_on_targ, max_depth, \
-        bases_per_depth_per_region, percent_per_depth_per_region = \
+        bases_per_depth_per_region = \
             get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
@@ -88,12 +88,11 @@ def run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, dep
     print(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     print('Done. Report: ' + result_fpath)
 
-    return bases_per_depth_per_region, percent_per_depth_per_region
+    return bases_per_depth_per_region
 
 
 def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
-                   bases_per_depth_per_region, percent_per_depth_per_region,
-                   genes_bed=None, exons_bed=None):
+                   bases_per_depth_per_region, genes_bed=None, exons_bed=None):
     sample_name, _ = splitext(basename(bam))
 
     if genes_bed and exons_bed:
@@ -118,26 +117,39 @@ def run_cov_report(output_dir, work_dir, capture_bed, bam, depth_threshs,
     #     for line in (l.strip() for l in bed_f if l and l.strip()):
     #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
-    for i, (region, percent_by_depths) in enumerate(percent_per_depth_per_region.items()):
+    required_fields_start = ['#Sample', 'Chr', 'Start', 'End']
+    required_fields_end = ['Size', 'AvgDepth'] + map(str, depth_threshs)
+
+    for i, (region, (bp_per_depths, avg_depth)) in enumerate(bases_per_depth_per_region.items()):
         # for depth, num in bases_per_depth.items():
         #     covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
         #     line_vals.append(covd_at + '%'))
-        region_tokens = region.split()
+        region_tokens = region.split()  # Chr, Start, End, RegionSize, F1, F2,...
+        region_size = region_tokens[-1]
+        region_tokens = region_tokens[:-1]
         if i == 0:
-            header = (['Sample', 'Chr', 'Start', 'End'] + ([''] * (len(region_tokens) - 1 + 1)))
-            header += ['RegionSize', 'MeanDepth'] + map(str, depth_threshs)
+            header = (required_fields_start +
+                      ([''] * (len(region_tokens) - len(required_fields_start))) +
+                      required_fields_end)
             max_lengths = map(len, header)
 
         # avg_depth_str = '{0:.2f}'.format(mean(depths) if depths else 0.0)
 
-        line_tokens = [sample_name] + region.split() + ['-']
+        line_tokens = [sample_name] + region_tokens
+        line_tokens += ['-'] * (len(header) - len(line_tokens) - len(required_fields_end))
+        line_tokens += [region_size]
+        line_tokens += ['{0:.2f}'.format(avg_depth)]
 
-        for depth_thres, percent in percent_by_depths.items():
-            line_tokens.append('{0:.2f}'.format(percent))
+        for depth_thres, bases in bp_per_depths.items():
+            if 1 == 0:
+                percent_str = '-'
+            else:
+                percent = float(bases) / 1
+                percent_str = '{0:.2f}%'.format(percent) if percent != 0 else '0'
+            line_tokens.append(percent_str)
 
         all_values.append(line_tokens)
-        max_lengths = map(max, izip(max_lengths,
-                                    chain(map(len, line_tokens), repeat(0))))
+        max_lengths = map(max, izip(max_lengths, chain(map(len, line_tokens), repeat(0))))
 
 
     with file_transaction(out_fpath) as tx:
@@ -287,45 +299,58 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     percent_per_depth_all = OrderedDict([(depth_thres, 0.0) for depth_thres in depth_thresholds])
 
     bases_per_depth_per_region = OrderedDict()
-    percent_per_depth_per_region = OrderedDict()
+    # percent_per_depth_per_region = OrderedDict()
+
+    _prev_region_line = None
+    _prev_region_size = 0
+    _prev_region_depth_sum = 0
 
     for line in proc.stdout:
-        if line.startswith('#'):
+        if not line.strip() or line.startswith('#'):
             continue
 
-        tokens = line.split()
-        region_tokens = tokens[:-4] + [tokens[-2]]
-        region_line = '\t'.join(region_tokens)
-        depth, bases_for_depth, _, percent_for_depth = tokens[-4:]
+        def set_avg_depth_for_prev_region():
+            if _prev_region_size and _prev_region_line:
+                avg_depth = _prev_region_depth_sum / _prev_region_size
+                bases_per_depth_per_region[_prev_region_line][1] = avg_depth
 
+        tokens = line.strip().split('\t')
+        depth, bases_for_depth, region_size = map(int, tokens[-4:-1])
+        region_tokens = [str(region_size)]
 
-        if region_line not in bases_per_depth_per_region:
-            print(timestamp() + ' ' + region_line)
-            bases_per_depth_per_region[region_line] = bases_per_depth_all.copy()
-            percent_per_depth_per_region[region_line] = percent_per_depth_all.copy()
+        if line.startswith('all'):
+            set_avg_depth_for_prev_region()
 
-        for depth_thres in depth_thresholds:
-            if depth >= depth_thres:
-                bases_per_depth_per_region[region_line][depth_thres] += float(bases_for_depth)
-                percent_per_depth_per_region[region_line][depth_thres] += float(percent_for_depth) * 100.0
-
-
-        if line and line.startswith('all'):
-            _, depth, bases, reg_size, percent_on_depth = line.strip().split('\t')
-            # print(line)
-            depth = int(depth)
-            bases = int(bases)
-            reg_size = int(reg_size)
+            region_tokens = [tokens[0]] + region_tokens
 
             max_depth = max(max_depth, depth)
-            covered_bases += bases
+            covered_bases += bases_for_depth
 
             for depth_thres in depth_thresholds:
                 if depth >= depth_thres:
-                    bases_per_depth_all[depth_thres] += bases
+                    bases_per_depth_all[depth_thres] += bases_for_depth
+        else:
+            region_tokens = tokens[:-4] + region_tokens
+
+        region_line = '\t'.join(region_tokens)
+        if region_line not in bases_per_depth_per_region:
+            set_avg_depth_for_prev_region()
+
+            print(timestamp() + ' ' + region_line)
+            bases_per_depth_per_region[region_line] = [bases_per_depth_all.copy(), None]
+            _prev_region_line = region_line
+            _prev_region_depth_sum = 0
+            _prev_region_size = region_size
+
+        _prev_region_depth_sum += depth * bases_for_depth
+
+        for depth_thres in depth_thresholds:
+            if depth >= depth_thres:
+                bases_per_depth_per_region[region_line][0][depth_thres] += float(bases_for_depth)
+
 
     return bases_per_depth_all, covered_bases, max_depth, \
-           bases_per_depth_per_region, percent_per_depth_per_region
+           bases_per_depth_per_region
 
 
 # TODO how to pass the data stream to samtools vs. creating file

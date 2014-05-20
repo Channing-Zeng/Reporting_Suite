@@ -107,11 +107,11 @@ def main(args):
         rmtree(work_dir)
     os.makedirs(work_dir)
 
-    bases_per_depth_per_region, percent_per_depth_per_region = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding)
+    bases_per_depth_per_region = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath, depth_thresholds, padding)
 
-    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, percent_per_depth_per_region)
+    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region)
 
-    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, percent_per_depth_per_region, genes_bed, exons_bed)
+    run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds, bases_per_depth_per_region, genes_bed, exons_bed)
 
 
 if __name__ == '__main__':
