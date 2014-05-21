@@ -54,14 +54,10 @@ def common_main(name, opts):
         system_config_path = args[0]
         run_config_path = args[1]
 
-    info('after notice')
-
     if not os.path.isfile(system_config_path):
         exit(system_config_path + ' does not exist or is a directory.\n')
     if not os.path.isfile(run_config_path):
         exit(run_config_path + ' does not exist or is a directory.\n')
-
-    info('after notice')
 
     to_exit = False
     if not system_config_path.endswith('.yaml'):
@@ -76,8 +72,7 @@ def common_main(name, opts):
     if to_exit:
         exit(1)
 
-        info('before loading configs')
-    # _check_system_tools()
+    _check_system_tools()
 
     sys_cnf = load(open(system_config_path), Loader=Loader)
     run_cnf = load(open(run_config_path), Loader=Loader)

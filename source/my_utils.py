@@ -33,6 +33,7 @@ def info(log, msg=None):
     if msg is None:
         msg, log = log, None
     print(msg)
+    sys.stdout.flush()
     if log:
         open(log, 'a').write(msg + '\n')
 
