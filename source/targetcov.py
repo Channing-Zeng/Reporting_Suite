@@ -155,7 +155,7 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
         region_tokens = region_tokens[:-1]
         if i == 0:
             header = (required_fields_start +
-                      ([''] * (len(region_tokens) - len(required_fields_start))) +
+                      (['-'] * (len(region_tokens) - len(required_fields_start) + 1)) +
                       required_fields_end)
             max_lengths = map(len, header)
 
