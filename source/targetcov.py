@@ -132,7 +132,7 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
                    bases_per_depth_per_region):
     sample_name, _ = splitext(basename(bam))
 
-    out_fpath = join(output_dir, sample_name + '.cov.report')
+    out_fpath = join(output_dir, sample_name + '.exons.report')
 
     # bed_sorted_path = gnu_sort(capture_bed, work_dir)
 
@@ -143,7 +143,7 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
     #     for line in (l.strip() for l in bed_f if l and l.strip()):
     #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
-    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Gene', 'ExonNum', 'Strand']
+    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Transcript', 'Gene', 'ExonNum', 'Strand']
     required_fields_end = ['Size', 'AvgDepth', 'StdDev', 'Within20%'] + map(str, depth_threshs)
 
     for i, (region, (bp_per_depths, avg_depth, std_dev, bases_within_normal_deviation)) \

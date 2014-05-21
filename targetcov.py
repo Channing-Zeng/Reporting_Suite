@@ -6,7 +6,7 @@ from genericpath import isdir
 
 import sys
 import os
-from os.path import join, expanduser
+from os.path import join, expanduser, splitext, basename
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
 
@@ -142,19 +142,18 @@ def main(args):
     if not options.get('only_summary'):
         step_greetings('Coverage report for regions')
 
-        amplicon_report_fpath = run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds,
+        result_fpath = run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds,
             bases_per_depth_per_region)
+        amplicon_report_fpath = join(output_dir, splitext(basename(bam))[0] + '.regions.report')
+        os.rename(result_fpath, amplicon_report_fpath)
 
         bed = capture_bed
-        # print(''.join(open(capture_bed).readlines()))
         if genes_bed:
             log('Getting the gene regions that intersect with our capture panel.')
             bed = intersect_bed(genes_bed, capture_bed, work_dir)
-            # print(''.join(open(bed).readlines()))
         if exons_bed:
             log('Getting the exons of the genes.')
-            bed = intersect_bed(exons_bed, genes_bed, work_dir)
-            # print(''.join(open(bed).readlines()))
+            bed = intersect_bed(exons_bed, bed, work_dir)
 
         log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
         bases_per_depth_per_region, max_depth, _ = \
@@ -168,7 +167,7 @@ def main(args):
     if header_report_fpath:
         log('Summary report: ' + header_report_fpath)
     if amplicon_report_fpath:
-        log('Amplicons coverage report: ' + cov_report_fpath)
+        log('Region coverage report: ' + amplicon_report_fpath)
     if cov_report_fpath:
         log('Exons coverage report: ' + cov_report_fpath)
 
