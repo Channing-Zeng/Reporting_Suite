@@ -26,7 +26,7 @@ from os.path import join, expanduser
 from shutil import rmtree
 from source.main import common_main
 from source.my_utils import verify_file, critical, step_greetings
-from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast, intersect_bed
+from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast, intersect_bed, log
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -127,12 +127,14 @@ def main(args):
 
     bases_per_depth_all, all_avg_depth, all_std_dev = bases_per_depth_per_region.items()[0][1]
 
+    header_report_fpath = None
     if not options.get('only_regions'):
-        run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
-                          depth_thresholds, padding,
-                          bases_per_depth_all, all_avg_depth, all_std_dev,
-                          max_depth, total_bed_size)
+        header_report_fpath = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
+            depth_thresholds, padding,
+            bases_per_depth_all, all_avg_depth, all_std_dev,
+            max_depth, total_bed_size)
 
+    cov_report_fpath = None
     if not options.get('only_summary'):
         step_greetings('Coverage report for regions')
 
@@ -145,8 +147,15 @@ def main(args):
         bases_per_depth_per_region, max_depth, _ = \
             get_target_depth_analytics_fast(bed, bam, depth_thresholds)
 
-        run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,
-                       bases_per_depth_per_region)
+        cov_report_fpath = run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,
+            bases_per_depth_per_region)
+
+    print('')
+    print('*' * 70)
+    if header_report_fpath:
+        log('Summary report: ' + header_report_fpath)
+    if cov_report_fpath:
+        log('Region coverage report: ' + cov_report_fpath)
 
 
 if __name__ == '__main__':
