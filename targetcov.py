@@ -126,7 +126,7 @@ def main(args):
     bases_per_depth_per_region, max_depth, total_bed_size = \
         get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
-    _all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev) = \
+    _all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation) = \
         bases_per_depth_per_region.items()[-1]
     print(_all_reg_line)
 
@@ -134,7 +134,7 @@ def main(args):
     if not options.get('only_regions'):
         header_report_fpath = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
             depth_thresholds, padding,
-            bases_per_depth_all, all_avg_depth, all_std_dev,
+            bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation,
             max_depth, total_bed_size)
 
     cov_report_fpath = None
@@ -143,8 +143,10 @@ def main(args):
 
         bed = capture_bed
         if genes_bed:
+            log('Getting the gene regions that intersect with our capture panel.')
             bed = intersect_bed(genes_bed, capture_bed, work_dir)
         if exons_bed:
+            log('Getting the exons of the genes.')
             bed = intersect_bed(exons_bed, genes_bed, work_dir)
 
         log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')

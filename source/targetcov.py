@@ -38,7 +38,7 @@ def log(msg=''):
 
 def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
                       depth_thresholds, padding,
-                      bases_per_depth, avg_depth, std_dev,
+                      bases_per_depth, avg_depth, std_dev, bases_within_normal_deviation,
                       max_depth, total_bed_size):
     step_greetings('Target coverage summary report')
 
@@ -99,6 +99,7 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     log('')
     append_stat(format_decimal('Average target coverage depth', avg_depth))
     append_stat(format_decimal('Std. dev. of target coverage depth', std_dev))
+    append_stat(format_integer('Bases withing 20% of avarage depth in a region', bases_within_normal_deviation))
     append_stat(format_integer('Maximum target coverage depth', max_depth))
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
@@ -144,14 +145,15 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
     #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
     required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Gene']
-    required_fields_end = ['Size', 'AvgDepth', 'StdDev'] + map(str, depth_threshs)
+    required_fields_end = ['Size', 'AvgDepth', 'StdDev', 'Within20%'] + map(str, depth_threshs)
 
-    for i, (region, (bp_per_depths, avg_depth, std_dev)) in enumerate(bases_per_depth_per_region.items()):
+    for i, (region, (bp_per_depths, avg_depth, std_dev, bases_within_normal_deviation)) \
+            in enumerate(bases_per_depth_per_region.items()):
         # for depth, num in bases_per_depth.items():
         #     covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
         #     line_vals.append(covd_at + '%'))
         region_tokens = region.split()  # Chr, Start, End, RegionSize, F1, F2,...
-        region_size = region_tokens[-1]
+        region_size = int(region_tokens[-1])
         region_tokens = region_tokens[:-1]
         if i == 0:
             header = (required_fields_start +
@@ -163,15 +165,18 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
 
         line_tokens = [sample_name] + region_tokens
         line_tokens += ['-'] * (len(header) - len(line_tokens) - len(required_fields_end))
-        line_tokens += [region_size]
+        line_tokens += [str(region_size)]
         line_tokens += ['{0:.2f}'.format(avg_depth) if avg_depth else '0']
         line_tokens += ['{0:.2f}'.format(std_dev) if std_dev else '0']
+
+        percent_within_normal_dev = 100.0 * bases_within_normal_deviation / region_size if region_size else '-'
+        line_tokens += ['{0:.2f}%'.format(percent_within_normal_dev) if percent_within_normal_dev else '0']
 
         for depth_thres, bases in bp_per_depths.items():
             if int(region_size) == 0:
                 percent_str = '-'
             else:
-                percent = 100.0 * float(bases) / int(region_size)
+                percent = 100.0 * float(bases) / region_size
                 percent_str = '{0:.2f}%'.format(percent) if percent != 0 else '0'
             line_tokens.append(percent_str)
 
@@ -352,18 +357,24 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
 
         def set_avg_depth_for_prev_region():
             if _prev_region_size and _prev_region_line:
-                depth_sum = sum(depth * bases_for_depth
-                                for depth, bases_for_depth
+                depth_sum = sum(depth * bases
+                                for depth, bases
                                 in _prev_region_bases_by_depths)
                 avg_depth = depth_sum / _prev_region_size
 
-                sum_of_sq_var = sum((depth - avg_depth)**2 * bases_for_depth
-                                    for depth, bases_for_depth
+                sum_of_sq_var = sum((depth - avg_depth)**2 * bases
+                                    for depth, bases
                                     in _prev_region_bases_by_depths)
                 std_dev = math.sqrt(sum_of_sq_var / _prev_region_size)
 
+                bases_within_normal_deviation = sum(
+                    bases for depth, bases
+                    in _prev_region_bases_by_depths
+                    if math.fabs(avg_depth - depth) <= 0.2 * avg_depth)
+
                 bases_per_depth_per_region[_prev_region_line][1] = avg_depth
                 bases_per_depth_per_region[_prev_region_line][2] = std_dev
+                bases_per_depth_per_region[_prev_region_line][3] = bases_within_normal_deviation
 
         tokens = line.strip().split('\t')
         depth, bases_for_depth, region_size = map(int, tokens[-4:-1])
@@ -390,6 +401,7 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             bases_per_depth_per_region[region_line] = \
                 [OrderedDict([(depth_thres, 0.0) for depth_thres
                               in depth_thresholds]),
+                 None,
                  None,
                  None]
             _prev_region_bases_by_depths = []
