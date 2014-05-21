@@ -196,9 +196,9 @@ def _read_sample_names_from_vcf(vcf_fpath):
 def _check_system_resources(cnf):
     to_exit = False
 
-    resources = cnf.get('resources', None)
-    if not resources:
-        critical(cnf.get('log'), 'No "resources" section in system config.')
+    # resources = cnf.get('resources', None)
+    # if not resources:
+    #     critical(cnf.get('log'), 'No "resources" section in system config.')
 
     # for name, data in resources.items():
     #     if 'path' in data:
@@ -218,30 +218,26 @@ def _load_genome_resources(cnf):
     if genome_name not in cnf['genomes']:
         critical(genome_name + ' is not in "genomes section" of system config.')
     genome_cnf = cnf['genomes'][genome_name].copy()
-    # to rerun on dumped config:
-    # else:
-    #     genome_cnf = genome_name
-    #     genome_name = genome_cnf['name']
 
     to_exit = False
 
-    if 'seq' not in genome_cnf:
-        err('Please, provide path to the reference file (seq).')
-        to_exit = True
+    # if 'seq' not in genome_cnf:
+    #     err('Please, provide path to the reference file (seq).')
+    #     to_exit = True
 
     genome_cnf['seq'] = expanduser(genome_cnf['seq'])
-    if not verify_file(genome_cnf['seq'], 'Reference seq'):
-        to_exit = True
+    # if not verify_file(genome_cnf['seq'], 'Reference seq'):
+    #     to_exit = True
 
     for f in 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if f in genome_cnf:
             genome_cnf[f] = expanduser(genome_cnf[f])
-            if not verify_file(genome_cnf[f], f):
-                to_exit = True
+            # if not verify_file(genome_cnf[f], f):
+            #     to_exit = True
     if 'snpeff' in genome_cnf:
         genome_cnf['snpeff'] = expanduser(genome_cnf['snpeff'])
-        if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
-            to_exit = True
+        # if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
+        #     to_exit = True
 
     if to_exit:
         exit(1)
