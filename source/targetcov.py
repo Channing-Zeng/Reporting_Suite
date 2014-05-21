@@ -72,8 +72,8 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
              format_decimal('Part of mapped reads that are on target', v_percent_on_target, '%'),
              format_decimal('Part of mapped reads on padded target', v_percent_on_padded, '%'),
              # format_integer('Total aligned bases in reads', v_aligned_read_bases),
-             format_integer('Total bases on target', total_bed_size),
-             format_integer('Total bases of reads on target', v_read_bases_on_targ),
+             format_integer('Bases in target', total_bed_size),
+             format_integer('Read bases mapped on target', v_read_bases_on_targ),
              # format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'),
              # format_integer('Bases covered (at least 1x) in target', bases_per_depth[1]),
              format_decimal('Average target coverage depth', avg_depth),
@@ -131,8 +131,8 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
         line_tokens = [sample_name] + region_tokens
         line_tokens += ['-'] * (len(header) - len(line_tokens) - len(required_fields_end))
         line_tokens += [region_size]
-        line_tokens += ['{0:.2f}'.format(avg_depth)]
-        line_tokens += ['{0:.2f}'.format(std_dev)]
+        line_tokens += ['{0:.2f}'.format(avg_depth) if avg_depth else '0']
+        line_tokens += ['{0:.2f}'.format(std_dev) if std_dev else '0']
 
         for depth_thres, bases in bp_per_depths.items():
             if int(region_size) == 0:
