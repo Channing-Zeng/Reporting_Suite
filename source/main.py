@@ -200,11 +200,11 @@ def _check_system_resources(cnf):
     if not resources:
         critical(cnf.get('log'), 'No "resources" section in system config.')
 
-    for name, data in resources.items():
-        if 'path' in data:
-            data['path'] = expanduser(data['path'])
-            if not verify_file(data['path'], name):
-                to_exit = True
+    # for name, data in resources.items():
+    #     if 'path' in data:
+    #         data['path'] = expanduser(data['path'])
+    #         if not verify_file(data['path'], name):
+    #             to_exit = True
     if to_exit:
         exit()
 
