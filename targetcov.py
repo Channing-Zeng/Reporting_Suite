@@ -146,15 +146,15 @@ def main(args):
             bases_per_depth_per_region)
 
         bed = capture_bed
-        print(''.join(open(capture_bed).readlines()))
+        # print(''.join(open(capture_bed).readlines()))
         if genes_bed:
             log('Getting the gene regions that intersect with our capture panel.')
             bed = intersect_bed(genes_bed, capture_bed, work_dir)
-            print(''.join(open(bed).readlines()))
+            # print(''.join(open(bed).readlines()))
         if exons_bed:
             log('Getting the exons of the genes.')
             bed = intersect_bed(exons_bed, genes_bed, work_dir)
-            print(''.join(open(bed).readlines()))
+            # print(''.join(open(bed).readlines()))
 
         log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
         bases_per_depth_per_region, max_depth, _ = \
@@ -171,7 +171,6 @@ def main(args):
         log('Amplicons coverage report: ' + cov_report_fpath)
     if cov_report_fpath:
         log('Exons coverage report: ' + cov_report_fpath)
-
 
 
 if __name__ == '__main__':
