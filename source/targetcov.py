@@ -44,35 +44,51 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
 
     base_name, ext = splitext(basename(bam))
     result_fpath = join(output_dir, base_name + '.' + 'summary.report')
-    padded_bed = get_padded_bed_file(bed, chr_len_fpath, padding, work_dir)
 
     stats = []
     def append_stat(stat):
         stats.append(stat)
         log(stat)
 
+    log('* General coverage statistics *')
+    log('Getting number of reads...')
     v_number_of_reads = number_of_reads(bam)
     append_stat(format_integer('Reads', v_number_of_reads))
 
+    log('Getting number of mapped reads...')
     v_mapped_reads = number_of_mapped_reads(bam)
     append_stat(format_integer('Mapped reads', v_mapped_reads))
     append_stat(format_integer('Unmapped reads', v_number_of_reads - v_mapped_reads))
 
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
     append_stat(format_decimal('Part of reads that mapped', v_percent_mapped, '%'))
+    log('')
 
+    log('* Target coverage statistics *')
+    append_stat(format_integer('Bases in target', total_bed_size))
+
+    v_covered_bases_in_targ = bases_per_depth.items()[0][1]
+    append_stat(format_integer('Covered bases in target', v_covered_bases_in_targ))
+
+    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
+    append_stat(format_decimal('Part of target covered by reads', v_percent_covered_bases_in_targ, '%'))
+
+    log('Getting number of mapped reads on target...')
     v_mapped_reads_on_target = number_mapped_reads_on_target(bed, bam)
     append_stat(format_integer('Reads mapped on target', v_mapped_reads_on_target))
 
     v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
     append_stat(format_decimal('Part of mapped reads that are on target', v_percent_mapped_on_target, '%'))
 
+    log('Making bed file for padded regions...')
+    padded_bed = get_padded_bed_file(bed, chr_len_fpath, padding, work_dir)
+
+    log('Getting number of mapped reads on padded target...')
     v_reads_on_padded_targ = number_mapped_reads_on_target(padded_bed, bam)
-    append_stat(format_decimal('Reads mapped on padded target', v_reads_on_padded_targ, '%'))
+    append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ, '%'))
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     append_stat(format_decimal('Part of mapped reads that are on padded target', v_percent_mapped_on_padded_target, '%'))
-    append_stat(format_integer('Bases in target', total_bed_size))
 
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
     # append_stat(format_integer('Total aligned bases in reads', v_aligned_read_bases))
@@ -80,6 +96,7 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
     append_stat(format_integer('Read bases mapped on target', v_read_bases_on_targ))
 
+    log('')
     append_stat(format_decimal('Average target coverage depth', avg_depth))
     append_stat(format_decimal('Std. dev. of target coverage depth', std_dev))
     append_stat(format_integer('Maximum target coverage depth', max_depth))
@@ -91,8 +108,13 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     # format_integer('Bases covered (at least 1x) in target', bases_per_depth[1]),
 
     for depth, bases in bases_per_depth.items():
+        append_stat(format_integer('Bases on target covered at least by ' + str(depth) +
+                                   ' read' + ('s' if depth != 1 else ''), bases))
+
+    for depth, bases in bases_per_depth.items():
         percent = 100.0 * bases / total_bed_size if total_bed_size else 0
-        append_stat(format_decimal('Target covered at ' + str(depth) + 'x', percent, '%'))
+        append_stat(format_decimal('Part of target covered at least by ' + str(depth) +
+                                   ('s' if depth != 1 else ''), percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
     with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
@@ -156,9 +178,9 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
         all_values.append(line_tokens)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_tokens), repeat(0))))
 
-        if i > 0 and i % 1000 == 0:
+        if i > 0 and i % 100000 == 0:
             log('processed %i regions' % (i + 1))
-    if i % 1000 != 0:
+    if i % 100000 != 0:
         log('processed %i regions' % (i + 1))
 
 
@@ -179,21 +201,33 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
 
 
 def _call(cmdline, output_fpath=None):
-    log(datetime.now().strftime("%Y-%m-%d %H:%M:%S  ") +
-          cmdline + (' > ' + output_fpath if output_fpath else ''))
+    log('  $ ' + cmdline + (' > ' + output_fpath if output_fpath else ''))
     if output_fpath:
         with file_transaction(output_fpath) as tx:
             subprocess.call(cmdline.split(), stdout=open(tx, 'w'))
 
 
 def _call_and_open_stdout(cmdline):
-    log(cmdline)
+    log('  $ ' + cmdline)
     return subprocess.Popen(cmdline.split(), stdout=subprocess.PIPE)
 
 
 def _call_check_output(cmdline, stdout=subprocess.PIPE):
-    log(cmdline)
+    log('  $ ' + cmdline)
     return subprocess.check_output(cmdline.split())
+
+
+def samtool_depth_range(bam_path, region):
+    cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
+    return _call_and_open_stdout(cmdline)
+
+
+def mapped_bases_in_bed_using_samtoolsdepth(bam, bed):
+    total = 0
+    for st, end in (l.split()[1:3] for l in open(bed).readlines() if l.strip()):
+        total += len([l for l in samtool_depth_range(bam, 'chrM:' + str(int(st) + 1) + '-' + end).stdout
+                   if l.strip() and not l.startswith('#')])
+    return total
 
 
 # # TODO to check if input files a re not empty
@@ -264,12 +298,6 @@ def number_bases_in_aligned_reads(bam):
             values = coverage_line.strip().split('\t')
             count += int(values[2])
     return count
-
-
-# def samtool_depth_range(bam_path, region):
-#     cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
-#     return _call_and_open_stdout(cmdline)
-
 
 
 # def samtool_depth_range_fast(bam_path, region):
