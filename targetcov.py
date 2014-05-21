@@ -122,7 +122,7 @@ def main(args):
     print('')
 
     #########################################
-    log('Calculation of coverage statistics for regions in the input bed...')
+    log('Calculation of coverage statistics for the regions in the input BED file...')
     bases_per_depth_per_region, max_depth, total_bed_size = \
         get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
 
