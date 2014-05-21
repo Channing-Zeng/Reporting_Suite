@@ -31,7 +31,6 @@ from source.transaction import file_transaction
 from source.utils import splitext_plus
 
 
-
 def log(msg=''):
     print(timestamp() + msg)
 
@@ -72,8 +71,8 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
     append_stat(format_decimal('Part of target covered by reads', v_percent_covered_bases_in_targ, '%'))
-
     log('Getting number of mapped reads on target...')
+
     v_mapped_reads_on_target = number_mapped_reads_on_target(bed, bam)
     append_stat(format_integer('Reads mapped on target', v_mapped_reads_on_target))
 
@@ -144,7 +143,7 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
     #     for line in (l.strip() for l in bed_f if l and l.strip()):
     #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
-    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Gene']
+    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Gene', 'ExonNum', 'Strand']
     required_fields_end = ['Size', 'AvgDepth', 'StdDev', 'Within20%'] + map(str, depth_threshs)
 
     for i, (region, (bp_per_depths, avg_depth, std_dev, bases_within_normal_deviation)) \
@@ -182,12 +181,6 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
 
         all_values.append(line_tokens)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_tokens), repeat(0))))
-
-        if i > 0 and i % 100000 == 0:
-            log('processed %i regions' % (i + 1))
-    if i % 100000 != 0:
-        log('processed %i regions' % (i + 1))
-
 
     with file_transaction(out_fpath) as tx:
         with open(tx, 'w') as out:
@@ -256,7 +249,6 @@ def gnu_sort(bed_path, work_dir):
 #     cmdline = 'cat {bed} | awk -F"\t" ' \
 #               '"BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}"'.format(**locals())
 #     return int(_call_check_output(cmdline))
-
 
 
 def intersect_bed(bed1, bed2, work_dir):
@@ -395,7 +387,6 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
         region_line = '\t'.join(region_tokens)
         if region_line not in bases_per_depth_per_region:
             set_avg_depth_for_prev_region()
-
             regions_number += 1
 
             bases_per_depth_per_region[region_line] = \
@@ -415,7 +406,11 @@ def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
             if depth >= depth_thres:
                 bases_per_depth_per_region[region_line][0][depth_thres] += float(bases_for_depth)
 
-    log('processed ' + str(regions_number) + ' regions.')
+        if regions_number > 0 and regions_number % 100000 == 0:
+            log('processed %i regions' % regions_number)
+
+    if regions_number % 100000 != 0:
+        log('processed %i regions' % regions_number)
 
     return bases_per_depth_per_region, max_depth, total_size
 
