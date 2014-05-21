@@ -72,7 +72,8 @@ def common_main(name, opts):
     if to_exit:
         exit(1)
 
-    _check_system_tools()
+    info('before loading configs')
+    # _check_system_tools()
 
     sys_cnf = load(open(system_config_path), Loader=Loader)
     run_cnf = load(open(run_config_path), Loader=Loader)
