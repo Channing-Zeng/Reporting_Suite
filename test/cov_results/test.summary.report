@@ -1,38 +1,27 @@
-Reads                                            80,332
-Mapped reads                                     80,244
-Unmapped reads                                   88
-Part of reads that mapped                        99.89%
-Bases in target                                  4,499
-Covered bases in target                          2,499.0
-Part of target covered by reads                  55.55%
-Reads mapped on target                           36,951
-Part of mapped reads that are on target          46.05%
-Reads mapped on padded target                    58,901%
-Part of mapped reads that are on padded target   73.40%
-Read bases mapped on target                      2,523,939
-Average target coverage depth                    561.00
-Std. dev. of target coverage depth               613.19
-Bases withing 20% of avarage depth in a region   203
-Maximum target coverage depth                    2,024
-Bases on target covered at least by 1 read       2,499.0
-Bases on target covered at least by 5 reads      2,499.0
-Bases on target covered at least by 10 reads     2,499.0
-Bases on target covered at least by 25 reads     2,498.0
-Bases on target covered at least by 50 reads     2,497.0
-Bases on target covered at least by 100 reads    2,493.0
-Bases on target covered at least by 500 reads    2,065.0
-Bases on target covered at least by 1000 reads   1,290.0
-Bases on target covered at least by 5000 reads   0.0
-Bases on target covered at least by 10000 reads  0.0
-Bases on target covered at least by 50000 reads  0.0
-Part of target covered at least by 1             55.55%
-Part of target covered at least by 5s            55.55%
-Part of target covered at least by 10s           55.55%
-Part of target covered at least by 25s           55.52%
-Part of target covered at least by 50s           55.50%
-Part of target covered at least by 100s          55.41%
-Part of target covered at least by 500s          45.90%
-Part of target covered at least by 1000s         28.67%
-Part of target covered at least by 5000s         0.00%
-Part of target covered at least by 10000s        0.00%
-Part of target covered at least by 50000s        0.00%
+Reads                                              80,332
+Mapped reads                                       80,244
+Unmapped reads                                     88
+Percentage of mapped reads                         99.89%
+Bases in target                                    4,499
+Covered bases in target                            2,499.0
+Percentage of target covered by at least 1 read    55.55%
+Reads mapped on target                             36,951
+Percentage of reads mapped on target               46.05%
+Reads mapped on padded target                      58,901%
+Percentage of reads mapped on padded target        73.40%
+Read bases mapped on target                        2,523,939
+Average target coverage depth                      561.00
+Std. dev. of target coverage depth                 613.19
+Maximum target coverage depth                      2,024
+Percentage thing 20% of avarage depth in a region  0.00%
+Part of target covered at least by 1x              55.55%
+Part of target covered at least by 5x              55.55%
+Part of target covered at least by 10x             55.55%
+Part of target covered at least by 25x             55.52%
+Part of target covered at least by 50x             55.50%
+Part of target covered at least by 100x            55.41%
+Part of target covered at least by 500x            45.90%
+Part of target covered at least by 1000x           28.67%
+Part of target covered at least by 5000x           0.00%
+Part of target covered at least by 10000x          0.00%
+Part of target covered at least by 50000x          0.00%

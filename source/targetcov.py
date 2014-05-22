@@ -60,7 +60,7 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     append_stat(format_integer('Unmapped reads', v_number_of_reads - v_mapped_reads))
 
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-    append_stat(format_decimal('Part of reads that mapped', v_percent_mapped, '%'))
+    append_stat(format_decimal('Percentage of mapped reads', v_percent_mapped, '%'))
     log('')
 
     log('* Target coverage statistics *')
@@ -70,14 +70,14 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     append_stat(format_integer('Covered bases in target', v_covered_bases_in_targ))
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
-    append_stat(format_decimal('Part of target covered by reads', v_percent_covered_bases_in_targ, '%'))
+    append_stat(format_decimal('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ, '%'))
     log('Getting number of mapped reads on target...')
 
     v_mapped_reads_on_target = number_mapped_reads_on_target(bed, bam)
     append_stat(format_integer('Reads mapped on target', v_mapped_reads_on_target))
 
     v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
-    append_stat(format_decimal('Part of mapped reads that are on target', v_percent_mapped_on_target, '%'))
+    append_stat(format_decimal('Percentage of reads mapped on target ', v_percent_mapped_on_target, '%'))
 
     log('Making bed file for padded regions...')
     padded_bed = get_padded_bed_file(bed, chr_len_fpath, padding, work_dir)
@@ -87,7 +87,7 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ, '%'))
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
-    append_stat(format_decimal('Part of mapped reads that are on padded target', v_percent_mapped_on_padded_target, '%'))
+    append_stat(format_decimal('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target, '%'))
 
     # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
     # append_stat(format_integer('Total aligned bases in reads', v_aligned_read_bases))
@@ -96,10 +96,12 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     append_stat(format_integer('Read bases mapped on target', v_read_bases_on_targ))
 
     log('')
+    percent_within_normal_deviation = bases_within_normal_deviation / total_bed_size
     append_stat(format_decimal('Average target coverage depth', avg_depth))
     append_stat(format_decimal('Std. dev. of target coverage depth', std_dev))
-    append_stat(format_integer('Bases withing 20% of avarage depth in a region', bases_within_normal_deviation))
     append_stat(format_integer('Maximum target coverage depth', max_depth))
+    append_stat(format_decimal('Percentage thing 20% of avarage depth in a region',
+                               percent_within_normal_deviation, '%'))
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
     #     if v_aligned_read_bases else None
@@ -107,14 +109,14 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
 
     # format_integer('Bases covered (at least 1x) in target', bases_per_depth[1]),
 
-    for depth, bases in bases_per_depth.items():
-        append_stat(format_integer('Bases on target covered at least by ' + str(depth) +
-                                   ' read' + ('s' if depth != 1 else ''), bases))
+    # for depth, bases in bases_per_depth.items():
+    #     append_stat(format_integer('Bases on target covered at least by ' + str(depth) +
+    #                                ' read' + ('s' if depth != 1 else ''), bases))
 
     for depth, bases in bases_per_depth.items():
         percent = 100.0 * bases / total_bed_size if total_bed_size else 0
         append_stat(format_decimal('Part of target covered at least by ' + str(depth) +
-                                   ('s' if depth != 1 else ''), percent, '%'))
+                                   ('x'), percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
     with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
