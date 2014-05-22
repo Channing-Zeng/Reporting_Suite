@@ -21,14 +21,16 @@ except ImportError:
 
 def common_main(name, opts):
     # options
+    run_config_name = 'run_info_' + name + '.yaml'
+
     parser = OptionParser(
         usage='python ' + __file__ +
-              ' [system_info.yaml] [run_info_varqc.yaml] ' +
+              ' [system_info.yaml] [' + run_config_name + '] ' +
               ' '.join(args[0] + example for args, example, _ in opts) +
               ' [--output_dir dir]\n'
 
               '    or python ' + __file__ +
-              ' [system_info.yaml] run_info_varqc.yaml')
+              ' [system_info.yaml] ' + run_config_name)
 
     for args, _, kwargs in opts:
         parser.add_option(*args, **kwargs)
@@ -79,9 +81,6 @@ def common_main(name, opts):
     info('Loaded system config ' + system_config_path)
     info('Loaded run config ' + run_config_path)
     config = dict(run_cnf.items() + sys_cnf.items())
-
-    _check_system_resources(config)
-    _load_genome_resources(config)
 
     if options.threads:
         if 'gatk' in config:
@@ -176,7 +175,7 @@ def read_samples_info_and_split(common_cnf, options):
             all_samples[cnf['name']] = cnf
 
     if not all_samples:
-        print 'No samples.'
+        info('No samples.')
     else:
         info('Using samples: ' + ', '.join(all_samples) + '.')
 
@@ -193,23 +192,30 @@ def _read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def _check_system_resources(cnf):
+def check_system_resources(cnf, required=list()):
     to_exit = False
 
-    # resources = cnf.get('resources', None)
-    # if not resources:
-    #     critical(cnf.get('log'), 'No "resources" section in system config.')
+    for program in required:
+        if not which(program):
+            resources = cnf.get('resources', None)
 
-    # for name, data in resources.items():
-    #     if 'path' in data:
-    #         data['path'] = expanduser(data['path'])
-    #         if not verify_file(data['path'], name):
-    #             to_exit = True
+            if not resources:
+                critical(cnf.get('log'), 'No "resources" section in system config.')
+
+            data = resources.get(program)
+            if data is None:
+                err(program + ' is required. Specify path in system config or in your environment.')
+                to_exit = True
+            else:
+                data['path'] = expanduser(data['path'])
+                if not isdir(data['path']) and not file_exists(data['path']):
+                    err(data['path'] + ' does not exist.')
+                    to_exit = True
     if to_exit:
         exit()
 
 
-def _load_genome_resources(cnf):
+def load_genome_resources(cnf, required=list()):
     if 'genome' not in cnf:
         critical('"genome" is not specified in run config.')
     if 'genomes' not in cnf:
@@ -221,23 +227,32 @@ def _load_genome_resources(cnf):
 
     to_exit = False
 
-    # if 'seq' not in genome_cnf:
-    #     err('Please, provide path to the reference file (seq).')
-    #     to_exit = True
+    if 'seq' in required:
+        required.remove('seq')
 
-    genome_cnf['seq'] = expanduser(genome_cnf['seq'])
-    # if not verify_file(genome_cnf['seq'], 'Reference seq'):
-    #     to_exit = True
+        if 'seq' not in genome_cnf:
+            err('Please, provide path to the reference file (seq).')
+            to_exit = True
 
-    for f in 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
-        if f in genome_cnf:
+        genome_cnf['seq'] = expanduser(genome_cnf['seq'])
+        if not verify_file(genome_cnf['seq'], 'Reference seq'):
+            to_exit = True
+
+    if 'snpeff' in required:
+        required.remove('snpeff')
+        if 'snpeff' in genome_cnf:
+            genome_cnf['snpeff'] = expanduser(genome_cnf['snpeff'])
+            if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
+                to_exit = True
+
+    for f in required:  #'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
+        if f not in genome_cnf:
+            err('Please, provide path to ' + f  + ' in system config genome section.')
+            to_exit = True
+        else:
             genome_cnf[f] = expanduser(genome_cnf[f])
-            # if not verify_file(genome_cnf[f], f):
-            #     to_exit = True
-    if 'snpeff' in genome_cnf:
-        genome_cnf['snpeff'] = expanduser(genome_cnf['snpeff'])
-        # if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
-        #     to_exit = True
+            if not verify_file(genome_cnf[f], f):
+                to_exit = True
 
     if to_exit:
         exit(1)

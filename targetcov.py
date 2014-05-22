@@ -24,7 +24,7 @@ from os.path import join, expanduser, splitext, basename
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
 from shutil import rmtree
-from source.main import common_main
+from source.main import common_main, check_system_resources, load_genome_resources
 from source.my_utils import verify_file, critical, step_greetings
 from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast, intersect_bed, log
 
@@ -71,6 +71,9 @@ def main(args):
                 'action': 'store_true',
                 'default': False}),
         ])
+
+    check_system_resources(cnf, ['samtools', 'bamtools'])
+    load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
 
     genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
     exons_bed = options.get('exons') or cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
@@ -128,7 +131,6 @@ def main(args):
 
     _all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation) = \
         bases_per_depth_per_region.items()[-1]
-    print(_all_reg_line)
 
     header_report_fpath = None
     if not options.get('only_regions'):

@@ -260,31 +260,35 @@ def intersect_bed(bed1, bed2, work_dir):
     return output_fpath
 
 
+# TODO very slow :(
 def number_of_mapped_reads(bam):
     cmdline = 'samtools view -c -F 4 {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
+# TODO very slow :(
 def number_of_unmapped_reads(bam):
     cmdline = 'samtools view -c -f 4 {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
+# TODO very slow :(
 def number_of_reads(bam):
     cmdline = 'samtools view -c {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
+# TODO very slow :(
 def number_mapped_reads_on_target(bed, bam):
     cmdline = 'samtools view -c -F 4 -L {bed} {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
-# TODO very slow
+# TODO very slow :(
 def number_bases_in_aligned_reads(bam):
     cmdline = 'samtools depth {bam}'.format(**locals())
     proc = _call_and_open_stdout(cmdline)
@@ -297,45 +301,13 @@ def number_bases_in_aligned_reads(bam):
     return count
 
 
-# def samtool_depth_range_fast(bam_path, region):
-#     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
-#     return _call_and_open_stdout(cmdline)
-
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       10      4       99      0.0404040
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       11      14      99      0.1414141
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       12      2       99      0.0202020
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       13      2       99      0.0202020
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       14      5       99      0.0505050
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       15      17      99      0.1717172
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       16      8       99      0.0808081
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       17      19      99      0.1919192
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       18      25      99      0.2525252
-# chr17   62006585        62006684        NM_000626_cds_0_0_chr17_62006586_r      0       -       19      3       99      0.0303030
-# chr17   62006793        62006835        NM_000626_cds_1_0_chr17_62006794_r      0       -       5       12      42      0.2857143
-# chr17   62006793        62006835        NM_000626_cds_1_0_chr17_62006794_r      0       -       6       30      42      0.7142857
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       7       15      119     0.1260504
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       8       5       119     0.0420168
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       9       5       119     0.0420168
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       10      44      119     0.3697479
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       11      11      119     0.0924370
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       12      26      119     0.2184874
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       13      6       119     0.0504202
-# chr17   62007129        62007248        NM_000626_cds_2_0_chr17_62007130_r      0       -       14      7       119     0.0588235
-# chr17   62007433        62007745        NM_000626_cds_3_0_chr17_62007434_r      0       -       3       10      312     0.0320513
-# chr17   62007433        62007745        NM_000626_cds_3_0_chr17_62007434_r      0       -       4       10      312     0.0320513
-
-
 def get_target_depth_analytics_fast(bed, bam, depth_thresholds):
     cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
     proc = _call_and_open_stdout(cmdline)
     max_depth = 0
     total_size = 0
 
-    # bases_per_depth_all = OrderedDict([(depth_thres, 0) for depth_thres in depth_thresholds])
-    # percent_per_depth_all = OrderedDict([(depth_thres, 0.0) for depth_thres in depth_thresholds])
-
     bases_per_depth_per_region = OrderedDict()
-    # percent_per_depth_per_region = OrderedDict()
 
     _prev_region_bases_by_depths = []
     _prev_region_line = None

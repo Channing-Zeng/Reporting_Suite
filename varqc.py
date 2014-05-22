@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from os.path import join
 import sys
-from source.main import common_main, read_samples_info_and_split
+from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
 try:
@@ -25,6 +25,9 @@ def main(args):
             'dest': 'vcf',
             'help': 'variants to evaluate'}),
         ])
+
+    check_system_resources(config, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats'])
+    load_genome_resources(config, ['seq', 'dbsnp'])
 
     if 'quality_control' in config:
         check_quality_control_config(config)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 
-from source.main import common_main, read_samples_info_and_split
+from source.main import common_main, read_samples_info_and_split, check_system_resources, load_genome_resources
 from source.runner import run_all
 from source.tsv import make_tsv
 try:
@@ -30,6 +30,9 @@ def main(args):
              'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
         ])
+
+    check_system_resources(config, ['java', 'perl', 'gatk', 'snpeff', 'snpsift', 'vcfannotate'])
+    load_genome_resources(config, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
 
     var_fpath = options.get('vcf')
     if var_fpath:

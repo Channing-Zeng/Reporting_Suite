@@ -18,9 +18,9 @@ resources:
 genomes:
   hg19:
     seq: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
-#    dbsnp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
-#    cosmic: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-    # dbnsfp: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
+    dbsnp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
+    cosmic: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+    dbnsfp: /vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.4.zip
     snpeff: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
 
     chr_lengths: data/chr_lengths_hg19.txt
