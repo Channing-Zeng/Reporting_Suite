@@ -72,7 +72,7 @@ def main(args):
                 'default': False}),
         ])
 
-    check_system_resources(cnf, ['samtools', 'bamtools'])
+    check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
 
     genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
