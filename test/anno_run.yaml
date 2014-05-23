@@ -81,6 +81,7 @@ tracks:
 - /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
 
 tsv_fields:
+  - SAMPLE                        : Sample
   - CHROM                         : Chromosome
   - POS                           : Position
   - REF                           : REF

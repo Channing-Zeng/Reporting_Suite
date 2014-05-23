@@ -108,7 +108,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
                 col_counts = [0 for _ in names]
             else:
-                values = (v for v in l.split('\t') if v != '\n')
+                values = [v for v in l.split('\t') if v != '\n']
 
                 if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
                     values = [cnf['name']] + values
