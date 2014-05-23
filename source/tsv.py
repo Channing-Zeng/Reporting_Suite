@@ -96,31 +96,30 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
          stdin=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
          to_remove=[splitted_FORMAT_column_vcf_fpath])
 
-    # REMOVE NON-EMPTY, ADD SAMPLE COLUMN
+    # REMOVE EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
         names, col_counts = None, None
         for i, l in enumerate(tsv):
             if i == 0:
                 names = [v for v in l.split('\t') if v != '\n']
-
-                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
-                    names = [manual_tsv_fields[0].values()[0]] + names
-
                 col_counts = [0 for _ in names]
             else:
                 values = [v for v in l.split('\t') if v != '\n']
-
-                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
-                    values = [cnf['name']] + values
-
                 for i, v in enumerate(values):
                     if v:
                         col_counts[i] += 1
 
     with file_transaction(tsv_fpath) as tx:
         with open(tx, 'w') as out, open(tsv_fpath) as f:
-            for l in f:
-                out.write('\t'.join([v for i, v in enumerate(l.split('\t'))
+            for i, l in enumerate(f):
+                values = [v for v in l.split('\t')]
+                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
+                    if i == 0:
+                        values = [manual_tsv_fields[0].values()[0]] + values
+                    else:
+                        values = [cnf['name']] + values
+
+                out.write('\t'.join([v for i, v in enumerate(values)
                                      if v == '\n' or col_counts[i]]))
 
     # with file_transaction(tsv_fpath) as tx_tsv_fpath:
