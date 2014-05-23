@@ -113,14 +113,16 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         with open(tx, 'w') as out, open(tsv_fpath) as f:
             for i, l in enumerate(f):
                 values = [v for v in l.split('\t')]
+                if_sample_col = 0
                 if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
+                    if_sample_col = 1
                     if i == 0:
                         values = [manual_tsv_fields[0].values()[0]] + values
                     else:
                         values = [cnf['name']] + values
 
-                out.write('\t'.join([v for i, v in enumerate(values)
-                                     if v == '\n' or col_counts[i]]))
+                out.write('\t'.join([v for j, v in enumerate(values)
+                                     if v == '\n' or col_counts[j + if_sample_col]]))
 
     # with file_transaction(tsv_fpath) as tx_tsv_fpath:
     #     info(cnf['log'], cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
