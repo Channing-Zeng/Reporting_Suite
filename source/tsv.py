@@ -69,7 +69,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     manual_tsv_fields = cnf.get('tsv_fields')
     if manual_tsv_fields:
-        fields = [rec.keys()[0] for rec in manual_tsv_fields]
+        fields_line = [rec.keys()[0] for rec in manual_tsv_fields if rec.keys()[0] != 'SAMPLE']
     # else:
         # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
         #   if l.strip().startswith('#CHROM'))
@@ -81,7 +81,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     else:
         return None
 
-    anno_line = ' '.join(fields)
+    anno_line = ' '.join(fields_line)
     snpsift_cmline = get_java_tool_cmdline(cnf, 'snpsift')
 
     if not which('perl'):
@@ -96,15 +96,23 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
          stdin=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
          to_remove=[splitted_FORMAT_column_vcf_fpath])
 
-    # REMOVE NON-EMPTY
+    # REMOVE NON-EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
         names, col_counts = None, None
         for i, l in enumerate(tsv):
             if i == 0:
                 names = [v for v in l.split('\t') if v != '\n']
-                col_counts = [0 for name in names]
+
+                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
+                    names = [manual_tsv_fields[0].values()[0]] + names
+
+                col_counts = [0 for _ in names]
             else:
                 values = (v for v in l.split('\t') if v != '\n')
+
+                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
+                    values = [cnf['name']] + values
+
                 for i, v in enumerate(values):
                     if v:
                         col_counts[i] += 1

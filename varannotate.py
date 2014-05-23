@@ -15,7 +15,7 @@ from source.my_utils import info
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     exit('Python 2, versions 2.7 and higher is supported (you are running ' +
-     '.'.join(map(str, sys.version_info[:3])) + ')\n')
+    '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
 
 def main(args):
@@ -31,7 +31,7 @@ def main(args):
              'help': 'used to generate some annotations by GATK'}),
         ])
 
-    check_system_resources(config, ['java', 'perl', 'gatk', 'snpeff', 'snpsift', 'vcfannotate'])
+    check_system_resources(config, ['java', 'perl', 'gatk', 'snpeff', 'snpsift'])
     load_genome_resources(config, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
 
     var_fpath = options.get('vcf')

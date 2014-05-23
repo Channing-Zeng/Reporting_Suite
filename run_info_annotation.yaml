@@ -103,6 +103,7 @@ tracks:   ## requires vcfannotate (from bcbio-nextgen)
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
 
 tsv_fields:
+  - SAMPLE                        : Sample
   - CHROM                         : Chromosome
   - POS                           : Position
   - REF                           : REF
