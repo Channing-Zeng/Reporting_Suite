@@ -112,14 +112,19 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     with file_transaction(tsv_fpath) as tx:
         with open(tx, 'w') as out, open(tsv_fpath) as f:
             for i, l in enumerate(f):
+                values = [v for v in l.split('\t')]
+
+                if i == 0:
+                    out.write('#')
+                    values[0] = values[0][1:]
+
                 if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
                     if i == 0:
-                        out.write(manual_tsv_fields[0].values()[0])
+                        out.write('Sample')
                     else:
                         out.write(cnf['name'])
                     out.write('\t')
 
-                values = [v for v in l.split('\t')]
                 out.write('\t'.join([v for j, v in enumerate(values)
                                      if v == '\n' or col_counts[j]]))
 
