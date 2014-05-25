@@ -74,8 +74,8 @@ def run_one(cnf, process_one_fun, finalize_one_fun, multiple_samples=False):
         cnf['log'] = join(cnf['work_dir'], cnf['name'] + '_log.txt')
         if isfile(cnf['log']):
             os.remove(cnf['log'])
-        with open(join(cnf['work_dir'], cnf['name'] + '_config.yaml'), 'w') as f:
-            f.write(dump(cnf, Dumper=Dumper))
+        #with open(join(cnf['work_dir'], cnf['name'] + '_config.yaml'), 'w') as f:
+        #    f.write(dump(cnf, Dumper=Dumper))
     else:
         cnf['log'] = None
     # sample['fields'] = []

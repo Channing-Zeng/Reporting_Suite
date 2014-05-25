@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 import sys
+
 import os
+
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -10,8 +12,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, run_cov_report, \
-    intersect_bed, get_target_depth_analytics, run_header_report
+from source.targetcov.cov import log, intersect_bed, get_target_depth_analytics, run_header_report, run_exons_cov_report, run_amplicons_cov_report
 
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
@@ -32,7 +33,6 @@ from source.targetcov.cov import log, run_cov_report, \
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
 from source.utils import verify_file, critical, step_greetings
-from source.targetcov import cov
 
 
 REPORT_TYPES = 'summary,amplicons,exons,genes'
@@ -145,7 +145,8 @@ def main(args):
         if 'amplicons' in options['reports']:
             step_greetings('Coverage report for the input BED file regions')
             amplicons_report_fpath = join(output_dir, sample_name + '.amplicons.report')
-            run_cov_report(amplicons_report_fpath, sample_name, depth_threshs, bases_per_depth_per_amplicon)
+            run_amplicons_cov_report(amplicons_report_fpath, sample_name, depth_threshs,
+                                     bases_per_depth_per_amplicon[:-1])
 
         if 'exons' in options['reports']:
             if not genes_bed or not exons_bed:
@@ -165,7 +166,8 @@ def main(args):
                 bases_per_depth_per_amplicon, _, _ = get_target_depth_analytics(bed, bam, depth_threshs)
 
                 exons_report_fpath = join(output_dir, sample_name + '.exons.report')
-                run_cov_report(exons_report_fpath, sample_name, depth_threshs, bases_per_depth_per_amplicon)
+                run_exons_cov_report(exons_report_fpath, sample_name, depth_threshs,
+                                     bases_per_depth_per_amplicon[:-1])
 
     print('')
     print('*' * 70)

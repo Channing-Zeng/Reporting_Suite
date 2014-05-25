@@ -8,8 +8,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import common_main, read_samples_info_and_split, check_system_resources, load_genome_resources
 from source.runner import run_all
-from source.varannotation import tsv
-from source.varannotation import anno
+from source.varannotation import tsv, anno
 from source.utils import info
 
 

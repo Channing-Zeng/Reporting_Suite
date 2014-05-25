@@ -69,7 +69,10 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     manual_tsv_fields = cnf.get('tsv_fields')
     if manual_tsv_fields:
-        fields_line = [rec.keys()[0] for rec in manual_tsv_fields if rec.keys()[0] != 'SAMPLE']
+        fields_line = [
+            rec.keys()[0] for rec
+            in manual_tsv_fields
+            if rec.keys()[0] != 'SAMPLE']
     # else:
         # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
         #   if l.strip().startswith('#CHROM'))
@@ -115,7 +118,6 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 values = [v for v in l.split('\t')]
 
                 if i == 0:
-                    out.write('#')
                     values[0] = values[0][1:]
 
                 if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
