@@ -28,7 +28,7 @@ def main(args):
             'help': 'variants to evaluate'}),
         ])
 
-    check_system_resources(config, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats'])
+    check_system_resources(config, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats', 'bgzip', 'tabix'])
     load_genome_resources(config, ['seq', 'dbsnp'])
 
     if 'quality_control' in config:
