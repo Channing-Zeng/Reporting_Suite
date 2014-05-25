@@ -3,19 +3,18 @@ import sys
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d' %
+             '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
 
 from source.main import common_main, read_samples_info_and_split, check_system_resources, load_genome_resources
 from source.runner import run_all
-from source.annotation.tsv import make_tsv
+from source.varannotation import tsv
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
 
-from source.annotation.annotation import run_annotators
+from source.varannotation import anno
 from source.utils import info
 
 
@@ -54,10 +53,10 @@ def main(args):
 
 
 def process_one(cnf, vcf_fpath):
-    anno_vcf_fpath = run_annotators(cnf, vcf_fpath)
+    anno_vcf_fpath = anno.run_annotators(cnf, vcf_fpath)
     anno_tsv_fpath = None
     if anno_vcf_fpath and 'tsv_fields' in cnf:
-        anno_tsv_fpath = make_tsv(cnf, anno_vcf_fpath)
+        anno_tsv_fpath = tsv.make_tsv(cnf, anno_vcf_fpath)
     return anno_vcf_fpath, anno_tsv_fpath
 
 

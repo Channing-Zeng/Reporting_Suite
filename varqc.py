@@ -1,23 +1,22 @@
 #!/usr/bin/env python
 
 import sys
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d' %
+             '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join
+
 from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
+from source.varqc import qc
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
 
-from source.quality_control import quality_control, \
-    check_quality_control_config
 from source.utils import info
 
 
@@ -33,7 +32,7 @@ def main(args):
     load_genome_resources(config, ['seq', 'dbsnp'])
 
     if 'quality_control' in config:
-        check_quality_control_config(config)
+        qc.check_quality_control_config(config)
 
     samples = read_samples_info_and_split(config, options)
 
@@ -45,7 +44,7 @@ def main(args):
 
 def process_one(cnf, vcf_fpath):
     if 'quality_control' in cnf:
-        return quality_control(cnf, cnf['output_dir'], vcf_fpath)
+        return qc.run_qc(cnf, cnf['output_dir'], vcf_fpath)
     else:
         return None, None
 

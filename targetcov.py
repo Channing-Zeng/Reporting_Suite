@@ -6,10 +6,12 @@ import os
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d' %
+             '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
+from source.targetcov.cov import log, run_cov_report, \
+    intersect_bed, get_target_depth_analytics, run_header_report
 
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
@@ -30,13 +32,7 @@ from os.path import join, expanduser, splitext, basename, isdir
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
 from source.utils import verify_file, critical, step_greetings
-from source.targetcov.targetcov import run_cov_report, run_header_report, get_target_depth_analytics, intersect_bed, log
-
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.stderr.write('Python 2, versions 2.7 and higher is supported '
-        '(you are running %d.%d.%d' %
-        (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-    exit(1)
+from source.targetcov import cov
 
 
 REPORT_TYPES = 'summary,amplicons,exons,genes'
