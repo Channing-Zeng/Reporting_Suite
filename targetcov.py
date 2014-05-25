@@ -34,6 +34,9 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
          '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
 
+REPORT_TYPES = 'summary,amplicons,exons,genes'
+
+
 def main(args):
     cnf, options = common_main(
         'targetcov',
@@ -59,17 +62,10 @@ def main(args):
                 'help': '',
                 'default': 250}),
 
-            (['--only-summary'], '', {
-                'dest': 'only_summary',
-                'help': '',
-                'action': 'store_true',
-                'default': False}),
-
-            (['--only-regions'], '', {
-                'dest': 'only_regions',
-                'help': '',
-                'action': 'store_true',
-                'default': False}),
+            (['--reports'], '', {
+                'dest': 'reports',
+                'help': '--reports ' + REPORT_TYPES,
+                'default': REPORT_TYPES}),
         ])
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
@@ -111,7 +107,7 @@ def main(args):
     if not verify_file(bam): exit(1)
     if not verify_file(capture_bed): exit(1)
 
-    depth_thresholds = cnf['depth_thresholds']
+    depth_threshs = cnf['depth_thresholds']
     padding = options.get('padding', cnf.get('padding', 250))
     output_dir = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
     print('writing to output dir ' + output_dir)
@@ -125,52 +121,59 @@ def main(args):
     print('')
 
     #########################################
-    log('Calculation of coverage statistics for the regions in the input BED file...')
-    bases_per_depth_per_region, max_depth, total_bed_size = \
-        get_target_depth_analytics(capture_bed, bam, depth_thresholds)
+    sample_name, _ = splitext(basename(bam))
 
-    #_all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation) = \
-    all_region = bases_per_depth_per_region[-1]
+    summary_report_fpath = None
+    amplicons_report_fpath = None
+    exons_report_fpath = None
 
-    header_report_fpath = None
-    if not options.get('only_regions'):
-        header_report_fpath = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
-            depth_thresholds, padding,
-            all_region, max_depth, total_bed_size)
+    if 'summary' or 'amplicons' in options['reports']:
+        log('Calculation of coverage statistics for the regions in the input BED file...')
+        bases_per_depth_per_amplicon, max_depth, total_bed_size = \
+            get_target_depth_analytics(capture_bed, bam, depth_threshs)
 
-    amplicon_report_fpath = None
-    cov_report_fpath = None
-    if not options.get('only_summary'):
-        step_greetings('Coverage report for regions')
+        if 'summary' in options['reports']:
+            step_greetings('Target coverage summary report')
+            summary_report_fpath = join(output_dir, sample_name + '.summary.report')
+            run_header_report(
+                summary_report_fpath, output_dir, work_dir,
+                capture_bed, bam, chr_len_fpath,
+                depth_threshs, padding,
+                bases_per_depth_per_amplicon[-1], max_depth, total_bed_size)
 
-        result_fpath = run_cov_report(output_dir, work_dir, capture_bed, bam, depth_thresholds,
-            bases_per_depth_per_region)
-        amplicon_report_fpath = join(output_dir, splitext(basename(bam))[0] + '.regions.report')
-        os.rename(result_fpath, amplicon_report_fpath)
+        if 'amplicons' in options['reports']:
+            step_greetings('Coverage report for the input BED file regions')
+            amplicons_report_fpath = join(output_dir, sample_name + '.amplicons.report')
+            run_cov_report(amplicons_report_fpath, sample_name, depth_threshs, bases_per_depth_per_amplicon)
 
-        bed = capture_bed
-        if genes_bed:
-            log('Getting the gene regions that intersect with our capture panel.')
-            bed = intersect_bed(genes_bed, capture_bed, work_dir)
-        if exons_bed:
-            log('Getting the exons of the genes.')
-            bed = intersect_bed(exons_bed, bed, work_dir)
+        if 'exons' in options['reports']:
+            if not genes_bed or not exons_bed:
+                if options['reports'] == 'exons':
+                    exit('Error: no genes and exons specified for the genome in system config, '
+                         'cannot run per-exon report.')
+                if not genes_bed or not exons_bed:
+                    print('Warning: no genes and exons specified for the genome in system config, '
+                          'cannot run per-exon report.', file=sys.stderr)
+            else:
+                log('Getting the gene regions that intersect with our capture panel.')
+                bed = intersect_bed(genes_bed, capture_bed, work_dir)
+                log('Getting the exons of the genes.')
+                bed = intersect_bed(exons_bed, bed, work_dir)
 
-        log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-        bases_per_depth_per_region, max_depth, _ = \
-            get_target_depth_analytics(bed, bam, depth_thresholds)
+                log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
+                bases_per_depth_per_amplicon, _, _ = get_target_depth_analytics(bed, bam, depth_threshs)
 
-        cov_report_fpath = run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,
-            bases_per_depth_per_region)
+                exons_report_fpath = join(output_dir, sample_name + '.exons.report')
+                run_cov_report(exons_report_fpath, sample_name, depth_threshs, bases_per_depth_per_amplicon)
 
     print('')
     print('*' * 70)
-    if header_report_fpath:
-        log('Summary report: ' + header_report_fpath)
-    if amplicon_report_fpath:
-        log('Region coverage report: ' + amplicon_report_fpath)
-    if cov_report_fpath:
-        log('Exons coverage report: ' + cov_report_fpath)
+    if summary_report_fpath:
+        log('Summary report: ' + summary_report_fpath)
+    if amplicons_report_fpath:
+        log('Region coverage report: ' + amplicons_report_fpath)
+    if exons_report_fpath:
+        log('Exons coverage report: ' + exons_report_fpath)
 
 
 if __name__ == '__main__':

@@ -3,25 +3,25 @@ Mapped reads                                       80,244
 Unmapped reads                                     88
 Percentage of mapped reads                         99.89%
 Bases in target                                    4,499
-Covered bases in target                            2.0
-Percentage of target covered by at least 1 read    0.04%
+Covered bases in target                            2,499.0
+Percentage of target covered by at least 1 read    55.55%
 Reads mapped on target                             36,951
 Percentage of reads mapped on target               46.05%
 Reads mapped on padded target                      58,901%
 Percentage of reads mapped on padded target        73.40%
-Read bases mapped on target                        3,382.0
-Average target coverage depth                      0.75
-Std. dev. of target coverage depth                 23.67
+Read bases mapped on target                        2,799,084.0
+Average target coverage depth                      622.16
+Std. dev. of target coverage depth                 1101.17
 Maximum target coverage depth                      2,024
-Percentage thing 20% of avarage depth in a region  0.00%
-Part of target covered at least by 1x              0.04%
-Part of target covered at least by 5x              0.04%
-Part of target covered at least by 10x             0.04%
-Part of target covered at least by 25x             0.04%
-Part of target covered at least by 50x             0.04%
-Part of target covered at least by 100x            0.04%
-Part of target covered at least by 500x            0.04%
-Part of target covered at least by 1000x           0.04%
+Percentage thing 20% of avarage depth in a region  45.90%
+Part of target covered at least by 1x              55.55%
+Part of target covered at least by 5x              55.55%
+Part of target covered at least by 10x             55.55%
+Part of target covered at least by 25x             55.52%
+Part of target covered at least by 50x             55.50%
+Part of target covered at least by 100x            55.41%
+Part of target covered at least by 500x            45.90%
+Part of target covered at least by 1000x           28.67%
 Part of target covered at least by 5000x           0.00%
 Part of target covered at least by 10000x          0.00%
 Part of target covered at least by 50000x          0.00%

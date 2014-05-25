@@ -36,15 +36,12 @@ def log(msg=''):
     print(timestamp() + msg)
 
 
-def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
+def run_header_report(result_fpath, output_dir, work_dir,
+                      bed, bam, chr_len_fpath,
                       depth_thresholds, padding,
                       all_region, max_depth, total_bed_size):
-    step_greetings('Target coverage summary report')
-
-    base_name, ext = splitext(basename(bam))
-    result_fpath = join(output_dir, base_name + '.' + 'summary.report')
-
     stats = []
+
     def append_stat(stat):
         stats.append(stat)
         log(stat)
@@ -129,30 +126,16 @@ def run_header_report(output_dir, work_dir, bed, bam, chr_len_fpath,
     return result_fpath
 
 
-def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
-                   bases_per_depth_per_region):
-    sample_name, _ = splitext(basename(bam))
-
-    out_fpath = join(output_dir, sample_name + '.exons.report')
-
-    # bed_sorted_path = gnu_sort(capture_bed, work_dir)
-
+def run_cov_report(report_fpath, sample_name, depth_threshs, bases_per_depth_per_region):
     header, max_lengths = None, None
 
     all_values = []
-    # with open(bed) as bed_f:
-    #     for line in (l.strip() for l in bed_f if l and l.strip()):
-    #         # line_vals = get_report_line_values(bam, sample_name, depth_threshs, line)
 
     required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Transcript', 'Gene', 'ExonNum', 'Strand']
     required_fields_end = ['Size', 'AvgDepth', 'StdDev', 'Within20%'] + map(str, depth_threshs)
 
-    for i, (region, (bp_per_depths, avg_depth, std_dev, bases_within_normal_deviation)) \
-            in enumerate(bases_per_depth_per_region.items()):
-        # for depth, num in bases_per_depth.items():
-        #     covd_at = 100.0 * num / v_covd_ref_bases_on_targ if v_covd_ref_bases_on_targ else 0
-        #     line_vals.append(covd_at + '%'))
-        region_tokens = region.split()  # Chr, Start, End, RegionSize, F1, F2,...
+    for i, region in enumerate(bases_per_depth_per_region):
+        region_tokens = region.line.split()  # Chr, Start, End, RegionSize, F1, F2,...
         region_size = int(region_tokens[-1])
         region_tokens = region_tokens[:-1]
         if i == 0:
@@ -161,29 +144,26 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
                       required_fields_end)
             max_lengths = map(len, header)
 
-        # avg_depth_str = '{0:.2f}'.format(mean(depths) if depths else 0.0)
-
         line_tokens = [sample_name] + region_tokens
         line_tokens += ['-'] * (len(header) - len(line_tokens) - len(required_fields_end))
         line_tokens += [str(region_size)]
-        line_tokens += ['{0:.2f}'.format(avg_depth) if avg_depth else '0']
-        line_tokens += ['{0:.2f}'.format(std_dev) if std_dev else '0']
+        line_tokens += ['{0:.2f}'.format(region.avg_depth) if region.avg_depth else '0']
+        line_tokens += ['{0:.2f}'.format(region.std_dev) if region.std_dev else '0']
+        line_tokens += ['{0:.2f}%'.format(region.percent_within_normal)
+                        if region.percent_within_normal is not None else '-']
 
-        percent_within_normal_dev = 100.0 * bases_within_normal_deviation / region_size if region_size else '-'
-        line_tokens += ['{0:.2f}%'.format(percent_within_normal_dev) if percent_within_normal_dev else '0']
-
-        for depth_thres, bases in bp_per_depths.items():
-            if int(region_size) == 0:
+        for depth_thres, bases in region.bases_by_depth.items():
+            if int(region.size) == 0:
                 percent_str = '-'
             else:
-                percent = 100.0 * float(bases) / region_size
+                percent = 100.0 * bases / region.size
                 percent_str = '{0:.2f}%'.format(percent) if percent != 0 else '0'
             line_tokens.append(percent_str)
 
         all_values.append(line_tokens)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_tokens), repeat(0))))
 
-    with file_transaction(out_fpath) as tx:
+    with file_transaction(report_fpath) as tx:
         with open(tx, 'w') as out:
             for h, l in zip(header, max_lengths):
                 out.write(h + ' ' * (l - len(h) + 2))
@@ -195,8 +175,8 @@ def run_cov_report(output_dir, work_dir, bed, bam, depth_threshs,
                 out.write('\n')
 
     log('')
-    log('Result: ' + out_fpath)
-    return out_fpath
+    log('Result: ' + report_fpath)
+    return report_fpath
 
 
 def _call(cmdline, output_fpath=None):
@@ -329,7 +309,7 @@ def _sum_up_region(region):
         in region.bases_by_depth.items()
         if math.fabs(region.avg_depth - depth) <= 0.2 * region.avg_depth)
 
-    region.percent_within_normal = (float(bases_within_normal) / region.size)
+    region.percent_within_normal = 100.0 * bases_within_normal / region.size if region.size else None
     return region
 
 
@@ -373,7 +353,7 @@ def get_target_depth_analytics(bed, bam, depth_thresholds):
             region_tokens = tokens[:3] + region_tokens
 
         next_region_line = '\t'.join(region_tokens)
-        if next_region_line not in bases_per_depth_per_region:
+        if not cur_region or next_region_line != cur_region.line:
             total_regions_count += 1
 
             if cur_region:
