@@ -4,10 +4,10 @@ from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
 from source.bcbio_utils import file_exists
-from source.utils import info, err, verify_file, verify_dir, verify_matplotlib, critical
+from source.utils import info, err, verify_file, verify_dir, verify_module, critical
 
 from source.varqc.stats_gatk import gatk_qc
-if verify_matplotlib():
+if verify_module('matplotlib'):
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
     from source.varqc.distribution_plots import variants_distribution_plot
@@ -24,7 +24,7 @@ def run_qc(cnf, qc_dir, vcf_fpath):
         mkdir(qc_dir)
 
     qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
-    if verify_matplotlib():
+    if verify_module('matplotlib'):
         qc_plots_fpaths = bcftools_qc(cnf, qc_dir, vcf_fpath)
         qc_var_distr_plot_fpath = variants_distribution_plot(cnf, qc_dir, vcf_fpath)
         return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_plots_fpaths

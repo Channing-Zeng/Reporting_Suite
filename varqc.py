@@ -6,18 +6,11 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join
-
 from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
 from source.varqc import qc
-try:
-    from yaml import CDumper as Dumper
-except ImportError:
-    from yaml import Dumper
-
-from source.utils import info, verify_matplotlib
+from source.utils import info, verify_module
 
 
 def main(args):
@@ -54,7 +47,7 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
         info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
         info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
-    elif not verify_matplotlib():
+    elif not verify_module('matplotlib'):
         info('Warning: QC plots were not generated because matplotlib is not installed.')
 
 

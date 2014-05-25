@@ -67,9 +67,9 @@ def human_sorted(l):
     return l
 
 
-def verify_matplotlib():
+def verify_module(name):
     try:
-        import matplotlib
+        __import__(name)
         return True
     except ImportError:
         return False
