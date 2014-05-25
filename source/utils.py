@@ -1,528 +1,408 @@
-"""Helpful utilities for building analysis pipelines.
-"""
-import gzip
-import os
+import sys
+import subprocess
 import tempfile
-import time
+import os
 import shutil
-import contextlib
-import itertools
-import functools
-import random
-import ConfigParser
-from os.path import join
-try:
-    from concurrent import futures
-except ImportError:
+import re
+from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
+from distutils.version import LooseVersion
+from datetime import datetime
+
+from source.transaction import file_transaction
+from source.bcbio_utils import add_suffix, file_exists, which
+
+
+def err(log, msg=None):
+    if msg is None:
+        msg, log = log, None
+    if log:
+        open(log, 'a').write('\n' + msg + '\n')
+    sys.stderr.write('\n' + msg + '\n')
+    sys.stderr.flush()
+
+
+def critical(log, msg=None):
+    if msg is None:
+        msg, log = log, None
+    if log:
+        open(log, 'a').write('\n' + msg + '\n')
+    exit(msg)
+
+
+def info(log, msg=None):
+    if msg is None:
+        msg, log = log, None
+    print(msg)
+    sys.stdout.flush()
+    if log:
+        open(log, 'a').write(msg + '\n')
+
+
+def remove_quotes(s):
+    if s and s[0] == '"':
+        s = s[1:]
+    if s and s[-1] == '"':
+        s = s[:-1]
+    return s
+
+
+def _tryint(s):
     try:
-        import futures
-    except ImportError:
-        futures = None
-import collections
-import yaml
-import fnmatch
+        return int(s)
+    except:
+        return s
 
 
-@contextlib.contextmanager
-def cpmap(cores=1):
-    """Configurable parallel map context manager.
-
-    Returns appropriate map compatible function based on configuration:
-    - Local single core (the default)
-    - Multiple local cores
+def _alphanum_key(s):
+    """ Turn a string into a list of string and number chunks.
+        "z23a" -> ["z", 23, "a"]
     """
-    if int(cores) == 1:
-        yield itertools.imap
-    else:
-        if futures is None:
-            raise ImportError("concurrent.futures not available")
-        pool = futures.ProcessPoolExecutor(cores)
-        yield pool.map
-        pool.shutdown()
+    return [_tryint(c) for c in re.split('([0-9]+)', s)]
 
-def map_wrap(f):
-    """Wrap standard function to easily pass into 'map' processing.
+
+def human_sorted(l):
+    """ Sort the given list in the way that humans expect.
     """
-    @functools.wraps(f)
-    def wrapper(*args, **kwargs):
-        return apply(f, *args, **kwargs)
-    return wrapper
+    l.sort(key=_alphanum_key)
+    return l
 
 
-def transform_to(ext):
-    """
-    Decorator to create an output filename from an output filename with
-    the specified extension. Changes the extension, in_file is transformed
-    to a new type.
-
-    Takes functions like this to decorate:
-    f(in_file, out_dir=None, out_file=None) or,
-    f(in_file=in_file, out_dir=None, out_file=None)
-
-    examples:
-    @transform(".bam")
-    f("the/input/path/file.sam") ->
-        f("the/input/path/file.sam", out_file="the/input/path/file.bam")
-
-    @transform(".bam")
-    f("the/input/path/file.sam", out_dir="results") ->
-        f("the/input/path/file.sam", out_file="results/file.bam")
-
-    """
-
-    def decor(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            out_file = kwargs.get("out_file", None)
-            if not out_file:
-                in_path = kwargs.get("in_file", args[0])
-                out_dir = kwargs.get("out_dir", os.path.dirname(in_path))
-                safe_makedir(out_dir)
-                out_name = replace_suffix(os.path.basename(in_path), ext)
-                out_file = os.path.join(out_dir, out_name)
-            kwargs["out_file"] = out_file
-            if not file_exists(out_file):
-                out_file = f(*args, **kwargs)
-            return out_file
-        return wrapper
-    return decor
+def verify_file(fpath, description=''):
+    if not fpath:
+        sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
+        return False
+    fpath = expanduser(fpath)
+    if not exists(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        return False
+    if not isfile(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a file.\n')
+        return False
+    if getsize(fpath) <= 0:
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
+        return False
+    return True
 
 
-def filter_to(word):
-    """
-    Decorator to create an output filename from an input filename by
-    adding a word onto the stem. in_file is filtered by the function
-    and the results are written to out_file. You would want to use
-    this over transform_to if you don't know the extension of the file
-    going in. This also memoizes the output file.
-
-    Takes functions like this to decorate:
-    f(in_file, out_dir=None, out_file=None) or,
-    f(in_file=in_file, out_dir=None, out_file=None)
-
-    examples:
-    @filter_to(".foo")
-    f("the/input/path/file.sam") ->
-        f("the/input/path/file.sam", out_file="the/input/path/file.foo.bam")
-
-    @filter_to(".foo")
-    f("the/input/path/file.sam", out_dir="results") ->
-        f("the/input/path/file.sam", out_file="results/file.foo.bam")
-
-    """
-
-    def decor(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kwargs):
-            out_file = kwargs.get("out_file", None)
-            if not out_file:
-                in_path = kwargs.get("in_file", args[0])
-                out_dir = kwargs.get("out_dir", os.path.dirname(in_path))
-                safe_makedir(out_dir)
-                out_name = append_stem(os.path.basename(in_path), word)
-                out_file = os.path.join(out_dir, out_name)
-            kwargs["out_file"] = out_file
-            if not file_exists(out_file):
-                out_file = f(*args, **kwargs)
-            return out_file
-        return wrapper
-    return decor
+def verify_dir(fpath, description=''):
+    if not fpath:
+        sys.stderr.write((description + ': d' if description else 'D') + 'ir name is empty.\n')
+        return False
+    fpath = expanduser(fpath)
+    if not exists(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        return False
+    if not isdir(fpath):
+        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a directory.\n')
+        return False
+    return True
 
 
-def memoize_outfile(ext=None, stem=None):
-    """
-    Memoization decorator.
-
-    See docstring for transform_to and filter_to for details.
-    """
-    if ext:
-        return transform_to(ext)
-    if stem:
-        return filter_to(stem)
-
-
-def safe_makedir(dname):
-    """Make a directory if it doesn't exist, handling concurrent race conditions.
-    """
-    if not dname:
-        return dname
-    num_tries = 0
-    max_tries = 5
-    while not os.path.exists(dname):
-        # we could get an error here if multiple processes are creating
-        # the directory at the same time. Grr, concurrency.
+def safe_mkdir(dirpath, descriptive_name):
+    if not dirpath:
+        exit(descriptive_name + ' path is empty.')
+    if isfile(dirpath):
+        exit(descriptive_name + ' ' + dirpath + ' is a file.')
+    if not exists(dirpath):
         try:
-            os.makedirs(dname)
+            os.mkdir(dirpath)
         except OSError:
-            if num_tries > max_tries:
-                raise
-            num_tries += 1
-            time.sleep(2)
-    return dname
+            exit('Parent directory for ' + descriptive_name +
+                 ' ' + dirpath + ' probably does not exist.')
 
-@contextlib.contextmanager
-def curdir_tmpdir(remove=True, base_dir=None):
-    """Context manager to create and remove a temporary directory.
 
-    This can also handle a configured temporary directory to use.
-    """
-    if base_dir is not None:
-        tmp_dir_base = os.path.join(base_dir, "bcbiotmp")
+def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
+                 keep_original_if_not_keep_intermediate=False):
+    output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
+
+    if suffix and cnf.get('reuse_intermediate'):
+        if file_exists(output_fpath):
+            info(cnf['log'], output_fpath + ' exists, reusing')
+            return output_fpath
+
+    with file_transaction(output_fpath) as tx_fpath:
+        with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
+            for i, line in enumerate(vcf):
+                clean_line = line.strip()
+                if clean_line:
+                    new_l = proc_line_fun(clean_line)
+                    if new_l is not None:
+                        out.write(new_l + '\n')
+                else:
+                    out.write(line)
+
+    if not suffix:
+        os.rename(output_fpath, input_fpath)
+        output_fpath = input_fpath
     else:
-        tmp_dir_base = os.path.join(os.getcwd(), "tmp")
-    safe_makedir(tmp_dir_base)
-    tmp_dir = tempfile.mkdtemp(dir=tmp_dir_base)
-    safe_makedir(tmp_dir)
-    try:
-        yield tmp_dir
-    finally:
-        if remove:
-            try:
-                shutil.rmtree(tmp_dir)
-            except:
-                pass
+        if (not cnf.get('keep_intermediate') and
+            not keep_original_if_not_keep_intermediate and
+                input_fpath):
+            os.remove(input_fpath)
+    return output_fpath
 
-@contextlib.contextmanager
-def chdir(new_dir):
-    """Context manager to temporarily change to a new directory.
 
-    http://lucentbeing.com/blog/context-managers-and-the-with-statement-in-python/
-    """
-    cur_dir = os.getcwd()
-    safe_makedir(new_dir)
-    os.chdir(new_dir)
-    try:
-        yield
-    finally:
-        os.chdir(cur_dir)
+def get_tool_cmdline(sys_cnf, tool_name, extra_warn=''):
+    tool_path = which(tool_name) or None
 
-@contextlib.contextmanager
-def tmpfile(*args, **kwargs):
-    """Make a tempfile, safely cleaning up file descriptors on completion.
-    """
-    (fd, fname) = tempfile.mkstemp(*args, **kwargs)
-    try:
-        yield fname
-    finally:
-        os.close(fd)
-        if os.path.exists(fname):
-            os.remove(fname)
+    if not 'resources' in sys_cnf \
+            or tool_name not in sys_cnf['resources'] \
+            or 'path' not in sys_cnf['resources'][tool_name]:
+        if tool_path:
+            return tool_path
+        else:
+            err(tool_name + ' executable was not found. '
+                'You can either specify path in the system config, or load into your '
+                'PATH environment variable.')
+            if extra_warn:
+                err(extra_warn)
+            return None
 
-def file_exists(fname):
-    """Check if a file exists and is non-empty.
-    """
-    return os.path.exists(fname) and os.path.getsize(fname) > 0
-
-def file_uptodate(fname, cmp_fname):
-    """Check if a file exists, is non-empty and is more recent than cmp_fname.
-    """
-    return (file_exists(fname) and file_exists(cmp_fname) and
-            os.path.getmtime(fname) >= os.path.getmtime(cmp_fname))
-
-def create_dirs(config, names=None):
-    if names is None:
-        names = config["dir"].keys()
-    for dname in names:
-        d = config["dir"][dname]
-        safe_makedir(d)
-
-def save_diskspace(fname, reason, config):
-    """Overwrite a file in place with a short message to save disk.
-
-    This keeps files as a sanity check on processes working, but saves
-    disk by replacing them with a short message.
-    """
-    if config["algorithm"].get("save_diskspace", False):
-        with open(fname, "w") as out_handle:
-            out_handle.write("File removed to save disk space: %s" % reason)
-
-def read_galaxy_amqp_config(galaxy_config, base_dir):
-    """Read connection information on the RabbitMQ server from Galaxy config.
-    """
-    galaxy_config = add_full_path(galaxy_config, base_dir)
-    config = ConfigParser.ConfigParser()
-    config.read(galaxy_config)
-    amqp_config = {}
-    for option in config.options("galaxy_amqp"):
-        amqp_config[option] = config.get("galaxy_amqp", option)
-    return amqp_config
-
-def add_full_path(dirname, basedir=None):
-    if basedir is None:
-        basedir = os.getcwd()
-    if not dirname.startswith("/"):
-        dirname = os.path.join(basedir, dirname)
-    return dirname
-
-def splitext_plus(fname):
-    """Split on file extensions, allowing for zipped extensions.
-    """
-    base, ext = os.path.splitext(fname)
-    if ext in [".gz", ".bz2", ".zip"]:
-        base, ext2 = os.path.splitext(base)
-        ext = ext2 + ext
-    return base, ext
-
-def add_suffix(fname, suf):
-    base, ext = splitext_plus(fname)
-    return base + '.' + suf + ext
-
-def symlink_plus(orig, new):
-    """Create relative symlinks and handle associated biological index files.
-    """
-    for ext in ["", ".idx", ".gbi", ".tbi", ".bai"]:
-        if os.path.exists(orig + ext) and not os.path.lexists(new + ext):
-            with chdir(os.path.dirname(new)):
-                os.symlink(os.path.relpath(orig + ext), os.path.basename(new + ext))
-    orig_noext = splitext_plus(orig)[0]
-    new_noext = splitext_plus(new)[0]
-    for sub_ext in [".bai"]:
-        if os.path.exists(orig_noext + sub_ext) and not os.path.lexists(new_noext + sub_ext):
-            with chdir(os.path.dirname(new_noext)):
-                os.symlink(os.path.relpath(orig_noext + sub_ext), os.path.basename(new_noext + sub_ext))
-
-def open_gzipsafe(f):
-    return gzip.open(f) if f.endswith(".gz") else open(f)
-
-def append_stem(to_transform, word):
-    """
-    renames a filename or list of filenames with 'word' appended to the stem
-    of each one:
-    example: append_stem("/path/to/test.sam", "_filtered") ->
-    "/path/to/test_filtered.sam"
-
-    """
-    if is_sequence(to_transform):
-        return [append_stem(f, word) for f in to_transform]
-    elif is_string(to_transform):
-        (base, ext) = splitext_plus(to_transform)
-        return "".join([base, word, ext])
+    tool_path = sys_cnf['resources'][tool_name]['path']
+    if verify_file(tool_path, tool_name):
+        return tool_path
     else:
-        raise ValueError("append_stem takes a single filename as a string or "
-                         "a list of filenames to transform.")
+        err(tool_path + ' for ' + tool_name + ' does not exist or is not a file.')
+        return None
 
 
-def replace_suffix(to_transform, suffix):
-    """
-    replaces the suffix on a filename or list of filenames
-    example: replace_suffix("/path/to/test.sam", ".bam") ->
-    "/path/to/test.bam"
+def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
+         stdout_to_outputfile=True, to_remove=None, output_is_file=True,
+         stdin=None):
+    to_remove = to_remove or []
 
-    """
-    if is_sequence(to_transform):
-        transformed = []
-        for f in to_transform:
-            (base, _) = os.path.splitext(f)
-            transformed.append(base + suffix)
-        return transformed
-    elif is_string(to_transform):
-        (base, _) = os.path.splitext(to_transform)
-        return base + suffix
-    else:
-        raise ValueError("replace_suffix takes a single filename as a string or "
-                         "a list of filenames to transform.")
+    # MAYBE REUSE?
+    if output_fpath and cnf.get('reuse_intermediate'):
+        if file_exists(output_fpath):
+            info(cnf.get('log'), output_fpath + ' exists, reusing')
+            return output_fpath
+    if output_fpath and file_exists(output_fpath):
+        if output_is_file:
+            os.remove(output_fpath)
+        else:
+            shutil.rmtree(output_fpath)
 
-# ## Functional programming
+    # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
+    err_fpath = None
+    if cnf.get('work_dir'):
+        _, err_fpath = tempfile.mkstemp(dir=cnf.get('work_dir'), prefix='err_tmp')
+        to_remove.append(err_fpath)
 
-def partition_all(n, iterable):
-    """Partition a list into equally sized pieces, including last smaller parts
-    http://stackoverflow.com/questions/5129102/python-equivalent-to-clojures-partition-all
-    """
-    it = iter(iterable)
-    while True:
-        chunk = list(itertools.islice(it, n))
-        if not chunk:
-            break
-        yield chunk
+    # RUN AND PRINT OUTPUT
+    def do(cmdline, tx_out_fpath=None):
+        stdout = subprocess.PIPE
+        stderr = subprocess.STDOUT
 
-def partition(pred, iterable):
-    'Use a predicate to partition entries into false entries and true entries'
-    # partition(is_odd, range(10)) --> 0 2 4 6 8   and  1 3 5 7 9
-    t1, t2 = itertools.tee(iterable)
-    return itertools.ifilterfalse(pred, t1), itertools.ifilter(pred, t2)
+        if cnf['verbose']:
+            if tx_out_fpath:
+                # STDOUT TO PIPE OR TO FILE
+                if stdout_to_outputfile:
+                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath + (' < ' + stdin if stdin else ''))
+                    stdout = open(tx_out_fpath, 'w')
+                    stderr = subprocess.PIPE
+                else:
+                    cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                    info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
+                    stdout = subprocess.PIPE
+                    stderr = subprocess.STDOUT
 
-# ## Dealing with configuration files
+            proc = subprocess.Popen(cmdline, shell=True, stdout=stdout, stderr=stderr,
+                                    stdin=open(stdin) if stdin else None)
 
-def merge_config_files(fnames):
-    """Merge configuration files, preferring definitions in latter files.
-    """
-    def _load_yaml(fname):
-        with open(fname) as in_handle:
-            config = yaml.load(in_handle)
-        return config
-    out = _load_yaml(fnames[0])
-    for fname in fnames[1:]:
-        cur = _load_yaml(fname)
-        for k, v in cur.iteritems():
-            if out.has_key(k) and isinstance(out[k], dict):
-                out[k].update(v)
+            # PRINT STDOUT AND STDERR
+            if proc.stdout:
+                for line in iter(proc.stdout.readline, ''):
+                    info(cnf.get('log'), '   ' + line.strip())
+            elif proc.stderr:
+                for line in iter(proc.stderr.readline, ''):
+                    info(cnf.get('log'), '   ' + line.strip())
+
+            # CHECK RES CODE
+            ret_code = proc.wait()
+            if ret_code != 0:
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(fpath)
+                critical(cnf.get('log'), 'Command returned status ' + str(ret_code) +
+                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+
+        else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
+            if tx_out_fpath:
+                # STDOUT TO PIPE OR TO FILE
+                if stdout_to_outputfile:
+                    info(cnf.get('log'), cmdline + ' > ' + tx_out_fpath + (' < ' + stdin if stdin else ''))
+                    stdout = open(tx_out_fpath, 'w')
+                    stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
+                else:
+                    cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                    info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
+                    stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
+                    stderr = subprocess.STDOUT
+
+            res = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr,
+                                  stdin=open(stdin) if stdin else None)
+
+            # PRINT STDOUT AND STDERR
+            if res != 0:
+                with open(err_fpath) as err_f:
+                    info(cnf.get('log'), '')
+                    info(cnf.get('log'), err_f.read())
+                    info(cnf.get('log'), '')
+                for fpath in to_remove:
+                    if fpath and isfile(fpath):
+                        os.remove(fpath)
+                critical(cnf.get('log'), 'Command returned status ' + str(res) +
+                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
             else:
-                out[k] = v
-    return out
+                if cnf.get('log') and err_fpath:
+                    with open(err_fpath) as err_f, \
+                         open(cnf.get('log'), 'a') as log_f:
+                        log_f.write('')
+                        log_f.write(err_f.read())
+                        log_f.write('')
 
-
-def get_in(d, t, default=None):
-    """
-    look up if you can get a tuple of values from a nested dictionary,
-    each item in the tuple a deeper layer
-
-    example: get_in({1: {2: 3}}, (1, 2)) -> 3
-    example: get_in({1: {2: 3}}, (2, 3)) -> {}
-    """
-    result = reduce(lambda d, t: d.get(t, {}), t, d)
-    if not result:
-        return default
+    if output_fpath and output_is_file:
+        with file_transaction(output_fpath) as tx_out_fpath:
+            do(cmdline, tx_out_fpath)
     else:
-        return result
+        do(cmdline)
+
+    # REMOVE UNNESESSARY
+    for fpath in to_remove:
+        if fpath and isfile(fpath):
+            os.remove(fpath)
+
+    if not cnf.get('keep_intermediate') and input_fpath_to_remove:
+        os.remove(input_fpath_to_remove)
+
+    if output_fpath and output_is_file:
+        info(cnf.get('log'), 'Saved to ' + output_fpath)
+    return output_fpath
 
 
-def flatten(l):
+def get_java_tool_cmdline(cnf, name):
+    cmdline_template = get_script_cmdline_template(cnf, 'java', name)
+    jvm_opts = cnf['resources'][name].get('jvm_opts', []) + ['']
+    return cmdline_template % (' '.join(jvm_opts) + ' -jar')
+
+
+def get_script_cmdline_template(cnf, executable, script_name):
+    if not which(executable):
+        exit(executable + ' executable required, maybe you need '
+             'to run "module load ' + executable + '"?')
+    if 'resources' not in cnf:
+        critical(cnf['log'], 'System config yaml must contain resources section with '
+                 + script_name + ' path.')
+    if script_name not in cnf['resources']:
+        critical(cnf['log'], 'System config resources section must contain '
+                 + script_name + ' info (with a path to the tool).')
+    tool_config = cnf['resources'][script_name]
+    if 'path' not in tool_config:
+        critical(script_name + ' section in the system config must contain a path to the tool.')
+    tool_path = tool_config['path']
+    if not verify_file(tool_path, script_name):
+        exit(1)
+    return executable + ' %s ' + tool_path
+
+
+def join_parent_conf(child_conf, parent_conf):
+    bc = parent_conf.copy()
+    bc.update(child_conf)
+    child_conf.update(bc)
+    return child_conf
+
+
+def timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
+
+
+def step_greetings(cnf, name=None):
+    if name is None:
+        name = cnf
+        cnf = dict()
+    if name is None:
+        name = ''
+    if cnf is None:
+        cnf = dict()
+
+    info(cnf.get('log'), '')
+    info(cnf.get('log'), '-' * 70)
+    info(cnf.get('log'), timestamp() + name)
+    info(cnf.get('log'), '-' * 70)
+
+
+def intermediate_fname(work_dir, fname, suf):
+    output_fname = add_suffix(fname, suf)
+    return join(work_dir, basename(output_fname))
+
+
+def dots_to_empty_cells(config, tsv_fpath):
+    """Put dots instead of empty cells in order to view TSV with column -t
     """
-    flatten an irregular list of lists
-    example: flatten([[[1, 2, 3], [4, 5]], 6]) -> [1, 2, 3, 4, 5, 6]
-    lifted from: http://stackoverflow.com/questions/2158395/
+    def proc_line(l):
+        while '\t\t' in l:
+            l = l.replace('\t\t', '\t.\t')
+        return l
+    return iterate_file(config, tsv_fpath, proc_line, 'dots')
 
+
+def get_gatk_type(tool_cmdline):
+    """Retrieve type of GATK jar, allowing support for older GATK lite.
+    Returns either `lite` (targeting GATK-lite 2.3.9) or `restricted`,
+    the latest 2.4+ restricted version of GATK.
     """
-    for el in l:
-        if isinstance(el, collections.Iterable) and not isinstance(el,
-                                                                   basestring):
-            for sub in flatten(el):
-                yield sub
-        else:
-            yield el
-
-
-def is_sequence(arg):
-    """
-    check if 'arg' is a sequence
-
-    example: arg([]) -> True
-    example: arg("lol") -> False
-
-    """
-    return (not hasattr(arg, "strip") and
-            hasattr(arg, "__getitem__") or
-            hasattr(arg, "__iter__"))
-
-
-def is_pair(arg):
-    """
-    check if 'arg' is a two-item sequence
-
-    """
-    return is_sequence(arg) and len(arg) == 2
-
-def is_string(arg):
-    return isinstance(arg, basestring)
-
-
-def locate(pattern, root=os.curdir):
-    '''Locate all files matching supplied filename pattern in and below
-    supplied root directory.'''
-    for path, dirs, files in os.walk(os.path.abspath(root)):
-        for filename in fnmatch.filter(files, pattern):
-            yield os.path.join(path, filename)
-
-
-def itersubclasses(cls, _seen=None):
-    """
-    snagged from:  http://code.activestate.com/recipes/576949/
-    itersubclasses(cls)
-
-    Generator over all subclasses of a given class, in depth first order.
-
-    >>> list(itersubclasses(int)) == [bool]
-    True
-    >>> class A(object): pass
-    >>> class B(A): pass
-    >>> class C(A): pass
-    >>> class D(B,C): pass
-    >>> class E(D): pass
-    >>>
-    >>> for cls in itersubclasses(A):
-    ...     print(cls.__name__)
-    B
-    D
-    E
-    C
-    >>> # get ALL (new-style) classes currently defined
-    >>> [cls.__name__ for cls in itersubclasses(object)] #doctest: +ELLIPSIS
-    ['type', ...'tuple', ...]
-    """
-
-    if not isinstance(cls, type):
-        raise TypeError('itersubclasses must be called with '
-                        'new-style classes, not %.100r' % cls)
-    if _seen is None:
-        _seen = set()
-    try:
-        subs = cls.__subclasses__()
-    except TypeError:  # fails only when cls is type
-        subs = cls.__subclasses__(cls)
-    for sub in subs:
-        if sub not in _seen:
-            _seen.add(sub)
-            yield sub
-            for sub in itersubclasses(sub, _seen):
-                yield sub
-
-def replace_directory(out_files, dest_dir):
-    """
-    change the output directory to dest_dir
-    can take a string (single file) or a list of files
-    """
-    if is_sequence(out_files):
-        filenames = map(os.path.basename, out_files)
-        return [os.path.join(dest_dir, x) for x in filenames]
-    elif is_string(out_files):
-        return os.path.join(dest_dir, os.path.basename(out_files))
+    if LooseVersion(_gatk_major_version(tool_cmdline)) > LooseVersion("2.3"):
+        return "restricted"
     else:
-        raise ValueError("in_files must either be a sequence of filenames "
-                         "or a string")
+        return "lite"
 
-def which(program):
-    """
-    returns the path to an executable or None if it can't be found
-    """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
+def _gatk_major_version(config):
+    """Retrieve the GATK major version, handling multiple GATK distributions.
+
+    Has special cases for GATK nightly builds, Appistry releases and
+    GATK prior to 2.3.
+    """
+    full_version = _get_gatk_version(config)
+    # Working with a recent version if using nightlies
+    if full_version.startswith("nightly-"):
+        return "2.8"
+    parts = full_version.split("-")
+    if len(parts) == 4:
+        appistry_release, version, subversion, githash = parts
+    elif len(parts) == 3:
+        version, subversion, githash = parts
+    # version was not properly implemented in earlier GATKs
     else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return None
+        version = "2.3"
+    if version.startswith("v"):
+        version = version[1:]
+    return version
 
-def reservoir_sample(stream, num_items, item_parser=lambda x: x):
-    """
-    samples num_items from the stream keeping each with equal probability
-    """
-    kept = []
-    for index, item in enumerate(stream):
-        if index < num_items:
-            kept.append(item_parser(item))
+
+def _get_gatk_version(tool_cmdline):
+    cmdline = tool_cmdline + ' -version'
+
+    version = None
+    with subprocess.Popen(cmdline,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          shell=True).stdout as stdout:
+        out = stdout.read().strip()
+        last_line = out.split('\n')[-1].strip()
+        # versions earlier than 2.4 do not have explicit version command,
+        # parse from error output from GATK
+        if out.find("ERROR") >= 0:
+            flag = "The Genome Analysis Toolkit (GATK)"
+            for line in last_line.split("\n"):
+                if line.startswith(flag):
+                    version = line.split(flag)[-1].split(",")[0].strip()
         else:
-            r = random.randint(0, index)
-            if r < num_items:
-                kept[r] = item_parser(item)
-    return kept
+            version = last_line
+    if not version:
+        info('WARNING: could not determine Gatk version, using 1.0')
+        return '1.0'
+    if version.startswith("v"):
+        version = version[1:]
+    return version
 
-
-def compose(f, g):
-    return lambda x: f(g(x))
-
-def dictapply(d, fn):
-    """
-    apply a function to all non-dict values in a dictionary
-    """
-    for k, v in d.items():
-        if isinstance(v, dict):
-            v = dictapply(v, fn)
-        else:
-            d[k] = fn(v)
-    return d

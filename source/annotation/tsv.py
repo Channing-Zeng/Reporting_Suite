@@ -5,8 +5,8 @@ from os.path import dirname, realpath, join, basename
 import shutil
 
 from source.transaction import file_transaction
-from source.utils import which, splitext_plus, file_exists
-from source.my_utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
+from source.bcbio_utils import which, splitext_plus, file_exists
+from source.utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
     intermediate_fname, info, call
 
 

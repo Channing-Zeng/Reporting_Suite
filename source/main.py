@@ -6,11 +6,11 @@ from os.path import join, realpath, isdir, isfile, dirname, basename, join, real
 from optparse import OptionParser
 from collections import OrderedDict
 
-from source.utils import which, open_gzipsafe, file_exists, splitext_plus
-from source.my_utils import get_tool_cmdline, err, critical, verify_file,\
+from source.bcbio_utils import which, open_gzipsafe, file_exists, splitext_plus
+from source.utils import get_tool_cmdline, err, critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir
 from source.summarize import summarize_qc
-from source.tsv import make_tsv
+from source.annotation.tsv import make_tsv
 
 from yaml import dump, load
 try:

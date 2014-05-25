@@ -25,8 +25,8 @@ from os.path import join, expanduser, splitext, basename
 # give user an option to select type of the report to run ????
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
-from source.my_utils import verify_file, critical, step_greetings
-from source.targetcov import run_cov_report, run_header_report, get_target_depth_analytics_fast, intersect_bed, log
+from source.utils import verify_file, critical, step_greetings
+from source.targetcov.targetcov import run_cov_report, run_header_report, get_target_depth_analytics, intersect_bed, log
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -127,17 +127,16 @@ def main(args):
     #########################################
     log('Calculation of coverage statistics for the regions in the input BED file...')
     bases_per_depth_per_region, max_depth, total_bed_size = \
-        get_target_depth_analytics_fast(capture_bed, bam, depth_thresholds)
+        get_target_depth_analytics(capture_bed, bam, depth_thresholds)
 
-    _all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation) = \
-        bases_per_depth_per_region.items()[-1]
+    #_all_reg_line, (bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation) = \
+    all_region = bases_per_depth_per_region[-1]
 
     header_report_fpath = None
     if not options.get('only_regions'):
         header_report_fpath = run_header_report(output_dir, work_dir, capture_bed, bam, chr_len_fpath,
             depth_thresholds, padding,
-            bases_per_depth_all, all_avg_depth, all_std_dev, bases_within_normal_deviation,
-            max_depth, total_bed_size)
+            all_region, max_depth, total_bed_size)
 
     amplicon_report_fpath = None
     cov_report_fpath = None
@@ -159,7 +158,7 @@ def main(args):
 
         log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
         bases_per_depth_per_region, max_depth, _ = \
-            get_target_depth_analytics_fast(bed, bam, depth_thresholds)
+            get_target_depth_analytics(bed, bam, depth_thresholds)
 
         cov_report_fpath = run_cov_report(output_dir, work_dir, bed, bam, depth_thresholds,
             bases_per_depth_per_region)

@@ -3,8 +3,8 @@ import textwrap
 from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
-from source.utils import file_exists
-from source.my_utils import info, err, verify_file, step_greetings, \
+from source.bcbio_utils import file_exists
+from source.utils import info, err, verify_file, step_greetings, \
     get_tool_cmdline, get_java_tool_cmdline, call, verify_dir, \
     critical, human_sorted
 

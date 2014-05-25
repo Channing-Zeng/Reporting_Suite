@@ -10,7 +10,7 @@ except ImportError:
     from yaml import Dumper
 
 from source.annotation import run_annotators
-from source.my_utils import info
+from source.utils import info
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
