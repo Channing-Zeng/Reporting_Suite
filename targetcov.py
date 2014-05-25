@@ -5,8 +5,9 @@ import sys
 import os
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
-    '.'.join(map(str, sys.version_info[:3])) + ')\n')
+    exit('Python 2, versions 2.7 and higher is supported '
+         '(you are running %d.%d.%d' %
+         (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
 
