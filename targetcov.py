@@ -32,10 +32,11 @@ from source.main import common_main, check_system_resources, load_genome_resourc
 from source.utils import verify_file, critical, step_greetings
 from source.targetcov.targetcov import run_cov_report, run_header_report, get_target_depth_analytics, intersect_bed, log
 
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
-         '.'.join(map(str, sys.version_info[:3])) + ')\n')
+    sys.stderr.write('Python 2, versions 2.7 and higher is supported '
+        '(you are running %d.%d.%d' %
+        (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+    exit(1)
 
 
 REPORT_TYPES = 'summary,amplicons,exons,genes'
