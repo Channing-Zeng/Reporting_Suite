@@ -131,16 +131,17 @@ def run_cov_report(report_fpath, sample_name, depth_threshs, bases_per_depth_per
 
     all_values = []
 
-    required_fields_start = ['#Sample', 'Chr', 'Start', 'End', 'Transcript', 'Gene', 'ExonNum', 'Strand']
-    required_fields_end = ['Size', 'AvgDepth', 'StdDev', 'Within20%'] + map(str, depth_threshs)
+    fields = (['#Sample', 'Chr', 'Start', 'End', 'Transcript', 'Gene',
+              'ExonNum', 'Strand', 'Size', 'AvgDepth', 'StdDev', 'Within20%'] +
+              map(str, depth_threshs))
 
     for i, region in enumerate(bases_per_depth_per_region):
         region_tokens = region.line.split()  # Chr, Start, End, RegionSize, F1, F2,...
         region_size = int(region_tokens[-1])
         region_tokens = region_tokens[:-1]
         if i == 0:
-            header = (required_fields_start +
-                      (['-'] * (len(region_tokens) - len(required_fields_start) + 1)) +
+            header = (fields +
+                      (['-'] * (len(region_tokens) - len(fields) + 1)) +
                       required_fields_end)
             max_lengths = map(len, header)
 
@@ -340,8 +341,8 @@ def get_target_depth_analytics(bed, bam, depth_thresholds):
             continue
 
         tokens = next_line.strip().split('\t')
-        depth, bases, region_size = map(int, tokens[-4:-1])
         chrom = tokens[0]
+        depth, bases, region_size = map(int, tokens[-4:-1])
         region_tokens = [str(region_size)]
 
         if next_line.startswith('all'):
@@ -353,12 +354,12 @@ def get_target_depth_analytics(bed, bam, depth_thresholds):
             region_tokens = tokens[:3] + region_tokens
 
         next_region_line = '\t'.join(region_tokens)
+
         if not cur_region or next_region_line != cur_region.line:
             total_regions_count += 1
 
             if cur_region:
                 _sum_up_region(cur_region)
-                bases_per_depth_per_region.append(cur_region)
 
             cur_region = Region(next_region_line, region_size, depth_thresholds)
             bases_per_depth_per_region.append(cur_region)
@@ -375,7 +376,6 @@ def get_target_depth_analytics(bed, bam, depth_thresholds):
 
     if cur_region:  # "all" region
         _sum_up_region(cur_region)
-        bases_per_depth_per_region.append(cur_region)
 
     return bases_per_depth_per_region, max_depth, total_bed_size
 

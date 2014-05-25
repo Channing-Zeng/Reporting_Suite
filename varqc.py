@@ -1,6 +1,12 @@
 #!/usr/bin/env python
-from os.path import join
+
 import sys
+
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
+    '.'.join(map(str, sys.version_info[:3])) + ')\n')
+
+from os.path import join
 from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
@@ -11,11 +17,6 @@ except ImportError:
 
 from source.quality_control import quality_control, check_quality_control_config
 from source.utils import info
-
-
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
-     '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
 
 def main(args):

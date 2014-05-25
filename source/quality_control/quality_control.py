@@ -130,7 +130,7 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
 
     work_dir = cnf['work_dir']
 
-    bgzip = get_tool_cmdline(cnf, 'bgzip')
+    bgzip = get_tool_cmdline(cnf, 'bgzisp')
     tabix = get_tool_cmdline(cnf, 'tabix')
     bcftools = get_tool_cmdline(cnf, 'bcftools')
     plot_vcfstats = get_tool_cmdline(cnf, 'plot_vcfstats')

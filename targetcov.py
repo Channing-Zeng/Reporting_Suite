@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-
-from genericpath import isdir
-
 import sys
 import os
-from os.path import join, expanduser, splitext, basename
+
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
+    '.'.join(map(str, sys.version_info[:3])) + ')\n')
+
+from os.path import join, expanduser, splitext, basename, isdir
+
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
 

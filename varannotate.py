@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 import sys
 
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
+    '.'.join(map(str, sys.version_info[:3])) + ')\n')
+
 from source.main import common_main, read_samples_info_and_split, check_system_resources, load_genome_resources
 from source.runner import run_all
-from source.tsv import make_tsv
+from source.annotation.tsv import make_tsv
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
 
-from source.annotation import run_annotators
+from source.annotation.annotation import run_annotators
 from source.utils import info
-
-
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    exit('Python 2, versions 2.7 and higher is supported (you are running ' +
-    '.'.join(map(str, sys.version_info[:3])) + ')\n')
 
 
 def main(args):

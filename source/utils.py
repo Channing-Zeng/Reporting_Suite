@@ -142,27 +142,28 @@ def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
     return output_fpath
 
 
-def get_tool_cmdline(sys_cnf, tool_name, extra_warn=''):
-    tool_path = which(tool_name) or None
+def get_tool_cmdline(sys_cnf, tool_name, extra_warning=''):
+    which_tool_path = which(tool_name) or None
 
-    if not 'resources' in sys_cnf \
-            or tool_name not in sys_cnf['resources'] \
-            or 'path' not in sys_cnf['resources'][tool_name]:
-        if tool_path:
-            return tool_path
+    if (not 'resources' in sys_cnf or
+        tool_name not in sys_cnf['resources'] or
+        'path' not in sys_cnf['resources'][tool_name]):
+
+        if which_tool_path:
+            tool_path = which_tool_path
         else:
             err(tool_name + ' executable was not found. '
                 'You can either specify path in the system config, or load into your '
                 'PATH environment variable.')
-            if extra_warn:
-                err(extra_warn)
+            if extra_warning:
+                err(extra_warning)
             return None
+    else:
+        tool_path = sys_cnf['resources'][tool_name]['path']
 
-    tool_path = sys_cnf['resources'][tool_name]['path']
     if verify_file(tool_path, tool_name):
         return tool_path
     else:
-        err(tool_path + ' for ' + tool_name + ' does not exist or is not a file.')
         return None
 
 
