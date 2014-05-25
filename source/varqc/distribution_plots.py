@@ -6,7 +6,6 @@ from os.path import basename, join, isdir, dirname, expanduser
 from source.utils import info, verify_file, step_greetings, human_sorted
 
 import matplotlib
-matplotlib.use('Agg')  # non-GUI backen
 import matplotlib.pyplot
 
 

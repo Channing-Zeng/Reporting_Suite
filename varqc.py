@@ -17,7 +17,7 @@ try:
 except ImportError:
     from yaml import Dumper
 
-from source.utils import info
+from source.utils import info, verify_matplotlib
 
 
 def main(args):
@@ -54,6 +54,8 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
         info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
         info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
+    elif not verify_matplotlib():
+        info('Warning: QC plots were not generated because matplotlib is not installed.')
 
 
 def finalize_all(cnf, samples, results):

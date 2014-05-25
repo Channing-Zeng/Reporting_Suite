@@ -67,6 +67,14 @@ def human_sorted(l):
     return l
 
 
+def verify_matplotlib():
+    try:
+        import matplotlib
+        return True
+    except ImportError:
+        return False
+
+
 def verify_file(fpath, description=''):
     if not fpath:
         sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
