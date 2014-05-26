@@ -131,13 +131,13 @@ def main(args):
     if 'summary' or 'amplicons' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')
         bases_per_depth_per_amplicon, max_depth, total_bed_size = \
-            get_target_depth_analytics(capture_bed, bam, depth_threshs)
+            get_target_depth_analytics(cnf, capture_bed, bam, depth_threshs)
 
         if 'summary' in options['reports']:
             step_greetings('Target coverage summary report')
             summary_report_fpath = join(output_dir, sample_name + '.summary.report')
             run_header_report(
-                summary_report_fpath, output_dir, work_dir,
+                cnf, summary_report_fpath, output_dir, work_dir,
                 capture_bed, bam, chr_len_fpath,
                 depth_threshs, padding,
                 bases_per_depth_per_amplicon[-1], max_depth, total_bed_size)
@@ -145,7 +145,7 @@ def main(args):
         if 'amplicons' in options['reports']:
             step_greetings('Coverage report for the input BED file regions')
             amplicons_report_fpath = join(output_dir, sample_name + '.amplicons.report')
-            run_amplicons_cov_report(amplicons_report_fpath, sample_name, depth_threshs,
+            run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs,
                                      bases_per_depth_per_amplicon[:-1])
 
         if 'exons' in options['reports']:
@@ -158,16 +158,18 @@ def main(args):
                           'cannot run per-exon report.', file=sys.stderr)
             else:
                 log('Getting the gene regions that intersect with our capture panel.')
-                bed = intersect_bed(genes_bed, capture_bed, work_dir)
+                bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
                 log('Getting the exons of the genes.')
-                bed = intersect_bed(exons_bed, bed, work_dir)
+                bed = intersect_bed(cnf, exons_bed, bed, work_dir)
 
                 log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-                bases_per_depth_per_amplicon, _, _ = get_target_depth_analytics(bed, bam, depth_threshs)
+                bases_per_depth_per_amplicon, _, _ = get_target_depth_analytics(cnf, bed, bam, depth_threshs)
 
                 exons_report_fpath = join(output_dir, sample_name + '.exons.report')
-                run_exons_cov_report(exons_report_fpath, sample_name, depth_threshs,
+                run_exons_cov_report(cnf, exons_report_fpath, sample_name, depth_threshs,
                                      bases_per_depth_per_amplicon[:-1])
+
+    rmtree(join(output_dir, 'tx'))
 
     print('')
     print('*' * 70)

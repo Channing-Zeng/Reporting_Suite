@@ -7,7 +7,8 @@ from optparse import OptionParser
 from collections import OrderedDict
 
 from source.utils import err, critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir, verify_module
+    join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir, verify_module, md5_for_file, \
+    check_file_changed
 
 if verify_module('yaml'):
     from yaml import dump, load
@@ -98,6 +99,16 @@ def common_main(name, opts):
     return config, options.__dict__
 
 
+def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
+    input_fpaths = []
+    for key in required_inputs:
+        input_fpaths.append(cnf[key])
+    for key in optional_inputs:
+        if key in cnf:
+            input_fpaths.append(cnf[key])
+    return input_fpaths
+
+
 def read_samples_info_and_split(common_cnf, options):
     info('')
     info('Processing input details...')
@@ -111,13 +122,17 @@ def read_samples_info_and_split(common_cnf, options):
     if not details and not options.get('vcf'):
         critical('ERROR: Provide input VCF by --var '
                  'or specify "details" section in run config.')
+
+    if options.get('output_dir'):
+        common_cnf['output_dir'] = expanduser(options['output_dir'])
+
     if options.get('vcf'):
-        vcf_conf = {'vcf': expanduser(options['vcf'])}
+        common_cnf['vcf'] = expanduser(options['vcf'])
         if options.get('bam'):
-            vcf_conf['bam'] = expanduser(options['bam'])
-        if options.get('output_dir'):
-            vcf_conf['output_dir'] = expanduser(options['output_dir'])
-        details = [vcf_conf]
+            common_cnf['bam'] = expanduser(options['bam'])
+        details = [common_cnf]
+
+    _set_up_work_dir(common_cnf)
 
     all_samples = OrderedDict()
 
@@ -132,6 +147,13 @@ def read_samples_info_and_split(common_cnf, options):
             exit(1)
 
         join_parent_conf(vcf_conf, common_cnf)
+
+        work_vcf = join(vcf_conf['work_dir'], basename(vcf_conf['vcf']))
+        check_file_changed(vcf_conf, vcf_conf['vcf'], work_vcf)
+        if not vcf_conf.get('reuse_intermediate'):
+            with open_gzipsafe(vcf_conf['vcf']) as inp, open(work_vcf, 'w') as out:
+                out.write(inp.read())
+        vcf_conf['vcf'] = work_vcf
 
         vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
 
@@ -148,32 +170,27 @@ def read_samples_info_and_split(common_cnf, options):
 
                 cnf = all_samples[header_sample_name] = sample_cnfs[header_sample_name]
                 cnf['name'] = header_sample_name
-                _set_up_work_dir(cnf)
+                if cnf.get('keep_intermediate'):
+                    cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
 
                 cnf['vcf'] = extract_sample(cnf, vcf_conf['vcf'], cnf['name'], cnf['work_dir'])
                 info(cnf.get('log'), '')
 
         # SINGLE SAMPLE
         else:
-            if 'bam' in vcf_conf:
-                vcf_conf['bam'] = expanduser(vcf_conf['bam'])
-                if not verify_file(vcf_conf['bam']):
-                    exit()
-
             cnf = vcf_conf
+
+            if 'bam' in cnf:
+                cnf['bam'] = expanduser(cnf['bam'])
+                if not verify_file(cnf['bam']):
+                    sys.exit(1)
 
             cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
 
-            _set_up_work_dir(cnf)
+            if cnf.get('keep_intermediate'):
+                cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
 
-            work_vcf = join(cnf['work_dir'], cnf['name'] + '.vcf')
-            if file_exists(work_vcf) and cnf.get('reuse_intermediate'):
-                pass
-            else:
-                with open_gzipsafe(cnf['vcf']) as inp, open(work_vcf, 'w') as out:
-                    out.write(inp.read())
             cnf['vcf'] = work_vcf
-
             all_samples[cnf['name']] = cnf
 
     if not all_samples:
@@ -310,12 +327,10 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
 def _set_up_work_dir(cnf):
     cnf['output_dir'] = expanduser(cnf['output_dir'])
     output_dirpath = realpath(cnf['output_dir'])
-    safe_mkdir(output_dirpath, 'output_dir for ' + cnf['name'])
+    safe_mkdir(output_dirpath, 'output_dir')
     work_dirpath = join(output_dirpath, 'work')
     safe_mkdir(work_dirpath, 'working directory')
     cnf['work_dir'] = work_dirpath
-    if cnf.get('keep_intermediate'):
-        cnf['log'] = join(work_dirpath, cnf['name'] + '.log')
 
 
 def _verify_sample_info(vcf_conf, vcf_header_samples):

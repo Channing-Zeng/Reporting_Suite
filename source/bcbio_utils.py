@@ -281,8 +281,8 @@ def symlink_plus(orig, new):
             with chdir(os.path.dirname(new_noext)):
                 os.symlink(os.path.relpath(orig_noext + sub_ext), os.path.basename(new_noext + sub_ext))
 
-def open_gzipsafe(f):
-    return gzip.open(f) if f.endswith(".gz") else open(f)
+def open_gzipsafe(f, mode='rb'):
+    return gzip.open(f, mode=mode) if f.endswith(".gz") else open(f, mode=mode)
 
 def append_stem(to_transform, word):
     """

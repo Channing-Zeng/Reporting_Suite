@@ -26,8 +26,7 @@ from datetime import datetime
 # take folder name as a sample name (first column on the report)
 # give user an option to select type of the report to run ????
 import math
-from pysam.cvcf import namedtuple
-from source.utils import step_greetings, intermediate_fname, timestamp
+from source.utils import step_greetings, intermediate_fname, timestamp, get_tool_cmdline
 from source.transaction import file_transaction
 from source.bcbio_utils import splitext_plus
 
@@ -36,7 +35,7 @@ def log(msg=''):
     print(timestamp() + msg)
 
 
-def run_header_report(result_fpath, output_dir, work_dir,
+def run_header_report(cnf, result_fpath, output_dir, work_dir,
                       bed, bam, chr_len_fpath,
                       depth_thresholds, padding,
                       all_region, max_depth, total_bed_size):
@@ -48,11 +47,11 @@ def run_header_report(result_fpath, output_dir, work_dir,
 
     log('* General coverage statistics *')
     log('Getting number of reads...')
-    v_number_of_reads = number_of_reads(bam)
+    v_number_of_reads = number_of_reads(cnf, bam)
     append_stat(format_integer('Reads', v_number_of_reads))
 
     log('Getting number of mapped reads...')
-    v_mapped_reads = number_of_mapped_reads(bam)
+    v_mapped_reads = number_of_mapped_reads(cnf, bam)
     append_stat(format_integer('Mapped reads', v_mapped_reads))
     append_stat(format_integer('Unmapped reads', v_number_of_reads - v_mapped_reads))
 
@@ -70,17 +69,17 @@ def run_header_report(result_fpath, output_dir, work_dir,
     append_stat(format_decimal('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ, '%'))
     log('Getting number of mapped reads on target...')
 
-    v_mapped_reads_on_target = number_mapped_reads_on_target(bed, bam)
+    v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, bed, bam)
     append_stat(format_integer('Reads mapped on target', v_mapped_reads_on_target))
 
     v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
     append_stat(format_decimal('Percentage of reads mapped on target ', v_percent_mapped_on_target, '%'))
 
     log('Making bed file for padded regions...')
-    padded_bed = get_padded_bed_file(bed, chr_len_fpath, padding, work_dir)
+    padded_bed = get_padded_bed_file(cnf, bed, chr_len_fpath, padding, work_dir)
 
     log('Getting number of mapped reads on padded target...')
-    v_reads_on_padded_targ = number_mapped_reads_on_target(padded_bed, bam)
+    v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam)
     append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ, '%'))
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
@@ -126,20 +125,20 @@ def run_header_report(result_fpath, output_dir, work_dir,
     return result_fpath
 
 
-def run_amplicons_cov_report(report_fpath, sample_name, depth_threshs,
+def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
                              bases_per_depth_per_amplicon):
-    return run_cov_report(report_fpath, sample_name, depth_threshs,
+    return run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
                           bases_per_depth_per_amplicon, feature='Amplicon')
 
 
-def run_exons_cov_report(report_fpath, sample_name, depth_threshs,
+def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
                          bases_per_depth_per_exon):
-    return run_cov_report(report_fpath, sample_name, depth_threshs,
+    return run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
                           bases_per_depth_per_exon,
                           feature='Exon', extra_fields=['Transcript', 'Gene'])
 
 
-def run_cov_report(report_fpath, sample_name, depth_threshs,
+def run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
                    bases_per_depth_per_region, feature='-', extra_fields=list()):
     first_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Feature']
     last_fields = ['Size', 'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
@@ -206,17 +205,18 @@ def _call_check_output(cmdline, stdout=subprocess.PIPE):
     return subprocess.check_output(cmdline.split())
 
 
-def samtool_depth_range(bam_path, region):
-    cmdline = 'samtools depth -r {region} {bam_path}'.format(**locals())
-    return _call_and_open_stdout(cmdline)
-
-
-def mapped_bases_in_bed_using_samtoolsdepth(bam, bed):
-    total = 0
-    for st, end in (l.split()[1:3] for l in open(bed).readlines() if l.strip()):
-        total += len([l for l in samtool_depth_range(bam, 'chrM:' + str(int(st) + 1) + '-' + end).stdout
-                   if l.strip() and not l.startswith('#')])
-    return total
+# def samtool_depth_range(cnf, bam_path, region):
+#     bedtools = get_tool_cmdline(cnf, 'samtools')
+#     cmdline = '{samtools} depth -r {region} {bam_path}'.format(**locals())
+#     return _call_and_open_stdout(cmdline)
+#
+#
+# def mapped_bases_in_bed_using_samtoolsdepth(cnf, bam, bed):
+#     total = 0
+#     for st, end in (l.split()[1:3] for l in open(bed).readlines() if l.strip()):
+#         total += len([l for l in samtool_depth_range(cnf, bam, 'chrM:' + str(int(st) + 1) + '-' + end).stdout
+#                    if l.strip() and not l.startswith('#')])
+#     return total
 
 
 # # TODO to check if input files a re not empty
@@ -229,8 +229,9 @@ def mapped_bases_in_bed_using_samtoolsdepth(bam, bed):
 #     return output_fpath
 
 
-def gnu_sort(bed_path, work_dir):
-    cmdline = 'sort -k1,1V -k2,2n -k3,3n {bed_path}'.format(**locals())
+def gnu_sort(cnf, bed_path, work_dir):
+    sort = get_tool_cmdline(cnf, 'sort')
+    cmdline = '{sort} -k1,1V -k2,2n -k3,3n {bed_path}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
     _call(cmdline, output_fpath)
     return output_fpath
@@ -242,46 +243,52 @@ def gnu_sort(bed_path, work_dir):
 #     return int(_call_check_output(cmdline))
 
 
-def intersect_bed(bed1, bed2, work_dir):
+def intersect_bed(cnf, bed1, bed2, work_dir):
     bed1_fname, _ = splitext_plus(basename(bed1))
     bed2_fname, _ = splitext_plus(basename(bed2))
     output_fpath = join(work_dir, bed1_fname + '__' + bed2_fname + '.bed')
-    cmdline = 'intersectBed -a {bed1} -b {bed2} -u'.format(**locals())
+    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    cmdline = '{bedtools} intersect -a {bed1} -b {bed2} -u'.format(**locals())
     _call(cmdline, output_fpath)
     return output_fpath
 
 
 # TODO very slow :(
-def number_of_mapped_reads(bam):
-    cmdline = 'samtools view -c -F 4 {bam}'.format(**locals())
+def number_of_mapped_reads(cnf, bam):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
 # TODO very slow :(
-def number_of_unmapped_reads(bam):
-    cmdline = 'samtools view -c -f 4 {bam}'.format(**locals())
+def number_of_unmapped_reads(cnf, bam):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
 # TODO very slow :(
-def number_of_reads(bam):
-    cmdline = 'samtools view -c {bam}'.format(**locals())
+def number_of_reads(cnf, bam):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    cmdline = '{samtools} view -c {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
 # TODO very slow :(
-def number_mapped_reads_on_target(bed, bam):
-    cmdline = 'samtools view -c -F 4 -L {bed} {bam}'.format(**locals())
+def number_mapped_reads_on_target(cnf, bed, bam):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
     res = _call_check_output(cmdline)
     return int(res)
 
 
 # TODO very slow :(
-def number_bases_in_aligned_reads(bam):
-    cmdline = 'samtools depth {bam}'.format(**locals())
+def number_bases_in_aligned_reads(cnf, bam):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    cmdline = '{samtools} depth {bam}'.format(**locals())
     proc = _call_and_open_stdout(cmdline)
     count = 0
     while True:
@@ -335,12 +342,13 @@ class Region():
         self.percent_within_normal = None
 
 
-def get_target_depth_analytics(bed, bam, depth_thresholds):
+def get_target_depth_analytics(cnf, bed, bam, depth_thresholds):
     total_regions_count = 0
     total_bed_size = 0
     max_depth = 0
 
-    cmdline = 'coverageBed -abam {bam} -b {bed} -hist'.format(**locals())
+    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
 
     bases_per_depth_per_region = []
     cur_region = None
@@ -390,8 +398,9 @@ def get_target_depth_analytics(bed, bam, depth_thresholds):
 
 
 # TODO how to pass the data stream to samtools vs. creating file
-def get_padded_bed_file(bed, genome, padding, work_dir):
-    cmdline = 'bedtools slop -i {bed} -g {genome} -b {padding}'.format(**locals())
+def get_padded_bed_file(cnf, bed, genome, padding, work_dir):
+    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    cmdline = '{bedtools} slop -i {bed} -g {genome} -b {padding}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, bed, 'padded')
     _call(cmdline, output_fpath)
     return output_fpath

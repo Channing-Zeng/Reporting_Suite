@@ -1,8 +1,8 @@
 resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx2500m"]
-#    path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
-    path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
+    path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
+#    path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpEff/snpEff.jar

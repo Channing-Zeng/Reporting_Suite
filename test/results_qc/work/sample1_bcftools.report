@@ -1,0 +1,46 @@
+# This file was produced by vcfstats(0.0.1) and can be plotted using plot-vcfstats.
+# The command line was:	bcftools stats  /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+#
+# Definition of sets:
+# ID	[2]id	[3]tab-separated file names
+ID	0	/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+# SN, Summary numbers:
+# SN	[2]id	[3]key	[4]value
+SN	0	number of samples:	1
+SN	0	number of SNPs:	10
+SN	0	number of MNPs:	0
+SN	0	number of indels:	1
+SN	0	number of others:	1
+SN	0	number of multiallelic sites:	0
+SN	0	number of multiallelic SNP sites:	0
+# TSTV, transitions/transversions:
+# TSTV	[2]id	[3]ts	[4]tv	[5]ts/tv	[6]ts (1st ALT)	[7]tv (1st ALT)	[8]ts/tv (1st ALT)
+TSTV	0	8	2	4.00	8	2	4.00
+# Sis, Singleton stats:
+# SiS	[2]id	[3]allele count	[4]number of SNPs	[5]number of transitions	[6]number of transversions	[7]number of indels	[8]repeat-consistent	[9]repeat-inconsistent	[10]not applicable
+SiS	0	1	1	0	1	0	0	0	0
+# AF, Stats by non-reference allele frequency:
+# AF	[2]id	[3]allele frequency	[4]number of SNPs	[5]number of transitions	[6]number of transversions	[7]number of indels	[8]repeat-consistent	[9]repeat-inconsistent	[10]not applicable
+AF	0	0.000000	1	0	1	0	0	0	0
+AF	0	99.000000	9	8	1	1	0	0	1
+# QUAL, Stats by quality:
+# QUAL	[2]id	[3]Quality	[4]number of SNPs	[5]number of transitions (1st ALT)	[6]number of transversions (1st ALT)	[7]number of indels
+QUAL	0	358	1	0	1	0
+QUAL	0	998	9	8	1	1
+# IDD, InDel distribution:
+# IDD	[2]id	[3]length (deletions negative)	[4]count
+IDD	0	2	1
+# ST, Substitution types:
+# ST	[2]id	[3]type	[4]count
+ST	0	A>C	1
+ST	0	A>G	1
+ST	0	A>T	1
+ST	0	C>A	0
+ST	0	C>G	0
+ST	0	C>T	3
+ST	0	G>A	1
+ST	0	G>C	0
+ST	0	G>T	0
+ST	0	T>A	0
+ST	0	T>C	3
+ST	0	T>G	0
