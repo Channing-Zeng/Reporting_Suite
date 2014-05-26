@@ -1,99 +1,38 @@
-/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpAr1gF9/sample1.vcf.gz.tbi
+/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpQMhziK/sample1.vcf.gz.tbi
 Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf.gz.tbi
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:13  GATK
+2014-05-26 20:23:41  GATK
 ----------------------------------------------------------------------
-java -Xms750m -Xmx2500m  -jar /usr/local/share/java/gatk/GenomeAnalysisTK.jar -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantAnnotator --variant /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmp38pLWa/sample1.gatk.vcf -I data/sample1.bam -A Coverage -A BaseQualityRankSumTest -A FisherStrand -A GCContent -A HaplotypeScore -A HomopolymerRun -A RMSMappingQuality -A MappingQualityRankSumTest -A MappingQualityZero -A QualByDepth -A ReadPosRankSumTest -A DepthPerAlleleBySample -A AlleleBalanceBySample
-   INFO  16:11:19,110 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:11:19,112 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.1-1-g07a4bf8, Compiled 2014/03/18 06:09:21
-   INFO  16:11:19,112 HelpFormatter - Copyright (c) 2010 The Broad Institute
-   INFO  16:11:19,112 HelpFormatter - For support and documentation go to http://www.broadinstitute.org/gatk
-   INFO  16:11:19,115 HelpFormatter - Program Args: -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantAnnotator --variant /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmp38pLWa/sample1.gatk.vcf -I data/sample1.bam -A Coverage -A BaseQualityRankSumTest -A FisherStrand -A GCContent -A HaplotypeScore -A HomopolymerRun -A RMSMappingQuality -A MappingQualityRankSumTest -A MappingQualityZero -A QualByDepth -A ReadPosRankSumTest -A DepthPerAlleleBySample -A AlleleBalanceBySample
-   INFO  16:11:19,119 HelpFormatter - Executing as vladsaveliev@Vladislavs-MacBook-Air-2.local on Mac OS X 10.9.2 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.7.0_55-b13.
-   INFO  16:11:19,120 HelpFormatter - Date/Time: 2014/05/26 16:11:19
-   INFO  16:11:19,120 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:11:19,120 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:11:19,521 GenomeAnalysisEngine - Strictness is SILENT
-   INFO  16:11:19,594 GenomeAnalysisEngine - Downsampling Settings: No downsampling
-   INFO  16:11:19,601 SAMDataSource$SAMReaders - Initializing SAMRecords in serial
-   INFO  16:11:19,616 SAMDataSource$SAMReaders - Done initializing BAM readers: total time 0.01
-   INFO  16:11:19,689 RMDTrackBuilder - Writing Tribble index to disk for file /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf.idx
-   INFO  16:11:19,709 MicroScheduler - Running the GATK in parallel mode with 10 total threads, 1 CPU thread(s) for each of 10 data thread(s), of 4 processors available on this machine
-   WARN  16:11:19,710 MicroScheduler - Number of requested GATK threads 10 is more than the number of available processors on this machine 4
-   INFO  16:11:19,758 GenomeAnalysisEngine - Preparing for traversal over 1 BAM files
-   INFO  16:11:19,775 GenomeAnalysisEngine - Done preparing for traversal
-   INFO  16:11:19,775 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
-   INFO  16:11:19,776 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
-   INFO  16:11:19,857 SAMDataSource$SAMReaders - Initializing SAMRecords in serial
-   INFO  16:11:19,859 SAMDataSource$SAMReaders - Done initializing BAM readers: total time 0.00
-   INFO  16:11:19,863 SAMDataSource$SAMReaders - Initializing SAMRecords in serial
-   INFO  16:11:19,864 SAMDataSource$SAMReaders - Done initializing BAM readers: total time 0.00
-   INFO  16:11:19,868 SAMDataSource$SAMReaders - Initializing SAMRecords in serial
-   INFO  16:11:19,869 SAMDataSource$SAMReaders - Done initializing BAM readers: total time 0.00
-   INFO  16:11:22,504 VariantAnnotator - Processed 12 loci.
-   
-   INFO  16:11:22,509 ProgressMeter -            done        3.66e+04    2.0 s       74.0 s    100.0%         2.0 s     0.0 s
-   INFO  16:11:22,509 ProgressMeter - Total runtime 2.73 secs, 0.05 min, 0.00 hours
-   INFO  16:11:22,510 MicroScheduler - 26 reads were filtered out during the traversal out of approximately 80270 total reads (0.03%)
-   INFO  16:11:22,510 MicroScheduler -   -> 0 reads (0.00% of total) failing DuplicateReadFilter
-   INFO  16:11:22,511 MicroScheduler -   -> 0 reads (0.00% of total) failing FailsVendorQualityCheckFilter
-   INFO  16:11:22,511 MicroScheduler -   -> 0 reads (0.00% of total) failing MalformedReadFilter
-   INFO  16:11:22,512 MicroScheduler -   -> 2 reads (0.00% of total) failing NotPrimaryAlignmentFilter
-   INFO  16:11:22,512 MicroScheduler -   -> 24 reads (0.03% of total) failing UnmappedReadFilter
-   INFO  16:11:23,835 GATKRunReport - Uploaded run statistics report to AWS S3
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.vcf
+/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.vcf exists, reusing
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:23  Annotate with cosmic
+2014-05-26 20:23:42  Annotate with cosmic
 ----------------------------------------------------------------------
-java -Xms750m -Xmx6g  -jar /usr/local/share/java/snpEff/SnpSift.jar annotate -v -info ID,CNT,AA,CDS /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.vcf > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpdzogzf/sample1.gatk.cosmic.vcf
-   00:00:00.000	Annotating entries from: 'null'
-   Index: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-   index:	chrM	51347
-   index:	chrM	8971
-   00:00:00.059	Chromosome: 'M'
-   WARNING: Chromosome '22' not found in database.
-   WARNING: Chromosome '22' not found in database.
-   00:00:00.069	Done.
-   Total annotated entries : 0
-   Total entries           : 12
-   Percent                 : 0.00%
-   Errors (bad references) : 0
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.vcf
+/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.vcf exists, reusing
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:24  SnpEff
+2014-05-26 20:23:42  SnpEff
 ----------------------------------------------------------------------
-java -Xms750m -Xmx6g  -jar /usr/local/share/java/snpEff/snpEff.jar eff -dataDir /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff -stats /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.snpEff_summary.html -csvStats -noLog -1 -i vcf -o vcf hg19 /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.vcf -canon -hgvs  -cancer  > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpic6v5r/sample1.gatk.cosmic.snpEff.vcf
-   
-   WARNINGS: Some warning were detected
-   Warning type	Number of warnings
-   WARNING_TRANSCRIPT_INCOMPLETE	21
-   WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS	12
-   
-   
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.snpEff.vcf
+/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.snpEff.vcf exists, reusing
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:25  Intersecting with analysis_blocks
+2014-05-26 20:23:42  Intersecting with analysis_blocks
 ----------------------------------------------------------------------
-/usr/local/bin/vcfannotate -b /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed -k analysis_blocks /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.snpEff.vcf > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpbiGJrk/sample1.gatk.cosmic.snpEff.analysis_blocks.vcf
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.snpEff.analysis_blocks.vcf
+/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.gatk.cosmic.snpEff.analysis_blocks.vcf exists, reusing
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:25  Filtering incorrect fields.
+2014-05-26 20:23:42  Filtering incorrect fields.
 ----------------------------------------------------------------------
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:25  Extracting fields
+2014-05-26 20:23:42  Extracting fields
 ----------------------------------------------------------------------
-perl /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/vcfOnePerLine.pl | java -Xms750m -Xmx6g  -jar /usr/local/share/java/snpEff/SnpSift.jar extractFields - CHROM POS REF ALT ID QUAL DP FILTER dbSNPBuildID EFF[*].EFFECT EFF[*].IMPACT EFF[*].FUNCLASS EFF[*].CODING EFF[*].GENE EFF[*].CODON EFF[*].AA EFF[*].AA_LEN CNT AA CDS EFF[*].RANK BaseQRankSum FS GC HaplotypeScore HRun MQ MQRankSum MQ0 QD ReadPosRankSum gt_GT gt_PL gt_AD SAO AB VC TYPE PM HD KGPROD PH3 OM COMMON G5 set analysis_blocks > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpZXLLdD/sample1.anno.tsv < /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.split_format_fields.vcf
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv
+/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv exists, reusing
 Saved TSV file to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv
 
 ----------------------------------------------------------------------
-2014-05-26 16:11:25  Renaming fields.
+2014-05-26 20:23:42  Renaming fields.
 ----------------------------------------------------------------------
 Saved TSV file with nice names to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.renamed.tsv
 
