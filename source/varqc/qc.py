@@ -4,7 +4,8 @@ from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
 from source.bcbio_utils import file_exists
-from source.utils import info, err, verify_file, verify_dir, verify_module, critical
+from source.runner import filter_ensemble
+from source.utils import info, err, verify_file, verify_dir, verify_module, critical, bgzip_and_tabix_vcf
 
 from source.varqc.stats_gatk import gatk_qc
 if verify_module('matplotlib'):
@@ -23,7 +24,13 @@ def run_qc(cnf, qc_dir, vcf_fpath):
     if not isdir(qc_dir):
         mkdir(qc_dir)
 
+    gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
+
+    if cnf.get('ensemble'):
+        vcf_fpath = filter_ensemble(cnf, vcf_fpath)
+
     qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
+
     if verify_module('matplotlib'):
         qc_plots_fpaths = bcftools_qc(cnf, qc_dir, vcf_fpath)
         qc_var_distr_plot_fpath = variants_distribution_plot(cnf, qc_dir, vcf_fpath)

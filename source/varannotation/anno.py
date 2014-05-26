@@ -2,30 +2,34 @@ from genericpath import isfile
 from os.path import splitext, basename, join
 import os
 import shutil
+from source.runner import filter_ensemble
 
 from source.utils import critical, iterate_file, step_greetings, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call, \
-    get_tool_cmdline, err, get_gatk_type, info, remove_quotes
+    get_tool_cmdline, err, get_gatk_type, info, bgzip_and_tabix_vcf, index_bam
 from source.bcbio_utils import add_suffix, file_exists
 
 
-def run_annotators(cnf, vcf_fpath):
+def run_annotators(cnf, vcf_fpath, bam_fpath=None):
     work_dir = cnf['work_dir']
 
     annotated = False
 
+    gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
+
+    if cnf.get('ensemble'):
+        vcf_fpath = filter_ensemble(cnf, vcf_fpath)
+
     if 'gatk' in cnf:
         annotated = True
-        vcf_fpath = _gatk(cnf, vcf_fpath, cnf.get('bam'), work_dir)
+        vcf_fpath = _gatk(cnf, vcf_fpath, bam_fpath, work_dir)
 
     if 'dbsnp' in cnf:
         annotated = True
-        vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'],
-                                      'dbsnp', vcf_fpath, work_dir)
+        vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath, work_dir)
     if 'cosmic' in cnf:
         annotated = True
-        vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'],
-                                      'cosmic', vcf_fpath, work_dir)
+        vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath, work_dir)
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
             annotated = True
@@ -228,15 +232,24 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
 
     step_greetings(cnf, 'GATK')
 
+    index_bam(cnf, bam_fpath)
+
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
     output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
 
-    # duplicating this from "call" function to avoid calling gatk version
+    # duplicating this from "call" function to avoid calling "gatk --version"
     if output_fpath and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
             info(cnf.get('log'), output_fpath + ' exists, reusing')
             return output_fpath
+
+    # Avoid issues with incorrectly created empty GATK index files.
+    # Occurs when GATK cannot lock shared dbSNP database on previous run
+    # (not using dbSNP here anymore, but removing old inx just in case)
+    idx_fpath = input_fpath + '.idx'
+    if os.path.exists(idx_fpath) and not file_exists(idx_fpath):
+        os.remove(idx_fpath)
 
     ref_fpath = cnf['genome']['seq']
 

@@ -1,15 +1,16 @@
+import hashlib
 import sys
 import subprocess
 import tempfile
 import os
 import shutil
 import re
-from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
+from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, realpath
 from distutils.version import LooseVersion
 from datetime import datetime
 
 from source.transaction import file_transaction
-from source.bcbio_utils import add_suffix, file_exists, which
+from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe
 
 
 def err(log, msg=None):
@@ -150,6 +151,99 @@ def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
     return output_fpath
 
 
+def index_bam(cnf, bam_fpath):
+    samtools = get_tool_cmdline(cnf, 'samtools')
+    if not samtools:
+        sys.exit(1)
+
+    cmdline = '{samtools} index {bam_fpath}'.format(**locals())
+    call(cnf, cmdline, None, None)
+
+
+def bgzip_and_tabix_vcf(cnf, vcf_fpath):
+    work_dir = cnf['work_dir']
+
+    bgzip = get_tool_cmdline(cnf, 'bgzip')
+    tabix = get_tool_cmdline(cnf, 'tabix')
+
+    gzipped_fpath = join(work_dir, basename(vcf_fpath) + '.gz')
+    tbi_fpath = gzipped_fpath + '.tbi'
+
+    if not file_exists(gzipped_fpath):
+        cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
+        call(cnf, cmdline, None, gzipped_fpath)
+
+    if not file_exists(tbi_fpath):
+        cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
+        call(cnf, cmdline, None, tbi_fpath)
+
+    return gzipped_fpath, tbi_fpath
+
+
+def md5_for_file(f, block_size=2**20):
+    md5 = hashlib.md5()
+
+    while True:
+        data = f.read(block_size)
+        if not data:
+            break
+        md5.update(data)
+
+    return md5.hexdigest()
+
+
+def check_file_changed(cnf, new, in_work):
+    if not file_exists(in_work):
+        cnf['reuse_intermediate'] = False
+
+    if cnf.get('reuse_intermediate'):
+        if (basename(in_work) != basename(new) or
+            md5_for_file(open(in_work, 'rb')) !=
+            md5_for_file(open_gzipsafe(new, 'rb'))):
+
+            info(cnf.get('log'), 'Input file %s changed, setting "reuse_intermediate" '
+                'to False.' % str(new))
+            cnf['reuse_intermediate'] = False
+
+
+# def check_inputs_changed(cnf, new_inputs):
+#     prev_input_fpath = join(cnf['work_dir'], 'prev_inputs.txt')
+#
+#     new_inp_hashes = {realpath(fn): md5_for_file(fn) for fn in new_inputs}
+#
+#     if cnf.get('reuse_intermediate'):
+#         if not file_exists(prev_input_fpath):
+#             info(cnf.get('log'), 'File %s does not exist, setting "reuse_intermediate" to '
+#                       'False.' % str(prev_input_fpath))
+#             cnf['reuse_intermediate'] = False
+#
+#         else:
+#             prev_inp_hashes = dict()
+#
+#             with open(prev_input_fpath) as f:
+#                 for l in f:
+#                     input_fname, md5 = l.strip().split('\t')
+#                     prev_inp_hashes[input_fname] = md5
+#
+#             if len(new_inp_hashes) != len(prev_inp_hashes):
+#                 info(cnf.get('log'), 'Number of input files changed, setting "reuse_intermediate" to False.')
+#                 cnf['reuse_intermediate'] = False
+#
+#             for inp_fpath, inp_hash in new_inp_hashes.items():
+#                 if inp_fpath not in prev_inp_hashes:
+#                     info(cnf.get('log'), 'Input changed, setting "reuse_intermediate" to False.')
+#                     cnf['reuse_intermediate'] = False
+#
+#                 if inp_hash != prev_inp_hashes[inp_fpath]:
+#                     info(cnf.get('log'), 'Input %s changed, setting "reuse_intermediate" '
+#                               'to False.' % str(inp_fpath))
+#                     cnf['reuse_intermediate'] = False
+#
+#     with open(prev_input_fpath, 'w') as f:
+#         for inp_fpath, inp_hash in new_inp_hashes.items():
+#             f.write(inp_fpath + '\t' + inp_hash + '\n')
+
+
 def get_tool_cmdline(sys_cnf, tool_name, extra_warning=''):
     which_tool_path = which(tool_name) or None
 
@@ -178,6 +272,9 @@ def get_tool_cmdline(sys_cnf, tool_name, extra_warning=''):
 def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
          stdout_to_outputfile=True, to_remove=None, output_is_file=True,
          stdin=None):
+    if output_fpath is None:
+        output_is_file = False
+
     to_remove = to_remove or []
 
     # MAYBE REUSE?
@@ -210,7 +307,8 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     stdout = open(tx_out_fpath, 'w')
                     stderr = subprocess.PIPE
                 else:
-                    cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                    if output_fpath:
+                        cmdline = cmdline.replace(output_fpath, tx_out_fpath)
                     info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
@@ -243,7 +341,8 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     stdout = open(tx_out_fpath, 'w')
                     stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                 else:
-                    cmdline = cmdline.replace(output_fpath, tx_out_fpath)
+                    if output_fpath:
+                        cmdline = cmdline.replace(output_fpath, tx_out_fpath)
                     info(cnf.get('log'), cmdline + (' < ' + stdin if stdin else ''))
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT

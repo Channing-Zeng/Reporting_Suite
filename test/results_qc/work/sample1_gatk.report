@@ -1,0 +1,195 @@
+#:GATKReport.v1.1:8
+#:GATKTable:11:6:%s:%s:%s:%s:%s:%d:%d:%d:%.2f:%d:%.2f:;
+#:GATKTable:CompOverlap:The overlap between eval and comp sites
+CompOverlap  CompRod  EvalRod  JexlExpression  Novelty  nEvalVariants  novelSites  nVariantsAtComp  compRate  nConcordant  concordantRate
+CompOverlap  cosmic   tmp      none            all                 12          12                0      0.00            0            0.00
+CompOverlap  cosmic   tmp      none            known                1           1                0      0.00            0            0.00
+CompOverlap  cosmic   tmp      none            novel               11          11                0      0.00            0            0.00
+CompOverlap  dbsnp    tmp      none            all                 12          11                1      8.33            1          100.00
+CompOverlap  dbsnp    tmp      none            known                1           0                1    100.00            1          100.00
+CompOverlap  dbsnp    tmp      none            novel               11          11                0      0.00            0            0.00
+
+#:GATKTable:30:6:%s:%s:%s:%s:%s:%d:%d:%d:%d:%.8f:%.8f:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%.2e:%.2f:%.2f:%.2e:%.2f:%.2f:;
+#:GATKTable:CountVariants:Counts different classes of variants in the sample
+CountVariants  CompRod  EvalRod  JexlExpression  Novelty  nProcessedLoci  nCalledLoci  nRefLoci  nVariantLoci  variantRate  variantRatePerBp  nSNPs  nMNPs  nInsertions  nDeletions  nComplex  nSymbolic  nMixed  nNoCalls  nHets  nHomRef  nHomVar  nSingletons  nHomDerived  heterozygosity  heterozygosityPerBp  hetHomRatio  indelRate  indelRatePerBp  insertionDeletionRatio
+CountVariants  cosmic   tmp      none            all               36572           12         0            12   0.00032812     3047.00000000     10      0            1           0         1          0       0         0      1        0       11            1            0        2.73e-05             36572.00         0.09   5.47e-05        18286.00                    1.00
+CountVariants  cosmic   tmp      none            known             36572            1         0             1   0.00002734    36572.00000000      1      0            0           0         0          0       0         0      0        0        1            0            0        0.00e+00                 0.00         0.00   0.00e+00            0.00                    0.00
+CountVariants  cosmic   tmp      none            novel             36572           11         0            11   0.00030078     3324.00000000      9      0            1           0         1          0       0         0      1        0       10            1            0        2.73e-05             36572.00         0.10   5.47e-05        18286.00                    1.00
+CountVariants  dbsnp    tmp      none            all               36572           12         0            12   0.00032812     3047.00000000     10      0            1           0         1          0       0         0      1        0       11            1            0        2.73e-05             36572.00         0.09   5.47e-05        18286.00                    1.00
+CountVariants  dbsnp    tmp      none            known             36572            1         0             1   0.00002734    36572.00000000      1      0            0           0         0          0       0         0      0        0        1            0            0        0.00e+00                 0.00         0.00   0.00e+00            0.00                    0.00
+CountVariants  dbsnp    tmp      none            novel             36572           11         0            11   0.00030078     3324.00000000      9      0            1           0         1          0       0         0      1        0       10            1            0        2.73e-05             36572.00         0.10   5.47e-05        18286.00                    1.00
+
+#:GATKTable:7:120:%s:%s:%s:%s:%s:%d:%.2f:;
+#:GATKTable:IndelLengthHistogram:Indel length histogram
+IndelLengthHistogram  CompRod  EvalRod  JexlExpression  Novelty  Length  Freq
+IndelLengthHistogram  cosmic   tmp      none            all         -10  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -9  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -8  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -7  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -6  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -5  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -4  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -3  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -2  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          -1  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           1  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           2  1.00
+IndelLengthHistogram  cosmic   tmp      none            all           3  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           4  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           5  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           6  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           7  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           8  0.00
+IndelLengthHistogram  cosmic   tmp      none            all           9  0.00
+IndelLengthHistogram  cosmic   tmp      none            all          10  0.00
+IndelLengthHistogram  cosmic   tmp      none            known       -10  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -9  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -8  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -7  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -6  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -5  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -4  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -3  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -2  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        -1  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         1  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         2  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         3  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         4  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         5  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         6  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         7  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         8  0.00
+IndelLengthHistogram  cosmic   tmp      none            known         9  0.00
+IndelLengthHistogram  cosmic   tmp      none            known        10  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel       -10  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -9  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -8  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -7  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -6  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -5  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -4  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -3  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -2  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        -1  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         1  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         2  1.00
+IndelLengthHistogram  cosmic   tmp      none            novel         3  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         4  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         5  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         6  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         7  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         8  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel         9  0.00
+IndelLengthHistogram  cosmic   tmp      none            novel        10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all         -10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -2  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          -1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           2  1.00
+IndelLengthHistogram  dbsnp    tmp      none            all           3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all           9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            all          10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known       -10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -2  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        -1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         2  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known         9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            known        10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel       -10  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -2  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        -1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         1  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         2  1.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         3  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         4  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         5  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         6  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         7  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         8  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel         9  0.00
+IndelLengthHistogram  dbsnp    tmp      none            novel        10  0.00
+
+#:GATKTable:30:6:%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%s:%s:%s:%s:%s:%d:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:%s:;
+#:GATKTable:IndelSummary:Evaluation summary for indels
+IndelSummary  CompRod  EvalRod  JexlExpression  Novelty  n_SNPs  n_singleton_SNPs  n_indels  n_singleton_indels  n_indels_matching_gold_standard  gold_standard_matching_rate  n_multiallelic_indel_sites  percent_of_sites_with_more_than_2_alleles  SNP_to_indel_ratio  SNP_to_indel_ratio_for_singletons  n_novel_indels  indel_novelty_rate  n_insertions  n_deletions  insertion_to_deletion_ratio  n_large_deletions  n_large_insertions  insertion_to_deletion_ratio_for_large_indels  n_coding_indels_frameshifting  n_coding_indels_in_frame  frameshift_rate_for_coding_indels  SNP_het_to_hom_ratio  indel_het_to_hom_ratio  ratio_of_1_and_2_to_3_bp_insertions  ratio_of_1_and_2_to_3_bp_deletions
+IndelSummary  cosmic   tmp      none            all          10                 1         2                   0                                0                         0.00                           0                                       0.00                5.00                                 NA               2              100.00             2            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.11                    0.00                                   NA                                  NA
+IndelSummary  cosmic   tmp      none            known         1                 0         0                   0                                0                           NA                           0                                         NA                  NA                                 NA               0                  NA             0            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.00                      NA                                   NA                                  NA
+IndelSummary  cosmic   tmp      none            novel         9                 1         2                   0                                0                         0.00                           0                                       0.00                4.50                                 NA               2              100.00             2            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.13                    0.00                                   NA                                  NA
+IndelSummary  dbsnp    tmp      none            all          10                 1         2                   0                                0                         0.00                           0                                       0.00                5.00                                 NA               2              100.00             2            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.11                    0.00                                   NA                                  NA
+IndelSummary  dbsnp    tmp      none            known         1                 0         0                   0                                0                           NA                           0                                         NA                  NA                                 NA               0                  NA             0            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.00                      NA                                   NA                                  NA
+IndelSummary  dbsnp    tmp      none            novel         9                 1         2                   0                                0                         0.00                           0                                       0.00                4.50                                 NA               2              100.00             2            0                           NA                  0                   0                                            NA                              0                         0                                 NA                  0.13                    0.00                                   NA                                  NA
+
+#:GATKTable:20:6:%s:%s:%s:%s:%s:%d:%d:%d:%.5f:%.3f:%d:%d:%.5f:%.3f:%d:%d:%.2f:%d:%d:%s:;
+#:GATKTable:MultiallelicSummary:Evaluation summary for multi-allelic variants
+MultiallelicSummary  CompRod  EvalRod  JexlExpression  Novelty  nProcessedLoci  nSNPs  nMultiSNPs  processedMultiSnpRatio  variantMultiSnpRatio  nIndels  nMultiIndels  processedMultiIndelRatio  variantMultiIndelRatio  nTi  nTv  TiTvRatio  knownSNPsPartial  knownSNPsComplete  SNPNoveltyRate
+MultiallelicSummary  cosmic   tmp      none            all               36572     10           0                 0.00000                 0.000        2             0                   0.00000                   0.000    0    0        NaN                 0                  0              NA
+MultiallelicSummary  cosmic   tmp      none            known             36572      1           0                 0.00000                 0.000        0             0                   0.00000                     NaN    0    0        NaN                 0                  0              NA
+MultiallelicSummary  cosmic   tmp      none            novel             36572      9           0                 0.00000                 0.000        2             0                   0.00000                   0.000    0    0        NaN                 0                  0              NA
+MultiallelicSummary  dbsnp    tmp      none            all               36572     10           0                 0.00000                 0.000        2             0                   0.00000                   0.000    0    0        NaN                 0                  0              NA
+MultiallelicSummary  dbsnp    tmp      none            known             36572      1           0                 0.00000                 0.000        0             0                   0.00000                     NaN    0    0        NaN                 0                  0              NA
+MultiallelicSummary  dbsnp    tmp      none            novel             36572      9           0                 0.00000                 0.000        2             0                   0.00000                   0.000    0    0        NaN                 0                  0              NA
+
+#:GATKTable:14:6:%s:%s:%s:%s:%s:%d:%d:%.2f:%d:%d:%.2f:%d:%d:%.2f:;
+#:GATKTable:TiTvVariantEvaluator:Ti/Tv Variant Evaluator
+TiTvVariantEvaluator  CompRod  EvalRod  JexlExpression  Novelty  nTi  nTv  tiTvRatio  nTiInComp  nTvInComp  TiTvRatioStandard  nTiDerived  nTvDerived  tiTvDerivedRatio
+TiTvVariantEvaluator  cosmic   tmp      none            all        8    2       4.00        489         23              21.26           0           0              0.00
+TiTvVariantEvaluator  cosmic   tmp      none            known      1    0       1.00          0          0               0.00           0           0              0.00
+TiTvVariantEvaluator  cosmic   tmp      none            novel      7    2       3.50        489         23              21.26           0           0              0.00
+TiTvVariantEvaluator  dbsnp    tmp      none            all        8    2       4.00        150         22               6.82           0           0              0.00
+TiTvVariantEvaluator  dbsnp    tmp      none            known      1    0       1.00          1          0               1.00           0           0              0.00
+TiTvVariantEvaluator  dbsnp    tmp      none            novel      7    2       3.50        149         22               6.77           0           0              0.00
+
+#:GATKTable:24:6:%s:%s:%s:%s:%s:%d:%d:%d:%d:%d:%.2f:%.2f:%.2f:%.2f:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:;
+#:GATKTable:ValidationReport:Assess site accuracy and sensitivity of callset against follow-up validation assay
+ValidationReport  CompRod  EvalRod  JexlExpression  Novelty  nComp  TP  FP  FN   TN  sensitivity  specificity  PPV     FDR   CompMonoEvalNoCall  CompMonoEvalFiltered  CompMonoEvalMono  CompMonoEvalPoly  CompPolyEvalNoCall  CompPolyEvalFiltered  CompPolyEvalMono  CompPolyEvalPoly  CompFiltered  nDifferentAlleleSites
+ValidationReport  cosmic   tmp      none            all        520   0   0  520   0         0.00       100.00     NaN   NaN                   0                     0                 0                 0                 520                     0                 0                 0             0                      0
+ValidationReport  cosmic   tmp      none            known        0   0   0    0   0          NaN       100.00     NaN   NaN                   0                     0                 0                 0                   0                     0                 0                 0             0                      0
+ValidationReport  cosmic   tmp      none            novel      520   0   0  520   0         0.00       100.00     NaN   NaN                   0                     0                 0                 0                 520                     0                 0                 0             0                      0
+ValidationReport  dbsnp    tmp      none            all        191   1   0  190   0         0.52       100.00  100.00  0.00                   0                     0                 0                 0                 190                     0                 0                 1             0                      0
+ValidationReport  dbsnp    tmp      none            known        1   1   0    0   0       100.00       100.00  100.00  0.00                   0                     0                 0                 0                   0                     0                 0                 1             0                      0
+ValidationReport  dbsnp    tmp      none            novel      190   0   0  190   0         0.00       100.00     NaN   NaN                   0                     0                 0                 0                 190                     0                 0                 0             0                      0
+
+#:GATKTable:20:6:%s:%s:%s:%s:%s:%d:%d:%d:%.2f:%s:%d:%.2f:%.1f:%d:%s:%d:%.1f:%d:%s:%d:;
+#:GATKTable:VariantSummary:1000 Genomes Phase I summary of variants table
+VariantSummary  CompRod  EvalRod  JexlExpression  Novelty  nSamples  nProcessedLoci  nSNPs  TiTvRatio  SNPNoveltyRate  nSNPsPerSample  TiTvRatioPerSample  SNPDPPerSample  nIndels  IndelNoveltyRate  nIndelsPerSample  IndelDPPerSample  nSVs  SVNoveltyRate  nSVsPerSample
+VariantSummary  cosmic   tmp      none            all             1           36572     10       4.00          100.00              10                4.00            10.0        2            100.00                 2               2.0     0             NA              0
+VariantSummary  cosmic   tmp      none            known           1           36572      1       1.00          100.00               1                1.00             1.0        0                NA                 0               0.0     0             NA              0
+VariantSummary  cosmic   tmp      none            novel           1           36572      9       3.50          100.00               9                3.50             9.0        2            100.00                 2               2.0     0             NA              0
+VariantSummary  dbsnp    tmp      none            all             1           36572     10       4.00           90.00              10                4.00            10.0        2            100.00                 2               2.0     0             NA              0
+VariantSummary  dbsnp    tmp      none            known           1           36572      1       1.00            0.00               1                1.00             1.0        0                NA                 0               0.0     0             NA              0
+VariantSummary  dbsnp    tmp      none            novel           1           36572      9       3.50          100.00               9                3.50             9.0        2            100.00                 2               2.0     0             NA              0
+

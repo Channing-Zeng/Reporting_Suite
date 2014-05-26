@@ -6,7 +6,8 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources
+from source.main import common_main, read_samples_info_and_split, load_genome_resources, check_system_resources, \
+    input_fpaths_from_cnf
 from source.runner import run_all
 from source.summarize import summarize_qc
 from source.varqc import qc
@@ -27,10 +28,13 @@ def main(args):
     if 'quality_control' in config:
         qc.check_quality_control_config(config)
 
-    samples = read_samples_info_and_split(config, options)
+    sample_cnfs_by_name = read_samples_info_and_split(config, options)
+    required = ['vcf']
+    optional = []
 
     try:
-        run_all(config, samples, process_one, finalize_one, finalize_all)
+        run_all(config, sample_cnfs_by_name, required, optional,
+                process_one, finalize_one, finalize_all)
     except KeyboardInterrupt:
         exit()
 

@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+import hashlib
 import shutil
 import os
-from os.path import join, isdir, isfile
+from os.path import join, isdir, isfile, realpath
 from yaml import dump
+from source.bcbio_utils import file_exists
 
 try:
     from yaml import CDumper as Dumper
@@ -12,10 +14,13 @@ except ImportError:
 from source.utils import critical, info, iterate_file, step_greetings
 
 
-def run_all(cnf, samples, process_one, finalize_one, finalize_all):
-    if len(samples) == 1:
-        sample_name, sample_cnf = samples.items()[0]
-        run_one(sample_cnf, process_one, finalize_one)
+def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
+            process_one, finalize_one, finalize_all):
+
+    if len(sample_cnfs_by_name) == 1:
+        sample_name, sample_cnf = sample_cnfs_by_name.items()[0]
+        run_one(sample_cnf, required_inputs, optional_inputs, process_one, finalize_one)
+
     else:
         results = []
         if cnf.get('parallel'):
@@ -27,28 +32,28 @@ def run_all(cnf, samples, process_one, finalize_one, finalize_all):
                     'in parallel, in this case, make sure python joblib intalled. '
                     '(pip install joblib).')
             else:
-                for sample_name, sample_cnf in samples.items():
+                for sample_name, sample_cnf in sample_cnfs_by_name.items():
                     sample_cnf['verbose'] = False
 
-                results = Parallel(n_jobs=len(samples)) \
+                results = Parallel(n_jobs=len(sample_cnfs_by_name)) \
                     (delayed(run_one)(sample_cnf, process_one, finalize_one,
                                       multiple_samples=True)
-                        for sample_name, sample_cnf in samples.items())
+                        for sample_name, sample_cnf in sample_cnfs_by_name.items())
         else:
             results = []
-            for sample_name, sample_cnf in samples.items():
+            for sample_name, sample_cnf in sample_cnfs_by_name.items():
                 results.append(
                     run_one(sample_cnf, process_one, finalize_one,
                             multiple_samples=True))
 
-        if samples:
+        if sample_cnfs_by_name:
             info('')
             info('*' * 70)
             info('Results for each sample:')
-            finalize_all(cnf, samples, results)
+            finalize_all(cnf, sample_cnfs_by_name, results)
 
     # Cleaning
-    for name, data in samples.items():
+    for name, data in sample_cnfs_by_name.items():
         work_dirpath = data['work_dir']
         tx_dirpath = join(work_dirpath, 'tx')
 
@@ -60,7 +65,7 @@ def run_all(cnf, samples, process_one, finalize_one, finalize_all):
             shutil.rmtree(work_dirpath)
 
 
-def _filter_ensemble(cnf, input_fpath):
+def filter_ensemble(cnf, input_fpath):
     step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
     output_fpath = iterate_file(cnf, input_fpath,
                                 (lambda l: 'REJECT' not in l),
@@ -69,31 +74,33 @@ def _filter_ensemble(cnf, input_fpath):
     return output_fpath
 
 
-def run_one(cnf, process_one_fun, finalize_one_fun, multiple_samples=False):
+def run_one(cnf, required_inputs, optional_inputs,
+            process_one_fun, finalize_one_fun, multiple_samples=False):
+    input_fpaths = []
+    for key in required_inputs:
+        input_fpaths.append(cnf[key])
+    for key in optional_inputs:
+        if key in cnf:
+            input_fpaths.append(cnf[key])
+
     if cnf.get('keep_intermediate'):
         cnf['log'] = join(cnf['work_dir'], cnf['name'] + '_log.txt')
         if isfile(cnf['log']):
             os.remove(cnf['log'])
-        #with open(join(cnf['work_dir'], cnf['name'] + '_config.yaml'), 'w') as f:
-        #    f.write(dump(cnf, Dumper=Dumper))
     else:
         cnf['log'] = None
-    # sample['fields'] = []
 
     if multiple_samples:
         info('')
         info('*' * 70)
         msg = '*' * 3 + ' Sample ' + cnf['name'] + ' '
         info(cnf.get('log'), msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
-        info(cnf.get('log'), 'VCF: ' + cnf['vcf'])
-        if cnf.get('bam'):
-            info(cnf.get('log'), 'BAM: ' + cnf['bam'])
 
-    vcf_fpath = cnf['vcf']
-    if cnf.get('ensemble'):
-        vcf_fpath = _filter_ensemble(cnf, vcf_fpath)
+        info(cnf.get('log'), 'Input:')
+        for fpath in input_fpaths:
+            info(cnf.get('log'), '  ' + fpath)
 
-    results_one = process_one_fun(cnf, vcf_fpath)
+    results_one = process_one_fun(cnf, *input_fpaths)
 
     info(cnf['log'], '')
     info(cnf['log'], '*' * 70)

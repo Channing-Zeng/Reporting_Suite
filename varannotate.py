@@ -38,16 +38,19 @@ def main(args):
     if output_dir:
         print 'Saving to ' + output_dir
     
-    samples = read_samples_info_and_split(config, options)
+    sample_cnfs_by_name = read_samples_info_and_split(config, options)
+    required = ['vcf']
+    optional = ['bam']
 
     try:
-        run_all(config, samples, process_one, finalize_one, finalize_all)
+        run_all(config, sample_cnfs_by_name, required, optional,
+                process_one, finalize_one, finalize_all)
     except KeyboardInterrupt:
         exit()
 
 
-def process_one(cnf, vcf_fpath):
-    anno_vcf_fpath = anno.run_annotators(cnf, vcf_fpath)
+def process_one(cnf, vcf_fpath, bam_fpath=None):
+    anno_vcf_fpath = anno.run_annotators(cnf, vcf_fpath, bam_fpath)
     anno_tsv_fpath = None
     if anno_vcf_fpath and 'tsv_fields' in cnf:
         anno_tsv_fpath = tsv.make_tsv(cnf, anno_vcf_fpath)
