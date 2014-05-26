@@ -12,7 +12,8 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, intersect_bed, get_target_depth_analytics, run_header_report, run_exons_cov_report, run_amplicons_cov_report
+from source.targetcov.cov import log, intersect_bed, get_target_depth_analytics, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
+    add_genes_cov_analytics
 
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
@@ -41,13 +42,13 @@ REPORT_TYPES = 'summary,amplicons,exons,genes'
 def main(args):
     cnf, options = common_main(
         'targetcov',
-        opts=[
+        extra_opts=[
             (['--bam'], 'align.bam', {
                 'dest': 'bam',
                 'help': 'used to generate some annotations by GATK'}),
 
             (['--capture', '--bed'], 'capture.bed', {
-                'dest': 'capture',
+                'dest': 'bed',
                 'help': ''}),
 
             (['--genes', '--genes'], 'genes.bed', {
@@ -67,7 +68,8 @@ def main(args):
                 'dest': 'reports',
                 'help': '--reports ' + REPORT_TYPES,
                 'default': REPORT_TYPES}),
-        ])
+        ],
+        required=['bam', 'bed'])
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
@@ -75,7 +77,7 @@ def main(args):
     genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
     exons_bed = options.get('exons') or cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
     chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
-    capture_bed = options.get('capture') or cnf.get('capture')
+    capture_bed = options.get('bed') or cnf.get('bed')
     bam = options.get('bam') or cnf.get('bam')
 
     if not genes_bed:
@@ -131,7 +133,7 @@ def main(args):
     if 'summary' or 'amplicons' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')
         bases_per_depth_per_amplicon, max_depth, total_bed_size = \
-            get_target_depth_analytics(cnf, capture_bed, bam, depth_threshs)
+            get_target_depth_analytics(cnf, sample_name, capture_bed, bam, 'Amplicon', depth_threshs)
 
         if 'summary' in options['reports']:
             step_greetings('Target coverage summary report')
@@ -145,7 +147,7 @@ def main(args):
         if 'amplicons' in options['reports']:
             step_greetings('Coverage report for the input BED file regions')
             amplicons_report_fpath = join(output_dir, sample_name + '.amplicons.report')
-            run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs,
+            run_amplicons_cov_report(cnf, amplicons_report_fpath, depth_threshs,
                                      bases_per_depth_per_amplicon[:-1])
 
         if 'exons' in options['reports']:
@@ -163,11 +165,14 @@ def main(args):
                 bed = intersect_bed(cnf, exons_bed, bed, work_dir)
 
                 log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-                bases_per_depth_per_amplicon, _, _ = get_target_depth_analytics(cnf, bed, bam, depth_threshs)
+                bases_per_depth_per_exon, _, _ = get_target_depth_analytics(
+                    cnf, sample_name, bed, bam, 'Exon', depth_threshs)
+
+                bases_per_depth_per_exon_and_gene = add_genes_cov_analytics(bases_per_depth_per_exon[:-1])
 
                 exons_report_fpath = join(output_dir, sample_name + '.exons.report')
-                run_exons_cov_report(cnf, exons_report_fpath, sample_name, depth_threshs,
-                                     bases_per_depth_per_amplicon[:-1])
+                run_exons_cov_report(cnf, exons_report_fpath, depth_threshs,
+                                     bases_per_depth_per_exon_and_gene)
 
     rmtree(join(output_dir, 'tx'))
 

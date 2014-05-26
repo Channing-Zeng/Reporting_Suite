@@ -125,21 +125,65 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
     return result_fpath
 
 
-def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
+def run_amplicons_cov_report(cnf, report_fpath, depth_threshs,
                              bases_per_depth_per_amplicon):
-    return run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                          bases_per_depth_per_amplicon, feature='Amplicon')
+    return run_cov_report(cnf, report_fpath, depth_threshs,
+                          bases_per_depth_per_amplicon)
 
 
-def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                         bases_per_depth_per_exon):
-    return run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                          bases_per_depth_per_exon,
-                          feature='Exon', extra_fields=['Transcript', 'Gene'])
+def run_exons_cov_report(cnf, report_fpath, depth_threshs,
+                         bases_per_depth_per_exon_and_gene):
+    return run_cov_report(cnf, report_fpath, depth_threshs,
+                          bases_per_depth_per_exon_and_gene,
+                          extra_fields=['Transcript', 'Gene'])
 
 
-def run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                   bases_per_depth_per_region, feature='-', extra_fields=list()):
+def add_genes_cov_analytics(bases_per_depth_per_exon):
+    bases_per_depth_per_exon_and_gene = []
+
+    current_genename = None
+    current_gene = None
+    current_geneexons = []
+
+    def sum_up_gene(gene, gene_exons):
+        gene.end = gene_exons[-1].end
+        gene.avg_depth = 0
+        gene.percent_within_normal = 0
+        gene.std_dev = 0
+        bases_per_depth_per_exon_and_gene.append(current_gene)
+
+    for exon in bases_per_depth_per_exon:
+        if len(exon.extra_fields) < 2:
+           sys.exit('no gene info in exons record: ' + str(exon))
+        exon_genename = exon.extra_fields[1]
+
+        if exon_genename == current_genename:
+            current_geneexons.append(exon)
+
+        else:
+            if current_gene and current_geneexons:
+                sum_up_gene(current_gene, current_geneexons)
+
+            current_geneexons.append(exon)
+
+            current_genename = exon_genename
+            current_geneexons = [exon]
+            current_gene = Region(
+                sample=exon.sample, chrom=exon.chrom,
+                start=exon.start, feature='Gene',
+                extra_fields=[current_genename, '.'],
+                depth_thresholds=exon.depth_thresholds)
+
+        bases_per_depth_per_exon_and_gene.append(exon)
+
+    if current_gene and current_geneexons:
+        sum_up_gene(current_gene, current_geneexons)
+
+    return bases_per_depth_per_exon_and_gene
+
+
+def run_cov_report(cnf, report_fpath, depth_threshs,
+                   bases_per_depth_per_region, extra_fields=list()):
     first_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Feature']
     last_fields = ['Size', 'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
     header = first_fields + extra_fields + last_fields
@@ -149,23 +193,23 @@ def run_cov_report(cnf, report_fpath, sample_name, depth_threshs,
     all_values = []
 
     for i, region in enumerate(bases_per_depth_per_region):
-        region_tokens = region.line.split()  # Chr, Start, End, F1, F2,...
-
-        line_tokens = [sample_name]
-        line_tokens += region_tokens[:3]
-        line_tokens += [feature]
-        line_tokens += region_tokens[3:len(first_fields) - 2 + len(extra_fields)]
-        line_tokens += [str(region.size)]
+        line_tokens = map(str, [region.sample,
+                                region.chrom,
+                                region.start,
+                                region.end,
+                                region.feature])
+        line_tokens += region.extra_fields[:len(extra_fields)]
+        line_tokens += [str(region.get_size())]
         line_tokens += ['{0:.2f}'.format(region.avg_depth)]
         line_tokens += ['{0:.2f}'.format(region.std_dev)]
         line_tokens += ['{0:.2f}%'.format(region.percent_within_normal)
                         if region.percent_within_normal is not None else '-']
 
         for depth_thres, bases in region.bases_by_depth.items():
-            if int(region.size) == 0:
+            if int(region.get_size()) == 0:
                 percent_str = '-'
             else:
-                percent = 100.0 * bases / region.size
+                percent = 100.0 * bases / region.get_size()
                 percent_str = '{0:.2f}%'.format(percent)
             line_tokens.append(percent_str)
 
@@ -312,13 +356,13 @@ def _sum_up_region(region):
         depth * bases
         for depth, bases
         in region.bases_by_depth.items())
-    region.avg_depth = float(depth_sum) / region.size
+    region.avg_depth = float(depth_sum) / region.get_size()
 
     sum_of_sq_var = sum(
         (depth - region.avg_depth)**2 * bases
         for depth, bases
         in region.bases_by_depth.items())
-    region.std_dev = math.sqrt(float(sum_of_sq_var) / region.size)
+    region.std_dev = math.sqrt(float(sum_of_sq_var) / region.get_size())
 
     bases_within_normal = sum(
         bases
@@ -326,23 +370,45 @@ def _sum_up_region(region):
         in region.bases_by_depth.items()
         if math.fabs(region.avg_depth - depth) <= 0.2 * region.avg_depth)
 
-    region.percent_within_normal = 100.0 * bases_within_normal / region.size if region.size else None
+    region.percent_within_normal = 100.0 * bases_within_normal / region.get_size() if region.get_size else None
     return region
 
 
 class Region():
-    def __init__(self, line, size, depth_thresholds):
-        self.line = line
+    def __init__(self, sample=None, chrom=None,
+                 start=None, end=None, size=None, extra_fields=list(),
+                 feature=None, depth_thresholds=None):
+        self.sample = sample
+        self.chrom = chrom
+        self.start = start
+        self.end = end
         self.size = size
+        self.feature = feature
+        self.extra_fields = extra_fields
 
+        self.depth_thresholds = depth_thresholds or []
         self.bases_by_depth = OrderedDict([(depth_thres, 0.0)
                                            for depth_thres in depth_thresholds])
         self.avg_depth = None
         self.std_dev = None
         self.percent_within_normal = None
 
+    def get_size(self):
+        if self.size:
+            return self.size
+        if self.start is None or self.end is None:
+            return None
+        return abs(self.end - self.start)
 
-def get_target_depth_analytics(cnf, bed, bam, depth_thresholds):
+    def key(self):
+        return hash((self.sample, self.chrom, self.start, self.end))
+
+    def __str__(self):
+        ts = [self.sample, self.chrom, self.start, self.end, self.feature] + self.extra_fields
+        return '\t'.join(map(str, ts))
+
+
+def get_target_depth_analytics(cnf, sample, bed, bam, feature, depth_thresholds):
     total_regions_count = 0
     total_bed_size = 0
     max_depth = 0
@@ -359,26 +425,35 @@ def get_target_depth_analytics(cnf, bed, bam, depth_thresholds):
 
         tokens = next_line.strip().split()
         chrom = tokens[0]
+        start, end = None, None
         depth, bases, region_size = map(int, tokens[-4:-1])
-        region_tokens = []
+
+        region_tokens = ()
 
         if next_line.startswith('all'):
             max_depth = max(max_depth, depth)
             total_bed_size += bases
 
-            region_tokens = tokens[:1]
+            region_tokens, extra_tokens = (sample, chrom, None, None), []
         else:
-            region_tokens = tokens[:-4]
+            start, end = map(int, tokens[1:3])
+            region_tokens, extra_tokens = (sample, chrom, start, end), tokens[3:-4]
 
-        next_region_line = '\t'.join(region_tokens)
-
-        if not cur_region or next_region_line != cur_region.line:
+        if cur_region:
+            k = cur_region.key()
+            h = hash(region_tokens)
+            # print (k)
+            # print (h)
+        if not cur_region or hash(region_tokens) != cur_region.key():
             total_regions_count += 1
 
             if cur_region:
                 _sum_up_region(cur_region)
 
-            cur_region = Region(next_region_line, region_size, depth_thresholds)
+            cur_region = Region(sample=sample, chrom=chrom,
+                start=start, end=end, size=region_size,
+                feature=feature, extra_fields=extra_tokens,
+                depth_thresholds=depth_thresholds)
             bases_per_depth_per_region.append(cur_region)
 
         for depth_thres in depth_thresholds:

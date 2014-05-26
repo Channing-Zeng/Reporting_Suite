@@ -22,27 +22,70 @@ else:
 from source.bcbio_utils import which, open_gzipsafe, file_exists, splitext_plus
 
 
-def common_main(name, opts):
+def common_main(pipeline_name, extra_opts, required):
     # options
-    run_config_name = 'run_info_' + name + '.yaml'
+    run_config_name = 'run_info_' + pipeline_name + '.yaml'
 
     parser = OptionParser(
         usage='python ' + __file__ +
               ' [system_info.yaml] [' + run_config_name + '] ' +
-              ' '.join(args[0] + example for args, example, _ in opts) +
+              ' '.join(args[0] + example for args, example, _ in extra_opts) +
               ' [--output_dir dir]\n'
 
               '    or python ' + __file__ +
-              ' [system_info.yaml] ' + run_config_name)
+              ' [system_info.yaml] ' + run_config_name +
+              '' +
+              'Orther options:' +
+              '-t <thread num>  number of threads to run GATK' +
+              '-w               do not reuse intermediate files from previous run')
 
-    for args, _, kwargs in opts:
+    for args, _, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
     parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR')
-    parser.add_option('--nt', '-t', dest='threads', help='number of threads to run GATK')
+    parser.add_option('-t', '--nt', dest='threads')
+    parser.add_option('-w', dest='rewrite', action='store_true', default=False)
+    parser.add_option('--np', '--no-parallel', dest='no_parallel', action='store_true', default=False)
     (options, args) = parser.parse_args()
+    options = options.__dict__
 
-    # configs
-    run_config_name = 'run_info_' + name + '.yaml'
+    cnf = _load_config(pipeline_name, args)
+
+    cnf['output_dir'] = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
+    cnf['output_dir'] = expanduser(cnf['output_dir'])
+    _set_up_work_dir(cnf)
+
+    if (len([k for k in required if k in options]) < len(required) and
+        not cnf.get('details')):
+        critical(
+            'Error: provide input files with command line options '
+            'or by specifying in the "details" section in run config.')
+
+    cnf['filter_reject'] = cnf.get('filter_reject', False)
+    cnf['split_samples'] = cnf.get('split_samples', False)
+    cnf['log'] = None
+
+    if options.get('threads'):
+        if 'gatk' in cnf:
+            gatk_opts = cnf['gatk'].get('options', [])
+            new_opts = []
+            for opt in gatk_opts:
+                if opt.startswith('-nt '):
+                    new_opts.append('-nt ' + options.get('threads'))
+                else:
+                    new_opts.append(opt)
+            cnf['gatk']['options'] = new_opts
+
+    if options.get('rewrite'):
+        cnf['reuse_intermediate'] = False
+
+    if options.get('no_parallel'):
+        cnf['parallel'] = False
+
+    return cnf, options
+
+
+def _load_config(pipleine_name, args):
+    run_config_name = 'run_info_' + pipleine_name + '.yaml'
 
     system_config_path = join(dirname(dirname(realpath(__file__))), 'system_info_rask.yaml')
     run_config_path = join(dirname(dirname(realpath(__file__))), run_config_name)
@@ -83,20 +126,9 @@ def common_main(name, opts):
     run_cnf = load(open(run_config_path), Loader=Loader)
     info('Loaded system config ' + system_config_path)
     info('Loaded run config ' + run_config_path)
-    config = dict(run_cnf.items() + sys_cnf.items())
 
-    if options.threads:
-        if 'gatk' in config:
-            gatk_opts = config['gatk'].get('options', [])
-            new_opts = []
-            for opt in gatk_opts:
-                if opt.startswith('-nt '):
-                    new_opts.append('-nt ' + options.threads)
-                else:
-                    new_opts.append(opt)
-            config['gatk']['options'] = new_opts
+    return dict(run_cnf.items() + sys_cnf.items())
 
-    return config, options.__dict__
 
 
 def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
@@ -107,108 +139,6 @@ def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
         if key in cnf:
             input_fpaths.append(cnf[key])
     return input_fpaths
-
-
-def read_samples_info_and_split(common_cnf, options):
-    info('')
-    info('Processing input details...')
-
-    common_cnf['output_dir'] = common_cnf.get('output_dir', os.getcwd())
-    common_cnf['filter_reject'] = common_cnf.get('filter_reject', False)
-    common_cnf['split_samples'] = common_cnf.get('split_samples', False)
-    common_cnf['log'] = None
-
-    details = common_cnf.get('details')
-    if not details and not options.get('vcf'):
-        critical('ERROR: Provide input VCF by --var '
-                 'or specify "details" section in run config.')
-
-    if options.get('output_dir'):
-        common_cnf['output_dir'] = expanduser(options['output_dir'])
-
-    if options.get('vcf'):
-        common_cnf['vcf'] = expanduser(options['vcf'])
-        if options.get('bam'):
-            common_cnf['bam'] = expanduser(options['bam'])
-        details = [common_cnf]
-
-    _set_up_work_dir(common_cnf)
-
-    all_samples = OrderedDict()
-
-    for vcf_conf in details:
-        if 'var' in vcf_conf:
-            vcf_conf['vcf'] = vcf_conf['var']
-            del vcf_conf['var']
-        if 'vcf' not in vcf_conf:
-            critical('ERROR: A section in details does not contain field "var".')
-        vcf_conf['vcf'] = expanduser(vcf_conf['vcf'])
-        if not verify_file(vcf_conf['vcf'], 'Input file'):
-            exit(1)
-
-        join_parent_conf(vcf_conf, common_cnf)
-
-        work_vcf = join(vcf_conf['work_dir'], basename(vcf_conf['vcf']))
-        check_file_changed(vcf_conf, vcf_conf['vcf'], work_vcf)
-        if not vcf_conf.get('reuse_intermediate'):
-            with open_gzipsafe(vcf_conf['vcf']) as inp, open(work_vcf, 'w') as out:
-                out.write(inp.read())
-        vcf_conf['vcf'] = work_vcf
-
-        vcf_header_samples = _read_sample_names_from_vcf(vcf_conf['vcf'])
-
-        # MULTIPLE SAMPELS
-        if ('samples' in vcf_conf or vcf_conf.get('split_samples')) and len(vcf_header_samples) == 0:
-            sample_cnfs = _verify_sample_info(vcf_conf, vcf_header_samples)
-
-            for header_sample_name in vcf_header_samples:
-                if header_sample_name not in sample_cnfs:
-                    sample_cnfs[header_sample_name] = vcf_conf.copy()
-
-                if header_sample_name in all_samples:
-                    critical('ERROR: duplicated sample name: ' + header_sample_name)
-
-                cnf = all_samples[header_sample_name] = sample_cnfs[header_sample_name]
-                cnf['name'] = header_sample_name
-                if cnf.get('keep_intermediate'):
-                    cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
-
-                cnf['vcf'] = extract_sample(cnf, vcf_conf['vcf'], cnf['name'], cnf['work_dir'])
-                info(cnf.get('log'), '')
-
-        # SINGLE SAMPLE
-        else:
-            cnf = vcf_conf
-
-            if 'bam' in cnf:
-                cnf['bam'] = expanduser(cnf['bam'])
-                if not verify_file(cnf['bam']):
-                    sys.exit(1)
-
-            cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
-
-            if cnf.get('keep_intermediate'):
-                cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
-
-            cnf['vcf'] = work_vcf
-            all_samples[cnf['name']] = cnf
-
-    if not all_samples:
-        info('No samples.')
-    else:
-        info('Using samples: ' + ', '.join(all_samples) + '.')
-
-    return all_samples
-
-
-def _read_sample_names_from_vcf(vcf_fpath):
-    basic_fields = next((l.strip()[1:].split() for l in open_gzipsafe(vcf_fpath)
-                        if l.strip().startswith('#CHROM')), None)
-    if not basic_fields:
-        critical('Error: no VCF header in ' + vcf_fpath)
-    if len(basic_fields) < 9:
-        return []
-    return basic_fields[9:]
 
 
 def check_system_resources(cnf, required=list()):
@@ -303,27 +233,6 @@ def _check_system_tools():
         exit()
 
 
-def extract_sample(cnf, input_fpath, samplename, work_dir):
-    info(cnf.get('log'), '-' * 70)
-    info(cnf.get('log'), 'Separating out sample ' + samplename)
-    info(cnf.get('log'), '-' * 70)
-
-    executable = get_java_tool_cmdline(cnf, 'gatk')
-    ref_fpath = cnf['genome']['seq']
-
-    corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-
-    output_fname = splitext_plus(input_fpath)[0] + '.' + corr_samplename + '.vcf'
-    output_fpath = join(work_dir, output_fname)
-
-    cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-          '--variant {input_fpath} -sn {samplename} ' \
-          '-o {output_fpath}'.format(**locals())
-    call(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
-         to_remove=[input_fpath + '.idx'])
-    return output_fpath
-
-
 def _set_up_work_dir(cnf):
     cnf['output_dir'] = expanduser(cnf['output_dir'])
     output_dirpath = realpath(cnf['output_dir'])
@@ -331,26 +240,3 @@ def _set_up_work_dir(cnf):
     work_dirpath = join(output_dirpath, 'work')
     safe_mkdir(work_dirpath, 'working directory')
     cnf['work_dir'] = work_dirpath
-
-
-def _verify_sample_info(vcf_conf, vcf_header_samples):
-    # check bams if exist
-    if 'samples' in vcf_conf:
-        for header_sample_name, sample_conf in vcf_conf['samples'].items():
-            join_parent_conf(sample_conf, vcf_conf)
-
-            bam = sample_conf.get('bam')
-            if bam and not verify_file(expanduser(bam), 'Bam file'):
-                exit()
-            sample_conf['bam'] = expanduser(bam)
-
-    sample_cnfs = vcf_conf.get('samples') or OrderedDict()
-
-    # compare input sample names to vcf header
-    if sample_cnfs:
-        for input_sample_name, sample_conf in sample_cnfs.items():
-            if input_sample_name not in vcf_header_samples:
-                critical('ERROR: sample ' + input_sample_name +
-                         ' is not in VCF header ' + vcf_header_samples + '\n'
-                         'Available samples: ' + ', '.join(vcf_header_samples))
-    return sample_cnfs
