@@ -65,12 +65,12 @@ do
 
     ### VarAnn ###
     mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var ../${sample}${vcf_suffix}.filtered.vcf --bam ../"${sample}"-ready.bam --nt=4 -o annotation"
+    cmdline="python /group/ngs/src/varannotate.py --var ${sample}${vcf_suffix}.filtered.vcf --bam "${sample}"-ready.bam --nt=4 -o annotation"
     run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log InDelFilter_${sample}
 
     ### VarQC ###
     mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var ../${sample}${vcf_suffix}.filtered.vcf --nt=4 -o varQC"
+    cmdline="python /group/ngs/src/varqc.py --var ${sample}${vcf_suffix}.filtered.vcf --nt=4 -o varQC"
     run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log InDelFilter_${sample}
 
     if [ ! -z "${qc_jobids}" ]; then
@@ -81,7 +81,7 @@ do
 
     ### targetCov ###
     mkdir targetSeq
-    cmdline="python /group/ngs/src/targetcov.py --bam ../${sample}-ready.bam --bed "${bed}" --nt=4 -o targetSeq"
+    cmdline="python /group/ngs/src/targetcov.py --bam ${sample}-ready.bam --bed "${bed}" --nt=4 -o targetSeq"
     run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log
 
     if [ ! -z "${targetcov_jobids}" ]; then
@@ -92,12 +92,12 @@ do
 
     ### NGSCat ###
     mkdir NGSCat
-    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams ../${sample}-ready.bam --bed "${bed}" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
+    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams ${sample}-ready.bam --bed "${bed}" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
     run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log
 
     ## QualiMap ##
     mkdir QualiMap
-    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam ../"${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
+    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log
 done
 
