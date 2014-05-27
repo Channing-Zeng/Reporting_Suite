@@ -86,7 +86,7 @@ custom_vcfs:
     - om_MutClassPC
 
 snpeff:
-  clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+  clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
   cancer: True
   ## no "annotations" section here, always applied all annotations
 

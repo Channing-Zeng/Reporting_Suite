@@ -13,10 +13,10 @@ function run_on_grid {
         # fi
         # rm log
         rm ${output_file}
-        echo $cmdline
+        echo ${cmdline}
         echo "#!/bin/bash" > cmd.sh
-        echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> cmd.sh
-        echo $cmdline >> cmd.sh
+        echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load be${cmdline}e}module load samtools;" >> cmd.sh
+        echo ${cmdline} >> cmd.sh
         chmod +x cmd.sh
 
         if [ -z "${hold_jid}" ]; then
@@ -34,9 +34,9 @@ do
 
         rm -rf cmd.sh log ${sample}-mutect.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
-        if [ ! -f $sample-mutect.vcf ];
+        if [ ! -f ${sample}-mutect.vcf ];
         then
-                gunzip -c $sample-mutect.vcf.gz > $sample-mutect.vcf
+                gunzip -c ${sample}-mutect.vcf.gz > ${sample}-mutect.vcf
         fi
 
         ### InDelFilter ###

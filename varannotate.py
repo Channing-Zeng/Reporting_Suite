@@ -27,8 +27,17 @@ def main(args):
             (['--bam'], 'align.bam', {
              'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
+
+            (['--clinical_reporting'], {
+             'dest': 'clinical_reporting',
+             'help': 'used to generate some annotations by GATK',
+             'action': 'set_true',
+             'default': False}),
         ],
         required=required)
+
+    if 'clinical_reporting' in options and 'snpeff' in config:
+        config['snpeff']['clinical_reporting'] = True
 
     check_system_resources(config, ['java', 'perl', 'gatk', 'snpeff', 'snpsift'])
     load_genome_resources(config, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
@@ -42,7 +51,7 @@ def main(args):
     output_dir = options.get('output_dir')
     if output_dir:
         print 'Saving to ' + output_dir
-    
+
     sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
 
     try:
