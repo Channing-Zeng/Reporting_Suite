@@ -16,8 +16,9 @@ fi
 function run_on_grid {
     cmdline=$1
     name=$2
-    output_file=$3
-    hold_jid=$4
+    output_dir=$3
+    output_file=$4
+    hold_jid=$5
     # if [ -z "$3" ]; then
     #         output="log"
     # fi
@@ -33,9 +34,10 @@ function run_on_grid {
         hold_jid=" -hold_jid "${hold_jid}
     fi
 
-    qsub ${hold_jid} -pe smp 8 -S /bin/bash -cwd -q batch.q -b y -o ${output_file} -e log -N ${name} bash ./cmd.sh
-
-    rm cmd.sh
+    runner_script=${output_dir}/runner.sh
+    qsub_command="qsub ${hold_jid} -pe smp 8 -S /bin/bash -cwd -q batch.q -b y -o ${output_file} -e log -N ${name} bash ${runner_script}/cmd.sh"
+    echo "${qsub_command}"
+    eval "${qsub_command}"
 }
 
 for sample in `cat ${samples}`
@@ -43,7 +45,7 @@ do
     echo "cd to ${finalDir}/${sample}"
     cd $finalDir/$sample
 
-    rm -rf cmd.sh log ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+    rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
     if [ ! -f ${sample}${vcf_suffix}.vcf ];
     then
@@ -57,27 +59,27 @@ do
     ### VarAnn ###
     mkdir annotation
     cmdline="python /group/ngs/src/varannotate.py --var ../${sample}${vcf_suffix}.filtered.vcf --bam ../"${sample}"-ready.bam --nt=4 -o annotation"
-    run_on_grid "${cmdline}" VarAnn_${sample} annotation/log InDelFilter_${sample}
+    run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log InDelFilter_${sample}
 
     ### VarQC ###
     mkdir varQC
     cmdline="python /group/ngs/src/varqc.py --var ../${sample}${vcf_suffix}.filtered.vcf --nt=4 -o varQC"
-    run_on_grid "${cmdline}" VarQC_${sample} varQC/log InDelFilter_${sample}
+    run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log InDelFilter_${sample}
 
     ### targetCov ###
     mkdir targetSeq
     cmdline="python /group/ngs/src/targetcov.py --bam ../${sample}-ready.bam --bed "${bed}" --nt=4 -o targetSeq"
-    run_on_grid "${cmdline}" targetSeq_${sample} targetSeq/log
+    run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log
 
     ### NGSCat ###
     mdkir NGSCat
     cmdline="python /group/ngs/src/ngscat/ngscat.py --bams ../${sample}-ready.bam --bed "${bed}" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
-    run_on_grid "${cmdline}" NGSCat_${sample} NGSCat/log
+    run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log
 
     ## QualiMap ##
     mkdir QualiMap
     cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam ../"${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
-    run_on_grid "${cmdline}" QualiMap_${sample} QualiMap/log
+    run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log
 done
 
 qc_summary=qc_summary_report.txt
