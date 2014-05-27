@@ -1,7 +1,7 @@
 #!/bin/sh
 
 bed=$1
-finalDir=$2
+bcbio_final_dir=$2
 samples=$3
 vcf_suffix=$4
 
@@ -54,8 +54,8 @@ targetcov_jobids=""
 
 for sample in `cat ${samples}`
 do
-    echo "cd to ${finalDir}/${sample}"
-    cd ${finalDir}/${sample}
+    echo "cd to ${bcbio_final_dir}/${sample}"
+    cd ${bcbio_final_dir}/${sample}
 
     rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
@@ -105,8 +105,8 @@ do
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
 done
 
-cmdline="python varqc_summary.py $finalDir $samples varQC"
-run_on_grid "${cmdline}" VarQCSummary ${finalDir} ../work/log_varqc_summary 1 ${qc_jobids}
+cmdline="python varqc_summary.py $bcbio_final_dir $samples varQC"
+run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
 
-cmdline="python targetcov_summary.py $finalDir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary ${finalDir} ../work/log_targetcov_summary 1 ${targetcov_jobids}
+cmdline="python targetcov_summary.py $bcbio_final_dir $samples targetSeq"
+run_on_grid "${cmdline}" targetSeqSummary ${bcbio_final_dir} ../work/log_targetcov_summary 1 ${targetcov_jobids}
