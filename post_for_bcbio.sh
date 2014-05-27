@@ -57,7 +57,7 @@ do
     echo "cd to ${bcbio_final_dir}/${sample}"
     cd ${bcbio_final_dir}/${sample}
 
-    rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+    # rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
     if [ ! -f ${sample}${vcf_suffix}.vcf ]; then
         gunzip -c ${sample}${vcf_suffix}.vcf.gz > ${sample}${vcf_suffix}.vcf
