@@ -27,6 +27,9 @@ def read_samples_info_and_split(common_cnf, options, inputs):
         if options.get(key):
             common_cnf[key] = expanduser(options[key])
             details = [common_cnf]
+    if not details:
+        sys.exit('Please, provide inputs ' + ' '.join(inputs) +
+                 ' in command line or in run info yaml config.')
 
     all_samples = OrderedDict()
 
@@ -38,7 +41,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
             critical('ERROR: A section in details does not contain field "var".')
         one_item_cnf['vcf'] = expanduser(one_item_cnf['vcf'])
         if not verify_file(one_item_cnf['vcf'], 'Input file'):
-            exit(1)
+            sys.exit(1)
 
         join_parent_conf(one_item_cnf, common_cnf)
 
