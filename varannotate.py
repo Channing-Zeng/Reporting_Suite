@@ -28,10 +28,10 @@ def main(args):
              'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
 
-            (['--clinical_reporting'], {
+            (['--clinical_reporting'], '', {
              'dest': 'clinical_reporting',
              'help': 'used to generate some annotations by GATK',
-             'action': 'set_true',
+             'action': 'store_true',
              'default': False}),
         ],
         required=required)

@@ -27,17 +27,20 @@ def common_main(pipeline_name, extra_opts, required):
     run_config_name = 'run_info_' + pipeline_name + '.yaml'
 
     parser = OptionParser(
-        usage='python ' + __file__ +
-              ' [system_info.yaml] [' + run_config_name + '] ' +
-              ' '.join(args[0] + example for args, example, _ in extra_opts) +
-              ' [--output_dir dir]\n'
-
-              '    or python ' + __file__ +
-              ' [system_info.yaml] ' + run_config_name +
-              '' +
-              'Orther options:' +
-              '-t <thread num>  number of threads to run GATK' +
-              '-w               do not reuse intermediate files from previous run')
+        usage=(
+            'python ' + __file__ +
+            ' [system_info.yaml] [' + run_config_name + '] ' +
+            ' '.join(args[0] + example for args, example, _ in extra_opts) +
+            ' [--output_dir dir]\n'
+            ''
+            '    or python ' + __file__ +
+            ' [system_info.yaml] ' + run_config_name +
+            '' +
+            'Orther options:' +
+            '-t <thread num>  number of threads to run GATK' +
+            '-w               do not reuse intermediate files from previous run'
+        )
+    )
 
     for args, _, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
