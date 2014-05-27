@@ -65,12 +65,12 @@ do
 
     ### VarAnn ###
     mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var ${sample}${vcf_suffix}.filtered.vcf --bam "${sample}"-ready.bam --nt=4 -o annotation"
+    cmdline="python /group/ngs/src/varannotate.py --var ${sample}${vcf_suffix}.filtered.vcf --bam "${sample}"-ready.bam -o annotation"
     run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log InDelFilter_${sample}
 
     ### VarQC ###
     mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var ${sample}${vcf_suffix}.filtered.vcf --nt=4 -o varQC"
+    cmdline="python /group/ngs/src/varqc.py --var ${sample}${vcf_suffix}.filtered.vcf -o varQC"
     run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log InDelFilter_${sample}
 
     if [ ! -z "${qc_jobids}" ]; then
