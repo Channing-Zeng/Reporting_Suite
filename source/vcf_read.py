@@ -28,7 +28,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
             common_cnf[key] = expanduser(options[key])
             details = [common_cnf]
     if not details:
-        sys.exit('Please, provide inputs ' + ' '.join(inputs) +
+        sys.exit('Please, provide input ' + ', '.join(inputs) +
                  ' in command line or in run info yaml config.')
 
     all_samples = OrderedDict()
