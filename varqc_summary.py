@@ -28,9 +28,21 @@ def main(argv):  # dir samples.txt report_basedir
     with open(samples_fname, 'r') as f:
         for line in f:
             sample_name = line.strip()
+
             report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
+            print(report_fpath)
             if isfile(report_fpath):
                 report_fpaths.append(report_fpath)
+            else:
+                print(report_fpath + ' does not exist, checking another')
+                report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_suffix)
+                print(report_fpath)
+                if isfile(report_fpath):
+                    report_fpaths.append(report_fpath)
+                else:
+                    print(report_fpath + ' does not exist! skipping')
+            print('')
+
     summarize_qc(report_fpaths, summary_report_fpath, report_suffix)
 
 
