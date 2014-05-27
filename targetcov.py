@@ -2,9 +2,7 @@
 
 from __future__ import print_function
 import sys
-
 import os
-
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -12,25 +10,15 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
-    add_genes_cov_analytics
+from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report
+
 
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
 
 #TODO
-# check on the input file format
-# format result and calculation to the 2 decimal places on the header report    .00
-# multi - sample report                                                         header only
-#       sample1 sample2
-#number 2       3
-#bases  10      20
-
-# check if samtools and bedtools exist
 # log file
-# yaml
 # take folder name as a sample name (first column on the report)
-# give user an option to select type of the report to run ????
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
 from source.utils import verify_file, critical, step_greetings

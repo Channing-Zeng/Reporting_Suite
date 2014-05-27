@@ -1,4 +1,4 @@
 #!/bin/bash
 ../varannotate.py \
-    test/system_info.yaml test/run_info_annotation.yaml -t 10 \
-    --var test/data/sample1.vcf --bam test/data/sample1.bam -o test/results_anno
+    system_info.yaml run_info_annotation.yaml -t 10 \
+    --var data/sample1.vcf --bam data/sample1.bam -o results_anno
