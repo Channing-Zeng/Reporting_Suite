@@ -363,7 +363,7 @@ class Region():
         self.size = size
         self.feature = feature
         self.extra_fields = extra_fields
-        self.bases_by_depth = dict()
+        self.bases_by_depth = dict(int)
 
     def get_size(self):
         if self.size:

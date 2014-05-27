@@ -5,13 +5,19 @@ bcbio_final_dir=$2
 samples=$3
 vcf_suffix=$4
 
-if [ ! -z "${samples}" ]; then
+if [ -z "${samples}" ]; then
     samples="./samples.txt"
 fi
 
-if [ ! -z "${vcf_suffix}" ]; then
+if [ -z "${vcf_suffix}" ]; then
     vcf_suffix="-mutect"
 fi
+
+echo "Using BED file: "${bed}
+echo "Running on BCBIO final dir: "${bcbio_final_dir}
+echo "Using the list of samples: "${samples}
+echo "Using VCFs with the suffix "${vcf_suffix}
+echo ""
 
 #filter_indels=false
 #if [[ $* == *--filter-indels* ]]; then
@@ -34,13 +40,18 @@ function run_on_grid {
         rm ${output_file}
     fi
 
-    runner_script=${output_dir}/runner.sh
-
     echo ${cmdline}
-    echo "#!/bin/bash" > ${runner_script}
+
+    cwd=`pwd`
+    echo $cwd
+    cd ${output_dir}
+    runner_script=${name}.sh
+    echo "#!/bin/bash" > "${runner_script}"
     echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> ${runner_script}
     echo ${cmdline} >> ${runner_script}
     chmod +x ${runner_script}
+    cd ${cwd}
+    runner_script=${output_dir}/${runner_script}
 
     if [ ! -z "${hold_jid}" ]; then
         hold_jid="-hold_jid "${hold_jid}
@@ -61,13 +72,13 @@ for sample in `cat ${samples}`
 do
     echo "cd to ${bcbio_final_dir}/${sample}"
     cd ${bcbio_final_dir}/${sample}
+    echo ""
 
     rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
     if [ ! -f ${sample}${vcf_suffix}.vcf ]; then
         gunzip -c ${sample}${vcf_suffix}.vcf.gz > ${sample}${vcf_suffix}.vcf
     fi
-
 
     ### InDelFilter ###
     cmdline="python /group/ngs/bin/InDelFilter.py ${sample}${vcf_suffix}.vcf > ${sample}${vcf_suffix}.filtered.vcf"
@@ -110,12 +121,14 @@ do
     mkdir QualiMap
     cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
+
+    cd ..
 done
 
 ## VarQC summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${vcf_suffix}"
-run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
+run_on_grid "${cmdline}" VarQCSummary . ../work/log_varqc_summary 1 ${qc_jobids}
 
 ## Target coverage summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary ${bcbio_final_dir} ../work/log_targetcov_summary 1 ${targetcov_jobids}
+run_on_grid "${cmdline}" targetSeqSummary . ../work/log_targetcov_summary 1 ${targetcov_jobids}
