@@ -57,7 +57,7 @@ do
     echo "cd to ${bcbio_final_dir}/${sample}"
     cd ${bcbio_final_dir}/${sample}
 
-    # rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+#    rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
     if [ ! -f ${sample}${vcf_suffix}.vcf ]; then
         gunzip -c ${sample}${vcf_suffix}.vcf.gz > ${sample}${vcf_suffix}.vcf
@@ -107,8 +107,10 @@ done
 
 ## VarQC summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC"
-run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
+run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1
+# ${qc_jobids}
 
 ## Target coverage summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary ${bcbio_final_dir} ../work/log_targetcov_summary 1 ${targetcov_jobids}
+run_on_grid "${cmdline}" targetSeqSummary ${bcbio_final_dir} ../work/log_targetcov_summary 1
+# ${targetcov_jobids}
