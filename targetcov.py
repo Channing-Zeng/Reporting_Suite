@@ -12,7 +12,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, intersect_bed, get_target_depth_analytics, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
+from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
     add_genes_cov_analytics
 
 #downlad hg19.genome
@@ -132,23 +132,21 @@ def main(args):
 
     if 'summary' or 'amplicons' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')
-        bases_per_depth_per_amplicon, max_depth, total_bed_size = \
-            get_target_depth_analytics(cnf, sample_name, capture_bed, bam, 'Amplicon', depth_threshs)
+        amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, capture_bed, bam)
 
         if 'summary' in options['reports']:
             step_greetings('Target coverage summary report')
-            summary_report_fpath = join(output_dir, sample_name + '.summary.report')
+            summary_report_fpath = join(output_dir, sample_name + '.targetseq.summary.txt')
             run_header_report(
                 cnf, summary_report_fpath, output_dir, work_dir,
                 capture_bed, bam, chr_len_fpath,
                 depth_threshs, padding,
-                bases_per_depth_per_amplicon[-1], max_depth, total_bed_size)
+                combined_region, max_depth, total_bed_size)
 
         if 'amplicons' in options['reports']:
             step_greetings('Coverage report for the input BED file regions')
-            amplicons_report_fpath = join(output_dir, sample_name + '.amplicons.report')
-            run_amplicons_cov_report(cnf, amplicons_report_fpath, depth_threshs,
-                                     bases_per_depth_per_amplicon[:-1])
+            amplicons_report_fpath = join(output_dir, sample_name + '.targetseq.details.capture.txt')
+            run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
 
         if 'exons' in options['reports']:
             if not genes_bed or not exons_bed:
@@ -165,14 +163,10 @@ def main(args):
                 bed = intersect_bed(cnf, exons_bed, bed, work_dir)
 
                 log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-                bases_per_depth_per_exon, _, _ = get_target_depth_analytics(
-                    cnf, sample_name, bed, bam, 'Exon', depth_threshs)
+                exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
 
-                bases_per_depth_per_exon_and_gene = add_genes_cov_analytics(bases_per_depth_per_exon[:-1])
-
-                exons_report_fpath = join(output_dir, sample_name + '.exons.report')
-                run_exons_cov_report(cnf, exons_report_fpath, depth_threshs,
-                                     bases_per_depth_per_exon_and_gene)
+                exons_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
+                run_exons_cov_report(cnf, exons_report_fpath, sample_name, depth_threshs, exons)
 
     rmtree(join(output_dir, 'tx'))
 

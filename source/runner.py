@@ -36,14 +36,16 @@ def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
                     sample_cnf['verbose'] = False
 
                 results = Parallel(n_jobs=len(sample_cnfs_by_name)) \
-                    (delayed(run_one)(sample_cnf, process_one, finalize_one,
+                    (delayed(run_one)(sample_cnf, required_inputs, optional_inputs,
+                                      process_one, finalize_one,
                                       multiple_samples=True)
                         for sample_name, sample_cnf in sample_cnfs_by_name.items())
         else:
             results = []
             for sample_name, sample_cnf in sample_cnfs_by_name.items():
                 results.append(
-                    run_one(sample_cnf, process_one, finalize_one,
+                    run_one(sample_cnf, required_inputs, optional_inputs,
+                            process_one, finalize_one,
                             multiple_samples=True))
 
         if sample_cnfs_by_name:

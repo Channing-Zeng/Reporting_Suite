@@ -32,7 +32,7 @@ def main(args):
     if 'quality_control' in config:
         qc.check_quality_control_config(config)
 
-    sample_cnfs_by_name = read_samples_info_and_split(config, options)
+    sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
 
     try:
         run_all(config, sample_cnfs_by_name, required, optional,

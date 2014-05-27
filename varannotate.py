@@ -43,7 +43,7 @@ def main(args):
     if output_dir:
         print 'Saving to ' + output_dir
     
-    sample_cnfs_by_name = read_samples_info_and_split(config, options)
+    sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
 
     try:
         run_all(config, sample_cnfs_by_name, required, optional,

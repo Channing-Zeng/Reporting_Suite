@@ -122,7 +122,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
                 if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
                     if i == 0:
-                        out.write('Sample')
+                        out.write('SAMPLE')
                     else:
                         out.write(cnf['name'])
                     out.write('\t')
@@ -153,7 +153,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map, work_dir):
         step_greetings(cnf, 'Renaming fields.')
 
     with open(inp_tsv_fpath) as f:
-        first_line = f.readline()[1:]
+        first_line = f.readline()
     fields = first_line.split()
     new_fields = [field_map.get(f, f) for f in fields]
     new_first_line = '\t'.join(new_fields)

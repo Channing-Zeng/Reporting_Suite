@@ -1,2 +1,0 @@
-/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf	59be2a8e683453d2e7c16c6c2b7a879c
-/Users/vladsaveliev/vagrant/ngs_analysis/test/data/sample1.bam	33a952f3501581f2fd57b605394b979a

@@ -1,47 +1,49 @@
-/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmp7_zBLx/sample1.vcf.gz.tbi
+/usr/local/bin/bgzip -c /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpfSm4th/sample1.vcf.gz
+Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpAW3v4E/sample1.vcf.gz.tbi
 Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz.tbi
 
 ----------------------------------------------------------------------
-2014-05-26 16:13:45  Quality control reports
+2014-05-27 18:03:25  Quality control reports
 ----------------------------------------------------------------------
-java -Xms750m -Xmx2500m  -jar /usr/local/share/java/gatk/GenomeAnalysisTK.jar -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpvDaqcx/sample1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-   INFO  16:13:48,435 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:13:48,436 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.1-1-g07a4bf8, Compiled 2014/03/18 06:09:21
-   INFO  16:13:48,437 HelpFormatter - Copyright (c) 2010 The Broad Institute
-   INFO  16:13:48,437 HelpFormatter - For support and documentation go to http://www.broadinstitute.org/gatk
-   INFO  16:13:48,440 HelpFormatter - Program Args: -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpvDaqcx/sample1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-   INFO  16:13:48,443 HelpFormatter - Executing as vladsaveliev@Vladislavs-MacBook-Air-2.local on Mac OS X 10.9.2 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.7.0_55-b13.
-   INFO  16:13:48,444 HelpFormatter - Date/Time: 2014/05/26 16:13:48
-   INFO  16:13:48,444 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:13:48,444 HelpFormatter - --------------------------------------------------------------------------------
-   INFO  16:13:48,925 GenomeAnalysisEngine - Strictness is SILENT
-   INFO  16:13:48,983 GenomeAnalysisEngine - Downsampling Settings: No downsampling
-   INFO  16:13:49,038 RMDTrackBuilder - Writing Tribble index to disk for file /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.idx
-   INFO  16:13:49,068 MicroScheduler - Running the GATK in parallel mode with 10 total threads, 1 CPU thread(s) for each of 10 data thread(s), of 4 processors available on this machine
-   WARN  16:13:49,068 MicroScheduler - Number of requested GATK threads 10 is more than the number of available processors on this machine 4
-   INFO  16:13:49,111 GenomeAnalysisEngine - Preparing for traversal
-   INFO  16:13:49,112 GenomeAnalysisEngine - Done preparing for traversal
-   INFO  16:13:49,112 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
-   INFO  16:13:49,112 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
-   INFO  16:13:49,134 VariantEval - Creating 6 combinatorial stratification states
-   INFO  16:13:49,384 VariantEval - Finalizing variant report
-   INFO  16:13:49,688 ProgressMeter -            done        7.22e+02    0.0 s       13.3 m     45.7%         0.0 s     0.0 s
-   INFO  16:13:49,689 ProgressMeter - Total runtime 0.58 secs, 0.01 min, 0.00 hours
-   INFO  16:13:51,484 GATKRunReport - Uploaded run statistics report to AWS S3
+java -Xms750m -Xmx2500m  -jar /usr/local/share/java/gatk/GenomeAnalysisTK.jar -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpv2jmZW/sample1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+   INFO  18:03:28,491 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  18:03:28,493 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.1-1-g07a4bf8, Compiled 2014/03/18 06:09:21
+   INFO  18:03:28,493 HelpFormatter - Copyright (c) 2010 The Broad Institute
+   INFO  18:03:28,493 HelpFormatter - For support and documentation go to http://www.broadinstitute.org/gatk
+   INFO  18:03:28,496 HelpFormatter - Program Args: -dt NONE -nt 10 -R /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa -T VariantEval --eval:tmp /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf -o /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpv2jmZW/sample1_gatk.report -D /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf -comp:cosmic /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+   INFO  18:03:28,501 HelpFormatter - Executing as vladsaveliev@Vladislavs-MacBook-Air-2.local on Mac OS X 10.9.2 x86_64; Java HotSpot(TM) 64-Bit Server VM 1.7.0_55-b13.
+   INFO  18:03:28,502 HelpFormatter - Date/Time: 2014/05/27 18:03:28
+   INFO  18:03:28,502 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  18:03:28,502 HelpFormatter - --------------------------------------------------------------------------------
+   INFO  18:03:29,017 GenomeAnalysisEngine - Strictness is SILENT
+   INFO  18:03:29,080 GenomeAnalysisEngine - Downsampling Settings: No downsampling
+   INFO  18:03:29,162 RMDTrackBuilder - Writing Tribble index to disk for file /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.idx
+   INFO  18:03:29,200 MicroScheduler - Running the GATK in parallel mode with 10 total threads, 1 CPU thread(s) for each of 10 data thread(s), of 4 processors available on this machine
+   WARN  18:03:29,200 MicroScheduler - Number of requested GATK threads 10 is more than the number of available processors on this machine 4
+   INFO  18:03:29,253 GenomeAnalysisEngine - Preparing for traversal
+   INFO  18:03:29,254 GenomeAnalysisEngine - Done preparing for traversal
+   INFO  18:03:29,254 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
+   INFO  18:03:29,255 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
+   INFO  18:03:29,279 VariantEval - Creating 6 combinatorial stratification states
+   INFO  18:03:29,537 VariantEval - Finalizing variant report
+   INFO  18:03:29,941 ProgressMeter -            done        7.22e+02    0.0 s       15.8 m     45.7%         0.0 s     0.0 s
+   INFO  18:03:29,942 ProgressMeter - Total runtime 0.69 secs, 0.01 min, 0.00 hours
+   INFO  18:03:31,535 GATKRunReport - Uploaded run statistics report to AWS S3
 Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_gatk.report
 
 ----------------------------------------------------------------------
-2014-05-26 16:13:51  Quality control basic plots
+2014-05-27 18:03:31  Quality control basic plots
 ----------------------------------------------------------------------
-/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpqNZjEd/sample1.vcf.gz.tbi
+/usr/local/bin/tabix -f -p vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpJfRsdt/sample1.vcf.gz.tbi
 Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz.tbi
-~/bin/bcftools/bcftools stats /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpqEcmJg/sample1_bcftools.report
+~/bin/bcftools/bcftools stats /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/tx/tmpXY_Ye6/sample1_bcftools.report
 Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_bcftools.report
    Parsing vcfstats output: /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_bcftools.report
    Plotting graphs: python /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/plot.py
 
 ----------------------------------------------------------------------
-2014-05-26 16:13:52  Quality control variant distribution plots
+2014-05-27 18:03:32  Quality control variant distribution plots
 ----------------------------------------------------------------------
 Chromosomes without variants: chr1, chr2, chr3, chr4, chr5, chr6, chr7, chr8, chr9, chr10, chr11, chr12, chr13, chr14, chr15, chr16, chr17, chr18, chr19, chr20, chr21, chrX, chrY
 
