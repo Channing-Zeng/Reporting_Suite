@@ -23,7 +23,7 @@ def main(argv):  # dir samples.txt report_basedir
     samples_fname = argv[2]
     report_basedir = argv[3]
     report_suffix='_qc.report'
-    summary_report_fpath=join(out_dirpath, 'summary' + report_suffix)
+    summary_report_fpath=join(out_dirpath, 'varqc_summary_report.txt')
     report_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:

@@ -22,8 +22,8 @@ def main(argv):  # dir samples.txt report_basedir
     out_dirpath = argv[1]
     samples_fname = argv[2]
     report_basedir = argv[3]
-    report_suffix='.targetseq.summary.txt'
-    summary_report_fpath=join(out_dirpath, 'summary' + report_suffix)
+    report_suffix = '.targetseq.summary.txt'
+    summary_report_fpath=join(out_dirpath, 'targetcov_summary_report.txt')
     report_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:
