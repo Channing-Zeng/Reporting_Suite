@@ -7,16 +7,16 @@ novelty_header = 'Novelty'
 sample_header = 'Sample name:'
 
 
-def summarize_qc(input_reports, output_summary_fpath):
+def summarize_qc(input_report_fpaths, output_summary_fpath):
     full_report = [['Sample']]
-    for report in input_reports:
+    for report in input_report_fpaths:
         sample_name, report_dict = _parse_report(report)
         _add_to_full_report(full_report, sample_name, report_dict)
     _print_full_report(full_report, output_summary_fpath)
 
 
-def _parse_report(report_filename):
-    report_handler = open(report_filename, 'r')
+def _parse_report(report_fpath):
+    report_handler = open(report_fpath, 'r')
     sample_name = ''
     report_dict = OrderedDict()
     # parsing Sample name and Database columns
@@ -77,3 +77,5 @@ def _print_full_report(report, report_filename):
                             for col_width, value in zip(col_widths, row))
                   + "\r\n")
     out.close()
+
+

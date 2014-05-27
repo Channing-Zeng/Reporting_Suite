@@ -82,7 +82,7 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
 
     log('Getting number of mapped reads on padded target...')
     v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam)
-    append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ, '%'))
+    append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ))
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     append_stat(format_decimal('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target, '%'))
@@ -97,7 +97,7 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
     append_stat(format_decimal('Average target coverage depth', avg_depth))
     append_stat(format_decimal('Std. dev. of target coverage depth', std_dev))
     append_stat(format_integer('Maximum target coverage depth', max_depth))
-    append_stat(format_decimal('Percentage thing 20% of avarage depth in a region',
+    append_stat(format_decimal('Percentage of target within 20% of mean depth',
                                percent_within_normal, '%'))
 
     # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
@@ -136,17 +136,20 @@ def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regi
 
 
 def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
+    extra_fields = ['Gene', 'Transcript']
+
     for region in regions:
         region.feature = 'Exon'
         region.sample = sample_name
+        region.extra_fields = region.extra_fields[:len(extra_fields)][::-1]
 
-    exons_and_genes = add_genes_cov_analytics(regions)
+    exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0)
 
     return run_cov_report(cnf, report_fpath, depth_threshs,
-        exons_and_genes, extra_fields=['Transcript', 'Gene'])
+        exons_and_genes, extra_fields=extra_fields)
 
 
-def add_genes_cov_analytics(exons):
+def add_genes_cov_analytics(exons, gene_pos=0):
     exons_and_genes = []
 
     current_gene = None
@@ -159,19 +162,21 @@ def add_genes_cov_analytics(exons):
             gene.bases_by_depth[depth] += bases
 
     for exon in exons:
-        if len(exon.extra_fields) < 2:
+        if len(exon.extra_fields) <= gene_pos:
             sys.exit('no gene info in exons record: ' + str(exon))
 
-        gene_name = exon.extra_fields[1]
+        gene_name = exon.extra_fields[gene_pos]
         if gene_name != current_gene_name:
             if current_gene:
                 exons_and_genes.append(current_gene)
 
             current_gene_name = gene_name
+            extra_fields = ['-'] * len(exon.extra_fields)
+            extra_fields[gene_pos] = gene_name
             current_gene = Region(
                 sample=exon.sample, chrom=exon.chrom,
                 start=exon.start, end=0, size=0, feature='Gene',
-                extra_fields=['-', gene_name])
+                extra_fields=extra_fields)
             current_gene.bases_by_depth = defaultdict(int)
 
         update_gene(current_gene, exon)
@@ -398,8 +403,11 @@ class Region():
             for depth, bases
             in self.bases_by_depth.items()
             if math.fabs(avg_depth - depth) <= 0.2 * avg_depth)
-        percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
-            if self.get_size() else None
+        if avg_depth == 0:
+            percent_within_normal = 0.0
+        else:
+            percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
+                if self.get_size() else None
 
         return bases_within_threshs, avg_depth, std_dev, percent_within_normal
 
@@ -485,6 +493,7 @@ def bps_by_depth(depth_vals, depth_thresholds):
 
 
 def format_integer(name, value, unit=''):
+    value = int(value)
     if value is not None:
         return '{name}: {value:,}{unit}'.format(**locals())
     else:
