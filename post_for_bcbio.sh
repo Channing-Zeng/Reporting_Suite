@@ -31,7 +31,7 @@ function run_on_grid {
 
     echo ${cmdline}
     echo "#!/bin/bash" > ${runner_script}
-    echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load be${cmdline}e}module load samtools;" >> ${runner_script}
+    echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> ${runner_script}
     echo ${cmdline} >> ${runner_script}
     chmod +x ${runner_script}
 
@@ -91,7 +91,7 @@ do
     fi
 
     ### NGSCat ###
-    mdkir NGSCat
+    mkdir NGSCat
     cmdline="python /group/ngs/src/ngscat/ngscat.py --bams ../${sample}-ready.bam --bed "${bed}" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
     run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log
 
