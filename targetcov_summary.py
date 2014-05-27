@@ -29,8 +29,12 @@ def main(argv):  # dir samples.txt report_basedir
         for line in f:
             sample_name = line.strip()
             report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
+            print(report_fpath)
             if isfile(report_fpath):
                 report_fpaths.append(report_fpath)
+            else:
+                print(report_fpath + ' does not exist!')
+
     summarize_cov(report_fpaths, summary_report_fpath, report_suffix)
 
 
