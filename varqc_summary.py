@@ -7,7 +7,7 @@ from optparse import OptionParser
 from os.path import join
 from genericpath import isfile
 from source.utils import critical
-from source.summarize import summarize_cov
+from source.summarize import summarize_qc
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -22,7 +22,7 @@ def main(argv):  # dir samples.txt report_basedir
     out_dirpath = argv[1]
     samples_fname = argv[2]
     report_basedir = argv[3]
-    report_suffix='.targetseq.summary.txt'
+    report_suffix='_qc.report'
     summary_report_fpath=join(out_dirpath, 'summary' + report_suffix)
     report_fpaths = []
     with open(samples_fname, 'r') as f:
@@ -31,7 +31,7 @@ def main(argv):  # dir samples.txt report_basedir
             report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
             if isfile(report_fpath):
                 report_fpaths.append(report_fpath)
-    summarize_cov(report_fpaths, summary_report_fpath, report_suffix)
+    summarize_qc(report_fpaths, summary_report_fpath, report_suffix)
 
 
 if __name__ == '__main__':
