@@ -16,7 +16,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 
 def main(argv):  # dir samples.txt report_basedir
-    if len(argv) != 4:
+    if len(argv) < 4:
         critical('Error: provide bcbio dir, list of samples, and report basedir (e.g. VarQC)')
 
     out_dirpath = argv[1]

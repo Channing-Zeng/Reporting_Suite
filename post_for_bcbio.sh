@@ -106,7 +106,7 @@ do
 done
 
 ## VarQC summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${vcf_suffix}.filtered"
 run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
 
 ## Target coverage summary ##

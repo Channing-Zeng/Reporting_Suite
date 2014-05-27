@@ -16,12 +16,13 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 
 def main(argv):  # dir samples.txt report_basedir
-    if len(argv) != 4:
+    if len(argv) < 4:
         critical('Error: provide bcbio dir, list of samples, and report basedir (e.g. VarQC)')
 
     out_dirpath = argv[1]
     samples_fname = argv[2]
     report_basedir = argv[3]
+    vcfsuffix = argv[4]
     report_suffix='_qc.report'
     summary_report_fpath=join(out_dirpath, 'varqc_summary_report.txt')
     report_fpaths = []
@@ -35,7 +36,7 @@ def main(argv):  # dir samples.txt report_basedir
                 report_fpaths.append(report_fpath)
             else:
                 print(report_fpath + ' does not exist, checking another')
-                report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_suffix)
+                report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + vcfsuffix + report_suffix)
                 print(report_fpath)
                 if isfile(report_fpath):
                     report_fpaths.append(report_fpath)
