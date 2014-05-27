@@ -61,7 +61,7 @@ do
 
     ### InDelFilter ###
     cmdline="python /group/ngs/bin/InDelFilter.py ${sample}${vcf_suffix}.vcf > ${sample}${vcf_suffix}.filtered.vcf"
-    run_on_grid "${cmdline}" InDelFilter_${sample} ${sample}${vcf_suffix}.filtered.vcf
+    run_on_grid "${cmdline}" InDelFilter_${sample} . ${sample}${vcf_suffix}.filtered.vcf
 
     ### VarAnn ###
     mkdir annotation
