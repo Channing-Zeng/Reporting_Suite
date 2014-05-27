@@ -105,8 +105,10 @@ do
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
 done
 
-cmdline="python varqc_summary.py $bcbio_final_dir $samples varQC"
+## VarQC summary ##
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC"
 run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
 
-cmdline="python targetcov_summary.py $bcbio_final_dir $samples targetSeq"
+## Target coverage summary ##
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
 run_on_grid "${cmdline}" targetSeqSummary ${bcbio_final_dir} ../work/log_targetcov_summary 1 ${targetcov_jobids}
