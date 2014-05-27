@@ -13,6 +13,11 @@ if [ ! -z "${vcf_suffix}" ]; then
     vcf_suffix="-mutect"
 fi
 
+#filter_indels=false
+#if [[ $* == *--filter-indels* ]]; then
+#    filter_indels=true
+#fi
+
 function run_on_grid {
     cmdline=$1
     name=$2
@@ -63,18 +68,20 @@ do
         gunzip -c ${sample}${vcf_suffix}.vcf.gz > ${sample}${vcf_suffix}.vcf
     fi
 
+
     ### InDelFilter ###
     cmdline="python /group/ngs/bin/InDelFilter.py ${sample}${vcf_suffix}.vcf > ${sample}${vcf_suffix}.filtered.vcf"
     run_on_grid "${cmdline}" InDelFilter_${sample} . ${sample}${vcf_suffix}.filtered.vcf 1
+    vcf_suffix=${vcf_suffix}.filtered
 
     ### VarAnn ###
     mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var ${sample}${vcf_suffix}.filtered.vcf --bam "${sample}"-ready.bam -o annotation"
+    cmdline="python /group/ngs/src/varannotate.py --var ${sample}${vcf_suffix}.vcf --bam "${sample}"-ready.bam -o annotation"
     run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log 1 InDelFilter_${sample}
 
     ### VarQC ###
     mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var ${sample}${vcf_suffix}.filtered.vcf -o varQC"
+    cmdline="python /group/ngs/src/varqc.py --var ${sample}${vcf_suffix}.vcf -o varQC"
     run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log 1 InDelFilter_${sample}
 
     if [ ! -z "${qc_jobids}" ]; then
@@ -106,7 +113,7 @@ do
 done
 
 ## VarQC summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${vcf_suffix}.filtered"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${vcf_suffix}"
 run_on_grid "${cmdline}" VarQCSummary ${bcbio_final_dir} ../work/log_varqc_summary 1 ${qc_jobids}
 
 ## Target coverage summary ##
