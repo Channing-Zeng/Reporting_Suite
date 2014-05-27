@@ -23,7 +23,10 @@ function run_on_grid {
     #         output="log"
     # fi
     # rm log
-    rm ${output_file}
+    if [ -z "${output_file}" ]; then
+        rm ${output_file}
+    fi
+    
     echo ${cmdline}
     echo "#!/bin/bash" > cmd.sh
     echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load be${cmdline}e}module load samtools;" >> cmd.sh
