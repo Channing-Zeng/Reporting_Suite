@@ -23,25 +23,30 @@ function run_on_grid {
     #         output="log"
     # fi
     # rm log
-    if [ -z "${output_file}" ]; then
+    if [ -f "${output_file}" ]; then
         rm ${output_file}
-    fi
-    
-    echo ${cmdline}
-    echo "#!/bin/bash" > cmd.sh
-    echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load be${cmdline}e}module load samtools;" >> cmd.sh
-    echo ${cmdline} >> cmd.sh
-    chmod +x cmd.sh
-
-    if [ -z "${hold_jid}" ]; then
-        hold_jid=" -hold_jid "${hold_jid}
     fi
 
     runner_script=${output_dir}/runner.sh
-    qsub_command="qsub ${hold_jid} -pe smp 8 -S /bin/bash -cwd -q batch.q -b y -o ${output_file} -e log -N ${name} bash ${runner_script}/cmd.sh"
+
+    echo ${cmdline}
+    echo "#!/bin/bash" > ${runner_script}
+    echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load be${cmdline}e}module load samtools;" >> ${runner_script}
+    echo ${cmdline} >> ${runner_script}
+    chmod +x ${runner_script}
+
+    if [ ! -z "${hold_jid}" ]; then
+        hold_jid=" -hold_jid "${hold_jid}
+    fi
+
+    qsub_command="qsub ${hold_jid} -pe smp 8 -S /bin/bash -cwd -q batch.q -b y -o ${output_file} -e log -N ${name} bash ${runner_script}"
     echo "${qsub_command}"
     eval "${qsub_command}"
+    echo ""
 }
+
+qc_jobids=""
+targetcov_jobids=""
 
 for sample in `cat ${samples}`
 do
@@ -50,8 +55,7 @@ do
 
     rm -rf ${sample}${vcf_suffix}.filtered.vcf annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
-    if [ ! -f ${sample}${vcf_suffix}.vcf ];
-    then
+    if [ ! -f ${sample}${vcf_suffix}.vcf ]; then
         gunzip -c ${sample}${vcf_suffix}.vcf.gz > ${sample}${vcf_suffix}.vcf
     fi
 
@@ -69,10 +73,22 @@ do
     cmdline="python /group/ngs/src/varqc.py --var ../${sample}${vcf_suffix}.filtered.vcf --nt=4 -o varQC"
     run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log InDelFilter_${sample}
 
+    if [ ! -z "${qc_jobids}" ]; then
+        qc_jobids=${qc_jobids},VarQC_${sample}
+    else
+        qc_jobids=VarQC_${sample}
+    fi
+
     ### targetCov ###
     mkdir targetSeq
     cmdline="python /group/ngs/src/targetcov.py --bam ../${sample}-ready.bam --bed "${bed}" --nt=4 -o targetSeq"
     run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log
+
+    if [ ! -z "${targetcov_jobids}" ]; then
+        targetcov_jobids=${targetcov_jobids},targetSeq_${sample}
+    else
+        targetcov_jobids=targetSeq_${sample}
+    fi
 
     ### NGSCat ###
     mdkir NGSCat
@@ -85,4 +101,8 @@ do
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log
 done
 
-qc_summary=qc_summary_report.txt
+cmdline="python varqc_summary.py $finalDir $samples varQC"
+run_on_grid "${cmdline}" VarQCSummary ${finalDir} log ${qc_jobids}
+
+cmdline="python targetcov_summary.py $finalDir $samples targetSeq"
+run_on_grid "${cmdline}" targetSeqSummary ${finalDir} log ${targetcov_jobids}
