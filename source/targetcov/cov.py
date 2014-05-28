@@ -119,7 +119,8 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
     with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
         for l in stats:
             text, val = l.rsplit(':', 1)
-            spaces = ' ' * (max_len - len(text) + 1)
+            # spaces = ' ' * (max_len - len(text) + 1)
+            spaces = '\t'
             out.write(text + spaces + val + '\n')
 
     log('')
