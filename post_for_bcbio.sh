@@ -49,6 +49,7 @@ function run_on_grid {
     echo "#!/bin/bash" > "${runner_script}"
     echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> ${runner_script}
     echo ${cmdline} >> ${runner_script}
+    echo "rm -- \"$0\"" >> ${runner_script}
     chmod +x ${runner_script}
     cd ${cwd}
     runner_script=${output_dir}/${runner_script}
@@ -62,13 +63,30 @@ function run_on_grid {
     eval "${qsub_command}"
     echo ""
 
-    rm ${runner_script}
+    # rm ${runner_script}
 }
 
 qc_jobids=""
 targetcov_jobids=""
 
 bed=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${bed}`
+
+
+bed_col_num=`awk '{print NF}' ${bed} | sort -nu | tail -n 1`
+if [ ${bed_col_num} -lt 5 ]; then
+    tmp_bed="/ngs/tmp/bed_fixed_for_qualimap.bed"
+    echo ${tmp_bed}
+
+    if [ ${bed_col_num} -lt 4 ]; then
+        awk 'NR==1 {v="+\t0"}{print $0,v}' ${bed} > ${tmp_bed}
+    else
+        awk 'NR==1 {v="0"}{print $0,v}' ${bed} > ${tmp_bed}
+    fi
+    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${tmp_bed}" -c -gd HUMAN"
+else
+    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
+fi
+
 
 for sample in `cat ${samples}`
 do
@@ -121,23 +139,7 @@ do
 
     ## QualiMap ##
     mkdir QualiMap
-    bed_col_num=`awk '{print NF}' ${bed} | sort -nu | tail -n 1`
-    echo ${bed_col_num}
-    if [ ${bed_col_num} -lt 5 ]; then
-        tmp_bed="_tmp_bed.bed"
-        echo ${tmp_bed}
-
-        if [ ${bed_col_num} -lt 4 ]; then
-            awk 'NR==1 {v="+\t0"}{print $0,v}' < ${bed} > ${tmp_bed}
-        else
-            awk 'NR==1 {v="0"}{print $0,v}' < ${bed} > ${tmp_bed}
-        fi
-        cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${tmp_bed}" -c -gd HUMAN"
-    else
-        cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
-    fi
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
-    rm ${tmp_bed}
 
     cd ..
 done
