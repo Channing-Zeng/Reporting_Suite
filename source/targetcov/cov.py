@@ -136,7 +136,7 @@ def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regi
 
 
 def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
-    extra_fields = ['Gene', 'Transcript']
+    extra_fields = ['Gene']
 
     for region in regions:
         region.feature = 'Exon'
@@ -410,12 +410,12 @@ class Region():
             bases
             for depth, bases
             in self.bases_by_depth.items()
-            if math.fabs(avg_depth - depth) <= 0.2 * avg_depth)
-        if avg_depth == 0:
-            percent_within_normal = 0.0
-        else:
-            percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
-                if self.get_size() else None
+            if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
+        # if avg_depth == 0:
+        #     percent_within_normal = 0.0
+        # else:
+        percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
+            if self.get_size() else None
 
         return bases_within_threshs, avg_depth, std_dev, percent_within_normal
 
