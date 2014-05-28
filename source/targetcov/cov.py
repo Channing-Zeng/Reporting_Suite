@@ -142,15 +142,16 @@ def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions)
     for region in regions:
         region.feature = 'Exon'
         region.sample = sample_name
-        region.extra_fields = region.extra_fields[:len(extra_fields)][::-1]
+        region.extra_fields = region.extra_fields[:2]
+        print (str(region.extra_fields))
 
-    exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0)
+    exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0, exon_num_pos=1)
 
     return run_cov_report(cnf, report_fpath, depth_threshs,
         exons_and_genes, extra_fields=extra_fields)
 
 
-def add_genes_cov_analytics(exons, gene_pos=0):
+def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
     exons_and_genes = []
 
     current_gene = None
@@ -182,6 +183,7 @@ def add_genes_cov_analytics(exons, gene_pos=0):
 
         update_gene(current_gene, exon)
         exons_and_genes.append(exon)
+        exon.extra_fields[0] = exon.extra_fields[exon_num_pos]
 
     return exons_and_genes
 
