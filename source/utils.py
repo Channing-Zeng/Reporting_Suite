@@ -8,6 +8,7 @@ import re
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, realpath
 from distutils.version import LooseVersion
 from datetime import datetime
+import traceback
 
 from source.transaction import file_transaction
 from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe
@@ -115,9 +116,11 @@ def safe_mkdir(dirpath, descriptive_name):
     if not exists(dirpath):
         try:
             os.mkdir(dirpath)
-        except OSError:
-            exit('Parent directory for ' + descriptive_name +
-                 ' ' + dirpath + ' probably does not exist.')
+        except OSError, e:
+            sys.exit(
+                'Error creating ' + descriptive_name + ' ' + dirpath +
+                ', probably parent directory does not exist.\nActual error is: ' +
+                str(traceback.format_exc()))
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,

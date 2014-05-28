@@ -49,6 +49,7 @@ function run_on_grid {
     runner_script=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${runner_name}`
     echo "#!/bin/bash" > "${runner_script}"
 #    echo "date" >> "${runner_script}"
+## TODO: module loads could print to output
     echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> "${runner_script}"
     echo ${cmdline} >> "${runner_script}"
 #    echo "date" >> "${runner_script}"
