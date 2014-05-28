@@ -16,7 +16,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
     annotated = False
     original_vcf = vcf_fpath
 
-    gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
+    # gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
 
     if cnf.get('ensemble'):
         vcf_fpath = filter_ensemble(cnf, vcf_fpath)

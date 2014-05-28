@@ -172,12 +172,12 @@ def bgzip_and_tabix_vcf(cnf, vcf_fpath):
     if bgzip and not file_exists(gzipped_fpath):
         step_greetings(cnf, 'Bgzip VCF')
         cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
-        call(cnf, cmdline, None, gzipped_fpath)
+        call(cnf, cmdline, None, gzipped_fpath, exit_on_error=False)
 
     if tabix and not file_exists(tbi_fpath):
         step_greetings(cnf, 'Tabix VCF')
         cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
-        call(cnf, cmdline, None, tbi_fpath)
+        call(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
 
     return gzipped_fpath, tbi_fpath
 
@@ -274,7 +274,7 @@ def get_tool_cmdline(sys_cnf, tool_name, extra_warning='', suppress_warn=False):
 
 def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
          stdout_to_outputfile=True, to_remove=None, output_is_file=True,
-         stdin=None):
+         stdin=None, exit_on_error=True):
     if output_fpath is None:
         output_is_file = False
 
@@ -333,8 +333,10 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                critical(cnf.get('log'), 'Command returned status ' + str(ret_code) +
-                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                err(cnf.get('log'), 'Command returned status ' + str(ret_code) +
+                    ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                if exit_on_error:
+                    sys.exit(1)
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
             if tx_out_fpath:
@@ -350,11 +352,12 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
 
-            res = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr,
-                                  stdin=open(stdin) if stdin else None)
+            ret_code = subprocess.call(
+                cmdline, shell=True, stdout=stdout, stderr=stderr,
+                stdin=open(stdin) if stdin else None)
 
             # PRINT STDOUT AND STDERR
-            if res != 0:
+            if ret_code != 0:
                 with open(err_fpath) as err_f:
                     info(cnf.get('log'), '')
                     info(cnf.get('log'), err_f.read())
@@ -362,8 +365,10 @@ def call(cnf, cmdline, input_fpath_to_remove, output_fpath,
                 for fpath in to_remove:
                     if fpath and isfile(fpath):
                         os.remove(fpath)
-                critical(cnf.get('log'), 'Command returned status ' + str(res) +
-                         ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                err(cnf.get('log'), 'Command returned status ' + str(ret_code) +
+                    ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                if exit_on_error:
+                    sys.exit(1)
             else:
                 if cnf.get('log') and err_fpath:
                     with open(err_fpath) as err_f, \

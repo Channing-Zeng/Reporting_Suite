@@ -25,8 +25,6 @@ def run_qc(cnf, qc_dir, vcf_fpath):
     if not isdir(qc_dir):
         mkdir(qc_dir)
 
-    gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
-
     if cnf.get('ensemble'):
         vcf_fpath = filter_ensemble(cnf, vcf_fpath)
 
