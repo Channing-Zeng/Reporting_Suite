@@ -146,12 +146,6 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
 
     genes_by_name = dict()
 
-    def update_gene(gene, exon):
-        gene.end = max(gene.end, exon.end)
-        gene.size += exon.get_size()
-        for depth, bases in exon.bases_by_depth.items():
-            gene.add_bases_for_depth(depth, bases)
-
     for exon in exons:
         if len(exon.extra_fields) <= gene_pos:
             sys.exit('no gene info in exons record: ' + str(exon))
@@ -167,7 +161,7 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
                 extra_fields=extra_fields)
             genes_by_name[gene_name] = gene
             exons_and_genes.append(gene)
-        update_gene(gene, exon)
+        gene.add_subregion(exon)
 
         exon.extra_fields[0] = exon.extra_fields[exon_num_pos]
         exons_and_genes.append(exon)
