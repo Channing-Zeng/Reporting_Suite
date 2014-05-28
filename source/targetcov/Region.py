@@ -4,8 +4,8 @@ import math
 
 class Region():
     def __init__(self, sample=None, chrom=None,
-                 start=None, end=None, size=None, extra_fields=list(),
-                 feature=None):
+                 start=None, end=None, size=None,
+                 extra_fields=list(), feature=None):
         self.sample = sample
         self.chrom = chrom
         self.start = start
@@ -14,8 +14,10 @@ class Region():
         self.feature = feature
         self.extra_fields = extra_fields
         self.bases_by_depth = defaultdict(int)
+        self.subregions = []
 
-    def update(self, subregion):
+    def add_subregion(self, subregion):
+        self.subregions += subregion
         self.size += subregion.get_size()
         self.end = max(subregion.end, self.end)
         for depth, bases in subregion.bases_by_depth.items():

@@ -26,6 +26,10 @@ def log(msg=''):
     print(timestamp() + msg)
 
 
+def err(msg=''):
+    print(timestamp() + msg, file=sys.stderr)
+
+
 def run_header_report(cnf, result_fpath, output_dir, work_dir,
                       bed, bam, chr_len_fpath,
                       depth_thresholds, padding,
@@ -119,61 +123,88 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
     return result_fpath
 
 
-def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
-    for region in regions:
-        region.feature = 'Amplicon'
-        region.sample = sample_name
-
-    return run_cov_report(cnf, report_fpath, depth_threshs, regions)
-
-
-def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
+def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
+                             amplicons, exons):
     extra_fields = ['Gene']
 
-    for region in regions:
+    for region in amplicons:
+        region.feature = 'Amplicon'
+        region.sample = sample_name
+        region.extra_fields = region.extra_fields[:1]
+    amplicons_and_genes = add_genes_cov_analytics(amplicons, gene_pos=0)
+    # TODO: detect amplicons which fit gene (use intersect bed?)
+
+    for region in exons:
         region.feature = 'Exon'
         region.sample = sample_name
-        region.extra_fields = region.extra_fields[:2]
+        region.extra_fields = region.extra_fields[:1]
+    exons_with_genes = add_genes_cov_analytics(exons, gene_pos=0)
 
-    exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0, exon_num_pos=1)
+    return build_regions_cov_report(
+        cnf, report_fpath, depth_threshs,
+        amplicons_and_genes + exons_with_genes,
+        extra_headers=extra_fields)
 
-    return run_cov_report(cnf, report_fpath, depth_threshs,
-                          exons_and_genes, extra_fields=extra_fields)
+# def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
+#     for region in regions:
+#         region.feature = 'Amplicon'
+#         region.sample = sample_name
+#
+#     # exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0)
+#
+#     return build_regions_cov_report(cnf, report_fpath, depth_threshs, regions)
+#
+#
+# def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
+#     extra_fields = ['Gene']
+#
+#     for region in regions:
+#         region.feature = 'Exon'
+#         region.sample = sample_name
+#         region.extra_fields = region.extra_fields[:1]
+#
+#     exons_with_genes = add_genes_cov_analytics(regions, gene_pos=0)
+#
+#     return build_regions_cov_report(
+#         cnf, report_fpath, depth_threshs,
+#         exons_with_genes, extra_headers=extra_fields)
 
 
-def add_genes_cov_analytics(exons, gene_pos=0,
-                            feature='Gene', exon_num_pos=1):
-    exons_and_genes = []
-
+def add_genes_cov_analytics(regions, gene_pos=0, feature='Gene-Exon'):
     genes_by_name = dict()
+    for region in regions:
+        if (len(region.extra_fields) <= gene_pos or
+            not region.extra_fields[gene_pos]):
+            err('No gene name info in the record: ' +
+                str(region) + '. Skipping.')
+            continue
 
-    for exon in exons:
-        if len(exon.extra_fields) <= gene_pos:
-            sys.exit('no gene info in exons record: ' + str(exon))
-
-        gene_name = exon.extra_fields[gene_pos]
+        gene_name = region.extra_fields[gene_pos]
         gene = genes_by_name.get(gene_name)
         if gene is None:
-            extra_fields = ['-'] * len(exon.extra_fields)
+            extra_fields = ['-'] * len(region.extra_fields)
             extra_fields[gene_pos] = gene_name
             gene = Region(
-                sample=exon.sample, chrom=exon.chrom,
-                start=exon.start, end=0, size=0, feature=feature,
-                extra_fields=extra_fields)
+                sample=region.sample, chrom=region.chrom,
+                start=region.start, end=region.end, size=0,
+                feature=feature, extra_fields=extra_fields)
             genes_by_name[gene_name] = gene
-            exons_and_genes.append(gene)
-        gene.update(exon)
 
-        exon.extra_fields[0] = exon.extra_fields[exon_num_pos]
-        exons_and_genes.append(exon)
+        gene.add_subregion(region)
 
-    return exons_and_genes
+    regions_with_genes = []
+    for gene in sorted(genes_by_name.values(), key=lambda g: (g.start, g.end)):
+        for subregion in gene.subregions:
+            regions_with_genes.append(subregion)
+        regions_with_genes.append(gene)
+
+    return regions_with_genes
 
 
-def run_cov_report(cnf, report_fpath, depth_threshs, regions, extra_fields=list()):
+def build_regions_cov_report(cnf, report_fpath, depth_threshs, regions, extra_headers=list()):
     first_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Feature']
     last_fields = ['Size', 'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
-    header_fields = first_fields + extra_fields + last_fields
+    header_fields = first_fields + extra_headers + last_fields
     header_fields += ['{}x'.format(thres) for thres in depth_threshs]
     max_lengths = map(len, header_fields)
 
@@ -187,7 +218,7 @@ def run_cov_report(cnf, report_fpath, depth_threshs, regions, extra_fields=list(
                                 region.start,
                                 region.end,
                                 region.feature])
-        line_fields += region.extra_fields[:len(extra_fields)]
+        line_fields += region.extra_fields[:len(extra_headers)]
         line_fields += [str(region.get_size())]
         line_fields += ['{0:.2f}'.format(avg_depth)]
         line_fields += ['{0:.2f}'.format(std_dev)]
@@ -226,6 +257,52 @@ def run_cov_report(cnf, report_fpath, depth_threshs, regions, extra_fields=list(
     return report_fpath
 
 
+def bedcoverage_hist_stats(cnf, bed, bam):
+    regions, max_depth, total_bed_size = [], 0, 0
+
+    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+
+    _total_regions_count = 0
+
+    for next_line in _call_and_open_stdout(cmdline).stdout:
+        if not next_line.strip() or next_line.startswith('#'):
+            continue
+
+        line_tokens = next_line.strip().split()
+        chrom = line_tokens[0]
+        start, end = None, None
+        depth, bases, region_size = map(int, line_tokens[-4:-1])
+
+        if next_line.startswith('all'):
+            max_depth = max(max_depth, depth)
+            total_bed_size += bases
+            extra_tokens = []
+        else:
+            start, end = map(int, line_tokens[1:3])
+            extra_tokens = line_tokens[3:-4]
+
+        line_region_key_tokens = (None, chrom, start, end)
+
+        if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
+            _total_regions_count += 1
+
+            region = Region(sample=None, chrom=chrom,
+                            start=start, end=end, size=region_size,
+                            extra_fields=extra_tokens)
+            regions.append(region)
+
+        regions[-1].add_bases_for_depth(depth, bases)
+
+        if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
+            log('processed %i regions' % _total_regions_count)
+
+    if _total_regions_count % 100000 != 0:
+        log('processed %i regions' % _total_regions_count)
+
+    return regions[:-1], regions[-1], max_depth, total_bed_size
+
+
 def _call(cmdline, output_fpath=None):
     log('  $ ' + cmdline + (' > ' + output_fpath if output_fpath else ''))
     if output_fpath:
@@ -243,50 +320,12 @@ def _call_check_output(cmdline, stdout=subprocess.PIPE):
     return subprocess.check_output(cmdline.split())
 
 
-# def samtool_depth_range(cnf, bam_path, region):
-#     bedtools = get_tool_cmdline(cnf, 'samtools')
-#     cmdline = '{samtools} depth -r {region} {bam_path}'.format(**locals())
-#     return _call_and_open_stdout(cmdline)
-#
-#
-# def mapped_bases_in_bed_using_samtoolsdepth(cnf, bam, bed):
-#     total = 0
-#     for st, end in (l.split()[1:3] for l in open(bed).readlines() if l.strip()):
-#         total += len([l for l in samtool_depth_range(cnf, bam, 'chrM:' + str(int(st) + 1) + '-' + end).stdout
-#                    if l.strip() and not l.startswith('#')])
-#     return total
-
-
-# # TODO to check if input files a re not empty
-# def _call_and_write(cmdline, fpath, new_ext):
-#     base_name, ext = os.path.splitext(fpath)
-#     output_fpath = base_name + '.' + new_ext
-#     if not os.path.isfile(output_fpath):
-#         _call(cmdline, open(output_fpath, 'w'))
-#         #TODO check if we have file
-#     return output_fpath
-
-
-# def gnu_sort(cnf, bed_path, work_dir):
-#     sort = get_tool_cmdline(cnf, 'sort')
-#     cmdline = '{sort} -k1,1V -k2,2n -k3,3n {bed_path}'.format(**locals())
-#     output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
-#     _call(cmdline, output_fpath)
-#     return output_fpath
-
-
 def sort_bed(cnf, bed_fpath):
     bedtools = get_tool_cmdline(cnf, 'bedtools')
     cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf['work_dir'], bed_fpath, 'sorted')
     _call(cmdline, output_fpath)
     return output_fpath
-
-
-# def total_bed_length(bed_fpath):
-#     cmdline = 'cat {bed} | awk -F"\t" ' \
-#               '"BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}"'.format(**locals())
-#     return int(_call_check_output(cmdline))
 
 
 def intersect_bed(cnf, bed1, bed2, work_dir):
@@ -343,52 +382,6 @@ def number_bases_in_aligned_reads(cnf, bam):
             values = coverage_line.strip().split('\t')
             count += int(values[2])
     return count
-
-
-def bedcoverage_hist_stats(cnf, bed, bam):
-    regions, max_depth, total_bed_size = [], 0, 0
-
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
-    cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
-
-    _total_regions_count = 0
-
-    for next_line in _call_and_open_stdout(cmdline).stdout:
-        if not next_line.strip() or next_line.startswith('#'):
-            continue
-
-        line_tokens = next_line.strip().split()
-        chrom = line_tokens[0]
-        start, end = None, None
-        depth, bases, region_size = map(int, line_tokens[-4:-1])
-
-        if next_line.startswith('all'):
-            max_depth = max(max_depth, depth)
-            total_bed_size += bases
-            extra_tokens = []
-        else:
-            start, end = map(int, line_tokens[1:3])
-            extra_tokens = line_tokens[3:-4]
-
-        line_region_key_tokens = (None, chrom, start, end)
-
-        if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
-            _total_regions_count += 1
-
-            region = Region(sample=None, chrom=chrom,
-                            start=start, end=end, size=region_size,
-                            extra_fields=extra_tokens)
-            regions.append(region)
-
-        regions[-1].add_bases_for_depth(depth, bases)
-
-        if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-            log('processed %i regions' % _total_regions_count)
-
-    if _total_regions_count % 100000 != 0:
-        log('processed %i regions' % _total_regions_count)
-
-    return regions[:-1], regions[-1], max_depth, total_bed_size
 
 
 # TODO how to pass the data stream to samtools vs. creating file
