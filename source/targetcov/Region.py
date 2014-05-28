@@ -15,10 +15,10 @@ class Region():
         self.extra_fields = extra_fields
         self.bases_by_depth = defaultdict(int)
 
-    def add_subregion(self, region):
-        self.size += region.get_size()
-        self.end = max(region.end, self.end)
-        for depth, bases in region.bases_by_depth.items():
+    def update(self, subregion):
+        self.size += subregion.get_size()
+        self.end = max(subregion.end, self.end)
+        for depth, bases in subregion.bases_by_depth.items():
             self.add_bases_for_depth(depth, bases)
 
     def get_size(self):

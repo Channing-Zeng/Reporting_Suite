@@ -141,7 +141,8 @@ def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions)
                           exons_and_genes, extra_fields=extra_fields)
 
 
-def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
+def add_genes_cov_analytics(exons, gene_pos=0,
+                            feature='Gene', exon_num_pos=1):
     exons_and_genes = []
 
     genes_by_name = dict()
@@ -157,11 +158,11 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
             extra_fields[gene_pos] = gene_name
             gene = Region(
                 sample=exon.sample, chrom=exon.chrom,
-                start=exon.start, end=0, size=0, feature='Gene',
+                start=exon.start, end=0, size=0, feature=feature,
                 extra_fields=extra_fields)
             genes_by_name[gene_name] = gene
             exons_and_genes.append(gene)
-        gene.add_subregion(exon)
+        gene.update(exon)
 
         exon.extra_fields[0] = exon.extra_fields[exon_num_pos]
         exons_and_genes.append(exon)
