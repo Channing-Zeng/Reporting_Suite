@@ -99,47 +99,47 @@ do
     cd "${bcbio_final_dir}/${sample}"
     echo ""
 
-    rm -rf "${sample}${filtered_vcf_suffix}.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
-
-    if [ ! -f "${sample}${vcf_suffix}.vcf" ]; then
-        gunzip -c "${sample}${vcf_suffix}.vcf.gz" > "${sample}${vcf_suffix}.vcf"
-    fi
-
-    ### InDelFilter ###
-    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suffix}.vcf\" > \"${sample}${filtered_vcf_suffix}.vcf\""
-    run_on_grid "${cmdline}" InDelFilter_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
-
-    ### VarAnn ###
-    mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o annotation"
-    run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log 1 InDelFilter_${sample}
-
-    ### VarQC ###
-    mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o varQC"
-    run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log 1 InDelFilter_${sample}
-
-    if [ ! -z "${qc_jobids}" ]; then
-        qc_jobids=${qc_jobids},VarQC_${sample}
-    else
-        qc_jobids=VarQC_${sample}
-    fi
-
-    ### targetCov ###
-    mkdir targetSeq
-    cmdline="python /group/ngs/src/targetcov.py --bam \"${sample}-ready.bam\" --bed \"${bed}\" --nt=4 -o targetSeq"
-    run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log 4
-
-    if [ ! -z "${targetcov_jobids}" ]; then
-        targetcov_jobids=${targetcov_jobids},targetSeq_${sample}
-    else
-        targetcov_jobids=targetSeq_${sample}
-    fi
-
-    ### NGSCat ###
-    mkdir NGSCat
-    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams \"${sample}-ready.bam\" --bed \"${bed}\" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
-    run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log 4
+#    rm -rf "${sample}${filtered_vcf_suffix}.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+#
+#    if [ ! -f "${sample}${vcf_suffix}.vcf" ]; then
+#        gunzip -c "${sample}${vcf_suffix}.vcf.gz" > "${sample}${vcf_suffix}.vcf"
+#    fi
+#
+#    ### InDelFilter ###
+#    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suffix}.vcf\" > \"${sample}${filtered_vcf_suffix}.vcf\""
+#    run_on_grid "${cmdline}" InDelFilter_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
+#
+#    ### VarAnn ###
+#    mkdir annotation
+#    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o annotation"
+#    run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log 1 InDelFilter_${sample}
+#
+#    ### VarQC ###
+#    mkdir varQC
+#    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o varQC"
+#    run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log 1 InDelFilter_${sample}
+#
+#    if [ ! -z "${qc_jobids}" ]; then
+#        qc_jobids=${qc_jobids},VarQC_${sample}
+#    else
+#        qc_jobids=VarQC_${sample}
+#    fi
+#
+#    ### targetCov ###
+#    mkdir targetSeq
+#    cmdline="python /group/ngs/src/targetcov.py --bam \"${sample}-ready.bam\" --bed \"${bed}\" --nt=4 -o targetSeq"
+#    run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log 4
+#
+#    if [ ! -z "${targetcov_jobids}" ]; then
+#        targetcov_jobids=${targetcov_jobids},targetSeq_${sample}
+#    else
+#        targetcov_jobids=targetSeq_${sample}
+#    fi
+#
+#    ### NGSCat ###
+#    mkdir NGSCat
+#    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams \"${sample}-ready.bam\" --bed \"${bed}\" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
+#    run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log 4
 
     ## QualiMap ##
     mkdir QualiMap
@@ -147,11 +147,11 @@ do
 
     cd ..
 done
-
-## VarQC summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${filtered_vcf_suffix}"
-run_on_grid "${cmdline}" VarQCSummary . ../work/log_varqc_summary 1 ${qc_jobids}
-
-## Target coverage summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary . ../work/log_targetcov_summary 1 ${targetcov_jobids}
+#
+### VarQC summary ##
+#cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${filtered_vcf_suffix}"
+#run_on_grid "${cmdline}" VarQCSummary . ../work/log_varqc_summary 1 ${qc_jobids}
+#
+### Target coverage summary ##
+#cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
+#run_on_grid "${cmdline}" targetSeqSummary . ../work/log_targetcov_summary 1 ${targetcov_jobids}
