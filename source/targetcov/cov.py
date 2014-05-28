@@ -144,8 +144,7 @@ def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions)
 def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
     exons_and_genes = []
 
-    current_gene = None
-    current_gene_name = None
+    genes_by_name = dict()
 
     def update_gene(gene, exon):
         gene.end = max(gene.end, exon.end)
@@ -158,21 +157,20 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
             sys.exit('no gene info in exons record: ' + str(exon))
 
         gene_name = exon.extra_fields[gene_pos]
-        if gene_name != current_gene_name:
-            if current_gene:
-                exons_and_genes.append(current_gene)
-
-            current_gene_name = gene_name
+        gene = genes_by_name.get(gene_name)
+        if gene is None:
             extra_fields = ['-'] * len(exon.extra_fields)
             extra_fields[gene_pos] = gene_name
-            current_gene = Region(
+            gene = Region(
                 sample=exon.sample, chrom=exon.chrom,
                 start=exon.start, end=0, size=0, feature='Gene',
                 extra_fields=extra_fields)
+            genes_by_name[gene_name] = gene
+            exons_and_genes.append(gene)
+        update_gene(gene, exon)
 
-        update_gene(current_gene, exon)
-        exons_and_genes.append(exon)
         exon.extra_fields[0] = exon.extra_fields[exon_num_pos]
+        exons_and_genes.append(exon)
 
     return exons_and_genes
 
