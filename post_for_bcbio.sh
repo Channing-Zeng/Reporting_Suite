@@ -88,31 +88,32 @@ else
 fi
 
 
+filtered_vcf_suffix=${vcf_suffix}.filtered
+
 for sample in `cat ${samples}`
 do
     echo "cd to ${bcbio_final_dir}/${sample}"
     cd "${bcbio_final_dir}/${sample}"
     echo ""
 
-    rm -rf "${sample}${vcf_suffix}.filtered.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+    rm -rf "${sample}${filtered_vcf_suffix}.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
     if [ ! -f "${sample}${vcf_suffix}.vcf" ]; then
         gunzip -c "${sample}${vcf_suffix}.vcf.gz" > "${sample}${vcf_suffix}.vcf"
     fi
 
     ### InDelFilter ###
-    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suffix}.vcf\" > \"${sample}${vcf_suffix}.filtered.vcf\""
-    run_on_grid "${cmdline}" InDelFilter_${sample} . "${sample}${vcf_suffix}.filtered.vcf" 1
-    vcf_suffix=${vcf_suffix}.filtered
+    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suffix}.vcf\" > \"${sample}${filtered_vcf_suffix}.vcf\""
+    run_on_grid "${cmdline}" InDelFilter_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
 
     ### VarAnn ###
     mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o annotation"
+    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o annotation"
     run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log 1 InDelFilter_${sample}
 
     ### VarQC ###
     mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${vcf_suffix}.vcf\" -o varQC"
+    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o varQC"
     run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log 1 InDelFilter_${sample}
 
     if [ ! -z "${qc_jobids}" ]; then
@@ -145,7 +146,7 @@ do
 done
 
 ## VarQC summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${vcf_suffix}"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${filtered_vcf_suffix}"
 run_on_grid "${cmdline}" VarQCSummary . ../work/log_varqc_summary 1 ${qc_jobids}
 
 ## Target coverage summary ##
