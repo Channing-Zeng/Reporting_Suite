@@ -92,9 +92,7 @@ def _print_full_report(report, report_filename):
 
     out = open(report_filename, 'w')
     for row in report:
-        out.write('  '.join('%-*s' % (col_width, value)
-                            for col_width, value in zip(col_widths, row))
-                  + "\r\n")
+        out.write('\t'.join(row) + '\n')
     out.close()
 
 
