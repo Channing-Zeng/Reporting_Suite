@@ -119,7 +119,7 @@ def main(args):
     amplicons_report_fpath = None
     exons_report_fpath = None
 
-    capture_bed = sort_bed(cnf, capture_bed)
+    # capture_bed = sort_bed(cnf, capture_bed)
 
     if 'summary' or 'amplicons' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')
@@ -152,6 +152,8 @@ def main(args):
                 bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
                 log('Getting the exons of the genes.')
                 bed = intersect_bed(cnf, exons_bed, bed, work_dir)
+                log('Sorting final exon BED file.')
+                bed = sort_bed(cnf, bed)
 
                 log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
                 exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
