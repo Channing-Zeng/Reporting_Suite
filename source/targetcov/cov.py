@@ -2,31 +2,22 @@
 
 from __future__ import print_function
 
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from itertools import izip, chain, repeat
 
 import sys
-from os.path import join, splitext, basename
+from os.path import join, basename
 import subprocess
-from datetime import datetime
+
 #downlad hg19.genome
 #https://github.com/arq5x/bedtools/tree/master/genomes
 
 #TODO
-# check on the input file format
-# format result and calculation to the 2 decimal places on the header report    .00
-# multi - sample report                                                         header only
-#       sample1 sample2
-#number 2       3
-#bases  10      20
-
-# check if samtools and bedtools exist
 # log file
 # yaml
 # take folder name as a sample name (first column on the report)
-# give user an option to select type of the report to run ????
-import math
-from source.utils import step_greetings, intermediate_fname, timestamp, get_tool_cmdline
+from source.targetcov.Region import Region
+from source.utils import intermediate_fname, timestamp, get_tool_cmdline
 from source.transaction import file_transaction
 from source.bcbio_utils import splitext_plus
 
@@ -160,7 +151,7 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
         gene.end = max(gene.end, exon.end)
         gene.size += exon.get_size()
         for depth, bases in exon.bases_by_depth.items():
-            gene.bases_by_depth[depth] += bases
+            gene.add_bases_for_depth(depth, bases)
 
     for exon in exons:
         if len(exon.extra_fields) <= gene_pos:
@@ -178,7 +169,6 @@ def add_genes_cov_analytics(exons, gene_pos=0, exon_num_pos=1):
                 sample=exon.sample, chrom=exon.chrom,
                 start=exon.start, end=0, size=0, feature='Gene',
                 extra_fields=extra_fields)
-            current_gene.bases_by_depth = defaultdict(int)
 
         update_gene(current_gene, exon)
         exons_and_genes.append(exon)
@@ -397,7 +387,7 @@ def bedcoverage_hist_stats(cnf, bed, bam):
                             extra_fields=extra_tokens)
             regions.append(region)
 
-        regions[-1].bases_by_depth[depth] = bases
+        regions[-1].add_bases_for_depth(depth, bases)
 
         if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
             log('processed %i regions' % _total_regions_count)
@@ -448,89 +438,3 @@ def mean(ints):
     return float(sum(ints)) / len(ints) if len(ints) > 0 else float('nan')
 
 
-class Region():
-    def __init__(self, sample=None, chrom=None,
-                 start=None, end=None, size=None, extra_fields=list(),
-                 feature=None):
-        self.sample = sample
-        self.chrom = chrom
-        self.start = start
-        self.end = end
-        self.size = size
-        self.feature = feature
-        self.extra_fields = extra_fields
-        self.bases_by_depth = defaultdict(int)
-
-    def get_size(self):
-        if self.size:
-            return self.size
-        if self.start is None or self.end is None:
-            return None
-        return abs(self.end - self.start)
-
-    def key(self):
-        return hash((self.sample, self.chrom, self.start, self.end))
-
-    def __str__(self, depth_thresholds):
-        ts = [self.sample, self.chrom, self.start, self.end, self.feature] + self.extra_fields
-        return '\t'.join(map(str, ts))
-
-    def bases_within_threshs(self, depth_thresholds):
-        bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
-        for depth, bases in self.bases_by_depth.iteritems():
-            for depth_thres in depth_thresholds:
-                if depth >= depth_thres:
-                    bases_within_threshs[depth_thres] += bases
-
-        return bases_within_threshs
-
-    def avg_depth(self):
-        depth_sum = sum(
-            depth * bases
-            for depth, bases
-            in self.bases_by_depth.items())
-        avg_depth = float(depth_sum) / self.get_size()
-        return depth_sum
-
-    def std_dev(self, avg_depth):
-        sum_of_sq_var = sum(
-            (depth - avg_depth) ** 2 * bases
-            for depth, bases
-            in self.bases_by_depth.items())
-        std_dev = math.sqrt(float(sum_of_sq_var) / self.get_size())
-        return std_dev
-
-    def percent_within_normal(self, avg_depth):
-        bases_within_normal = sum(
-            bases
-            for depth, bases
-            in self.bases_by_depth.items()
-            if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
-        # if avg_depth == 0:
-        #     percent_within_normal = 0.0
-        # else:
-        percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
-            if self.get_size() else None
-
-        return percent_within_normal
-
-        return bases_within_threshs, avg_depth, std_dev, percent_within_normal
-
-    def sum_up(self, depth_thresholds):
-        avg_depth = self.avg_depth()
-        return self.bases_within_threshs(depth_thresholds), avg_depth, self.std_dev(avg_depth), self.percent_within_normal(avg_depth)
-
-
-
-        # def get_report_line_values(bam, sample_name, depth_threshs, bed_line):
-        #     chrom, start, end = bed_line.strip().split('\t')[:3]
-        #     region_for_samtools = '{chrom}:{start}-{end}'.format(**locals())
-        #     depths = get_depth_by_bed_range(bam, region_for_samtools)
-        #     region_size = (int(end) - int(start)) + 1
-        #
-        #     vals = [sample_name, chrom, start, end, str(region_size)]
-        #
-        #     avg_depth_str = '{0:.2f}'.format(mean(depths) if depths else 0.0)
-        #     by_depth = bps_by_depth(depths, depth_threshs)
-        #     by_depth_str = ['{0:.2f}'.format(c) for c in by_depth]
-        #     return vals + [avg_depth_str] + by_depth_str
