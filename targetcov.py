@@ -139,27 +139,27 @@ def main(args):
             amplicons_report_fpath = join(output_dir, sample_name + '.targetseq.details.capture.txt')
             run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
 
-        if 'exons' in options['reports']:
+    if 'exons' in options['reports']:
+        if not genes_bed or not exons_bed:
+            if options['reports'] == 'exons':
+                exit('Error: no genes and exons specified for the genome in system config, '
+                     'cannot run per-exon report.')
             if not genes_bed or not exons_bed:
-                if options['reports'] == 'exons':
-                    exit('Error: no genes and exons specified for the genome in system config, '
-                         'cannot run per-exon report.')
-                if not genes_bed or not exons_bed:
-                    print('Warning: no genes and exons specified for the genome in system config, '
-                          'cannot run per-exon report.', file=sys.stderr)
-            else:
-                log('Getting the gene regions that intersect with our capture panel.')
-                bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
-                log('Getting the exons of the genes.')
-                bed = intersect_bed(cnf, exons_bed, bed, work_dir)
-                log('Sorting final exon BED file.')
-                bed = sort_bed(cnf, bed)
+                print('Warning: no genes and exons specified for the genome in system config, '
+                      'cannot run per-exon report.', file=sys.stderr)
+        else:
+            log('Getting the gene regions that intersect with our capture panel.')
+            bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
+            log('Getting the exons of the genes.')
+            bed = intersect_bed(cnf, exons_bed, bed, work_dir)
+            log('Sorting final exon BED file.')
+            bed = sort_bed(cnf, bed)
 
-                log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-                exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
+            log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
+            exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
 
-                exons_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
-                run_exons_cov_report(cnf, exons_report_fpath, sample_name, depth_threshs, exons)
+            exons_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
+            run_exons_cov_report(cnf, exons_report_fpath, sample_name, depth_threshs, exons)
 
     rmtree(join(output_dir, 'tx'))
 
