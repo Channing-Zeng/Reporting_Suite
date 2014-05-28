@@ -1,6 +1,6 @@
 details:
-- vcf: test/S1.vcf
-- vcf: test/S2.vcf
+- vcf: test/data/sample1.vcf
+- vcf: test/data/sample2.vcf
 
 output_dir: test/results
 
@@ -13,22 +13,22 @@ keep_intermediate: True
 reuse_intermediate: True
 #parallel: True
 
-gatk:
-  options: ['-dt NONE', '-nt 1']
-  annotations:                # Field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
-  - DepthPerAlleleBySample
-  - AlleleBalanceBySample     # AB
+#gatk:
+#  options: ['-dt NONE', '-nt 1']
+#  annotations:                # Field names in final VCF:
+#  - Coverage                  # DP
+#  - BaseQualityRankSumTest    # BaseQRankSum
+#  - FisherStrand              # FS
+#  - GCContent                 # GC
+#  - HaplotypeScore            # HaplotypeScore
+#  - HomopolymerRun            # HRun
+#  - RMSMappingQuality         # MQ
+#  - MappingQualityRankSumTest # MQRankSum
+#  - MappingQualityZero        # MQ0
+#  - QualByDepth               # QD
+#  - ReadPosRankSumTest        # ReadPosRankSum
+#  - DepthPerAlleleBySample
+#  - AlleleBalanceBySample     # AB
 
 #db_nsfp:
 #  annotations:
@@ -73,9 +73,9 @@ cosmic:
   - AA
   - CDS
 
-snpeff:
-  clinical_reporting: True
-  cancer: True
+#snpeff:
+#  clinical_reporting: True
+#  cancer: True
 
 tracks:
 - /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed

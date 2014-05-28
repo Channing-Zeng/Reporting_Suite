@@ -128,7 +128,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                     out.write('\t')
 
                 out.write('\t'.join([v for j, v in enumerate(values)
-                                     if v == '\n' or col_counts[j]]))
+                                     if v != '\n' or col_counts[j]]) + '\n')
 
     # with file_transaction(tsv_fpath) as tx_tsv_fpath:
     #     info(cnf['log'], cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath

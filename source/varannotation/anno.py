@@ -14,6 +14,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
     work_dir = cnf['work_dir']
 
     annotated = False
+    original_vcf = vcf_fpath
 
     gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
 
@@ -55,8 +56,9 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
     if cnf.get('tracks'):
         for track in cnf['tracks']:
-            annotated = True
             vcf_fpath = _tracks(cnf, track, vcf_fpath, work_dir)
+            if vcf_fpath:
+                annotated = True
 
     if annotated:
         vcf_fpath = _filter_fields(cnf, vcf_fpath, work_dir)
@@ -70,7 +72,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         return final_vcf_fpath
     else:
-        info('No annotations were run on ' + vcf_fpath + '. Please, specify some in run_info.')
+        info('No annotations were run on ' + original_vcf + '. Please, specify some in run_info.')
         return None
 
 
@@ -232,7 +234,8 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
 
     step_greetings(cnf, 'GATK')
 
-    index_bam(cnf, bam_fpath)
+    if bam_fpath:
+        index_bam(cnf, bam_fpath)
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))

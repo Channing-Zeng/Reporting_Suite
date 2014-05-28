@@ -163,17 +163,19 @@ def index_bam(cnf, bam_fpath):
 def bgzip_and_tabix_vcf(cnf, vcf_fpath):
     work_dir = cnf['work_dir']
 
-    bgzip = get_tool_cmdline(cnf, 'bgzip')
-    tabix = get_tool_cmdline(cnf, 'tabix')
+    bgzip = get_tool_cmdline(cnf, 'bgzip', suppress_warn=True)
+    tabix = get_tool_cmdline(cnf, 'tabix', suppress_warn=True)
 
     gzipped_fpath = join(work_dir, basename(vcf_fpath) + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'
 
-    if not file_exists(gzipped_fpath):
+    if bgzip and not file_exists(gzipped_fpath):
+        step_greetings(cnf, 'Bgzip VCF')
         cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
         call(cnf, cmdline, None, gzipped_fpath)
 
-    if not file_exists(tbi_fpath):
+    if tabix and not file_exists(tbi_fpath):
+        step_greetings(cnf, 'Tabix VCF')
         cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
         call(cnf, cmdline, None, tbi_fpath)
 
@@ -244,7 +246,7 @@ def check_file_changed(cnf, new, in_work):
 #             f.write(inp_fpath + '\t' + inp_hash + '\n')
 
 
-def get_tool_cmdline(sys_cnf, tool_name, extra_warning=''):
+def get_tool_cmdline(sys_cnf, tool_name, extra_warning='', suppress_warn=False):
     which_tool_path = which(tool_name) or None
 
     if (not 'resources' in sys_cnf or
@@ -254,9 +256,10 @@ def get_tool_cmdline(sys_cnf, tool_name, extra_warning=''):
         if which_tool_path:
             tool_path = which_tool_path
         else:
-            err(tool_name + ' executable was not found. '
-                'You can either specify path in the system config, or load into your '
-                'PATH environment variable.')
+            if not suppress_warn:
+                err(tool_name + ' executable was not found. '
+                    'You can either specify path in the system config, or load into your '
+                    'PATH environment variable.')
             if extra_warning:
                 err(extra_warning)
             return None

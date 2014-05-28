@@ -282,10 +282,18 @@ def _call_check_output(cmdline, stdout=subprocess.PIPE):
 #     return output_fpath
 
 
-def gnu_sort(cnf, bed_path, work_dir):
-    sort = get_tool_cmdline(cnf, 'sort')
-    cmdline = '{sort} -k1,1V -k2,2n -k3,3n {bed_path}'.format(**locals())
-    output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
+# def gnu_sort(cnf, bed_path, work_dir):
+#     sort = get_tool_cmdline(cnf, 'sort')
+#     cmdline = '{sort} -k1,1V -k2,2n -k3,3n {bed_path}'.format(**locals())
+#     output_fpath = intermediate_fname(work_dir, bed_path, 'sorted')
+#     _call(cmdline, output_fpath)
+#     return output_fpath
+
+
+def sort_bed(cnf, bed_fpath):
+    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
+    output_fpath = intermediate_fname(cnf['work_dir'], bed_fpath, 'sorted')
     _call(cmdline, output_fpath)
     return output_fpath
 
@@ -363,7 +371,7 @@ class Region():
         self.size = size
         self.feature = feature
         self.extra_fields = extra_fields
-        self.bases_by_depth = dict(int)
+        self.bases_by_depth = defaultdict(int)
 
     def get_size(self):
         if self.size:

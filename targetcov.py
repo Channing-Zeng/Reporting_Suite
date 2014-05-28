@@ -10,7 +10,8 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report
+from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
+    sort_bed
 
 
 #downlad hg19.genome
@@ -117,6 +118,8 @@ def main(args):
     summary_report_fpath = None
     amplicons_report_fpath = None
     exons_report_fpath = None
+
+    capture_bed = sort_bed(cnf, capture_bed)
 
     if 'summary' or 'amplicons' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')

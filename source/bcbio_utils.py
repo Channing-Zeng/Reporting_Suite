@@ -10,7 +10,7 @@ import itertools
 import functools
 import random
 import ConfigParser
-from os.path import join
+from os.path import join, splitext
 try:
     from concurrent import futures
 except ImportError:
@@ -257,9 +257,9 @@ def add_full_path(dirname, basedir=None):
 def splitext_plus(fname):
     """Split on file extensions, allowing for zipped extensions.
     """
-    base, ext = os.path.splitext(fname)
+    base, ext = splitext(fname)
     if ext in [".gz", ".bz2", ".zip"]:
-        base, ext2 = os.path.splitext(base)
+        base, ext2 = splitext(base)
         ext = ext2 + ext
     return base, ext
 

@@ -68,6 +68,8 @@ function run_on_grid {
 qc_jobids=""
 targetcov_jobids=""
 
+bed=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${bed}`
+
 for sample in `cat ${samples}`
 do
     echo "cd to ${bcbio_final_dir}/${sample}"
@@ -119,8 +121,23 @@ do
 
     ## QualiMap ##
     mkdir QualiMap
-    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
+    bed_col_num=`awk '{print NF}' ${bed} | sort -nu | tail -n 1`
+    echo ${bed_col_num}
+    if [ ${bed_col_num} -lt 5 ]; then
+        tmp_bed="_tmp_bed.bed"
+        echo ${tmp_bed}
+
+        if [ ${bed_col_num} -lt 4 ]; then
+            awk 'NR==1 {v="+\t0"}{print $0,v}' < ${bed} > ${tmp_bed}
+        else
+            awk 'NR==1 {v="0"}{print $0,v}' < ${bed} > ${tmp_bed}
+        fi
+        cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${tmp_bed}" -c -gd HUMAN"
+    else
+        cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam "${sample}"-ready.bam -outdir QualiMap -gff "${bed}" -c -gd HUMAN"
+    fi
     run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
+    rm ${tmp_bed}
 
     cd ..
 done
