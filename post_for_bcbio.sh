@@ -75,6 +75,22 @@ targetcov_jobids=""
 bed=`python -c "import os,sys; print os.path.realpath(sys.argv[1])" ${bed}`
 
 
+bed_col_num=`awk '{print NF}' ${bed} | sort -nu | tail -n 1`
+if [ ${bed_col_num} -lt 6 ]; then
+    tmp_bed="/ngs/tmp/bed_fixed_for_qualimap.bed"
+    echo ${tmp_bed}
+
+    if [ ${bed_col_num} -lt 5 ]; then
+        awk 'NR==1 {v="0\t+"}{print $0,v}' ${bed} > ${tmp_bed}
+    else
+        awk 'NR==1 {v="+"}{print $0,v}' ${bed} > ${tmp_bed}
+    fi
+    qualimap_cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir QualiMap -gff \"${tmp_bed}\" -c -gd HUMAN"
+else
+    qualimap_cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir QualiMap -gff \"${bed}\" -c -gd HUMAN"
+fi
+
+
 filtered_vcf_suffix=${vcf_suffix}.filtered
 
 for sample in `cat ${samples}`
@@ -127,21 +143,6 @@ do
 
     ## QualiMap ##
     mkdir QualiMap
-
-    bed_col_num=`awk '{print NF}' ${bed} | sort -nu | tail -n 1`
-    if [ ${bed_col_num} -lt 6 ]; then
-        tmp_bed="/ngs/tmp/bed_fixed_for_qualimap.bed"
-        echo ${tmp_bed}
-
-        if [ ${bed_col_num} -lt 5 ]; then
-            awk 'NR==1 {v="0\t+"}{print $0,v}' ${bed} > ${tmp_bed}
-        else
-            awk 'NR==1 {v="+"}{print $0,v}' ${bed} > ${tmp_bed}
-        fi
-        qualimap_cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir QualiMap -gff \"${tmp_bed}\" -c -gd HUMAN"
-    else
-        qualimap_cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir QualiMap -gff \"${bed}\" -c -gd HUMAN"
-    fi
     run_on_grid "${qualimap_cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
 
     cd ..
