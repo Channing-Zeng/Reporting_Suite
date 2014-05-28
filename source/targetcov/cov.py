@@ -143,7 +143,6 @@ def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions)
         region.feature = 'Exon'
         region.sample = sample_name
         region.extra_fields = region.extra_fields[:2]
-        print (str(region.extra_fields))
 
     exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0, exon_num_pos=1)
 
