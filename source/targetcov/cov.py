@@ -218,7 +218,8 @@ def get_exon_genes(subregions):
             genes_by_name[exon.gene_name] = gene
         gene.add_subregion(exon)
 
-    sorted_genes = sorted(genes_by_name.values(), key=lambda g: (g.start, g.end))
+    sorted_genes = sorted(genes_by_name.values(),
+                          key=lambda g: (g.chrom, g.start, g.end))
     return sorted_genes
 
 
