@@ -167,8 +167,14 @@ def main(args):
                 gene_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
                 run_region_cov_report(cnf, gene_report_fpath, sample_name, depth_threshs,
                                          amplicons, exons)
-
-    rmtree(join(output_dir, 'tx'))
+    try:
+        rmtree(join(output_dir, 'tx'))
+    except OSError:
+        pass
+    try:
+        rmtree(join(work_dir, 'tx'))
+    except OSError:
+        pass
 
     print('')
     print('*' * 70)
