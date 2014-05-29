@@ -3,6 +3,8 @@
 from __future__ import print_function
 import sys
 import os
+from source.targetcov.cov import log, bedcoverage_hist_stats, run_header_report, intersect_bed, sort_bed, \
+    run_region_cov_report, add_gene_names
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -10,8 +12,6 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from os.path import join, expanduser, splitext, basename, isdir
-from source.targetcov.cov import log, intersect_bed, bedcoverage_hist_stats, run_header_report, run_exons_cov_report, run_amplicons_cov_report, \
-    sort_bed
 
 
 #downlad hg19.genome
@@ -123,7 +123,8 @@ def main(args):
 
     if 'summary' or 'genes' in options['reports']:
         log('Calculation of coverage statistics for the regions in the input BED file...')
-        amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, capture_bed, bam)
+        amplicons, combined_region, max_depth, total_bed_size = \
+            bedcoverage_hist_stats(cnf, capture_bed, bam)
 
         if 'summary' in options['reports']:
             step_greetings('Target coverage summary report')
@@ -141,13 +142,16 @@ def main(args):
 
         if 'genes' in options['reports']:
             if not genes_bed or not exons_bed:
-                if options['reports'] == 'exons':
-                    exit('Error: no genes and exons specified for the genome in system config, '
+                if options['reports'] == 'genes':
+                    exit('Error: no genes or exons specified for the genome in system config, '
                          'cannot run per-exon report.')
-                if not genes_bed or not exons_bed:
-                    print('Warning: no genes and exons specified for the genome in system config, '
+                else:
+                    print('Warning: no genes or exons specified for the genome in system config, '
                           'cannot run per-exon report.', file=sys.stderr)
             else:
+                # log('Annotating amplicons.')
+                # annotate_amplicons(amplicons, genes_bed)
+
                 log('Getting the gene regions that intersect with our capture panel.')
                 bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
                 log('Getting the exons of the genes.')
@@ -157,10 +161,12 @@ def main(args):
 
                 log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
                 exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
+                for exon in exons:
+                    exon.gene_name = exon.extra_fields[0]
 
                 gene_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
-                run_amplicons_cov_report(cnf, gene_report_fpath, sample_name, depth_threshs,
-                                         exons, amplicons)
+                run_region_cov_report(cnf, gene_report_fpath, sample_name, depth_threshs,
+                                         amplicons, exons)
 
     rmtree(join(output_dir, 'tx'))
 

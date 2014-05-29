@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from collections import defaultdict
+import copy
 from itertools import izip, chain, repeat
 
 import sys
@@ -123,27 +124,55 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
     return result_fpath
 
 
-def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                             amplicons, exons):
-    extra_fields = ['Gene']
+def run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
+                          amplicons, exons):
+    for ampl in amplicons:
+        ampl.feature = 'Amplicon'
+        ampl.sample = sample_name
 
-    for region in amplicons:
-        region.feature = 'Amplicon'
-        region.sample = sample_name
-        region.extra_fields = region.extra_fields[:1]
-    amplicons_and_genes = add_genes_cov_analytics(amplicons, gene_pos=0)
-    # TODO: detect amplicons which fit gene (use intersect bed?)
+    for exon in exons:
+        exon.feature = 'Exon'
+        exon.sample = sample_name
 
-    for region in exons:
-        region.feature = 'Exon'
-        region.sample = sample_name
-        region.extra_fields = region.extra_fields[:1]
-    exons_with_genes = add_genes_cov_analytics(exons, gene_pos=0)
+    exon_genes = get_exon_genes(exons)
+    amplicon_genes_by_name = get_amplicon_genes(amplicons, exon_genes)
+
+    result_regions = []
+    for exon_gene in exon_genes:
+        for exon in exon_gene.subregions:
+            result_regions.append(exon)
+        result_regions.append(exon_gene)
+
+        amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
+        if amplicon_gene:
+            for amplicon in amplicon_gene.subregions:
+                result_regions.append(amplicon)
+            result_regions.append(amplicon_gene)
 
     return build_regions_cov_report(
-        cnf, report_fpath, depth_threshs,
-        amplicons_and_genes + exons_with_genes,
-        extra_headers=extra_fields)
+        cnf, report_fpath, depth_threshs, result_regions)
+
+
+def get_amplicon_genes(amplicons, exon_genes):
+    amplicon_genes_by_name = dict()
+
+    for exon_gene in exon_genes:
+        for amplicon in amplicons:
+            if intersect(exon_gene, amplicon):
+                amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
+                if amplicon_gene is None:
+                    amplicon_gene = Region(
+                        sample=amplicon.sample, chrom=amplicon.chrom,
+                        start=amplicon.start, end=amplicon.end, size=0,
+                        feature='Gene-' + amplicon.feature,
+                        gene_name=exon_gene.gene_name)
+                    amplicon_genes_by_name[amplicon_gene.gene_name] = amplicon_gene
+                amplicon_copy = copy.copy(amplicon)
+                amplicon_gene.add_subregion(amplicon_copy)
+                amplicon_copy.gene_name = amplicon_gene.gene_name
+
+    return amplicon_genes_by_name
+
 
 # def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
 #     for region in regions:
@@ -170,42 +199,53 @@ def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs,
 #         exons_with_genes, extra_headers=extra_fields)
 
 
-def add_genes_cov_analytics(regions, gene_pos=0, feature='Gene-Exon'):
+def get_exon_genes(subregions):
     genes_by_name = dict()
-    for region in regions:
-        if (len(region.extra_fields) <= gene_pos or
-            not region.extra_fields[gene_pos]):
+
+    for exon in subregions:
+        if not exon.gene_name:
             err('No gene name info in the record: ' +
-                str(region) + '. Skipping.')
+                str(exon) + '. Skipping.')
             continue
 
-        gene_name = region.extra_fields[gene_pos]
-        gene = genes_by_name.get(gene_name)
+        gene = genes_by_name.get(exon.gene_name)
         if gene is None:
-            extra_fields = ['-'] * len(region.extra_fields)
-            extra_fields[gene_pos] = gene_name
             gene = Region(
-                sample=region.sample, chrom=region.chrom,
-                start=region.start, end=region.end, size=0,
-                feature=feature, extra_fields=extra_fields)
-            genes_by_name[gene_name] = gene
+                sample=exon.sample, chrom=exon.chrom,
+                start=exon.start, end=exon.end, size=0,
+                feature='Gene-' + exon.feature,
+                gene_name=exon.gene_name)
+            genes_by_name[exon.gene_name] = gene
+        gene.add_subregion(exon)
 
-        gene.add_subregion(region)
-
-    regions_with_genes = []
-    for gene in sorted(genes_by_name.values(), key=lambda g: (g.start, g.end)):
-        for subregion in gene.subregions:
-            regions_with_genes.append(subregion)
-        regions_with_genes.append(gene)
-
-    return regions_with_genes
+    sorted_genes = sorted(genes_by_name.values(), key=lambda g: (g.start, g.end))
+    return sorted_genes
 
 
-def build_regions_cov_report(cnf, report_fpath, depth_threshs, regions, extra_headers=list()):
-    first_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Feature']
-    last_fields = ['Size', 'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
-    header_fields = first_fields + extra_headers + last_fields
-    header_fields += ['{}x'.format(thres) for thres in depth_threshs]
+def add_gene_names(amplicons, genes):
+    # amplicon_num = 0
+    # gene_num = 0
+
+    # while amplicon_num < len(amplicons) and gene_num < len(genes):
+    #     amplicon = amplicons[amplicon_num]
+    #     gene = genes[gene_num]
+
+    for gene in genes:
+        for amplicon in amplicons:
+            if intersect(gene, amplicon):
+                amplicon.gene_name = gene.gene_name
+
+
+def intersect(reg1, reg2):
+    return (reg2.start < reg1.start < reg2.end or
+            reg1.start < reg2.start < reg1.end)
+
+
+def build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
+                             extra_headers=list()):
+    header_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
+                     'Mean Depth', 'Standard Dev.', 'Within 20% of Mean'] +\
+                    ['{}x'.format(thres) for thres in depth_threshs]
     max_lengths = map(len, header_fields)
 
     all_values = []
@@ -217,8 +257,8 @@ def build_regions_cov_report(cnf, report_fpath, depth_threshs, regions, extra_he
                                 region.chrom,
                                 region.start,
                                 region.end,
-                                region.feature])
-        line_fields += region.extra_fields[:len(extra_headers)]
+                                region.gene_name])
+        line_fields += [region.feature]
         line_fields += [str(region.get_size())]
         line_fields += ['{0:.2f}'.format(avg_depth)]
         line_fields += ['{0:.2f}'.format(std_dev)]
@@ -261,7 +301,8 @@ def bedcoverage_hist_stats(cnf, bed, bam):
     regions, max_depth, total_bed_size = [], 0, 0
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
-    cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+    cmdline = '{bedtools} coverage -abam {bam} -b {bed} ' \
+              '-hist'.format(**locals())
 
     _total_regions_count = 0
 
@@ -277,10 +318,10 @@ def bedcoverage_hist_stats(cnf, bed, bam):
         if next_line.startswith('all'):
             max_depth = max(max_depth, depth)
             total_bed_size += bases
-            extra_tokens = []
+            extra_fields = []
         else:
             start, end = map(int, line_tokens[1:3])
-            extra_tokens = line_tokens[3:-4]
+            extra_fields = line_tokens[3:-4]
 
         line_region_key_tokens = (None, chrom, start, end)
 
@@ -289,7 +330,7 @@ def bedcoverage_hist_stats(cnf, bed, bam):
 
             region = Region(sample=None, chrom=chrom,
                             start=start, end=end, size=region_size,
-                            extra_fields=extra_tokens)
+                            extra_fields=extra_fields)
             regions.append(region)
 
         regions[-1].add_bases_for_depth(depth, bases)
