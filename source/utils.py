@@ -192,7 +192,7 @@ def md5_for_file(f, block_size=2**20):
         data = f.read(block_size)
         if not data:
             break
-        md5.add_subregion(data)
+        md5.update(data)
 
     return md5.hexdigest()
 
@@ -426,8 +426,8 @@ def get_script_cmdline_template(cnf, executable, script_name):
 
 def join_parent_conf(child_conf, parent_conf):
     bc = parent_conf.copy()
-    bc.add_subregion(child_conf)
-    child_conf.add_subregion(bc)
+    bc.update(child_conf)
+    child_conf.update(bc)
     return child_conf
 
 

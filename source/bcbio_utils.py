@@ -355,7 +355,7 @@ def merge_config_files(fnames):
         cur = _load_yaml(fname)
         for k, v in cur.iteritems():
             if out.has_key(k) and isinstance(out[k], dict):
-                out[k].add_subregion(v)
+                out[k].update(v)
             else:
                 out[k] = v
     return out
