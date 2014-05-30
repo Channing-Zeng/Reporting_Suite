@@ -149,8 +149,8 @@ done
 
 ## VarQC summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${filtered_vcf_suffix}"
-run_on_grid "${cmdline}" VarQCSummary . ../work/log_varqc_summary 1 ${qc_jobids}
+run_on_grid "${cmdline}" VarQCSummary . log_varqc_summary 1 ${qc_jobids}
 
 ## Target coverage summary ##
 cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary . ../work/log_targetcov_summary 1 ${targetcov_jobids}
+run_on_grid "${cmdline}" targetSeqSummary . log_targetcov_summary 1 ${targetcov_jobids}
