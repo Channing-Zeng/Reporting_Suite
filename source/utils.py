@@ -431,6 +431,13 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
+def rmtx(work_dir):
+    try:
+        shutil.rmtree(join(work_dir, 'tx'))
+    except OSError:
+        pass
+
+
 def timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
 

@@ -11,7 +11,7 @@ from source.main import common_main, load_genome_resources, check_system_resourc
 from source.runner import run_all
 from source.summarize import summarize_qc
 from source.varqc import qc
-from source.utils import info, verify_module
+from source.utils import info, verify_module, rmtx
 
 
 def main(args):
@@ -38,7 +38,9 @@ def main(args):
         run_all(config, sample_cnfs_by_name, required, optional,
                 process_one, finalize_one, finalize_all)
     except KeyboardInterrupt:
+        rmtx(config['work_dir'])
         exit()
+    rmtx(config['work_dir'])
 
 
 def process_one(cnf, vcf_fpath):

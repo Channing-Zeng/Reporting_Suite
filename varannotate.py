@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+from os.path import join
 import sys
+from shutil import rmtree
 from source.vcf_read import read_samples_info_and_split
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -58,7 +60,9 @@ def main(args):
         run_all(config, sample_cnfs_by_name, required, optional,
                 process_one, finalize_one, finalize_all)
     except KeyboardInterrupt:
-        exit()
+        rmtx(config['work_dir'])
+        sys.exit(1)
+    rmtx(config['work_dir'])
 
 
 def process_one(cnf, vcf_fpath, bam_fpath=None):

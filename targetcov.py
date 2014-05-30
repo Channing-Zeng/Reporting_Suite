@@ -22,7 +22,7 @@ from os.path import join, expanduser, splitext, basename, isdir
 # take folder name as a sample name (first column on the report)
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
-from source.utils import verify_file, critical, step_greetings
+from source.utils import verify_file, critical, step_greetings, rmtx
 
 
 REPORT_TYPES = 'summary,genes'
@@ -166,14 +166,9 @@ def main(args):
             gene_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
             run_region_cov_report(cnf, gene_report_fpath, sample_name, depth_threshs,
                                   amplicons, exons)
-    try:
-        rmtree(join(output_dir, 'tx'))
-    except OSError:
-        pass
-    try:
-        rmtree(join(work_dir, 'tx'))
-    except OSError:
-        pass
+
+    rmtx(cnf['work_dir'])
+    rmtx(cnf['output_dir'])
 
     print('')
     print('*' * 70)
@@ -181,6 +176,7 @@ def main(args):
         log('Summary report: ' + summary_report_fpath)
     if gene_report_fpath:
         log('Exons coverage report: ' + gene_report_fpath)
+
 
 
 if __name__ == '__main__':
