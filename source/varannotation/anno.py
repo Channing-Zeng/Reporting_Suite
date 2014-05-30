@@ -1,5 +1,5 @@
 from genericpath import isfile
-from os.path import splitext, basename, join
+from os.path import splitext, basename, join, dirname, realpath
 import os
 import shutil
 from source.runner import filter_ensemble
@@ -70,10 +70,18 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
             os.remove(final_vcf_fpath)
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
-        return final_vcf_fpath
+        # Converting to MAF
+        final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
+        perl = get_tool_cmdline(cnf, 'perl')
+        vcf2maf = join(dirname(realpath(__file__)), '../../source/vcf2maf-1.1.0/vcf2maf.pl')
+        cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
+                  '--output-maf {final_maf_fpath}'.format(**locals())
+        call(cnf, cmdline, None, None)
+
+        return final_vcf_fpath, final_maf_fpath
     else:
         info('No annotations were run on ' + original_vcf + '. Please, specify some in run_info.')
-        return None
+        return None, None
 
 
 def _remove_annotation(cnf, field_to_del, input_fpath, work_dir):

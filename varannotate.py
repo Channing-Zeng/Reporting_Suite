@@ -62,26 +62,30 @@ def main(args):
 
 
 def process_one(cnf, vcf_fpath, bam_fpath=None):
-    anno_vcf_fpath = anno.run_annotators(cnf, vcf_fpath, bam_fpath)
+    anno_vcf_fpath, anno_maf_fpath = anno.run_annotators(cnf, vcf_fpath, bam_fpath)
     anno_tsv_fpath = None
     if anno_vcf_fpath and 'tsv_fields' in cnf:
         anno_tsv_fpath = tsv.make_tsv(cnf, anno_vcf_fpath)
-    return anno_vcf_fpath, anno_tsv_fpath
+    return anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath
 
 
-def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath):
+def finalize_one(cnf, anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath):
     if anno_vcf_fpath:
         info(cnf['log'], 'Saved final VCF to ' + anno_vcf_fpath)
+    if anno_maf_fpath:
+        info(cnf['log'], 'Saved final MAF to ' + anno_maf_fpath)
     if anno_tsv_fpath:
         info(cnf['log'], 'Saved final TSV to ' + anno_tsv_fpath)
 
 
 def finalize_all(cnf, samples, results):
-    for (sample_name, cnf), (vcf, tsv) in zip(samples.items(), results):
+    for (sample_name, cnf), (vcf, maf, tsv) in zip(samples.items(), results):
         if vcf or tsv:
             info(cnf['log'], sample_name + ':')
         if vcf:
             info(cnf['log'], '  ' + vcf)
+        if maf:
+            info(cnf['log'], '  ' + maf)
         if tsv:
             info(cnf['log'], '  ' + tsv)
 
