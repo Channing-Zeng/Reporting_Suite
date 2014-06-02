@@ -9,3 +9,4 @@ warnstd = 0.3
 
 offtargetoffset = 1000
 offtargetthreshold = 15
+TMP = '/tmp/'

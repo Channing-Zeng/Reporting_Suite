@@ -5,13 +5,12 @@ except ImportError:
 
 import gc
 import time
-import random
 import pysam
-import copy
 import os
 import sys
 import string
 import sets
+import config
 
 try:
     import progressbar
@@ -23,7 +22,6 @@ import xlwt
 from matplotlib import pyplot
 
 import bed_file
-import ngscat
 
 #TMP = '/home/fjavier/tmp/'
 #TMP = '/tmp/'
@@ -251,7 +249,7 @@ class bam_file(pysam.Samfile):
         ************************************************************************************************************************************************************"""
 
         pid = str(os.getpid())
-        coveragefile = ngscat.TMP + pid + '.coverage'
+        coveragefile = config.TMP + pid + '.coverage'
 
         print 'Calculating coverage per target position...'
         self.run('coverageBed -d -abam ' + self.filename + ' -b ' + targetfile + ' > ' + coveragefile)
@@ -292,7 +290,7 @@ class bam_file(pysam.Samfile):
 
     def generate_gff(self, chrs, sizes, binsize):
         pid = str(os.getpid())
-        gfffile = ngscat.TMP + '/' + pid + '.gff'
+        gfffile = config.TMP + '/' + pid + '.gff'
         fd = file(gfffile, 'w')
 
         for chr in chrs:
@@ -310,8 +308,8 @@ class bam_file(pysam.Samfile):
         base0 = {}
         lengths = {}
 
-        tmpbed = bed_file.bed_file(ngscat.TMP + '/' + pid + '.bed')
-        coveragefile = ngscat.TMP + '/' + pid + '.coverage'
+        tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
+        coveragefile = config.TMP + '/' + pid + '.coverage'
 
         print 'Loading chr lengths...'
         fd = file(CHR_LENGTHS)
@@ -330,8 +328,8 @@ class bam_file(pysam.Samfile):
         #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
         print 'Calculating histogram...'
         points = []
-        gfffile = ngscat.TMP + '/' + pid + '.gff'
-        countsfile = ngscat.TMP + '/' + pid + '.counts'
+        gfffile = config.TMP + '/' + pid + '.gff'
+        countsfile = config.TMP + '/' + pid + '.counts'
 
         self.generate_gff(chrs, lengths, binsize)
         self.run(
@@ -379,9 +377,9 @@ class bam_file(pysam.Samfile):
         on = bed_file.bed_file(ontarget)
         off = bed_file.bed_file(offtarget)
 
-        onbam = bam_file(ngscat.TMP + '/' + pid + '.on.bam')
-        notonbam = bam_file(ngscat.TMP + '/' + pid + '.noton.bam')
-        offbam = bam_file(ngscat.TMP + '/' + pid + '.off.bam')
+        onbam = bam_file(config.TMP + '/' + pid + '.on.bam')
+        notonbam = bam_file(config.TMP + '/' + pid + '.noton.bam')
+        offbam = bam_file(config.TMP + '/' + pid + '.off.bam')
 
         self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbam.filename)
 
@@ -439,8 +437,8 @@ class bam_file(pysam.Samfile):
         base0 = {}
         lengths = {}
 
-        tmpbed = bed_file.bed_file(ngscat.TMP + '/' + pid + '.bed')
-        coveragefile = ngscat.TMP + '/' + pid + '.coverage'
+        tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
+        coveragefile = config.TMP + '/' + pid + '.coverage'
 
         print 'Loading chr lengths...'
         fd = file(CHR_LENGTHS)
@@ -459,8 +457,8 @@ class bam_file(pysam.Samfile):
         #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
         print 'Calculating histogram...'
         points = []
-        gfffile = ngscat.TMP + '/' + pid + '.gff'
-        countsfile = ngscat.TMP + '/' + pid + '.counts'
+        gfffile = config.TMP + '/' + pid + '.gff'
+        countsfile = config.TMP + '/' + pid + '.counts'
 
         self.generate_gff(chrs, lengths, binsize)
         self.run(
@@ -504,9 +502,9 @@ class bam_file(pysam.Samfile):
         # notonbamfilename: string containing the name of the .bam where reads that do not overlap with the target will be stored.
         # offbamfilename: string containing the name of the .bam where reads that do not overlap with the target BUT that do overlap with the offtarget bed will be stored.
         # onbamfilename: string containing the name of the .bam containing those reads that overlap with ontarget.
-        notonbamfilename = ngscat.TMP + '/' + pid + '.noton.bam'
-        offbamfilename = ngscat.TMP + '/' + pid + '.off.bam'
-        onbamfilename = ngscat.TMP + '/' + pid + '.on.bam'
+        notonbamfilename = config.TMP + '/' + pid + '.noton.bam'
+        offbamfilename = config.TMP + '/' + pid + '.off.bam'
+        onbamfilename = config.TMP + '/' + pid + '.on.bam'
 
         # Extract those reads overlapping with the target
         self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbamfilename)
@@ -614,7 +612,7 @@ class bam_file(pysam.Samfile):
         *******************************************************************************************************************************************"""
         pid = str(os.getpid())
         print 'Sorting BAM according to position...'
-        sortedBAMfilename = ngscat.TMP + pid + os.path.basename(self.filename) + ".sorted"
+        sortedBAMfilename = config.TMP + pid + os.path.basename(self.filename) + ".sorted"
         #		self.run('samtools sort '+self.filename+' '+sortedBAMfilename)
         pysam.sort(self.filename, sortedBAMfilename)
 
@@ -638,7 +636,7 @@ class bam_file(pysam.Samfile):
 
         pid = str(os.getpid())
         selectionprob = n * 1.0 / self.nreads()
-        normalizedbam = bam_file(ngscat.TMP + '/' + pid + '.bam', 'wb', header=self.header)
+        normalizedbam = bam_file(config.TMP + '/' + pid + '.bam', 'wb', header=self.header)
 
         i = self.fetch()
         currread = 0
@@ -682,14 +680,14 @@ class bam_file(pysam.Samfile):
         print str(nselected) + ' reads written'
 
         normalizedbam.close()
-        pysam.index(ngscat.TMP + '/' + pid + '.bam')
+        pysam.index(config.TMP + '/' + pid + '.bam')
 
-        return bam_file(ngscat.TMP + '/' + pid + '.bam', 'rb')
+        return bam_file(config.TMP + '/' + pid + '.bam', 'rb')
 
 
     def ncovered_reads(self, target):
         pid = str(os.getpid())
-        newbamfilename = ngscat.TMP + '/' + pid
+        newbamfilename = config.TMP + '/' + pid
         self.run(""" intersectBed -abam """ + self.filename + """ -b """ + target + """ > """ + newbamfilename)
         pysam.index(newbamfilename)
         bam = bam_file(newbamfilename, 'rb')
@@ -712,13 +710,13 @@ class bam_file(pysam.Samfile):
         # in the memory used
         *******************************************************************************************************************************************"""
 
-        #global ngscat.TMP
+        #global config.TMP
 
         if (executiongranted <> None):
             executiongranted.acquire()
 
         #if(tmpdir<>None):
-        #	ngscat.TMP = tmpdir
+        #	config.TMP = tmpdir
 
         pid = str(os.getpid())
 
@@ -748,10 +746,10 @@ class bam_file(pysam.Samfile):
 
         # Load target file, remove overlapping regions, sort it and load it
         bed = bed_file.bed_file(target)
-        sortedBed = bed.my_sort_bed(tmpdir=ngscat.TMP)
+        sortedBed = bed.my_sort_bed(tmpdir=config.TMP)
         nonOverlappingBed = sortedBed.non_overlapping_exons(1,
-                                                            tmpdir=ngscat.TMP)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
-        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=ngscat.TMP)  # BED file in base 1 (Non-standard BED)
+                                                            tmpdir=config.TMP)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
+        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=config.TMP)  # BED file in base 1 (Non-standard BED)
         finalBed.load_custom(
             -1)  # Load chromosome and positions in base 1....(finalBed is in base 1 -> Non-standard BED)
 
@@ -1058,14 +1056,14 @@ class bam_file(pysam.Samfile):
         # will be removed from the target file as they are -> no conversion to real zero or one-base indexing
         *******************************************************************************************************************************************"""
 
-        #global ngscat.TMP
+        #global config.TMP
 
 
         # Load target file, remove overlapping regions, sort it and load it
         bed = bed_file.bed_file(target)
-        sortedBed = bed.my_sort_bed(tmpdir=ngscat.TMP)
-        nonOverlappingBed = sortedBed.non_overlapping_exons(1, tmpdir=ngscat.TMP)  # Base-1 indexing
-        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=ngscat.TMP)  # BED file in base 1 (Non-standard BED)
+        sortedBed = bed.my_sort_bed(tmpdir=config.TMP)
+        nonOverlappingBed = sortedBed.non_overlapping_exons(1, tmpdir=config.TMP)  # Base-1 indexing
+        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=config.TMP)  # BED file in base 1 (Non-standard BED)
         finalBed.load_custom(-1)  # Load chromosome and positions as they are
 
         dicOnTarget = {}
@@ -1925,7 +1923,7 @@ class bam_file(pysam.Samfile):
             whether the number of on-target reads is extremely low (False) or not (True)
         ************************************************************************************************************************************************************"""
 
-        #global ngscat.TMP
+        #global config.TMP
 
         # Check whether the method can be executed or not
         if (executiongranted <> None):
@@ -1933,7 +1931,7 @@ class bam_file(pysam.Samfile):
 
         # Check whether to use default tmpdir
         #if(tmpdir<>None):
-        #	ngscat.TMP = tmpdir
+        #	config.TMP = tmpdir
 
         # Create a list of bam_file objects which includes self. Generates an array with the total number of reads in each bam.
         bamlist = [self] + bamlist
@@ -2007,7 +2005,7 @@ class bam_file(pysam.Samfile):
 
     def get_coverage_distribution(self, bedfilename):
 
-        coveragefile = ngscat.TMP + '/' + str(os.getpid()) + '.coverage'
+        coveragefile = config.TMP + '/' + str(os.getpid()) + '.coverage'
 
         print 'Calculating coverage per target position...'
         self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
@@ -2094,7 +2092,7 @@ class bam_file(pysam.Samfile):
             std_sampling: list of real values containing the coverage std for each region in the bed file.
         ************************************************************************************************************************************************************"""
 
-        coveragefile = ngscat.TMP + '/' + str(os.getpid()) + '.coverage'
+        coveragefile = config.TMP + '/' + str(os.getpid()) + '.coverage'
 
         print 'Calculating coverage per target position...'
         self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
@@ -2132,16 +2130,16 @@ class bam_file(pysam.Samfile):
         return std_sampling
 
 
-    def fastq(self):
-        pysam.bam2fq(self.filename)
-
-        return fastq_file.fastq_file(self.filename.replace('.bam', '.fq'))
+    # def fastq(self):
+    #     pysam.bam2fq(self.filename)
+    #
+    #     return fastq_file.fastq_file(self.filename.replace('.bam', '.fq'))
 
 
     def minusbam(self, bam, fileout=None):
 
         pid = str(os.getpid())
-        if (fileout == None): fileout = ngscat.TMP + '/' + pid + '.minus.bam'
+        if (fileout == None): fileout = config.TMP + '/' + pid + '.minus.bam'
 
         tosubstract = bam.get_mapped_reads_ids()
 
@@ -2327,7 +2325,7 @@ class bam_file(pysam.Samfile):
 
     def unannotated(self, gtffilename, fileout):
         pid = str(time.time())
-        tmpsam = ngscat.TMP + '/' + pid + '.sam'
+        tmpsam = config.TMP + '/' + pid + '.sam'
         print """CMD: samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename
         os.system(
             """samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename)
@@ -2398,8 +2396,6 @@ class bam_file(pysam.Samfile):
 
         return bam_file(out)
 
-
-import multiprocessing
 
 #bam_file('/tmp/HG00096.mapped.ILLUMINA.bwa.GBR.exome.20120522.mapped.bam', 'rb').reads_on_target('/tmp/20130108.exome.targets.bed','/tmp',legend=['test'])
 #bam_file('/tmp/test.bam').issorted()

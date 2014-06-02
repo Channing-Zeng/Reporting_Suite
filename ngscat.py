@@ -3,51 +3,45 @@
 import glob
 import tempfile
 import time
-import pysam
-import sets
 import sys
 import os
 import optparse
 import string
-import numpy
-#import progressbar
-import xlwt
 import multiprocessing
 import shutil
 import math
 
+import pysam
+import numpy
+
+
 if not 'matplotlib' in sys.modules:
     import matplotlib
-
     matplotlib.use('Agg')  # non-GUI backend
-from matplotlib import pyplot
 
-import coverageHisto
-import coverage_target
-import coveragecorr
+from source.ngscat import coverageHisto
+from source.ngscat import coverage_target
+from source.ngscat import coveragecorr
 
 #sys.path.append('/home/javi/MGP/utils')
 
-import bam_file
-import bed_file
-import bedgraph_file
-import target_coverage
+from source.ngscat import bam_file
+from source.ngscat import bed_file
+from source.ngscat import bedgraph_file
+from source.ngscat import target_coverage
 
 #sys.path.append('/home/javi/MGP/capture_methods/src')
-import coverage_saturation
-import exon_coverage_std
-import gcbias
+from source.ngscat import coverage_saturation
+from source.ngscat import exon_coverage_std
+from source.ngscat import gcbias
 
-import config
-
-
-TMP = '/tmp/'
+from source.ngscat import config
 
 #DATASRC = '/home/javi/MGP/ngscat/data/'
 #IMGSRC = '/home/javi/MGP/ngscat/data/'
 
-DATASRC = os.path.dirname(sys.argv[0]) + '/html/'
-IMGSRC = os.path.dirname(sys.argv[0]) + '/img/'
+DATASRC = os.path.join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'html')
+IMGSRC = os.path.join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'img')
 
 
 def which(program):
@@ -83,14 +77,12 @@ def run(command):
 
 
 def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongranted):
-    global TMP
-
     coveragefiles = []
     Pcoveragebeds = []
     pid = str(os.getpid())
 
     for i, bamfilename in enumerate(bamfilenames):
-        coveragefile = TMP + '/' + os.path.basename(bamfilename).replace('.bam', '.' + pid + '.coverage')
+        coveragefile = config.TMP + '/' + os.path.basename(bamfilename).replace('.bam', '.' + pid + '.coverage')
         coveragebedgraph = outdir + '/data/' + legend[i].replace('.bam', '.bed')
 
         print 'Coveragefile = ' + coveragefile
@@ -98,7 +90,7 @@ def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongrant
 
         print 'Launching coverageBed...'
         Pcoveragebed = multiprocessing.Process(target=bam.myCoverageBed, args=(
-        bedfilename, None, coveragefile, executiongranted, TMP, coveragebedgraph,))
+        bedfilename, None, coveragefile, executiongranted, config.TMP, coveragebedgraph,))
         Pcoveragebed.start()
 
         #    [positions,coverage,chromosomes,processedbed] = bam.myCoverageBed(bedfilename, bam.nreads())
@@ -141,14 +133,12 @@ def launch_covered_positions(coveragefiles, coveragethresholds, outdir, legend, 
 
 
 def launch_coverage_saturation(bamfilenames, bedfilename, depthlist, legend, outdir, executiongranted):
-    global TMP
-
     status = multiprocessing.Value('b', False)
     saturationslopes = multiprocessing.Array('f', len(bamfilenames))
     Psaturation = multiprocessing.Process(target=coverage_saturation.coverage_saturation_local,
                                           args=(bamfilenames, [bedfilename for i in range(len(bamfilenames))],
                                                 depthlist, 10, legend, outdir + '/coverage_saturation_10x.png',
-                                                executiongranted, status, saturationslopes, TMP,
+                                                executiongranted, status, saturationslopes, config.TMP,
                                                 config.warnsaturation,))
     print 'Launching coverage saturation calculation...'
     Psaturation.start()
@@ -183,8 +173,6 @@ def launch_coveragecorr(coveragefiles, fileout, legend, executiongranted):
 
 
 def launch_onoff_reads(bamfilenames, bedfilename, legend, outdir, executiongranted):
-    global TMP
-
     onoff_status = multiprocessing.Value('b', False)
     duplicates_status = multiprocessing.Value('b', False)
     enrichment = multiprocessing.Array('f', len(bamfilenames))
@@ -197,7 +185,7 @@ def launch_onoff_reads(bamfilenames, bedfilename, legend, outdir, executiongrant
     Ponoff_reads = multiprocessing.Process(target=bam.reads_on_target, args=(
     bedfilename, outdir, [bam_file.bam_file(bamfilenames[i]) for i in range(1, len(bamfilenames))],
     legend, executiongranted, onoff_status, duplicates_status, onduplicates,
-    offduplicates, enrichment, percontarget, TMP, config.warnontarget,))
+    offduplicates, enrichment, percontarget, config.TMP, config.warnontarget,))
     Ponoff_reads.start()
     bam.close()
 
@@ -205,15 +193,13 @@ def launch_onoff_reads(bamfilenames, bedfilename, legend, outdir, executiongrant
 
 
 def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfilenames, bedfilename, executiongranted):
-    global TMP
-
     if (executiongranted <> None):
         executiongranted.acquire()
 
     for bedgraphfilename in bedgraphfilenames:
         bedgraph = bedgraph_file.bedgraph_file(bedgraphfilename)
         bedgraph.getOffTarget(offtargetoffset, offtargetthreshold, bedfilename,
-                              bedgraphfilename.replace('.bed', '.off.bed'), TMP)
+                              bedgraphfilename.replace('.bed', '.off.bed'), config.TMP)
 
     if (executiongranted <> None):
         executiongranted.release()
@@ -282,8 +268,6 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
                     reference, nthreads,
                     depthlist,
                     coveragethresholds):
-    global TMP
-
     shutil.copy(IMGSRC + '/xls_icon.png', outdir + '/img')
     shutil.copy(IMGSRC + '/txt_icon.png', outdir + '/img')
     shutil.copy(IMGSRC + '/ok.jpg', outdir + '/img')
@@ -303,7 +287,7 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
     reportcontent = string.join(fd.readlines(), sep='').replace('bamfilename',
                                                                 string.join(bamfilenames, sep=', ')).replace(
         'bedfilename', bedfilename).replace('reportdate', time.ctime()).replace('reference', str(reference)).replace(
-        'saturationcurve', saturationcurve).replace('nthreads', str(nthreads)).replace('tmpdir', TMP)
+        'saturationcurve', saturationcurve).replace('nthreads', str(nthreads)).replace('tmpdir', config.TMP)
     fd.close()
 
 
@@ -519,11 +503,9 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
 def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation=False, nthreads=2, extend=None,
            depthlist='auto', coveragethresholds=[1, 5, 10, 20, 30],
            onefeature=None, tmpdir=None):
-    global TMP
-
     if (tmpdir <> None):
         if (os.path.isdir(tmpdir) or os.path.islink(tmpdir)):
-            TMP = tmpdir
+            config.TMP = tmpdir
         else:
             print 'ERROR: temporary directory ' + tmpdir + ' does not exist.'
             print '    Exiting'
@@ -543,7 +525,7 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
 
     sortedbams = []
     for bamfilename in bamfilenames:
-        filelink = TMP + '/' + os.path.basename(bamfilename)
+        filelink = config.TMP + '/' + os.path.basename(bamfilename)
         try:
             os.symlink(bamfilename, filelink)
         except OSError:
@@ -561,7 +543,7 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
                 print 'Exiting...'
                 sys.exit(1)
 
-            if (os.path.dirname(bamfilename) <> os.path.dirname(TMP + '/')):
+            if (os.path.dirname(bamfilename) <> os.path.dirname(config.TMP + '/')):
                 os.remove(filelink)
                 os.symlink(bamfilename, filelink)
 
@@ -573,7 +555,7 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
             print 'WARNING: ' + bamfilename + ' is not sorted'
             print 'Sorting...'
             pid = str(time.time())
-            newsortedbam = TMP + '/' + pid + '.sorted'
+            newsortedbam = config.TMP + '/' + pid + '.sorted'
             sortedbams.append(newsortedbam + '.bam')
             pysam.sort(filelink, newsortedbam)
             print 'Indexing...'
@@ -592,7 +574,7 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
     executiongranted = multiprocessing.Semaphore(nthreads)
 
     if (extend <> None):
-        bedfilename = TMP + '/' + originalbedfilename.replace('.bed', '.' + pid + '.extended.bed')
+        bedfilename = config.TMP + '/' + originalbedfilename.replace('.bed', '.' + pid + '.extended.bed')
         bed_file.bed_file(originalbedfilename).extendnoref(extend, bedfilename)
     else:
         bedfilename = originalbedfilename
