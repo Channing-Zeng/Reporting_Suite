@@ -21,9 +21,9 @@ import sets
 import pysam
 
 import bam_file
+import config
 
 
-CHR_LENGTHS = os.path.join(os.path.dirname(sys.argv[0]), 'grch_37_chr_lengths.genome')
 TMP = '/tmp/'
 BEDTOOLS = ''
 
@@ -159,7 +159,7 @@ class bed_file:
 
 
     def listids(self):
-        fd = filename(self.filename)
+        fd = file(self.filename)
         listids = []
         for line in fd:
             listids.append(line.split('\t')[3])
@@ -172,7 +172,7 @@ class bed_file:
         lengths = {}
 
         print 'Loading chr lengths...'
-        fd = file(CHR_LENGTHS)
+        fd = file(config.CHR_LENGTHS)
         for line in fd:
             parts = line.split('\t')
             lengths[parts[0]] = string.atoi(parts[1])
@@ -226,8 +226,8 @@ class bed_file:
             fileout = self.filename.replace('.bed', '.extended' + str(n) + '.bed')
 
         # Each region in each line is extended +-n bases
-        fd = file(self.filename)
-        fdw = file(fileout, 'w')
+        fd = open(self.filename)
+        fdw = open(fileout, 'w')
         for line in fd:
             parts = line.split('\t')
             fdw.write(

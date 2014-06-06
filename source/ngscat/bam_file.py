@@ -23,11 +23,6 @@ from matplotlib import pyplot
 
 import bed_file
 
-#TMP = '/home/fjavier/tmp/'
-#TMP = '/tmp/'
-#CHR_LENGTHS = '/data/reference_genomes/human/human_g1k_v37.genome'
-CHR_LENGTHS = os.path.join(os.path.dirname(sys.argv[0]), 'grch_37_chr_lengths.genome')
-
 
 # aux function
 def bam_has_unmapped_reads(bam_filename):
@@ -312,7 +307,7 @@ class bam_file(pysam.Samfile):
         coveragefile = config.TMP + '/' + pid + '.coverage'
 
         print 'Loading chr lengths...'
-        fd = file(CHR_LENGTHS)
+        fd = open(config.CHR_LENGTHS)
         for line in fd:
             parts = line.split('\t')
             lengths[parts[0]] = string.atoi(parts[1])
@@ -441,7 +436,7 @@ class bam_file(pysam.Samfile):
         coveragefile = config.TMP + '/' + pid + '.coverage'
 
         print 'Loading chr lengths...'
-        fd = file(CHR_LENGTHS)
+        fd = file(config.CHR_LENGTHS)
         for line in fd:
             parts = line.split('\t')
             lengths[parts[0]] = string.atoi(parts[1])

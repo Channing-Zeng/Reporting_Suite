@@ -13,12 +13,9 @@ import pysam
 import simulated_depth
 import draw_saturation_curve
 
-sys.path.append('/home/javi/MGP/utils/')
-#import job_queue
-
 import bam_file
+from os.path import join
 
-#TMP = '/data/analisis/MGP/capture_methods_tmp/'
 TMP = '/tmp/'
 
 
@@ -93,13 +90,13 @@ def coverage_saturation_local(bamlist, targets, depthlist, coverage, legend, fil
 
                     #            queue.wait()
                 newprocess = multiprocessing.Process(target=simulated_depth.simulated_depth, args=(
-                bam, targets[i], depth, coverage, TMP + '/' + jobid, executiongranted,
+                bam, targets[i], depth, coverage, join(TMP, jobid), executiongranted,
                 TMP,))
                 simulated_depth_processes.append(newprocess)
                 newprocess.start()
                 #            queue.push(newprocess)
 
-                result_files.append(TMP + jobid)
+                result_files.append(join(TMP, jobid))
                 j += 1
         else:
             print 'WARNING: the number of reads in ' + str(bam) + ' is ' + str(nreads_bam)

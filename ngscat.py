@@ -14,6 +14,10 @@ import math
 import pysam
 import numpy
 
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    sys.exit('Python 2, versions 2.7 and higher is supported '
+             '(you are running %d.%d.%d)' %
+             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 if not 'matplotlib' in sys.modules:
     import matplotlib
@@ -23,57 +27,23 @@ from source.ngscat import coverageHisto
 from source.ngscat import coverage_target
 from source.ngscat import coveragecorr
 
-#sys.path.append('/home/javi/MGP/utils')
-
 from source.ngscat import bam_file
 from source.ngscat import bed_file
 from source.ngscat import bedgraph_file
 from source.ngscat import target_coverage
 
-#sys.path.append('/home/javi/MGP/capture_methods/src')
 from source.ngscat import coverage_saturation
 from source.ngscat import exon_coverage_std
 from source.ngscat import gcbias
 
 from source.ngscat import config
 
-#DATASRC = '/home/javi/MGP/ngscat/data/'
-#IMGSRC = '/home/javi/MGP/ngscat/data/'
+from source.main import common_main, check_system_resources, load_genome_resources
+from source.utils import verify_file, critical, step_greetings, rmtx
+from os.path import join, expanduser, splitext, basename, isdir, abspath
 
-DATASRC = os.path.join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'html')
-IMGSRC = os.path.join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'img')
-
-
-def which(program):
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-    return None
-
-
-def run(command):
-    """************************************************************************************************************************************************************
-    Task: launches a system call
-    Inputs:
-        command: string containing the system call.
-    ************************************************************************************************************************************************************"""
-
-    print 'CMD: ' + command
-    # Checks whether an error occurred during the execution of the system call    
-    fd = os.popen(command)
-    if (fd.close() <> None):
-        print 'Some error occurred while executing: '
-        print '    ' + command
+DATASRC = join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'html')
+IMGSRC = join(os.path.dirname(sys.argv[0]), 'source', 'ngscat', 'img')
 
 
 def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongranted):
@@ -101,19 +71,6 @@ def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongrant
 
     #    return [positions,coverage,chromosomes,processedbed]
     return [Pcoveragebeds, coveragefiles]
-
-
-#def launch_coveragebed(bamfilename, bedfilename):
-#    pid = str(os.getpid())
-#    coveragefile = TMP+'/'+pid+'.coverage'
-#    print 'Launching coverageBed...'
-#    Pcoveragebed = multiprocessing.Process(target=run, args=('coverageBed -d -abam '+bamfilename+' -b '+bedfilename+' > '+coveragefile,))
-#    Pcoveragebed.start()
-#    
-#    return [Pcoveragebed,coveragefile]
-
-
-
 
 
 def launch_covered_positions(coveragefiles, coveragethresholds, outdir, legend, executiongranted):
@@ -268,14 +225,14 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
                     reference, nthreads,
                     depthlist,
                     coveragethresholds):
-    shutil.copy(IMGSRC + '/xls_icon.png', outdir + '/img')
-    shutil.copy(IMGSRC + '/txt_icon.png', outdir + '/img')
-    shutil.copy(IMGSRC + '/ok.jpg', outdir + '/img')
-    shutil.copy(IMGSRC + '/warning.jpg', outdir + '/img')
-    shutil.copy(IMGSRC + '/coverage_histogram_example.png', outdir + '/img')
+    dest = join(outdir, 'img')
+    shutil.copy(IMGSRC + '/xls_icon.png', dest)
+    shutil.copy(IMGSRC + '/txt_icon.png', dest)
+    shutil.copy(IMGSRC + '/ok.jpg', dest)
+    shutil.copy(IMGSRC + '/warning.jpg', dest)
+    shutil.copy(IMGSRC + '/coverage_histogram_example.png', dest)
 
     shutil.copy(DATASRC + '/styles.css', outdir)
-
 
     # ********************************************************* INput parameters ******************************************************************
     if (coverage_saturation_status <> None):
@@ -289,10 +246,6 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
         'bedfilename', bedfilename).replace('reportdate', time.ctime()).replace('reference', str(reference)).replace(
         'saturationcurve', saturationcurve).replace('nthreads', str(nthreads)).replace('tmpdir', config.TMP)
     fd.close()
-
-
-
-
 
     # ********************************************************* Result summary ******************************************************************
 
@@ -373,11 +326,6 @@ def generate_report(bamfilenames, sortedbams, bedfilename, outdir, coveredpositi
 
     reportcontent = reportcontent.replace('<SUMMARYCOVERAGETHRS>', str(coveragethresholds[0]))
     reportcontent = reportcontent.replace('<SUMMARYTARGETSIZE>', str(bed_file.bed_file(bedfilename).size()))
-
-
-
-
-
 
 
     # ********************************************************* Detailed results ******************************************************************
@@ -574,7 +522,7 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
     executiongranted = multiprocessing.Semaphore(nthreads)
 
     if (extend <> None):
-        bedfilename = config.TMP + '/' + originalbedfilename.replace('.bed', '.' + pid + '.extended.bed')
+        bedfilename = join(config.TMP, basename(originalbedfilename).replace('.bed', '.' + pid + '.extended.bed'))
         bed_file.bed_file(originalbedfilename).extendnoref(extend, bedfilename)
     else:
         bedfilename = originalbedfilename
@@ -677,10 +625,6 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
         Poffclusters.join()
         Poffclusters.terminate()
 
-
-
-
-
     #    if(onefeature==None or onefeature<>'saturation'):
     #        for coveragefile in coveragefiles:
     #            os.remove(coveragefile)
@@ -696,207 +640,160 @@ def ngscat(bamfilenames, originalbedfilename, outdir, reference=None, saturation
                         coveragethresholds)
 
 
-def check_parameters(options, parser):
-    availablefeatures = ['percbases', 'saturation', 'specificity', 'coveragefreq', 'coveragedistr', 'coveragestd',
-                         'gcbias', 'coveragecorr']
+def verify_bam(fpath):
+    if not verify_file(fpath):
+        return False
+    if not fpath.endswith('.bam'):
+        sys.stderr.write(fpath + ' must have .bam extension. '
+                                 'Please, make sure that the bam file is appropriately formatted.\n')
+        return False
     textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
-
-    # Check number of arguments    
-    if len(sys.argv) < 7:
-        parser.print_help()
-        print 'ERROR: --bams, --bed and --out parameters are required.'
-        sys.exit(1)
-
-    # Check number of arguments    
-    if len(sys.argv) > 21:
-        parser.print_help()
-        print 'ERROR: too many parameters. Please, check that there are no spaces between commas within the "depthlist" or "coveragethrs" arguments.'
-        sys.exit(1)
-
-    try:
-        options.bams = map(os.path.abspath, options.bams.split(','))
-        if (len(options.bams) > 2):
-            print 'ERROR: please make sure that no more than two bam files are provided. Please, input a comma separated list. E.g.: --bams /home/user/bam1.sorted.bam,/home/user/bam2.sorted.bam'
-            sys.exit(1)
-    except AttributeError:
-        print 'ERROR: at least one bam file is required. Please, input a comma separated list. E.g.: --bams /home/user/bam1.sorted.bam,/home/user/bam2.sorted.bam'
-        sys.exit(1)
-
-    for bam in options.bams:
-        if (not (os.path.isfile(bam) or os.path.islink(bam))):
-            print 'ERROR: ' + bam + ' does not exist.'
-            sys.exit(1)
-
-        if (not bam[-4:] == '.bam'):
-            print 'ERROR: ' + bam + ' must have .bam extension. Please, make sure that the bam file is appropriately formatted.'
-            sys.exit(1)
-
-        if (not is_binary_string(open(bam).read(3))):
-            print 'ERROR: ' + bam + ' must be a binary file. Please, make sure that the bam file is appropriately formatted.'
-            sys.exit(1)
-
-    try:
-        options.bed = os.path.abspath(options.bed)
-        if (not (os.path.isfile(options.bed) or os.path.islink(options.bed))):
-            print 'ERROR: ' + options.bed + ' does not exist.'
-            sys.exit(1)
-    except AttributeError:
-        print 'ERROR: the --bed file is a required parameter. Please, provide one bed file indicating target regions to analyze.'
-        sys.exit(1)
-
-    err = bed_file.bed_file(options.bed).checkformat()
-    if (err <> ''):
-        print 'ERROR: incorrect bed file format.'
-        print '    ' + err
-        sys.exit(1)
-
-    if options.out is None:
-        print 'ERROR: --out parameter is required.'
-        sys.exit(1)
-    options.out = os.path.abspath(options.out) + '/'
-    if not os.path.isdir(options.out):
-        os.makedirs(options.out)
-
-    if ((os.path.isdir(options.out) or os.path.islink(options.out)) and (
-        os.path.isdir(options.out + '/data') or os.path.islink(options.out + '/data')) and len(
-            glob.glob(options.out + '/data/*_Ontarget_Coverage.png')) > 0):
-        print 'WARNING: ' + options.out + ' directory seems to contain previous NGScat results. Saving results of current execution in this directory may cause incorrect report generation.'
-        print 'Continue with current setting? (y/n)'
-
-        proceed = 'y'  # raw_input().lower()
-        while (proceed <> 'y' and proceed <> 'n'):
-            proceed = raw_input().lower()
-
-        if (proceed == 'n'):
-            sys.exit(1)
-
-    if (options.reference <> None and (not (os.path.isfile(options.reference) or os.path.islink(options.reference)))):
-        print 'ERROR: ' + options.reference + ' does not exist.'
-        sys.exit(1)
-
-    if (options.saturation <> 'y' and options.saturation <> 'n'):
-        print 'ERROR: incorrect value for --saturation parameters. Please indicate "y" or "n".'
-        sys.exit(1)
-
-    try:
-        nthreads = int(options.nthreads)
-    except ValueError:
-        print 'ERROR: invalid value for --nthreads option. Please, provide an integer value. Note that the application will launch as many processess as it needs between 1 and nthreads.'
-        sys.exit(1)
-
-    if (options.depthlist <> 'auto'):
-        try:
-            depthlist = map(float, options.depthlist.split(','))
-        except ValueError:
-            print 'ERROR: invalid values for --depthlist option. Please, provide a comma separated list of values without leaving spaces, e.g.: 1,2,10,20'
-            sys.exit(1)
-
-    try:
-        coveragetrhesholds = map(float, options.coveragethresholds.split(','))
-    except ValueError:
-        print 'ERROR: invalid values for --coveragethrs option. Please, provide a comma separated list of values without leaving spaces, e.g.: 1,2,10,20'
-        sys.exit(1)
-
-    if (options.feature <> None and options.feature.lower() not in availablefeatures):
-        print 'ERROR: ' + options.feature + " not available. Please, check that the selected feature is one of the following: 'percbases','saturation','specificity','coveragefreq', 'coveragedistr', 'coveragestd', 'gcbias'"
-        sys.exit(1)
-
-    if not options.tmp:
-        options.tmp = options.out
-    else:
-        options.tmp = os.path.abspath(options.tmp)
-    if not os.path.isdir(options.tmp):
-        os.makedirs(options.tmp)
-    options.tmp = tempfile.mkdtemp(dir=options.tmp, prefix='ngscat_tmp_') + '/'
+    if not is_binary_string(open(fpath).read(3)):
+        sys.stderr.write(fpath + ' must be a binary file. '
+                                 'Please, make sure that the bam file is appropriately formatted.\n')
+        return False
     return True
 
 
+def verify_bed(fpath):
+    if not verify_file(fpath):
+        return False
+    err = bed_file.bed_file(fpath).checkformat()
+    if err:
+        sys.stderr.write('ERROR: incorrect bed file format (' + fpath + '): ' + err + '\n')
+        return False
+    return True
+
+
+def verify_parameters(options):
+    if options.get('extra_bam'):
+        if not verify_bam(options.get('extra_bam')):
+            exit(1)
+
+    if options.get('saturation') not in ['y', 'n']:
+        sys.stderr.write('ERROR: incorrect value for --saturation parameter. Please indicate "y" or "n".')
+        exit(1)
+
+    if options.get('depthlist') != 'auto':
+        try:
+            map(float, options.get('depthlist').split(','))
+        except ValueError:
+            sys.stderr.write('ERROR: invalid values for --depth_list option. Please, provide a comma separated '
+                             'list of values without leaving spaces, e.g.: 1.0,2.5,10.0')
+            exit(1)
+
+    if options.get('feature') is not None and options.get('feature').lower() not in config.availablefeatures:
+        sys.stderr.write('ERROR: ' + options.get('feature') + ' is not available. '
+                         'Please, check that the selected feature is one of the following: ' +
+                         ', '.join(config.availablefeatures))
+        exit(1)
+
+
 def main():
-    # checking whether samtools and bamtools are installed
-    for binary in ["samtools", "bedtools"]:
-        if not which(binary):
-            sys.stderr.write('ERROR: %s not found! You may want to run "module load %s", '
-                             'or better ". /group/ngs/bin/bcbio-prod.sh"\n' % (binary, binary))
-            sys.stderr.flush()
-            sys.exit(1)
+    cnf, options = common_main(
+        'targetcov',
+        extra_opts=[
+            (['--bam'], 'align.bam', {
+                'dest': 'bam',
+                'help': 'Path to the bam file. Required!'}),
 
-    ################################################
+            (['--extra_bam'], 'align2.bam', {
+                'dest': 'extra_bam',
+                'help': 'Additional bam file',
+                'default': None}),
 
-    #### Options and arguments #####################
+            (['--bed'], 'target_regions.bed', {
+                'dest': 'bed',
+                'help': 'Path to the bed file containing the target regions. Required!'}),
 
-    ################################################
+            (['--extend_target'], '<int>', {
+                'dest': 'extend',
+                'help': 'Integer indicating the number of bases to extend each target region up and down-stream',
+                'default': None}),
 
-    usage = """
-    ************************************************************************************************************************************************************
-    Task: Assesses capture performance in terms of sensibility, specificity and uniformity of the coverage.
-    Output: An html report will be created at the path indicated with the --out option.
-    ************************************************************************************************************************************************************
+            (['--saturation'], '{y,n}', {
+                'dest': 'saturation',
+                'help': 'Y/n to indicate whether saturation curve should be calculated',
+                'default': 'n'}),
 
+            (['--depth_list'], '<float,float,..>', {
+                'dest': 'depthlist',
+                'help': 'Will only be used in case --saturation is "y". Comma separated list of real numbers '
+                        '(do not leave spaces between) indicating the number of millions of reads to simulate '
+                        'for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6.',
+                'default': 'auto'}),
 
-    
-    usage: %prog --bams <filename> --bed <filename> --out <path> --extendtarget <nbases> --reference <filename> --saturation <{y,n}> --depthlist <list> --tmp <path> --threads <integer> [--debug]"""
+            (['--one_feature'], '<str>', {
+                'dest': 'feature',
+                'help': "Use this option if just one of the graphs/statistics should be calculated. "
+                        "String indicating one of the following features: "
+                        "{%s}" % (', '.join(config.availablefeatures)),
+                'default': None}),
+        ],
+        required=['bam', 'bed'])
 
-    parser = optparse.OptionParser(usage)
-    parser.add_option("--bams", dest="bams",
-                      help="""Required. Comma separated list of bam files (2 maximum). E.g.: --bams /home/user/bam1.sorted.bam,/home/user/bam2.sorted.bam""")
-    parser.add_option("--bed", dest="bed", help="""Required. Path to the bed file containing the target regions.""")
-    parser.add_option("--out", dest="out", help="""Required. Path to the directory where results will be saved.""")
-    parser.add_option("--extendtarget", dest="extend",
-                      help="""Optional. Integer indicating the number of bases to extend each target region up and down-stream. Default=None.""",
-                      default=None)
-    parser.add_option("--reference", dest="reference",
-                      help="""Optional. String indicating the path to a .fasta file containing the reference chromosomes. Default=None.""",
-                      default=None)
-    parser.add_option("--saturation", dest="saturation",
-                      help="""Optional. {y,n} to indicate whether saturation curve should be calculated. Default=n.""",
-                      default='n')
-    parser.add_option("--depthlist", dest="depthlist",
-                      help="""Optional. Will only be used in case --saturation is "y". Comma separated list of real numbers (do not leave spaces between) indicating the number of millions of reads to simulate for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6. Default=auto.""",
-                      default='auto')
-    parser.add_option("--coveragethrs", dest="coveragethresholds",
-                      help="""Optional. Comma separated list of real numbers (do not leave spaces between) indicating coverage thresholds to be used when calculating percentages of covered bases (first graph in the report). Default=1,5,10,20,30.""",
-                      default='1,5,10,20,30')
-    parser.add_option("--onefeature", dest="feature",
-                      help="""Optional. Use this option if just one of the graphs/statistics should be calculated. String indicating one of the following features:  {'percbases','saturation','specificity','coveragefreq', 'coveragedistr', 'coveragestd', 'gcbias','coveragecorr'}.""",
-                      default=None)
-    parser.add_option("--tmp", dest="tmp",
-                      help="""Optional. String indicating the path to a temporary directory where temporary files will be created. Default=<output_dir>/""",
-                      default=None)
-    parser.add_option("--nt", "--threads", dest="nthreads",
-                      help="""Optional. Integer indicating the number of concurrent threads to launch. Default=2.""",
-                      default=2)
-    parser.add_option("--debug", dest="debug", action="store_true",
-                      help="""Optional. Use this option to disable removing of temporary files.""")
+    check_system_resources(cnf, ['samtools', 'bedtools'])
+    load_genome_resources(cnf)
+    #load_genome_resources(cnf, ['chr_lengths']) #TODO: check whether it needed at all!
+    #chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
+    #if not chr_len_fpath:
+    #    critical('Specify chromosome lengths for the genome'
+    #             ' in system info or in run info.')
+    #config.CHR_LENGTHS = chr_len_fpath
 
-    (options, args) = parser.parse_args()
+    bed = options.get('bed') or cnf.get('bed')
+    bam = options.get('bam') or cnf.get('bam')
 
-    if (check_parameters(options, parser)):
-        if (options.extend <> None):
-            extend = int(options.extend)
-        else:
-            extend = None
+    if not bam:
+        critical('Specify bam file by --bam option or in run_config.')
+    if not bed:
+        critical('Specify target regions file by --bed option or in run_config.')
 
-        filtered_bams = []
-        for bam in options.bams:
-            filtered_bams.append(bam_file.filter_unmapped_reads(bam, options.tmp))
-        options.bams = filtered_bams
+    print('using bam ' + bam)
+    print('using bed ' + bed)
 
-        if (options.depthlist == 'auto'):
-            # call core function
-            ngscat(options.bams, options.bed, options.out, options.reference, options.saturation == 'y',
-                   int(options.nthreads), extend, options.depthlist,
-                   map(float, options.coveragethresholds.split(',')), options.feature, options.tmp)
-        else:
-            # call core function
-            ngscat(options.bams, options.bed, options.out, options.reference, options.saturation == 'y',
-                   int(options.nthreads), extend, map(float, options.depthlist.split(',')),
-                   map(float, options.coveragethresholds.split(',')), options.feature, options.tmp)
+    bam = abspath(expanduser(bam))
+    bed = abspath(expanduser(bed))
 
-        #print 'Results written at '+ options.out
-        if not options.debug:
-            shutil.rmtree(options.tmp)
-        print '>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<'
+    if not verify_bam(bam) or not verify_bed(bed):
+        exit(1)
+
+    verify_parameters(options)
+
+    print('writing to output dir ' + cnf['output_dir'])
+
+    step_greetings('ngsCAT starting! Task: Assesses capture performance in terms of sensibility, '
+                   'specificity and uniformity of the coverage.\n'
+                   'Output: An html report will be created at the path indicated with the --out option.')
+
+    if isdir(cnf['work_dir']):
+        shutil.rmtree(cnf['work_dir'])
+    os.makedirs(cnf['work_dir'])
+    config.TMP = cnf['work_dir'] # TODO: rewrite config.TMP usage!
+
+    filtered_bams = []
+    bams = [bam]
+    if options.get('extra_bam'):
+        bams.append(abspath(options.get('extra_bam')))
+    for bam in bams:
+        filtered_bams.append(bam_file.filter_unmapped_reads(bam, cnf['work_dir']))
+
+    extend = options.get('extend') if options.get('extend') is None else int(options.get('extend'))
+    depth_list = options.get('depthlist') if options.get('depthlist') == 'auto' \
+        else map(float, options.get('depthlist').split(','))
+
+    ngscat(filtered_bams, bed, cnf['output_dir'], cnf['genome'].get('seq'), options.get('saturation') == 'y',
+           int(options.get('threads')), extend, depth_list, cnf['depth_thresholds'],
+           options.get('feature'), cnf['work_dir'])
+
+    if not cnf.get('keep_intermediate'):
+        shutil.rmtree(cnf['work_dir'])
+
+    # not needed yet
+    rmtx(cnf['work_dir'])
+    rmtx(cnf['output_dir'])
+    print('>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 
 if __name__ == '__main__':
