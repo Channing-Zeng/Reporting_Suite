@@ -30,23 +30,20 @@ def common_main(pipeline_name, extra_opts, required):
         usage=(
             'python ' + __file__ +
             ' [system_info.yaml] [' + run_config_name + '] ' +
-            ' '.join(args[0] + example for args, example, _ in extra_opts) +
+            ' '.join(args[0] + ' ' + example for args, example, _ in extra_opts) +
             ' [--output_dir dir]\n'
             ''
             '    or python ' + __file__ +
-            ' [system_info.yaml] ' + run_config_name +
-            '' +
-            'Orther options:' +
-            '-t <thread num>  number of threads to run GATK' +
-            '-w               do not reuse intermediate files from previous run'
+            ' [system_info.yaml] ' + run_config_name
         )
     )
 
     for args, _, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
     parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR')
-    parser.add_option('-t', '--nt', dest='threads')
-    parser.add_option('-w', dest='rewrite', action='store_true', default=False)
+    parser.add_option('-t', '--nt', dest='threads', help='number of threads')
+    parser.add_option('-w', dest='rewrite', action='store_true', default=False,
+                      help='do not reuse intermediate files from previous run')
     parser.add_option('--np', '--no-parallel', dest='no_parallel', action='store_true', default=False)
     (options, args) = parser.parse_args()
     options = options.__dict__
