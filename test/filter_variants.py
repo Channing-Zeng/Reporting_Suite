@@ -57,41 +57,15 @@ def main(args):
     sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
 
     try:
-        run_all(config, sample_cnfs_by_name, required, optional,
-                process_one, finalize_one, finalize_all)
+        run()
     except KeyboardInterrupt:
         rmtx(config['work_dir'])
         sys.exit(1)
     rmtx(config['work_dir'])
 
 
-def process_one(cnf, vcf_fpath, bam_fpath=None):
-    anno_vcf_fpath, anno_maf_fpath = anno.run_annotators(cnf, vcf_fpath, bam_fpath)
-    anno_tsv_fpath = None
-    if anno_vcf_fpath and 'tsv_fields' in cnf:
-        anno_tsv_fpath = tsv.make_tsv(cnf, anno_vcf_fpath)
-    return anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath
-
-
-def finalize_one(cnf, anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath):
-    if anno_vcf_fpath:
-        info(cnf['log'], 'Saved final VCF to ' + anno_vcf_fpath)
-    if anno_maf_fpath:
-        info(cnf['log'], 'Saved final MAF to ' + anno_maf_fpath)
-    if anno_tsv_fpath:
-        info(cnf['log'], 'Saved final TSV to ' + anno_tsv_fpath)
-
-
-def finalize_all(cnf, samples, results):
-    for (sample_name, cnf), (vcf, maf, tsv) in zip(samples.items(), results):
-        if vcf or tsv:
-            info(cnf['log'], sample_name + ':')
-        if vcf:
-            info(cnf['log'], '  ' + vcf)
-        if maf:
-            info(cnf['log'], '  ' + maf)
-        if tsv:
-            info(cnf['log'], '  ' + tsv)
+def run():
+    pass
 
 
 if __name__ == '__main__':
