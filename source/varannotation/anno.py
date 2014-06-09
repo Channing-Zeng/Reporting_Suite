@@ -2,7 +2,7 @@ from genericpath import isfile
 from os.path import splitext, basename, join, dirname, realpath
 import os
 import shutil
-from source.runner import filter_ensemble
+from source.runner import filter_rejected
 
 from source.utils import critical, iterate_file, step_greetings, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
@@ -18,8 +18,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
     # gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
 
-    if cnf.get('ensemble'):
-        vcf_fpath = filter_ensemble(cnf, vcf_fpath)
+    if cnf.get('filter_reject'):
+        vcf_fpath = filter_rejected(cnf, vcf_fpath)
 
     if 'gatk' in cnf:
         annotated = True

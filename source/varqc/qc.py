@@ -2,7 +2,7 @@ from os import mkdir, makedirs
 from os.path import basename, isdir, dirname
 
 from source.bcbio_utils import file_exists
-from source.runner import filter_ensemble
+from source.runner import filter_rejected
 from source.utils import info, err, verify_file, verify_dir, verify_module, critical
 from source.varqc.stats_gatk import gatk_qc
 
@@ -22,8 +22,8 @@ def run_qc(cnf, qc_dir, vcf_fpath):
     if not isdir(qc_dir):
         mkdir(qc_dir)
 
-    if cnf.get('ensemble'):
-        vcf_fpath = filter_ensemble(cnf, vcf_fpath)
+    if cnf.get('filter_reject'):
+        vcf_fpath = filter_rejected(cnf, vcf_fpath)
 
     qc_report_fpath = gatk_qc(cnf, qc_dir, vcf_fpath)
 

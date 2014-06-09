@@ -61,10 +61,10 @@ def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
         shutil.rmtree(work_dirpath)
 
 
-def filter_ensemble(cnf, input_fpath):
-    step_greetings(cnf, 'Extracting dataset by filename, filtering ensemble reject line.')
+def filter_rejected(cnf, input_fpath):
+    step_greetings(cnf, 'Extracting dataset by filename, filtering REJECT line.')
     output_fpath = iterate_file(cnf, input_fpath,
-                                (lambda l: 'REJECT' not in l),
+                                (lambda l: l if 'REJECT' not in l else None),
                                 cnf['work_dir'])
     info(cnf.get('log'), 'Saved to ' + output_fpath)
     return output_fpath
