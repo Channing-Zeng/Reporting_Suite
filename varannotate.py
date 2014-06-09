@@ -12,14 +12,14 @@ from source.main import common_main, check_system_resources, load_genome_resourc
 from source.runner import run_all
 from source.varannotation.tsv import make_tsv
 from source.varannotation.anno import run_annotators
-from source.utils import info, rmtx
+from source.utils import info, rmtx, make_tmpdir
 
 
 def main(args):
     required = ['vcf']
     optional = ['bam']
 
-    config, options = common_main(
+    cnf, options = common_main(
         'annotation',
         extra_opts=[
             (['--var', '--vcf'], 'variants.vcf', {
@@ -38,25 +38,25 @@ def main(args):
         ],
         required=required)
 
-    if 'clinical_reporting' in options and 'snpeff' in config:
-        config['snpeff']['clinical_reporting'] = True
+    if 'clinical_reporting' in options and 'snpeff' in cnf:
+        cnf['snpeff']['clinical_reporting'] = True
 
-    check_system_resources(config, ['java', 'perl', 'gatk', 'snpeff', 'snpsift'])
-    load_genome_resources(config, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
+    check_system_resources(cnf, ['java', 'perl', 'gatk', 'snpeff', 'snpsift'])
+    load_genome_resources(cnf, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
 
     var_fpath = options.get('vcf')
     if var_fpath:
-        print 'Using variants ' + var_fpath
+        info('Using variants ' + var_fpath)
     bam_fpath = options.get('bam')
     if bam_fpath:
-        print 'Using bam ' + bam_fpath
+        info('Using bam ' + bam_fpath)
     output_dir = options.get('output_dir')
     if output_dir:
-        print 'Saving to ' + output_dir
+        info('Saving to ' + output_dir)
 
-    sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
+    sample_cnfs_by_name = read_samples_info_and_split(cnf, options, required + optional)
 
-    run_all(config, sample_cnfs_by_name, required, optional,
+    run_all(cnf, sample_cnfs_by_name, required, optional,
             process_one, finalize_one, finalize_all)
 
 

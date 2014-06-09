@@ -1,4 +1,4 @@
-tmp_dir: /ngs/tmp
+tmp_base_dir: /ngs/tmp
 
 resources:
   gatk:

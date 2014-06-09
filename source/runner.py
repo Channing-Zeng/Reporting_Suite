@@ -10,13 +10,13 @@ try:
 except ImportError:
     from yaml import Dumper
 
-from source.utils import critical, info, iterate_file, step_greetings
+from source.utils import critical, info, iterate_file, step_greetings, make_tmpdir
 
 
 def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
             process_one, finalize_one, finalize_all):
 
-    try:
+    with make_tmpdir(cnf):
         if len(sample_cnfs_by_name) == 1:
             sample_name, sample_cnf = sample_cnfs_by_name.items()[0]
             run_one(sample_cnf, required_inputs, optional_inputs, process_one, finalize_one)
@@ -56,18 +56,9 @@ def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
                 info('Results for each sample:')
                 finalize_all(cnf, sample_cnfs_by_name, results)
 
-    except KeyboardInterrupt:
-        pass
-
-    finally:  # Cleaning
-        for name, data in sample_cnfs_by_name.items():
-            tmp_dirpath = data['tmp_dir']
-            if isdir(tmp_dirpath):
-                shutil.rmtree(tmp_dirpath)
-
-            work_dirpath = data['work_dir']
-            if not data.get('keep_intermediate') and isdir(work_dirpath):
-                shutil.rmtree(work_dirpath)
+    work_dirpath = cnf['work_dir']
+    if not cnf.get('keep_intermediate') and isdir(work_dirpath):
+        shutil.rmtree(work_dirpath)
 
 
 def filter_ensemble(cnf, input_fpath):

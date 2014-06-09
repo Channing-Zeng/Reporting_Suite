@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import sys
 import subprocess
@@ -5,20 +6,19 @@ import tempfile
 import os
 import shutil
 import re
-import traceback
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
 from distutils.version import LooseVersion
-from datetime import datetime
+from datetime import datetime, time
 
 from source.transaction import file_transaction
-from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe, safe_makedir
+from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
 
 
 def err(log, msg=None):
     if msg is None:
         msg, log = log, None
 
-    msg += timestamp() + msg
+    msg = timestamp() + msg
 
     if log:
         open(log, 'a').write('\n' + msg + '\n')
@@ -31,7 +31,7 @@ def critical(log, msg=None):
     if msg is None:
         msg, log = log, None
 
-    msg += timestamp() + msg
+    msg = timestamp() + msg
 
     if log:
         open(log, 'a').write('\n' + msg + '\n')
@@ -43,7 +43,7 @@ def info(log, msg=None):
     if msg is None:
         msg, log = log, None
 
-    msg += timestamp() + msg
+    msg = timestamp() + msg
 
     print(msg)
     sys.stdout.flush()
@@ -120,41 +120,25 @@ def verify_dir(fpath, description=''):
     return True
 
 
-def safe_mkdir(dirpath, descriptive_name):
-    if not dirpath:
-        exit(descriptive_name + ' path is empty.')
-    if isfile(dirpath):
-        exit(descriptive_name + ' ' + dirpath + ' is a file.')
-    if not exists(dirpath):
-        try:
-            os.mkdir(dirpath)
-        except OSError, e:
-            sys.exit(
-                'Error creating ' + descriptive_name + ' ' + dirpath +
-                ', probably parent directory does not exist.\nActual error is: ' +
-                str(traceback.format_exc()))
-
-
-def curdir_tmpdir(remove=True, base_dir=None):
+@contextlib.contextmanager
+def make_tmpdir(cnf, prefix='ngs_reporting_tmp'):
     """Context manager to create and remove a temporary directory.
 
     This can also handle a configured temporary directory to use.
     """
-    if base_dir is not None:
-        tmp_dir_base = os.path.join(base_dir, "tmpdir")
-    else:
-        tmp_dir_base = os.path.join(os.getcwd(), "tmp")
-    safe_makedir(tmp_dir_base)
-    tmp_dir = tempfile.mkdtemp(dir=tmp_dir_base)
-    safe_makedir(tmp_dir)
+    base_dir = cnf.get('tmp_base_dir') or cnf['work_dir']
+    if not verify_dir(base_dir, 'Base directory for temporary files.'):
+        sys.exit(1)
+    tmp_dir = tempfile.mkdtemp(dir=base_dir, prefix=prefix)
+    safe_mkdir(tmp_dir)
+    cnf['tmp_dir'] = tmp_dir
     try:
         yield tmp_dir
     finally:
-        if remove:
-            try:
-                shutil.rmtree(tmp_dir)
-            except:
-                pass
+        try:
+            shutil.rmtree(tmp_dir)
+        except OSError:
+            pass
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,

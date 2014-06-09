@@ -62,8 +62,8 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            basedir = bcbio_utils.safe_makedir(os.path.join(os.path.dirname(fname) or tmp_dir, 'tx'))
-            tmpdir = bcbio_utils.safe_makedir(tempfile.mkdtemp(dir=basedir))
+            basedir = bcbio_utils.safe_mkdir(tmp_dir or os.path.join(os.path.dirname(fname), 'tx'))
+            tmpdir = bcbio_utils.safe_mkdir(tempfile.mkdtemp(dir=basedir))
             tx_file = os.path.join(tmpdir, os.path.basename(fname))
             tx_files.append(tx_file)
             orig_files.append(fname)

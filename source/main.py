@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import contextlib
 import sys
 import shutil
 import os
@@ -8,7 +9,7 @@ from collections import OrderedDict
 
 from source.utils import err, critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir, verify_module, md5_for_file, \
-    check_file_changed
+    check_file_changed, make_tmpdir
 
 if verify_module('yaml'):
     from yaml import dump, load
@@ -52,9 +53,8 @@ def common_main(pipeline_name, extra_opts, required):
 
     cnf['output_dir'] = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
     cnf['output_dir'] = expanduser(cnf['output_dir'])
-    _set_up_work_dir(cnf)
-    cnf['tmp_dir'] = join(cnf.get('tmp_dir') or cnf['work_dir'], 'tmp')
-    safe_mkdir(cnf['tmp_dir'], 'Temporary directory')
+
+    _set_up_dirs(cnf)
 
     if (len([k for k in required if k in options]) < len(required) and
         not cnf.get('details')):
@@ -132,7 +132,6 @@ def _load_config(pipleine_name, args):
     return dict(run_cnf.items() + sys_cnf.items())
 
 
-
 def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
     input_fpaths = []
     for key in required_inputs:
@@ -196,7 +195,7 @@ def load_genome_resources(cnf, required=list()):
             if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
                 to_exit = True
 
-    for f in required:  #'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
+    for f in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if f not in genome_cnf:
             err('Please, provide path to ' + f  + ' in system config genome section.')
             to_exit = True
@@ -235,7 +234,7 @@ def _check_system_tools():
         exit()
 
 
-def _set_up_work_dir(cnf):
+def _set_up_dirs(cnf):
     cnf['output_dir'] = expanduser(cnf['output_dir'])
     output_dirpath = realpath(cnf['output_dir'])
     safe_mkdir(output_dirpath, 'output_dir')

@@ -1,249 +1,239 @@
-
-----------------------------------------------------------------------
-2014-05-30 21:22:32  Annotate with cosmic
-----------------------------------------------------------------------
-java -Xms750m -Xmx6g  -jar /usr/local/share/java/snpEff/SnpSift.jar annotate -v -info ID,CNT,AA,CDS /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.vcf > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmp5Fsbjk/sample1.cosmic.vcf
-   00:00:00.000	Annotating entries from: 'null'
-   Index: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
-   index:	chrM	51347
-   index:	chrM	8971
-   00:00:00.098	Chromosome: 'M'
-   WARNING: Chromosome '22' not found in database.
-   WARNING: Chromosome '22' not found in database.
-   00:00:00.118	Done.
-   Total annotated entries : 0
-   Total entries           : 12
-   Percent                 : 0.00%
-   Errors (bad references) : 0
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.cosmic.vcf
-
-----------------------------------------------------------------------
-2014-05-30 21:22:33  Intersecting with analysis_blocks
-----------------------------------------------------------------------
-/usr/local/bin/vcfannotate -b /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed -k analysis_blocks /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.cosmic.vcf > /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/tx/tmpKrrdg_/sample1.cosmic.analysis_blocks.vcf
-Saved to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.cosmic.analysis_blocks.vcf
-
-----------------------------------------------------------------------
-2014-05-30 21:22:33  Filtering incorrect fields.
-----------------------------------------------------------------------
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 42.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 42.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 43.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 43.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 44.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 44.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 45.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 45.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 46.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 46.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 47.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 47.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 48.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 48.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 49.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 49.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 50.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 50.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 51.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 51.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 52.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 52.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 53.
-   Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 53.
-   Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 53.
-
-----------------------------------------------------------------------
-2014-05-30 21:22:33  Extracting fields
-----------------------------------------------------------------------
-/Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv exists, reusing
-Saved TSV file to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv
-
-----------------------------------------------------------------------
-2014-05-30 21:22:33  Renaming fields.
-----------------------------------------------------------------------
-Saved TSV file with nice names to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.renamed.tsv
-
-**********************************************************************
-sample1
-Saved final VCF to results_anno/sample1.anno.vcf
-Saved final MAF to results_anno/sample1.anno.maf
-Saved final TSV to results_anno/sample1.anno.tsv
+2014-06-09 16:41:05  
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  2014-06-09 16:41:05  Annotate with cosmic
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.cosmic.vcf exists, reusing
+2014-06-09 16:41:05  
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  2014-06-09 16:41:05  Intersecting with analysis_blocks
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.cosmic.analysis_blocks.vcf exists, reusing
+2014-06-09 16:41:05  
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  2014-06-09 16:41:05  Filtering incorrect fields.
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:05  2014-06-09 16:41:05  Converting to MAF
+2014-06-09 16:41:05  ----------------------------------------------------------------------
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 42.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 43.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 44.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 45.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 46.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 47.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 48.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 49.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 50.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 51.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 52.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 53.
+2014-06-09 16:41:06     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/ngs_analysis/source/varannotation/../../source/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 53.
+2014-06-09 16:41:06  
+2014-06-09 16:41:06  ----------------------------------------------------------------------
+2014-06-09 16:41:06  2014-06-09 16:41:06  Extracting fields
+2014-06-09 16:41:06  ----------------------------------------------------------------------
+2014-06-09 16:41:06  /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv exists, reusing
+2014-06-09 16:41:06  Saved TSV file to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.tsv
+2014-06-09 16:41:06  
+2014-06-09 16:41:06  ----------------------------------------------------------------------
+2014-06-09 16:41:06  2014-06-09 16:41:06  Renaming fields.
+2014-06-09 16:41:06  ----------------------------------------------------------------------
+2014-06-09 16:41:06  Saved TSV file with nice names to /Users/vladsaveliev/vagrant/ngs_analysis/test/results_anno/work/sample1.anno.renamed.tsv
+2014-06-09 16:41:06  
+2014-06-09 16:41:06  **********************************************************************
+2014-06-09 16:41:06  sample1
+2014-06-09 16:41:06  Saved final VCF to results_anno/sample1.anno.vcf
+2014-06-09 16:41:06  Saved final MAF to results_anno/sample1.anno.maf
+2014-06-09 16:41:06  Saved final TSV to results_anno/sample1.anno.tsv

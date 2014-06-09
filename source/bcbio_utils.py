@@ -3,14 +3,17 @@
 import gzip
 import os
 import tempfile
-import time
-import shutil
 import contextlib
 import itertools
 import functools
 import random
 import ConfigParser
-from os.path import join, splitext
+import collections
+import sys
+import yaml
+import fnmatch
+from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, splitext
+from datetime import datetime, time
 try:
     from concurrent import futures
 except ImportError:
@@ -18,9 +21,6 @@ except ImportError:
         import futures
     except ImportError:
         futures = None
-import collections
-import yaml
-import fnmatch
 
 
 @contextlib.contextmanager
@@ -47,6 +47,29 @@ def map_wrap(f):
     def wrapper(*args, **kwargs):
         return apply(f, *args, **kwargs)
     return wrapper
+
+
+def safe_mkdir(dirpath, descriptive_name=''):
+    if not dirpath:
+        sys.exit(descriptive_name + ' path is empty.')
+
+    if isfile(dirpath):
+        sys.exit(descriptive_name + ' ' + dirpath + ' is a file.')
+
+    num_tries = 0
+    max_tries = 5
+
+    while not exists(dirpath):
+        # we could get an error here if multiple processes are creating
+        # the directory at the same time. Grr, concurrency.
+        try:
+            os.makedirs(dirpath)
+        except OSError, e:
+            if num_tries > max_tries:
+                raise
+            num_tries += 1
+            time.sleep(2)
+    return dirpath
 
 
 def transform_to(ext):
@@ -77,7 +100,7 @@ def transform_to(ext):
             if not out_file:
                 in_path = kwargs.get("in_file", args[0])
                 out_dir = kwargs.get("out_dir", os.path.dirname(in_path))
-                safe_makedir(out_dir)
+                safe_mkdir(out_dir)
                 out_name = replace_suffix(os.path.basename(in_path), ext)
                 out_file = os.path.join(out_dir, out_name)
             kwargs["out_file"] = out_file
@@ -118,7 +141,7 @@ def filter_to(word):
             if not out_file:
                 in_path = kwargs.get("in_file", args[0])
                 out_dir = kwargs.get("out_dir", os.path.dirname(in_path))
-                safe_makedir(out_dir)
+                safe_mkdir(out_dir)
                 out_name = append_stem(os.path.basename(in_path), word)
                 out_file = os.path.join(out_dir, out_name)
             kwargs["out_file"] = out_file
@@ -141,47 +164,6 @@ def memoize_outfile(ext=None, stem=None):
         return filter_to(stem)
 
 
-def safe_makedir(dname):
-    """Make a directory if it doesn't exist, handling concurrent race conditions.
-    """
-    if not dname:
-        return dname
-    num_tries = 0
-    max_tries = 5
-    while not os.path.exists(dname):
-        # we could get an error here if multiple processes are creating
-        # the directory at the same time. Grr, concurrency.
-        try:
-            os.makedirs(dname)
-        except OSError:
-            if num_tries > max_tries:
-                raise
-            num_tries += 1
-            time.sleep(2)
-    return dname
-
-@contextlib.contextmanager
-def curdir_tmpdir(remove=True, base_dir=None):
-    """Context manager to create and remove a temporary directory.
-
-    This can also handle a configured temporary directory to use.
-    """
-    if base_dir is not None:
-        tmp_dir_base = os.path.join(base_dir, "bcbiotmp")
-    else:
-        tmp_dir_base = os.path.join(os.getcwd(), "tmp")
-    safe_makedir(tmp_dir_base)
-    tmp_dir = tempfile.mkdtemp(dir=tmp_dir_base)
-    safe_makedir(tmp_dir)
-    try:
-        yield tmp_dir
-    finally:
-        if remove:
-            try:
-                shutil.rmtree(tmp_dir)
-            except:
-                pass
-
 @contextlib.contextmanager
 def chdir(new_dir):
     """Context manager to temporarily change to a new directory.
@@ -189,7 +171,7 @@ def chdir(new_dir):
     http://lucentbeing.com/blog/context-managers-and-the-with-statement-in-python/
     """
     cur_dir = os.getcwd()
-    safe_makedir(new_dir)
+    safe_mkdir(new_dir)
     os.chdir(new_dir)
     try:
         yield
@@ -224,7 +206,7 @@ def create_dirs(config, names=None):
         names = config["dir"].keys()
     for dname in names:
         d = config["dir"][dname]
-        safe_makedir(d)
+        safe_mkdir(d)
 
 def save_diskspace(fname, reason, config):
     """Overwrite a file in place with a short message to save disk.
