@@ -9,7 +9,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import common_main, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.runner import run_all
 from source.varannotation import tsv, anno
 from source.utils import info, rmtx
@@ -19,7 +19,7 @@ def main(args):
     required = ['vcf']
     optional = ['bam']
 
-    config, options = common_main(
+    config, options = read_opts_and_cnfs(
         'annotation',
         extra_opts=[
             (['--var', '--vcf'], 'variants.vcf', {
