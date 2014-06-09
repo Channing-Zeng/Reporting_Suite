@@ -3,8 +3,8 @@
 from __future__ import print_function
 import sys
 import os
-from source.targetcov.cov import log, bedcoverage_hist_stats, run_header_report, intersect_bed, sort_bed, \
-    run_region_cov_report, add_gene_names
+from source.targetcov.cov import bedcoverage_hist_stats, run_header_report, intersect_bed, sort_bed, \
+    run_region_cov_report
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -22,7 +22,7 @@ from os.path import join, expanduser, splitext, basename, isdir, abspath
 # take folder name as a sample name (first column on the report)
 from shutil import rmtree
 from source.main import common_main, check_system_resources, load_genome_resources
-from source.utils import verify_file, critical, step_greetings, rmtx
+from source.utils import verify_file, critical, step_greetings, rmtx, info, make_tmpdir, err
 
 
 REPORT_TYPES = 'summary,genes'
@@ -70,22 +70,22 @@ def main(args):
     bam = options.get('bam') or cnf.get('bam')
 
     if not genes_bed:
-        critical('Specify sorted genes bed file in system info or in run info.')
+        critical(cnf.get('log'), 'Specify sorted genes bed file in system info or in run info.')
     if not exons_bed:
-        critical('Specify sorted exons bed file in system info or in run info.')
+        critical(cnf.get('log'), 'Specify sorted exons bed file in system info or in run info.')
     if not chr_len_fpath:
-        critical('Specify chromosome lengths for the genome'
+        critical(cnf.get('log'), 'Specify chromosome lengths for the genome'
                  ' in system info or in run info.')
     if not bam:
-        critical('Specify bam file by --bam option or in run_config.')
+        critical(cnf.get('log'), 'Specify bam file by --bam option or in run_config.')
     if not capture_bed:
-        critical('Specify capture file by --capture option or in run_config.')
+        critical(cnf.get('log'), 'Specify capture file by --capture option or in run_config.')
 
-    print('using genes ' + genes_bed)
-    print('using exons ' + exons_bed)
-    print('using chr lengths ' + chr_len_fpath)
-    print('using bam ' + bam)
-    print('using capture panel ' + capture_bed)
+    info(cnf.get('log'), 'using genes ' + genes_bed)
+    info(cnf.get('log'), 'using exons ' + exons_bed)
+    info(cnf.get('log'), 'using chr lengths ' + chr_len_fpath)
+    info(cnf.get('log'), 'using bam ' + bam)
+    info(cnf.get('log'), 'using capture panel ' + capture_bed)
 
     genes_bed = expanduser(genes_bed)
     exons_bed = expanduser(exons_bed)
@@ -99,86 +99,79 @@ def main(args):
     if not verify_file(bam): exit(1)
     if not verify_file(capture_bed): exit(1)
 
-    depth_threshs = cnf['depth_thresholds']
-    padding = options.get('padding', cnf.get('padding', 250))
-    output_dir = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
-    print('writing to output dir ' + output_dir)
-    output_dir = expanduser(output_dir)
+    cnf['reports'] = options['reports']
+    cnf['padding'] = options.get('padding') or cnf.get('padding') or 250
+    cnf['depth_thresholds'] = cnf.get('depth_thresholds') or [5, 10, 25, 50, 100, 500, 1000, 5000,
+                                                              10000, 50000, 100000, 500000]
 
-    work_dir = join(output_dir, 'work')
-    if isdir(work_dir):
-        rmtree(work_dir)
-    os.makedirs(work_dir)
+    info(cnf.get('log'), '')
 
-    print('')
+    run_all(cnf, capture_bed, bam, chr_len_fpath, genes_bed, exons_bed)
 
-    #########################################
+
+def run_all(cnf, capture_bed, bam, chr_len_fpath, genes_bed, exons_bed):
     # sample_name, _ = splitext(basename(bam))
-    sample_name = os.path.split(os.pardir(bam))
-    print (bam)
-    print (sample_name)
+    sample_name = os.path.basename(os.path.dirname(bam))
 
     summary_report_fpath = None
     gene_report_fpath = None
 
-    # capture_bed = sort_bed(cnf, capture_bed)
+    with make_tmpdir(cnf):
+        info(cnf.get('log'), 'Calculation of coverage statistics for the regions in the input BED file...')
+        amplicons, combined_region, max_depth, total_bed_size = \
+            bedcoverage_hist_stats(cnf, capture_bed, bam)
 
-    log('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = \
-        bedcoverage_hist_stats(cnf, capture_bed, bam)
+        if 'summary' in cnf['reports']:
+            step_greetings('Target coverage summary report')
+            summary_report_fpath = join(cnf['output_dir'], sample_name + '.targetseq.summary.txt')
+            run_header_report(
+                cnf, summary_report_fpath,
+                capture_bed, bam, chr_len_fpath,
+                cnf['depth_thresholds'], cnf['padding'],
+                combined_region, max_depth, total_bed_size)
 
-    if 'summary' in options['reports']:
-        step_greetings('Target coverage summary report')
-        summary_report_fpath = join(output_dir, sample_name + '.targetseq.summary.txt')
-        run_header_report(
-            cnf, summary_report_fpath, output_dir, work_dir,
-            capture_bed, bam, chr_len_fpath,
-            depth_threshs, padding,
-            combined_region, max_depth, total_bed_size)
+        # if 'amplicons' in options['reports']:
+        #     step_greetings('Coverage report for the input BED file regions')
+        #     amplicons_report_fpath = join(output_dir, sample_name + '.targetseq.details.capture.txt')
+        #     run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
 
-    # if 'amplicons' in options['reports']:
-    #     step_greetings('Coverage report for the input BED file regions')
-    #     amplicons_report_fpath = join(output_dir, sample_name + '.targetseq.details.capture.txt')
-    #     run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
-
-    if 'genes' in options['reports']:
-        if not genes_bed or not exons_bed:
-            if options['reports'] == 'genes':
-                exit('Error: no genes or exons specified for the genome in system config, '
-                     'cannot run per-exon report.')
+        if 'genes' in cnf['reports']:
+            if not genes_bed or not exons_bed:
+                if cnf['reports'] == 'genes':
+                    critical('Error: no genes or exons specified for the genome in system config, '
+                             'cannot run per-exon report.')
+                else:
+                    err(cnf.get('log'), 'Warning: no genes or exons specified for the genome in system config, '
+                        'cannot run per-exon report.')
             else:
-                print('Warning: no genes or exons specified for the genome in system config, '
-                      'cannot run per-exon report.', file=sys.stderr)
-        else:
-            # log('Annotating amplicons.')
-            # annotate_amplicons(amplicons, genes_bed)
+                # log('Annotating amplicons.')
+                # annotate_amplicons(amplicons, genes_bed)
 
-            log('Getting the gene regions that intersect with our capture panel.')
-            bed = intersect_bed(cnf, genes_bed, capture_bed, work_dir)
-            log('Getting the exons of the genes.')
-            bed = intersect_bed(cnf, exons_bed, bed, work_dir)
-            log('Sorting final exon BED file.')
-            bed = sort_bed(cnf, bed)
+                info(cnf.get('log'), 'Getting the gene regions that intersect with our capture panel.')
+                bed = intersect_bed(cnf, genes_bed, capture_bed)
+                info(cnf.get('log'), 'Getting the exons of the genes.')
+                bed = intersect_bed(cnf, exons_bed, bed)
+                info(cnf.get('log'), 'Sorting final exon BED file.')
+                bed = sort_bed(cnf, bed)
 
-            log('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-            exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
-            for exon in exons:
-                exon.gene_name = exon.extra_fields[0]
+                info(cnf.get('log'), 'Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
+                exons, _, _, _ = bedcoverage_hist_stats(cnf, bed, bam)
+                for exon in exons:
+                    exon.gene_name = exon.extra_fields[0]
 
-            gene_report_fpath = join(output_dir, sample_name + '.targetseq.details.gene.txt')
-            run_region_cov_report(cnf, gene_report_fpath, sample_name, depth_threshs,
-                                  amplicons, exons)
+                gene_report_fpath = join(cnf['output_dir'], sample_name + '.targetseq.details.gene.txt')
+                run_region_cov_report(cnf, gene_report_fpath, sample_name, cnf['depth_thresholds'],
+                                      amplicons, exons)
 
-    rmtx(cnf['work_dir'])
-    rmtx(cnf['output_dir'])
+        rmtx(cnf['work_dir'])
+        rmtx(cnf['output_dir'])
 
-    print('')
-    print('*' * 70)
-    if summary_report_fpath:
-        log('Summary report: ' + summary_report_fpath)
-    if gene_report_fpath:
-        log('Exons coverage report: ' + gene_report_fpath)
-
+        info(cnf.get('log'), '')
+        info(cnf.get('log'), '*' * 70)
+        if summary_report_fpath:
+            info(cnf.get('log'), 'Summary report: ' + summary_report_fpath)
+        if gene_report_fpath:
+            info(cnf.get('log'), 'Exons coverage report: ' + gene_report_fpath)
 
 
 if __name__ == '__main__':

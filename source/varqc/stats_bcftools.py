@@ -4,7 +4,7 @@ from os import mkdir
 from os.path import basename, join
 
 from source.bcbio_utils import file_exists
-from source.utils import call, get_tool_cmdline, step_greetings, bgzip_and_tabix_vcf
+from source.utils import call_subprocess, get_tool_cmdline, step_greetings, bgzip_and_tabix_vcf
 
 
 def bcftools_qc(cnf, qc_dir, vcf_fpath):
@@ -21,7 +21,7 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
 
     text_report_fpath = join(work_dir, cnf['name'] + '_bcftools.report')
     cmdline = '{bcftools} stats {gzipped_fpath}'.format(**locals())
-    call(cnf, cmdline, None, text_report_fpath)
+    call_subprocess(cnf, cmdline, None, text_report_fpath)
 
     viz_report_dir = join(work_dir, cnf['name'] + '_qc_plots/')
     if file_exists(viz_report_dir):
@@ -29,7 +29,7 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
     mkdir(viz_report_dir)
     cmdline = '{plot_vcfstats} -s {text_report_fpath} -p {viz_report_dir} ' \
               '--no-PDF'.format(**locals())
-    call(cnf, cmdline, text_report_fpath, None, output_is_dir=False)
+    call_subprocess(cnf, cmdline, text_report_fpath, None, output_is_dir=False)
     return _get_plots_from_bcftools(cnf, viz_report_dir, qc_dir)
 
 

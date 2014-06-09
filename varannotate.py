@@ -46,13 +46,13 @@ def main(args):
 
     var_fpath = options.get('vcf')
     if var_fpath:
-        info('Using variants ' + var_fpath)
+        info(cnf.get('log'), 'Using variants ' + var_fpath)
     bam_fpath = options.get('bam')
     if bam_fpath:
-        info('Using bam ' + bam_fpath)
+        info(cnf.get('log'), 'Using bam ' + bam_fpath)
     output_dir = options.get('output_dir')
     if output_dir:
-        info('Saving to ' + output_dir)
+        info(cnf.get('log'), 'Saving to ' + output_dir)
 
     sample_cnfs_by_name = read_samples_info_and_split(cnf, options, required + optional)
 

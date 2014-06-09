@@ -5,7 +5,7 @@ import shutil
 from source.runner import filter_ensemble
 
 from source.utils import critical, iterate_file, step_greetings, \
-    get_java_tool_cmdline, verify_file, intermediate_fname, call, \
+    get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
     get_tool_cmdline, err, get_gatk_type, info, bgzip_and_tabix_vcf, index_bam
 from source.bcbio_utils import add_suffix, file_exists
 
@@ -111,7 +111,7 @@ def _convert_to_maf(cnf, final_vcf_fpath):
     vcf2maf = join(dirname(realpath(__file__)), '../../source/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
               '--output-maf {final_maf_fpath}'.format(**locals())
-    call(cnf, cmdline, None, None)
+    call_subprocess(cnf, cmdline, None, None)
     return final_maf_fpath
 
 
@@ -134,7 +134,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
     anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
-    output_fpath = call(cnf, cmdline, input_fpath, output_fpath,
+    output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
     def proc_line(line):
         if not line.startswith('#'):
@@ -167,7 +167,7 @@ def _snpsift_db_nsfp(cnf, input_fpath, work_dir):
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
-    return call(cnf, cmdline, input_fpath, output_fpath,
+    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True)
 
 
@@ -202,7 +202,7 @@ def _snpeff(cnf, input_fpath, work_dir):
         cmdline += ' -cancer '
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
-    return call(cnf, cmdline, input_fpath, output_fpath,
+    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True), \
         stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
 
@@ -224,7 +224,7 @@ def _tracks(cnf, track_path, input_fpath, work_dir):
     cmdline = '{toolpath} -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
     output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
-    output_fpath = call(cnf, cmdline, input_fpath, output_fpath,
+    output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
 
     # Set TRUE or FALSE for tracks
@@ -309,7 +309,7 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
         cmdline += " -A " + ann
 
     output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
-    return call(cnf, cmdline, input_fpath, output_fpath,
+    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=False,
                 to_remove=[output_fpath + '.idx',
                            input_fpath + '.idx'])

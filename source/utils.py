@@ -178,7 +178,7 @@ def index_bam(cnf, bam_fpath):
         sys.exit(1)
 
     cmdline = '{samtools} index {bam_fpath}'.format(**locals())
-    call(cnf, cmdline, None, None)
+    call_subprocess(cnf, cmdline, None, None)
 
 
 def bgzip_and_tabix_vcf(cnf, vcf_fpath):
@@ -193,12 +193,12 @@ def bgzip_and_tabix_vcf(cnf, vcf_fpath):
     if bgzip and not file_exists(gzipped_fpath):
         step_greetings(cnf, 'Bgzip VCF')
         cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
-        call(cnf, cmdline, None, gzipped_fpath, exit_on_error=False)
+        call_subprocess(cnf, cmdline, None, gzipped_fpath, exit_on_error=False)
 
     if tabix and not file_exists(tbi_fpath):
         step_greetings(cnf, 'Tabix VCF')
         cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
-        call(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
+        call_subprocess(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
 
     return gzipped_fpath, tbi_fpath
 
@@ -293,9 +293,22 @@ def get_tool_cmdline(sys_cnf, tool_name, extra_warning='', suppress_warn=False):
         return None
 
 
-def call(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
+def call_pipe(cnf, cmdline):
+    return call_subprocess(cnf, cmdline, return_proc=True)
+
+
+def call_check_output(cnf, cmdline):
+    return call_subprocess(cnf, cmdline, check_output=True)
+
+
+def call(cnf, cmdline, output_fpath=None):
+    return call_subprocess(cnf, cmdline, None, output_fpath)
+
+
+def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
-         stdin_fpath=None, exit_on_error=True):
+         stdin_fpath=None, exit_on_error=True,
+         check_output=False, return_proc=False):
     """
     Required arguments:
     ------------------------------------------------------------
@@ -344,7 +357,7 @@ def call(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
 
-        if cnf['verbose']:
+        if cnf['verbose'] or return_proc or check_output:
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
@@ -358,16 +371,24 @@ def call(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
 
+            if check_output:
+                return subprocess.check_output(
+                    cmdl, shell=True, stderr=stderr, stdin=open(stdin_fpath) if stdin_fpath else None)
+
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
                                     stdin=open(stdin_fpath) if stdin_fpath else None)
+            if return_proc:
+                # TODO: make this yield (as well as other returns), move cleaning to finally, and use this function from with statement
+                return proc
 
-            # PRINT STDOUT AND STDERR
-            if proc.stdout:
-                for line in iter(proc.stdout.readline, ''):
-                    info(cnf.get('log'), '   ' + line.strip())
-            elif proc.stderr:
-                for line in iter(proc.stderr.readline, ''):
-                    info(cnf.get('log'), '   ' + line.strip())
+            else:
+                # PRINT STDOUT AND STDERR
+                if proc.stdout:
+                    for line in iter(proc.stdout.readline, ''):
+                        info(cnf.get('log'), '   ' + line.strip())
+                elif proc.stderr:
+                    for line in iter(proc.stderr.readline, ''):
+                        info(cnf.get('log'), '   ' + line.strip())
 
             # CHECK RES CODE
             ret_code = proc.wait()
@@ -423,7 +444,9 @@ def call(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         with file_transaction(cnf['tmp_dir'], output_fpath) as tx_out_fpath:
             do(cmdline, tx_out_fpath)
     else:
-        do(cmdline)
+        res = do(cmdline)
+        if res is not None:
+            return res
 
     # REMOVE UNNESESSARY
     for fpath in to_remove:

@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 from source.bcbio_utils import open_gzipsafe, splitext_plus
 from source.utils import critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, check_file_changed
+    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed
 
 
 def _set_up_work_dir(cnf):
@@ -124,7 +124,7 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
     cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
           '--variant {input_fpath} -sn {samplename} ' \
           '-o {output_fpath}'.format(**locals())
-    call(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
+    call_subprocess(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
          to_remove=[input_fpath + '.idx'])
     return output_fpath
 

@@ -5,7 +5,7 @@ import shutil
 from source.transaction import file_transaction
 from source.bcbio_utils import which, splitext_plus, file_exists
 from source.utils import critical, iterate_file, step_greetings, get_java_tool_cmdline, \
-    intermediate_fname, info, call
+    intermediate_fname, info, call_subprocess
 
 
 def make_tsv(cnf, vcf_fpath):
@@ -93,7 +93,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + \
               ' extractFields - ' + anno_line
 
-    call(cnf, cmdline, None, tsv_fpath,
+    call_subprocess(cnf, cmdline, None, tsv_fpath,
          stdin_fpath=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
          to_remove=[splitted_FORMAT_column_vcf_fpath])
 

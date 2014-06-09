@@ -5,7 +5,7 @@ from os.path import basename, join, isdir, dirname, expanduser
 
 from source.bcbio_utils import file_exists
 from source.utils import info, err, verify_file, step_greetings, \
-    get_tool_cmdline, get_java_tool_cmdline, call, verify_dir, \
+    get_tool_cmdline, get_java_tool_cmdline, call_subprocess, verify_dir, \
     critical, human_sorted
 
 
@@ -34,7 +34,7 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
         if not db_name == 'dbsnp':
             cmdline += ' -comp:' + db_name + ' ' + db_path
 
-    call(cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
+    call_subprocess(cnf, cmdline, None, report_fpath, stdout_to_outputfile=False,
          to_remove=[vcf_fpath + '.idx'])
 
     report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)

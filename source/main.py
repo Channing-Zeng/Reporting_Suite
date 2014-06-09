@@ -8,7 +8,7 @@ from optparse import OptionParser
 from collections import OrderedDict
 
 from source.utils import err, critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call, safe_mkdir, verify_dir, verify_module, md5_for_file, \
+    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, verify_dir, verify_module, md5_for_file, \
     check_file_changed, make_tmpdir
 
 if verify_module('yaml'):
