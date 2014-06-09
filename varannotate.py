@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-from os.path import join
+
 import sys
-from shutil import rmtree
-from source.vcf_read import read_samples_info_and_split
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+from source.vcf_read import read_samples_info_and_split
 from source.main import common_main, check_system_resources, load_genome_resources
 from source.runner import run_all
-from source.varannotation import tsv, anno
+from source.varannotation.tsv import make_tsv
+from source.varannotation.anno import run_annotators
 from source.utils import info, rmtx
 
 
@@ -56,20 +56,15 @@ def main(args):
 
     sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
 
-    try:
-        run_all(config, sample_cnfs_by_name, required, optional,
-                process_one, finalize_one, finalize_all)
-    except KeyboardInterrupt:
-        rmtx(config['work_dir'])
-        sys.exit(1)
-    rmtx(config['work_dir'])
+    run_all(config, sample_cnfs_by_name, required, optional,
+            process_one, finalize_one, finalize_all)
 
 
 def process_one(cnf, vcf_fpath, bam_fpath=None):
-    anno_vcf_fpath, anno_maf_fpath = anno.run_annotators(cnf, vcf_fpath, bam_fpath)
+    anno_vcf_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
     anno_tsv_fpath = None
     if anno_vcf_fpath and 'tsv_fields' in cnf:
-        anno_tsv_fpath = tsv.make_tsv(cnf, anno_vcf_fpath)
+        anno_tsv_fpath = make_tsv(cnf, anno_vcf_fpath)
     return anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath
 
 

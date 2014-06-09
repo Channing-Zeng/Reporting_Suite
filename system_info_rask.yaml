@@ -1,3 +1,5 @@
+tmp_dir: /ngs/tmp
+
 resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]

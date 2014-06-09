@@ -14,11 +14,11 @@ import contextlib
 import bcbio_utils
 
 @contextlib.contextmanager
-def file_transaction(*rollback_files):
+def file_transaction(tmp_dir, *rollback_files):
     """Wrap file generation in a transaction, moving to output if finishes.
     """
     exts = {".vcf": ".idx", ".bam": ".bai", "vcf.gz": ".tbi"}
-    safe_names, orig_names = _flatten_plus_safe(rollback_files)
+    safe_names, orig_names = _flatten_plus_safe(tmp_dir, rollback_files)
     _remove_files(safe_names)  # remove any half-finished transactions
     try:
         if len(safe_names) == 1:
@@ -54,7 +54,7 @@ def _remove_files(fnames):
             elif os.path.isdir(x):
                 shutil.rmtree(x, ignore_errors=True)
 
-def _flatten_plus_safe(rollback_files):
+def _flatten_plus_safe(tmp_dir, rollback_files):
     """Flatten names of files and create temporary file names.
     """
     tx_files, orig_files = [], []
@@ -62,7 +62,7 @@ def _flatten_plus_safe(rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            basedir = bcbio_utils.safe_makedir(os.path.join(os.path.dirname(fname), "tx"))
+            basedir = bcbio_utils.safe_makedir(os.path.join(os.path.dirname(fname) or tmp_dir, 'tx'))
             tmpdir = bcbio_utils.safe_makedir(tempfile.mkdtemp(dir=basedir))
             tx_file = os.path.join(tmpdir, os.path.basename(fname))
             tx_files.append(tx_file)

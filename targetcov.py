@@ -11,7 +11,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, expanduser, splitext, basename, isdir
+from os.path import join, expanduser, splitext, basename, isdir, abspath
 
 
 #downlad hg19.genome
@@ -113,10 +113,12 @@ def main(args):
     print('')
 
     #########################################
-    sample_name, _ = splitext(basename(bam))
+    # sample_name, _ = splitext(basename(bam))
+    sample_name = os.path.split(os.pardir(bam))
+    print (bam)
+    print (sample_name)
 
     summary_report_fpath = None
-    amplicons_report_fpath = None
     gene_report_fpath = None
 
     # capture_bed = sort_bed(cnf, capture_bed)

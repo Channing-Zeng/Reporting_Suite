@@ -3,7 +3,6 @@ import hashlib
 import shutil
 import os
 from os.path import join, isdir, isfile, realpath
-from yaml import dump
 from source.bcbio_utils import file_exists
 
 try:
@@ -17,54 +16,58 @@ from source.utils import critical, info, iterate_file, step_greetings
 def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
             process_one, finalize_one, finalize_all):
 
-    if len(sample_cnfs_by_name) == 1:
-        sample_name, sample_cnf = sample_cnfs_by_name.items()[0]
-        run_one(sample_cnf, required_inputs, optional_inputs, process_one, finalize_one)
+    try:
+        if len(sample_cnfs_by_name) == 1:
+            sample_name, sample_cnf = sample_cnfs_by_name.items()[0]
+            run_one(sample_cnf, required_inputs, optional_inputs, process_one, finalize_one)
 
-    else:
-        results = []
-        if cnf.get('parallel'):
-            try:
-                from joblib import Parallel, delayed
-            except ImportError:
-                critical(
-                    '\nERROR: Joblib not found. You may want samples to be processed '
-                    'in parallel, in this case, make sure python joblib intalled. '
-                    '(pip install joblib).')
-            else:
-                for sample_name, sample_cnf in sample_cnfs_by_name.items():
-                    sample_cnf['verbose'] = False
-
-                results = Parallel(n_jobs=len(sample_cnfs_by_name)) \
-                    (delayed(run_one)(sample_cnf, required_inputs, optional_inputs,
-                                      process_one, finalize_one,
-                                      multiple_samples=True)
-                        for sample_name, sample_cnf in sample_cnfs_by_name.items())
         else:
             results = []
-            for sample_name, sample_cnf in sample_cnfs_by_name.items():
-                results.append(
-                    run_one(sample_cnf, required_inputs, optional_inputs,
-                            process_one, finalize_one,
-                            multiple_samples=True))
+            if cnf.get('parallel'):
+                try:
+                    from joblib import Parallel, delayed
+                except ImportError:
+                    from joblib import Parallel, delayed
+                    critical(
+                        '\nERROR: Joblib not found. You may want samples to be processed '
+                        'in parallel, in this case, make sure python joblib intalled. '
+                        '(pip install joblib).')
+                else:
+                    from joblib import Parallel, delayed
+                    for sample_name, sample_cnf in sample_cnfs_by_name.items():
+                        sample_cnf['verbose'] = False
 
-        if sample_cnfs_by_name:
-            info('')
-            info('*' * 70)
-            info('Results for each sample:')
-            finalize_all(cnf, sample_cnfs_by_name, results)
+                    results = Parallel(n_jobs=len(sample_cnfs_by_name)) \
+                        (delayed(run_one)(sample_cnf, required_inputs, optional_inputs,
+                                          process_one, finalize_one,
+                                          multiple_samples=True)
+                            for sample_name, sample_cnf in sample_cnfs_by_name.items())
+            else:
+                results = []
+                for sample_name, sample_cnf in sample_cnfs_by_name.items():
+                    results.append(
+                        run_one(sample_cnf, required_inputs, optional_inputs,
+                                process_one, finalize_one,
+                                multiple_samples=True))
 
-    # Cleaning
-    for name, data in sample_cnfs_by_name.items():
-        work_dirpath = data['work_dir']
-        tx_dirpath = join(work_dirpath, 'tx')
+            if sample_cnfs_by_name:
+                info('')
+                info('*' * 70)
+                info('Results for each sample:')
+                finalize_all(cnf, sample_cnfs_by_name, results)
 
-        if isdir(tx_dirpath):
-            shutil.rmtree(tx_dirpath)
+    except KeyboardInterrupt:
+        pass
 
-        if not data.get('keep_intermediate') \
-                and isdir(work_dirpath):
-            shutil.rmtree(work_dirpath)
+    finally:  # Cleaning
+        for name, data in sample_cnfs_by_name.items():
+            tmp_dirpath = data['tmp_dir']
+            if isdir(tmp_dirpath):
+                shutil.rmtree(tmp_dirpath)
+
+            work_dirpath = data['work_dir']
+            if not data.get('keep_intermediate') and isdir(work_dirpath):
+                shutil.rmtree(work_dirpath)
 
 
 def filter_ensemble(cnf, input_fpath):

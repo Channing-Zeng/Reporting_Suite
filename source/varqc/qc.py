@@ -1,12 +1,9 @@
-import shutil
-import textwrap
 from os import mkdir, makedirs
-from os.path import basename, join, isdir, dirname, expanduser
+from os.path import basename, isdir, dirname
 
 from source.bcbio_utils import file_exists
-from source.utils import info, err, verify_file, verify_dir, verify_module, critical
 from source.runner import filter_ensemble
-from source.utils import info, err, verify_file, verify_dir, verify_module, critical, bgzip_and_tabix_vcf
+from source.utils import info, err, verify_file, verify_dir, verify_module, critical
 from source.varqc.stats_gatk import gatk_qc
 
 if verify_module('matplotlib'):

@@ -53,6 +53,8 @@ def common_main(pipeline_name, extra_opts, required):
     cnf['output_dir'] = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
     cnf['output_dir'] = expanduser(cnf['output_dir'])
     _set_up_work_dir(cnf)
+    cnf['tmp_dir'] = join(cnf.get('tmp_dir') or cnf['work_dir'], 'tmp')
+    safe_mkdir(cnf['tmp_dir'], 'Temporary directory')
 
     if (len([k for k in required if k in options]) < len(required) and
         not cnf.get('details')):

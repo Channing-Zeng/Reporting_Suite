@@ -1,7 +1,5 @@
-from genericpath import isfile
-import subprocess
 import os
-from os.path import dirname, realpath, join, basename
+from os.path import dirname, realpath, join, basename, isfile
 import shutil
 
 from source.transaction import file_transaction
@@ -96,7 +94,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
               ' extractFields - ' + anno_line
 
     call(cnf, cmdline, None, tsv_fpath,
-         stdin=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
+         stdin_fpath=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
          to_remove=[splitted_FORMAT_column_vcf_fpath])
 
     # REMOVE EMPTY, ADD SAMPLE COLUMN
@@ -112,7 +110,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                     if v:
                         col_counts[i] += 1
 
-    with file_transaction(tsv_fpath) as tx:
+    with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx:
         with open(tx, 'w') as out, open(tsv_fpath) as f:
             for i, l in enumerate(f):
                 values = [v for v in l.split('\t')]
@@ -129,7 +127,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
                 out.write('\t'.join([v for j, v in enumerate(values) if col_counts[j] and '\n' not in v]) + '\n')
 
-    # with file_transaction(tsv_fpath) as tx_tsv_fpath:
+    # with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx_tsv_fpath:
     #     info(cnf['log'], cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
     #                                         or vcf_fpath) + ' > ' + tx_tsv_fpath)
     #     res = subprocess.call(cmdline,
@@ -162,7 +160,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map, work_dir):
     else:
         out_tsv_fpath = inp_tsv_fpath
 
-    with file_transaction(out_tsv_fpath) as tx_out_fpath:
+    with file_transaction(cnf['tmp_dir'], out_tsv_fpath) as tx_out_fpath:
         with open(tx_out_fpath, 'w') as out:
             out.write(new_first_line + '\n')
             with open(inp_tsv_fpath) as f:

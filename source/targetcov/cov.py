@@ -15,20 +15,11 @@ import subprocess
 
 #TODO
 # log file
-# yaml
 # take folder name as a sample name (first column on the report)
 from source.targetcov.Region import Region
-from source.utils import intermediate_fname, timestamp, get_tool_cmdline
+from source.utils import intermediate_fname, timestamp, get_tool_cmdline, info
 from source.transaction import file_transaction
 from source.bcbio_utils import splitext_plus
-
-
-def log(msg=''):
-    print(timestamp() + msg)
-
-
-def err(msg=''):
-    print(timestamp() + msg, file=sys.stderr)
 
 
 def run_header_report(cnf, result_fpath, output_dir, work_dir,
@@ -39,7 +30,7 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
 
     def append_stat(stat):
         stats.append(stat)
-        log(stat)
+        info(stat)
 
     log('* General coverage statistics *')
     log('Getting number of reads...')
@@ -112,7 +103,7 @@ def run_header_report(cnf, result_fpath, output_dir, work_dir,
                                    'x', percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
-    with file_transaction(result_fpath) as tx, open(tx, 'w') as out:
+    with file_transaction(cnf['tmp_dir'], result_fpath) as tx, open(tx, 'w') as out:
         for l in stats:
             text, val = l.rsplit(':', 1)
             # spaces = ' ' * (max_len - len(text) + 1)
@@ -277,7 +268,7 @@ def build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
         all_values.append(line_fields)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
 
-    with file_transaction(report_fpath) as tx:
+    with file_transaction(cnf['tmp_dir'], report_fpath) as tx:
         with open(tx, 'w') as out, \
                 open(join(cnf['work_dir'], basename(report_fpath)), 'w') as nice_out:
             out.write('\t'.join(header_fields) + '\n')
@@ -348,7 +339,7 @@ def bedcoverage_hist_stats(cnf, bed, bam):
 def _call(cmdline, output_fpath=None):
     log('  $ ' + cmdline + (' > ' + output_fpath if output_fpath else ''))
     if output_fpath:
-        with file_transaction(output_fpath) as tx:
+        with file_transaction(cnf['tmp_dir'], output_fpath) as tx:
             subprocess.call(cmdline.split(), stdout=open(tx, 'w'))
 
 
