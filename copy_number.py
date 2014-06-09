@@ -121,8 +121,6 @@ def main():
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth, 2)
 
 
-
-
 if __name__ == '__main__':
     main()
 

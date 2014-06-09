@@ -7,7 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import common_main, load_genome_resources, check_system_resources
+from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
 from source.varqc import qc
@@ -18,29 +18,23 @@ def main(args):
     required = ['vcf']
     optional = []
 
-    config, options = common_main(
-        'varqc',
+    cnf, options = read_opts_and_cnfs(
         extra_opts=[(['--var', '--vcf'], 'variants.vcf', {
             'dest': 'vcf',
             'help': 'variants to evaluate'}),
         ],
         required=required)
 
-    check_system_resources(config, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats', 'bgzip', 'tabix'])
-    load_genome_resources(config, ['seq', 'dbsnp'])
+    check_system_resources(cnf, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats', 'bgzip', 'tabix'])
+    load_genome_resources(cnf, ['seq', 'dbsnp'])
 
-    if 'quality_control' in config:
-        qc.check_quality_control_config(config)
+    if 'quality_control' in cnf:
+        qc.check_quality_control_config(cnf)
 
-    sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
+    cnfs_by_sample = read_samples_info_and_split(cnf, options, required + optional)
 
-    try:
-        run_all(config, sample_cnfs_by_name, required, optional,
-                process_one, finalize_one, finalize_all)
-    except KeyboardInterrupt:
-        rmtx(config['work_dir'])
-        exit()
-    rmtx(config['work_dir'])
+    run_all(cnf, cnfs_by_sample, required, optional,
+            process_one, finalize_one, finalize_all)
 
 
 def process_one(cnf, vcf_fpath):

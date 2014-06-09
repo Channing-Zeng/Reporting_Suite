@@ -21,8 +21,6 @@ resources:
     path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/bgzip
   tabix:
     path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/tabix
-  vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/Cellar/vcflib/2014-02-19/bin/vcfannotate
 
 genomes:
   hg19:

@@ -38,7 +38,7 @@ from source.ngscat import gcbias
 
 from source.ngscat import config
 
-from source.main import common_main, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.utils import verify_file, critical, step_greetings, rmtx
 from os.path import join, expanduser, splitext, basename, isdir, abspath
 
@@ -691,8 +691,7 @@ def verify_parameters(options):
 
 
 def main():
-    cnf, options = common_main(
-        'targetcov',
+    cnf, options = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], 'align.bam', {
                 'dest': 'bam',
@@ -790,9 +789,6 @@ def main():
     if not cnf.get('keep_intermediate'):
         shutil.rmtree(cnf['work_dir'])
 
-    # not needed yet
-    rmtx(cnf['work_dir'])
-    rmtx(cnf['output_dir'])
     print('>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<')
 
 

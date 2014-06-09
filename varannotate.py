@@ -8,7 +8,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.vcf_read import read_samples_info_and_split
-from source.main import common_main, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.runner import run_all
 from source.varannotation.tsv import make_tsv
 from source.varannotation.anno import run_annotators
@@ -19,8 +19,7 @@ def main(args):
     required = ['vcf']
     optional = ['bam']
 
-    cnf, options = common_main(
-        'annotation',
+    cnf, options = read_opts_and_cnfs(
         extra_opts=[
             (['--var', '--vcf'], 'variants.vcf', {
              'dest': 'vcf',
@@ -36,27 +35,17 @@ def main(args):
              'action': 'store_true',
              'default': False}),
         ],
-        required=required)
+        required_inputs=required)
 
     if 'clinical_reporting' in options and 'snpeff' in cnf:
         cnf['snpeff']['clinical_reporting'] = True
 
-    check_system_resources(cnf, ['java', 'perl', 'gatk', 'snpeff', 'snpsift'])
-    load_genome_resources(cnf, ['seq', 'dbsnp', 'cosmic', 'snpeff'])
+    check_system_resources(cnf, required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'], optional=[])
+    load_genome_resources(cnf, required=['seq', 'dbsnp', 'cosmic', 'snpeff'], optional=[])
 
-    var_fpath = options.get('vcf')
-    if var_fpath:
-        info(cnf.get('log'), 'Using variants ' + var_fpath)
-    bam_fpath = options.get('bam')
-    if bam_fpath:
-        info(cnf.get('log'), 'Using bam ' + bam_fpath)
-    output_dir = options.get('output_dir')
-    if output_dir:
-        info(cnf.get('log'), 'Saving to ' + output_dir)
+    cnfs_by_sample = read_samples_info_and_split(cnf, options, required + optional)
 
-    sample_cnfs_by_name = read_samples_info_and_split(cnf, options, required + optional)
-
-    run_all(cnf, sample_cnfs_by_name, required, optional,
+    run_all(cnf, cnfs_by_sample, required, optional,
             process_one, finalize_one, finalize_all)
 
 

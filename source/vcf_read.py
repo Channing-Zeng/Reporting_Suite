@@ -9,36 +9,31 @@ from source.utils import critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed
 
 
-def _set_up_work_dir(cnf):
-    cnf['output_dir'] = expanduser(cnf['output_dir'])
-    output_dirpath = realpath(cnf['output_dir'])
-    safe_mkdir(output_dirpath, 'output_dir')
-    work_dirpath = join(output_dirpath, 'work')
-    safe_mkdir(work_dirpath, 'working directory')
-    cnf['work_dir'] = work_dirpath
 
+#TODO: _set_up_dirs(cnf) for each sample
 
 def read_samples_info_and_split(common_cnf, options, inputs):
-    info('')
-    info('Processing input details...')
+    info(common_cnf.get('log'), '')
+    info(common_cnf.get('log'), 'Processing input details...')
 
-    details = common_cnf.get('details')
+    details = None
     for key in inputs:
         if options.get(key):
             common_cnf[key] = expanduser(options[key])
+            info(common_cnf.get('log'), 'Using ' + common_cnf[key])
             details = [common_cnf]
     if not details:
-        sys.exit('Please, provide input ' + ', '.join(inputs) +
+        details = common_cnf.get('details')
+    if not details:
+        critical(common_cnf.get('log'),
+                 'Please, provide input ' + ', '.join(inputs) +
                  ' in command line or in run info yaml config.')
 
     all_samples = OrderedDict()
 
     for one_item_cnf in details:
-        if 'var' in one_item_cnf:
-            one_item_cnf['vcf'] = one_item_cnf['var']
-            del one_item_cnf['var']
         if 'vcf' not in one_item_cnf:
-            critical('ERROR: A section in details does not contain field "var".')
+            critical(common_cnf.get('log'), 'ERROR: A section in details does not contain field "var".')
         one_item_cnf['vcf'] = expanduser(one_item_cnf['vcf'])
         if not verify_file(one_item_cnf['vcf'], 'Input file'):
             sys.exit(1)

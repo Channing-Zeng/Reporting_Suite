@@ -7,7 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import common_main, load_genome_resources, check_system_resources
+from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_all
 from source.summarize import summarize_qc
 from source.varqc import qc
@@ -18,7 +18,7 @@ def main(args):
     required = ['vcf']
     optional = []
 
-    config, options = common_main(
+    config, options = read_opts_and_cnfs(
         'varqc',
         extra_opts=[(['--var', '--vcf'], 'variants.vcf', {
             'dest': 'vcf',

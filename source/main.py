@@ -1,18 +1,14 @@
 #!/usr/bin/env python
-import contextlib
 import sys
-import shutil
 import os
-from os.path import join, realpath, isdir, isfile, dirname, basename, join, realpath, expanduser
+from os.path import isdir, dirname, join, realpath, expanduser
 from optparse import OptionParser
-from collections import OrderedDict
 
-from source.utils import err, critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, verify_dir, verify_module, md5_for_file, \
-    check_file_changed, make_tmpdir
+from source.utils import err, critical, verify_file, \
+    info, safe_mkdir, verify_dir, verify_module
 
 if verify_module('yaml'):
-    from yaml import dump, load
+    from yaml import load
     try:
         from yaml import CDumper as Dumper, CLoader as Loader
     except ImportError:
@@ -20,22 +16,21 @@ if verify_module('yaml'):
 else:
     critical('Cannot import module yaml.')
 
-from source.bcbio_utils import which, open_gzipsafe, file_exists, splitext_plus
+from source.bcbio_utils import which, file_exists
 
 
-def common_main(pipeline_name, extra_opts, required):
-    # options
-    run_config_name = 'run_info_' + pipeline_name + '.yaml'
+def read_opts_and_cnfs(extra_opts, required_inputs):
+    run_config_name = 'run_info.yaml'
+    system_config_name = 'system_info_Waltham.yaml'
 
+    opts = ' '.join(args[0] + ' ' + example for args, example, _ in extra_opts)
+
+    filename = __file__
     parser = OptionParser(
         usage=(
-            'python ' + __file__ +
-            ' [system_info.yaml] [' + run_config_name + '] ' +
-            ' '.join(args[0] + ' ' + example for args, example, _ in extra_opts) +
-            ' [--output_dir dir]\n'
-            ''
-            '    or python ' + __file__ +
-            ' [system_info.yaml] ' + run_config_name
+            'python {filename} [{system_config_name}] [{run_config_name}] {opts} [--output_dir dir]\n'
+            'or\n'
+            'python {filename} [{system_config_name}] {run_config_name}'.format(**locals())
         )
     )
 
@@ -49,14 +44,15 @@ def common_main(pipeline_name, extra_opts, required):
     (options, args) = parser.parse_args()
     options = options.__dict__
 
-    cnf = _load_config(pipeline_name, args)
+    cnf = _load_configs(run_config_name, system_config_name, args)
 
-    cnf['output_dir'] = options.get('output_dir') or cnf.get('output_dir') or os.getcwd()
-    cnf['output_dir'] = expanduser(cnf['output_dir'])
+    if options.get('output_dir'):
+        cnf['output_dir'] = options.get('output_dir')
+    if cnf.get('output_dir'):
+        cnf['output_dir'] = expanduser(cnf['output_dir'])
+        _set_up_dirs(cnf)
 
-    _set_up_dirs(cnf)
-
-    if (len([k for k in required if k in options]) < len(required) and
+    if (len([k for k in required_inputs if k in options]) < len(required_inputs) and
         not cnf.get('details')):
         critical(
             'Error: provide input files with command line options '
@@ -64,7 +60,6 @@ def common_main(pipeline_name, extra_opts, required):
 
     cnf['filter_reject'] = cnf.get('filter_reject', False)
     cnf['split_samples'] = cnf.get('split_samples', False)
-    cnf['log'] = None
 
     if options.get('threads'):
         if 'gatk' in cnf:
@@ -86,10 +81,8 @@ def common_main(pipeline_name, extra_opts, required):
     return cnf, options
 
 
-def _load_config(pipleine_name, args):
-    run_config_name = 'run_info_' + pipleine_name + '.yaml'
-
-    system_config_path = join(dirname(dirname(realpath(__file__))), 'system_info_rask.yaml')
+def _load_configs(run_config_name, system_config_name, args):
+    system_config_path = join(dirname(dirname(realpath(__file__))), system_config_name)
     run_config_path = join(dirname(dirname(realpath(__file__))), run_config_name)
     if len(args) < 1:
         sys.stderr.write('Notice: using ' + run_config_name + ' as a default'
@@ -142,13 +135,12 @@ def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
     return input_fpaths
 
 
-def check_system_resources(cnf, required=list()):
+def check_system_resources(cnf, required=list(), optional=list()):
     to_exit = False
 
     for program in required:
         if not which(program):
             resources = cnf.get('resources', None)
-
             if not resources:
                 critical(cnf.get('log'), 'No "resources" section in system config.')
 
@@ -161,11 +153,26 @@ def check_system_resources(cnf, required=list()):
                 if not isdir(data['path']) and not file_exists(data['path']):
                     err(data['path'] + ' does not exist.')
                     to_exit = True
+
+    for program in optional:
+        resources = cnf.get('resources', None)
+        if not resources:
+            break
+
+        data = resources.get(program)
+        if data is None:
+            continue
+        else:
+            data['path'] = expanduser(data['path'])
+            if not isdir(data['path']) and not file_exists(data['path']):
+                err(data['path'] + ' does not exist.')
+                to_exit = True
+
     if to_exit:
         exit()
 
 
-def load_genome_resources(cnf, required=list()):
+def load_genome_resources(cnf, required=list(), optional=list()):
     if 'genome' not in cnf:
         critical('"genome" is not specified in run config.')
     if 'genomes' not in cnf:
@@ -199,6 +206,14 @@ def load_genome_resources(cnf, required=list()):
         if f not in genome_cnf:
             err('Please, provide path to ' + f  + ' in system config genome section.')
             to_exit = True
+        else:
+            genome_cnf[f] = expanduser(genome_cnf[f])
+            if not verify_file(genome_cnf[f], f):
+                to_exit = True
+
+    for f in optional:
+        if f not in genome_cnf:
+            continue
         else:
             genome_cnf[f] = expanduser(genome_cnf[f])
             if not verify_file(genome_cnf[f], f):
@@ -241,3 +256,4 @@ def _set_up_dirs(cnf):
     work_dirpath = join(output_dirpath, 'work')
     safe_mkdir(work_dirpath, 'working directory')
     cnf['work_dir'] = work_dirpath
+    cnf['log'] = join(cnf['work_dir'], 'log.txt')

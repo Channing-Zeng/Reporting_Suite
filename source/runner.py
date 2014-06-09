@@ -2,8 +2,7 @@
 import hashlib
 import shutil
 import os
-from os.path import join, isdir, isfile, realpath
-from source.bcbio_utils import file_exists
+from os.path import join, isdir, isfile
 
 try:
     from yaml import CDumper as Dumper
@@ -13,12 +12,16 @@ except ImportError:
 from source.utils import critical, info, iterate_file, step_greetings, make_tmpdir
 
 
-def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
+def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,
             process_one, finalize_one, finalize_all):
 
     with make_tmpdir(cnf):
-        if len(sample_cnfs_by_name) == 1:
-            sample_name, sample_cnf = sample_cnfs_by_name.items()[0]
+
+        if not cnfs_by_sample or len(cnfs_by_sample) == 1:
+            if cnfs_by_sample:
+                _, sample_cnf = cnfs_by_sample.items()[0]
+            else:
+                sample_cnf = cnf
             run_one(sample_cnf, required_inputs, optional_inputs, process_one, finalize_one)
 
         else:
@@ -34,27 +37,27 @@ def run_all(cnf, sample_cnfs_by_name, required_inputs, optional_inputs,
                         '(pip install joblib).')
                 else:
                     from joblib import Parallel, delayed
-                    for sample_name, sample_cnf in sample_cnfs_by_name.items():
+                    for sample_name, sample_cnf in cnfs_by_sample.items():
                         sample_cnf['verbose'] = False
 
-                    results = Parallel(n_jobs=len(sample_cnfs_by_name)) \
+                    results = Parallel(n_jobs=len(cnfs_by_sample)) \
                         (delayed(run_one)(sample_cnf, required_inputs, optional_inputs,
                                           process_one, finalize_one,
                                           multiple_samples=True)
-                            for sample_name, sample_cnf in sample_cnfs_by_name.items())
+                            for sample_name, sample_cnf in cnfs_by_sample.items())
             else:
                 results = []
-                for sample_name, sample_cnf in sample_cnfs_by_name.items():
+                for sample_name, sample_cnf in cnfs_by_sample.items():
                     results.append(
                         run_one(sample_cnf, required_inputs, optional_inputs,
                                 process_one, finalize_one,
                                 multiple_samples=True))
 
-            if sample_cnfs_by_name:
+            if cnfs_by_sample:
                 info('')
                 info('*' * 70)
                 info('Results for each sample:')
-                finalize_all(cnf, sample_cnfs_by_name, results)
+                finalize_all(cnf, cnfs_by_sample, results)
 
     work_dirpath = cnf['work_dir']
     if not cnf.get('keep_intermediate') and isdir(work_dirpath):
@@ -79,7 +82,7 @@ def run_one(cnf, required_inputs, optional_inputs,
         if key in cnf:
             input_fpaths.append(cnf[key])
 
-    if cnf.get('keep_intermediate'):
+    if cnf.get('keep_intermediate') and not 'log' in cnf:
         cnf['log'] = join(cnf['work_dir'], cnf['name'] + '_log.txt')
         if isfile(cnf['log']):
             os.remove(cnf['log'])

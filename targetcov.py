@@ -3,6 +3,7 @@
 from __future__ import print_function
 import sys
 import os
+from source.runner import run_all
 from source.targetcov.cov import bedcoverage_hist_stats, run_header_report, intersect_bed, sort_bed, \
     run_region_cov_report
 
@@ -21,7 +22,7 @@ from os.path import join, expanduser, splitext, basename, isdir, abspath
 # log file
 # take folder name as a sample name (first column on the report)
 from shutil import rmtree
-from source.main import common_main, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.utils import verify_file, critical, step_greetings, rmtx, info, make_tmpdir, err
 
 
@@ -29,69 +30,72 @@ REPORT_TYPES = 'summary,genes'
 
 
 def main(args):
-    cnf, options = common_main(
-        'targetcov',
+    required = ['bam', 'bed']
+    optional = []
+    genome_resources = ['chr_lengths', 'genes', 'exons']
+
+    cnf, options = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], 'align.bam', {
                 'dest': 'bam',
                 'help': 'used to generate some annotations by GATK'}),
 
-            (['--capture', '--bed'], 'capture.bed', {
+            (['--bed', '--capture', '--amplicons'], 'amplicons.bed', {
                 'dest': 'bed',
-                'help': ''}),
-
-            (['--genes', '--genes'], 'genes.bed', {
-                'dest': 'genes',
-                'help': ''}),
-
-            (['--exons', '--exons'], 'exons.bed', {
-                'dest': 'exons',
-                'help': ''}),
+                'help': 'capture panel/amplicons'}),
 
             (['--padding'], '250', {
                 'dest': 'padding',
-                'help': '',
+                'help': 'input regions will be extended by this value in both directions',
                 'default': 250}),
 
             (['--reports'], '', {
                 'dest': 'reports',
-                'help': '--reports ' + REPORT_TYPES,
+                'help': 'default: --reports ' + REPORT_TYPES,
                 'default': REPORT_TYPES}),
         ],
-        required=['bam', 'bed'])
+        required_inputs=required)
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
-    load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
+    load_genome_resources(cnf, genome_resources)
 
-    genes_bed = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
-    exons_bed = options.get('exons') or cnf.get('exons') or expanduser(cnf['genome'].get('exons'))
-    chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
-    capture_bed = options.get('bed') or cnf.get('bed')
-    bam = options.get('bam') or cnf.get('bam')
+    read_samples_info(cnf, options)
 
-    if not genes_bed:
+    run_all(cnf, None, required + genome_resources, [], process_one, None, None)
+
+
+def read_samples_info(cnf, options):
+    info('')
+    info('Processing input details...')
+
+    cnf['bed'] = options.get('bed') or cnf.get('bed')
+    cnf['bam'] = options.get('bam') or cnf.get('bam')
+    cnf['genes'] = options.get('genes') or cnf.get('genes') or cnf['genome'].get('genes')
+    cnf['exons'] = options.get('exons') or cnf.get('exons') or cnf['genome'].get('exons')
+    cnf['chr_lengths'] = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
+
+    if not cnf['genes']:
         critical(cnf.get('log'), 'Specify sorted genes bed file in system info or in run info.')
-    if not exons_bed:
+    if not cnf['exons']:
         critical(cnf.get('log'), 'Specify sorted exons bed file in system info or in run info.')
-    if not chr_len_fpath:
-        critical(cnf.get('log'), 'Specify chromosome lengths for the genome'
-                 ' in system info or in run info.')
-    if not bam:
+    if not cnf['chr_lengths']:
+        critical(cnf.get('log'), 'Specify chromosome lengths for the genome in system info or in run info.')
+    if not cnf['bam']:
         critical(cnf.get('log'), 'Specify bam file by --bam option or in run_config.')
-    if not capture_bed:
+    if not cnf['bed']:
         critical(cnf.get('log'), 'Specify capture file by --capture option or in run_config.')
 
-    info(cnf.get('log'), 'using genes ' + genes_bed)
-    info(cnf.get('log'), 'using exons ' + exons_bed)
-    info(cnf.get('log'), 'using chr lengths ' + chr_len_fpath)
-    info(cnf.get('log'), 'using bam ' + bam)
-    info(cnf.get('log'), 'using capture panel ' + capture_bed)
+    info(cnf.get('log'), 'using genes ' + cnf['genes'])
+    info(cnf.get('log'), 'using exons ' + cnf['exons'])
+    info(cnf.get('log'), 'using chr lengths ' + cnf['chr_lengths'])
+    info(cnf.get('log'), 'using bam ' + cnf['bam'])
+    info(cnf.get('log'), 'using capture panel/amplicons ' + cnf['bed'])
 
-    genes_bed = expanduser(genes_bed)
-    exons_bed = expanduser(exons_bed)
-    chr_len_fpath = expanduser(chr_len_fpath)
-    bam = expanduser(bam)
-    capture_bed = expanduser(capture_bed)
+    genes_bed = expanduser(cnf['genes'])
+    exons_bed = expanduser(cnf['exons'])
+    chr_len_fpath = expanduser(cnf['chr_lengths'])
+    bam = expanduser(cnf['bam'])
+    capture_bed = expanduser(cnf['bed'])
 
     if not verify_file(genes_bed): exit(1)
     if not verify_file(exons_bed): exit(1)
@@ -104,12 +108,8 @@ def main(args):
     cnf['depth_thresholds'] = cnf.get('depth_thresholds') or [5, 10, 25, 50, 100, 500, 1000, 5000,
                                                               10000, 50000, 100000, 500000]
 
-    info(cnf.get('log'), '')
 
-    run_all(cnf, capture_bed, bam, chr_len_fpath, genes_bed, exons_bed)
-
-
-def run_all(cnf, capture_bed, bam, chr_len_fpath, genes_bed, exons_bed):
+def process_one(cnf, bam, capture_bed, chr_len_fpath, genes_bed, exons_bed):
     # sample_name, _ = splitext(basename(bam))
     sample_name = os.path.basename(os.path.dirname(bam))
 
