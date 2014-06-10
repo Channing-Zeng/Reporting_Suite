@@ -1,30 +1,17 @@
-## Inside the output directory the following will be created:
-## <sample_name>.anno.vcf
-## <sample_name>.anno.tsv
-
-filter_reject: True           ## Filters variants with REJECT in the FILTER field
-#split_samples: True          ## Creates separate VCF for each sample.
-                              ## Default when multiple BAMs are provided.
-
-genome: hg19                  ## loads from "genomes" section from system_config yaml
+genome: hg19                  ## Loads from "genomes" section from system_config yaml
 
 verbose: True                 ## Prints tools output
 keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
 reuse_intermediate: True      ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-parallel: False               ## Process samples in parallel (requires "joblib" python package)
 
+filter_reject: True           ## Filter variants with REJECT in the FILTER field
 
-# For target coverage reports
-depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+coverage_reports:
+  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
 
+variant_filtering:
+  expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
 
-# For variant filtering
-variant_filtering_expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
-
-
-## For variant quality control reports:
-## GATK for database concordance and other metrics
-## BCFtools for plots
 quality_control:
   databases: ['dbsnp', 'cosmic', '1000genomes']
   novelty: ['all', 'known', 'novel']
@@ -33,11 +20,10 @@ quality_control:
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
   variants_distribution_scale: 1000  ## in kilobases
 
-
 ## Annotation with various tools.
-## If no "annotations:" section specified, all annotations will be applied
 gatk:
   options: ['-dt NONE', '-nt 1']
+  all-annotations: False
   annotations:                ## Field names in final VCF:
   - Coverage                  ## DP
   - BaseQualityRankSumTest    ## BaseQRankSum
@@ -54,6 +40,7 @@ gatk:
   - AlleleBalanceBySample     ## AB
 
 dbnsfp:
+  all-annotations: False
   annotations:
   - SIFT_score
   - Polyphen2_HVAR_score
@@ -74,6 +61,7 @@ dbnsfp:
   - ESP6500_EA_AF
 
 dbsnp:
+  all-annotations: False
   annotations:
   - ID
   - SAO
@@ -90,6 +78,7 @@ dbsnp:
   - CDA
 
 cosmic:
+  all-annotations: False
   annotations:
   - ID
   - CNT
@@ -99,6 +88,7 @@ cosmic:
 custom_vcfs:
   oncomine:
     path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
+    all-annotations: False
     annotations:
     - om_Cancer
     - om_PATIENT
@@ -110,19 +100,16 @@ snpeff:
   cancer: True
   ## no "annotations" section here, always applied all annotations
 
-tracks:   ## requires vcfannotate (from bcbio-nextgen)
-  ## CpG Island
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed
-  ## Copy Number Variants
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed
-  ## Segmental Duplications
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed
-  ## Repeats
-- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed
-  ## RNA Editing (RNA-Seq data)
-#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed
+tracks:
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed          ## Copy Number Variants
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed   ## Segmental Duplications
+- /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
+#- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
+
 
 tsv_fields:
+  all-annotations: False
   - SAMPLE                        : Sample
   - CHROM                         : Chromosome
   - POS                           : Position
