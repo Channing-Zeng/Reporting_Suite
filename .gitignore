@@ -40,7 +40,5 @@ nosetests.xml
 .DS_Store
 */.DS_Store
 
-test/results
-test/results/
-test/results/*
-test/targetcov_results/*
+test/results*
+test/results*/

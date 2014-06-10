@@ -11,8 +11,29 @@ filter_reject: True
 verbose: True
 keep_intermediate: True
 reuse_intermediate: True
-#parallel: True
 
+
+# For target coverage reports
+depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+
+
+# For variant filtering
+variant_filtering_expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+
+
+## Quality control variants:
+## GATK for database concordance and other metrics
+## BCFtools for plots
+quality_control:
+  databases: ['dbsnp', 'cosmic']
+  novelty: ['all', 'known', 'novel']
+  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+
+
+## Annotation with various tools.
+## If no "annotations:" section specified, all annotations will be applied
 #gatk:
 #  options: ['-dt NONE', '-nt 1']
 #  annotations:                # Field names in final VCF:

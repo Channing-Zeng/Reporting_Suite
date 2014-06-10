@@ -59,7 +59,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, fpaths_keys=Non
         parser.add_option(*args, **kwargs)
 
     (opt_obj, args) = parser.parse_args()
-    opts = opt_obj.__dict__
+    opts = dict((k, v) for k, v in opt_obj.__dict__.items() if v is not None)
 
     if opts['overwrite']:
         opts['reuse_intermediate'] = False
@@ -67,7 +67,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, fpaths_keys=Non
 
     cnf = _load_configs(run_config_name, system_config_name, args)
 
-    cnf.update(opt_obj.__dict__)
+    cnf.update(opts)
 
     assert required_keys
     cnf['name'] = cnf.get('name') or basename(dirname(cnf[required_keys[0]]))
@@ -101,7 +101,7 @@ def check_inputs(cnf, required_keys, optional_keys, fpaths_keys=None):
     if to_exit:
         sys.exit(1)
 
-    info('Input')
+    info('Input:')
     for key in required_keys + optional_keys:
         info('  ' + key + ': ' + cnf[key])
 

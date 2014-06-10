@@ -18,6 +18,10 @@ parallel: False               ## Process samples in parallel (requires "joblib" 
 depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
 
 
+# For variant filtering
+variant_filtering_expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+
+
 ## For variant quality control reports:
 ## GATK for database concordance and other metrics
 ## BCFtools for plots

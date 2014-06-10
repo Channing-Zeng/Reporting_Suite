@@ -72,7 +72,7 @@ dat = [
 	[ 0.000000, 10, 4.000000 ],
 ]
 dat = []
-with open('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/tstv_by_qual.0.dat', 'rb') as f:
+with open('//test/results_qc/work/sample1_qc_plots/tstv_by_qual.0.dat', 'rb') as f:
 	reader = csv.reader(f, 'tab')
 	for row in reader:
 		if row[0][0] != '#': dat.append([float(x) for x in row])

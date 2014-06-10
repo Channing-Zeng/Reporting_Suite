@@ -1,79 +1,63 @@
 #!/usr/bin/env python
 
 import sys
-from source.vcf_read import read_samples_info_and_split
+
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
-from source.runner import run_all
-from source.summarize import summarize_qc
-from source.varqc import qc
-from source.utils import info, verify_module, rmtx
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.runner import run_one
+from source.utils import info, get_java_tool_cmdline, intermediate_fname, call, iterate_file
 
 
 def main(args):
-    required = ['vcf']
-    optional = []
+    required_keys = ['vcf']
+    optional_keys = []
 
-    config, options = read_opts_and_cnfs(
-        'varqc',
-        extra_opts=[(['--var', '--vcf'], 'variants.vcf', {
-            'dest': 'vcf',
-            'help': 'variants to evaluate'}),
+    cnf = read_opts_and_cnfs(
+        extra_opts=[
+            (['--var', '--vcf'], 'variants.vcf', {
+             'dest': 'vcf',
+             'help': 'variants to annotate'}),
+
+            (['--expression'], '', {
+             'dest': 'variant_filtering_expression',
+             'help': 'filtering line for snpsift'}),
         ],
-        required=required)
+        required_keys=required_keys,
+        optional_keys=optional_keys)
 
-    check_system_resources(config, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats', 'bgzip', 'tabix'])
-    load_genome_resources(config, ['seq', 'dbsnp'])
+    check_system_resources(cnf, ['snpsift'])
+    load_genome_resources(cnf)
 
-    if 'quality_control' in config:
-        qc.check_quality_control_config(config)
-
-    sample_cnfs_by_name = read_samples_info_and_split(config, options, required + optional)
-
-    try:
-        run_all(config, sample_cnfs_by_name, required, optional,
-                process_one, finalize_one, finalize_all)
-    except KeyboardInterrupt:
-        rmtx(config['work_dir'])
-        exit()
-    rmtx(config['work_dir'])
+    run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
 
 
-def process_one(cnf, vcf_fpath):
-    if 'quality_control' in cnf:
-        return qc.run_qc(cnf, cnf['output_dir'], vcf_fpath)
-    else:
-        return None, None
+def filter_variants(cnf, vcf_fpath):
+    executable = get_java_tool_cmdline(cnf, 'snpsift')
+    expression = cnf['variant_filtering_expression'] or ''
+
+    info('')
+    info('*' * 70)
+    vcf_fpath = iterate_file(cnf, vcf_fpath, lambda l: l.replace('\tPASS\t', '\t\t'))
+
+    cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
+    filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'filtered')
+    call(cnf, cmdline, filtered_fpath, overwrite=True)
+    return filtered_fpath
 
 
-def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
-    if qc_report_fpath:
-        info('Saved QC report to ' + qc_report_fpath)
-    if qc_plots_fpaths:
-        info('Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
-    elif not verify_module('matplotlib'):
-        info('Warning: QC plots were not generated because matplotlib is not installed.')
+def process_one(cnf, *inputs):
+    anno_vcf_fpath = filter_variants(cnf, *inputs)
+    return [anno_vcf_fpath]
 
 
-def finalize_all(cnf, samples, results):
-    for (sample_name, cnf), (qc_dir, qc_report, qc_plots) in zip(samples.items(), results):
-        if qc_dir:
-            info(sample_name + ':')
-            info('  ' + qc_report)
-            info('  ' + qc_dir)
-
-    qc_cnf = cnf.get('quality_control')
-    if qc_cnf and 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
-        qc_output_fpath = cnf.get('qc_summary_output') or qc_cnf.get('summary_output')
-        summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
-        info('Variant QC summary:')
-        info('  ' + qc_output_fpath)
+def finalize_one(cnf, filtered_vcf_fpath):
+    if filtered_vcf_fpath:
+        info('Saved filtered VCF to ' + filtered_vcf_fpath)
 
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-

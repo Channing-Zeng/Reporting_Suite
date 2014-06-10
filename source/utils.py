@@ -108,10 +108,11 @@ def make_tmpdir(cnf, prefix='ngs_reporting_tmp'):
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
-                 keep_original_if_not_keep_intermediate=False):
+                 keep_original_if_not_keep_intermediate=False,
+                 reuse_intermediate=True):
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
-    if suffix and cnf.get('reuse_intermediate'):
+    if suffix and cnf.get('reuse_intermediate') and reuse_intermediate:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
@@ -265,13 +266,15 @@ def call_check_output(cnf, cmdline):
     return call_subprocess(cnf, cmdline, check_output=True)
 
 
-def call(cnf, cmdline, output_fpath=None):
-    return call_subprocess(cnf, cmdline, None, output_fpath)
+def call(cnf, cmdline, output_fpath=None, overwrite=False):
+    return call_subprocess(cnf, cmdline, None, output_fpath, overwrite=overwrite)
 
 
 def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
          stdin_fpath=None, exit_on_error=True,
+
+         overwrite=True,
          check_output=False, return_proc=False):
     """
     Required arguments:
@@ -293,6 +296,11 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     output_is_dir                   output_fpath is a directory
     stdin_fpath:                    stdin=open(stdin_fpath)
     exit_on_error:                  is return code != 0, exit
+
+    overwrite                       overwrite even if reuse_intermediate=True
+    check_output                    subprocess.check_output; returns stdout
+    return_proc                     proc = subprocess.Popen; returns proc
+
     ------------------------------------------------------------
     """
 
@@ -300,7 +308,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         stdout_to_outputfile = False
 
     # NEEDED TO REUSE?
-    if output_fpath and cnf.get('reuse_intermediate'):
+    if output_fpath and cnf.get('reuse_intermediate') and overwrite is False:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath

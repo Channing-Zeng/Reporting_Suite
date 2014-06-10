@@ -92,7 +92,9 @@ def run_one(cnf, required_inputs, optional_inputs,
         if finalize_one_fun:
             info('')
             info('*' * 70)
-            info(cnf['name'])
+            if multiple_samples:
+                info(cnf['name'])
+
             finalize_one_fun(cnf, *results_one)
 
         return results_one
