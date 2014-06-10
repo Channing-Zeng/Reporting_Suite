@@ -2,9 +2,9 @@ from os import mkdir, makedirs
 from os.path import basename, isdir, dirname
 
 from source.bcbio_utils import file_exists
-from source.runner import filter_rejected
 from source.utils import info, err, verify_file, verify_dir, verify_module, critical
 from source.varqc.stats_gatk import gatk_qc
+from source.vcf import filter_rejected
 
 if verify_module('matplotlib'):
     import matplotlib
@@ -74,7 +74,7 @@ def check_quality_control_config(cnf):
             dbs_dict[basename(db)] = db
         elif db not in cnf['genome']:
             to_exit = True
-            err(cnf.get('log'), db + ' for variant qc is not found '
+            err(db + ' for variant qc is not found '
                                      'in genome resources in system config.')
         else:
             dbs_dict[db] = cnf['genome'][db]

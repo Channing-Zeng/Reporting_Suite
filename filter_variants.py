@@ -52,9 +52,9 @@ def process_one(cnf, vcf_fpath):
 
 def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
     if qc_report_fpath:
-        info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
+        info('Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
-        info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
+        info('Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
     elif not verify_module('matplotlib'):
         info('Warning: QC plots were not generated because matplotlib is not installed.')
 
@@ -62,16 +62,16 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
 def finalize_all(cnf, samples, results):
     for (sample_name, cnf), (qc_dir, qc_report, qc_plots) in zip(samples.items(), results):
         if qc_dir:
-            info(cnf['log'], sample_name + ':')
-            info(cnf['log'], '  ' + qc_report)
-            info(cnf['log'], '  ' + qc_dir)
+            info(sample_name + ':')
+            info('  ' + qc_report)
+            info('  ' + qc_dir)
 
     qc_cnf = cnf.get('quality_control')
     if qc_cnf and 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
         qc_output_fpath = cnf.get('qc_summary_output') or qc_cnf.get('summary_output')
         summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
-        info(cnf['log'], 'Variant QC summary:')
-        info(cnf['log'], '  ' + qc_output_fpath)
+        info('Variant QC summary:')
+        info('  ' + qc_output_fpath)
 
 
 if __name__ == '__main__':

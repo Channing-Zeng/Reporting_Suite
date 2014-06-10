@@ -2,12 +2,13 @@ from genericpath import isfile
 from os.path import splitext, basename, join, dirname, realpath
 import os
 import shutil
-from source.runner import filter_rejected
+from source.logger import step_greetings
 
-from source.utils import critical, iterate_file, step_greetings, \
+from source.utils import critical, iterate_file, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
     get_tool_cmdline, err, get_gatk_type, info, bgzip_and_tabix_vcf, index_bam
 from source.bcbio_utils import add_suffix, file_exists
+from source.vcf import filter_rejected
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -23,28 +24,28 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
     if 'gatk' in cnf:
         annotated = True
-        vcf_fpath = _gatk(cnf, vcf_fpath, bam_fpath, work_dir)
+        vcf_fpath = _gatk(cnf, vcf_fpath, bam_fpath)
 
     if 'dbsnp' in cnf:
         annotated = True
-        vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath, work_dir)
+        vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath)
     if 'cosmic' in cnf:
         annotated = True
-        vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath, work_dir)
+        vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
             annotated = True
             vcf_fpath = _snpsift_annotate(
-                cnf, custom_conf, dbname, vcf_fpath, work_dir)
+                cnf, custom_conf, dbname, vcf_fpath)
 
     if 'dbnsfp' in cnf:
         annotated = True
-        vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath, work_dir)
+        vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath)
 
     if 'snpeff' in cnf:
         annotated = True
-        _remove_annotation(cnf, 'EFF', vcf_fpath, work_dir)
-        vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath, work_dir)
+        _remove_annotation(cnf, 'EFF', vcf_fpath)
+        vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
         if isfile(join(cnf['output_dir'], summary_fpath)):
             os.remove(join(cnf['output_dir'], summary_fpath))
         if isfile(join(cnf['output_dir'], genes_fpath)):
@@ -56,12 +57,12 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
     if cnf.get('tracks'):
         for track in cnf['tracks']:
-            vcf_fpath = _tracks(cnf, track, vcf_fpath, work_dir)
+            vcf_fpath = _tracks(cnf, track, vcf_fpath)
             if vcf_fpath:
                 annotated = True
 
     if annotated:
-        vcf_fpath = _filter_fields(cnf, vcf_fpath, work_dir)
+        vcf_fpath = _filter_fields(cnf, vcf_fpath)
 
         # Copying final VCF
         final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
@@ -79,7 +80,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         return None, None
 
 
-def _remove_annotation(cnf, field_to_del, input_fpath, work_dir):
+def _remove_annotation(cnf, field_to_del, input_fpath):
     def proc_line(l):
         if field_to_del in l:
             if l.startswith('##INFO='):
@@ -87,7 +88,7 @@ def _remove_annotation(cnf, field_to_del, input_fpath, work_dir):
                     if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
                         return None
                 except IndexError:
-                    critical(cnf['log'], 'Incorrect VCF at line: ' + l)
+                    critical('Incorrect VCF at line: ' + l)
             elif not l.startswith('#'):
                 fields = l.split('\t')
                 info_line = fields[7]
@@ -98,11 +99,11 @@ def _remove_annotation(cnf, field_to_del, input_fpath, work_dir):
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
         return l
-    return iterate_file(cnf, input_fpath, proc_line, work_dir)
+    return iterate_file(cnf, input_fpath, proc_line)
 
 
 def _convert_to_maf(cnf, final_vcf_fpath):
-    step_greetings(cnf, 'Converting to MAF')
+    step_greetings('Converting to MAF')
 
     final_vcf_fname = basename(final_vcf_fpath)
 
@@ -115,8 +116,8 @@ def _convert_to_maf(cnf, final_vcf_fpath):
     return final_maf_fpath
 
 
-def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
-    step_greetings(cnf, 'Annotate with ' + dbname)
+def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
+    step_greetings('Annotate with ' + dbname)
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
 
@@ -124,7 +125,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
     if not db_path:
         db_path = vcf_conf.get('path')
         if not db_path:
-            critical(cnf['log'], 'Please, privide a path to ' + dbname + ' in the run config '
+            critical('Please, privide a path to ' + dbname + ' in the run config '
                      '("path:" field), or in the "genomes" section in the system config')
         if not verify_file(db_path):
             exit()
@@ -133,7 +134,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
     # all_fields.extend(annotations)
     anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(work_dir, input_fpath, dbname)
+    output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
     def proc_line(line):
@@ -141,21 +142,21 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath, work_dir):
             line = line.replace(' ', '_')
             assert ' ' not in line
         return line
-    output_fpath = iterate_file(cnf, output_fpath, proc_line, work_dir)
+    output_fpath = iterate_file(cnf, output_fpath, proc_line)
     return output_fpath
 
 
-def _snpsift_db_nsfp(cnf, input_fpath, work_dir):
+def _snpsift_db_nsfp(cnf, input_fpath):
     if 'dbnsfp' not in cnf:
         return input_fpath
 
-    step_greetings(cnf, 'DB SNFP')
+    step_greetings('DB SNFP')
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
 
     db_path = cnf['genome'].get('dbnsfp')
     if not db_path:
-        critical(cnf['log'], 'Please, provide a path to DB NSFP file in '
+        critical('Please, provide a path to DB NSFP file in '
                  'the "genomes" section in the system config.')
 
     annotations = cnf['dbnsfp'].get('annotations', [])
@@ -166,16 +167,16 @@ def _snpsift_db_nsfp(cnf, input_fpath, work_dir):
 
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
               '{input_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(work_dir, input_fpath, 'db_nsfp')
+    output_fpath = intermediate_fname(input_fpath, 'db_nsfp')
     return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True)
 
 
-def _snpeff(cnf, input_fpath, work_dir):
+def _snpeff(cnf, input_fpath):
     if 'snpeff' not in cnf:
         return input_fpath, None, None
 
-    step_greetings(cnf, 'SnpEff')
+    step_greetings('SnpEff')
 
     # self.all_fields.extend([
     #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
@@ -186,10 +187,10 @@ def _snpeff(cnf, input_fpath, work_dir):
     ref_name = cnf['genome']['name']
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
-        critical(cnf['log'], 'Please, provide a path to SnpEff data in '
+        critical('Please, provide a path to SnpEff data in '
                  'the "genomes" section in the system config.')
 
-    stats_fpath = join(work_dir, cnf['name'] + '.snpEff_summary.html')
+    stats_fpath = join(cnf['name'] + '.snpEff_summary.html')
     cmdline = ('{executable} eff -dataDir {db_path} -stats {stats_fpath} '
                '-csvStats -noLog -1 -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
@@ -201,20 +202,20 @@ def _snpeff(cnf, input_fpath, work_dir):
     if cnf['snpeff'].get('cancer'):
         cmdline += ' -cancer '
 
-    output_fpath = intermediate_fname(work_dir, input_fpath, 'snpEff')
+    output_fpath = intermediate_fname(input_fpath, 'snpEff')
     return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True), \
         stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
 
 
-def _tracks(cnf, track_path, input_fpath, work_dir):
+def _tracks(cnf, track_path, input_fpath):
     field_name = splitext(basename(track_path))[0]
 
-    step_greetings(cnf, 'Intersecting with ' + field_name)
+    step_greetings('Intersecting with ' + field_name)
 
     toolpath = get_tool_cmdline(cnf, 'vcfannotate')
     if not toolpath:
-        err(cnf['log'], 'WARNING: Skipping annotation with tracks: vcfannotate '
+        err('WARNING: Skipping annotation with tracks: vcfannotate '
             'executable not found, you probably need to specify path in system_config, or '
             'run load bcbio:  . /group/ngs/bin/bcbio-prod.sh"')
         return
@@ -223,7 +224,7 @@ def _tracks(cnf, track_path, input_fpath, work_dir):
 
     cmdline = '{toolpath} -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
-    output_fpath = intermediate_fname(work_dir, input_fpath, field_name)
+    output_fpath = intermediate_fname(cnf, input_fpath, field_name)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
 
@@ -242,26 +243,29 @@ def _tracks(cnf, track_path, input_fpath, work_dir):
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
         return line
-    return iterate_file(cnf, output_fpath, proc_line, work_dir)
+    return iterate_file(cnf, output_fpath, proc_line)
 
 
-def _gatk(cnf, input_fpath, bam_fpath, work_dir):
+def _gatk(cnf, input_fpath, bam_fpath):
     if 'gatk' not in cnf:
         return input_fpath
 
-    step_greetings(cnf, 'GATK')
+    step_greetings('GATK')
 
     if bam_fpath:
         index_bam(cnf, bam_fpath)
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
-    output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
+    if 'threads' in cnf:
+        gatk_opts_line += ' -nt ' + int(cnf['threads'])
+
+    output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
 
     # duplicating this from "call" function to avoid calling "gatk --version"
     if output_fpath and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
-            info(cnf.get('log'), output_fpath + ' exists, reusing')
+            info(output_fpath + ' exists, reusing')
             return output_fpath
 
     # Avoid issues with incorrectly created empty GATK index files.
@@ -297,26 +301,26 @@ def _gatk(cnf, input_fpath, bam_fpath, work_dir):
     gatk_type = get_gatk_type(get_java_tool_cmdline(cnf, 'gatk'))
     for ann in annotations:
         if ann == 'DepthOfCoverage' and gatk_type == 'restricted':
-            info(cnf['log'], 'Notice: in the restricted Gatk version, DepthOfCoverage '
+            info('Notice: in the restricted Gatk version, DepthOfCoverage '
                  'is renamed to Coverage. Using the name Coverage.\n')
             ann = 'Coverage'
         if ann == 'Coverage' and gatk_type == 'lite':
-            info(cnf['log'], 'Notice: in the lite Gatk version, the Coverage annotation '
+            info('Notice: in the lite Gatk version, the Coverage annotation '
                  'goes by name of DepthOfCoverage. '
                  'In the system config, the lite version of Gatk is '
                  'specified; using DepthOfCoverage.\n')
             ann = 'DepthOfCoverage'
         cmdline += " -A " + ann
 
-    output_fpath = intermediate_fname(work_dir, input_fpath, 'gatk')
+    output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
     return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=False,
                 to_remove=[output_fpath + '.idx',
                            input_fpath + '.idx'])
 
 
-def _filter_fields(cnf, input_fpath, work_dir):
-    step_greetings(cnf, 'Filtering incorrect fields.')
+def _filter_fields(cnf, input_fpath):
+    step_greetings('Filtering incorrect fields.')
 
     def proc_line(line):
         if not line.startswith('#'):
@@ -337,6 +341,6 @@ def _filter_fields(cnf, input_fpath, work_dir):
                 return '\t'.join(fields)
         return line
 
-    output_fpath = iterate_file(cnf, input_fpath, proc_line, work_dir)
+    output_fpath = iterate_file(cnf, input_fpath, proc_line)
     info('Saved to ' + output_fpath)
     return output_fpath

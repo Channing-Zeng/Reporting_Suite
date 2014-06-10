@@ -5,35 +5,42 @@ from os.path import basename, join, realpath, expanduser
 from collections import OrderedDict
 
 from source.bcbio_utils import open_gzipsafe, splitext_plus
+from source.logger import step_greetings
 from source.utils import critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed
+    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed, iterate_file
 
 
+def filter_rejected(cnf, input_fpath):
+    step_greetings('Extracting dataset by filename, filtering REJECT line.')
+    output_fpath = iterate_file(cnf, input_fpath,
+                                (lambda l: l if 'REJECT' not in l else None))
+    info('Saved to ' + output_fpath)
+    return output_fpath
 
-#TODO: _set_up_dirs(cnf) for each sample
 
 def read_samples_info_and_split(common_cnf, options, inputs):
-    info(common_cnf.get('log'), '')
-    info(common_cnf.get('log'), 'Processing input details...')
+    #TODO: _set_up_dirs(cnf) for each sample
+
+    info('')
+    info('Processing input details...')
 
     details = None
     for key in inputs:
         if options.get(key):
             common_cnf[key] = expanduser(options[key])
-            info(common_cnf.get('log'), 'Using ' + common_cnf[key])
+            info('Using ' + common_cnf[key])
             details = [common_cnf]
     if not details:
         details = common_cnf.get('details')
     if not details:
-        critical(common_cnf.get('log'),
-                 'Please, provide input ' + ', '.join(inputs) +
+        critical('Please, provide input ' + ', '.join(inputs) +
                  ' in command line or in run info yaml config.')
 
     all_samples = OrderedDict()
 
     for one_item_cnf in details:
         if 'vcf' not in one_item_cnf:
-            critical(common_cnf.get('log'), 'ERROR: A section in details does not contain field "var".')
+            critical('ERROR: A section in details does not contain field "var".')
         one_item_cnf['vcf'] = expanduser(one_item_cnf['vcf'])
         if not verify_file(one_item_cnf['vcf'], 'Input file'):
             sys.exit(1)
@@ -66,7 +73,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
                     cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
 
                 cnf['vcf'] = extract_sample(cnf, one_item_cnf['vcf'], cnf['name'], cnf['work_dir'])
-                info(cnf.get('log'), '')
+                info()
 
         # SINGLE SAMPLE
         else:
@@ -104,9 +111,9 @@ def _read_sample_names_from_vcf(vcf_fpath):
 
 
 def extract_sample(cnf, input_fpath, samplename, work_dir):
-    info(cnf.get('log'), '-' * 70)
-    info(cnf.get('log'), 'Separating out sample ' + samplename)
-    info(cnf.get('log'), '-' * 70)
+    info('-' * 70)
+    info('Extracting sample ' + samplename)
+    info('-' * 70)
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
     ref_fpath = cnf['genome']['seq']
@@ -125,7 +132,6 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
 
 
 def _verify_sample_info(vcf_conf, vcf_header_samples):
-    # check bams if exist
     if 'samples' in vcf_conf:
         for header_sample_name, sample_conf in vcf_conf['samples'].items():
             join_parent_conf(sample_conf, vcf_conf)

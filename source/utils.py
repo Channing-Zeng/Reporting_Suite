@@ -8,48 +8,11 @@ import shutil
 import re
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
 from distutils.version import LooseVersion
-from datetime import datetime, time
+from source.logger import step_greetings, info, err, critical
 
 from source.transaction import file_transaction
 from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
 
-
-def err(log, msg=None):
-    if msg is None:
-        msg, log = log, None
-
-    msg = timestamp() + msg
-
-    if log:
-        open(log, 'a').write('\n' + msg + '\n')
-
-    sys.stderr.write('\n' + msg + '\n')
-    sys.stderr.flush()
-
-
-def critical(log, msg=None):
-    if msg is None:
-        msg, log = log, None
-
-    msg = timestamp() + msg
-
-    if log:
-        open(log, 'a').write('\n' + msg + '\n')
-
-    sys.exit(msg)
-
-
-def info(log, msg=None):
-    if msg is None:
-        msg, log = log, None
-
-    msg = timestamp() + msg
-
-    print(msg)
-    sys.stdout.flush()
-
-    if log:
-        open(log, 'a').write(msg + '\n')
 
 
 def remove_quotes(s):
@@ -126,8 +89,10 @@ def make_tmpdir(cnf, prefix='ngs_reporting_tmp'):
 
     This can also handle a configured temporary directory to use.
     """
+    prev_tmp_dir = cnf.get('tmp_dir')
+
     base_dir = cnf.get('tmp_base_dir') or cnf['work_dir']
-    if not verify_dir(base_dir, 'Base directory for temporary files.'):
+    if not verify_dir(base_dir, 'Base directory for temporary files'):
         sys.exit(1)
     tmp_dir = tempfile.mkdtemp(dir=base_dir, prefix=prefix)
     safe_mkdir(tmp_dir)
@@ -139,15 +104,16 @@ def make_tmpdir(cnf, prefix='ngs_reporting_tmp'):
             shutil.rmtree(tmp_dir)
         except OSError:
             pass
+        cnf['tmp_dir'] = prev_tmp_dir
 
 
-def iterate_file(cnf, input_fpath, proc_line_fun, work_dir, suffix=None,
+def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
                  keep_original_if_not_keep_intermediate=False):
-    output_fpath = intermediate_fname(work_dir, input_fpath, suf=suffix or 'tmp')
+    output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
     if suffix and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
-            info(cnf['log'], output_fpath + ' exists, reusing')
+            info(output_fpath + ' exists, reusing')
             return output_fpath
 
     with file_transaction(cnf['tmp_dir'], output_fpath) as tx_fpath:
@@ -182,21 +148,19 @@ def index_bam(cnf, bam_fpath):
 
 
 def bgzip_and_tabix_vcf(cnf, vcf_fpath):
-    work_dir = cnf['work_dir']
-
     bgzip = get_tool_cmdline(cnf, 'bgzip', suppress_warn=True)
     tabix = get_tool_cmdline(cnf, 'tabix', suppress_warn=True)
 
-    gzipped_fpath = join(work_dir, basename(vcf_fpath) + '.gz')
+    gzipped_fpath = join(cnf['work_dir'], basename(vcf_fpath) + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'
 
     if bgzip and not file_exists(gzipped_fpath):
-        step_greetings(cnf, 'Bgzip VCF')
+        info('BGzipping VCF')
         cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
         call_subprocess(cnf, cmdline, None, gzipped_fpath, exit_on_error=False)
 
     if tabix and not file_exists(tbi_fpath):
-        step_greetings(cnf, 'Tabix VCF')
+        info('Tabixing VCF')
         cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
         call_subprocess(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
 
@@ -224,7 +188,7 @@ def check_file_changed(cnf, new, in_work):
             md5_for_file(open(in_work, 'rb')) !=
             md5_for_file(open_gzipsafe(new, 'rb'))):
 
-            info(cnf.get('log'), 'Input file %s changed, setting "reuse_intermediate" '
+            info('Input file %s changed, setting "reuse_intermediate" '
                 'to False.' % str(new))
             cnf['reuse_intermediate'] = False
 
@@ -236,7 +200,7 @@ def check_file_changed(cnf, new, in_work):
 #
 #     if cnf.get('reuse_intermediate'):
 #         if not file_exists(prev_input_fpath):
-#             info(cnf.get('log'), 'File %s does not exist, setting "reuse_intermediate" to '
+#             info('File %s does not exist, setting "reuse_intermediate" to '
 #                       'False.' % str(prev_input_fpath))
 #             cnf['reuse_intermediate'] = False
 #
@@ -249,16 +213,16 @@ def check_file_changed(cnf, new, in_work):
 #                     prev_inp_hashes[input_fname] = md5
 #
 #             if len(new_inp_hashes) != len(prev_inp_hashes):
-#                 info(cnf.get('log'), 'Number of input files changed, setting "reuse_intermediate" to False.')
+#                 info('Number of input files changed, setting "reuse_intermediate" to False.')
 #                 cnf['reuse_intermediate'] = False
 #
 #             for inp_fpath, inp_hash in new_inp_hashes.items():
 #                 if inp_fpath not in prev_inp_hashes:
-#                     info(cnf.get('log'), 'Input changed, setting "reuse_intermediate" to False.')
+#                     info('Input changed, setting "reuse_intermediate" to False.')
 #                     cnf['reuse_intermediate'] = False
 #
 #                 if inp_hash != prev_inp_hashes[inp_fpath]:
-#                     info(cnf.get('log'), 'Input %s changed, setting "reuse_intermediate" '
+#                     info('Input %s changed, setting "reuse_intermediate" '
 #                               'to False.' % str(inp_fpath))
 #                     cnf['reuse_intermediate'] = False
 #
@@ -338,7 +302,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     # NEEDED TO REUSE?
     if output_fpath and cnf.get('reuse_intermediate'):
         if file_exists(output_fpath):
-            info(cnf.get('log'), output_fpath + ' exists, reusing')
+            info(output_fpath + ' exists, reusing')
             return output_fpath
     if output_fpath and file_exists(output_fpath):
         if output_is_dir:
@@ -361,13 +325,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cnf.get('log'), cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(out_fpath, 'w')
                     stderr = subprocess.PIPE
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)
-                    info(cnf.get('log'), cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
 
@@ -385,10 +349,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 # PRINT STDOUT AND STDERR
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
-                        info(cnf.get('log'), '   ' + line.strip())
+                        info('   ' + line.strip())
                 elif proc.stderr:
                     for line in iter(proc.stderr.readline, ''):
-                        info(cnf.get('log'), '   ' + line.strip())
+                        info('   ' + line.strip())
 
             # CHECK RES CODE
             ret_code = proc.wait()
@@ -396,7 +360,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
-                err(cnf.get('log'), 'Command returned status ' + str(ret_code) +
+                err('Command returned status ' + str(ret_code) +
                     ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
                 if exit_on_error:
                     sys.exit(1)
@@ -405,13 +369,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cnf.get('log'), cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(out_fpath, 'w')
                     stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)
-                    info(cnf.get('log'), cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
 
@@ -422,13 +386,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             # PRINT STDOUT AND STDERR
             if ret_code != 0:
                 with open(err_fpath) as err_f:
-                    info(cnf.get('log'), '')
-                    info(cnf.get('log'), err_f.read())
-                    info(cnf.get('log'), '')
+                    info('')
+                    info(err_f.read())
+                    info('')
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
-                err(cnf.get('log'), 'Command returned status ' + str(ret_code) +
+                err('Command returned status ' + str(ret_code) +
                     ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
                 if exit_on_error:
                     sys.exit(1)
@@ -457,7 +421,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         os.remove(input_fpath_to_remove)
 
     if output_fpath and not output_is_dir:
-        info(cnf.get('log'), 'Saved to ' + output_fpath)
+        info('Saved to ' + output_fpath)
     return output_fpath
 
 
@@ -472,10 +436,10 @@ def get_script_cmdline_template(cnf, executable, script_name):
         exit(executable + ' executable required, maybe you need '
              'to run "module load ' + executable + '"?')
     if 'resources' not in cnf:
-        critical(cnf['log'], 'System config yaml must contain resources section with '
+        critical('System config yaml must contain resources section with '
                  + script_name + ' path.')
     if script_name not in cnf['resources']:
-        critical(cnf['log'], 'System config resources section must contain '
+        critical('System config resources section must contain '
                  + script_name + ' info (with a path to the tool).')
     tool_config = cnf['resources'][script_name]
     if 'path' not in tool_config:
@@ -493,35 +457,9 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
-def rmtx(work_dir):
-    try:
-        shutil.rmtree(join(work_dir, 'tx'))
-    except OSError:
-        pass
-
-
-def timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
-
-
-def step_greetings(cnf, name=None):
-    if name is None:
-        name = cnf
-        cnf = dict()
-    if name is None:
-        name = ''
-    if cnf is None:
-        cnf = dict()
-
-    info(cnf.get('log'), '')
-    info(cnf.get('log'), '-' * 70)
-    info(cnf.get('log'), timestamp() + name)
-    info(cnf.get('log'), '-' * 70)
-
-
-def intermediate_fname(work_dir, fname, suf):
+def intermediate_fname(cnf, fname, suf):
     output_fname = add_suffix(fname, suf)
-    return join(work_dir, basename(output_fname))
+    return join(cnf['work_dir'], basename(output_fname))
 
 
 def dots_to_empty_cells(config, tsv_fpath):
@@ -593,4 +531,23 @@ def _get_gatk_version(tool_cmdline):
     if version.startswith("v"):
         version = version[1:]
     return version
+
+
+def format_integer(name, value, unit=''):
+    value = int(value)
+    if value is not None:
+        return '{name}: {value:,}{unit}'.format(**locals())
+    else:
+        return '{name}: -'.format(**locals())
+
+
+def format_decimal(name, value, unit=''):
+    if value is not None:
+        return '{name}: {value:.2f}{unit}'.format(**locals())
+    else:
+        return '{name}: -'.format(**locals())
+
+
+def mean(ints):
+    return float(sum(ints)) / len(ints) if len(ints) > 0 else float('nan')
 

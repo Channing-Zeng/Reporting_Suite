@@ -1,40 +1,41 @@
 #!/usr/bin/env python
 
 import sys
-from source.vcf_read import read_samples_info_and_split
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
-from source.runner import run_all
+from source.runner import run_all, run_one
 from source.summarize import summarize_qc
 from source.varqc import qc
-from source.utils import info, verify_module, rmtx
+from source.utils import info, verify_module
 
 
 def main(args):
-    required = ['vcf']
-    optional = []
+    required_keys = ['vcf']
+    optional_keys = []
 
-    cnf, options = read_opts_and_cnfs(
+    cnf = read_opts_and_cnfs(
         extra_opts=[(['--var', '--vcf'], 'variants.vcf', {
             'dest': 'vcf',
             'help': 'variants to evaluate'}),
         ],
-        required=required)
+        required_keys=required_keys,
+        optional_keys=optional_keys)
 
-    check_system_resources(cnf, ['java', 'gatk', 'snpeff', 'bcftools', 'plot_vcfstats', 'bgzip', 'tabix'])
-    load_genome_resources(cnf, ['seq', 'dbsnp'])
+    check_system_resources(cnf,
+        required=['java', 'gatk', 'snpeff', 'bgzip', 'tabix'],
+        optional=['bcftools', 'plot_vcfstats'])
+    load_genome_resources(cnf,
+        required=['seq', 'dbsnp'],
+        optional=['cosmic', '1000genomes'])
 
     if 'quality_control' in cnf:
         qc.check_quality_control_config(cnf)
 
-    cnfs_by_sample = read_samples_info_and_split(cnf, options, required + optional)
-
-    run_all(cnf, cnfs_by_sample, required, optional,
-            process_one, finalize_one, finalize_all)
+    run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
 
 
 def process_one(cnf, vcf_fpath):
@@ -46,9 +47,9 @@ def process_one(cnf, vcf_fpath):
 
 def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
     if qc_report_fpath:
-        info(cnf['log'], 'Saved QC report to ' + qc_report_fpath)
+        info('Saved QC report to ' + qc_report_fpath)
     if qc_plots_fpaths:
-        info(cnf['log'], 'Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
+        info('Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
     elif not verify_module('matplotlib'):
         info('Warning: QC plots were not generated because matplotlib is not installed.')
 
@@ -56,16 +57,16 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
 def finalize_all(cnf, samples, results):
     for (sample_name, cnf), (qc_dir, qc_report, qc_plots) in zip(samples.items(), results):
         if qc_dir:
-            info(cnf['log'], sample_name + ':')
-            info(cnf['log'], '  ' + qc_report)
-            info(cnf['log'], '  ' + qc_dir)
+            info(sample_name + ':')
+            info('  ' + qc_report)
+            info('  ' + qc_dir)
 
     qc_cnf = cnf.get('quality_control')
     if qc_cnf and 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
         qc_output_fpath = cnf.get('qc_summary_output') or qc_cnf.get('summary_output')
         summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
-        info(cnf['log'], 'Variant QC summary:')
-        info(cnf['log'], '  ' + qc_output_fpath)
+        info('Variant QC summary:')
+        info('  ' + qc_output_fpath)
 
 
 if __name__ == '__main__':

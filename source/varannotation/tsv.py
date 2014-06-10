@@ -15,10 +15,10 @@ def make_tsv(cnf, vcf_fpath):
     if manual_tsv_fields:
         field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
         if cnf.get('keep_intermediate'):
-            info(cnf['log'], 'Saved TSV file to ' + tsv_fpath)
-        tsv_fpath = _rename_fields(cnf, tsv_fpath, field_map, cnf['work_dir'])
+            info('Saved TSV file to ' + tsv_fpath)
+        tsv_fpath = _rename_fields(cnf, tsv_fpath, field_map)
         if cnf.get('keep_intermediate'):
-            info(cnf['log'], 'Saved TSV file with nice names to ' + tsv_fpath)
+            info('Saved TSV file with nice names to ' + tsv_fpath)
 
     # Copying final TSV
     final_tsv_fname = splitext_plus(basename(cnf['vcf']))[0] + '.anno.tsv'
@@ -31,14 +31,14 @@ def make_tsv(cnf, vcf_fpath):
 
 
 def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
-    step_greetings(cnf, 'Extracting fields')
+    step_greetings('Extracting fields')
 
     name, _ = splitext_plus(basename(vcf_fpath))
     tsv_fpath = join(work_dir, name + '.tsv')
 
     if cnf.get('reuse_intermediate'):
         if file_exists(tsv_fpath):
-            info(cnf['log'], tsv_fpath + ' exists, reusing')
+            info(tsv_fpath + ' exists, reusing')
             return tsv_fpath
 
     all_format_fields = set()
@@ -62,7 +62,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 all_format_fields.add(f)
         l = '\t'.join(vals[:7] + [info_field])
         return l
-    splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, work_dir,
+    splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
         'split_format_fields', keep_original_if_not_keep_intermediate=True)
 
     manual_tsv_fields = cnf.get('tsv_fields')
@@ -128,7 +128,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 out.write('\t'.join([v for j, v in enumerate(values) if col_counts[j] and '\n' not in v]) + '\n')
 
     # with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx_tsv_fpath:
-    #     info(cnf['log'], cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
+    #     info(cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
     #                                         or vcf_fpath) + ' > ' + tx_tsv_fpath)
     #     res = subprocess.call(cmdline,
     #                           stdin=open(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
@@ -137,17 +137,17 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     # if splitted_FORMAT_column_vcf_fpath:
     #     os.remove(splitted_FORMAT_column_vcf_fpath)
 
-    # info(cnf['log'], '')
+    # info('')
     # if res != 0:
-    #     critical(cnf['log'], 'Command returned status ' + str(res) +
+    #     critical('Command returned status ' + str(res) +
     #              ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
 
     return tsv_fpath
 
 
-def _rename_fields(cnf, inp_tsv_fpath, field_map, work_dir):
+def _rename_fields(cnf, inp_tsv_fpath, field_map):
     if cnf.get('keep_intermediate'):
-        step_greetings(cnf, 'Renaming fields.')
+        step_greetings('Renaming fields.')
 
     with open(inp_tsv_fpath) as f:
         first_line = f.readline()
@@ -156,7 +156,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map, work_dir):
     new_first_line = '\t'.join(new_fields)
 
     if cnf.get('keep_intermediate'):
-        out_tsv_fpath = intermediate_fname(work_dir, inp_tsv_fpath, 'renamed')
+        out_tsv_fpath = intermediate_fname(cnf, inp_tsv_fpath, 'renamed')
     else:
         out_tsv_fpath = inp_tsv_fpath
 

@@ -4,11 +4,12 @@ from os import mkdir
 from os.path import basename, join
 
 from source.bcbio_utils import file_exists
+from source.logger import info
 from source.utils import call_subprocess, get_tool_cmdline, step_greetings, bgzip_and_tabix_vcf
 
 
 def bcftools_qc(cnf, qc_dir, vcf_fpath):
-    step_greetings(cnf, 'Quality control basic plots')
+    step_greetings('Quality control basic plots')
 
     work_dir = cnf['work_dir']
 
@@ -30,7 +31,10 @@ def bcftools_qc(cnf, qc_dir, vcf_fpath):
     cmdline = '{plot_vcfstats} -s {text_report_fpath} -p {viz_report_dir} ' \
               '--no-PDF'.format(**locals())
     call_subprocess(cnf, cmdline, text_report_fpath, None, output_is_dir=False)
-    return _get_plots_from_bcftools(cnf, viz_report_dir, qc_dir)
+
+    results = _get_plots_from_bcftools(cnf, viz_report_dir, qc_dir)
+    info('Done.')
+    return results
 
 
 def _get_plots_from_bcftools(cnf, bcftools_report_dir, output_dir):

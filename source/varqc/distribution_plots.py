@@ -10,7 +10,7 @@ import matplotlib.pyplot
 
 
 def variants_distribution_plot(cnf, qc_dir, vcf_fpath):
-    step_greetings(cnf, 'Quality control variant distribution plots')
+    step_greetings('Quality control variant distribution plots')
 
     # step 1: get chr lengths
     chr_len_fpath = cnf.get('chr_lengths')
@@ -27,14 +27,14 @@ def variants_distribution_plot(cnf, qc_dir, vcf_fpath):
     plot_scale = 1000 * variants_per_kbp
     variants_distribution, not_counted = _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale)
     if not_counted:
-        info(cnf['log'], 'Warning: some variants were not counted (chromosome names not found): ' + str(not_counted))
+        info('Warning: some variants were not counted (chromosome names not found): ' + str(not_counted))
     empty_chr = []
     for chr_name in chr_lengths.keys():
         if sum(variants_distribution[chr_name]) == 0:
             empty_chr.append(chr_name)
             del variants_distribution[chr_name]
     if empty_chr:
-        info(cnf['log'], 'Chromosomes without variants: ' + ', '.join(human_sorted(empty_chr)))
+        info('Chromosomes without variants: ' + ', '.join(human_sorted(empty_chr)))
 
     # step 3: plotting
     nplots = len(variants_distribution.keys())

@@ -1,16 +1,11 @@
-import shutil
-import textwrap
-from os import mkdir, makedirs
-from os.path import basename, join, isdir, dirname, expanduser
+from os.path import join
 
-from source.bcbio_utils import file_exists
-from source.utils import info, err, verify_file, step_greetings, \
-    get_tool_cmdline, get_java_tool_cmdline, call_subprocess, verify_dir, \
-    critical, human_sorted
+from source.logger import step_greetings
+from source.utils import get_java_tool_cmdline, call_subprocess
 
 
 def gatk_qc(cnf, qc_dir, vcf_fpath):
-    step_greetings(cnf, 'Quality control reports')
+    step_greetings('Quality control reports')
 
     log = cnf['log']
     work_dir = cnf['work_dir']
@@ -22,6 +17,9 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
+    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
+        gatk_opts_line += ' -nt ' + cnf['threads']
+
     ref_fpath = cnf['genome']['seq']
     report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
 
