@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from source.logger import critical
 from source.targetcov.cov import run_target_cov
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -50,6 +51,9 @@ def main(args):
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
+
+    if 'coverage_reports' not in cnf:
+        critical('No coverage_reports section in the report, cannot make coverage reports.')
 
     run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
 

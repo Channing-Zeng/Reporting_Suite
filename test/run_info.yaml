@@ -6,8 +6,8 @@ reuse_intermediate: True
 
 filter_reject: True
 
-coverage_reports:
-  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+#coverage_reports:
+#  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
 
 variant_filtering:
   expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"

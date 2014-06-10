@@ -730,7 +730,8 @@ def main():
                         "{%s}" % (', '.join(config.availablefeatures)),
                 'default': None}),
         ],
-        required=['bam', 'bed'])
+        required_keys=['bam', 'bed'],
+        optional_keys=[])
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf)
@@ -740,6 +741,9 @@ def main():
     #    critical('Specify chromosome lengths for the genome'
     #             ' in system info or in run info.')
     #config.CHR_LENGTHS = chr_len_fpath
+
+    if 'coverage_reports' not in cnf:
+        critical('No coverage_reports section in the report, cannot run NGScat.')
 
     bed = options.get('bed') or cnf.get('bed')
     bam = options.get('bam') or cnf.get('bam')
@@ -783,7 +787,7 @@ def main():
         else map(float, options.get('depthlist').split(','))
 
     ngscat(filtered_bams, bed, cnf['output_dir'], cnf['genome'].get('seq'), options.get('saturation') == 'y',
-           int(options.get('threads')), extend, depth_list, cnf['depth_thresholds'],
+           int(options.get('threads')), extend, depth_list, cnf['coverage_reports']['depth_thresholds'],
            options.get('feature'), cnf['work_dir'])
 
     if not cnf.get('keep_intermediate'):

@@ -27,7 +27,7 @@ def run_target_cov(cnf, bam, bed):
         _run_header_report(
             cnf, summary_report_fpath,
             bed, bam, chr_len_fpath,
-            cnf['depth_thresholds'], cnf['padding'],
+            cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
 
     # if 'amplicons' in options['reports']:
@@ -60,7 +60,7 @@ def run_target_cov(cnf, bam, bed):
                 exon.gene_name = exon.extra_fields[0]
 
             gene_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.details.gene.txt')
-            _run_region_cov_report(cnf, gene_report_fpath, cnf['name'], cnf['depth_thresholds'],
+            _run_region_cov_report(cnf, gene_report_fpath, cnf['name'], cnf['coverage_reports']['depth_thresholds'],
                                   amplicons, exons)
 
     return summary_report_fpath, gene_report_fpath

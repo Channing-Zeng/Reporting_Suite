@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from source.logger import err, critical
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -25,15 +26,19 @@ def main(args):
         required_keys=required_keys,
         optional_keys=optional_keys)
 
-    check_system_resources(cnf,
+    check_system_resources(
+        cnf,
         required=['java', 'gatk', 'snpeff', 'bgzip', 'tabix'],
         optional=['bcftools', 'plot_vcfstats'])
-    load_genome_resources(cnf,
+    load_genome_resources(
+        cnf,
         required=['seq', 'dbsnp'],
         optional=['cosmic', '1000genomes'])
 
-    if 'quality_control' in cnf:
-        qc.check_quality_control_config(cnf)
+    if 'quality_control' not in cnf:
+        critical('No quality_control section in the report, cannot run quality control.')
+
+    qc.check_quality_control_config(cnf)
 
     run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
 

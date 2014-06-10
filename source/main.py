@@ -3,10 +3,11 @@ import sys
 import os
 from os.path import isdir, dirname, join, realpath, expanduser, basename, abspath
 from optparse import OptionParser
-from source import logger
 
-from source.utils import err, critical, verify_file, \
-    info, safe_mkdir, verify_dir, verify_module
+from source import logger
+from source.logger import info, err, critical
+from source.bcbio_utils import which, file_exists
+from source.utils import verify_file, safe_mkdir, verify_dir, verify_module
 
 if verify_module('yaml'):
     from yaml import load
@@ -17,13 +18,13 @@ if verify_module('yaml'):
 else:
     critical('Cannot import module yaml.')
 
-from source.bcbio_utils import which, file_exists
+
+default_sys_config_path = 'system_info_Waltham.yaml'
+default_run_config_path = 'run_info.yaml'
 
 
-def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, fpaths_keys=None):
-    run_config_name = 'run_info.yaml'
-    system_config_name = 'system_info_Waltham.yaml'
-
+def read_opts_and_cnfs(extra_opts, required_keys,
+                       optional_keys=list(), fpaths_keys=None):
     basic_opts = [
         (['-o', '--output_dir'], 'DIR', {
          'dest': 'output_dir',
@@ -46,14 +47,18 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, fpaths_keys=Non
 
     options = basic_opts + extra_opts
     opts_line = ' '.join(args[0] + ' ' + example for args, example, _ in options)
-    filename = __file__
+    format_params = {
+        'script': __file__,
+        'opts_line': opts_line,
+        'sys_cnf': default_sys_config_path,
+        'run_cnf': default_run_config_path}
     parser = OptionParser(
         usage=(
-            'python {filename} [{system_config_name}] [{run_config_name}] {opts_line}\n'
+            'python {script} [{sys_cnf}] [{run_cnf}] {opts_line}\n'
             'or\n'
-            'python {filename} [{system_config_name}] {run_config_name}\n'
+            'python {script} [{sys_cnf}] {run_cnf}\n'
             'or\n'
-            'python {filename} {system_config_name}'.format(**locals())
+            'python {script} {sys_cnf}'.format(**format_params)
         ))
     for args, _, kwargs in options:
         parser.add_option(*args, **kwargs)
@@ -65,7 +70,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, fpaths_keys=Non
         opts['reuse_intermediate'] = False
         del opts['overwrite']
 
-    cnf = _load_configs(run_config_name, system_config_name, args)
+    cnf = _load_configs(args)
 
     cnf.update(opts)
 
@@ -106,28 +111,41 @@ def check_inputs(cnf, required_keys, optional_keys, fpaths_keys=None):
         info('  ' + key + ': ' + cnf[key])
 
 
-def _load_configs(run_config_name, system_config_name, args):
-    system_config_path = join(dirname(dirname(realpath(__file__))), system_config_name)
-    run_config_path = join(dirname(dirname(realpath(__file__))), run_config_name)
+def _fill_config_from_defaults(cnf, defaults):
+    for key in defaults:
+        if key in cnf:
+            if isinstance(cnf[key], dict) and isinstance(defaults[key], dict):
+                _fill_config_from_defaults(cnf[key], defaults[key])
+        else:
+            cnf[key] = defaults[key]
+    return cnf
+
+
+def _load_configs(args):
+    defaults_config_path = join(dirname(dirname(realpath(__file__))), join('source', 'defaults.yaml'))
+
+    sys_config_path = join(dirname(dirname(realpath(__file__))), default_sys_config_path)
+    run_config_path = join(dirname(dirname(realpath(__file__))), default_run_config_path)
+
     if len(args) < 1:
-        err('Notice: using ' + run_config_name + ' as a default run configutation file.\n\n')
+        err('Notice: using ' + run_config_path + ' as a default run configutation file.\n\n')
     else:
         run_config_path = args[0]
 
     if len(args) < 2:
         err('Notice: using system_info_rask.yaml as a default tools configutation file.\n\n')
     else:
-        system_config_path = args[0]
+        sys_config_path = args[0]
         run_config_path = args[1]
 
-    if not os.path.isfile(system_config_path):
-        critical(system_config_path + ' does not exist or is a directory.\n')
+    if not os.path.isfile(sys_config_path):
+        critical(sys_config_path + ' does not exist or is a directory.\n')
     if not os.path.isfile(run_config_path):
         critical(run_config_path + ' does not exist or is a directory.\n')
 
     to_exit = False
-    if not system_config_path.endswith('.yaml'):
-        err(system_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
+    if not sys_config_path.endswith('.yaml'):
+        err(sys_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
         to_exit = True
     if not run_config_path.endswith('.yaml'):
         err(run_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
@@ -136,16 +154,18 @@ def _load_configs(run_config_name, system_config_name, args):
     if to_exit:
         sys.exit(1)
 
-    sys_cnf = load(open(system_config_path), Loader=Loader)
+    dft_cnf = load(open(defaults_config_path), Loader=Loader)
+    sys_cnf = load(open(sys_config_path), Loader=Loader)
     run_cnf = load(open(run_config_path), Loader=Loader)
-    info('Loaded system config ' + system_config_path)
-    info('Loaded run config ' + run_config_path)
 
     cnf = dict(run_cnf.items() + sys_cnf.items())
+    _fill_config_from_defaults(cnf, dft_cnf)
 
-    cnf['system_config_path'] = system_config_path
+    cnf['system_config_path'] = sys_config_path
     cnf['run_config_path'] = run_config_path
 
+    info('Loaded system config ' + sys_config_path)
+    info('Loaded run config ' + run_config_path)
     return cnf
 
 
