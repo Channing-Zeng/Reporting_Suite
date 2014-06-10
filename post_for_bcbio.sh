@@ -6,7 +6,7 @@ samples=$3
 vcf_suffix=$4
 
 if [ -z "${samples}" ]; then
-    samples="./samples.txt"
+    samples=${bcbio_final_dir}"/samples.txt"
 fi
 
 if [ -z "${vcf_suffix}" ]; then
@@ -50,7 +50,8 @@ function run_on_grid {
     echo "#!/bin/bash" > "${runner_script}"
 #    echo "date" >> "${runner_script}"
 ## TODO: module loads could print to output
-    echo "source /etc/profile.d/modules.sh; module load python/64_2.7.3; module load java; module load bedtools; module load samtools;" >> "${runner_script}"
+    echo "source /etc/profile.d/modules.sh" >> "${runner_script}"
+    echo "module load python/64_2.7.3 java bedtools samtools" >> "${runner_script}"
     echo ${cmdline} >> "${runner_script}"
 #    echo "date" >> "${runner_script}"
     echo "rm -- \"${runner_script}\"" >> "${runner_script}"
@@ -104,53 +105,65 @@ do
     fi
 
     ### InDelFilter ###
+    name="indel_filter"
     cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suffix}.vcf\" > \"${sample}${filtered_vcf_suffix}.vcf\""
-    run_on_grid "${cmdline}" InDelFilter_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
+    run_on_grid "${cmdline}" ${name}_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
+    indel_filter_name=${name}
 
     ### VarAnn ###
-    mkdir annotation
-    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o annotation"
-    run_on_grid "${cmdline}" VarAnn_${sample} annotation annotation/log 1 InDelFilter_${sample}
+    name="varannotate"
+    mkdir ${name}
+    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o ${name}"
+    run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 1 ${indel_filter_name}_${sample}
+    varannotate_name=${name}
 
     ### VarQC ###
-    mkdir varQC
-    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o varQC"
-    run_on_grid "${cmdline}" VarQC_${sample} varQC varQC/log 1 InDelFilter_${sample}
+    name="varqc"
+    mkdir ${name}
+    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o ${name}"
+    run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 1 ${indel_filter_name}_${sample}
+    varqc_name=${name}
 
     if [ ! -z "${qc_jobids}" ]; then
-        qc_jobids=${qc_jobids},VarQC_${sample}
+        qc_jobids=${qc_jobids},${varqc_name}_${sample}
     else
-        qc_jobids=VarQC_${sample}
+        qc_jobids=${varqc_name}_${sample}
     fi
 
     ### targetCov ###
-    mkdir targetSeq
-    cmdline="python /group/ngs/src/targetcov.py --bam \"${sample}-ready.bam\" --bed \"${bed}\" --nt=4 -o targetSeq"
-    run_on_grid "${cmdline}" targetSeq_${sample} targetSeq targetSeq/log 4
+    name="targetcov"
+    mkdir ${name}
+    cmdline="python /group/ngs/src/targetcov.py --bam \"${sample}-ready.bam\" --bed \"${bed}\" --nt=4 -o ${name}"
+    run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 4
+    targetcov_name=${name}
 
     if [ ! -z "${targetcov_jobids}" ]; then
-        targetcov_jobids=${targetcov_jobids},targetSeq_${sample}
+        targetcov_jobids=${targetcov_jobids},${targetcov_name}_${sample}
     else
-        targetcov_jobids=targetSeq_${sample}
+        targetcov_jobids=${targetcov_name}_${sample}
     fi
 
     ### NGSCat ###
-    mkdir NGSCat
-    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams \"${sample}-ready.bam\" --bed \"${bed}\" --out NGSCat --reference /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa --saturation y"
-    run_on_grid "${cmdline}" NGSCat_${sample} NGSCat NGSCat/log 4
+    name="ngscat"
+    mkdir ${name}
+    cmdline="python /group/ngs/src/ngscat/ngscat.py --bams \"${sample}-ready.bam\" --bed \"${bed}\" --out ${name} --saturation y"
+    run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 4
 
     ## QualiMap ##
-    mkdir QualiMap
-    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir QualiMap -gff \"${qualimap_bed}\" -c -gd HUMAN"
-    run_on_grid "${cmdline}" QualiMap_${sample} QualiMap QualiMap/log 8
+    name="qualimap"
+    mkdir ${name}
+    cmdline="/group/ngs/src/qualimap/qualimap bamqc -nt 8 --java-mem-size=24G -nr 5000 -bam \"${sample}-ready.bam\" -outdir ${name} -gff \"${qualimap_bed}\" -c -gd HUMAN"
+    run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 8
 
     cd ..
 done
 
 ## VarQC summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py $bcbio_final_dir $samples varQC ${filtered_vcf_suffix}"
-run_on_grid "${cmdline}" VarQCSummary . log_varqc_summary 1 ${qc_jobids}
+name="varqc_summary"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py ${bcbio_final_dir} ${samples} ${varqc_name} ${filtered_vcf_suffix}"
+run_on_grid "${cmdline}" ${name} . log_${name} 1 ${qc_jobids}
 
 ## Target coverage summary ##
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py $bcbio_final_dir $samples targetSeq"
-run_on_grid "${cmdline}" targetSeqSummary . log_targetcov_summary 1 ${targetcov_jobids}
+name="targetcov_summary"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/targetcov_summary.py ${bcbio_final_dir} ${samples} ${targetcov_name}"
+run_on_grid "${cmdline}" ${name} . log_${name} 1 ${targetcov_jobids}
