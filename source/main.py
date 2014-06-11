@@ -309,7 +309,7 @@ def set_up_dirs(cnf):
 
     work_dir_name = 'work_' + cnf['name']
     cnf['work_dir'] = join(cnf['output_dir'], work_dir_name)
-    if not cnf.get('reuse_intermediate'):
+    if not cnf.get('reuse_intermediate') and isdir(cnf['work_dir']):
         rmtree(cnf['work_dir'])
 
     safe_mkdir(cnf['work_dir'], 'working directory')

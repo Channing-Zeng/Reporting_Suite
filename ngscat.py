@@ -49,7 +49,6 @@ def verify_bed(fpath):
 def main():
     required_keys = ['bam', 'bed']
     optional_keys = ['extra_bam', 'extend', 'saturation', 'depthlist', 'feature']
-    fpaths_keys = ['bam', 'bed', 'extra_bam']
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], 'align.bam', {
@@ -88,7 +87,7 @@ def main():
         ],
         required_keys=required_keys,
         optional_keys=optional_keys,
-        fpaths_keys=fpaths_keys)
+        key_for_sample_name='bam')
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf)
