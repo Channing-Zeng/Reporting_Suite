@@ -110,6 +110,7 @@ tracks:
 
 tsv_fields:
   all-annotations: False
+  annotations:
   - SAMPLE                        : Sample
   - CHROM                         : Chromosome
   - POS                           : Position

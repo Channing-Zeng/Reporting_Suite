@@ -167,58 +167,56 @@ def coveragecorr(coveragefiles, fileout, legend, executiongranted=None, status=N
         executiongranted.release()
 
 
-def coveragecorrtest():
-    x = numpy.array(list(numpy.random.normal(30, 5, 1000)) + list(numpy.random.normal(130, 5, 1000)))
-    y = numpy.array(list(numpy.random.normal(30, 5, 1000)) + list(numpy.random.normal(130, 5, 1000)))
+#################### NOT NEEDED IN DEFAULT ngsCAT! #########################
 
-    xmin = x.min()
-    xmax = x.max()  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-    ymin = y.min()
-    ymax = y.max()
-
-    # Perform a kernel density estimator on the results
-    X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
-    positions = c_[X.ravel(), Y.ravel()]
-    values = c_[x, y]
-    kernel = stats.kde.gaussian_kde(values.T)
-    Z = reshape(kernel(positions.T).T, X.T.shape)
-
-
-    # Fills in the 'd' vector which represents the "function" that determines the colour of each point in the graph
-    xfactor = 100 / (xmax - xmin)
-    yfactor = 100 / (ymax - ymin)
-    d = []
-    for i in range(len(x)):
-        # Z dimensions are (ymax-ymin+1)x(xmax-xmin+1)        
-        xvalue = int(round((x[i] - xmin) * xfactor)) - 1
-        # Rounding may yield negative values after substracting -1. Truncate to 0.
-        if (xvalue < 0): xvalue = 0
-        yvalue = int(round((y[i] - ymin) * yfactor)) - 1
-        # Rounding may yield negative values after substracting -1. Truncate to 0.
-        if (yvalue < 0): yvalue = 0
-
-        d.append(Z[xvalue][yvalue])
-
-    fig = pyplot.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111)
-    sc = ax.scatter(x, y, cmap=cm.Reds, c=d, s=1, edgecolors='none')
-    #    sc=ax.imshow(rot90(Z),cmap=cm.Reds,extent=[xmin, xmax, ymin, ymax]) # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-    #    sc=ax.imshow(rot90(Z),cmap=cm.gist_earth_r,extent=[xmin, xmax, ymin, ymax]) # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-    cbar = fig.colorbar(sc, ticks=(numpy.min(Z) + 0.00001, numpy.max(Z)))
-
-    #    cbar.set_ticks((numpy.min(Z),numpy.max(Z)))
-    #    cbar=fig.colorbar(sc,ticks=None)
-    #    cbar=fig.colorbar(sc,ax=ax, ticks=[0,1])
-    #    cbar.set_ticks(())
-    cbar.set_ticklabels(['Low', 'High'])
-    #    cbar.update_ticks()
-
-    cbar.set_label('Density')
-    ax.set_xlabel('GC content (%)')
-    ax.set_ylabel('Mean coverage')
-
-    fig.savefig('/tmp/tmp.png')
-
-
-#coveragecorr(None, '/tmp/tmp.png', ['a','b'])
-#coveragecorrtest()
+# def coveragecorrtest():
+#     x = numpy.array(list(numpy.random.normal(30, 5, 1000)) + list(numpy.random.normal(130, 5, 1000)))
+#     y = numpy.array(list(numpy.random.normal(30, 5, 1000)) + list(numpy.random.normal(130, 5, 1000)))
+#
+#     xmin = x.min()
+#     xmax = x.max()  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+#     ymin = y.min()
+#     ymax = y.max()
+#
+#     # Perform a kernel density estimator on the results
+#     X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
+#     positions = c_[X.ravel(), Y.ravel()]
+#     values = c_[x, y]
+#     kernel = stats.kde.gaussian_kde(values.T)
+#     Z = reshape(kernel(positions.T).T, X.T.shape)
+#
+#
+#     # Fills in the 'd' vector which represents the "function" that determines the colour of each point in the graph
+#     xfactor = 100 / (xmax - xmin)
+#     yfactor = 100 / (ymax - ymin)
+#     d = []
+#     for i in range(len(x)):
+#         # Z dimensions are (ymax-ymin+1)x(xmax-xmin+1)
+#         xvalue = int(round((x[i] - xmin) * xfactor)) - 1
+#         # Rounding may yield negative values after substracting -1. Truncate to 0.
+#         if (xvalue < 0): xvalue = 0
+#         yvalue = int(round((y[i] - ymin) * yfactor)) - 1
+#         # Rounding may yield negative values after substracting -1. Truncate to 0.
+#         if (yvalue < 0): yvalue = 0
+#
+#         d.append(Z[xvalue][yvalue])
+#
+#     fig = pyplot.figure(figsize=(6, 6))
+#     ax = fig.add_subplot(111)
+#     sc = ax.scatter(x, y, cmap=cm.Reds, c=d, s=1, edgecolors='none')
+#     #    sc=ax.imshow(rot90(Z),cmap=cm.Reds,extent=[xmin, xmax, ymin, ymax]) # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+#     #    sc=ax.imshow(rot90(Z),cmap=cm.gist_earth_r,extent=[xmin, xmax, ymin, ymax]) # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+#     cbar = fig.colorbar(sc, ticks=(numpy.min(Z) + 0.00001, numpy.max(Z)))
+#
+#     #    cbar.set_ticks((numpy.min(Z),numpy.max(Z)))
+#     #    cbar=fig.colorbar(sc,ticks=None)
+#     #    cbar=fig.colorbar(sc,ax=ax, ticks=[0,1])
+#     #    cbar.set_ticks(())
+#     cbar.set_ticklabels(['Low', 'High'])
+#     #    cbar.update_ticks()
+#
+#     cbar.set_label('Density')
+#     ax.set_xlabel('GC content (%)')
+#     ax.set_ylabel('Mean coverage')
+#
+#     fig.savefig('/tmp/tmp.png')

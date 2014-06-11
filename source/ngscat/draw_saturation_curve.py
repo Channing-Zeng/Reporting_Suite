@@ -93,43 +93,43 @@ def draw_saturation_curve(filelist, ylabel, fileout, legend=None, warnthreshold=
 
     return status, slopes
 
-
-def main():
-    ################################################
-
-    #### Options and arguments #####################
-
-    ################################################
-    usage = """
-	************************************************************************************************************************************************************
-	Task: draws a coverage saturation plot with the data returned by simulated_depth.py  
-	Output: a .png image containing the saturation plot.					 
-	************************************************************************************************************************************************************
-	
-	
-	Usage: %prog --filelist <filelist> --legend <legend> --ylabel <ylabel> --fileout <fileout>
-	"""
-
-    parser = optparse.OptionParser(usage)
-    parser.add_option("--filelist", dest="filelist",
-                      help="""String containing comma separated names of the files that contain the percentaje of covered positions at each depth.""")
-    parser.add_option("--ylabel", dest="ylabel", help="""String containing the label for the Y axis.""")
-    parser.add_option("--fileout", dest="fileout", help="""String containing the name of the file where the result """)
-
-    (options, args) = parser.parse_args()
-
-
-    #	draw_saturation_curve(['/tmp/coverage_3442_1_agilib-agicap', '/tmp/coverage_3442_5_agilib-agicap','/tmp/coverage_3442_10_agilib-agicap','/tmp/coverage_3442_20_agilib-agicap','/tmp/coverage_3442_30_agilib-agicap'], ['Agilib-agicap.', '% covered positions', '/tmp/test.png')
-
-    # Check number of arguments
-    if len(sys.argv) < 7:
-        parser.print_help()
-        sys.exit(1)
-
-    # call core function
-    draw_saturation_curve(options.filelist.split(','), options.ylabel, options.fileout)
-
-
-if __name__ == '__main__':
-    main()
+#################### NOT NEEDED IN DEFAULT ngsCAT! #########################
+# def main():
+#     ################################################
+#
+#     #### Options and arguments #####################
+#
+#     ################################################
+#     usage = """
+# 	************************************************************************************************************************************************************
+# 	Task: draws a coverage saturation plot with the data returned by simulated_depth.py
+# 	Output: a .png image containing the saturation plot.
+# 	************************************************************************************************************************************************************
+#
+#
+# 	Usage: %prog --filelist <filelist> --legend <legend> --ylabel <ylabel> --fileout <fileout>
+# 	"""
+#
+#     parser = optparse.OptionParser(usage)
+#     parser.add_option("--filelist", dest="filelist",
+#                       help="""String containing comma separated names of the files that contain the percentaje of covered positions at each depth.""")
+#     parser.add_option("--ylabel", dest="ylabel", help="""String containing the label for the Y axis.""")
+#     parser.add_option("--fileout", dest="fileout", help="""String containing the name of the file where the result """)
+#
+#     (options, args) = parser.parse_args()
+#
+#
+#     #	draw_saturation_curve(['/tmp/coverage_3442_1_agilib-agicap', '/tmp/coverage_3442_5_agilib-agicap','/tmp/coverage_3442_10_agilib-agicap','/tmp/coverage_3442_20_agilib-agicap','/tmp/coverage_3442_30_agilib-agicap'], ['Agilib-agicap.', '% covered positions', '/tmp/test.png')
+#
+#     # Check number of arguments
+#     if len(sys.argv) < 7:
+#         parser.print_help()
+#         sys.exit(1)
+#
+#     # call core function
+#     draw_saturation_curve(options.filelist.split(','), options.ylabel, options.fileout)
+#
+#
+# if __name__ == '__main__':
+#     main()
 

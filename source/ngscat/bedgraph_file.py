@@ -15,9 +15,13 @@ except ImportError:
 import os
 import sys
 import bed_file
+import config
 import region
 
-from mpl_toolkits.mplot3d import Axes3D
+from os.path import join
+from source.utils import intermediate_fname
+
+
 from matplotlib import pyplot
 
 
@@ -546,7 +550,7 @@ class bedgraph_file:
         return batch, fd
 
 
-    def getOffTarget(self, offset, coverageThreshold, target, outfile, tmpdir=None):
+    def getOffTarget(self, offset, coverageThreshold, target_fpath, outfile):
         """************************************************************************************************************************************************************
         Task: selects off-tareget(+offset) regions with a coverage >  coverageThreshold
         Inputs:       
@@ -556,14 +560,15 @@ class bedgraph_file:
         Ouputs: a new bedgraph file will be created containing selected regions.
         ************************************************************************************************************************************************************"""
 
-        pid = str(os.getpid())
-        tmpbed = tmpdir + '/' + pid + '.extended.bed'
+        #cnf = config.cnf
+        #tmpbed_fpath = intermediate_fname(cnf['work_dir'], target_fpath, 'extended')
+        #tmpbed_fpath = join(cnf['work_dir'], pid + '.extended.bed')
 
-        bed = bed_file.bed_file(target)
-        extendedBed = bed.extendnoref(offset, tmpbed)
-        sortedBed = extendedBed.my_sort_bed()
+        bed = bed_file.bed_file(target_fpath)
+        extendedBed = bed.extendnoref(offset)
+        sortedBed = extendedBed.sort_bed()
         nonOverlappingBed = sortedBed.non_overlapping_exons(-1)  # Base 0, it is a standard BED
-        finalBed = nonOverlappingBed.my_sort_bed()  # BED file in base 0
+        finalBed = nonOverlappingBed.sort_bed()  # BED file in base 0
         finalBed.load_custom(-1)  # Load chromosome and positions in base 0
         bed_region = finalBed.get_region()
         bed_index = 0  #index to control bed_region position

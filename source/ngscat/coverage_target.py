@@ -4,9 +4,6 @@ import numpy
 import matplotlib
 import pylab
 
-sys.path.append('/home/javi/MGP/utils/')
-import bed_file
-
 
 def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted=None, status=None, lowcovbases=None,
                    warnregionsize=100, warncoveragethreshold=6):

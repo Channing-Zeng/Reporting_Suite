@@ -1,5 +1,4 @@
-import os
-import sys
+from os.path import join, dirname, realpath
 
 warnbasescovered = 90
 warnsaturation = 1e-5
@@ -12,8 +11,13 @@ warnstd = 0.3
 
 offtargetoffset = 1000
 offtargetthreshold = 15
-TMP = '/tmp/'
-CHR_LENGTHS = os.path.join(os.path.dirname(sys.argv[0]), 'chr_lengths_hg19.txt')
 
-availablefeatures = ['percbases', 'saturation', 'specificity', 'coveragefreq', 'coveragedistr', 'coveragestd',
-                    'gcbias', 'coveragecorr']
+CHR_LENGTHS = join(dirname(realpath(__file__)), 'chr_lengths_hg19.txt')
+
+DATASRC = join(dirname(realpath(__file__)), 'html')
+IMGSRC = join(dirname(realpath(__file__)), 'img')
+
+availablefeatures = ['percbases', 'saturation', 'specificity', 'coveragefreq',
+                     'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
+
+cnf = None

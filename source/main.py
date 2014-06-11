@@ -108,7 +108,8 @@ def check_inputs(cnf, required_keys, optional_keys, fpaths_keys=None):
 
     info('Input:')
     for key in required_keys + optional_keys:
-        info('  ' + key + ': ' + cnf[key])
+        if key in cnf:
+            info('  ' + key + ': ' + cnf[key])
 
 
 def _fill_config_from_defaults(cnf, defaults):

@@ -122,8 +122,6 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
     if (executiongranted <> None):
         executiongranted.acquire()
 
-    pid = str(os.getpid())
-
     #	print 'Processing '+coveragefile
     #	print 'Results will be written at '+fileout
     coverage = region_coverage(coveragefile)  # Calculate mean coverage per region
@@ -146,10 +144,10 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
 
             # Load BED file -> since coverage information is in 1-base format, BED format must be transformed to 1-base
             bed = bed_file.bed_file(bedfilename)
-            sortedBed = bed.my_sort_bed()  # Sort bed avoiding bedtools
+            sortedBed = bed.sort_bed()
             nonOverlappingBed = sortedBed.non_overlapping_exons(
                 1)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
-            finalBed = nonOverlappingBed.my_sort_bed()  # BED file in base 1 (Non-standard BED)
+            finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1 (Non-standard BED)
             finalBed.load_custom(
                 -1)  # Load chromosome and positions in base 1....(finalBed is in base 1 -> Non-standard BED)
 
@@ -200,9 +198,9 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
         else:
             print 'Calculating nt content by means of pybedtools...'
             bed = bed_file.bed_file(bedfilename)
-            sortedBed = bed.my_sort_bed()  # Sort bed avoiding bedtools
+            sortedBed = bed.sort_bed()
             nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # base one!!!
-            finalBed = nonOverlappingBed.my_sort_bed()  # BED file in base 1
+            finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1
             bedfd = pybedtools.BedTool(finalBed.filename)
             bedfd = bedfd.remove_invalid()  # Remove negative coordinates or features with length=0, which do not work with bedtools
             pybedtools._bedtools_installed = True
@@ -285,171 +283,171 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
 
 
 #################### NOT NEEDED IN DEFAULT ngsCAT! #########################
-REF = '/usr/local/reference_genomes/human/human_g1k_v37.fasta'
-TMP = '/tmp/'
-BEDTOOLSPATH = '/usr/local/bedtools/bin/'
-
-
-def count_lines(filename):
-    print 'Calculating file size...'
-    tmp = os.popen('wc -l ' + filename)
-    nlines = string.atof(tmp.readline().split(' ')[0])
-
-    if (tmp.close() <> None):
-        print 'Error: some error occurred while running '
-        print '	wc -l ' + filename
-        print 'at bam_file.py'
-        print 'Exiting'
-        sys.exit(1)
-    print '	Done.'
-
-    return nlines
-
-
-def run(command):
-    """************************************************************************************************************************************************************
-    Task: launches a system call
-    Inputs:
-        command: string containing the system call.
-    ************************************************************************************************************************************************************"""
-
-    # Checks whether an error occurred during the execution of the system call
-    fd = os.popen(command)
-    if (fd.close() <> None):
-        print 'Some error occurred while executing: '
-        print '	' + command
-
-
-def gcbias(filelist, fileoutlist, bedfilelist):
-    """************************************************************************************************************************************************************
-    Task: draws coverage as a function of gc content
-    Input:
-        filelist: list of strings, each containing the full path of the bam file to analyze.
-        fileoutlist: list of strings, each containing the full path of the png file where the corresponding figure will be saved.
-        bedfilelist:
-    Output: a bmp file will be created named "fileout" where a graph that compares gc content and mean coverage will be saved.
-    ************************************************************************************************************************************************************"""
-
-    pid = str(os.getpid())
-
-    numpy.random.seed(1)
-    ntotal_positions = []
-    bamlist = []
-
-    # Process each file and store counting results
-    for filename in filelist:
-        # Check whether index already exists for the bam file, needed for pysam use
-        if (not os.path.isfile(filename + '.bai')):
-            print 'Creating index for ' + filename
-            pysam.index(filename)
-            print '	Done.'
-
-        bamlist.append(bam_file.bam_file(filename))
-    sizes = numpy.array([bam.nreads() for bam in bamlist])
-    minsize = sizes.min()
-
-    print 'The smaller bam is ' + filelist[sizes.argmin()] + ' and contains ' + str(minsize) + ' reads.'
-
-    # Process each file and store counting results
-    for i, bamfile in enumerate(bamlist):
-
-        print 'Processing ' + bamfile.filename
-        print 'Results will be written at ' + fileoutlist[i]
-
-        # Check whether normalization should be run
-        if (normalize):
-            normalizedbam = bamfile.normalize(minsize)
-        else:
-            normalizedbam = bamfile
-
-        coveragefile = TMP + pid + '.coverage'
-        print 'Calculating coverage per position...'
-        run(BEDTOOLSPATH + 'coverageBed -d -abam ' + normalizedbam.filename + ' -b ' + bedfilelist[
-            i] + ' > ' + coveragefile)
-
-        coverage = region_coverage(coveragefile)
-
-        print 'Calculating nt content...'
-        bedfd = pybedtools.BedTool(bedfilelist[i])
-        pybedtools._bedtools_installed = True
-        pybedtools.set_bedtools_path(BEDTOOLSPATH)
-        ntcontent = bedfd.nucleotide_content(REF)
-
-        # Each entry in ntcontent is parsed to extract the gc content of each exon
-        gccontent = {}
-        for entry in ntcontent:
-            gccontent[(entry.fields[0], string.atoi(entry.fields[1]), string.atoi(entry.fields[2]))] = string.atof(
-                entry.fields[-8]) * 100
-        print '	Done.'
-
-        fig = pyplot.figure(figsize=(13, 6))
-        ax = fig.add_subplot(111)
-
-        region_ids = coverage.keys()
-        coveragearray = numpy.array([coverage[id] for id in region_ids])
-        gccontentarray = numpy.array([gccontent[id] for id in region_ids])  # Values in [0,1]
-
-        xmin = gccontentarray.min()
-        xmax = gccontentarray.max()  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-        ymin = coveragearray.min()
-        ymax = coveragearray.max()
-
-        # Perform a kernel density estimator on the results
-        X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
-        positions = c_[X.ravel(), Y.ravel()]
-        values = c_[gccontentarray, coveragearray]
-        kernel = stats.kde.gaussian_kde(values.T)
-        Z = reshape(kernel(positions.T).T, X.T.shape)
-
-        fig = pyplot.figure(figsize=(6, 6))
-        ax = fig.add_subplot(111)
-        sc = ax.imshow(rot90(Z), cmap=cm.gist_earth_r, extent=[xmin, 100, ymin, ymax],
-                       aspect="auto")  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-        cbar = fig.colorbar(sc, ticks=[numpy.min(Z), numpy.max(Z)])
-        cbar.ax.set_yticklabels(['Low', 'High'])
-        cbar.set_label('Density')
-        ax.set_xlabel('GC content (%)')
-        ax.set_ylabel('Mean coverage')
-        fig.savefig(fileoutlist[i])
-
-    print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'
-
-
-def main():
-    ################################################
-
-    #### Options and arguments #####################
-
-    ################################################
-    usage = """
-	************************************************************************************************************************************************************
-	Task: draws coverage as a function of gc content		
-	************************************************************************************************************************************************************
-
-
-	
-	usage: %prog -i <bamfile> -o <fileout>"""
-
-    parser = optparse.OptionParser(usage)
-    parser.add_option("-i", dest="bamfilelist",
-                      help="""String containing a comma-separated list with the names of the bams to analyze.""")
-    parser.add_option("-b", dest="bedfilelist",
-                      help="""String containing a comma-separated list with the names of the bed files that contain the regions to analyze.""")
-    parser.add_option("-o", dest="fileoutlist",
-                      help="""String containing the name of the (png) file where the figure will be saved.""")
-    (options, args) = parser.parse_args()
-
-    # Check number of arguments
-    if len(sys.argv) < 7:
-        parser.print_help()
-        sys.exit(1)
-
-    # call core function
-    #gcbias(options.bamfile, options.fileout)
-    gcbias(options.bamfilelist.split(','), options.fileoutlist.split(','),
-           options.bedfilelist.split(','))  # Improved version
-
-
-if __name__ == '__main__':
-    main()
+# REF = '/usr/local/reference_genomes/human/human_g1k_v37.fasta'
+# TMP = '/tmp/'
+# BEDTOOLSPATH = '/usr/local/bedtools/bin/'
+#
+#
+# def count_lines(filename):
+#     print 'Calculating file size...'
+#     tmp = os.popen('wc -l ' + filename)
+#     nlines = string.atof(tmp.readline().split(' ')[0])
+#
+#     if (tmp.close() <> None):
+#         print 'Error: some error occurred while running '
+#         print '	wc -l ' + filename
+#         print 'at bam_file.py'
+#         print 'Exiting'
+#         sys.exit(1)
+#     print '	Done.'
+#
+#     return nlines
+#
+#
+# def run(command):
+#     """************************************************************************************************************************************************************
+#     Task: launches a system call
+#     Inputs:
+#         command: string containing the system call.
+#     ************************************************************************************************************************************************************"""
+#
+#     # Checks whether an error occurred during the execution of the system call
+#     fd = os.popen(command)
+#     if (fd.close() <> None):
+#         print 'Some error occurred while executing: '
+#         print '	' + command
+#
+#
+# def gcbias(filelist, fileoutlist, bedfilelist):
+#     """************************************************************************************************************************************************************
+#     Task: draws coverage as a function of gc content
+#     Input:
+#         filelist: list of strings, each containing the full path of the bam file to analyze.
+#         fileoutlist: list of strings, each containing the full path of the png file where the corresponding figure will be saved.
+#         bedfilelist:
+#     Output: a bmp file will be created named "fileout" where a graph that compares gc content and mean coverage will be saved.
+#     ************************************************************************************************************************************************************"""
+#
+#     pid = str(os.getpid())
+#
+#     numpy.random.seed(1)
+#     ntotal_positions = []
+#     bamlist = []
+#
+#     # Process each file and store counting results
+#     for filename in filelist:
+#         # Check whether index already exists for the bam file, needed for pysam use
+#         if (not os.path.isfile(filename + '.bai')):
+#             print 'Creating index for ' + filename
+#             pysam.index(filename)
+#             print '	Done.'
+#
+#         bamlist.append(bam_file.bam_file(filename))
+#     sizes = numpy.array([bam.nreads() for bam in bamlist])
+#     minsize = sizes.min()
+#
+#     print 'The smaller bam is ' + filelist[sizes.argmin()] + ' and contains ' + str(minsize) + ' reads.'
+#
+#     # Process each file and store counting results
+#     for i, bamfile in enumerate(bamlist):
+#
+#         print 'Processing ' + bamfile.filename
+#         print 'Results will be written at ' + fileoutlist[i]
+#
+#         # Check whether normalization should be run
+#         if (normalize):
+#             normalizedbam = bamfile.normalize(minsize)
+#         else:
+#             normalizedbam = bamfile
+#
+#         coveragefile = TMP + pid + '.coverage'
+#         print 'Calculating coverage per position...'
+#         run(BEDTOOLSPATH + 'coverageBed -d -abam ' + normalizedbam.filename + ' -b ' + bedfilelist[
+#             i] + ' > ' + coveragefile)
+#
+#         coverage = region_coverage(coveragefile)
+#
+#         print 'Calculating nt content...'
+#         bedfd = pybedtools.BedTool(bedfilelist[i])
+#         pybedtools._bedtools_installed = True
+#         pybedtools.set_bedtools_path(BEDTOOLSPATH)
+#         ntcontent = bedfd.nucleotide_content(REF)
+#
+#         # Each entry in ntcontent is parsed to extract the gc content of each exon
+#         gccontent = {}
+#         for entry in ntcontent:
+#             gccontent[(entry.fields[0], string.atoi(entry.fields[1]), string.atoi(entry.fields[2]))] = string.atof(
+#                 entry.fields[-8]) * 100
+#         print '	Done.'
+#
+#         fig = pyplot.figure(figsize=(13, 6))
+#         ax = fig.add_subplot(111)
+#
+#         region_ids = coverage.keys()
+#         coveragearray = numpy.array([coverage[id] for id in region_ids])
+#         gccontentarray = numpy.array([gccontent[id] for id in region_ids])  # Values in [0,1]
+#
+#         xmin = gccontentarray.min()
+#         xmax = gccontentarray.max()  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+#         ymin = coveragearray.min()
+#         ymax = coveragearray.max()
+#
+#         # Perform a kernel density estimator on the results
+#         X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
+#         positions = c_[X.ravel(), Y.ravel()]
+#         values = c_[gccontentarray, coveragearray]
+#         kernel = stats.kde.gaussian_kde(values.T)
+#         Z = reshape(kernel(positions.T).T, X.T.shape)
+#
+#         fig = pyplot.figure(figsize=(6, 6))
+#         ax = fig.add_subplot(111)
+#         sc = ax.imshow(rot90(Z), cmap=cm.gist_earth_r, extent=[xmin, 100, ymin, ymax],
+#                        aspect="auto")  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+#         cbar = fig.colorbar(sc, ticks=[numpy.min(Z), numpy.max(Z)])
+#         cbar.ax.set_yticklabels(['Low', 'High'])
+#         cbar.set_label('Density')
+#         ax.set_xlabel('GC content (%)')
+#         ax.set_ylabel('Mean coverage')
+#         fig.savefig(fileoutlist[i])
+#
+#     print '>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'
+#
+#
+# def main():
+#     ################################################
+#
+#     #### Options and arguments #####################
+#
+#     ################################################
+#     usage = """
+# 	************************************************************************************************************************************************************
+# 	Task: draws coverage as a function of gc content
+# 	************************************************************************************************************************************************************
+#
+#
+#
+# 	usage: %prog -i <bamfile> -o <fileout>"""
+#
+#     parser = optparse.OptionParser(usage)
+#     parser.add_option("-i", dest="bamfilelist",
+#                       help="""String containing a comma-separated list with the names of the bams to analyze.""")
+#     parser.add_option("-b", dest="bedfilelist",
+#                       help="""String containing a comma-separated list with the names of the bed files that contain the regions to analyze.""")
+#     parser.add_option("-o", dest="fileoutlist",
+#                       help="""String containing the name of the (png) file where the figure will be saved.""")
+#     (options, args) = parser.parse_args()
+#
+#     # Check number of arguments
+#     if len(sys.argv) < 7:
+#         parser.print_help()
+#         sys.exit(1)
+#
+#     # call core function
+#     #gcbias(options.bamfile, options.fileout)
+#     gcbias(options.bamfilelist.split(','), options.fileoutlist.split(','),
+#            options.bedfilelist.split(','))  # Improved version
+#
+#
+# if __name__ == '__main__':
+#     main()
 

@@ -1,8 +1,3 @@
-try:
-    import numpy
-except ImportError:
-    print 'WARNING: module numpy was not loaded.'
-
 import gc
 import time
 import pysam
@@ -11,45 +6,40 @@ import sys
 import string
 import sets
 import config
+from source.utils import call, get_tool_cmdline, info, intermediate_fname, call_check_output
 
 try:
-    import progressbar
+    import numpy
 except ImportError:
-    print 'WARNING: module progressbar was not loaded.'
+    print 'WARNING: module numpy was not loaded.'
 
 import xlwt
 
 from matplotlib import pyplot
+from os.path import join, basename
 
 import bed_file
 
 
 # aux function
-def bam_has_unmapped_reads(bam_filename):
-    command = "samtools view -cf 4 " + bam_filename
-    print "Checking whether bam has unmapped reads:", command
-    fd = os.popen(command)
-    num_unmapped_reads = int(fd.read())
+def bam_has_unmapped_reads(cnf, bam_fpath):
+    command = "%s view -cf 4 %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)
+    info("Checking whether bam has unmapped reads:" + command)
+    num_unmapped_reads = int(call_check_output(cnf, command))
     if num_unmapped_reads == 0:
         return False
     return True
 
 
-def filter_unmapped_reads(bam_filename, output_dir):
-    if bam_has_unmapped_reads(bam_filename):
-        base, ext = os.path.splitext(os.path.basename(bam_filename))
-        filtered_bam_filename = os.path.join(output_dir, base + "_mapped" + ext)
-        command = "samtools view -b -F 4 %s > %s" % (bam_filename, filtered_bam_filename)
-        print "Filtering unmapped reads from input bam:", command
-        fd = os.popen(command)
-        if fd.close() is not None:
-            print 'Some error occurred while executing: '
-            print '	' + command
+def filter_unmapped_reads(cnf, bam_fpath):
+    if bam_has_unmapped_reads(cnf, bam_fpath):
+        output_fpath = intermediate_fname(cnf, bam_fpath, 'mapped')
+        cmdline = "%s view -b -F 4 %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)
+        info("Filtering unmapped reads from input bam: " + cmdline)
+        call(cnf, cmdline, output_fpath)
     else:
-        filtered_bam_filename = bam_filename
-    return filtered_bam_filename
-
-
+        output_fpath = bam_fpath
+    return output_fpath
 # end of aux functions
 
 
@@ -120,22 +110,6 @@ class bam_file(pysam.Samfile):
             return False
         else:
             return True
-
-
-    def run(self, command):
-        """************************************************************************************************************************************************************
-        Task: launches a system call
-        Inputs:
-            command: string containing the system call.
-        ************************************************************************************************************************************************************"""
-
-        print 'CMD: ' + command
-        # Checks whether an error occurred during the execution of the system call
-        fd = os.popen(command)
-        if (fd.close() is not None):
-            print 'Some error occurred while executing: '
-            print '	' + command
-
 
     def nreads(self):
         return self.mapped + self.unmapped
@@ -228,176 +202,6 @@ class bam_file(pysam.Samfile):
 
         return nlines
 
-
-    def target_coverage(self, coveragelist, targetfile):
-        """************************************************************************************************************************************************************
-        Task: draws statistics about the percentage of covered exons and transcripts at different coverage levels. A transcript is considered to be covered when
-            at least the 90% of its positions present a coverage greater than the threshold.
-        Inputs:
-            filelist: list of strings indicating those files to be processed. For a file format example see
-                /home/javi/MGP/capture_methods/data/coverage/GU_20120719_FC1_6L1S_AL_01_3376_BC1_AA_F3.filtered.singleHits.realigned.recalibrated.bam.coverage
-            coveragelist: list of values with coverage thresholds to use.
-            graph_legend: list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot.
-            dirout: string containing the full path to the directory where data will be saved.
-        Output: a summary .xls file and two bar plots depicting coverage vs. %covered-positions and coverage vs. #covered transcripts. Figures will be saved as
-            <dirout>/coverage_summary.xls, <dirout>/covered_positions.png and <dirout>/covered_transcripts.png
-        ************************************************************************************************************************************************************"""
-
-        pid = str(os.getpid())
-        coveragefile = config.TMP + pid + '.coverage'
-
-        print 'Calculating coverage per target position...'
-        self.run('coverageBed -d -abam ' + self.filename + ' -b ' + targetfile + ' > ' + coveragefile)
-
-        ntotal_positions = self.count_lines(coveragefile)
-
-        # covered_positions_per_depth: list of integers. There will be a position for each coverage threshold. Each value will be the count of positions
-        #	 covered for the corresponding threshold.
-        # ccds_counts: dictionary. Keys are transcript ids. values are lists of two elements. The first element of this list will contain the length of the
-        #	 transcript. The second element will be a list of integers with as many positions as coverage thresholds, being each value the count of positions
-        #	 covered for the corresponding threshold.
-        covered_positions_per_depth = [0 for i in range(len(coveragelist))]
-
-        # A progress bar is initialized
-        widgets = ['Counting: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=ntotal_positions).start()
-
-        # Each line contains the coverage for a given position
-        fd = file(coveragefile)
-        for k, line in enumerate(fd):
-            parts = line.split('\t')
-
-            # Check whether the coverage is over each threshold
-            for i, cov in enumerate(coveragelist):
-                current_coverage = string.atof(parts[-1])
-                # In case coverage is over the threshold, add 1 to the global number of covered positions and to the counts of the current transcript
-                if (current_coverage >= cov):
-                    covered_positions_per_depth[i] += 1
-
-            pbar.update(k + 1)
-
-        pbar.finish()
-        fd.close()
-
-        return [ntotal_positions, covered_positions_per_depth]
-
-
-    def generate_gff(self, chrs, sizes, binsize):
-        pid = str(os.getpid())
-        gfffile = config.TMP + '/' + pid + '.gff'
-        fd = file(gfffile, 'w')
-
-        for chr in chrs:
-            for base in range(0, sizes[chr], binsize):
-                fd.write(chr + '\ttmp\texon\t' + str(base + 1) + '\t' + str(
-                    base + binsize) + '\t0\t+\t.\tcoord "' + chr + ':' + str(base + 1) + '";\n')
-
-        fd.close()
-
-
-    def coverage_distribution(self, fileout, binsize=10000000):
-        pid = str(os.getpid())
-        chrs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
-                '20', '21', '22', 'X', 'Y']
-        base0 = {}
-        lengths = {}
-
-        tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
-        coveragefile = config.TMP + '/' + pid + '.coverage'
-
-        print 'Loading chr lengths...'
-        fd = open(config.CHR_LENGTHS)
-        for line in fd:
-            parts = line.split('\t')
-            lengths[parts[0]] = string.atoi(parts[1])
-        print '	Done.'
-        fd.close()
-
-        print 'Calculating base 0 coordinates for each chr...'
-        base0['1'] = 0
-        for i in range(1, len(chrs)):
-            base0[chrs[i]] = base0[chrs[i - 1]] + lengths[chrs[i - 1]]
-        print '	Done.'
-
-        #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
-        print 'Calculating histogram...'
-        points = []
-        gfffile = config.TMP + '/' + pid + '.gff'
-        countsfile = config.TMP + '/' + pid + '.counts'
-
-        self.generate_gff(chrs, lengths, binsize)
-        self.run(
-            """samtools view """ + self.filename + """ | htseq-count -q -i coord - """ + gfffile + """ > """ + countsfile)
-
-        fd = file(countsfile)
-        line = fd.readline()
-        while ('no_feature' not in line):
-            chrcoord, counts = line.split()
-            chr, coord = chrcoord.split(':')
-            points.append((base0[chr] + string.atoi(coord) + binsize / 2, string.atoi(counts)))
-            line = fd.readline()
-
-        points.sort()
-        fig = pyplot.figure(figsize=(13, 6))
-        ax = fig.add_subplot(111)
-        ax.plot([point[0] for point in points], [point[1] for point in points])
-
-        ax.set_xlim(right=lengths['Y'] + base0['Y'])
-        ax.set_ylabel('# reads')
-        ax.set_xlabel('Chr position')
-
-        for chr in base0: ax.axvline(base0[chr], color='#ff0000', linestyle='--', linewidth=0.5, alpha=0.5)
-
-        fig.savefig(fileout)
-
-
-    def enrichment(self, ontarget, offtarget, dirout):
-        """*******************************************************************************************************************************************
-        Task: calculates the enrichment in mapped reads of targeted regions as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
-        Inputs:
-            ontarget, offtarget: strings containing the full path to the bed files containing on-target and off-target regions. We implemented
-                this method for testing the enrichment of target regions compared to whole genome gencode regions, that is why off-target reads
-                are not simply reads not mapped on-target.
-        Outputs:
-            nreads_on, notonbam.nreads(), nreads_off: number of reads on target, number of reads that do not map on target, and number of reads
-                that do not map on target but do map on the regions indicated at "offtarget".
-            Reads that do no map on-target but do map on "offtarget" per Kbase
-            Reads that map on-target per Kbase
-            Enrichment, calculated as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
-        *******************************************************************************************************************************************"""
-
-        pid = str(os.getpid())
-
-        on = bed_file.bed_file(ontarget)
-        off = bed_file.bed_file(offtarget)
-
-        onbam = bam_file(config.TMP + '/' + pid + '.on.bam')
-        notonbam = bam_file(config.TMP + '/' + pid + '.noton.bam')
-        offbam = bam_file(config.TMP + '/' + pid + '.off.bam')
-
-        self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbam.filename)
-
-        # The set of reads that do not map on-taret is obtained. This set is then intersected with the "offtarget" bed.
-        self.run(""" intersectBed -v -abam """ + self.filename + """ -b """ + ontarget + """ > """ + notonbam.filename)
-        self.run(""" intersectBed -abam """ + notonbam.filename + """ -b """ + offtarget + """ > """ + offbam.filename)
-
-        nreads_off = offbam.nreads()
-        offbam.coverage_distribution(dirout + '/' + os.path.basename(self.filename).replace('.bam', '.png'))
-        nreads_on = onbam.nreads()
-        nreads_noton = notonbam.nreads()
-        ontarget_size = on.size()
-        offtarget_size = off.size()
-
-        os.remove(onbam.filename)
-        os.remove(notonbam.filename)
-        os.remove(offbam.filename)
-
-        return [nreads_on, nreads_noton, nreads_off, nreads_off * 1000.0 / offtarget_size,
-                nreads_on * 1000.0 / ontarget_size,
-                (nreads_on * 1.0 / ontarget_size) / (nreads_off * 1.0 / offtarget_size)]
-
-
     def draw_coverage_distribution(self, on_points, noton_points, off_points, base0, lengths, fileout):
         fig = pyplot.figure(figsize=(13, 6))
         ax = fig.add_subplot(111)
@@ -424,180 +228,6 @@ class bam_file(pysam.Samfile):
 
         fig.savefig(fileout)
 
-
-    def coverage_distribution2(self, binsize=10000000):
-        pid = str(os.getpid())
-        chrs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
-                '20', '21', '22', 'X', 'Y']
-        base0 = {}
-        lengths = {}
-
-        tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
-        coveragefile = config.TMP + '/' + pid + '.coverage'
-
-        print 'Loading chr lengths...'
-        fd = file(config.CHR_LENGTHS)
-        for line in fd:
-            parts = line.split('\t')
-            lengths[parts[0]] = string.atoi(parts[1])
-        print '	Done.'
-        fd.close()
-
-        print 'Calculating base 0 coordinates for each chr...'
-        base0['1'] = 0
-        for i in range(1, len(chrs)):
-            base0[chrs[i]] = base0[chrs[i - 1]] + lengths[chrs[i - 1]]
-        print '	Done.'
-
-        #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
-        print 'Calculating histogram...'
-        points = []
-        gfffile = config.TMP + '/' + pid + '.gff'
-        countsfile = config.TMP + '/' + pid + '.counts'
-
-        self.generate_gff(chrs, lengths, binsize)
-        self.run(
-            """samtools view """ + self.filename + """ | htseq-count -q -i coord - """ + gfffile + """ > """ + countsfile)
-
-        fd = file(countsfile)
-        line = fd.readline()
-        while ('no_feature' not in line):
-            chrcoord, counts = line.split()
-            chr, coord = chrcoord.split(':')
-            points.append((base0[chr] + string.atoi(coord) + binsize / 2, string.atoi(counts)))
-            line = fd.readline()
-
-        points.sort()
-
-        return [base0, lengths, points]
-
-
-    def enrichment2(self, ontarget, offtarget, dirout):
-        """*******************************************************************************************************************************************
-        Task: calculates the enrichment in mapped reads of targeted regions as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
-        Inputs:
-            ontarget, offtarget: strings containing the full path to the bed files containing on-target and off-target regions. We implemented
-                this method for testing the enrichment of target regions compared to whole genome gencode regions, that is why off-target reads
-                are not simply reads not mapped on-target.
-        Outputs:
-            nreads_on, notonbam.nreads(), nreads_off: number of reads on target, number of reads that do not map on target, and number of reads
-                that do not map on target but do map on the regions indicated at "offtarget".
-            Reads that do no map on-target but do map on "offtarget" per Kbase
-            Reads that map on-target per Kbase
-            Enrichment, calculated as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
-        *******************************************************************************************************************************************"""
-
-        # pid: integer containing current process id
-        pid = str(os.getpid())
-
-        # on, off: bed_file objects representing on and off targets
-        on = bed_file.bed_file(ontarget)
-        off = bed_file.bed_file(offtarget)
-
-        # notonbamfilename: string containing the name of the .bam where reads that do not overlap with the target will be stored.
-        # offbamfilename: string containing the name of the .bam where reads that do not overlap with the target BUT that do overlap with the offtarget bed will be stored.
-        # onbamfilename: string containing the name of the .bam containing those reads that overlap with ontarget.
-        notonbamfilename = config.TMP + '/' + pid + '.noton.bam'
-        offbamfilename = config.TMP + '/' + pid + '.off.bam'
-        onbamfilename = config.TMP + '/' + pid + '.on.bam'
-
-        # Extract those reads overlapping with the target
-        self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbamfilename)
-
-        # The set of reads that do not map on-tarfet is obtained. This set is then intersected with the "offtarget" bed.
-        self.run(""" intersectBed -v -abam """ + self.filename + """ -b """ + ontarget + """ > """ + notonbamfilename)
-        self.run(""" intersectBed -abam """ + notonbamfilename + """ -b """ + offtarget + """ > """ + offbamfilename)
-
-        # Index the three new bam. Neccessary to avoid pysam to fail.
-        pysam.index(onbamfilename)
-        pysam.index(notonbamfilename)
-        pysam.index(offbamfilename)
-
-        # Generate bam_file objects for the three bam
-        onbam = bam_file(onbamfilename, 'rb')
-        notonbam = bam_file(notonbamfilename, 'rb')
-        offbam = bam_file(offbamfilename, 'rb')
-
-        # nreads_off: integer containing the number of reads that do not overlap with ontarget BUT that do overlap with offtarget
-        # base0: dictionary where keys are chromsomes and values are integers, each containing the coordinate that represents the base 0 of the chromome, considering that all the chromosomes will be drawn one before another.
-        # lengths: dictionary where keys are chromosomes and values the length of each chromosome.
-        # onpoints: tuples of integers (x,y) representing the read count (y) at genomic position x
-        # nreads_on: integer containing the number of reads that do overlap with the target
-        # nreads_noton: integer containing the number of reads that do not overlap with the target
-        # ontarget_size: integer containing the number of bases covered by the ontarget. Bases falling in overlapped regions are counted just once.
-        # offtarget_size: integer containing the number of bases covered by the offtarget. Bases falling in overlapped regions are counted just once.
-        nreads_off = offbam.mapped
-        base0, lengths, offpoints = offbam.coverage_distribution2()
-        nreads_on = onbam.mapped
-        base0, lengths, onpoints = onbam.coverage_distribution2()
-        nreads_noton = notonbam.mapped
-        base0, lengths, notonpoints = notonbam.coverage_distribution2()
-        self.draw_coverage_distribution(onpoints, notonpoints, offpoints, base0, lengths,
-                                        dirout + '/' + os.path.basename(self.filename).replace('.bam', '.png'))
-        ontarget_size = on.size()
-        offtarget_size = off.size()
-
-        # Remove temporary bams
-        os.remove(onbam.filename)
-        os.remove(notonbam.filename)
-        os.remove(offbam.filename)
-
-        return [nreads_on, nreads_noton, nreads_off, nreads_off * 1000.0 / offtarget_size,
-                nreads_on * 1000.0 / ontarget_size,
-                (nreads_on * 1.0 / ontarget_size) / (nreads_off * 1.0 / offtarget_size)]
-
-
-    def select_reads(self, n):
-        numpy.random.seed(1)
-
-        selected = numpy.random.uniform(size=self.nreads()) <= (n * 1.0 / self.nreads())
-        nselected = len(selected.nonzero()[0])
-
-        i = 0
-        while (i < len(selected) and nselected < n):
-            if (not selected[i]):
-                selected[i] = True
-                nselected += 1
-            i += 1
-
-        while (i < len(selected) and nselected > n):
-            if (selected[i]):
-                selected[i] = False
-                nselected -= 1
-            i += 1
-
-        return selected.nonzero()[0]
-
-
-    def select_reads_boolean(self, n):
-        """*******************************************************************************************************************************************
-        JPFLORIDO
-        Task:  Randomly selected a given set of reads from a BAM file
-        Inputs: BAM file and number of reads to be selected
-        Outputs: Boolean array indicating whether i-th read has been selected or not
-        *******************************************************************************************************************************************"""
-
-        numpy.random.seed(1)
-
-        selected = numpy.random.uniform(size=self.nreads()) <= (n * 1.0 / self.nreads())
-        nselected = len(selected.nonzero()[0])
-
-        i = 0
-        while (i < len(selected) and nselected < n):
-            if (not selected[i]):
-                selected[i] = True
-                nselected += 1
-            i += 1
-
-        while (i < len(selected) and nselected > n):
-            if (selected[i]):
-                selected[i] = False
-                nselected -= 1
-            i += 1
-
-        return selected
-
-
     def sort_bam(self):
         """*******************************************************************************************************************************************
         JPFLORIDO.
@@ -605,10 +235,9 @@ class bam_file(pysam.Samfile):
         Inputs: BAM file to be sorted
         Outputs: Sorted file (object) with the corresponding index created
         *******************************************************************************************************************************************"""
-        pid = str(os.getpid())
-        print 'Sorting BAM according to position...'
-        sortedBAMfilename = config.TMP + pid + os.path.basename(self.filename) + ".sorted"
-        #		self.run('samtools sort '+self.filename+' '+sortedBAMfilename)
+        cnf = config.cnf
+        info('Sorting BAM according to position...')
+        sortedBAMfilename = join(cnf['work_dir'], basename(self.filename) + ".sorted")
         pysam.sort(self.filename, sortedBAMfilename)
 
         # Index sorted BAM
@@ -622,75 +251,7 @@ class bam_file(pysam.Samfile):
 
         return bam_file(sortedBAMfilename + '.bam', 'rb')
 
-
-    def normalize(self, n):
-        if (n >= self.nreads()):
-            print 'File: ' + self.filename + '. No actual normalization was done, current number of reads is ' + str(
-                self.nreads()) + '. Required number of reads is ' + str(n) + '.'
-            return bam_file(self.filename, 'rb')
-
-        pid = str(os.getpid())
-        selectionprob = n * 1.0 / self.nreads()
-        normalizedbam = bam_file(config.TMP + '/' + pid + '.bam', 'wb', header=self.header)
-
-        i = self.fetch()
-        currread = 0
-        nselected = 0
-        niterated = 0
-
-        remove = self.select_reads(self.nreads() - n)
-
-        # A progress bar is initialized
-        widgets = ['Writing selected reads: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.nreads()).start()
-
-        try:
-            previous = 0
-            for next in remove:
-                for j in range(previous, next):
-                    normalizedbam.write(i.next())
-                    nselected += 1
-                    pbar.update(j)
-                i.next()
-                previous = next + 1
-
-            for j in range(previous, self.nreads()):
-                normalizedbam.write(i.next())
-                nselected += 1
-
-        except StopIteration, stop:
-            print 'ERROR: method normalize at bam_file.py.'
-            print '	n = ' + str(n)
-            print '	self.nreads()-n = ' + str(self.nreads() - n)
-            print '	j = ' + str(j)
-            print '	nselected = ' + str(nselected)
-            print '	previous = ' + str(previous)
-            print '	next = ' + str(next)
-            print 'Iteration should have stopped before end of bam.'
-            sys.exit(1)
-
-        pbar.finish()
-
-        print str(nselected) + ' reads written'
-
-        normalizedbam.close()
-        pysam.index(config.TMP + '/' + pid + '.bam')
-
-        return bam_file(config.TMP + '/' + pid + '.bam', 'rb')
-
-
-    def ncovered_reads(self, target):
-        pid = str(os.getpid())
-        newbamfilename = config.TMP + '/' + pid
-        self.run(""" intersectBed -abam """ + self.filename + """ -b """ + target + """ > """ + newbamfilename)
-        pysam.index(newbamfilename)
-        bam = bam_file(newbamfilename, 'rb')
-
-        return bam.nreads()
-
-
-    def myCoverageBed(self, target, numberReads=None, writeToFile=None, executiongranted=None, tmpdir=None,
+    def myCoverageBed(self, target, numberReads=None, writeToFile=None, executiongranted=None,
                       bedGraphFile=None):
         """*******************************************************************************************************************************************
         JPFLORIDO
@@ -705,29 +266,25 @@ class bam_file(pysam.Samfile):
         # in the memory used
         *******************************************************************************************************************************************"""
 
-        #global config.TMP
-
         if (executiongranted <> None):
             executiongranted.acquire()
 
-        #if(tmpdir<>None):
-        #	config.TMP = tmpdir
-
-        pid = str(os.getpid())
-
         # Check whether BAM file is sorted
-        command = 'samtools view -H ' + self.filename + ' | grep SO:'
-        fd = os.popen(command)
-        outputCommand = fd.read()
+        # command = 'samtools view -H ' + self.filename + ' | grep SO:'
+        # fd = os.popen(command)
+        # outputCommand = fd.read()
+        #
+        # if ((fd.close() <> None) or (
+        #     'coordinate' not in outputCommand.split('SO:')[-1])):  # BAM not sorted -> Sort and indexing BAM
+        #     #			print 'ERROR: bam file must be sorted.'
+        #     #			print '	Exiting.'
+        #     #			sys.exit(1)
+        #     sortedBam = self.sort_bam()
+        # else:
+        #     sortedBam = self
 
-        if ((fd.close() <> None) or (
-            'coordinate' not in outputCommand.split('SO:')[-1])):  # BAM not sorted -> Sort and indexing BAM
-            #			print 'ERROR: bam file must be sorted.'
-            #			print '	Exiting.'
-            #			sys.exit(1)
-            sortedBam = self.sort_bam()
-        else:
-            sortedBam = self
+        # Alex: we use only sorted bams!
+        sortedBam = self
 
         if (writeToFile != None):  # Results written to output file
             fdw = file(writeToFile, 'w')
@@ -741,10 +298,9 @@ class bam_file(pysam.Samfile):
 
         # Load target file, remove overlapping regions, sort it and load it
         bed = bed_file.bed_file(target)
-        sortedBed = bed.my_sort_bed(tmpdir=config.TMP)
-        nonOverlappingBed = sortedBed.non_overlapping_exons(1,
-                                                            tmpdir=config.TMP)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
-        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=config.TMP)  # BED file in base 1 (Non-standard BED)
+        sortedBed = bed.sort_bed()
+        nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
+        finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1 (Non-standard BED)
         finalBed.load_custom(
             -1)  # Load chromosome and positions in base 1....(finalBed is in base 1 -> Non-standard BED)
 
@@ -1051,14 +607,11 @@ class bam_file(pysam.Samfile):
         # will be removed from the target file as they are -> no conversion to real zero or one-base indexing
         *******************************************************************************************************************************************"""
 
-        #global config.TMP
-
-
         # Load target file, remove overlapping regions, sort it and load it
         bed = bed_file.bed_file(target)
-        sortedBed = bed.my_sort_bed(tmpdir=config.TMP)
-        nonOverlappingBed = sortedBed.non_overlapping_exons(1, tmpdir=config.TMP)  # Base-1 indexing
-        finalBed = nonOverlappingBed.my_sort_bed(tmpdir=config.TMP)  # BED file in base 1 (Non-standard BED)
+        sortedBed = bed.sort_bed()
+        nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # Base-1 indexing
+        finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1 (Non-standard BED)
         finalBed.load_custom(-1)  # Load chromosome and positions as they are
 
         dicOnTarget = {}
@@ -1228,349 +781,6 @@ class bam_file(pysam.Samfile):
                 dicTotalReads[str(currentChromosome)] = 0
         #FJAVIER: dicOffTarget is not actually needed yet, that is why it is not being returned
         return [readsOnTarget, dicOnTarget, dicTotalReads, duplicatesOnTarget, duplicatesOffTarget]
-
-
-    def coverageperbase(self, currentChromosome):
-        """*******************************************************************************************************************************************
-        Task:  almost the same code as the first part of myCoverageBed. Gets the coverage per position for a given chromosome without focussing on
-            a given target.
-        Inputs:
-            currentChromosome: string containing the identifier of the chromosome that will be inspected.
-        Outputs:
-            positionArray: a vector of bp coordinates in which coverage changes according to the reads of this BAM
-            coverageArray: coverage (number of reads) for a given bp position
-        Other issues: it is intented to return also positions off target. However, coverage around exons changes a lot, so there is an important increasing
-        # in the memory used
-        *******************************************************************************************************************************************"""
-
-        pid = str(os.getpid())
-
-        # Check whether BAM file is sorted
-        command = 'samtools view -H ' + self.filename + ' | grep SO:'
-        fd = os.popen(command)
-        outputCommand = fd.read()
-        removetmp = False
-
-        # Sort bed in case it is not sorted
-        if ((fd.close() <> None) or (
-            'coordinate' not in outputCommand.split('SO:')[-1])):  # BAM not sorted -> Sort and indexing BAM
-            sortedBam = self.sort_bam()
-            removetmp = True
-        else:
-            sortedBam = self
-
-        positionArray = []  # Structure that stores bp positions along the current chromosome
-        coverageArray = []  # Structure that stores coverage values for a related position in the chromosome (positionArray)
-
-        # Get all reads of current chromosome if there are reads in such chromosome
-        if (currentChromosome in sortedBam.references):
-            allReads = sortedBam.fetch(str(currentChromosome))
-
-            initPositions = []  # Structure that stores initial positions of each read
-            endPositions = []  # Structure that stores end positions of each read
-            for currentRead in allReads:
-                initPositions.append(
-                    int(currentRead.pos) + 1)  # Fetch is 0-base indexing!!! We are working on 1-base indexing
-                endPositions.append(int(currentRead.aend))
-
-            # Convert to numpy arrays
-            initPositions = numpy.array(initPositions, dtype=numpy.uint32)
-            endPositions = numpy.array(endPositions, dtype=numpy.uint32)
-            endPositions += 1  # At the end of the position, the coverage counts. Sum 1 to say that at this position the coverage decreases
-
-            # Sort each vector independtly
-            initPositions.sort()
-            endPositions.sort()
-
-            totalPositions_init = len(initPositions)
-            totalPositions_end = len(endPositions)
-
-            # This happens if there are no reads in this chromosome
-            if (totalPositions_init + totalPositions_end == 0):
-                print 'ERROR: no reads found for chr ' + currentChromosome + '. However, this chromosome id was found in the header of the bam file, indicating that there have to be reads in it.'
-                print '	The problem is most probably due to a incorrect .bai file. Please, regenerate the index and try again.'
-                sys.exit(1)
-
-            #			widgets = ['Examination of reads in chromosome '+ str(currentChromosome)+' ', progressbar.Percentage(), ' ',
-            #					progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-            #			pbar = progressbar.ProgressBar(widgets=widgets, maxval=totalPositions_init+totalPositions_end).start()
-            print 'Examining reads at chromosome ' + str(currentChromosome)
-            pbarIter = 0
-
-
-            # First iteration is done manually
-            if (initPositions[0] > 1):
-                positionArray.append(1)  # Init position of the first read
-                coverageArray.append(0)  # A single read (coverage=1)
-            positionArray.append(initPositions[0])  # Init position of the first read
-            coverageArray.append(1)  # A single read (coverage=1)
-
-            indexInit = 1  # Controls index along initPositions (fist position in this array has been read)
-            indexEnd = 0  # Controls index along endPositions
-
-            while indexEnd < totalPositions_end:  # While there are reads to be visited
-                if (indexInit < totalPositions_init):  # There are still reads that have to be visited
-                    if (initPositions[indexInit] < endPositions[
-                        indexEnd]):  # If current position in init is smaller than current position in end
-                        position = initPositions[indexInit]
-                        indexInit += 1
-                        partialSum = 1
-                    elif (initPositions[indexInit] > endPositions[
-                        indexEnd]):  # If current position in end is greater than current position in init
-                        position = endPositions[indexEnd]
-                        indexEnd += 1
-                        partialSum = -1
-                    else:  # If current position in init is equal to the position in end
-                        position = endPositions[indexEnd]
-                        indexInit += 1
-                        indexEnd += 1
-                        partialSum = 0
-                else:  # All starting positions for all reads have been visited
-                    position = endPositions[indexEnd]
-                    indexEnd += 1
-                    partialSum = -1
-
-                # Check whether position is already in the vector of positions
-                if (position == positionArray[-1]):  # More than a read starts or ends at the same time
-                    coverageArray[-1] += partialSum
-                elif (
-                    partialSum != 0):  # If partialSum==0, then a read ends and a new read start -> do not update information
-                    positionArray.append(position)
-                    coverageArray.append(coverageArray[-1] + partialSum)
-
-                pbarIter = indexInit + indexEnd
-            #				pbar.update(pbarIter)
-            #			pbar.finish()
-
-
-            # Transform positionArray and coverageArray to numpy arrays to save memory
-            positionArray = numpy.array(positionArray, dtype=numpy.uint32)
-            coverageArray = numpy.array(coverageArray, dtype=numpy.uint16)
-
-            numPositions = len(positionArray)
-
-        else:  # There are no reads for the current chromosome
-            numPositions = 0
-
-        if (removetmp):
-            os.remove(sortedBam.filename)
-
-        return [positionArray, coverageArray]
-
-
-    def coveragetrack(self, bedfilename, windowsize, overlap, fileout):
-        """************************************************************************************************************************************************************
-        Task: generates a track of coverage for this file and a given target.
-        Inputs:
-            bedfilename: String containing the full path to a bed file containing the target region.
-            windowsize: integer containing the size of the windows that will be used to promediate coverage.
-            overlap: integer containing the size of each step when moving the window through the chromosome.
-            fileout: string containing the full path to the bedgraph file where the track will be stored.
-         Ouputs: a bedgraph file named fileout will be created containing the track of coverage.
-        ************************************************************************************************************************************************************"""
-
-        rawbed = bed_file.bed_file(bedfilename)
-        sortedBed = rawbed.my_sort_bed()  # Sort bed avoiding bedtools
-        bed = sortedBed.non_overlapping_exons(1)  # Cargar BED tal cual (standard BED)
-        bed.load_custom(-1)  # Load chromosome and positions as they are (standard BED)
-
-        counts = bed.getWindows(windowsize, overlap)
-
-        # Initializes all counts to 0
-        coords = bed.sortcountkeys(counts)
-        previouschr = None
-        for coord in counts:
-            counts[coord] = 0
-
-        # Calculates mean coverage within each window
-        i = 0
-        while (i < len(coords)):
-            currchr = coords[i][0]
-            # Calculate coverage for current chromosome
-            if (currchr <> previouschr):
-                #				PREGUNTARLE A JAVI EN Q BASE VIENEN DADOS ESTOS DOS VECTORES
-                changepositions, coverage = self.coverageperbase(currchr)
-                previouschr = currchr
-                coverageidx = 0
-
-            if (coverageidx < len(changepositions)):
-                # Move the pointer until the coordinate in changepositions is within current window
-                # Check if the pointer is below the lower limit of the window
-                if (changepositions[coverageidx] <= coords[i][1]):
-                    # Increase the pointer until it falls within the window. If coverage changes in the first base of the window, the value
-                    # is saved to be used later
-                    try:
-                        while (coverageidx < len(changepositions) and changepositions[coverageidx] <= coords[i][1]):
-                            lastcoverage = coverage[coverageidx]
-                            coverageidx += 1
-                    except IndexError:
-                        print 'len(changepositions) = ' + str(len(changepositions))
-                        print 'coverageidx = ' + str(coverageidx)
-                        print 'i = ' + str(i)
-                        print 'len(coords) = ' + str(len(coords))
-                        print 'changepositions[coverageidx-1] = ' + str(changepositions[coverageidx - 1])
-                        print 'coords[i][1] = ' + str(coords[i][1])
-                        sys.exit(1)
-                # Check if the pointer is above the lower limit of the window. This happens if previous window overlaps with current window
-                elif (changepositions[coverageidx] > coords[i][1]):
-                    # Decreases the pointer until reaching the lower limit of the window
-                    while (changepositions[coverageidx] > coords[i][
-                        1]):  #ME SALTA UN ERROR AQUI AL LLAMAR DESDE BAM_UTILS.aggregatedcoveragetrack
-                        coverageidx -= 1
-                    # Save the "first" coverage of the window
-                    lastcoverage = coverage[coverageidx]
-                    # Move pointer to the first change above the lower limit of the window
-                    coverageidx += 1
-
-                # Check whether we are already at the end of the changepositions vector. In other words, there are no more change positions for the remaining
-                # windows in coords.
-                if (coverageidx < len(changepositions)):
-                    # Pass through each interval of constant coverage summing up the corresponding coverage of each base
-                    lastbase = coords[i][1]
-                    while (coverageidx < len(changepositions) and changepositions[coverageidx] <= coords[i][2]):
-                        counts[coords[i]] += (changepositions[coverageidx] - lastbase) * lastcoverage
-                        lastbase = changepositions[coverageidx]
-                        lastcoverage = coverage[coverageidx]
-                        coverageidx += 1
-
-                    counts[coords[i]] += (coords[i][2] - lastbase + 1) * lastcoverage
-                    counts[coords[i]] = counts[coords[i]] * 1.0 / (coords[i][2] - coords[i][1] + 1)
-                else:
-                    counts[coords[i]] = 0
-
-                    # The piece of code in this 'else' is only run when windows span beyond coverage limits in 'changepositions'. It would
-                    # be really improbable that the last coverage change is different from 0.
-                    if (lastcoverage <> 0):
-                        print 'WARNING: please, check that all data is correct at bam_file.coveragetrack.'
-                        print '	Execution stopped.'
-                        sys.exit(1)
-
-            else:
-                counts[coords[i]] = 0
-
-                # The piece of code in this 'else' is only run when windows span beyond coverage limits in 'changepositions'. It would
-                # be really improbable that the last coverage change is different from 0.
-                if (lastcoverage <> 0):
-                    print 'WARNING: please, check that all data is correct at bam_file.coveragetrack.'
-                    print '	Execution stopped.'
-                    sys.exit(1)
-
-            i += 1
-
-        bed.windows2bedgraph(counts, fileout, startshift=-1)
-
-
-    def coveragetrackchr(self, chr, bedfilename, windowsize=300, overlap=100):
-        """************************************************************************************************************************************************************
-        Task: generates a track for a given chromsome containing genomic positions and coverage in the form of a list of tuples.
-        Inputs:
-            chr: string containing the chromsome identifier.
-            bedfilename: String containing the full path to a bed file indicating target regions.
-            windowsize: integer containing the size of the windows that will be used to promediate coverage.
-            overlap: integer containing the size of each step when moving the window through the chromosome.
-         Ouputs: a list of tuples of the form (position, coverage), both integers.
-        ************************************************************************************************************************************************************"""
-
-        rawbed = bed_file.bed_file(bedfilename)
-        sortedBed = rawbed.my_sort_bed()  # Sort bed avoiding bedtools
-        bed = sortedBed.non_overlapping_exons(1)  # Cargar BED tal cual (standard BED)
-        bed.load_custom(-1)  # Load chromosome and positions as they are (standard BED)
-
-        counts = bed.getWindows(windowsize, overlap, chrs=[chr])
-        coords = bed.sortcountkeys(counts)
-
-        # Initializes each window count to 0
-        for coord in counts:
-            counts[coord] = 0
-
-        changepositions, coverage = self.coverageperbase(chr)
-        coverageidx = 0
-        # Calculates mean coverage within each window
-        for coord in coords:
-            #				PREGUNTARLE A JAVI EN Q BASE VIENEN DADOS ESTOS DOS VECTORES
-            # Move the pointer until the coordinate in changepositions is within current window
-            # Check if the pointer is below the lower limit of the window
-            if (changepositions[coverageidx] <= coord[1]):
-                # Increase the pointer until it falls within the window. If coverage changes in the first base of the window, the value
-                # is saved to be used later
-                while (changepositions[coverageidx] <= coord[1]):
-                    lastcoverage = coverage[coverageidx]
-                    coverageidx += 1
-            # Check if the pointer is above the lower limit of the window. This happens if previous window overlaps with current window
-            elif (changepositions[coverageidx] > coord[1]):
-                # Decreases the pointer until reaching the lower limit of the window
-                while (changepositions[coverageidx] > coord[1]):
-                    coverageidx -= 1
-                # Save the "first" coverage of the window
-                lastcoverage = coverage[coverageidx]
-                # Move pointer to the first change above the lower limit of the window
-                coverageidx += 1
-
-            # Pass through each interval of constant coverage summing up the corresponding coverage of each base
-            lastbase = coord[1]
-            while (changepositions[coverageidx] <= coord[2]):
-                counts[coord] += (changepositions[coverageidx] - lastbase) * lastcoverage
-                lastbase = changepositions[coverageidx]
-                lastcoverage = coverage[coverageidx]
-                coverageidx += 1
-            counts[coord] += (coord[2] - lastbase + 1) * lastcoverage
-            counts[coord] = counts[coord] * 1.0 / (coord[2] - coord[1] + 1)
-
-        return [((coord[1] + coord[2]) / 2.0, counts[coord]) for coord in coords]
-
-
-    def coveredpositions(self, chr, threshold):
-        chrinfo = self.header['SQ'][0]
-        i = 1
-        while (i < len(self.header['SQ']) and chrinfo['SN'] <> chr):
-            chrinfo = self.header['SQ'][i]
-            i += 1
-
-        if (chrinfo['SN'] <> chr):
-            print 'ERROR: ' + self.filename + ' does not contain mapped reads on contig ' + chr
-            print '	Exiting.'
-            sys.exit(1)
-
-        chrsize = int(chrinfo['LN'])
-
-        changepositions, coverage = self.coverageperbase(chr)
-
-        print 'Analyzing coverage per base...'
-        fullcoverage = []
-        previousbase = 1
-        lastcoverage = 0
-        for i, base in enumerate(changepositions):
-            if (lastcoverage >= threshold):
-                fullcoverage += [True for j in range(previousbase, base)]
-            else:
-                fullcoverage += [False for j in range(previousbase, base)]
-
-            previousbase = base
-            lastcoverage = coverage[i]
-
-        if (lastcoverage >= threshold):
-            fullcoverage += [True for j in range(previousbase, chrsize + 1)]
-        else:
-            fullcoverage += [False for j in range(previousbase, chrsize + 1)]
-        print '	Done.'
-
-        return numpy.array(fullcoverage)
-
-
-    def nonofftarget(self, bed):
-        """************************************************************************************************************************************************************
-        Task: returns reads on/off target
-        Inputs:
-            bed: bed file with capture coordinates
-        ************************************************************************************************************************************************************"""
-
-        capture = bed_file.bed_file(bed)
-        bamOT = capture.intersectbam(self, "ontarget.bam")
-        tread = self.nreads()
-        nread = bamOT.nreads()
-
-        return [nread, tread - nread]
-
 
     def generate_ontarget_results(self, bamlist, nread, tread, onperchr, totalperchr, enrichment, percontarget, outdir,
                                   legend):
@@ -1898,7 +1108,7 @@ class bam_file(pysam.Samfile):
 
     def reads_on_target(self, bed, outdir, bamlist=[], legend=None, executiongranted=None, onoff_status=None,
                         duplicates_status=None,
-                        retonduplicates=None, retoffduplicates=None, enrichment=None, percontarget=None, tmpdir=None,
+                        retonduplicates=None, retoffduplicates=None, enrichment=None, percontarget=None,
                         warnthreshold=80):
         """************************************************************************************************************************************************************
         Task: Print reads on traget and off target
@@ -1918,15 +1128,9 @@ class bam_file(pysam.Samfile):
             whether the number of on-target reads is extremely low (False) or not (True)
         ************************************************************************************************************************************************************"""
 
-        #global config.TMP
-
         # Check whether the method can be executed or not
         if (executiongranted <> None):
             executiongranted.acquire()
-
-        # Check whether to use default tmpdir
-        #if(tmpdir<>None):
-        #	config.TMP = tmpdir
 
         # Create a list of bam_file objects which includes self. Generates an array with the total number of reads in each bam.
         bamlist = [self] + bamlist
@@ -1996,168 +1200,6 @@ class bam_file(pysam.Samfile):
             for i in range(len(bamlist)):
                 retonduplicates[i] = sum(onduplicates[i][1:]) * 100.0 / tread[i]
                 retoffduplicates[i] = sum(offduplicates[i][1:]) * 100.0 / tread[i]
-
-
-    def get_coverage_distribution(self, bedfilename):
-
-        coveragefile = config.TMP + '/' + str(os.getpid()) + '.coverage'
-
-        print 'Calculating coverage per target position...'
-        self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
-
-        dist = []
-
-        # A progress bar is initialized
-        widgets = ['Loading coverage distribution: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.count_lines(coveragefile)).start()
-
-        i = 1
-        fd = file(coveragefile)
-        # Recorremos el archivo y guardamos la ultima columna en un vector
-        for line in fd:
-            dist.append(string.atoi(line.split("\t")[-1]))
-            pbar.update(i)
-            i += 1
-
-        pbar.finish()
-        fd.close()
-
-        return dist
-
-
-    def load_coverage_file(self, filename):
-        """*********************************************************************************************************************************************************
-        Task: loads coverage counts from a .coverage file. Only regions of size > 3 are considered.
-        Inputs:
-            filename: string containing the name of the file to be loaded. Must contain the coverage
-                per position per exon.
-        Outputs:
-            exon: numpy array with the list of exon identifier as they appear in the .coverage file.
-            coverage: numpy array with the list of coverage values for each position in each exon. Contains as many items as the exon array.
-            length: list containing the length of each exon.
-        *********************************************************************************************************************************************************"""
-
-        exon = []
-        coverage = []
-        length = []
-        curr_exon = None
-        next_exon_idx = 0
-
-
-        # A progress bar is initialized
-        widgets = ['Loading exon coverage: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        print 'Calculating file size...'
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.count_lines(filename)).start()
-
-        # One line for each entry
-        fd = file(filename)
-        for i, line in enumerate(fd):
-            parts = line.split(
-                '\t')  # Depending on the target file, the number of columns are different they share in common the following columns: 1st) chromosome, 2nd) Exon start position, 3rd) Exon end position and last) coverage in a single base
-            exon_length = string.atoi(parts[2]) - string.atoi(parts[1])  # parts[2] contains the exon end+1
-            # Only exons longer than 3 nts
-            if (exon_length > 3):
-                if (curr_exon <> (parts[0] + "-" + parts[1] + "-" + parts[2])):  # New exon found
-                    curr_exon = parts[0] + "-" + parts[1] + "-" + parts[2]
-                    next_exon_idx += 1
-
-                exon.append(next_exon_idx)  # Exon ID (integer number)
-                coverage.append(string.atof(parts[-1]))  #Coverage (last column)
-                length.append(exon_length)
-
-            pbar.update(i + 1)
-
-        pbar.finish()
-        fd.close()
-
-        exon = numpy.array(exon)
-        coverage = numpy.array(coverage)
-
-        return [exon, coverage, length]
-
-
-    def region_coverage_std(self, bedfilename):
-        """************************************************************************************************************************************************************
-        Task: gets the sampling distribution of coverage standard deviation across regions.
-        Inputs:
-            bedfilename: string containing the name of the bed with the regions to analyze.
-        Output:
-            std_sampling: list of real values containing the coverage std for each region in the bed file.
-        ************************************************************************************************************************************************************"""
-
-        coveragefile = config.TMP + '/' + str(os.getpid()) + '.coverage'
-
-        print 'Calculating coverage per target position...'
-        self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
-
-        # Loads exons and coverage per position
-        [loaded_exon, loaded_coverage, length] = self.load_coverage_file(coveragefile)
-
-        # A progress bar is initialized
-        widgets = ['Generating left position matrix: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(loaded_exon)).start()
-
-        std_sampling = []
-        positions_coverage = []
-        currexon = None
-
-        # Goes through each region position
-        for i in range(len(loaded_exon)):
-            exon = loaded_exon[i]
-
-            # If it is not, the first position of a new region has been found
-            if (exon <> currexon):
-                positions_coverage = numpy.array(positions_coverage)
-                # Skip regions with 0 coverage in all positions
-                if (len((positions_coverage > 0).nonzero()[0])): std_sampling.append(
-                    positions_coverage.std() / positions_coverage.mean())  # Normalized standard deviation
-                currexon = exon
-                positions_coverage = []
-
-            positions_coverage.append(loaded_coverage[i])
-
-            pbar.update(i + 1)
-        pbar.finish()
-
-        return std_sampling
-
-
-    # def fastq(self):
-    #     pysam.bam2fq(self.filename)
-    #
-    #     return fastq_file.fastq_file(self.filename.replace('.bam', '.fq'))
-
-
-    def minusbam(self, bam, fileout=None):
-
-        pid = str(os.getpid())
-        if (fileout == None): fileout = config.TMP + '/' + pid + '.minus.bam'
-
-        tosubstract = bam.get_mapped_reads_ids()
-
-        print str(len(tosubstract)) + ' reads found in right bam'
-
-        bamout = bam_file(fileout, "wb", header=self.header)
-
-        removed = 0
-        written = 0
-        for read in self:
-            if (read.qname not in tosubstract):
-                bamout.write(read)
-                written += 1
-            else:
-                removed += 1
-
-        print str(removed) + ' reads removed'
-        print str(written) + ' reads remain at ' + fileout
-        bamout.close()
-        pysam.index(fileout)
-
-        return bam_file(fileout)
-
 
     def getMQ_regions(self, regions):
         """*******************************************************************************************************************************************
@@ -2303,104 +1345,1004 @@ class bam_file(pysam.Samfile):
         fig.savefig(fileout)
 
 
-    def coveragefeaturesdistr(self, chr, featuresbedfilename, targetbedfilename, dirout):
-        """************************************************************************************************************************************************************
-        Task: generates a graph that compares coverage and features distribution.
-        Inputs:
-            featuresbedfilename: String containing the full path to a bed file
-            dirout: String containing the output directory where graphs will be saved (one per chromosome).
-            targetbedfilename: String containing the full path to a bed file indicating target regions.
-         Ouputs: a set of png files will be generated at dirout containing graphs that compare coverage and features distribution.
-        ************************************************************************************************************************************************************"""
+#################### NOT NEEDED IN DEFAULT ngsCAT! #########################
+#
+# try:
+#     import progressbar
+# except ImportError:
+#     print 'WARNING: module progressbar was not loaded.'
 
-        coverage = self.coveragetrackchr(chr, targetbedfilename, windowsize=480, overlap=160)
-        sampling = bed_file.bed_file(featuresbedfilename).get_centers()['MT']
-        self.drawcoveragefeatures(coverage, sampling, dirout + '/' + chr + '.png')
-
-
-    def unannotated(self, gtffilename, fileout):
-        pid = str(time.time())
-        tmpsam = config.TMP + '/' + pid + '.sam'
-        print """CMD: samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename
-        os.system(
-            """samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename)
-
-        toremove = {}
-        fd = file(tmpsam)
-        for line in fd:
-            if ('XF:Z:no_feature' not in line and 'XF:Z:ambiguous' not in line):
-                toremove[line.split('\t')[0]] = None
-        fd.close()
-
-        newbam = bam_file(fileout, 'wb', header=self.header)
-
-        for read in self:
-            if (read.qname not in toremove):
-                newbam.write(read)
-
-        newbam.close()
-        pysam.index(fileout)
-
-        return bam_file(fileout)
-
-
-    def mergealignments(self, bamfilename, out):
-
-        alreadywritten = {}
-
-        newbam = bam_file(out, 'wb', header=self.header)
-
-        # A progress bar is initialized
-        widgets = ['Initializing new bam: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.nreads()).start()
-        i = 0
-
-        for read in self:
-            alreadywritten[read.qname] = None
-            newbam.write(read)
-            i += 1
-            pbar.update(i)
-        pbar.finish()
-
-        bam = bam_file(bamfilename, 'rb')
-
-        chrids = [seqinfo['SN'] for seqinfo in self.header['SQ']]
-        chridmap = [chrids.index(seqinfo['SN']) for seqinfo in bam.header['SQ']]
-
-        # A progress bar is initialized
-        widgets = ['Merging alignments from ' + bamfilename + ': ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=bam.nreads()).start()
-        i = 0
-        mergedalignments = 0
-        for read in bam:
-            if (read.qname not in alreadywritten):
-                read.rname = chridmap[read.rname]
-                newbam.write(read)
-                mergedalignments += 1
-        bam.close()
-        pbar.finish()
-
-        newbam.close()
-
-        print str(mergedalignments) + ' extra alignments found in ' + bamfilename
-        print str(self.nreads() + mergedalignments) + ' total alignments included in ' + out
-
-        pysam.index(out)
-
-        return bam_file(out)
-
-
-#bam_file('/tmp/HG00096.mapped.ILLUMINA.bwa.GBR.exome.20120522.mapped.bam', 'rb').reads_on_target('/tmp/20130108.exome.targets.bed','/tmp',legend=['test'])
-#bam_file('/tmp/test.bam').issorted()
-#bam_file('/home/javi/MGP/course/data/GU_20130110_FC1_6L4S_JA_C148_F3.filtered.realigned.recalibrated.chr22.bam').reads_on_target('/home/javi/MGP/course/data/SeqCap_EZ_Exome_v3_primary.g1k.chr22.bed', '/tmp/course/')
-
-#enrichment = multiprocessing.Array('f', 2)
-#percontarget = multiprocessing.Array('f', 2)
-#a = bam_file('/tmp/GU_20121002_FC2_6L4S_AL_C121_F3.filtered.singleHits.realigned.recalibrated.bam')
-#b = bam_file('/tmp/shrimp-GU_20121002_FC2_6L4S_AL_C121_F3.filtered.realigned.recalibrated.bam')
-#a.reads_on_target('/tmp/test1.bed', '/tmp/', bamlist=[b], enrichment=enrichment, percontarget=percontarget)
-#a.reads_on_target('/tmp/test1.bed', '/tmp/', enrichment=enrichment, percontarget=percontarget)
-#b = bam_file('/tmp/test2.sorted.bam')
-#a.minusbam(b, '/tmp/minus_test.bam')
+    # def coverageperbase(self, currentChromosome):
+    #     """*******************************************************************************************************************************************
+    #     Task:  almost the same code as the first part of myCoverageBed. Gets the coverage per position for a given chromosome without focussing on
+    #         a given target.
+    #     Inputs:
+    #         currentChromosome: string containing the identifier of the chromosome that will be inspected.
+    #     Outputs:
+    #         positionArray: a vector of bp coordinates in which coverage changes according to the reads of this BAM
+    #         coverageArray: coverage (number of reads) for a given bp position
+    #     Other issues: it is intented to return also positions off target. However, coverage around exons changes a lot, so there is an important increasing
+    #     # in the memory used
+    #     *******************************************************************************************************************************************"""
+    #
+    #     # Check whether BAM file is sorted
+    #     command = 'samtools view -H ' + self.filename + ' | grep SO:'
+    #     fd = os.popen(command)
+    #     outputCommand = fd.read()
+    #     removetmp = False
+    #
+    #     # Sort bed in case it is not sorted
+    #     if ((fd.close() <> None) or (
+    #         'coordinate' not in outputCommand.split('SO:')[-1])):  # BAM not sorted -> Sort and indexing BAM
+    #         sortedBam = self.sort_bam()
+    #         removetmp = True
+    #     else:
+    #         sortedBam = self
+    #
+    #     positionArray = []  # Structure that stores bp positions along the current chromosome
+    #     coverageArray = []  # Structure that stores coverage values for a related position in the chromosome (positionArray)
+    #
+    #     # Get all reads of current chromosome if there are reads in such chromosome
+    #     if (currentChromosome in sortedBam.references):
+    #         allReads = sortedBam.fetch(str(currentChromosome))
+    #
+    #         initPositions = []  # Structure that stores initial positions of each read
+    #         endPositions = []  # Structure that stores end positions of each read
+    #         for currentRead in allReads:
+    #             initPositions.append(
+    #                 int(currentRead.pos) + 1)  # Fetch is 0-base indexing!!! We are working on 1-base indexing
+    #             endPositions.append(int(currentRead.aend))
+    #
+    #         # Convert to numpy arrays
+    #         initPositions = numpy.array(initPositions, dtype=numpy.uint32)
+    #         endPositions = numpy.array(endPositions, dtype=numpy.uint32)
+    #         endPositions += 1  # At the end of the position, the coverage counts. Sum 1 to say that at this position the coverage decreases
+    #
+    #         # Sort each vector independtly
+    #         initPositions.sort()
+    #         endPositions.sort()
+    #
+    #         totalPositions_init = len(initPositions)
+    #         totalPositions_end = len(endPositions)
+    #
+    #         # This happens if there are no reads in this chromosome
+    #         if (totalPositions_init + totalPositions_end == 0):
+    #             print 'ERROR: no reads found for chr ' + currentChromosome + '. However, this chromosome id was found in the header of the bam file, indicating that there have to be reads in it.'
+    #             print '	The problem is most probably due to a incorrect .bai file. Please, regenerate the index and try again.'
+    #             sys.exit(1)
+    #
+    #         #			widgets = ['Examination of reads in chromosome '+ str(currentChromosome)+' ', progressbar.Percentage(), ' ',
+    #         #					progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #         #			pbar = progressbar.ProgressBar(widgets=widgets, maxval=totalPositions_init+totalPositions_end).start()
+    #         print 'Examining reads at chromosome ' + str(currentChromosome)
+    #         pbarIter = 0
+    #
+    #
+    #         # First iteration is done manually
+    #         if (initPositions[0] > 1):
+    #             positionArray.append(1)  # Init position of the first read
+    #             coverageArray.append(0)  # A single read (coverage=1)
+    #         positionArray.append(initPositions[0])  # Init position of the first read
+    #         coverageArray.append(1)  # A single read (coverage=1)
+    #
+    #         indexInit = 1  # Controls index along initPositions (fist position in this array has been read)
+    #         indexEnd = 0  # Controls index along endPositions
+    #
+    #         while indexEnd < totalPositions_end:  # While there are reads to be visited
+    #             if (indexInit < totalPositions_init):  # There are still reads that have to be visited
+    #                 if (initPositions[indexInit] < endPositions[
+    #                     indexEnd]):  # If current position in init is smaller than current position in end
+    #                     position = initPositions[indexInit]
+    #                     indexInit += 1
+    #                     partialSum = 1
+    #                 elif (initPositions[indexInit] > endPositions[
+    #                     indexEnd]):  # If current position in end is greater than current position in init
+    #                     position = endPositions[indexEnd]
+    #                     indexEnd += 1
+    #                     partialSum = -1
+    #                 else:  # If current position in init is equal to the position in end
+    #                     position = endPositions[indexEnd]
+    #                     indexInit += 1
+    #                     indexEnd += 1
+    #                     partialSum = 0
+    #             else:  # All starting positions for all reads have been visited
+    #                 position = endPositions[indexEnd]
+    #                 indexEnd += 1
+    #                 partialSum = -1
+    #
+    #             # Check whether position is already in the vector of positions
+    #             if (position == positionArray[-1]):  # More than a read starts or ends at the same time
+    #                 coverageArray[-1] += partialSum
+    #             elif (
+    #                 partialSum != 0):  # If partialSum==0, then a read ends and a new read start -> do not update information
+    #                 positionArray.append(position)
+    #                 coverageArray.append(coverageArray[-1] + partialSum)
+    #
+    #             pbarIter = indexInit + indexEnd
+    #         #				pbar.update(pbarIter)
+    #         #			pbar.finish()
+    #
+    #
+    #         # Transform positionArray and coverageArray to numpy arrays to save memory
+    #         positionArray = numpy.array(positionArray, dtype=numpy.uint32)
+    #         coverageArray = numpy.array(coverageArray, dtype=numpy.uint16)
+    #
+    #         numPositions = len(positionArray)
+    #
+    #     else:  # There are no reads for the current chromosome
+    #         numPositions = 0
+    #
+    #     if (removetmp):
+    #         os.remove(sortedBam.filename)
+    #
+    #     return [positionArray, coverageArray]
+    #
+    # def coveredpositions(self, chr, threshold):
+    #     chrinfo = self.header['SQ'][0]
+    #     i = 1
+    #     while (i < len(self.header['SQ']) and chrinfo['SN'] <> chr):
+    #         chrinfo = self.header['SQ'][i]
+    #         i += 1
+    #
+    #     if (chrinfo['SN'] <> chr):
+    #         print 'ERROR: ' + self.filename + ' does not contain mapped reads on contig ' + chr
+    #         print '	Exiting.'
+    #         sys.exit(1)
+    #
+    #     chrsize = int(chrinfo['LN'])
+    #
+    #     changepositions, coverage = self.coverageperbase(chr)
+    #
+    #     print 'Analyzing coverage per base...'
+    #     fullcoverage = []
+    #     previousbase = 1
+    #     lastcoverage = 0
+    #     for i, base in enumerate(changepositions):
+    #         if (lastcoverage >= threshold):
+    #             fullcoverage += [True for j in range(previousbase, base)]
+    #         else:
+    #             fullcoverage += [False for j in range(previousbase, base)]
+    #
+    #         previousbase = base
+    #         lastcoverage = coverage[i]
+    #
+    #     if (lastcoverage >= threshold):
+    #         fullcoverage += [True for j in range(previousbase, chrsize + 1)]
+    #     else:
+    #         fullcoverage += [False for j in range(previousbase, chrsize + 1)]
+    #     print '	Done.'
+    #
+    #     return numpy.array(fullcoverage)
+    #
+    # def coveragetrackchr(self, chr, bedfilename, windowsize=300, overlap=100):
+    #     """************************************************************************************************************************************************************
+    #     Task: generates a track for a given chromsome containing genomic positions and coverage in the form of a list of tuples.
+    #     Inputs:
+    #         chr: string containing the chromsome identifier.
+    #         bedfilename: String containing the full path to a bed file indicating target regions.
+    #         windowsize: integer containing the size of the windows that will be used to promediate coverage.
+    #         overlap: integer containing the size of each step when moving the window through the chromosome.
+    #      Ouputs: a list of tuples of the form (position, coverage), both integers.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     rawbed = bed_file.bed_file(bedfilename)
+    #     sortedBed = rawbed.sort_bed()  # Sort bed avoiding bedtools
+    #     bed = sortedBed.non_overlapping_exons(1)  # Cargar BED tal cual (standard BED)
+    #     bed.load_custom(-1)  # Load chromosome and positions as they are (standard BED)
+    #
+    #     counts = bed.getWindows(windowsize, overlap, chrs=[chr])
+    #     coords = bed.sortcountkeys(counts)
+    #
+    #     # Initializes each window count to 0
+    #     for coord in counts:
+    #         counts[coord] = 0
+    #
+    #     changepositions, coverage = self.coverageperbase(chr)
+    #     coverageidx = 0
+    #     # Calculates mean coverage within each window
+    #     for coord in coords:
+    #         #				PREGUNTARLE A JAVI EN Q BASE VIENEN DADOS ESTOS DOS VECTORES
+    #         # Move the pointer until the coordinate in changepositions is within current window
+    #         # Check if the pointer is below the lower limit of the window
+    #         if (changepositions[coverageidx] <= coord[1]):
+    #             # Increase the pointer until it falls within the window. If coverage changes in the first base of the window, the value
+    #             # is saved to be used later
+    #             while (changepositions[coverageidx] <= coord[1]):
+    #                 lastcoverage = coverage[coverageidx]
+    #                 coverageidx += 1
+    #         # Check if the pointer is above the lower limit of the window. This happens if previous window overlaps with current window
+    #         elif (changepositions[coverageidx] > coord[1]):
+    #             # Decreases the pointer until reaching the lower limit of the window
+    #             while (changepositions[coverageidx] > coord[1]):
+    #                 coverageidx -= 1
+    #             # Save the "first" coverage of the window
+    #             lastcoverage = coverage[coverageidx]
+    #             # Move pointer to the first change above the lower limit of the window
+    #             coverageidx += 1
+    #
+    #         # Pass through each interval of constant coverage summing up the corresponding coverage of each base
+    #         lastbase = coord[1]
+    #         while (changepositions[coverageidx] <= coord[2]):
+    #             counts[coord] += (changepositions[coverageidx] - lastbase) * lastcoverage
+    #             lastbase = changepositions[coverageidx]
+    #             lastcoverage = coverage[coverageidx]
+    #             coverageidx += 1
+    #         counts[coord] += (coord[2] - lastbase + 1) * lastcoverage
+    #         counts[coord] = counts[coord] * 1.0 / (coord[2] - coord[1] + 1)
+    #
+    #     return [((coord[1] + coord[2]) / 2.0, counts[coord]) for coord in coords]
+    #
+    # def coveragefeaturesdistr(self, chr, featuresbedfilename, targetbedfilename, dirout):
+    #     """************************************************************************************************************************************************************
+    #     Task: generates a graph that compares coverage and features distribution.
+    #     Inputs:
+    #         featuresbedfilename: String containing the full path to a bed file
+    #         dirout: String containing the output directory where graphs will be saved (one per chromosome).
+    #         targetbedfilename: String containing the full path to a bed file indicating target regions.
+    #      Ouputs: a set of png files will be generated at dirout containing graphs that compare coverage and features distribution.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     coverage = self.coveragetrackchr(chr, targetbedfilename, windowsize=480, overlap=160)
+    #     sampling = bed_file.bed_file(featuresbedfilename).get_centers()['MT']
+    #     self.drawcoveragefeatures(coverage, sampling, dirout + '/' + chr + '.png')
+    #
+    # def coveragetrack(self, bedfilename, windowsize, overlap, fileout):
+    #     """************************************************************************************************************************************************************
+    #     Task: generates a track of coverage for this file and a given target.
+    #     Inputs:
+    #         bedfilename: String containing the full path to a bed file containing the target region.
+    #         windowsize: integer containing the size of the windows that will be used to promediate coverage.
+    #         overlap: integer containing the size of each step when moving the window through the chromosome.
+    #         fileout: string containing the full path to the bedgraph file where the track will be stored.
+    #      Ouputs: a bedgraph file named fileout will be created containing the track of coverage.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     rawbed = bed_file.bed_file(bedfilename)
+    #     sortedBed = rawbed.sort_bed()
+    #     bed = sortedBed.non_overlapping_exons(1)  # Cargar BED tal cual (standard BED)
+    #     bed.load_custom(-1)  # Load chromosome and positions as they are (standard BED)
+    #
+    #     counts = bed.getWindows(windowsize, overlap)
+    #
+    #     # Initializes all counts to 0
+    #     coords = bed.sortcountkeys(counts)
+    #     previouschr = None
+    #     for coord in counts:
+    #         counts[coord] = 0
+    #
+    #     # Calculates mean coverage within each window
+    #     i = 0
+    #     while (i < len(coords)):
+    #         currchr = coords[i][0]
+    #         # Calculate coverage for current chromosome
+    #         if (currchr <> previouschr):
+    #             #				PREGUNTARLE A JAVI EN Q BASE VIENEN DADOS ESTOS DOS VECTORES
+    #             changepositions, coverage = self.coverageperbase(currchr)
+    #             previouschr = currchr
+    #             coverageidx = 0
+    #
+    #         if (coverageidx < len(changepositions)):
+    #             # Move the pointer until the coordinate in changepositions is within current window
+    #             # Check if the pointer is below the lower limit of the window
+    #             if (changepositions[coverageidx] <= coords[i][1]):
+    #                 # Increase the pointer until it falls within the window. If coverage changes in the first base of the window, the value
+    #                 # is saved to be used later
+    #                 try:
+    #                     while (coverageidx < len(changepositions) and changepositions[coverageidx] <= coords[i][1]):
+    #                         lastcoverage = coverage[coverageidx]
+    #                         coverageidx += 1
+    #                 except IndexError:
+    #                     print 'len(changepositions) = ' + str(len(changepositions))
+    #                     print 'coverageidx = ' + str(coverageidx)
+    #                     print 'i = ' + str(i)
+    #                     print 'len(coords) = ' + str(len(coords))
+    #                     print 'changepositions[coverageidx-1] = ' + str(changepositions[coverageidx - 1])
+    #                     print 'coords[i][1] = ' + str(coords[i][1])
+    #                     sys.exit(1)
+    #             # Check if the pointer is above the lower limit of the window. This happens if previous window overlaps with current window
+    #             elif (changepositions[coverageidx] > coords[i][1]):
+    #                 # Decreases the pointer until reaching the lower limit of the window
+    #                 while (changepositions[coverageidx] > coords[i][
+    #                     1]):  #ME SALTA UN ERROR AQUI AL LLAMAR DESDE BAM_UTILS.aggregatedcoveragetrack
+    #                     coverageidx -= 1
+    #                 # Save the "first" coverage of the window
+    #                 lastcoverage = coverage[coverageidx]
+    #                 # Move pointer to the first change above the lower limit of the window
+    #                 coverageidx += 1
+    #
+    #             # Check whether we are already at the end of the changepositions vector. In other words, there are no more change positions for the remaining
+    #             # windows in coords.
+    #             if (coverageidx < len(changepositions)):
+    #                 # Pass through each interval of constant coverage summing up the corresponding coverage of each base
+    #                 lastbase = coords[i][1]
+    #                 while (coverageidx < len(changepositions) and changepositions[coverageidx] <= coords[i][2]):
+    #                     counts[coords[i]] += (changepositions[coverageidx] - lastbase) * lastcoverage
+    #                     lastbase = changepositions[coverageidx]
+    #                     lastcoverage = coverage[coverageidx]
+    #                     coverageidx += 1
+    #
+    #                 counts[coords[i]] += (coords[i][2] - lastbase + 1) * lastcoverage
+    #                 counts[coords[i]] = counts[coords[i]] * 1.0 / (coords[i][2] - coords[i][1] + 1)
+    #             else:
+    #                 counts[coords[i]] = 0
+    #
+    #                 # The piece of code in this 'else' is only run when windows span beyond coverage limits in 'changepositions'. It would
+    #                 # be really improbable that the last coverage change is different from 0.
+    #                 if (lastcoverage <> 0):
+    #                     print 'WARNING: please, check that all data is correct at bam_file.coveragetrack.'
+    #                     print '	Execution stopped.'
+    #                     sys.exit(1)
+    #
+    #         else:
+    #             counts[coords[i]] = 0
+    #
+    #             # The piece of code in this 'else' is only run when windows span beyond coverage limits in 'changepositions'. It would
+    #             # be really improbable that the last coverage change is different from 0.
+    #             if (lastcoverage <> 0):
+    #                 print 'WARNING: please, check that all data is correct at bam_file.coveragetrack.'
+    #                 print '	Execution stopped.'
+    #                 sys.exit(1)
+    #
+    #         i += 1
+    #
+    #     bed.windows2bedgraph(counts, fileout, startshift=-1)
+    #
+    # def run(self, command):
+    #     """************************************************************************************************************************************************************
+    #     Task: launches a system call
+    #     Inputs:
+    #         command: string containing the system call.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     print 'CMD: ' + command
+    #     # Checks whether an error occurred during the execution of the system call
+    #     fd = os.popen(command)
+    #     if (fd.close() is not None):
+    #         print 'Some error occurred while executing: '
+    #         print '	' + command
+    #
+    # def nonofftarget(self, bed):
+    #     """************************************************************************************************************************************************************
+    #     Task: returns reads on/off target
+    #     Inputs:
+    #         bed: bed file with capture coordinates
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     capture = bed_file.bed_file(bed)
+    #     bamOT = capture.intersectbam(self, "ontarget.bam")
+    #     tread = self.nreads()
+    #     nread = bamOT.nreads()
+    #
+    #     return [nread, tread - nread]
+    #
+    # def coverage_distribution2(self, binsize=10000000):
+    #     pid = str(os.getpid())
+    #     chrs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+    #             '20', '21', '22', 'X', 'Y']
+    #     base0 = {}
+    #     lengths = {}
+    #
+    #     tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
+    #     coveragefile = config.TMP + '/' + pid + '.coverage'
+    #
+    #     print 'Loading chr lengths...'
+    #     fd = file(config.CHR_LENGTHS)
+    #     for line in fd:
+    #         parts = line.split('\t')
+    #         lengths[parts[0]] = string.atoi(parts[1])
+    #     print '	Done.'
+    #     fd.close()
+    #
+    #     print 'Calculating base 0 coordinates for each chr...'
+    #     base0['1'] = 0
+    #     for i in range(1, len(chrs)):
+    #         base0[chrs[i]] = base0[chrs[i - 1]] + lengths[chrs[i - 1]]
+    #     print '	Done.'
+    #
+    #     #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
+    #     print 'Calculating histogram...'
+    #     points = []
+    #     gfffile = config.TMP + '/' + pid + '.gff'
+    #     countsfile = config.TMP + '/' + pid + '.counts'
+    #
+    #     self.generate_gff(chrs, lengths, binsize)
+    #     self.run(
+    #         """samtools view """ + self.filename + """ | htseq-count -q -i coord - """ + gfffile + """ > """ + countsfile)
+    #
+    #     fd = file(countsfile)
+    #     line = fd.readline()
+    #     while ('no_feature' not in line):
+    #         chrcoord, counts = line.split()
+    #         chr, coord = chrcoord.split(':')
+    #         points.append((base0[chr] + string.atoi(coord) + binsize / 2, string.atoi(counts)))
+    #         line = fd.readline()
+    #
+    #     points.sort()
+    #
+    #     return [base0, lengths, points]
+    #
+    #
+    # def enrichment2(self, ontarget, offtarget, dirout):
+    #     """*******************************************************************************************************************************************
+    #     Task: calculates the enrichment in mapped reads of targeted regions as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
+    #     Inputs:
+    #         ontarget, offtarget: strings containing the full path to the bed files containing on-target and off-target regions. We implemented
+    #             this method for testing the enrichment of target regions compared to whole genome gencode regions, that is why off-target reads
+    #             are not simply reads not mapped on-target.
+    #     Outputs:
+    #         nreads_on, notonbam.nreads(), nreads_off: number of reads on target, number of reads that do not map on target, and number of reads
+    #             that do not map on target but do map on the regions indicated at "offtarget".
+    #         Reads that do no map on-target but do map on "offtarget" per Kbase
+    #         Reads that map on-target per Kbase
+    #         Enrichment, calculated as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
+    #     *******************************************************************************************************************************************"""
+    #
+    #     # pid: integer containing current process id
+    #     pid = str(os.getpid())
+    #
+    #     # on, off: bed_file objects representing on and off targets
+    #     on = bed_file.bed_file(ontarget)
+    #     off = bed_file.bed_file(offtarget)
+    #
+    #     # notonbamfilename: string containing the name of the .bam where reads that do not overlap with the target will be stored.
+    #     # offbamfilename: string containing the name of the .bam where reads that do not overlap with the target BUT that do overlap with the offtarget bed will be stored.
+    #     # onbamfilename: string containing the name of the .bam containing those reads that overlap with ontarget.
+    #     notonbamfilename = config.TMP + '/' + pid + '.noton.bam'
+    #     offbamfilename = config.TMP + '/' + pid + '.off.bam'
+    #     onbamfilename = config.TMP + '/' + pid + '.on.bam'
+    #
+    #     # Extract those reads overlapping with the target
+    #     self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbamfilename)
+    #
+    #     # The set of reads that do not map on-tarfet is obtained. This set is then intersected with the "offtarget" bed.
+    #     self.run(""" intersectBed -v -abam """ + self.filename + """ -b """ + ontarget + """ > """ + notonbamfilename)
+    #     self.run(""" intersectBed -abam """ + notonbamfilename + """ -b """ + offtarget + """ > """ + offbamfilename)
+    #
+    #     # Index the three new bam. Neccessary to avoid pysam to fail.
+    #     pysam.index(onbamfilename)
+    #     pysam.index(notonbamfilename)
+    #     pysam.index(offbamfilename)
+    #
+    #     # Generate bam_file objects for the three bam
+    #     onbam = bam_file(onbamfilename, 'rb')
+    #     notonbam = bam_file(notonbamfilename, 'rb')
+    #     offbam = bam_file(offbamfilename, 'rb')
+    #
+    #     # nreads_off: integer containing the number of reads that do not overlap with ontarget BUT that do overlap with offtarget
+    #     # base0: dictionary where keys are chromsomes and values are integers, each containing the coordinate that represents the base 0 of the chromome, considering that all the chromosomes will be drawn one before another.
+    #     # lengths: dictionary where keys are chromosomes and values the length of each chromosome.
+    #     # onpoints: tuples of integers (x,y) representing the read count (y) at genomic position x
+    #     # nreads_on: integer containing the number of reads that do overlap with the target
+    #     # nreads_noton: integer containing the number of reads that do not overlap with the target
+    #     # ontarget_size: integer containing the number of bases covered by the ontarget. Bases falling in overlapped regions are counted just once.
+    #     # offtarget_size: integer containing the number of bases covered by the offtarget. Bases falling in overlapped regions are counted just once.
+    #     nreads_off = offbam.mapped
+    #     base0, lengths, offpoints = offbam.coverage_distribution2()
+    #     nreads_on = onbam.mapped
+    #     base0, lengths, onpoints = onbam.coverage_distribution2()
+    #     nreads_noton = notonbam.mapped
+    #     base0, lengths, notonpoints = notonbam.coverage_distribution2()
+    #     self.draw_coverage_distribution(onpoints, notonpoints, offpoints, base0, lengths,
+    #                                     dirout + '/' + os.path.basename(self.filename).replace('.bam', '.png'))
+    #     ontarget_size = on.size()
+    #     offtarget_size = off.size()
+    #
+    #     # Remove temporary bams
+    #     os.remove(onbam.filename)
+    #     os.remove(notonbam.filename)
+    #     os.remove(offbam.filename)
+    #
+    #     return [nreads_on, nreads_noton, nreads_off, nreads_off * 1000.0 / offtarget_size,
+    #             nreads_on * 1000.0 / ontarget_size,
+    #             (nreads_on * 1.0 / ontarget_size) / (nreads_off * 1.0 / offtarget_size)]
+    #
+    # def enrichment(self, ontarget, offtarget, dirout):
+    #     """*******************************************************************************************************************************************
+    #     Task: calculates the enrichment in mapped reads of targeted regions as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
+    #     Inputs:
+    #         ontarget, offtarget: strings containing the full path to the bed files containing on-target and off-target regions. We implemented
+    #             this method for testing the enrichment of target regions compared to whole genome gencode regions, that is why off-target reads
+    #             are not simply reads not mapped on-target.
+    #     Outputs:
+    #         nreads_on, notonbam.nreads(), nreads_off: number of reads on target, number of reads that do not map on target, and number of reads
+    #             that do not map on target but do map on the regions indicated at "offtarget".
+    #         Reads that do no map on-target but do map on "offtarget" per Kbase
+    #         Reads that map on-target per Kbase
+    #         Enrichment, calculated as (#reads/kbase_ontarget)/(#reads/kbase_offtarget)
+    #     *******************************************************************************************************************************************"""
+    #
+    #     pid = str(os.getpid())
+    #
+    #     on = bed_file.bed_file(ontarget)
+    #     off = bed_file.bed_file(offtarget)
+    #
+    #     onbam = bam_file(config.TMP + '/' + pid + '.on.bam')
+    #     notonbam = bam_file(config.TMP + '/' + pid + '.noton.bam')
+    #     offbam = bam_file(config.TMP + '/' + pid + '.off.bam')
+    #
+    #     self.run(""" intersectBed -abam """ + self.filename + """ -b """ + ontarget + """ > """ + onbam.filename)
+    #
+    #     # The set of reads that do not map on-taret is obtained. This set is then intersected with the "offtarget" bed.
+    #     self.run(""" intersectBed -v -abam """ + self.filename + """ -b """ + ontarget + """ > """ + notonbam.filename)
+    #     self.run(""" intersectBed -abam """ + notonbam.filename + """ -b """ + offtarget + """ > """ + offbam.filename)
+    #
+    #     nreads_off = offbam.nreads()
+    #     offbam.coverage_distribution(dirout + '/' + os.path.basename(self.filename).replace('.bam', '.png'))
+    #     nreads_on = onbam.nreads()
+    #     nreads_noton = notonbam.nreads()
+    #     ontarget_size = on.size()
+    #     offtarget_size = off.size()
+    #
+    #     os.remove(onbam.filename)
+    #     os.remove(notonbam.filename)
+    #     os.remove(offbam.filename)
+    #
+    #     return [nreads_on, nreads_noton, nreads_off, nreads_off * 1000.0 / offtarget_size,
+    #             nreads_on * 1000.0 / ontarget_size,
+    #             (nreads_on * 1.0 / ontarget_size) / (nreads_off * 1.0 / offtarget_size)]
+    #
+    # def coverage_distribution(self, fileout, binsize=10000000):
+    #     pid = str(os.getpid())
+    #     chrs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
+    #             '20', '21', '22', 'X', 'Y']
+    #     base0 = {}
+    #     lengths = {}
+    #
+    #     tmpbed = bed_file.bed_file(config.TMP + '/' + pid + '.bed')
+    #     coveragefile = config.TMP + '/' + pid + '.coverage'
+    #
+    #     print 'Loading chr lengths...'
+    #     fd = open(config.CHR_LENGTHS)
+    #     for line in fd:
+    #         parts = line.split('\t')
+    #         lengths[parts[0]] = string.atoi(parts[1])
+    #     print '	Done.'
+    #     fd.close()
+    #
+    #     print 'Calculating base 0 coordinates for each chr...'
+    #     base0['1'] = 0
+    #     for i in range(1, len(chrs)):
+    #         base0[chrs[i]] = base0[chrs[i - 1]] + lengths[chrs[i - 1]]
+    #     print '	Done.'
+    #
+    #     #		totallength = base0[chrs[-1]]+lengths[chrs[i-1]]
+    #     print 'Calculating histogram...'
+    #     points = []
+    #     gfffile = config.TMP + '/' + pid + '.gff'
+    #     countsfile = config.TMP + '/' + pid + '.counts'
+    #
+    #     self.generate_gff(chrs, lengths, binsize)
+    #     self.run(
+    #         """samtools view """ + self.filename + """ | htseq-count -q -i coord - """ + gfffile + """ > """ + countsfile)
+    #
+    #     fd = file(countsfile)
+    #     line = fd.readline()
+    #     while ('no_feature' not in line):
+    #         chrcoord, counts = line.split()
+    #         chr, coord = chrcoord.split(':')
+    #         points.append((base0[chr] + string.atoi(coord) + binsize / 2, string.atoi(counts)))
+    #         line = fd.readline()
+    #
+    #     points.sort()
+    #     fig = pyplot.figure(figsize=(13, 6))
+    #     ax = fig.add_subplot(111)
+    #     ax.plot([point[0] for point in points], [point[1] for point in points])
+    #
+    #     ax.set_xlim(right=lengths['Y'] + base0['Y'])
+    #     ax.set_ylabel('# reads')
+    #     ax.set_xlabel('Chr position')
+    #
+    #     for chr in base0: ax.axvline(base0[chr], color='#ff0000', linestyle='--', linewidth=0.5, alpha=0.5)
+    #
+    #     fig.savefig(fileout)
+    #
+    # def get_coverage_distribution(self, bedfilename):
+    #
+    #     coveragefile = config.TMP + '/' + str(os.getpid()) + '.coverage'
+    #
+    #     print 'Calculating coverage per target position...'
+    #     self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
+    #
+    #     dist = []
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Loading coverage distribution: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.count_lines(coveragefile)).start()
+    #
+    #     i = 1
+    #     fd = file(coveragefile)
+    #     # Recorremos el archivo y guardamos la ultima columna en un vector
+    #     for line in fd:
+    #         dist.append(string.atoi(line.split("\t")[-1]))
+    #         pbar.update(i)
+    #         i += 1
+    #
+    #     pbar.finish()
+    #     fd.close()
+    #
+    #     return dist
+    #
+    # def unannotated(self, gtffilename, fileout):
+    #     pid = str(time.time())
+    #     tmpsam = config.TMP + '/' + pid + '.sam'
+    #     print """CMD: samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename
+    #     os.system(
+    #         """samtools view -h """ + self.filename + """ | htseq-count --mode intersection-strict -t exon -i gene_id -o """ + tmpsam + """ - """ + gtffilename)
+    #
+    #     toremove = {}
+    #     fd = file(tmpsam)
+    #     for line in fd:
+    #         if ('XF:Z:no_feature' not in line and 'XF:Z:ambiguous' not in line):
+    #             toremove[line.split('\t')[0]] = None
+    #     fd.close()
+    #
+    #     newbam = bam_file(fileout, 'wb', header=self.header)
+    #
+    #     for read in self:
+    #         if (read.qname not in toremove):
+    #             newbam.write(read)
+    #
+    #     newbam.close()
+    #     pysam.index(fileout)
+    #
+    #     return bam_file(fileout)
+    #
+    # def generate_gff(self, chrs, sizes, binsize):
+    #     pid = str(os.getpid())
+    #     gfffile = config.TMP + '/' + pid + '.gff'
+    #     fd = file(gfffile, 'w')
+    #
+    #     for chr in chrs:
+    #         for base in range(0, sizes[chr], binsize):
+    #             fd.write(chr + '\ttmp\texon\t' + str(base + 1) + '\t' + str(
+    #                 base + binsize) + '\t0\t+\t.\tcoord "' + chr + ':' + str(base + 1) + '";\n')
+    #
+    #     fd.close()
+    #
+    # def target_coverage(self, coveragelist, targetfile):
+    #     """************************************************************************************************************************************************************
+    #     Task: draws statistics about the percentage of covered exons and transcripts at different coverage levels. A transcript is considered to be covered when
+    #         at least the 90% of its positions present a coverage greater than the threshold.
+    #     Inputs:
+    #         filelist: list of strings indicating those files to be processed. For a file format example see
+    #             /home/javi/MGP/capture_methods/data/coverage/GU_20120719_FC1_6L1S_AL_01_3376_BC1_AA_F3.filtered.singleHits.realigned.recalibrated.bam.coverage
+    #         coveragelist: list of values with coverage thresholds to use.
+    #         graph_legend: list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot.
+    #         dirout: string containing the full path to the directory where data will be saved.
+    #     Output: a summary .xls file and two bar plots depicting coverage vs. %covered-positions and coverage vs. #covered transcripts. Figures will be saved as
+    #         <dirout>/coverage_summary.xls, <dirout>/covered_positions.png and <dirout>/covered_transcripts.png
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     cnf = config.cnf
+    #
+    #     info('Calculating coverage per target position...')
+    #     pid = str(os.getpid())
+    #     coveragefile = join(cnf['tmp_dir'], pid + '.coverage')
+    #     cmdline = "%s coverage -d -abam %s -b %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename, targetfile)
+    #     call(cnf, cmdline, coveragefile)
+    #     #self.run('coverageBed -d -abam ' + self.filename + ' -b ' + targetfile + ' > ' + coveragefile)
+    #
+    #     ntotal_positions = self.count_lines(coveragefile)
+    #
+    #     # covered_positions_per_depth: list of integers. There will be a position for each coverage threshold. Each value will be the count of positions
+    #     #	 covered for the corresponding threshold.
+    #     # ccds_counts: dictionary. Keys are transcript ids. values are lists of two elements. The first element of this list will contain the length of the
+    #     #	 transcript. The second element will be a list of integers with as many positions as coverage thresholds, being each value the count of positions
+    #     #	 covered for the corresponding threshold.
+    #     covered_positions_per_depth = [0 for i in range(len(coveragelist))]
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Counting: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=ntotal_positions).start()
+    #
+    #     # Each line contains the coverage for a given position
+    #     fd = file(coveragefile)
+    #     for k, line in enumerate(fd):
+    #         parts = line.split('\t')
+    #
+    #         # Check whether the coverage is over each threshold
+    #         for i, cov in enumerate(coveragelist):
+    #             current_coverage = string.atof(parts[-1])
+    #             # In case coverage is over the threshold, add 1 to the global number of covered positions and to the counts of the current transcript
+    #             if (current_coverage >= cov):
+    #                 covered_positions_per_depth[i] += 1
+    #
+    #         pbar.update(k + 1)
+    #
+    #     pbar.finish()
+    #     fd.close()
+    #
+    #     return [ntotal_positions, covered_positions_per_depth]
+    #
+    # def normalize(self, n):
+    #     if (n >= self.nreads()):
+    #         print 'File: ' + self.filename + '. No actual normalization was done, current number of reads is ' + str(
+    #             self.nreads()) + '. Required number of reads is ' + str(n) + '.'
+    #         return bam_file(self.filename, 'rb')
+    #
+    #     pid = str(os.getpid())
+    #     selectionprob = n * 1.0 / self.nreads()
+    #     normalizedbam_fpath = join(config.cnf["tmp_dir"], pid + '_normalized.bam')
+    #     normalizedbam = bam_file(normalizedbam_fpath, 'wb', header=self.header)
+    #
+    #     i = self.fetch()
+    #     currread = 0
+    #     nselected = 0
+    #     niterated = 0
+    #
+    #     remove = self.select_reads(self.nreads() - n)
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Writing selected reads: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.nreads()).start()
+    #
+    #     try:
+    #         previous = 0
+    #         for next in remove:
+    #             for j in range(previous, next):
+    #                 normalizedbam.write(i.next())
+    #                 nselected += 1
+    #                 pbar.update(j)
+    #             i.next()
+    #             previous = next + 1
+    #
+    #         for j in range(previous, self.nreads()):
+    #             normalizedbam.write(i.next())
+    #             nselected += 1
+    #
+    #     except StopIteration, stop:
+    #         print 'ERROR: method normalize at bam_file.py.'
+    #         print '	n = ' + str(n)
+    #         print '	self.nreads()-n = ' + str(self.nreads() - n)
+    #         print '	j = ' + str(j)
+    #         print '	nselected = ' + str(nselected)
+    #         print '	previous = ' + str(previous)
+    #         print '	next = ' + str(next)
+    #         print 'Iteration should have stopped before end of bam.'
+    #         sys.exit(1)
+    #
+    #     pbar.finish()
+    #
+    #     print str(nselected) + ' reads written'
+    #
+    #     normalizedbam.close()
+    #     pysam.index(normalizedbam_fpath)
+    #
+    #     return bam_file(normalizedbam_fpath, 'rb')
+    #
+    # def minusbam(self, bam, fileout=None):
+    #
+    #     pid = str(os.getpid())
+    #     if (fileout == None): fileout = config.TMP + '/' + pid + '.minus.bam'
+    #
+    #     tosubstract = bam.get_mapped_reads_ids()
+    #
+    #     print str(len(tosubstract)) + ' reads found in right bam'
+    #
+    #     bamout = bam_file(fileout, "wb", header=self.header)
+    #
+    #     removed = 0
+    #     written = 0
+    #     for read in self:
+    #         if (read.qname not in tosubstract):
+    #             bamout.write(read)
+    #             written += 1
+    #         else:
+    #             removed += 1
+    #
+    #     print str(removed) + ' reads removed'
+    #     print str(written) + ' reads remain at ' + fileout
+    #     bamout.close()
+    #     pysam.index(fileout)
+    #
+    #     return bam_file(fileout)
+    #
+    # def select_reads_boolean(self, n):
+    #     """*******************************************************************************************************************************************
+    #     JPFLORIDO
+    #     Task:  Randomly selected a given set of reads from a BAM file
+    #     Inputs: BAM file and number of reads to be selected
+    #     Outputs: Boolean array indicating whether i-th read has been selected or not
+    #     *******************************************************************************************************************************************"""
+    #
+    #     numpy.random.seed(1)
+    #
+    #     selected = numpy.random.uniform(size=self.nreads()) <= (n * 1.0 / self.nreads())
+    #     nselected = len(selected.nonzero()[0])
+    #
+    #     i = 0
+    #     while (i < len(selected) and nselected < n):
+    #         if (not selected[i]):
+    #             selected[i] = True
+    #             nselected += 1
+    #         i += 1
+    #
+    #     while (i < len(selected) and nselected > n):
+    #         if (selected[i]):
+    #             selected[i] = False
+    #             nselected -= 1
+    #         i += 1
+    #
+    #     return selected
+    #
+    # def select_reads(self, n):
+    #     numpy.random.seed(1)
+    #
+    #     selected = numpy.random.uniform(size=self.nreads()) <= (n * 1.0 / self.nreads())
+    #     nselected = len(selected.nonzero()[0])
+    #
+    #     i = 0
+    #     while (i < len(selected) and nselected < n):
+    #         if (not selected[i]):
+    #             selected[i] = True
+    #             nselected += 1
+    #         i += 1
+    #
+    #     while (i < len(selected) and nselected > n):
+    #         if (selected[i]):
+    #             selected[i] = False
+    #             nselected -= 1
+    #         i += 1
+    #
+    #     return selected.nonzero()[0]
+    #
+    # def ncovered_reads(self, target):
+    #     pid = str(os.getpid())
+    #     newbamfilename = config.TMP + '/' + pid
+    #     self.run(""" intersectBed -abam """ + self.filename + """ -b """ + target + """ > """ + newbamfilename)
+    #     pysam.index(newbamfilename)
+    #     bam = bam_file(newbamfilename, 'rb')
+    #
+    #     return bam.nreads()
+    #
+    # def load_coverage_file(self, filename):
+    #     """*********************************************************************************************************************************************************
+    #     Task: loads coverage counts from a .coverage file. Only regions of size > 3 are considered.
+    #     Inputs:
+    #         filename: string containing the name of the file to be loaded. Must contain the coverage
+    #             per position per exon.
+    #     Outputs:
+    #         exon: numpy array with the list of exon identifier as they appear in the .coverage file.
+    #         coverage: numpy array with the list of coverage values for each position in each exon. Contains as many items as the exon array.
+    #         length: list containing the length of each exon.
+    #     *********************************************************************************************************************************************************"""
+    #
+    #     exon = []
+    #     coverage = []
+    #     length = []
+    #     curr_exon = None
+    #     next_exon_idx = 0
+    #
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Loading exon coverage: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     print 'Calculating file size...'
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.count_lines(filename)).start()
+    #
+    #     # One line for each entry
+    #     fd = file(filename)
+    #     for i, line in enumerate(fd):
+    #         parts = line.split(
+    #             '\t')  # Depending on the target file, the number of columns are different they share in common the following columns: 1st) chromosome, 2nd) Exon start position, 3rd) Exon end position and last) coverage in a single base
+    #         exon_length = string.atoi(parts[2]) - string.atoi(parts[1])  # parts[2] contains the exon end+1
+    #         # Only exons longer than 3 nts
+    #         if (exon_length > 3):
+    #             if (curr_exon <> (parts[0] + "-" + parts[1] + "-" + parts[2])):  # New exon found
+    #                 curr_exon = parts[0] + "-" + parts[1] + "-" + parts[2]
+    #                 next_exon_idx += 1
+    #
+    #             exon.append(next_exon_idx)  # Exon ID (integer number)
+    #             coverage.append(string.atof(parts[-1]))  #Coverage (last column)
+    #             length.append(exon_length)
+    #
+    #         pbar.update(i + 1)
+    #
+    #     pbar.finish()
+    #     fd.close()
+    #
+    #     exon = numpy.array(exon)
+    #     coverage = numpy.array(coverage)
+    #
+    #     return [exon, coverage, length]
+    #
+    #
+    # def region_coverage_std(self, bedfilename):
+    #     """************************************************************************************************************************************************************
+    #     Task: gets the sampling distribution of coverage standard deviation across regions.
+    #     Inputs:
+    #         bedfilename: string containing the name of the bed with the regions to analyze.
+    #     Output:
+    #         std_sampling: list of real values containing the coverage std for each region in the bed file.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     cnf = config.cnf
+    #
+    #     info('Calculating coverage per target position...')
+    #     pid = str(os.getpid())
+    #     coveragefile = join(cnf['tmp_dir'], pid + '.coverage')
+    #     cmdline = "%s coverage -d -abam %s -b %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename, bedfilename)
+    #     call(cnf, cmdline, coveragefile)
+    #     #self.run('coverageBed -d -abam ' + self.filename + ' -b ' + bedfilename + ' > ' + coveragefile)
+    #
+    #     # Loads exons and coverage per position
+    #     [loaded_exon, loaded_coverage, length] = self.load_coverage_file(coveragefile)
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Generating left position matrix: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(loaded_exon)).start()
+    #
+    #     std_sampling = []
+    #     positions_coverage = []
+    #     currexon = None
+    #
+    #     # Goes through each region position
+    #     for i in range(len(loaded_exon)):
+    #         exon = loaded_exon[i]
+    #
+    #         # If it is not, the first position of a new region has been found
+    #         if (exon <> currexon):
+    #             positions_coverage = numpy.array(positions_coverage)
+    #             # Skip regions with 0 coverage in all positions
+    #             if (len((positions_coverage > 0).nonzero()[0])): std_sampling.append(
+    #                 positions_coverage.std() / positions_coverage.mean())  # Normalized standard deviation
+    #             currexon = exon
+    #             positions_coverage = []
+    #
+    #         positions_coverage.append(loaded_coverage[i])
+    #
+    #         pbar.update(i + 1)
+    #     pbar.finish()
+    #
+    #     return std_sampling
+    #
+    # def mergealignments(self, bamfilename, out):
+    #
+    #     alreadywritten = {}
+    #
+    #     newbam = bam_file(out, 'wb', header=self.header)
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Initializing new bam: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=self.nreads()).start()
+    #     i = 0
+    #
+    #     for read in self:
+    #         alreadywritten[read.qname] = None
+    #         newbam.write(read)
+    #         i += 1
+    #         pbar.update(i)
+    #     pbar.finish()
+    #
+    #     bam = bam_file(bamfilename, 'rb')
+    #
+    #     chrids = [seqinfo['SN'] for seqinfo in self.header['SQ']]
+    #     chridmap = [chrids.index(seqinfo['SN']) for seqinfo in bam.header['SQ']]
+    #
+    #     # A progress bar is initialized
+    #     widgets = ['Merging alignments from ' + bamfilename + ': ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=bam.nreads()).start()
+    #     i = 0
+    #     mergedalignments = 0
+    #     for read in bam:
+    #         if (read.qname not in alreadywritten):
+    #             read.rname = chridmap[read.rname]
+    #             newbam.write(read)
+    #             mergedalignments += 1
+    #     bam.close()
+    #     pbar.finish()
+    #
+    #     newbam.close()
+    #
+    #     print str(mergedalignments) + ' extra alignments found in ' + bamfilename
+    #     print str(self.nreads() + mergedalignments) + ' total alignments included in ' + out
+    #
+    #     pysam.index(out)
+    #
+    #     return bam_file(out)

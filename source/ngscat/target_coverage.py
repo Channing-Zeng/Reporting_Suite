@@ -8,10 +8,10 @@ import optparse
 import string
 import numpy
 
-try:
-    import progressbar
-except ImportError:
-    print 'WARNING: module progressbar was not loaded.'
+# try:
+#     import progressbar
+# except ImportError:
+#     print 'WARNING: module progressbar was not loaded.'
 
 import xlwt
 
@@ -273,165 +273,166 @@ def target_coverage_lite(filenames, coveragelist, outprefix, graph_legend=None, 
         status.value = (i == len(filenames))
 
 
-#target_coverage_lite(['/tmp/test1.coverage', '/tmp/test2.coverage'], [10, 20, 30], '/tmp/')
 
 
-def target_coverage(filelist, targetfiles, coveragelist, graph_legend, outprefix, xticklabels=None, normalize=False):
-    """************************************************************************************************************************************************************
-    Task: draws statistics about the percentage of covered exons and transcripts at different coverage levels. A transcript is considered to be covered when
-        at least the 90% of its positions present a coverage greater than the threshold.
-    Inputs:
-        filelist: list of strings indicating those files to be processed. For a file format example see
-            /home/javi/MGP/capture_methods/data/coverage/GU_20120719_FC1_6L1S_AL_01_3376_BC1_AA_F3.filtered.singleHits.realigned.recalibrated.bam.coverage
-        coveragelist: list of values with coverage thresholds to use.
-        graph_legend: list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot. These 
-            labels will also be used to identify sample replicates. Replicates will be merged in one bar in the bar plot.
-        outprefix: string containing the full path to the directory where data will be saved.
-        xticklabels: list of strings with labels for the ticks in the x axis.
-        normalize: boolean to indicate whether bam files should be normalized or not.        
-    Output: a summary .xls file and a bar plot depicting coverage vs. %covered-positions. Figures will be saved as
-        <dirout>/coverage_summary.xls, <dirout>/covered_positions.png
-    ************************************************************************************************************************************************************"""
+#################### NOT NEEDED IN DEFAULT ngsCAT! #########################
 
-    numpy.random.seed(1)
-    covered_positions = []
-    ntotal_positions = []
-    bamlist = []
-
-    # Process each file and store counting results
-    for filename in filelist:
-        # Check whether index already exists for the bam file, needed for pysam use
-        if (not os.path.isfile(filename + '.bai')):
-            print 'Creating index for ' + filename
-            pysam.index(filename)
-            print '    Done.'
-
-        bamlist.append(bam_file.bam_file(filename))
-    sizes = numpy.array([bam.nreads() for bam in bamlist])
-    minsize = sizes.min()
-
-    print 'The smaller bam is ' + filelist[sizes.argmin()] + ' and contains ' + str(minsize) + ' reads.'
-
-    # Process each file and store counting results
-    print 'Counting covered bases...'
-    for i, bam in enumerate(bamlist):
-        print '    ' + bam.filename
-
-        # Check whether normalization should be run
-        if (normalize):
-            normalizedbam = bam.normalize(minsize)
-        else:
-            normalizedbam = bam
-
-        ntotal_positions_tmp, covered_positions_per_depth = normalizedbam.target_coverage(coveragelist, targetfiles[i])
-        covered_positions.append(covered_positions_per_depth)
-        ntotal_positions.append(ntotal_positions_tmp)
-
-    # Initialize the workbook and sheet
-    wb = xlwt.Workbook()
-    ws = wb.add_sheet('Bases')
-
-    # Create header font
-    header_style = xlwt.easyxf('font: bold on')
-
-    for i, cov in enumerate(coveragelist):
-        ws.write(0, i * 2 + 1, 'Coverage >=' + str(cov) + 'x', style=header_style)
-        ws.write(0, i * 2 + 1 + 1, '%', style=header_style)
-
-    # Write count of covered positions in each file for each coverage threshold    
-    for i, value_list in enumerate(covered_positions):
-        # Use graph legend elements for row identifiers
-        if (graph_legend <> None):
-            ws.write(i + 1, 0, graph_legend[i], style=header_style)
-        else:
-            ws.write(i + 1, 0, os.path.basename(filelist[i]), style=header_style)
-
-        # Write counts for current file
-        for j, value in enumerate(value_list):
-            ws.write(i + 1, j * 2 + 1, value)
-            ws.write(i + 1, j * 2 + 1 + 1, value * 100.0 / ntotal_positions[i])
-
-            # Calculate percentage of covered positions. Pass through the results of each file.
-    for i in range(len(covered_positions)):
-        # Divide each count by the total number of positions
-        for j, value in enumerate(covered_positions[i]):
-            covered_positions[i][j] = value * 100.0 / ntotal_positions[i]
-
-            # Check whether the output directory is already created
-    if (not os.path.isdir(os.path.dirname(outprefix))):
-        print 'WARNING: directory ' + os.path.dirname(outprefix) + ' not found. Creating new directory.'
-        os.mkdir(os.path.dirname(outprefix))
-
-    # If x labels are not provided, generate ad hoc labels
-    if (xticklabels == None): xticklabels = ['>=' + str(cov) + 'x' for cov in coveragelist]
-
-    # Save .xls file and generate the two bar plots.
-    wb.save(outprefix + 'coverage_summary.xls')
-    draw_graph_wreplicates(outprefix + 'covered_positions.png', covered_positions, xticklabels, 'Coverage threshold',
-                           '% covered positions', graph_legend)
-
-
-def main():
-    ################################################
-
-    #### Options and arguments #####################
-
-    ################################################
-    usage = """
-    ************************************************************************************************************************************************************
-    Task: draws statistics about the percentage of covered positions.
-    Output: a summary .xls file and a bar plot depicting coverage vs. %covered-positions. Figures will be saved as
-        <dirout>/coverage_summary.xls, <dirout>/covered_positions.png
-    ************************************************************************************************************************************************************
-
-
-    
-    usage: %prog --filelist bamlist --target bedlist --coveragelist coveragelist --graphlegend labellistt --dirout dirname --xticklabels xlabels --normalize {y,n}"""
-
-    parser = optparse.OptionParser(usage)
-    parser.add_option("--filelist", dest="filelist",
-                      help="""String containing a comma separated list indicating those bam files to be processed.""")
-    parser.add_option("--target", dest="target",
-                      help="""String containing a comma separated list indicating the full path to the bed files containing the targets. Each bam will be compared with the corresponding bed file.""")
-    parser.add_option("--coveragelist", dest="coveragelist",
-                      help="""String containing a comma separated list of values with coverage thresholds to use.""")
-    parser.add_option("--graphlegend", dest="graphlegend",
-                      help="""Optional. String containing a comma separated list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot. These labels will also be used to identify sample replicates. Replicates will be merged in one bar in the bar plot. Default = None.""",
-                      default=None)
-    parser.add_option("--dirout", dest="dirout",
-                      help="""String containing the full path to the directory where data will be saved.""")
-    parser.add_option("--xticklabels", dest="xticklabels",
-                      help="""Optional. Comma separated strings of labels for the ticks in the x axis. Default: coverage list.""",
-                      default=None)
-    parser.add_option("--normalize", dest="normalize",
-                      help="""Optional. {y,n} to indicate whether bam files should be normalized or not. Default = y.""",
-                      default='y')
-    (options, args) = parser.parse_args()
-
-    # Check number of arguments    
-    if len(sys.argv) < 11:
-        parser.print_help()
-        sys.exit(1)
-
-    # Check whether graphlegend should be included
-    if (options.graphlegend <> None):
-        legend = options.graphlegend.split(',')
-    else:
-        legend = None
-
-    # call core function with/without customized x labels
-    if (options.xticklabels <> None):
-        target_coverage(options.filelist.split(','), options.target, map(string.atof, options.coveragelist.split(',')),
-                        options.graphlegend.split(','),
-                        options.dirout, options.xticklabels.split(','), normalize=(options.normalize == 'y'))
-    else:
-        target_coverage(options.filelist.split(','), options.target.split(','),
-                        map(string.atof, options.coveragelist.split(',')), legend,
-                        options.dirout, normalize=(options.normalize == 'y'))
-
-    print '>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<'
-
-
-if __name__ == '__main__':
-    main()
+# def target_coverage(filelist, targetfiles, coveragelist, graph_legend, outprefix, xticklabels=None, normalize=False):
+#     """************************************************************************************************************************************************************
+#     Task: draws statistics about the percentage of covered exons and transcripts at different coverage levels. A transcript is considered to be covered when
+#         at least the 90% of its positions present a coverage greater than the threshold.
+#     Inputs:
+#         filelist: list of strings indicating those files to be processed. For a file format example see
+#             /home/javi/MGP/capture_methods/data/coverage/GU_20120719_FC1_6L1S_AL_01_3376_BC1_AA_F3.filtered.singleHits.realigned.recalibrated.bam.coverage
+#         coveragelist: list of values with coverage thresholds to use.
+#         graph_legend: list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot. These
+#             labels will also be used to identify sample replicates. Replicates will be merged in one bar in the bar plot.
+#         outprefix: string containing the full path to the directory where data will be saved.
+#         xticklabels: list of strings with labels for the ticks in the x axis.
+#         normalize: boolean to indicate whether bam files should be normalized or not.
+#     Output: a summary .xls file and a bar plot depicting coverage vs. %covered-positions. Figures will be saved as
+#         <dirout>/coverage_summary.xls, <dirout>/covered_positions.png
+#     ************************************************************************************************************************************************************"""
+#
+#     numpy.random.seed(1)
+#     covered_positions = []
+#     ntotal_positions = []
+#     bamlist = []
+#
+#     # Process each file and store counting results
+#     for filename in filelist:
+#         # Check whether index already exists for the bam file, needed for pysam use
+#         if (not os.path.isfile(filename + '.bai')):
+#             print 'Creating index for ' + filename
+#             pysam.index(filename)
+#             print '    Done.'
+#
+#         bamlist.append(bam_file.bam_file(filename))
+#     sizes = numpy.array([bam.nreads() for bam in bamlist])
+#     minsize = sizes.min()
+#
+#     print 'The smaller bam is ' + filelist[sizes.argmin()] + ' and contains ' + str(minsize) + ' reads.'
+#
+#     # Process each file and store counting results
+#     print 'Counting covered bases...'
+#     for i, bam in enumerate(bamlist):
+#         print '    ' + bam.filename
+#
+#         # Check whether normalization should be run
+#         if (normalize):
+#             normalizedbam = bam.normalize(minsize)
+#         else:
+#             normalizedbam = bam
+#
+#         ntotal_positions_tmp, covered_positions_per_depth = normalizedbam.target_coverage(coveragelist, targetfiles[i])
+#         covered_positions.append(covered_positions_per_depth)
+#         ntotal_positions.append(ntotal_positions_tmp)
+#
+#     # Initialize the workbook and sheet
+#     wb = xlwt.Workbook()
+#     ws = wb.add_sheet('Bases')
+#
+#     # Create header font
+#     header_style = xlwt.easyxf('font: bold on')
+#
+#     for i, cov in enumerate(coveragelist):
+#         ws.write(0, i * 2 + 1, 'Coverage >=' + str(cov) + 'x', style=header_style)
+#         ws.write(0, i * 2 + 1 + 1, '%', style=header_style)
+#
+#     # Write count of covered positions in each file for each coverage threshold
+#     for i, value_list in enumerate(covered_positions):
+#         # Use graph legend elements for row identifiers
+#         if (graph_legend <> None):
+#             ws.write(i + 1, 0, graph_legend[i], style=header_style)
+#         else:
+#             ws.write(i + 1, 0, os.path.basename(filelist[i]), style=header_style)
+#
+#         # Write counts for current file
+#         for j, value in enumerate(value_list):
+#             ws.write(i + 1, j * 2 + 1, value)
+#             ws.write(i + 1, j * 2 + 1 + 1, value * 100.0 / ntotal_positions[i])
+#
+#             # Calculate percentage of covered positions. Pass through the results of each file.
+#     for i in range(len(covered_positions)):
+#         # Divide each count by the total number of positions
+#         for j, value in enumerate(covered_positions[i]):
+#             covered_positions[i][j] = value * 100.0 / ntotal_positions[i]
+#
+#             # Check whether the output directory is already created
+#     if (not os.path.isdir(os.path.dirname(outprefix))):
+#         print 'WARNING: directory ' + os.path.dirname(outprefix) + ' not found. Creating new directory.'
+#         os.mkdir(os.path.dirname(outprefix))
+#
+#     # If x labels are not provided, generate ad hoc labels
+#     if (xticklabels == None): xticklabels = ['>=' + str(cov) + 'x' for cov in coveragelist]
+#
+#     # Save .xls file and generate the two bar plots.
+#     wb.save(outprefix + 'coverage_summary.xls')
+#     draw_graph_wreplicates(outprefix + 'covered_positions.png', covered_positions, xticklabels, 'Coverage threshold',
+#                            '% covered positions', graph_legend)
+#
+#
+# def main():
+#     ################################################
+#
+#     #### Options and arguments #####################
+#
+#     ################################################
+#     usage = """
+#     ************************************************************************************************************************************************************
+#     Task: draws statistics about the percentage of covered positions.
+#     Output: a summary .xls file and a bar plot depicting coverage vs. %covered-positions. Figures will be saved as
+#         <dirout>/coverage_summary.xls, <dirout>/covered_positions.png
+#     ************************************************************************************************************************************************************
+#
+#
+#
+#     usage: %prog --filelist bamlist --target bedlist --coveragelist coveragelist --graphlegend labellistt --dirout dirname --xticklabels xlabels --normalize {y,n}"""
+#
+#     parser = optparse.OptionParser(usage)
+#     parser.add_option("--filelist", dest="filelist",
+#                       help="""String containing a comma separated list indicating those bam files to be processed.""")
+#     parser.add_option("--target", dest="target",
+#                       help="""String containing a comma separated list indicating the full path to the bed files containing the targets. Each bam will be compared with the corresponding bed file.""")
+#     parser.add_option("--coveragelist", dest="coveragelist",
+#                       help="""String containing a comma separated list of values with coverage thresholds to use.""")
+#     parser.add_option("--graphlegend", dest="graphlegend",
+#                       help="""Optional. String containing a comma separated list of descriptions describing each of the files that will be processed. These descriptions will form the legend of the bar plot. These labels will also be used to identify sample replicates. Replicates will be merged in one bar in the bar plot. Default = None.""",
+#                       default=None)
+#     parser.add_option("--dirout", dest="dirout",
+#                       help="""String containing the full path to the directory where data will be saved.""")
+#     parser.add_option("--xticklabels", dest="xticklabels",
+#                       help="""Optional. Comma separated strings of labels for the ticks in the x axis. Default: coverage list.""",
+#                       default=None)
+#     parser.add_option("--normalize", dest="normalize",
+#                       help="""Optional. {y,n} to indicate whether bam files should be normalized or not. Default = y.""",
+#                       default='y')
+#     (options, args) = parser.parse_args()
+#
+#     # Check number of arguments
+#     if len(sys.argv) < 11:
+#         parser.print_help()
+#         sys.exit(1)
+#
+#     # Check whether graphlegend should be included
+#     if (options.graphlegend <> None):
+#         legend = options.graphlegend.split(',')
+#     else:
+#         legend = None
+#
+#     # call core function with/without customized x labels
+#     if (options.xticklabels <> None):
+#         target_coverage(options.filelist.split(','), options.target, map(string.atof, options.coveragelist.split(',')),
+#                         options.graphlegend.split(','),
+#                         options.dirout, options.xticklabels.split(','), normalize=(options.normalize == 'y'))
+#     else:
+#         target_coverage(options.filelist.split(','), options.target.split(','),
+#                         map(string.atof, options.coveragelist.split(',')), legend,
+#                         options.dirout, normalize=(options.normalize == 'y'))
+#
+#     print '>>>>>>>>>>>>>>>>>>>>>> Finished <<<<<<<<<<<<<<<<<<<<<<<<<<'
+#
+#
+# if __name__ == '__main__':
+#     main()
 
