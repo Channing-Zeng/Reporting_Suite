@@ -58,8 +58,7 @@ def main():
 
             (['--extra_bam'], 'align2.bam', {
                 'dest': 'extra_bam',
-                'help': 'Additional bam file',
-                'default': None}),
+                'help': 'Additional bam file'}),
 
             (['--bed'], 'target_regions.bed', {
                 'dest': 'bed',
@@ -67,8 +66,7 @@ def main():
 
             (['--extend_target'], '<int>', {
                 'dest': 'extend',
-                'help': 'Integer indicating the number of bases to extend each target region up and down-stream',
-                'default': None}),
+                'help': 'Integer indicating the number of bases to extend each target region up and down-stream'}),
 
             (['--saturation'], '{y,n}', {
                 'dest': 'saturation',
@@ -86,8 +84,7 @@ def main():
                 'dest': 'feature',
                 'help': "Use this option if just one of the graphs/statistics should be calculated. "
                         "String indicating one of the following features: "
-                        "{%s}" % (', '.join(config.availablefeatures)),
-                'default': None}),
+                        "{%s}" % (', '.join(config.availablefeatures))}),
         ],
         required_keys=required_keys,
         optional_keys=optional_keys,
@@ -154,7 +151,7 @@ def process_one(cnf, *inputs):
         filtered_bams.append(bam_file.filter_unmapped_reads(cnf, bam))
 
     report_fpath = ngscat_main.ngscat(cnf, filtered_bams, cnf['bed'], cnf['output_dir'], cnf['genome'].get('seq'),
-                                      cnf['saturation'] == 'y', int(cnf['threads']), cnf['extend'],
+                                      cnf['saturation'] == 'y', int(cnf.get('threads', '1')), cnf['extend'],
                                       cnf['depthlist'], cnf['coverage_reports']['depth_thresholds'],
                                       cnf['feature'])
     return [report_fpath]

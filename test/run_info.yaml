@@ -22,7 +22,7 @@ quality_control:
 
 ## Annotation with various tools.
 gatk:
-  options: ['-dt NONE', '-nt 1']
+  options: ['-dt NONE']
   all-annotations: False
   annotations:                # Field names in final VCF:
   - Coverage                  # DP

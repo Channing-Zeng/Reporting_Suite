@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-from source.vcf import filter_rejected
+from source.logger import critical
+from source.vcf import filter_rejected, read_sample_names_from_vcf, extract_sample
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -37,7 +38,7 @@ def main(args):
         ],
         required_keys=required_keys,
         optional_keys=optional_keys,
-        key_for_sample_name='bam')
+        key_for_sample_name='vcf')
 
     check_system_resources(cnf,
         required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'],
@@ -61,6 +62,9 @@ def set_up_snpeff(cnf):
 def process_one(cnf, vcf_fpath, bam_fpath=None):
     if cnf.get('filter_reject'):
         vcf_fpath = filter_rejected(cnf, vcf_fpath)
+
+    if cnf.get('extract_sample'):
+        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
 
     anno_vcf_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
 

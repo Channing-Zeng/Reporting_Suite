@@ -102,7 +102,7 @@ def _convert_to_maf(cnf, final_vcf_fpath):
 
     final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
     perl = get_tool_cmdline(cnf, 'perl')
-    vcf2maf = join(dirname(realpath(__file__)), '../../source/vcf2maf-1.1.0/vcf2maf.pl')
+    vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
               '--output-maf {final_maf_fpath}'.format(**locals())
     call_subprocess(cnf, cmdline, None, None)
@@ -250,8 +250,8 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
-    if 'threads' in cnf:
-        gatk_opts_line += ' -nt ' + int(cnf['threads'])
+    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
+        gatk_opts_line += ' -nt ' + str(cnf.get('threads', '1'))
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
 

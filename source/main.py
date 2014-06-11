@@ -164,8 +164,9 @@ def _load_configs(sys_cnf, run_cnf):
 
     sys_config_path = abspath(sys_cnf)
     run_config_path = abspath(run_cnf)
-    info('Using ' + sys_config_path + ' as a system configuration file.\n\n')
-    info('Using ' + run_config_path + ' as a run configuration file.\n\n')
+    info('Using ' + sys_config_path + ' as a system configuration file.')
+    info('Using ' + run_config_path + ' as a run configuration file.')
+    info()
 
     to_exit = False
     for f in [sys_config_path, run_config_path]:

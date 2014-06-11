@@ -54,7 +54,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
                 out.write(inp.read())
         one_item_cnf['vcf'] = work_vcf
 
-        vcf_header_samples = _read_sample_names_from_vcf(one_item_cnf['vcf'])
+        vcf_header_samples = read_sample_names_from_vcf(one_item_cnf['vcf'])
 
         # MULTIPLE SAMPELS
         if ('samples' in one_item_cnf or one_item_cnf.get('split_samples')) and len(vcf_header_samples) == 0:
@@ -100,7 +100,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     return all_samples
 
 
-def _read_sample_names_from_vcf(vcf_fpath):
+def read_sample_names_from_vcf(vcf_fpath):
     basic_fields = next((l.strip()[1:].split() for l in open_gzipsafe(vcf_fpath)
                         if l.strip().startswith('#CHROM')), None)
     if not basic_fields:
@@ -110,7 +110,22 @@ def _read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def extract_sample(cnf, input_fpath, samplename, work_dir):
+def extract_sample(cnf, input_fpath, samplename, work_dir=None):
+    if work_dir is None:
+        work_dir = cnf['work_dir']
+
+    vcf_header_samples = read_sample_names_from_vcf(input_fpath)
+
+    if len(vcf_header_samples) == 0:
+        return input_fpath
+
+    if len(vcf_header_samples) > 0 and samplename not in vcf_header_samples:
+            critical('Error: not sample ' + samplename + ' in the ' + input_fpath +
+                     ' header: available only ' + ', '.join(vcf_header_samples))
+
+    if len(vcf_header_samples) == 1:
+        return input_fpath
+
     info('-' * 70)
     info('Extracting sample ' + samplename)
     info('-' * 70)
@@ -128,6 +143,7 @@ def extract_sample(cnf, input_fpath, samplename, work_dir):
           '-o {output_fpath}'.format(**locals())
     call_subprocess(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
          to_remove=[input_fpath + '.idx'])
+
     return output_fpath
 
 

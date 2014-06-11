@@ -5,6 +5,8 @@ keep_intermediate: True       ## Keeps "work_dir" with intermediate files for ea
 reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
 filter_reject: True           ## Filter variants with REJECT in the FILTER field
+extract_samples: True         ## If multiple samples, extract by sample name (name of the dir where VCF file is,
+                              ## or value of the --sample command line options
 
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]

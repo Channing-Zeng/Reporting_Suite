@@ -18,7 +18,7 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
     executable = get_java_tool_cmdline(cnf, 'gatk')
     gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
     if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
-        gatk_opts_line += ' -nt ' + cnf['threads']
+        gatk_opts_line += ' -nt ' + cnf.get('threads', '1')
 
     ref_fpath = cnf['genome']['seq']
     report_fpath = join(work_dir, cnf['name'] + '_gatk.report')

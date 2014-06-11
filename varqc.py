@@ -2,6 +2,7 @@
 
 import sys
 from source.logger import err, critical
+from source.vcf import filter_rejected, read_sample_names_from_vcf, extract_sample
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -45,10 +46,13 @@ def main(args):
 
 
 def process_one(cnf, vcf_fpath):
-    if 'quality_control' in cnf:
-        return qc.run_qc(cnf, cnf['output_dir'], vcf_fpath)
-    else:
-        return None, None
+    if cnf.get('filter_reject'):
+        vcf_fpath = filter_rejected(cnf, vcf_fpath)
+
+    if cnf.get('extract_sample'):
+        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
+
+    return qc.run_qc(cnf, cnf['output_dir'], vcf_fpath)
 
 
 def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
