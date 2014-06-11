@@ -3,6 +3,7 @@ import sys
 import os
 from os.path import isdir, dirname, join, realpath, expanduser, basename, abspath
 from optparse import OptionParser
+from shutil import rmtree
 
 from source import logger
 from source.logger import info, err, critical
@@ -23,43 +24,61 @@ default_sys_config_path = 'system_info_Waltham.yaml'
 default_run_config_path = 'run_info.yaml'
 
 
-def read_opts_and_cnfs(extra_opts, required_keys,
-                       optional_keys=list(), fpaths_keys=None):
+def read_opts_and_cnfs(extra_opts, required_keys, optional_keys):
     basic_opts = [
         (['-o', '--output_dir'], 'DIR', {
-         'dest': 'output_dir',
-         'help': 'output directory'}),
+             'dest': 'output_dir',
+             'help': 'output directory (or directory name in case of bcbio final dir)'}),
 
-        (['--sample'], 'NAME', {
-         'dest': 'name',
-         'help': 'sample name (default is first input file directory name'}),
+        (['-s', '--sample'], 'NAME', {
+             'dest': 'name',
+             'help': 'sample name (default is part of name of the first parameter prior to the first - or .'}),
 
-        (['-t', '--nt', '--threads'], 'N', {
-         'dest': 'threads',
-         'help': 'number of threads'}),
+        # (['--bcbio-final-dir'], 'DIR', {
+        #     'dest': 'bcbio_final_dir',
+        #     'help': 'bcbio-nextgen "final" directory (assumes bcbio project structure)'}),
+        #
+        # (['-ss', '--samples'], 'SAMPLES.txt', {
+        #     'dest': 'samples',
+        #     'help': 'list of samples (assumes bcbio project structure)'}),
 
-        (['--overwrite'], 'False', {
-         'dest': 'overwrite',
-         'help': 'do not reuse intermediate files from previous run',
-         'action': 'store_true',
-         'default': False}),
+        (['-t', '-nt', '--threads'], 'N', {
+             'dest': 'threads',
+             'help': 'number of threads'}),
+
+        (['-w', '--overwrite'], 'False', {
+             'dest': 'overwrite',
+             'help': 'do not reuse intermediate files from previous run',
+             'action': 'store_true',
+             'default': False}),
+
+        (['--sys-cnf'], 'SYS_CNF.yaml', {
+             'dest': 'sys_cnf',
+             'help': 'system configuration yaml with paths to external tools and genome resources '
+                     '(see default one %s)' % default_sys_config_path,
+             'default': default_sys_config_path}),
+
+        (['--run-cnf'], 'RUN_CNF.yaml', {
+             'dest': 'run_cnf',
+             'help': 'run configuration yaml (see default one %s)' % default_run_config_path,
+             'default': default_run_config_path}),
     ]
 
     options = basic_opts + extra_opts
-    opts_line = ' '.join(args[0] + ' ' + example for args, example, _ in options)
-    format_params = {
-        'script': __file__,
-        'opts_line': opts_line,
-        'sys_cnf': default_sys_config_path,
-        'run_cnf': default_run_config_path}
+    # opts_line = ' '.join(args[0] + ' ' + example for args, example, _ in options)
+    # format_params = {
+    #     'script': __file__,
+    #     'opts_line': opts_line,
+    #     'sys_cnf': default_sys_config_path,
+    #     'run_cnf': default_run_config_path}
     parser = OptionParser(
-        usage=(
-            'python {script} [{sys_cnf}] [{run_cnf}] {opts_line}\n'
-            'or\n'
-            'python {script} [{sys_cnf}] {run_cnf}\n'
-            'or\n'
-            'python {script} {sys_cnf}'.format(**format_params)
-        ))
+        # usage=(
+        #     'python {script} [{sys_cnf}] [{run_cnf}] {opts_line}\n'
+        #     'or\n'
+        #     'python {script} [{sys_cnf}] {run_cnf}\n'
+        #     'or\n'
+        #     'python {script} {sys_cnf}'.format(**format_params))
+    )
     for args, _, kwargs in options:
         parser.add_option(*args, **kwargs)
 
@@ -70,16 +89,34 @@ def read_opts_and_cnfs(extra_opts, required_keys,
         opts['reuse_intermediate'] = False
         del opts['overwrite']
 
-    cnf = _load_configs(args)
+    cnf = _load_configs(opt_obj.sys_cnf, opt_obj.run_cnf)
 
     cnf.update(opts)
 
-    assert required_keys
-    cnf['name'] = cnf.get('name') or basename(dirname(cnf[required_keys[0]]))
+    # if 'bcbio_final_dir' in opts:
+    #     if 'samples' not in opts:
+    #         critical('Error: you specified bcbio_final_dir, but not samples. '
+    #                  'You have to specify a file with a list of sample names with '
+    #                  'the --samples option as well.')
+    #     opts['bcbio_final_dir'] = abspath(expanduser(opts['bcbio_final_dir']))
+    #     if not verify_dir(opts['bcbio_final_dir']):
+    #         sys.exit(1)
+    #
+    # if 'samples' in opts:
+    #     if 'samples' not in opts:
+    #         critical('Error: you specified bcbio_final_dir, but not samples. '
+    #                  'You have to specify a file with a list of sample names with '
+    #                  'the --samples option as well.')
+    #     opts['samples'] = abspath(expanduser(opts['samples']))
+    #     if not verify_file(opts['samples']):
+    #         sys.exit(1)
+
+    assert key_for_sample_name
+    cnf['name'] = cnf.get('name') or \
+                  basename(dirname(cnf[key_for_sample_name])) or \
+                  basename(cnf[key_for_sample_name])
 
     set_up_dirs(cnf)
-
-    check_inputs(cnf, required_keys, optional_keys, fpaths_keys)
 
     return cnf
 
@@ -122,36 +159,25 @@ def _fill_config_from_defaults(cnf, defaults):
     return cnf
 
 
-def _load_configs(args):
+def _load_configs(sys_cnf, run_cnf):
     defaults_config_path = join(dirname(dirname(realpath(__file__))), join('source', 'defaults.yaml'))
 
-    sys_config_path = join(dirname(dirname(realpath(__file__))), default_sys_config_path)
-    run_config_path = join(dirname(dirname(realpath(__file__))), default_run_config_path)
-
-    if len(args) < 1:
-        err('Notice: using ' + run_config_path + ' as a default run configutation file.\n\n')
-    else:
-        run_config_path = args[0]
-
-    if len(args) < 2:
-        err('Notice: using system_info_rask.yaml as a default tools configutation file.\n\n')
-    else:
-        sys_config_path = args[0]
-        run_config_path = args[1]
-
-    if not os.path.isfile(sys_config_path):
-        critical(sys_config_path + ' does not exist or is a directory.\n')
-    if not os.path.isfile(run_config_path):
-        critical(run_config_path + ' does not exist or is a directory.\n')
+    sys_config_path = abspath(sys_cnf)
+    run_config_path = abspath(run_cnf)
+    info('Using ' + sys_config_path + ' as a system configuration file.\n\n')
+    info('Using ' + run_config_path + ' as a run configuration file.\n\n')
 
     to_exit = False
-    if not sys_config_path.endswith('.yaml'):
-        err(sys_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
-        to_exit = True
-    if not run_config_path.endswith('.yaml'):
-        err(run_config_path + ' does not end with .yaml, maybe incorrect parameter?\n')
-        to_exit = True
+    for f in [sys_config_path, run_config_path]:
+        if not verify_file(f):
+            to_exit = True
+    if to_exit:
+        sys.exit(1)
 
+    for f in [sys_config_path, run_config_path]:
+        if not f.endswith('.yaml'):
+            err(f + ' does not end with .yaml, maybe incorrect parameter?\n')
+            to_exit = True
     if to_exit:
         sys.exit(1)
 
@@ -279,7 +305,12 @@ def set_up_dirs(cnf):
     cnf['output_dir'] = realpath(expanduser(cnf['output_dir']))
 
     safe_mkdir(cnf['output_dir'], 'output_dir')
-    cnf['work_dir'] = join(cnf['output_dir'], 'work')
+
+    work_dir_name = 'work_' + cnf['name']
+    cnf['work_dir'] = join(cnf['output_dir'], work_dir_name)
+    if not cnf.get('reuse_intermediate'):
+        rmtree(cnf['work_dir'])
+
     safe_mkdir(cnf['work_dir'], 'working directory')
 
     cnf['log'] = join(cnf['work_dir'], cnf['name'] + '_log.txt')

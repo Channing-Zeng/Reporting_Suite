@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from source.vcf import filter_rejected
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -56,8 +57,11 @@ def set_up_snpeff(cnf):
         del cnf['clinical_reporting']
 
 
-def process_one(cnf, *inputs):
-    anno_vcf_fpath, anno_maf_fpath = run_annotators(cnf, *inputs)
+def process_one(cnf, vcf_fpath, bam_fpath=None):
+    if cnf.get('filter_reject'):
+        vcf_fpath = filter_rejected(cnf, vcf_fpath)
+
+    anno_vcf_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
 
     anno_tsv_fpath = None
     if anno_vcf_fpath and 'tsv_fields' in cnf:

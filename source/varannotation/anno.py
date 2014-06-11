@@ -12,15 +12,8 @@ from source.vcf import filter_rejected
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
-    work_dir = cnf['work_dir']
-
     annotated = False
     original_vcf = vcf_fpath
-
-    # gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
-
-    if cnf.get('filter_reject'):
-        vcf_fpath = filter_rejected(cnf, vcf_fpath)
 
     if 'gatk' in cnf:
         annotated = True

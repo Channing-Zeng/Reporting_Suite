@@ -2,7 +2,7 @@ genome: hg19                  ## Loads from "genomes" section from system_config
 
 verbose: True                 ## Prints tools output
 keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
-reuse_intermediate: True      ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
 filter_reject: True           ## Filter variants with REJECT in the FILTER field
 
