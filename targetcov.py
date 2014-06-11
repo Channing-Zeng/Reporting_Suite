@@ -47,7 +47,8 @@ def main(args):
             #                                   10000, 50000, 100000, 500000]))}),
         ],
         required_keys=required_keys,
-        optional_keys=optional_keys)
+        optional_keys=optional_keys,
+        key_for_sample_name='bam')
 
     check_system_resources(cnf, ['samtools', 'bedtools'])
     load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])

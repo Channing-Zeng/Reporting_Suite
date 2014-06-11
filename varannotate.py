@@ -36,7 +36,8 @@ def main(args):
              'default': False}),
         ],
         required_keys=required_keys,
-        optional_keys=optional_keys)
+        optional_keys=optional_keys,
+        key_for_sample_name='bam')
 
     check_system_resources(cnf,
         required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'],

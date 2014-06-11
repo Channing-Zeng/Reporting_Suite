@@ -24,7 +24,7 @@ default_sys_config_path = 'system_info_Waltham.yaml'
 default_run_config_path = 'run_info.yaml'
 
 
-def read_opts_and_cnfs(extra_opts, required_keys, optional_keys):
+def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_name):
     basic_opts = [
         (['-o', '--output_dir'], 'DIR', {
              'dest': 'output_dir',
@@ -42,7 +42,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys):
         #     'dest': 'samples',
         #     'help': 'list of samples (assumes bcbio project structure)'}),
 
-        (['-t', '-nt', '--threads'], 'N', {
+        (['-t', '--nt', '--threads'], 'N', {
              'dest': 'threads',
              'help': 'number of threads'}),
 

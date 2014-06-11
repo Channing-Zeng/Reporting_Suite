@@ -23,21 +23,26 @@ def main(args):
              'help': 'variants to annotate'}),
 
             (['--expression'], '', {
-             'dest': 'variant_filtering_expression',
+             'dest': 'expression',
              'help': 'filtering line for snpsift'}),
         ],
         required_keys=required_keys,
-        optional_keys=optional_keys)
+        optional_keys=optional_keys,
+        key_for_sample_name='vcf')
 
     check_system_resources(cnf, ['snpsift'])
     load_genome_resources(cnf)
+
+    if 'expression' in cnf:
+        cnf['variant_filtering'] = {'expression': cnf['expression']}
+        del cnf['expression']
 
     run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
 
 
 def filter_variants(cnf, vcf_fpath):
     executable = get_java_tool_cmdline(cnf, 'snpsift')
-    expression = cnf['variant_filtering_expression'] or ''
+    expression = cnf['variant_filtering']['expression'] or ''
 
     info('')
     info('*' * 70)

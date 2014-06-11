@@ -24,7 +24,8 @@ def main(args):
             'help': 'variants to evaluate'}),
         ],
         required_keys=required_keys,
-        optional_keys=optional_keys)
+        optional_keys=optional_keys,
+        key_for_sample_name='vcf')
 
     check_system_resources(
         cnf,
