@@ -19,11 +19,11 @@ from source.utils import info
 def main(args):
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--vcf', '--var'], 'variants.vcf', {
+            (['--vcf', '--var'], 'FILE', {
              'dest': 'vcf',
              'help': 'variants to annotate'}),
 
-            (['--bam'], 'align.bam', {
+            (['--bam'], 'FILE', {
              'dest': 'bam',
              'help': 'used to generate some annotations by GATK'}),
 

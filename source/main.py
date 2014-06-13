@@ -27,7 +27,7 @@ default_run_config_path = 'run_info.yaml'
 
 
 def read_opts_and_cnfs(extra_opts, key_for_sample_name):
-    options = [
+    options = extra_opts + [
         (['-o', '--output_dir'], 'DIR', {
              'dest': 'output_dir',
              'help': 'output directory (or directory name in case of bcbio final dir)'}),
@@ -65,7 +65,7 @@ def read_opts_and_cnfs(extra_opts, key_for_sample_name):
              'dest': 'run_cnf',
              'help': 'run configuration yaml (see default one %s)' % default_run_config_path,
              'default': default_run_config_path}),
-    ] + extra_opts
+    ]
 
     # opts_line = ' '.join(args[0] + ' ' + example for args, example, _ in options)
     # format_params = {
@@ -81,8 +81,8 @@ def read_opts_and_cnfs(extra_opts, key_for_sample_name):
         #     'or\n'
         #     'python {script} {sys_cnf}'.format(**format_params))
     )
-    for args, _, kwargs in options:
-        parser.add_option(*args, **kwargs)
+    for args, metavar, kwargs in options:
+        parser.add_option(*args, metavar=metavar, **kwargs)
 
     (opt_obj, args) = parser.parse_args()
     opts = dict((k, v) for k, v in opt_obj.__dict__.items() if v is not None)
@@ -114,6 +114,11 @@ def read_opts_and_cnfs(extra_opts, key_for_sample_name):
     #         sys.exit(1)
 
     assert key_for_sample_name
+
+    if key_for_sample_name not in cnf:
+        critical('Error: ' + key_for_sample_name + ' must be provided in options or '
+            'in ' + cnf['run_config_path'] + '.')
+
     cnf['name'] = \
         cnf.get('name') or \
         basename(dirname(cnf[key_for_sample_name])) or \
@@ -196,6 +201,7 @@ def load_configs(sys_cnf, run_cnf):
 
     info('Loaded system config ' + sys_config_path)
     info('Loaded run config ' + run_config_path)
+    info()
     return cnf
 
 
