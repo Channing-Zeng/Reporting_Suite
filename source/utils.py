@@ -8,11 +8,10 @@ import shutil
 import re
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
 from distutils.version import LooseVersion
-from source.logger import step_greetings, info, err, critical
 
+from source.logger import info, err, critical
 from source.transaction import file_transaction
 from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
-
 
 
 def remove_quotes(s):
@@ -56,16 +55,20 @@ def verify_file(fpath, description=''):
     if not fpath:
         sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
         return False
+
     fpath = expanduser(fpath)
     if not exists(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
+
     if not isfile(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a file.\n')
         return False
+
     if getsize(fpath) <= 0:
         sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
         return False
+
     return True
 
 
@@ -73,13 +76,16 @@ def verify_dir(fpath, description=''):
     if not fpath:
         sys.stderr.write((description + ': d' if description else 'D') + 'ir name is empty.\n')
         return False
+
     fpath = expanduser(fpath)
     if not exists(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
         return False
+
     if not isdir(fpath):
         sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a directory.\n')
         return False
+
     return True
 
 

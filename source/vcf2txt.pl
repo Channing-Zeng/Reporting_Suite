@@ -2,7 +2,8 @@
 
 use lib '/users/kdld047/lib/perl5';
 use Getopt::Std;
-use Stat::Basic;
+#use Stat::Basic;
+use List::Util qw(sum);
 use strict;
 
 our ($opt_F, $opt_R, $opt_r, $opt_n, $opt_N, $opt_H, $opt_q, $opt_p, $opt_b, $opt_f, $opt_c, $opt_u, $opt_D, $opt_Q, $opt_P, $opt_M, $opt_s, $opt_V);
@@ -31,7 +32,7 @@ print join("\t", qw(Sample Chr Start ID Ref Alt Type Effect Functional_Class Cod
 my @data;
 my %sample;
 my %var;
-my $stat = new Stat::Basic;
+#my $stat = new Stat::Basic;
 my %CONTROL;
 while( <> ) {
     next if ( /^#/ );
@@ -40,7 +41,7 @@ while( <> ) {
     $a[7] .= ";";
     my %d;
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
-	$d{ $1 } = $2;
+	    $d{ $1 } = $2;
     }
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
@@ -64,17 +65,22 @@ while( <> ) {
         $CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && $class eq "Novel");  # so that any novel or COSMIC variants showed up in control won't be filtered
     }
     unless( $opt_u && $d{ SAMPLE } =~ /Undetermined/i ) { # Undetermined won't count toward samples
-	$sample{ $d{ SAMPLE } } = 1;
-	push( @{ $var{ $vark } }, $d{ AF } );
+        $sample{ $d{ SAMPLE } } = 1;
+        push( @{ $var{ $vark } }, $d{ AF } );
     }
     foreach my $eff (@effs) {
         $eff =~ s/\)$//;
-	my @e = split(/\|/, $eff, -1);
-	my ($type, $effect) = split(/\(/, $e[0]);
-	my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
-	my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
-	push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
+        my @e = split(/\|/, $eff, -1);
+        my ($type, $effect) = split(/\(/, $e[0]);
+        my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
+        my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
+        push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
     }
+    last;
+}
+
+sub mean {
+    return sum(@_)/@_;
 }
 
 my @samples = keys %sample;
@@ -84,7 +90,7 @@ foreach my $d (@data) {
     next unless( $var{ $vark } ); # Likely just in Undetermined.
     my ($pmean, $qmean) = @$d[23,25];
     my $varn = @{ $var{ $vark } } + 0;
-    my $ave_af = $stat->mean( $var{ $vark } );
+    my $ave_af = mean( $var{ $vark } );
     my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
     #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
     $pass = "DUP" if ( $d->[24] ==  0 && $d->[22] !~ /1$/ && $d->[22] !~ /0$/ ); # all variants from one position in reads
@@ -127,7 +133,7 @@ print <<USAGE;
     and add "PASS" column.  It will not perform any filtering.
     
     Usage: $0 [-H] [-F var_fraction] [-n sample_cnt] [-f freq] [-p pos] [-q quality] vcf_files
-    
+
     The program accepts more than one vcf files.
 
     Options:

@@ -1,18 +1,42 @@
-genome: hg19                  ## Loads from "genomes" section from system_config yaml
+steps:
+  - IndelFilter
+  - VarAnnotate
+  - VarQC
+  - FilterVariants
+  - TargetCoverage
+  - NGSCat
+# - QualiMap
 
-verbose: True                 ## Prints tools output
-keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
-reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
-filter_reject: True           ## Filter variants with REJECT in the FILTER field
-extract_samples: True         ## If multiple samples, extract by sample name (name of the dir where VCF file is,
-                              ## or value of the --sample command line options
+genome: hg19          ## Loads from "genomes" section from system_config yaml
 
-coverage_reports:
-  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
 
-variant_filtering:
-  expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+filter_reject: True   ## Before annotation and QC, filter variants
+                      ## that set REJECT in the FILTER field
+
+#Filter novel variants with strand bias
+# - "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+#
+#
+#variant_filtering:
+#  Effect:
+#    Impact: HIGH|MODERATE
+#  - b  # filterNovelVariantsWithStrandBias: True
+#  DontCountUndeterminedSamples: True
+#  Fraction: 0.4
+#  MaxRation: 1
+#  CNT: 10
+#  AveFreq: 0.15
+#  MinPMean: 5
+#  MinQMean: 25
+#  FilPMean: 0
+#  FilPDepth: 0
+#  MinFreq: 0.05
+#  MinMQ: 20
+#  MinVD: 2
+#  MAF: 0.0025
+#  SN: 4
+
 
 quality_control:
   databases: ['dbsnp', 'cosmic', '1000genomes']
@@ -22,10 +46,13 @@ quality_control:
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
   variant_distribution_scale: 1000  ## in kilobases
 
-## Annotation with various tools.
+
+coverage_reports:
+  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+
+
 gatk:
   options: ['-dt NONE']
-  all-annotations: False
   annotations:                ## Field names in final VCF:
   - Coverage                  ## DP
   - BaseQualityRankSumTest    ## BaseQRankSum
@@ -42,7 +69,6 @@ gatk:
   - AlleleBalanceBySample     ## AB
 
 dbnsfp:
-  all-annotations: False
   annotations:
   - SIFT_score
   - Polyphen2_HVAR_score
@@ -111,7 +137,6 @@ tracks:
 
 
 tsv_fields:
-  all-annotations: False
   annotations:
   - SAMPLE                        : Sample
   - CHROM                         : Chromosome
@@ -207,3 +232,9 @@ tsv_fields:
   - rptmk                         : KnownRepeat
   - dgvMerged                     : KnownCopyNumber
   - set                           : SourceVCF_forMergedRecInCombineVariants
+
+
+verbose: True                 ## Prints tools' output
+keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
+reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+

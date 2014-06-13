@@ -9,6 +9,8 @@ from source import logger
 from source.logger import info, err, critical
 from source.bcbio_utils import which, file_exists
 from source.utils import verify_file, safe_mkdir, verify_dir, verify_module
+from source.ngscat.bed_file import verify_bam, verify_bed
+
 
 if verify_module('yaml'):
     from yaml import load
@@ -24,8 +26,8 @@ default_sys_config_path = 'system_info_Waltham.yaml'
 default_run_config_path = 'run_info.yaml'
 
 
-def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_name):
-    basic_opts = [
+def read_opts_and_cnfs(extra_opts, key_for_sample_name):
+    options = [
         (['-o', '--output_dir'], 'DIR', {
              'dest': 'output_dir',
              'help': 'output directory (or directory name in case of bcbio final dir)'}),
@@ -44,6 +46,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_
 
         (['-t', '--nt', '--threads'], 'N', {
              'dest': 'threads',
+             'type': 'int',
              'help': 'number of threads'}),
 
         (['-w', '--overwrite'], 'False', {
@@ -62,9 +65,8 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_
              'dest': 'run_cnf',
              'help': 'run configuration yaml (see default one %s)' % default_run_config_path,
              'default': default_run_config_path}),
-    ]
+    ] + extra_opts
 
-    options = basic_opts + extra_opts
     # opts_line = ' '.join(args[0] + ' ' + example for args, example, _ in options)
     # format_params = {
     #     'script': __file__,
@@ -89,7 +91,7 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_
         opts['reuse_intermediate'] = False
         del opts['overwrite']
 
-    cnf = _load_configs(opt_obj.sys_cnf, opt_obj.run_cnf)
+    cnf = load_configs(opt_obj.sys_cnf, opt_obj.run_cnf)
 
     cnf.update(opts)
 
@@ -112,41 +114,41 @@ def read_opts_and_cnfs(extra_opts, required_keys, optional_keys, key_for_sample_
     #         sys.exit(1)
 
     assert key_for_sample_name
-    cnf['name'] = cnf.get('name') or \
-                  basename(dirname(cnf[key_for_sample_name])) or \
-                  basename(cnf[key_for_sample_name])
+    cnf['name'] = \
+        cnf.get('name') or \
+        basename(dirname(cnf[key_for_sample_name])) or \
+        basename(cnf[key_for_sample_name])
 
     set_up_dirs(cnf)
 
     return cnf
 
 
-def check_inputs(cnf, required_keys, optional_keys, fpaths_keys=None):
-    if fpaths_keys is None:
-        fpaths_keys = required_keys + optional_keys
-
+def check_inputs(cnf, required_keys, file_keys):
     to_exit = False
+
+    def _verify_input(_key):
+        if not verify_file(cnf[_key], _key):
+            return False
+        if 'bam' in _key and not verify_bam(cnf[_key]):
+            return False
+        if 'bed' in _key and not verify_bed(cnf[_key]):
+            return False
+        return True
 
     for key in required_keys:
         if not key or key not in cnf:
             to_exit = True
-            err('Error: ' + key + ' must be provided in options or ' + cnf['run_config_fpath'] + '.')
-        if key in fpaths_keys:
-            if not verify_file(cnf[key], key):
-                to_exit = True
+            err('Error: ' + key + ' must be provided in options or '
+                'in ' + cnf['run_config_fpath'] + '.')
 
-    for key in optional_keys:
-        if key and key in fpaths_keys:
-            if not verify_file(cnf[key], key):
+    for key in file_keys:
+        if key and key in cnf:
+            if not _verify_input(key):
                 to_exit = True
 
     if to_exit:
         sys.exit(1)
-
-    info('Input:')
-    for key in required_keys + optional_keys:
-        if key in cnf:
-            info('  ' + key + ': ' + cnf[key])
 
 
 def _fill_config_from_defaults(cnf, defaults):
@@ -159,7 +161,7 @@ def _fill_config_from_defaults(cnf, defaults):
     return cnf
 
 
-def _load_configs(sys_cnf, run_cnf):
+def load_configs(sys_cnf, run_cnf):
     defaults_config_path = join(dirname(dirname(realpath(__file__))), join('source', 'defaults.yaml'))
 
     sys_config_path = abspath(sys_cnf)
@@ -306,6 +308,7 @@ def set_up_dirs(cnf):
     cnf['output_dir'] = realpath(expanduser(cnf['output_dir']))
 
     safe_mkdir(cnf['output_dir'], 'output_dir')
+    info('Saving into ' + cnf['output_dir'])
 
     work_dir_name = 'work_' + cnf['name']
     cnf['work_dir'] = join(cnf['output_dir'], work_dir_name)

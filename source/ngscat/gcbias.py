@@ -143,7 +143,7 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
                     currentKey[0]] = 1  # Stores all chromosomes to be examined (the ones contained in the target file)
 
             # Load BED file -> since coverage information is in 1-base format, BED format must be transformed to 1-base
-            bed = bed_file.bed_file(bedfilename)
+            bed = bed_file.BedFile(bedfilename)
             sortedBed = bed.sort_bed()
             nonOverlappingBed = sortedBed.non_overlapping_exons(
                 1)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
@@ -197,7 +197,7 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
 
         else:
             print 'Calculating nt content by means of pybedtools...'
-            bed = bed_file.bed_file(bedfilename)
+            bed = bed_file.BedFile(bedfilename)
             sortedBed = bed.sort_bed()
             nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # base one!!!
             finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1

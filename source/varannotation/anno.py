@@ -123,13 +123,18 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         if not verify_file(db_path):
             exit()
 
+    anno_line = ''
     annotations = vcf_conf.get('annotations')
-    # all_fields.extend(annotations)
-    anno_line = ('-info ' + ','.join(annotations)) if annotations else ''
+    if annotations:
+        anno_line = '-info ' + ','.join(annotations)
+
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
+
+    # all_fields.extend(annotations)
+
     def proc_line(line):
         if not line.startswith('#'):
             line = line.replace(' ', '_')
@@ -291,17 +296,20 @@ def _gatk(cnf, input_fpath, bam_fpath):
     annotations = cnf['gatk'].get('annotations', [])
 
     # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
+
     gatk_type = get_gatk_type(get_java_tool_cmdline(cnf, 'gatk'))
     for ann in annotations:
         if ann == 'DepthOfCoverage' and gatk_type == 'restricted':
             info('Notice: in the restricted Gatk version, DepthOfCoverage '
-                 'is renamed to Coverage. Using the name Coverage.\n')
+                 'is renamed to Coverage. Using the name Coverage.')
+            info()
             ann = 'Coverage'
         if ann == 'Coverage' and gatk_type == 'lite':
             info('Notice: in the lite Gatk version, the Coverage annotation '
                  'goes by name of DepthOfCoverage. '
                  'In the system config, the lite version of Gatk is '
-                 'specified; using DepthOfCoverage.\n')
+                 'specified; using DepthOfCoverage.')
+            info()
             ann = 'DepthOfCoverage'
         cmdline += " -A " + ann
 

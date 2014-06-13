@@ -9,7 +9,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.runner import run_one
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources, check_inputs
 from source.utils import info
 
 
@@ -17,9 +17,6 @@ REPORT_TYPES = 'summary,genes'
 
 
 def main(args):
-    required_keys = ['bam', 'bed']
-    optional_keys = []
-
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], 'FILE.bam', {
@@ -46,21 +43,36 @@ def main(args):
             #     'default': ','.join(map(int, [5, 10, 25, 50, 100, 500, 1000, 5000,
             #                                   10000, 50000, 100000, 500000]))}),
         ],
-        required_keys=required_keys,
-        optional_keys=optional_keys,
         key_for_sample_name='bam')
 
-    check_system_resources(cnf, ['samtools', 'bedtools'])
-    load_genome_resources(cnf, ['chr_lengths', 'genes', 'exons'])
+    check_system_resources(
+        cnf,
+        required=['samtools', 'bedtools'],
+        optional=[])
+
+    load_genome_resources(
+        cnf,
+        required=['chr_lengths', 'genes', 'exons'],
+        optional=[])
+
+    check_inputs(cnf,
+        required_keys=['bam', 'bed'],
+        file_keys=['bam', 'bed'])
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot make coverage reports.')
 
-    run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
+    info('Using alignement ' + cnf['bam'])
+    info('Using amplicons/capture panel ' + cnf['bed'])
+
+    run_one(cnf, process_one, finalize_one)
 
 
-def process_one(cnf, *inputs):
-    return run_target_cov(cnf, *inputs)
+def process_one(cnf):
+    bed_fpath = cnf['bed']
+    bam_fpath = cnf['bam']
+
+    return run_target_cov(cnf, bam_fpath, bed_fpath)
 
 
 def finalize_one(cnf, summary_report_fpath, gene_report_fpath):

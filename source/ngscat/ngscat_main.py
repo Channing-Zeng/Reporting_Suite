@@ -43,7 +43,7 @@ def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongrant
         coveragebedgraph = join(outdir, 'data', legend[i][:-len('bam')] + 'bed')
 
         print 'Coveragefile = ' + coveragefile
-        bam = bam_file.bam_file(bamfilename, 'rb')
+        bam = bam_file.BamFile(bamfilename, 'rb')
 
         print 'Launching coverageBed...'
         Pcoveragebed = multiprocessing.Process(target=bam.myCoverageBed, args=(
@@ -123,10 +123,10 @@ def launch_onoff_reads(bamfilenames, bedfilename, legend, outdir, executiongrant
     onduplicates = multiprocessing.Array('f', len(bamfilenames))
     offduplicates = multiprocessing.Array('f', len(bamfilenames))
 
-    bam = bam_file.bam_file(bamfilenames[0], 'rb')
+    bam = bam_file.BamFile(bamfilenames[0], 'rb')
     print 'Launching on/off target enrichment calculation...'
     Ponoff_reads = multiprocessing.Process(target=bam.reads_on_target, args=(
-    bedfilename, outdir, [bam_file.bam_file(bamfilenames[i]) for i in range(1, len(bamfilenames))],
+    bedfilename, outdir, [bam_file.BamFile(bamfilenames[i]) for i in range(1, len(bamfilenames))],
     legend, executiongranted, onoff_status, duplicates_status, onduplicates,
     offduplicates, enrichment, percontarget, config.warnontarget,))
     Ponoff_reads.start()
@@ -150,7 +150,7 @@ def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfil
 
 def launch_offclusters(bedgraphfilenames, bedfilename, executiongranted):
     ### sorting all at once and reuse in the future
-    bed = bed_file.bed_file(bedfilename)
+    bed = bed_file.BedFile(bedfilename)
     extendedBed = bed.extendnoref(config.offtargetoffset)
     sortedBed = extendedBed.sort_bed()
     nonOverlappingBed = sortedBed.non_overlapping_exons(-1)  # Base 0, it is a standard BED
@@ -244,7 +244,7 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
     jsonstr = ''
     for i, bam in enumerate(bamfilenames):
         jsonstr += '{"bamfile":"' + bam + '"'
-        jsonstr += ',"nreads":' + str(bam_file.bam_file(sortedbams[i]).nreads())
+        jsonstr += ',"nreads":' + str(bam_file.BamFile(sortedbams[i]).nreads())
         jsonstr += ',"coveredbases":' + str(coveredbases[i])
 
         if (coverage_saturation_status <> None):
@@ -269,7 +269,7 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
     for i, bam in enumerate(bamfilenames):
         summaryrows += '<tr>\n'
         summaryrows += '<td class="table-cell"> ' + bam + '</td>'
-        summaryrows += '<td class="table-cell"> ' + str(bam_file.bam_file(sortedbams[i]).nreads()) + ' </td>'
+        summaryrows += '<td class="table-cell"> ' + str(bam_file.BamFile(sortedbams[i]).nreads()) + ' </td>'
         summaryrows += '<td class="table-cell">%.1f' % (coveredbases[i]) + '% </td>'
 
         if (coverage_saturation_status <> None):
@@ -317,7 +317,7 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
         reportcontent = reportcontent.replace('<SUMMARYCOVCORRELATION>', '')
 
     reportcontent = reportcontent.replace('<SUMMARYCOVERAGETHRS>', str(coveragethresholds[0]))
-    reportcontent = reportcontent.replace('<SUMMARYTARGETSIZE>', str(bed_file.bed_file(bedfilename).size()))
+    reportcontent = reportcontent.replace('<SUMMARYTARGETSIZE>', str(bed_file.BedFile(bedfilename).size()))
 
 
     # ********************************************************* Detailed results ******************************************************************
@@ -487,7 +487,7 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
         pysam.index(filelink)
         print '    Done.'
 
-        if (not bam_file.bam_file(filelink).issorted()):
+        if (not bam_file.BamFile(filelink).issorted()):
             print 'WARNING: ' + bamfilename + ' is not sorted'
             print 'Sorting...'
             newsortedbam_fpath = intermediate_fname(cnf, bamfilename, 'sorted')
@@ -500,7 +500,7 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
             sortedbams.append(filelink)
 
     if (saturation and depthlist == 'auto'):
-        maxdepth = max([bam_file.bam_file(bamfilename).nreads() for bamfilename in sortedbams])
+        maxdepth = max([bam_file.BamFile(bamfilename).nreads() for bamfilename in sortedbams])
         depthlist = numpy.arange(maxdepth / 5.0, maxdepth + (maxdepth / 5.0) - 1, maxdepth / 5.0)
         depthlist = depthlist / 1000000.0
 
@@ -508,13 +508,13 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
     executiongranted = multiprocessing.Semaphore(nthreads)
 
     if (extend <> None):
-        bedfilename = bed_file.bed_file(originalbedfilename).extendnoref(extend).filename
+        bedfilename = bed_file.BedFile(originalbedfilename).extendnoref(extend).filename
     else:
         bedfilename = originalbedfilename
 
     if onefeature == None or onefeature == 'specificity' or onefeature == 'gcbias':
         ### sorting all at once and reuse in the future
-        bed = bed_file.bed_file(bedfilename)
+        bed = bed_file.BedFile(bedfilename)
         sortedBed = bed.sort_bed()
         nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # This generates a BED file in base 1 (Non-standard BED)
         nonOverlappingBed.sort_bed()

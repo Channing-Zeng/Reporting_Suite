@@ -3,7 +3,8 @@ import textwrap
 from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
-from source.utils import info, verify_file, step_greetings, human_sorted
+from source.utils import info, verify_file, human_sorted
+from source.logger import step_greetings
 
 import matplotlib
 import matplotlib.pyplot

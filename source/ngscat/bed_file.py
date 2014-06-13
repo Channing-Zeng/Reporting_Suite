@@ -2,14 +2,49 @@ import os
 import numpy
 import string
 import region
-from os.path import join, basename
+from os.path import join, basename, expanduser
 from source.bcbio_utils import file_exists
-from source.utils import intermediate_fname, call, get_tool_cmdline, info
+from source.logger import err
+from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
 
 import config
 
 
-class bed_file:
+def verify_bam(fpath):
+    if not verify_file(fpath):
+        return False
+
+    fpath = expanduser(fpath)
+
+    if not fpath.endswith('.bam'):
+        err('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
+            'extension. Please, make sure you pass proper file.')
+        return False
+
+    textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
+    is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
+    if not is_binary_string(open(fpath).read(3)):
+        err('The BAM file ' + fpath + ' must be a binary file.')
+        return False
+
+    return True
+
+
+def verify_bed(fpath):
+    if not verify_file(fpath):
+        return False
+
+    fpath = expanduser(fpath)
+
+    error = BedFile(fpath).checkformat()
+    if error:
+        err('Error: incorrect bed file format (' + fpath + '): ' + err + '\n')
+        return False
+
+    return True
+
+
+class BedFile:
     def __init__(self, _filename):
         self.filename = _filename
         self.chrs = None
@@ -91,7 +126,7 @@ class bed_file:
             out_fpath = intermediate_fname(cnf, self.filename, 'extended_' + str(n))
 
         if file_exists(out_fpath):
-            return bed_file(out_fpath)
+            return BedFile(out_fpath)
 
         lengths = self.load_chr_lengths()
 
@@ -105,7 +140,7 @@ class bed_file:
         fd.close()
         fdw.close()
 
-        return bed_file(out_fpath)
+        return BedFile(out_fpath)
 
     def extendnoref(self, n, output_fpath=None):
         """*******************************************************************************************************************************************
@@ -124,7 +159,7 @@ class bed_file:
 
         if file_exists(output_fpath):
             #info(output_fpath + ' exists, reusing!')
-            return bed_file(output_fpath)
+            return BedFile(output_fpath)
 
         # Each region in each line is extended +-n bases
         fd = open(self.filename)
@@ -136,7 +171,7 @@ class bed_file:
         fd.close()
         fdw.close()
 
-        return bed_file(output_fpath)
+        return BedFile(output_fpath)
 
     def load(self):
         """************************************************************************************************************************************************************
@@ -304,7 +339,7 @@ class bed_file:
                                               'noOverlapping_base' + str(baseCodification))
         if file_exists(output_fpath):
             #info(output_fpath + ' exists, reusing!')
-            return bed_file(output_fpath)
+            return BedFile(output_fpath)
 
         chromosomes = []
         start_positions = []
@@ -381,7 +416,7 @@ class bed_file:
             fdw.write(str(chromosomes[i]) + '\t' + str(start_positions[i]) + '\t' + str(end_positions[i]) + '\n')
         fdw.close()
 
-        return bed_file(output_fpath)
+        return BedFile(output_fpath)
 
     def sort_bed(self):
         """************************************************************************************************************************************************************
@@ -395,10 +430,10 @@ class bed_file:
         output_fpath = intermediate_fname(cnf, self.filename, 'sorted')
         if file_exists(output_fpath):
             #info(output_fpath + ' exists, reusing!')
-            return bed_file(output_fpath)
+            return BedFile(output_fpath)
         cmdline = "%s sort -i %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename)
         call(cnf, cmdline, output_fpath)
-        return bed_file(output_fpath)
+        return BedFile(output_fpath)
 
     def size(self):
         """************************************************************************************************************************************************************

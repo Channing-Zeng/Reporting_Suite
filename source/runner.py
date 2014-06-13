@@ -64,18 +64,17 @@ def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,
         shutil.rmtree(cnf['work_dir'])
 
 
-def run_one(cnf, required_inputs, optional_inputs,
-            process_one_fun, finalize_one_fun=None,
+def run_one(cnf, process_one_fun, finalize_one_fun=None,
             multiple_samples=False):
 
     with make_tmpdir(cnf):
 
-        input_fpaths = []
-        for key in required_inputs:
-            input_fpaths.append(cnf[key])
-        for key in optional_inputs:
-            if key in cnf:
-                input_fpaths.append(cnf[key])
+        # input_fpaths = []
+        # for key in required_inputs:
+        #     input_fpaths.append(cnf[key])
+        # for key in optional_inputs:
+        #     if key in cnf:
+        #         input_fpaths.append(cnf[key])
 
         if multiple_samples:
             info('')
@@ -83,11 +82,11 @@ def run_one(cnf, required_inputs, optional_inputs,
             msg = '*' * 3 + ' Sample ' + cnf['name'] + ' '
             info(msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
 
-            info('Input:')
-            for fpath in input_fpaths:
-                info('  ' + fpath)
+            # info('Input:')
+            # for fpath in input_fpaths:
+            #     info('  ' + fpath)
 
-        results_one = process_one_fun(cnf, *input_fpaths)
+        results_one = process_one_fun(cnf)
 
         if finalize_one_fun:
             info('')

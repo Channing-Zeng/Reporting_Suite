@@ -9,7 +9,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources, check_inputs
 from source.runner import run_one
 from source.varannotation.tsv import make_tsv
 from source.varannotation.anno import run_annotators
@@ -17,12 +17,9 @@ from source.utils import info
 
 
 def main(args):
-    required_keys = ['vcf']
-    optional_keys = ['bam']
-
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--var', '--vcf'], 'variants.vcf', {
+            (['--vcf', '--var'], 'variants.vcf', {
              'dest': 'vcf',
              'help': 'variants to annotate'}),
 
@@ -36,20 +33,26 @@ def main(args):
              'action': 'store_true',
              'default': False}),
         ],
-        required_keys=required_keys,
-        optional_keys=optional_keys,
         key_for_sample_name='vcf')
 
     check_system_resources(cnf,
         required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'],
         optional=[])
+
     load_genome_resources(cnf,
         required=['seq', 'snpeff'],
         optional=['dbsnp', 'cosmic'])
 
+    check_inputs(cnf,
+         required_keys=['vcf'],
+         file_keys=['bam', 'vcf'])
+
     set_up_snpeff(cnf)
 
-    run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
+    info('Using variants ' + cnf['vcf'])
+    info('Using alignement ' + cnf['bam'])
+
+    run_one(cnf, process_one, finalize_one)
 
 
 def set_up_snpeff(cnf):
@@ -59,7 +62,10 @@ def set_up_snpeff(cnf):
         del cnf['clinical_reporting']
 
 
-def process_one(cnf, vcf_fpath, bam_fpath=None):
+def process_one(cnf):
+    vcf_fpath = cnf['vcf']
+    bam_fpath = cnf['bam']
+
     if cnf.get('filter_reject'):
         vcf_fpath = filter_rejected(cnf, vcf_fpath)
 

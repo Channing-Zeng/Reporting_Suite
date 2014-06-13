@@ -48,7 +48,7 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
 
         # Threads are launched for each bam and depth point. If provided depth values are greater than the number of reads in the bam file, the maximum depth
         # value to be used will be the number of reads in the bam and no more threads will be launched.
-        nreads_bam = bam_file.bam_file(bam).nreads()
+        nreads_bam = bam_file.BamFile(bam).nreads()
         sorteddepths = depthlist
         sorteddepths.sort()
         if (nreads_bam >= (sorteddepths[1] * 1000000)):

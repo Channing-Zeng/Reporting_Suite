@@ -4,8 +4,8 @@ from os import mkdir
 from os.path import basename, join
 
 from source.bcbio_utils import file_exists
-from source.logger import info
-from source.utils import call_subprocess, get_tool_cmdline, step_greetings, bgzip_and_tabix_vcf
+from source.logger import info, step_greetings
+from source.utils import call_subprocess, get_tool_cmdline, bgzip_and_tabix_vcf
 
 
 def bcftools_qc(cnf, qc_dir, vcf_fpath):

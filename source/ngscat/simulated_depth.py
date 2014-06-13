@@ -18,7 +18,7 @@ def simulated_depth(bam, target, depth, coveragethreshold, fileout, executiongra
     if (executiongranted <> None):
         executiongranted.acquire()
 
-    bam = bam_file.bam_file(bam, 'rb')
+    bam = bam_file.BamFile(bam, 'rb')
     [positions, coverage, chromosomes, processedbed] = bam.myCoverageBed(target, depth * 1000000)
 
     #    totalregions = sum([len(processedbed.chrs[chr]) for chr in processedbed.chrs])

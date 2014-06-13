@@ -1,10 +1,8 @@
 import gc
-import time
 import pysam
 import os
 import sys
 import string
-import sets
 import config
 from source.utils import call, get_tool_cmdline, info, intermediate_fname, call_check_output
 
@@ -43,7 +41,7 @@ def filter_unmapped_reads(cnf, bam_fpath):
 # end of aux functions
 
 
-class bam_file(pysam.Samfile):
+class BamFile(pysam.Samfile):
     def __init__(self, _filename=None, mode='rb', header=None):
         #		self.filename = _filename
         self._nreads = None
@@ -54,7 +52,7 @@ class bam_file(pysam.Samfile):
     def issorted(self):
         print 'Checking sorting of ' + self.filename
 
-        visitedcontigs = sets.Set()
+        visitedcontigs = set()
         previouscontig = None
         previousstart = None
         previousend = None
@@ -249,7 +247,7 @@ class bam_file(pysam.Samfile):
 
         pysam.index(sortedBAMfilename + '.bam')
 
-        return bam_file(sortedBAMfilename + '.bam', 'rb')
+        return BamFile(sortedBAMfilename + '.bam', 'rb')
 
     def myCoverageBed(self, target, numberReads=None, writeToFile=None, executiongranted=None,
                       bedGraphFile=None):
@@ -297,7 +295,7 @@ class bam_file(pysam.Samfile):
         #chromosomeCoordinatesOffTarget={}# Dictionary that controls, for a given chromosome, its starting position and end position in the previous off target arrays -> finally not used
 
         # Load target file, remove overlapping regions, sort it and load it
-        bed = bed_file.bed_file(target)
+        bed = bed_file.BedFile(target)
         sortedBed = bed.sort_bed()
         nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # Base 1!!! # This generates a BED file in base 1 (Non-standard BED)
         finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1 (Non-standard BED)
@@ -608,7 +606,7 @@ class bam_file(pysam.Samfile):
         *******************************************************************************************************************************************"""
 
         # Load target file, remove overlapping regions, sort it and load it
-        bed = bed_file.bed_file(target)
+        bed = bed_file.BedFile(target)
         sortedBed = bed.sort_bed()
         nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # Base-1 indexing
         finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1 (Non-standard BED)
@@ -1152,7 +1150,7 @@ class bam_file(pysam.Samfile):
             onduplicates.append(onduplicates_tmp);
             offduplicates.append(offduplicates_tmp)
 
-        bedobj = bed_file.bed_file(bed)
+        bedobj = bed_file.BedFile(bed)
         targetsize = bedobj.size()
 
         # If enrichment was not provided as a parameter a new list of floats is created
