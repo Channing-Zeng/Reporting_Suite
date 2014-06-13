@@ -27,6 +27,15 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
     _print_full_report(full_report, output_summary_fpath)
 
 
+def summarize_cov_gene(report_fpaths, output_summary_fpath, report_suffix=None):
+    gene_summary_lines = []
+    for report_fpath in report_fpaths:
+        gene_summary_lines += parse_report_cov_gene(report_fpath, "Gene-Amplicon")
+
+    print_full_report_gene(gene_summary_lines,  output_summary_fpath)
+
+
+
 def _get_sample_name(report_fpath, report_suffix=None):
     if report_fpath.endswith(report_suffix):
         return basename(report_fpath)[:-len(report_suffix)]
@@ -71,6 +80,20 @@ def _parse_report_cov(report_fpath):
     return report_dict
 
 
+def parse_report_cov_gene(report_fpath, line_type):
+    gene_summary_lines =[]
+
+    with open(report_fpath, 'r') as f:
+        for line in f:
+            if line.find(line_type)> -1:
+                cur_value = line.split()
+                gene_summary_lines.append('\t'.join(cur_value[:8]))
+
+    return gene_summary_lines
+
+
+
+
 def _add_to_full_report(full_report, sample_name, report_dict):
     full_report[0].append(sample_name)
     if len(full_report) == 1:
@@ -94,5 +117,12 @@ def _print_full_report(report, report_filename):
     for row in report:
         out.write('\t'.join(row) + '\n')
     out.close()
+
+def print_full_report_gene(report, report_filename):
+    with open(report_filename, 'w') as out:
+        for row in report:
+            out.write(row + '\n')
+
+
 
 

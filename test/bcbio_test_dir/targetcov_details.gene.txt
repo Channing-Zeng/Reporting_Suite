@@ -1,0 +1,12 @@
+sample1	chrM	0	1000	DQ582201	Gene-Amplicon	1000	1052.66
+sample1	chrM	0	1000	JB137816	Gene-Amplicon	1000	1052.66
+sample1	chrM	2000	4500	TVAS5	Gene-Amplicon	1500	984.02
+sample1	chrM	6000	8000	BC018860	Gene-Amplicon	2000	0.00
+sample1	chrM	6000	8000	OK/SW-cl.16	Gene-Amplicon	2000	0.00
+sample1	chrM	6000	8000	JA760602	Gene-Amplicon	2000	0.00
+sample2	chrM	0	1000	DQ582201	Gene-Amplicon	1000	1052.66
+sample2	chrM	0	1000	JB137816	Gene-Amplicon	1000	1052.66
+sample2	chrM	2000	4500	TVAS5	Gene-Amplicon	1500	984.02
+sample2	chrM	6000	8000	BC018860	Gene-Amplicon	2000	0.00
+sample2	chrM	6000	8000	OK/SW-cl.16	Gene-Amplicon	2000	0.00
+sample2	chrM	6000	8000	JA760602	Gene-Amplicon	2000	0.00
