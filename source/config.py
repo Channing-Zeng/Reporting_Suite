@@ -28,8 +28,8 @@ class Defaults():
     reuse_intermediate = True
     keep_intermediate = True
 
-    sys_cnf_path = 'system_info_Waltham.yaml'
-    run_cnf_path = 'run_info.yaml'
+    sys_cnf = 'system_info_Waltham.yaml'
+    run_cnf = 'run_info.yaml'
 
     bcbio_final_dir = getcwd()
     steps = ['IndelFilter', 'VarAnnotate', 'VarQC', 'FilterVariants', 'TargetCoverage', 'NGSCat', 'QualiMap']
@@ -72,8 +72,8 @@ class Config():
 
         self.__dict__ = _load(sys_cnf_fpath, run_cnf_fpath)
 
-        self.sys_cnf_fpath = sys_cnf_fpath
-        self.run_cnf_fpath = run_cnf_fpath
+        self.sys_cnf = sys_cnf_fpath
+        self.run_cnf = run_cnf_fpath
 
         for k, v in cmd_line_opts.items():
             if k not in self.__dict__ or v is not None:
@@ -109,6 +109,9 @@ class Config():
     def __delitem__(self, key):
         del self.__dict__[key]
 
+    def __repr__(self):
+        return self.__dict__.__repr__()
+
 
 
 def _load(sys_cnf_fpath, run_cnf_fpath):
@@ -135,16 +138,20 @@ def _fill_dict_from_defaults(cur_cnf, defaults_dict):
 
 
 def _check_paths(sys_cnf, run_cnf):
-    sys_cnf_path = abspath(expanduser(sys_cnf))
-    run_cnf_path = abspath(expanduser(run_cnf))
-
     to_exit = False
 
-    for fn in [sys_cnf_path, run_cnf_path]:
+    info('Using ' + sys_cnf + ' as a system configuration file.')
+    info('Using ' + run_cnf + ' as a run configuration file.')
+    info()
+
+    for fn in [sys_cnf, run_cnf]:
         if not verify_file(fn, 'Config'):
             to_exit = True
     if to_exit:
         sys.exit(1)
+
+    sys_cnf_path = abspath(expanduser(sys_cnf))
+    run_cnf_path = abspath(expanduser(run_cnf))
 
     for fn in [sys_cnf_path, run_cnf_path]:
         if not fn.endswith('.yaml'):
@@ -153,10 +160,6 @@ def _check_paths(sys_cnf, run_cnf):
             to_exit = True
     if to_exit:
         sys.exit(1)
-
-    info('Using ' + sys_cnf_path + ' as a system configuration file.')
-    info('Using ' + run_cnf_path + ' as a run configuration file.')
-    info()
 
     return sys_cnf_path, run_cnf_path
 

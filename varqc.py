@@ -26,6 +26,8 @@ def main(args):
                 help='variants to evaluate')
              ),
         ],
+        required_keys=['vcf'],
+        file_keys=['vcf'],
         key_for_sample_name='vcf')
 
     check_system_resources(cnf,
@@ -35,10 +37,6 @@ def main(args):
     load_genome_resources(cnf,
         required=['seq', 'dbsnp'],
         optional=['cosmic', '1000genomes'])
-
-    check_inputs(cnf,
-        required_keys=['vcf'],
-        file_keys=['vcf'])
 
     if 'quality_control' not in cnf:
         critical('No quality_control section in the report, cannot run quality control.')

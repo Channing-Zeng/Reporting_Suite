@@ -12,7 +12,10 @@ from source.utils import verify_file, safe_mkdir, verify_dir, make_tmpdir
 from source.ngscat.bed_file import verify_bam, verify_bed
 
 
-def read_opts_and_cnfs(extra_opts, key_for_sample_name):
+def read_opts_and_cnfs(extra_opts,
+                       key_for_sample_name,
+                       required_keys,
+                       file_keys):
     options = extra_opts + [
         (['-o', '--output_dir'], dict(
              dest='output_dir',
@@ -39,13 +42,13 @@ def read_opts_and_cnfs(extra_opts, key_for_sample_name):
              metavar='SYS_CNF.yaml',
              help='system configuration yaml with paths '
                   'to external tools and genome resources '
-                  '(see default one %s)' % Defaults.sys_cnf_path)
+                  '(see default one %s)' % Defaults.sys_cnf)
          ),
         (['--run-cnf'], dict(
              dest='run_cnf',
              metavar='RUN_CNF.yaml',
              help='run configuration yaml (see default one %s)'
-                  % Defaults.run_cnf_path)
+                  % Defaults.run_cnf)
          ),
     ]
 
@@ -58,10 +61,12 @@ def read_opts_and_cnfs(extra_opts, key_for_sample_name):
 
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    assert key_for_sample_name
+    check_inputs(cnf, required_keys, file_keys)
+
+    assert key_for_sample_name and cnf[key_for_sample_name]
     if key_for_sample_name not in cnf:
         critical('Error: ' + key_for_sample_name + ' must be provided '
-                 'in options or in ' + cnf.run_cnf_fpath + '.')
+                 'in options or in ' + cnf.run_cnf + '.')
 
     key_fname = basename(cnf.get(key_for_sample_name))
     cnf.name = cnf.get('name') or key_fname.split('.')[0].split('-')[0]
@@ -84,16 +89,18 @@ def check_inputs(cnf, required_keys, file_keys):
         return True
 
     for key in required_keys:
-        if not key or key not in cnf:
+        if key not in cnf or not cnf[key]:
             to_exit = True
-            err('Error: ' + key + ' must be provided in options or '
-                'in ' + cnf['run_config_fpath'] + '.')
+            err('Error: "' + key + '" must be provided in options or '
+                'in ' + cnf.run_cnf + '.')
+    if to_exit:
+        sys.exit(1)
+
 
     for key in file_keys:
         if key and key in cnf:
             if not _verify_input(key):
                 to_exit = True
-
     if to_exit:
         sys.exit(1)
 
@@ -203,7 +210,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
 
 
 def set_up_dirs(cnf):
-    """ Creates output_dir, work_dir, tmp_dir; sets up log
+    """ Creates output_dir, work_dir; sets up log
     """
     cnf.output_dir = realpath(expanduser(cnf.output_dir))
 
@@ -216,8 +223,6 @@ def set_up_dirs(cnf):
         rmtree(cnf.work_dir)
 
     safe_mkdir(cnf.work_dir, 'working directory')
-
-    cnf.tmp_dir = make_tmpdir(cnf)
 
     cnf.log = join(cnf.work_dir, cnf.name + '_log.txt')
     logger.log_fname = cnf.log

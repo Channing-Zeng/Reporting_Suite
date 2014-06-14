@@ -33,15 +33,13 @@ def main(args):
             #  'default': 0.15,
             #  }),
         ],
+        required_keys=['vcf', 'expression'],
+        file_keys=['vcf'],
         key_for_sample_name='vcf')
 
     check_system_resources(cnf,
         required=['java', 'snpsift'],
         optional=[])
-
-    check_inputs(cnf,
-         required_keys=['vcf', 'expression'],
-         file_keys=['vcf'])
 
     if 'expression' in cnf:
         cnf['variant_filtering'] = {'expression': cnf['expression']}

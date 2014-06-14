@@ -53,20 +53,20 @@ def verify_module(name):
 
 def verify_file(fpath, description=''):
     if not fpath:
-        sys.stderr.write((description + ': f' if description else 'F') + 'ile name is empty.\n')
+        err((description + ': f' if description else 'F') + 'ile name is empty.')
         return False
 
     fpath = expanduser(fpath)
     if not exists(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        err((description + ': ' if description else '') + fpath + ' does not exist.')
         return False
 
     if not isfile(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a file.\n')
+        err((description + ': ' if description else '') + fpath + ' is not a file.')
         return False
 
     if getsize(fpath) <= 0:
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' is empty.\n')
+        err((description + ': ' if description else '') + fpath + ' is empty.')
         return False
 
     return True
@@ -74,16 +74,16 @@ def verify_file(fpath, description=''):
 
 def verify_dir(fpath, description=''):
     if not fpath:
-        sys.stderr.write((description + ': d' if description else 'D') + 'ir name is empty.\n')
+        err((description + ': d' if description else 'D') + 'ir name is empty.')
         return False
 
     fpath = expanduser(fpath)
     if not exists(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' does not exist.\n')
+        err((description + ': ' if description else '') + fpath + ' does not exist.')
         return False
 
     if not isdir(fpath):
-        sys.stderr.write((description + ': ' if description else '') + fpath + ' is not a directory.\n')
+        err((description + ': ' if description else '') + fpath + ' is not a directory.')
         return False
 
     return True
@@ -333,7 +333,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         stdout_to_outputfile = False
 
     # NEEDED TO REUSE?
-    if output_fpath and cnf.get('reuse_intermediate') and overwrite is False:
+    if output_fpath and cnf.reuse_intermediate and overwrite is False:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
@@ -347,6 +347,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     err_fpath = None
     _, err_fpath = make_tmpfile(cnf, prefix='err_tmp')
     to_remove.append(err_fpath)
+
+    def clean():
+        for fpath in to_remove:
+            if fpath and isfile(fpath):
+                os.remove(fpath)
+
+        if not cnf.keep_intermediate and input_fpath_to_remove:
+            os.remove(input_fpath_to_remove)
 
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None):
@@ -368,13 +376,16 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     stderr = subprocess.STDOUT
 
             if check_output:
-                return subprocess.check_output(
+                res = subprocess.check_output(
                     cmdl, shell=True, stderr=stderr, stdin=open(stdin_fpath) if stdin_fpath else None)
+                clean()
+                return res
 
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
                                     stdin=open(stdin_fpath) if stdin_fpath else None)
             if return_proc:
                 # TODO: make this yield (as well as other returns), move cleaning to finally, and use this function from with statement
+                clean()
                 return proc
 
             else:
@@ -395,6 +406,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 err('Command returned status ' + str(ret_code) +
                     ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
                 if exit_on_error:
+                    clean()
                     sys.exit(1)
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
@@ -425,13 +437,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
                 err('Command returned status ' + str(ret_code) +
-                    ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                    ('. Log in ' + cnf.log if 'log' in cnf else '.'))
                 if exit_on_error:
+                    clean()
                     sys.exit(1)
             else:
-                if cnf.get('log') and err_fpath:
+                if cnf.log and err_fpath:
                     with open(err_fpath) as err_f, \
-                         open(cnf.get('log'), 'a') as log_f:
+                         open(cnf.log, 'a') as log_f:
                         log_f.write('')
                         log_f.write(err_f.read())
                         log_f.write('')
@@ -442,18 +455,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     else:
         res = do(cmdline)
         if res is not None:
+            clean()
             return res
 
-    # REMOVE UNNESESSARY
-    for fpath in to_remove:
-        if fpath and isfile(fpath):
-            os.remove(fpath)
-
-    if not cnf.get('keep_intermediate') and input_fpath_to_remove:
-        os.remove(input_fpath_to_remove)
+    clean()
 
     if output_fpath and not output_is_dir:
         info('Saved to ' + output_fpath)
+
     return output_fpath
 
 

@@ -33,6 +33,8 @@ def main(args):
                 action='store_true')
              ),
         ],
+        required_keys=['vcf'],
+        file_keys=['bam', 'vcf'],
         key_for_sample_name='vcf')
 
     check_system_resources(cnf,
@@ -42,10 +44,6 @@ def main(args):
     load_genome_resources(cnf,
         required=['seq', 'snpeff'],
         optional=['dbsnp', 'cosmic'])
-
-    check_inputs(cnf,
-         required_keys=['vcf'],
-         file_keys=['bam', 'vcf'])
 
     set_up_snpeff(cnf)
 

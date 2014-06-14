@@ -187,8 +187,8 @@ This script runs reporting suite on the bcbio final directory.
     parser.add_option('-v', dest='verbose', action='store_true', default=False, help='Verbose')
     parser.add_option('-t', dest='threads', type='int', default=4, help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', default=False, help='Overwrite existing results')
-    parser.add_option('--sys-cnf', dest='sys_cnf', default=Defaults.sys_cnf_path, help='system configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf_path)
-    parser.add_option('--run-cnf', dest='run_cnf', default=Defaults.run_cnf_path, help='run configuration yaml (see default one %s)' % Defaults.run_cnf_path)
+    parser.add_option('--sys-cnf', dest='sys_cnf', default=Defaults.sys_cnf, help='system configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--run-cnf', dest='run_cnf', default=Defaults.run_cnf, help='run configuration yaml (see default one %s)' % Defaults.run_cnf)
 
     (opts, args) = parser.parse_args()
 

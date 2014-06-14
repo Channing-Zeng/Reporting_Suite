@@ -65,6 +65,8 @@ def main():
                      'String indicating one of the following features: '
                      '{%s}' % (', '.join(Defaults.ngscat['availablefeatures'])))),
         ],
+        required_keys=['bam', 'bed'],
+        file_keys=['bam', 'bed', 'extra_bam'],
         key_for_sample_name='bam')
 
     check_system_resources(cnf,
@@ -74,10 +76,6 @@ def main():
     load_genome_resources(cnf,
         required=['chr_lengths'],
         optional=[])
-
-    check_inputs(cnf,
-        required_keys=['bam', 'bed'],
-        file_keys=['bam', 'bed', 'extra_bam'])
 
     #load_genome_resources(cnf, ['chr_lengths']) #TODO: check whether it needed at all!
     #chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')

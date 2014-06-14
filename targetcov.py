@@ -44,6 +44,8 @@ def main(args):
                 default=','.join(map(str, Defaults.coverage_reports['depth_thresholds'])))
              ),
         ],
+        required_keys=['bam', 'bed'],
+        file_keys=['bam', 'bed'],
         key_for_sample_name='bam')
 
     check_system_resources(
@@ -55,10 +57,6 @@ def main(args):
         cnf,
         required=['chr_lengths', 'genes', 'exons'],
         optional=[])
-
-    check_inputs(cnf,
-        required_keys=['bam', 'bed'],
-        file_keys=['bam', 'bed'])
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot make coverage reports.')
