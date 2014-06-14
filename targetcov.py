@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from source.config import Defaults
 from source.logger import critical
 from source.targetcov.cov import run_target_cov
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -13,35 +14,35 @@ from source.main import read_opts_and_cnfs, check_system_resources, load_genome_
 from source.utils import info
 
 
-REPORT_TYPES = 'summary,genes'
-
-
 def main(args):
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--bam'], 'FILE.bam', {
-                'dest': 'bam',
-                'help': 'used to generate some annotations by GATK'}),
-
-            (['--bed', '--capture', '--amplicons'], 'FILE.bed', {
-                'dest': 'bed',
-                'help': 'capture panel/amplicons'}),
-
-            (['--padding'], 'N', {
-                'dest': 'padding',
-                'help': 'input regions will be extended by this value in both directions',
-                'default': 250}),
-
-            (['--reports'], REPORT_TYPES, {
-                'dest': 'reports',
-                'help': 'default: --reports ' + REPORT_TYPES,
-                'default': REPORT_TYPES}),
-
-            # (['--depth-thresholds'], 'A,B,C', {
-            #     'dest': 'depth_thresholds',
-            #     'help': 'A,B,C..',
-            #     'default': ','.join(map(int, [5, 10, 25, 50, 100, 500, 1000, 5000,
-            #                                   10000, 50000, 100000, 500000]))}),
+            (['--bam'], dict(
+                dest='bam',
+                help='path to the BAM file')
+             ),
+            (['--bed', '--capture', '--amplicons'], dict(
+                dest='bed',
+                help='capture panel/amplicons')
+             ),
+            (['--padding'], dict(
+                dest='padding',
+                help='integer indicating the number of bases to extend each target region up and down-stream',
+                type='int',
+                default=Defaults.coverage_reports['padding'])
+             ),
+            (['--reports'], dict(
+                dest='reports',
+                metavar=Defaults.coverage_reports['report_types'],
+                help='Comma-separated report names',
+                default=Defaults.coverage_reports['report_types'])
+             ),
+            (['--depth-thresholds'], dict(
+                dest='depth_thresholds',
+                help='A,B,C..',
+                metavar='A,B,C',
+                default=','.join(map(str, Defaults.coverage_reports['depth_thresholds'])))
+             ),
         ],
         key_for_sample_name='bam')
 

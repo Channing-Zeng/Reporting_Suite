@@ -4,11 +4,8 @@ from source.logger import step_greetings
 from source.utils import get_java_tool_cmdline, call_subprocess
 
 
-def gatk_qc(cnf, qc_dir, vcf_fpath):
+def gatk_qc(cnf, vcf_fpath):
     step_greetings('Quality control reports')
-
-    log = cnf['log']
-    work_dir = cnf['work_dir']
 
     qc_cnf = cnf['quality_control']
     databases = qc_cnf.get('database_vcfs')
@@ -16,12 +13,17 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
     metrics = qc_cnf.get('metrics')
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
-    gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
-    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
-        gatk_opts_line += ' -nt ' + str(cnf.get('threads', '1'))
 
-    ref_fpath = cnf['genome']['seq']
-    report_fpath = join(work_dir, cnf['name'] + '_gatk.report')
+    gatk_opts_line = ''
+    if cnf.gatk:
+        if 'options' in cnf.gatk:
+            gatk_opts_line = ' '.join(cnf.gatk['options'])
+
+    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
+        gatk_opts_line += ' -nt ' + str(cnf.threads)
+
+    ref_fpath = cnf.genome['seq']
+    report_fpath = join(cnf.work_dir, cnf.name + '_gatk.report')
 
     cmdline = ('{executable} {gatk_opts_line} -R {ref_fpath} -T VariantEval'
                ' --eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
@@ -37,9 +39,9 @@ def gatk_qc(cnf, qc_dir, vcf_fpath):
 
     report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
 
-    final_report_fpath = join(qc_dir, cnf['name'] + '_qc.report')
+    final_report_fpath = join(cnf.output_dir, cnf.name + '_qc.report')
 
-    _make_final_report(report, final_report_fpath, cnf['name'],
+    _make_final_report(report, final_report_fpath, cnf.name,
                        databases.keys(), novelty, metrics)
     return final_report_fpath
 

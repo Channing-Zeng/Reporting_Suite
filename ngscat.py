@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+from source.config import Defaults
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -25,39 +26,44 @@ def main():
 
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--bam'], 'align.bam', {
-                'dest': 'bam',
-                'help': 'Path to the bam file. Required!'}),
-
-            (['--extra_bam'], 'align2.bam', {
-                'dest': 'extra_bam',
-                'help': 'Additional bam file to compare.'}),
-
-            (['--bed'], 'target_regions.bed', {
-                'dest': 'bed',
-                'help': 'Path to the bed file containing the target regions. Required!'}),
-
-            (['--extend_target'], '<int>', {
-                'dest': 'extend',
-                'help': 'Integer indicating the number of bases to extend each target region up and down-stream'}),
-
-            (['--saturation'], '{y,n}', {
-                'dest': 'saturation',
-                'help': 'Y/n to indicate whether saturation curve should be calculated',
-                'default': 'n'}),
-
-            (['--depth_list'], '<float,float,..>', {
-                'dest': 'depthlist',
-                'help': 'Will only be used in case --saturation is "y". Comma separated list of real numbers '
-                        '(do not leave spaces between) indicating the number of millions of reads to simulate '
-                        'for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6.',
-                'default': 'auto'}),
-
-            (['--one_feature'], '<str>', {
-                'dest': 'feature',
-                'help': "Use this option if just one of the graphs/statistics should be calculated. "
-                        "String indicating one of the following features: "
-                        "{%s}" % (', '.join(config.availablefeatures))}),
+            (['--bam'], dict(
+                dest='bam',
+                help='path to the BAM file')
+             ),
+            (['--extra_bam'], dict(
+                dest='extra_bam',
+                help='additional BAM file to compare')
+             ),
+            (['--bed', '--capture', '--amplicons'], dict(
+                dest='bed',
+                help='capture panel/amplicons')
+             ),
+            (['--padding'], dict(
+                dest='padding',
+                help='integer indicating the number of bases to extend each target region up and down-stream',
+                type='int',
+                default=Defaults.coverage_reports['padding'])
+             ),
+            (['--saturation'], dict(
+                dest='saturation',
+                help='Y/n to indicate whether saturation curve should be calculated',
+                metavar='{y,n}',
+                default=Defaults.ngscat['saturation'])
+             ),
+            (['--depth-list'], dict(
+                dest='depthlist',
+                help='will only be used in case --saturation is "y". Comma separated list of real numbers '
+                     '(do not leave spaces between) indicating the number of millions of reads to simulate '
+                     'for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6.',
+                metavar='<float,float,..>',
+                default=Defaults.ngscat['depthlist'])
+             ),
+            (['--one_feature'], dict(
+                dest='feature',
+                metavar='<str>',
+                help='Use this option if just one of the graphs/statistics should be calculated. '
+                     'String indicating one of the following features: '
+                     '{%s}' % (', '.join(Defaults.ngscat['availablefeatures'])))),
         ],
         key_for_sample_name='bam')
 

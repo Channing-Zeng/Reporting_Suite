@@ -10,13 +10,13 @@ try:
 except ImportError:
     from yaml import Dumper
 
-from source.utils import critical, info, iterate_file, make_tmpdir
+from source.utils import critical, info, iterate_file, tmpdir
 
 
 def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,
             process_one, finalize_one, finalize_all):
 
-    with make_tmpdir(cnf):
+    with tmpdir(cnf):
 
         if not cnfs_by_sample or len(cnfs_by_sample) == 1:
             if cnfs_by_sample:
@@ -67,7 +67,7 @@ def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,
 def run_one(cnf, process_one_fun, finalize_one_fun=None,
             multiple_samples=False):
 
-    with make_tmpdir(cnf):
+    with tmpdir(cnf):
 
         # input_fpaths = []
         # for key in required_inputs:

@@ -1,25 +1,30 @@
 #!/usr/bin/env python
+from os import makedirs
+from os.path import dirname, isdir, basename
 
 import sys
-from source.logger import critical
+from source.bcbio_utils import file_exists
+from source.logger import critical, err
+from source.varqc.stats_gatk import gatk_qc
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources, check_inputs
-from source.runner import run_all, run_one
+from source.runner import run_one
 from source.summarize import summarize_qc
-from source.varqc import qc
-from source.utils import info, verify_module
+from source.utils import info, verify_module, verify_dir, verify_file
 from source.vcf import filter_rejected, extract_sample
 
 
 def main(args):
     cnf = read_opts_and_cnfs(
-        extra_opts=[(['--var', '--vcf'], 'variants.vcf', {
-            'dest': 'vcf',
-            'help': 'variants to evaluate'}),
+        extra_opts=[
+            (['--var', '--vcf'], dict(
+                dest='vcf',
+                help='variants to evaluate')
+             ),
         ],
         key_for_sample_name='vcf')
 
@@ -38,11 +43,83 @@ def main(args):
     if 'quality_control' not in cnf:
         critical('No quality_control section in the report, cannot run quality control.')
 
-    qc.check_quality_control_config(cnf)
+    check_quality_control_config(cnf)
 
     info('Using variants ' + cnf['vcf'])
 
     run_one(cnf, process_one, finalize_one)
+
+
+if verify_module('matplotlib'):
+    import matplotlib
+    matplotlib.use('Agg')  # non-GUI backend
+    from source.varqc.distribution_plots import variants_distribution_plot
+    from source.varqc.stats_bcftools import bcftools_qc
+else:
+    info('Warning: matplotlib is not installed, cannot draw plots.')
+
+
+def check_quality_control_config(cnf):
+    if 'quality_control' not in cnf:
+        critical('No quality_control section in the report, cannot make reports.')
+    qc_cnf = cnf.quality_control
+
+    if 'databases' not in qc_cnf:
+        qc_cnf['databases'] = ['dbsnp']
+        info('Warning: not databases for quality control, using [dbsnp]')
+
+    if 'novelty' not in qc_cnf:
+        qc_cnf['novelty'] = ['all', 'known', 'novel']
+        info('Warning: no novelty specified for quality control, '
+             'using default ' + ', '.join(qc_cnf['novelty']))
+
+    if 'metrics' not in qc_cnf:
+        qc_cnf['metircs'] = [
+           'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+        info('Warning: no metrics for quality control, using '
+             'default ' + ', '.join(qc_cnf['metircs']))
+
+    if 'variants_distribution_scale' not in qc_cnf:
+        qc_cnf['variants_distribution_scale'] = 1000
+        info('Warning: no variants distribution scale specified for quality control, '
+             'using default ' + str(qc_cnf['variants_distribution_scale']))
+
+    to_exit = False
+    dbs_dict = {}
+    for db in qc_cnf['databases']:
+        if not db:
+            err('Empty field for quality_control databases')
+            to_exit = True
+        elif file_exists(db):
+            if not verify_file(db, 'VCF'):
+                to_exit = True
+            dbs_dict[basename(db)] = db
+        elif db not in cnf['genome']:
+            to_exit = True
+            err(db + ' for variant qc is not found '
+                                     'in genome resources in system config.')
+        else:
+            dbs_dict[db] = cnf['genome'][db]
+
+    if to_exit:
+        exit()
+
+    qc_cnf['database_vcfs'] = dbs_dict
+
+    if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
+        qc_output_fpath = qc_cnf.get('summary_output') or\
+                          cnf.get('qc_summary_output')
+        summary_output_dir = dirname(qc_output_fpath)
+        if not isdir(summary_output_dir):
+            try:
+                makedirs(summary_output_dir)
+            except OSError:
+                critical('ERROR: cannot create directory for '
+                         'qc summary report: ' + summary_output_dir)
+        if not verify_dir(summary_output_dir, 'qc_summary_output'):
+            exit()
 
 
 def process_one(cnf):
@@ -54,7 +131,14 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
 
-    return qc.run_qc(cnf, cnf['output_dir'], vcf_fpath)
+    qc_report_fpath = gatk_qc(cnf, vcf_fpath)
+
+    if verify_module('matplotlib'):
+        qc_plots_fpaths = bcftools_qc(cnf, vcf_fpath)
+        qc_var_distr_plot_fpath = variants_distribution_plot(cnf, vcf_fpath)
+        return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_plots_fpaths
+    else:
+        return qc_report_fpath, None
 
 
 def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):

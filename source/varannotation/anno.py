@@ -254,9 +254,14 @@ def _gatk(cnf, input_fpath, bam_fpath):
         index_bam(cnf, bam_fpath)
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
-    gatk_opts_line = ' '.join(cnf.get('gatk', {'options': []}).get('options', []))
+
+    gatk_opts_line = ''
+    if cnf.gatk:
+        if 'options' in cnf.gatk:
+            gatk_opts_line = ' '.join(cnf.gatk['options'])
+
     if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
-        gatk_opts_line += ' -nt ' + str(cnf.get('threads', '1'))
+        gatk_opts_line += ' -nt ' + str(cnf.threads)
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
 

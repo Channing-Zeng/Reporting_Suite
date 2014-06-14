@@ -111,7 +111,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                     if v:
                         col_counts[i] += 1
 
-    with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx:
+    with file_transaction(cnf.tmp_dir, tsv_fpath) as tx:
         with open(tx, 'w') as out, open(tsv_fpath) as f:
             for i, l in enumerate(f):
                 values = [v for v in l.split('\t')]

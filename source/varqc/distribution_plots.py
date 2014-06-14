@@ -10,7 +10,7 @@ import matplotlib
 import matplotlib.pyplot
 
 
-def variants_distribution_plot(cnf, qc_dir, vcf_fpath):
+def variants_distribution_plot(cnf, vcf_fpath):
     step_greetings('Quality control variant distribution plots')
 
     # step 1: get chr lengths
@@ -91,7 +91,7 @@ def variants_distribution_plot(cnf, qc_dir, vcf_fpath):
         fig.suptitle('Chromosomes without variants:', x=0.12, y=0.05, fontsize=fontsize, fontweight='bold', ha='left')
         fig.suptitle(chr_without_variants_wrapped, x=0.12, y=0.03, fontsize=fontsize, ha='left')
 
-    variants_distribution_plot_fpath = join(qc_dir, cnf['name'] + '_qc_variant_distribution.png')
+    variants_distribution_plot_fpath = join(cnf.output_dir, cnf.name + '_qc_variant_distribution.png')
     fig.savefig(variants_distribution_plot_fpath, bbox_inches='tight')
     matplotlib.pyplot.close(fig)
     return variants_distribution_plot_fpath

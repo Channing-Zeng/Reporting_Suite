@@ -10,8 +10,8 @@ from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
 import config
 
 
-def verify_bam(fpath):
-    if not verify_file(fpath):
+def verify_bam(fpath, description=''):
+    if not verify_file(fpath, description):
         return False
 
     fpath = expanduser(fpath)
@@ -30,8 +30,8 @@ def verify_bam(fpath):
     return True
 
 
-def verify_bed(fpath):
-    if not verify_file(fpath):
+def verify_bed(fpath, description=''):
+    if not verify_file(fpath, description):
         return False
 
     fpath = expanduser(fpath)

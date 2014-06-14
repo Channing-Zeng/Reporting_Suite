@@ -15,16 +15,15 @@ from source.utils import info, get_java_tool_cmdline, intermediate_fname, call, 
 def main(args):
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--var', '--vcf'], 'variants.vcf', {
-             'dest': 'vcf',
-             'help': 'variants to annotate'
-             }),
+            (['--vcf', '--var'], dict(
+                dest='vcf',
+                help='file with variants')
+             ),
 
-            (['--expression'], 'EXPRESSION', {
-             'dest': 'expression',
-             'help': 'Filtering line for snpsift'
-             }),
-
+            (['--expression'], dict(
+                dest='expression',
+                help='filtering line for snpsift')
+             ),
             # (['-f'], 'DOUBLE', {
             #  'dest': '',
             #  'type': 'double',
@@ -46,7 +45,6 @@ def main(args):
 
     if 'expression' in cnf:
         cnf['variant_filtering'] = {'expression': cnf['expression']}
-        del cnf['expression']
 
     run_one(cnf, process_one, finalize_one)
 

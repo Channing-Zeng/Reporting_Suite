@@ -89,28 +89,47 @@ def verify_dir(fpath, description=''):
     return True
 
 
-@contextlib.contextmanager
-def make_tmpdir(cnf, prefix='ngs_reporting_tmp'):
-    """Context manager to create and remove a temporary directory.
-
-    This can also handle a configured temporary directory to use.
-    """
-    prev_tmp_dir = cnf.get('tmp_dir')
-
-    base_dir = cnf.get('tmp_base_dir') or cnf['work_dir']
+def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
+    base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
     if not verify_dir(base_dir, 'Base directory for temporary files'):
         sys.exit(1)
-    tmp_dir = tempfile.mkdtemp(dir=base_dir, prefix=prefix)
-    safe_mkdir(tmp_dir)
-    cnf['tmp_dir'] = tmp_dir
+
+    return tempfile.mkdtemp(dir=base_dir, prefix=prefix)
+
+
+@contextlib.contextmanager
+def tmpdir(cnf, *args, **kwargs):
+    prev_tmp_dir = cnf.tmp_dir
+
+    cnf.tmp_dir = make_tmpdir(cnf, *args, **kwargs)
     try:
-        yield tmp_dir
+        yield cnf.tmp_dir
     finally:
         try:
-            shutil.rmtree(tmp_dir)
+            shutil.rmtree(cnf.tmp_dir)
         except OSError:
             pass
-        cnf['tmp_dir'] = prev_tmp_dir
+        cnf.tmp_dir = prev_tmp_dir
+
+
+def make_tmpfile(cnf, *args, **kwargs):
+    base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
+    if not verify_dir(base_dir, 'Base directory for temporary files'):
+        sys.exit(1)
+
+    return tempfile.mkstemp(dir=base_dir, *args, **kwargs)
+
+
+@contextlib.contextmanager
+def tmpfile(cnf, *args, **kwargs):
+    tmp_file, fpath = make_tmpfile(cnf, *args, **kwargs)
+    try:
+        yield tmp_file
+    finally:
+        try:
+            shutil.rmtree(fpath)
+        except OSError:
+            pass
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
@@ -118,12 +137,12 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
                  reuse_intermediate=True):
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
-    if suffix and cnf.get('reuse_intermediate') and reuse_intermediate:
+    if suffix and cnf.reuse_intermediate and reuse_intermediate:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
 
-    with file_transaction(cnf['tmp_dir'], output_fpath) as tx_fpath:
+    with file_transaction(cnf.tmp_dir, output_fpath) as tx_fpath:
         with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
             for i, line in enumerate(vcf):
                 clean_line = line.strip()
@@ -138,7 +157,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
         os.rename(output_fpath, input_fpath)
         output_fpath = input_fpath
     else:
-        if (not cnf.get('keep_intermediate') and
+        if (not cnf.keep_intermediate and
             not keep_original_if_not_keep_intermediate and
                 input_fpath):
             os.remove(input_fpath)
@@ -326,9 +345,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
     err_fpath = None
-    if cnf.get('tmp_dir'):
-        _, err_fpath = tempfile.mkstemp(dir=cnf.get('tmp_dir'), prefix='err_tmp')
-        to_remove.append(err_fpath)
+    _, err_fpath = make_tmpfile(cnf, prefix='err_tmp')
+    to_remove.append(err_fpath)
 
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None):
@@ -419,7 +437,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
 
     if output_fpath and not output_is_dir:
-        with file_transaction(cnf['tmp_dir'], output_fpath) as tx_out_fpath:
+        with file_transaction(cnf.tmp_dir, output_fpath) as tx_out_fpath:
             do(cmdline, tx_out_fpath)
     else:
         res = do(cmdline)

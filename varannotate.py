@@ -19,19 +19,19 @@ from source.utils import info
 def main(args):
     cnf = read_opts_and_cnfs(
         extra_opts=[
-            (['--vcf', '--var'], 'FILE', {
-             'dest': 'vcf',
-             'help': 'variants to annotate'}),
-
-            (['--bam'], 'FILE', {
-             'dest': 'bam',
-             'help': 'used to generate some annotations by GATK'}),
-
-            (['--clinical_reporting'], '', {
-             'dest': 'clinical_reporting',
-             'help': 'used to generate some annotations by GATK',
-             'action': 'store_true',
-             'default': False}),
+            (['--vcf', '--var'], dict(
+                dest='vcf',
+                help='variants to annotate')
+             ),
+            (['--bam'], dict(
+                dest='bam',
+                help='used to generate some annotations by GATK')
+             ),
+            (['--clinical_reporting'], dict(
+                dest='clinical_reporting',
+                help='used to generate some annotations by GATK',
+                action='store_true')
+             ),
         ],
         key_for_sample_name='vcf')
 

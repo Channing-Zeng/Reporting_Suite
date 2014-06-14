@@ -1,36 +1,31 @@
 #!/usr/bin/python
 
 import glob
-import tempfile
 import time
 import sys
 import os
-import optparse
 import string
 import multiprocessing
 import shutil
 import math
+from os.path import join
 
-import pysam
 import numpy
 
+import pysam
 import coverageHisto
 import coverage_target
 import coveragecorr
-
 import bam_file
 import bed_file
 import bedgraph_file
 import target_coverage
-
 import coverage_saturation
 import exon_coverage_std
 import gcbias
-
 import config
-
-from source.utils import verify_file, critical, step_greetings, intermediate_fname
-from os.path import join, expanduser, splitext, basename, isdir, abspath
+from source.logger import step_greetings
+from source.utils import intermediate_fname
 
 
 def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongranted):

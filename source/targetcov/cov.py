@@ -147,7 +147,7 @@ def _run_header_report(cnf, result_fpath,
                                    'x', percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
-    with file_transaction(cnf['tmp_dir'], result_fpath) as tx, open(tx, 'w') as out:
+    with file_transaction(cnf.tmp_dir, result_fpath) as tx, open(tx, 'w') as out:
         for l in stats:
             text, val = l.rsplit(':', 1)
             # spaces = ' ' * (max_len - len(text) + 1)

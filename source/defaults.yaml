@@ -1,9 +1,0 @@
-genome: hg19       ## Loads from "genomes" section from system_config yaml
-
-coverage_reports:
-  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
-
-quality_control:
-  variant_distribution_scale: 1000  ## in kilobases
-
-threads: 1

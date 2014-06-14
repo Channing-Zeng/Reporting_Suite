@@ -69,7 +69,7 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
                     endreached = True
 
                     #            queue.wait()
-                result_fpath = join(cnf['tmp_dir'], jobid)
+                result_fpath = join(cnf.tmp_dir, jobid)
                 newprocess = multiprocessing.Process(target=simulated_depth.simulated_depth, args=(
                 bam, targets[i], depth, coverage, result_fpath, executiongranted,))
                 simulated_depth_processes.append(newprocess)

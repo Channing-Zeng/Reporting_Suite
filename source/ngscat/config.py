@@ -17,8 +17,4 @@ offtargetthreshold = 15
 DATASRC = join(dirname(realpath(__file__)), 'html')
 IMGSRC = join(dirname(realpath(__file__)), 'img')
 
-availablefeatures = [
-    'percbases', 'saturation', 'specificity', 'coveragefreq',
-    'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
-
 cnf = None
