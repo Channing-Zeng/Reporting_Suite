@@ -99,7 +99,7 @@ def strand_bias_filter(linesplit, myFilters):
     abcd = get_format(linesplit, "SC")
     genotypes = get_format(linesplit, "GT")
     SB = False
-    if not abcd == []:
+    if abcd:
         for sample in abcd:
             a, c, b, d = int(sample[0]), int(sample[1]), int(sample[2]), int(sample[3])
             if b == 0 and d == 0 and ["0/0"] in genotypes: # not an indication of strand bias but no evidence for alternate allele
@@ -150,7 +150,7 @@ def get_format(linesplit, key):
                 output.append(samplesplit[myIndex].split(","))
         return output
     else:
-        return None
+        return []
 
 if __name__ == "__main__":
     main()
