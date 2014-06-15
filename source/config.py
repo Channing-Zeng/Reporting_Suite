@@ -1,6 +1,6 @@
 import sys
 from os import getcwd
-from os.path import abspath, expanduser, join
+from os.path import abspath, expanduser, join, dirname
 
 from source.logger import info, err, critical
 from source.utils import verify_file, verify_module
@@ -13,6 +13,8 @@ if verify_module('yaml'):
         from yaml import Dumper, Loader
 else:
     critical('Cannot import module yaml.')
+
+cur_dirpath = dirname(abspath(__file__))
 
 
 # noinspection PyClassHasNoInit
@@ -28,8 +30,8 @@ class Defaults():
     reuse_intermediate = True
     keep_intermediate = True
 
-    sys_cnf = 'system_info_Waltham.yaml'
-    run_cnf = 'run_info.yaml'
+    sys_cnf = join(cur_dirpath, 'system_info_Waltham.yaml')
+    run_cnf = join(cur_dirpath, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
     steps = ['IndelFilter',

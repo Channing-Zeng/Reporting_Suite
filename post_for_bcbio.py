@@ -16,8 +16,8 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-
-basic_runner = join(abspath(dirname(__file__)), 'basic_runner.sh')
+cur_dirpath = dirname(abspath(__file__))
+basic_runner = join(cur_dirpath, 'basic_runner.sh')
 
 
 class Step():
@@ -54,7 +54,6 @@ class Runner():
         cnfs_line = '--sys-cnf "' + self.cnf.sys_cnf + '" --run-cnf "' + self.cnf.run_cnf + '"'
         overwrite_line = '-w' if self.cnf.overwrite else ''
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
-        cur_dirpath = dirname(realpath(__file__))
         my_script = python + ' ' + join(cur_dirpath, '%s') + ' ' + spec_params + ' '
 
         self.varannotate = Step(
