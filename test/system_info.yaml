@@ -14,6 +14,8 @@ resources:
     path: ~/bin/bcftools/bcftools
   plot_vcfstats:
     path: ~/bin/bcftools/plot-vcfstats
+  qsub:
+    path: /Users/vlad/vagrant/reporting_suite/tools/qsub.sh
 
 
 genomes:
