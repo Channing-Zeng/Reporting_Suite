@@ -21,6 +21,10 @@ resources:
     path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/bgzip
   tabix:
     path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/tabix
+  indelfilter:
+    path: /group/ngs/bin/IndelFilter.py
+  qualimap:
+    path: /group/ngs/src/qualimap/qualimap
 
 genomes:
   hg19:
@@ -34,4 +38,4 @@ genomes:
 
     chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
-    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonical_sorted.bed
+    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed

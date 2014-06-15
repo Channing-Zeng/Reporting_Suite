@@ -1,3 +1,12 @@
+steps:
+#  - IndelFilter
+  - VarAnnotate
+  - VarQC
+  - FilterVariants
+  - TargetCoverage
+  - NGSCat
+# - QualiMap
+
 genome: hg19
 
 verbose: True
