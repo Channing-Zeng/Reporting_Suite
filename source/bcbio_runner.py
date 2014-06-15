@@ -163,8 +163,10 @@ class Runner():
 
         call(self.cnf, qsub_cmdline, silent=True)
 
-        # if self.cnf.verbose:
-        #     info()
+        if self.cnf.verbose:
+            info()
+
+        return output_dirpath
 
     def run(self):
         with tmpfile(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
@@ -200,24 +202,25 @@ class Runner():
 
                 indel_filtered_vcf_fpath = vcf_fpath
                 if self.indel_filter:
-                    indel_filtered_vcf_fpath = sample + self.suf + '.filt_indels.vcf'
+                    indel_filtered_vcf_fpath = join(sample_dirpath, sample + self.suf + '.filt_indels.vcf')
                     self.submit(self.indel_filter, sample, False,
                            vcf=vcf_fpath, filtered_vcf=indel_filtered_vcf_fpath)
 
                 annotated_vcf_fpath = indel_filtered_vcf_fpath
                 if self.varannotate:
-                    annotated_vcf_fpath = sample + self.suf + '.anno.vcf'
-                    self.submit(self.varannotate, sample, True,
+                    anno_dirpath = self.submit(self.varannotate, sample, True,
                         wait_for_steps=[sample + '_' + self.indel_filter.name] if self.indel_filter else [],
                         vcf=indel_filtered_vcf_fpath, bam=bam_fpath)
+                    annotated_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.vcf')
 
-                self.submit(self.varqc, sample, True, wait_for_steps=[sample + '_' + self.varannotate.name], vcf=annotated_vcf_fpath)
+                    self.submit(self.varqc, sample, True, vcf=annotated_vcf_fpath,
+                                wait_for_steps=[sample + '_' + self.varannotate.name])
 
-                if self.varannotate and self.filter_variants:
-                    filtered_vcf_fpath = sample + self.suf + '.anno.filt.vcf'
-                    self.submit(self.filter_variants, sample, True,
-                        wait_for_steps=[sample + '_' + self.varannotate.name],
-                        vcf=annotated_vcf_fpath, filtered_vcf=filtered_vcf_fpath)
+                    if self.filter_variants:
+                        filtered_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.filt.vcf')
+                        self.submit(self.filter_variants, sample, True,
+                            wait_for_steps=[sample + '_' + self.varannotate.name],
+                            vcf=annotated_vcf_fpath, filtered_vcf=filtered_vcf_fpath)
 
                 self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
                 self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
@@ -233,18 +236,16 @@ class Runner():
             info('', ending='')
 
         samples = ','.join(self.samples)
-        if self.varqc:
-            self.submit(
-                self.varqc_summary,
-                wait_for_steps=[s + '_' + self.varqc.name for s in self.samples],
-                vcf_suffix=self.suf + '.anno',
-                samples=samples)
+        self.submit(
+            self.varqc_summary,
+            wait_for_steps=[s + '_' + self.varqc.name for s in self.samples],
+            vcf_suffix=self.suf + '.anno',
+            samples=samples)
 
-        if self.targetcov:
-            self.submit(
-                self.targetcov_summary,
-                wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples],
-                samples=samples)
+        self.submit(
+            self.targetcov_summary,
+            wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples],
+            samples=samples)
 
         if not self.cnf.verbose:
             print ''
