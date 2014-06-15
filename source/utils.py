@@ -266,10 +266,10 @@ def get_tool_cmdline(cnf, tool_name, interpreter='',
 
     # IN SYSTEM CONFIG?
     if (cnf.resources and
-        tool_name in cnf.resources and
-        'path' in cnf.resources[tool_name]):
+        tool_name.lower() in cnf.resources and
+        'path' in cnf.resources[tool_name.lower()]):
 
-        tool_path = cnf.resources[tool_name]['path']
+        tool_path = cnf.resources[tool_name.lower()]['path']
         return verify_file(tool_path, tool_name)
 
     # IN PROJECT ROOT DIR?
