@@ -77,7 +77,7 @@ class Runner():
         self.indel_filter = self.steps.step(
             name='InDelFilter',
             interpreter='python',
-            param_line='\'{vcf}\' > \'{filtered_vcf}\'')
+            param_line='\'{vcf}\'')
 
         cnfs_line = '--sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         overwrite_line = '-w' if self.cnf.overwrite else ''
@@ -97,7 +97,7 @@ class Runner():
             name='FilterVariants',
             script='filter_variants.py',
             interpreter='python',
-            param_line=spec_params + ' --vcf \'{vcf}\' > \'{filtered_vcf}\'')
+            param_line=spec_params + ' --vcf \'{vcf}\'')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
@@ -127,7 +127,7 @@ class Runner():
                 interpreter='python',
                 param_line=' {dir} {samples} ' + self.targetcov.name)
 
-    def submit(self, step, sample_name='', create_dir=False,
+    def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):
         if not step or step.name not in self.steps:
             return None
@@ -137,10 +137,10 @@ class Runner():
             output_dirpath = join(output_dirpath, sample_name)
         if create_dir:
             output_dirpath = join(output_dirpath, step.name)
-            # safe_mkdir(output_dirpath)
+            safe_mkdir(output_dirpath)
 
         log_fpath = join(output_dirpath, step.name + '.log')
-        out_fpath = log_fpath
+        out_fpath = out_fpath or log_fpath
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps) if wait_for_steps else ''
 
@@ -205,8 +205,8 @@ class Runner():
                 indel_filtered_vcf_fpath = vcf_fpath
                 if self.indel_filter:
                     indel_filtered_vcf_fpath = join(sample_dirpath, sample + self.suf + '.filt_indels.vcf')
-                    self.submit(self.indel_filter, sample, False,
-                           vcf=vcf_fpath, filtered_vcf=indel_filtered_vcf_fpath)
+                    self.submit(self.indel_filter, sample, create_dir=False,
+                           out_fpath=indel_filtered_vcf_fpath, vcf=vcf_fpath)
 
                 annotated_vcf_fpath = indel_filtered_vcf_fpath
                 if self.varannotate:
@@ -222,7 +222,7 @@ class Runner():
                         filtered_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.filt.vcf')
                         self.submit(self.filter_variants, sample, False,
                             wait_for_steps=[sample + '_' + self.varannotate.name],
-                            vcf=annotated_vcf_fpath, filtered_vcf=filtered_vcf_fpath)
+                            out_fpath=filtered_vcf_fpath, vcf=annotated_vcf_fpath)
 
                 self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
                 self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
