@@ -15,7 +15,8 @@ from source.ngscat.bed_file import verify_bam, verify_bed
 def read_opts_and_cnfs(extra_opts,
                        key_for_sample_name,
                        required_keys,
-                       file_keys):
+                       file_keys=list(),
+                       dir_keys=list()):
     options = extra_opts + [
         (['-o', '--output_dir'], dict(
              dest='output_dir',
@@ -58,10 +59,13 @@ def read_opts_and_cnfs(extra_opts,
         parser.add_option(*args, **kwargs)
 
     (opts, args) = parser.parse_args()
-
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    check_inputs(cnf, required_keys, file_keys)
+    if not check_keys(cnf, required_keys):
+        parser.print_help()
+        sys.exit(1)
+    if not check_inputs(cnf, file_keys, dir_keys):
+        sys.exit(1)
 
     assert key_for_sample_name and cnf[key_for_sample_name]
     if key_for_sample_name not in cnf:
@@ -76,10 +80,21 @@ def read_opts_and_cnfs(extra_opts,
     return cnf
 
 
-def check_inputs(cnf, required_keys, file_keys):
+def check_keys(cnf, required_keys):
     to_exit = False
 
-    def _verify_input(_key):
+    for key in required_keys:
+        if key not in cnf or not cnf[key]:
+            to_exit = True
+            err('Error: "' + key + '" must be provided in options or '
+                'in ' + cnf.run_cnf + '.')
+    return not to_exit
+
+
+def check_inputs(cnf, file_keys=list(), dir_keys=list()):
+    to_exit = False
+
+    def _verify_input_file(_key):
         if not verify_file(cnf[_key], _key):
             return False
         if 'bam' in _key and not verify_bam(cnf[_key]):
@@ -88,21 +103,19 @@ def check_inputs(cnf, required_keys, file_keys):
             return False
         return True
 
-    for key in required_keys:
-        if key not in cnf or not cnf[key]:
-            to_exit = True
-            err('Error: "' + key + '" must be provided in options or '
-                'in ' + cnf.run_cnf + '.')
-    if to_exit:
-        sys.exit(1)
-
-
     for key in file_keys:
         if key and key in cnf:
-            if not _verify_input(key):
+            if not _verify_input_file(key):
                 to_exit = True
-    if to_exit:
-        sys.exit(1)
+            cnf[key] = abspath(expanduser(cnf[key]))
+
+    for key in dir_keys:
+        if key and key in cnf:
+            if not verify_dir(cnf[key], key):
+                to_exit = True
+            cnf[key] = abspath(expanduser(cnf[key]))
+
+    return not to_exit
 
 
 def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):

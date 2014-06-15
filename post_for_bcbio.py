@@ -1,17 +1,16 @@
 #!/usr/bin/env python
+import sys
 from optparse import OptionParser
-import os
+from os import getcwd
 from os.path import join, expanduser, abspath, dirname, realpath
 
-import sys
 from source.bcbio_utils import file_exists, safe_mkdir
 from source.config import Defaults, Config
-from source.logger import critical, info, err
-from source.main import check_system_resources
+from source.logger import info, err
+from source.main import check_system_resources, check_inputs, check_keys
 from source.ngscat.bed_file import verify_bed, verify_bam
-from source.transaction import file_transaction
-from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, make_tmpdir, make_tmpfile, call, tmpdir, \
-    get_java_tool_cmdline
+from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call, tmpdir
+
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -60,23 +59,19 @@ class Runner():
 
         self.varannotate = Step(
             'VarAnnotate',
-            my_script % 'varannotate.py'
-            '--vcf "{vcf}" --bam "{bam}" -o "{output_dir}"')
+            my_script % 'varannotate.py --vcf "{vcf}" --bam "{bam}" -o "{output_dir}"')
 
         self.varqc = Step(
             'VarQC',
-            my_script % 'varqc.py'
-            '--vcf "{vcf}" -o "{output_dir}"')
+            my_script % 'varqc.py --vcf "{vcf}" -o "{output_dir}"')
 
         self.targetcov = Step(
             'TargetCov',
-            my_script % 'targetcov.py'
-            '--bam "{bam}" --bed "{bed}" -o "{output_dir}"')
+            my_script % 'targetcov.py --bam "{bam}" --bed "{bed}" -o "{output_dir}"')
 
         self.ngscat = Step(
             'NGScat',
-            my_script % 'ngscat.py'
-            '--bam "{bam}" --bed "{bed}" -o "{output_dir}" --saturation y')
+            my_script % 'ngscat.py --bam "{bam}" --bed "{bed}" -o "{output_dir}" --saturation y')
 
         self.qualimap = None
         if 'QualiMap' in self.steps:
@@ -85,19 +80,16 @@ class Runner():
                 sys.exit(1)
             self.qualimap = Step(
                 'QualiMap',
-                qualimap_cmd + ' bamqc -nt ' + self.threads +
-                ' --java-mem-size=24G -nr 5000 -bam {bam} '
-                '-outdir ${output_dir} -gff {bed} -c -gd HUMAN')
+                qualimap_cmd + ' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam {bam} -outdir ${output_dir} -gff {bed} -c -gd HUMAN')
 
         self.varqc_summary = Step(
             'VarQC_summary',
-            my_script % 'varqc_summary.py'
-            '{dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
+            my_script % 'varqc_summary.py {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
 
         self.targetcov_summary = Step(
             'TargetCov_summary',
-            my_script % 'targetcov_summary.py' +
-            '{dir} {samples} ' + self.targetcov.name)
+            my_script % 'targetcov_summary.py {dir} {samples} ' + self.targetcov.name)
+
 
     def run(self):
         def submit(step, sample_name='', create_dir=False, wait_for_steps=list(), **kwargs):
@@ -189,65 +181,42 @@ class Runner():
 
 
 def main(args):
-    script_name = __file__
-    description = \
-'''Usage: {script_name} -s <SAMPLES> -d <BCBIO FINAL DIR> -v <VCF SUFFIX> -b <BED FILE>
-
-This script runs reporting suite on the bcbio final directory.
-'''.format(**locals())
+    description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-d', dest='dir', help='Path to bcbio-nextgen final directory (default is pwd)')
+    parser.add_option('-d', dest='bcbio_final_dir', default=Defaults.bcbio_final_dir, help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-b', dest='bed', help='BED file')
-    parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to file VCF file (mutect, ensembl, freebayes, etc)')
-    parser.add_option('--qualimap', dest='qualimap', action='store_true', default=False, help='Run QualiMap in the end')
+    parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
+    parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
-    parser.add_option('-v', dest='verbose', action='store_true', default=False, help='Verbose')
-    parser.add_option('-t', dest='threads', type='int', default=4, help='Number of threads for each process')
-    parser.add_option('-w', dest='overwrite', action='store_true', default=False, help='Overwrite existing results')
+    parser.add_option('-v', dest='verbose', action='store_true', default=Defaults.verbose, help='Verbose')
+    parser.add_option('-t', dest='threads', type='int', default=Defaults.threads, help='Number of threads for each process')
+    parser.add_option('-w', dest='overwrite', action='store_true', default=Defaults.overwrite, help='Overwrite existing results')
     parser.add_option('--sys-cnf', dest='sys_cnf', default=Defaults.sys_cnf, help='system configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
     parser.add_option('--run-cnf', dest='run_cnf', default=Defaults.run_cnf, help='run configuration yaml (see default one %s)' % Defaults.run_cnf)
 
     (opts, args) = parser.parse_args()
+    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    to_exit = False
+    if not cnf.samples:
+        cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
 
-    bcbio_final_dir = opts.dir
-    if not bcbio_final_dir:
-        info('The option -d is not specified, using cwd as bcbio final directory.')
-        bcbio_final_dir = os.getcwd()
-    if not verify_dir(bcbio_final_dir):
-        to_exit = True
-    else:
-        bcbio_final_dir = abspath(expanduser(bcbio_final_dir))
+    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
+    info('Samples: ' + cnf.samples + ' (set with -s)')
 
-    samples_fpath = opts.samples
-    if not samples_fpath:
-        info('The option -s is not specified, looking for samples.txt for the list of samples.')
-        samples_fpath = join(bcbio_final_dir, 'samples.txt')
-    if not verify_file(samples_fpath):
-        to_exit = True
-    else:
-        samples_fpath = abspath(expanduser(samples_fpath))
-
-    bed_fpath = opts.bed
-    if not bed_fpath:
-        err('BED file is not specified, use the -b option.')
-        to_exit = True
-    if not verify_bed(bed_fpath, 'BED file'):
-        to_exit = True
-    else:
-        bed_fpath = abspath(expanduser(opts.bed))
-
-    if not opts.vcf_suffix:
-        err('VCF suffix is not specified. Please, use --vcf-suffix (i.e. --vcf-suffix mutect)')
-        to_exit = True
-
-    if to_exit:
+    if not check_keys(cnf, ['bcbio_final_dir', 'samples', 'bed', 'vcf_suffix']):
+        parser.print_help()
         sys.exit(1)
 
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+    if not check_inputs(cnf, ['bcbio']):
+        sys.exit(1)
+
+    if not check_inputs(cnf, file_keys=['samples', 'bed'], dir_keys=['bcbio_final_dir']):
+        sys.exit(1)
+
+    info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
+    info('Suffix to choose VCF files: ' + cnf.vcf_suffix + ' (set with --vcf-suffix)')
 
     if opts.qualimap and 'QualiMap' not in cnf.steps:
         cnf.steps.append('QualiMap')
@@ -255,8 +224,7 @@ This script runs reporting suite on the bcbio final directory.
     check_system_resources(cnf, required=['qsub'])
 
     with tmpdir(cnf):
-        runner = Runner(cnf, bcbio_final_dir, samples_fpath, bed_fpath, opts.vcf_suffix)
-
+        runner = Runner(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, cnf.vcf_suffix)
         runner.run()
 
 

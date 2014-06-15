@@ -1,5 +1,7 @@
+from os import environ
 import sys
 from datetime import datetime
+from time import sleep
 
 
 log_fpath = None
@@ -33,7 +35,10 @@ def _log(out, msg=''):
     msg = timestamp() + msg
 
     out.write(msg + '\n')
-    out.flush()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    if environ.get('PYCHARM'):
+        sleep(0.01)
 
     if log_fpath:
         open(log_fpath, 'a').write(msg + '\n')

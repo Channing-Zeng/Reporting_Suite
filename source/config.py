@@ -1,6 +1,6 @@
 import sys
 from os import getcwd
-from os.path import abspath, expanduser
+from os.path import abspath, expanduser, join
 
 from source.logger import info, err, critical
 from source.utils import verify_file, verify_module
@@ -19,11 +19,11 @@ else:
 class Defaults():
     genome = 'hg19'
 
-    samples = 'samples.txt'
     output_dir = getcwd()
     base_tmp_dir = getcwd()
 
-    threads = 1
+    verbose = False
+    threads = 4
     overwrite = False
     reuse_intermediate = True
     keep_intermediate = True
@@ -32,23 +32,24 @@ class Defaults():
     run_cnf = 'run_info.yaml'
 
     bcbio_final_dir = getcwd()
-    steps = ['IndelFilter', 'VarAnnotate', 'VarQC', 'FilterVariants', 'TargetCoverage', 'NGSCat', 'QualiMap']
+    steps = ['IndelFilter',
+             'VarAnnotate', 'VarQC', 'FilterVariants', 'TargetCoverage', 'NGSCat', 'QualiMap']
+    qualimap = False
 
     coverage_reports = dict(
         depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
         padding=250,
-        report_types='summary,genes',
-    )
+        report_types='summary,genes')
+
     ngscat = dict(
         saturation='n',
         depthlist='auto',
         availablefeatures=[
             'percbases', 'saturation', 'specificity', 'coveragefreq',
-            'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr'],
-    )
-    quality_control = dict(
-        variant_distribution_scale=1000,
-    )
+            'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr'])
+
+    quality_control = dict(variant_distribution_scale=1000)
+
     clinical_reporting = False
 
 
