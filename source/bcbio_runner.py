@@ -8,7 +8,6 @@ from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, cal
 
 
 basic_dirpath = dirname(dirname(abspath(__file__)))
-qsub_runner = join(basic_dirpath, 'sh_runners', 'basic_runner.sh')
 
 
 def run_on_bcbio_final_dir(cnf, bcbio_final_dir, samples_fpath,
@@ -55,6 +54,7 @@ class Runner():
         self.suf = '-' + vcf_suffix if vcf_suffix else ''
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
+        self.qsub_runner = cnf.qsub_runner
 
         self.indel_filter = None
         self.varannotate = None
@@ -133,8 +133,10 @@ class Runner():
             return None
 
         output_dirpath = self.dir
+        if sample_name:
+            output_dirpath = join(output_dirpath, sample_name)
         if create_dir:
-            output_dirpath = join(self.dir, sample_name, step.name)
+            output_dirpath = join(output_dirpath, step.name)
             # safe_mkdir(output_dirpath)
 
         log_fpath = join(output_dirpath, step.name + '.log')
