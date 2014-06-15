@@ -135,7 +135,7 @@ class Runner():
         output_dirpath = self.dir
         if create_dir:
             output_dirpath = join(self.dir, sample_name, step.name)
-            safe_mkdir(output_dirpath)
+            # safe_mkdir(output_dirpath)
 
         log_fpath = join(output_dirpath, step.name + '.log')
         out_fpath = log_fpath
