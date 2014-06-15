@@ -144,7 +144,7 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps) if wait_for_steps else ''
 
-        job_name = sample_name + '_' + step.name if sample_name else step.name
+        job_name = step.name + '_' + sample_name if sample_name else step.name
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
