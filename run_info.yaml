@@ -1,7 +1,7 @@
 genome: hg19          ## Loads from "genomes" section from system_config yaml
 
 steps:
-  - IndelFilter
+  - InDelFilter
   - VarAnnotate
   - VarQC
   - FilterVariants

@@ -1,7 +1,7 @@
 genome: hg19
 
 steps:
-#  - IndelFilter
+#  - InDelFilter
   - VarAnnotate
   - VarQC
   - FilterVariants

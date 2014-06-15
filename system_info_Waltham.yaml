@@ -22,7 +22,7 @@ resources:
   tabix:
     path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/tabix
   indelfilter:
-    path: /group/ngs/bin/IndelFilter.py
+    path: /group/ngs/bin/InDelFilter.py
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
 

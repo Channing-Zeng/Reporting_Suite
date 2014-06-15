@@ -12,36 +12,36 @@ import config
 
 def verify_bam(fpath, description=''):
     if not verify_file(fpath, description):
-        return False
+        return None
 
     fpath = expanduser(fpath)
 
     if not fpath.endswith('.bam'):
         err('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
             'extension. Please, make sure you pass proper file.')
-        return False
+        return None
 
     textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
     is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
     if not is_binary_string(open(fpath).read(3)):
         err('The BAM file ' + fpath + ' must be a binary file.')
-        return False
+        return None
 
-    return True
+    return fpath
 
 
 def verify_bed(fpath, description=''):
     if not verify_file(fpath, description):
-        return False
+        return None
 
     fpath = expanduser(fpath)
 
     error = BedFile(fpath).checkformat()
     if error:
         err('Error: incorrect bed file format (' + fpath + '): ' + err + '\n')
-        return False
+        return None
 
-    return True
+    return fpath
 
 
 class BedFile:

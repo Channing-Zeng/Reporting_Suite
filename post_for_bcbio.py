@@ -8,7 +8,7 @@ from source.config import Defaults, Config
 from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
 from source.ngscat.bed_file import verify_bam
-from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call, tmpdir
+from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call, tmpdir, get_script_cmdline
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -21,9 +21,33 @@ basic_runner = join(cur_dirpath, 'sh_runners', 'basic_runner.sh')
 
 
 class Step():
-    def __init__(self, name, cmdline):
+    def __init__(self, name, cmdline=None):
         self.name = name
         self.cmdline = cmdline
+
+
+class Steps(list):
+    def __init__(self, cnf, steps):
+        super(Steps, self).__init__(steps)
+        self.cnf = cnf
+
+    @staticmethod
+    def __normalize(item):
+        return item.lower().replace('_', '').replace('-', '')
+
+    def __contains__(self, item):
+        return self.__normalize(item) in \
+               [self.__normalize(el) for el in self]
+
+    def step(self, name, script=None, interpreter=None, param_line=None):
+        if name not in self:
+            return None
+
+        cmd = get_tool_cmdline(self.cnf, script or name, interpreter)
+        if not cmd:
+            sys.exit(1)
+
+        return Step(name, cmd + ' ' + param_line)
 
 
 class Runner():
@@ -33,88 +57,100 @@ class Runner():
         self.bed = bed_fpath
         self.suf = '-' + vcf_suffix if vcf_suffix else ''
         self.threads = str(self.cnf.threads)
-        self.steps = cnf.steps
+        self.steps = Steps(cnf, cnf.steps)
+
+        self.indel_filter = None
+        self.varannotate = None
+        self.varqc = None
+        self.targetcov = None
+        self.ngscat = None
+        self.qualimap = None
+        self.targetcov_summary = None
+        self.varqc_summary = None
 
         with open(samples_fpath) as sample_f:
             self.samples = [s.strip() for s in sample_f.readlines()
                             if s and s.strip() and not s.startswith('#')]
 
-        # SET UP STEPS
-        python = get_tool_cmdline(cnf, 'python')
+        self.set_up_steps(cnf)
 
-        self.indel_filter = None
-        if 'IndelFilter' in self.steps:
-            indel_filter_cmd = get_tool_cmdline(cnf, 'indelfilter')
-            if not indel_filter_cmd:
-                sys.exit(1)
-            indel_filter_cmd = python + ' ' + indel_filter_cmd
-            self.indel_filter = Step('IndelFilter',
-                indel_filter_cmd + ' "{vcf}" > "{filtered_vcf}"')
 
-        cnfs_line = '--sys-cnf "' + self.cnf.sys_cnf + '" --run-cnf "' + self.cnf.run_cnf + '"'
+    def set_up_steps(self, cnf):
+        self.indel_filter = self.steps.step(
+            name='InDelFilter',
+            interpreter='python',
+            param_line='\'{vcf}\' > \'{filtered_vcf}\'')
+
+        cnfs_line = '--sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         overwrite_line = '-w' if self.cnf.overwrite else ''
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
-        my_script = python + ' ' + join(cur_dirpath, '%s') + ' ' + spec_params + ' '
 
-        self.varannotate = Step(
-            'VarAnnotate',
-            my_script % 'varannotate.py --vcf "{vcf}" --bam "{bam}" -o "{output_dir}"')
+        self.varannotate = self.steps.step(
+            name='VarAnnotate',
+            script='varannotate.py',
+            interpreter='python',
+            param_line=spec_params + ' --vcf \'{vcf}\' --bam \'{bam}\' -o \'{output_dir}\'')
+        self.varqc = self.steps.step(
+            name='VarQC',
+            script='varqc.py',
+            interpreter='python',
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\'')
+        self.targetcov = self.steps.step(
+            name='TargetCov',
+            script='targetcov.py',
+            interpreter='python',
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\'')
+        self.ngscat = self.steps.step(
+            name='NGScat',
+            script='ngscat.py',
+            interpreter='python',
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' --saturation y')
+        self.qualimap = self.steps.step(
+            name='QualiMap',
+            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
-        self.varqc = Step(
-            'VarQC',
-            my_script % 'varqc.py --vcf "{vcf}" -o "{output_dir}"')
+        self.varqc_summary = self.steps.step(
+            name='VarQC_summary',
+            script='varqc_summary.py',
+            interpreter='python',
+            param_line=' {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
+        self.targetcov_summary = self.steps.step(
+            name='TargetCov_summary',
+            script='targetcov_summary.py',
+            interpreter='python',
+            param_line=' {dir} {samples} ' + self.varqc.name)
 
-        self.targetcov = Step(
-            'TargetCov',
-            my_script % 'targetcov.py --bam "{bam}" --bed "{bed}" -o "{output_dir}"')
+    def submit(self, step, sample_name='', create_dir=False,
+               wait_for_steps=list(), **kwargs):
+        if not step or step.name not in self.steps:
+            return None
 
-        self.ngscat = Step(
-            'NGScat',
-            my_script % 'ngscat.py --bam "{bam}" --bed "{bed}" -o "{output_dir}" --saturation y')
+        output_dirpath = self.dir
+        if create_dir:
+            output_dirpath = join(self.dir, sample_name, step.name)
+            safe_mkdir(output_dirpath)
 
-        self.qualimap = None
-        if 'QualiMap' in self.steps:
-            qualimap_cmd = get_tool_cmdline(cnf, 'qualimap')
-            if not qualimap_cmd:
-                sys.exit(1)
-            self.qualimap = Step(
-                'QualiMap',
-                qualimap_cmd + ' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam {bam} -outdir ${output_dir} -gff {bed} -c -gd HUMAN')
+        log_fpath = join(output_dirpath, step.name + '.log')
+        out_fpath = log_fpath
 
-        self.varqc_summary = Step(
-            'VarQC_summary',
-            my_script % 'varqc_summary.py {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
+        hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps) if wait_for_steps else ''
 
-        self.targetcov_summary = Step(
-            'TargetCov_summary',
-            my_script % 'targetcov_summary.py {dir} {samples} ' + self.targetcov.name)
+        job_name = sample_name + '_' + step.name
 
+        params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
+        runner_script = basic_runner
+        cmdline = step.cmdline.format(**params)
+        qsub = get_tool_cmdline(self.cnf, 'qsub')
+        threads = str(self.threads)
+        qsub_cmdline = (
+            '{qsub} -pe smp {threads} -S /bin/bash -q batch.q '
+            '-b y -o {out_fpath} -e {log_fpath} {hold_jid_line} '
+            '-N {job_name} bash {runner_script} "{cmdline}"'.format(**locals()))
+        print qsub_cmdline
+
+        return call(self.cnf, qsub_cmdline)
 
     def run(self):
-        def submit(step, sample_name='', create_dir=False, wait_for_steps=list(), **kwargs):
-            output_dirpath = self.dir
-            if create_dir:
-                output_dirpath = join(self.dir, sample_name, step.name)
-                safe_mkdir(output_dirpath)
-
-            log_fpath = join(output_dirpath, step.name + '.log')
-            out_fpath = log_fpath
-
-            hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps) if wait_for_steps else ''
-
-            job_name = sample_name + '_' + step.name
-
-            params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
-            runner_script = basic_runner + ' ' + step.cmdline.format(**params)
-
-            qsub = get_tool_cmdline(self.cnf, 'qsub')
-            threads = self.threads
-            qsub_cmdline = (
-                '{qsub} {hold_jid_line} -pe smp {threads} -S /bin/bash -q batch.q '
-                '-b y -o {out_fpath} -e {log_fpath} -N ${job_name} bash ${runner_script}'.format(**locals()))
-
-            call(self.cnf, qsub_cmdline)
-
         with tmpfile(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
             with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
                 for l in inn:
@@ -123,7 +159,6 @@ class Runner():
                         ts += ['0']
                     if len(ts) < 6:
                         ts += ['+']
-
                     out.write('\t'.join(ts) + '\n')
 
             for sample in self.samples:
@@ -135,51 +170,44 @@ class Runner():
 
                 vcf_fpath = join(sample_dirpath, sample + self.suf + '.vcf')
                 if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
-                    vcf_fpath += '.gz'
-                    # gzip = get_tool_cmdline(cnf, 'gunzip')
-                    # call(gunzip -c "${sample}${VCF_SUFFIX}.vcf.gz" > "${sample}${VCF_SUFFIX}.vcf"
+                    gz_vcf_fpath = vcf_fpath + '.gz'
+                    gunzip = get_tool_cmdline(self.cnf, 'gunzip')
+                    cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
+                    call(self.cnf, cmdline, output_fpath=vcf_fpath)
                 if not verify_file(vcf_fpath):
                     sys.exit(1)
 
                 filtered_vcf_fpath = vcf_fpath
                 if self.indel_filter:
                     filtered_vcf_fpath = sample + self.suf + '.filtered.vcf'
-                    submit(self.indel_filter, sample, False,
+                    self.submit(self.indel_filter, sample, False,
                            vcf=vcf_fpath, filtered_vcf=filtered_vcf_fpath)
 
                 annotated_vcf_fpath = filtered_vcf_fpath
-                if self.varannotate.name in self.steps:
+                if self.varannotate:
                     annotated_vcf_fpath = sample + self.suf + '.anno.vcf'
-                    submit(self.varannotate, sample, True,
-                           wait_for_steps=[sample + '_' + self.indel_filter.name] if self.indel_filter else [],
-                           vcf=filtered_vcf_fpath, bam=bam_fpath)
+                    self.submit(self.varannotate, sample, True,
+                        wait_for_steps=[sample + '_' + self.indel_filter.name] if self.indel_filter else [],
+                        vcf=filtered_vcf_fpath, bam=bam_fpath)
 
-                if self.varqc.name in self.steps:
-                    submit(self.varqc, sample, True,
-                           wait_for_steps=[sample + '_' + self.varannotate.name],
-                           vcf=annotated_vcf_fpath)
+                self.submit(self.varqc, sample, True, wait_for_steps=[sample + '_' + self.varannotate.name], vcf=annotated_vcf_fpath)
+                self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
+                self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
+                self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath)
 
-                if self.targetcov.name in self.steps:
-                    submit(self.targetcov, sample, True,
-                           bam=bam_fpath, bed=self.bed)
+        if self.varqc:
+            self.submit(
+                self.varqc_summary,
+                wait_for_steps=[s + '_' + self.varqc.name for s in self.samples],
+                vcf_suffix=self.suf + '.anno')
 
-                if self.ngscat.name in self.steps:
-                    submit(self.ngscat, sample, True,
-                           bam=bam_fpath, bed=self.bed)
-
-                if self.qualimap:
-                    submit(self.qualimap, sample, True,
-                           bam=bam_fpath, bed=qualimap_bed_fpath)
-
-        if self.varqc.name in self.steps:
-            submit(self.varqc_summary, wait_for_steps=[s + '_' + self.varqc.name for s in self.samples],
-                   vcf_suffix=self.suf + '.anno')
-
-        if self.targetcov.name in self.steps:
-            submit(self.targetcov_summary, wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples])
+        if self.targetcov:
+            self.submit(
+                self.targetcov_summary,
+                wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples])
 
 
-def main(args):
+def main():
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
@@ -216,6 +244,7 @@ def main(args):
 
     info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
     info('Suffix to choose VCF files: ' + cnf.vcf_suffix + ' (set with --vcf-suffix)')
+    info()
 
     if opts.qualimap and 'QualiMap' not in cnf.steps:
         cnf.steps.append('QualiMap')
@@ -228,7 +257,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
 
 
 

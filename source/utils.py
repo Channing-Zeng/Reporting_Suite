@@ -6,7 +6,7 @@ import tempfile
 import os
 import shutil
 import re
-from os.path import join, basename, isfile, isdir, getsize, exists, expanduser
+from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, dirname, abspath
 from distutils.version import LooseVersion
 
 from source.logger import info, err, critical
@@ -54,39 +54,39 @@ def verify_module(name):
 def verify_file(fpath, description=''):
     if not fpath:
         err((description + ': f' if description else 'F') + 'ile name is empty.')
-        return False
+        return None
 
     fpath = expanduser(fpath)
     if not exists(fpath):
         err((description + ': ' if description else '') + fpath + ' does not exist.')
-        return False
+        return None
 
     if not isfile(fpath):
         err((description + ': ' if description else '') + fpath + ' is not a file.')
-        return False
+        return None
 
     if getsize(fpath) <= 0:
         err((description + ': ' if description else '') + fpath + ' is empty.')
-        return False
+        return None
 
-    return True
+    return fpath
 
 
 def verify_dir(fpath, description=''):
     if not fpath:
         err((description + ': d' if description else 'D') + 'ir name is empty.')
-        return False
+        return None
 
     fpath = expanduser(fpath)
     if not exists(fpath):
         err((description + ': ' if description else '') + fpath + ' does not exist.')
-        return False
+        return None
 
     if not isdir(fpath):
         err((description + ': ' if description else '') + fpath + ' is not a directory.')
-        return False
+        return None
 
-    return True
+    return fpath
 
 
 def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
@@ -124,10 +124,10 @@ def make_tmpfile(cnf, *args, **kwargs):
 def tmpfile(cnf, *args, **kwargs):
     tmp_file, fpath = make_tmpfile(cnf, *args, **kwargs)
     try:
-        yield tmp_file
+        yield fpath
     finally:
         try:
-            shutil.rmtree(fpath)
+            os.remove(fpath)
         except OSError:
             pass
 
@@ -257,30 +257,72 @@ def check_file_changed(cnf, new, in_work):
 #             f.write(inp_fpath + '\t' + inp_hash + '\n')
 
 
-def get_tool_cmdline(sys_cnf, tool_name, extra_warning='', suppress_warn=False):
-    which_tool_path = which(tool_name) or None
+def get_tool_cmdline(cnf, tool_name, interpreter='',
+                     extra_warning='', suppress_warn=False):
+    if interpreter:
+        return get_script_cmdline(
+            cnf, tool_name, interpreter,
+            extra_warning, suppress_warn)
 
-    if (not 'resources' in sys_cnf or
-        tool_name not in sys_cnf['resources'] or
-        'path' not in sys_cnf['resources'][tool_name]):
+    # IN SYSTEM CONFIG?
+    if (cnf.resources and
+        tool_name in cnf.resources and
+        'path' in cnf.resources[tool_name]):
 
-        if which_tool_path:
-            tool_path = which_tool_path
-        else:
-            if not suppress_warn:
-                err(tool_name + ' executable was not found. '
-                    'You can either specify path in the system config, or load into your '
-                    'PATH environment variable.')
-            if extra_warning:
-                err(extra_warning)
-            return None
+        tool_path = cnf.resources[tool_name]['path']
+        return verify_file(tool_path, tool_name)
+
+    # IN PROJECT ROOT DIR?
+    project_base_path = dirname(dirname(abspath(__file__)))
+    tool_path = join(project_base_path, tool_name)
+    if file_exists(tool_path):
+        return verify_file(tool_path, tool_name)
+
+    # SOME OF BASIC SCRIPTS?
+    tool_path += '.py'
+    if file_exists(tool_path):
+        return verify_file(tool_path, tool_name)
+
+    # IN PATH?
+    tool_path = which(tool_name)
+    if file_exists(tool_path):
+        return verify_file(tool_path, tool_name)
+
+    if not suppress_warn:
+        err(tool_name + ' was not found. '
+            'You may either specify path in the system config, '
+            'or load into your PATH environment variable.')
+    if extra_warning:
+        err(extra_warning)
+    return None
+
+
+def get_java_tool_cmdline(cnf, script,
+         extra_warning='', suppress_warn=False):
+
+    if (cnf.resources and
+        script in cnf.resources and
+        'jvm_opts' in cnf.resources[script]):
+        jvm_opts = cnf.resources[script]['jvm_opts']
     else:
-        tool_path = sys_cnf['resources'][tool_name]['path']
+        jvm_opts = ['']
 
-    if verify_file(tool_path, tool_name):
-        return tool_path
-    else:
+    return get_script_cmdline(cnf, 'java', script,
+                              (' '.join(jvm_opts) + ' -jar'),
+                              extra_warning='', suppress_warn=False)
+
+
+def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
+                       extra_warning='', suppress_warn=False):
+    interp_path = get_tool_cmdline(cnf, interpreter)
+    if not interp_path:
         return None
+
+    tool_path = get_tool_cmdline(cnf, script)
+    if not tool_path:
+        return None
+
+    return interp_path + ' ' + interpreter_params + ' ' + tool_path
 
 
 def call_pipe(cnf, cmdline):
@@ -292,7 +334,8 @@ def call_check_output(cnf, cmdline):
 
 
 def call(cnf, cmdline, output_fpath=None, overwrite=False):
-    return call_subprocess(cnf, cmdline, None, output_fpath, overwrite=overwrite)
+    return call_subprocess(cnf, cmdline, None,
+                           output_fpath, overwrite=overwrite)
 
 
 def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
@@ -464,31 +507,6 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         info('Saved to ' + output_fpath)
 
     return output_fpath
-
-
-def get_java_tool_cmdline(cnf, name):
-    cmdline_template = get_script_cmdline_template(cnf, 'java', name)
-    jvm_opts = cnf['resources'][name].get('jvm_opts', []) + ['']
-    return cmdline_template % (' '.join(jvm_opts) + ' -jar')
-
-
-def get_script_cmdline_template(cnf, executable, script_name):
-    if not which(executable):
-        exit(executable + ' executable required, maybe you need '
-             'to run "module load ' + executable + '"?')
-    if 'resources' not in cnf:
-        critical('System config yaml must contain resources section with '
-                 + script_name + ' path.')
-    if script_name not in cnf['resources']:
-        critical('System config resources section must contain '
-                 + script_name + ' info (with a path to the tool).')
-    tool_config = cnf['resources'][script_name]
-    if 'path' not in tool_config:
-        critical(script_name + ' section in the system config must contain a path to the tool.')
-    tool_path = tool_config['path']
-    if not verify_file(tool_path, script_name):
-        exit(1)
-    return executable + ' %s ' + tool_path
 
 
 def join_parent_conf(child_conf, parent_conf):

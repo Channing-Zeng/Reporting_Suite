@@ -34,8 +34,13 @@ class Defaults():
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    steps = ['IndelFilter',
-             'VarAnnotate', 'VarQC', 'FilterVariants', 'TargetCoverage', 'NGSCat', 'QualiMap']
+    steps = ['InDelFilter',
+             'VarAnnotate',
+             'VarQC',
+             'FilterVariants',
+             'TargetCoverage',
+             'NGSCat',
+             'QualiMap']
     qualimap = False
 
     coverage_reports = dict(
