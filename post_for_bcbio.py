@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 import sys
 from optparse import OptionParser
-from os import getcwd
-from os.path import join, expanduser, abspath, dirname, realpath
+from os.path import join, abspath, dirname, pardir
 
 from source.bcbio_utils import file_exists, safe_mkdir
 from source.config import Defaults, Config
-from source.logger import info, err
+from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
-from source.ngscat.bed_file import verify_bed, verify_bam
+from source.ngscat.bed_file import verify_bam
 from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call, tmpdir
+
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -17,7 +17,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 cur_dirpath = dirname(abspath(__file__))
-basic_runner = join(cur_dirpath, 'basic_runner.sh')
+basic_runner = join(cur_dirpath, 'sh_runners', 'basic_runner.sh')
 
 
 class Step():
