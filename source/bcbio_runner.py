@@ -148,7 +148,7 @@ class Runner():
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
-        runner_script = qsub_runner
+        runner_script = self.qsub_runner
         cmdline = step.cmdline.format(**params)
         qsub = get_tool_cmdline(self.cnf, 'qsub')
         threads = str(self.threads)
