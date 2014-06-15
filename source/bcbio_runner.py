@@ -220,7 +220,7 @@ class Runner():
 
                     if self.filter_variants:
                         filtered_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.filt.vcf')
-                        self.submit(self.filter_variants, sample, True,
+                        self.submit(self.filter_variants, sample, False,
                             wait_for_steps=[sample + '_' + self.varannotate.name],
                             vcf=annotated_vcf_fpath, filtered_vcf=filtered_vcf_fpath)
 
