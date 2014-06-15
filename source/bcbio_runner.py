@@ -142,7 +142,7 @@ class Runner():
         log_fpath = join(output_dirpath, step.name + '.log')
         out_fpath = out_fpath or log_fpath
 
-        hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps) if wait_for_steps else ''
+        hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
         job_name = step.name + '_' + sample_name if sample_name else step.name
 
@@ -154,8 +154,8 @@ class Runner():
         threads = str(self.threads)
         qsub_cmdline = (
             '{qsub} -pe smp {threads} -S /bin/bash -q batch.q '
-            '-b y -o {out_fpath} -e {log_fpath} {hold_jid_line} '
-            '-N {job_name} bash {runner_script} "{cmdline}"'.format(**locals()))
+            '-j y -o {out_fpath} -e {log_fpath} {hold_jid_line} '
+            '-N {job_name} {runner_script} "{cmdline}"'.format(**locals()))
 
         if self.cnf.verbose:
             info(step.name)

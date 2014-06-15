@@ -386,7 +386,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
     err_fpath = None
-    _, err_fpath = make_tmpfile(cnf, prefix='err_tmp')
+    _, err_fpath = make_tmpfile(cnf, prefix='err_tmp', suffix='.txt')
     to_remove.append(err_fpath)
 
     def clean():

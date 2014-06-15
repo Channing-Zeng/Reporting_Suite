@@ -181,3 +181,5 @@ tsv_fields:
 verbose: True
 keep_intermediate: True
 reuse_intermediate: True
+
+qsub_runner: /Users/vlad/vagrant/reporting_suite/test/runner_local.sh

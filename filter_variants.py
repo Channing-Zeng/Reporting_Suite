@@ -33,7 +33,7 @@ def main(args):
             #  'default': 0.15,
             #  }),
         ],
-        required_keys=['vcf', 'expression'],
+        required_keys=['vcf'],
         file_keys=['vcf'],
         key_for_sample_name='vcf')
 
