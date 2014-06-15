@@ -3,7 +3,7 @@
 from __future__ import print_function
 import sys
 from os.path import join
-from source.bcbio_utils import file_exists
+from source.utils_from_bcbio import file_exists
 from source.logger import info
 from source.utils import critical
 from source.summarize import summarize_qc

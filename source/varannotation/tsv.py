@@ -4,7 +4,7 @@ from os.path import dirname, realpath, join, basename, isfile
 from source.logger import step_greetings
 
 from source.transaction import file_transaction
-from source.bcbio_utils import which, splitext_plus, file_exists
+from source.utils_from_bcbio import which, splitext_plus, file_exists
 from source.utils import iterate_file, get_java_tool_cmdline, \
     intermediate_fname, info, call_subprocess
 

@@ -7,7 +7,7 @@ from source.targetcov.Region import Region
 from source.utils import intermediate_fname, get_tool_cmdline, info, err, \
     call_check_output, call_pipe, call, format_integer, format_decimal
 from source.transaction import file_transaction
-from source.bcbio_utils import splitext_plus
+from source.utils_from_bcbio import splitext_plus
 
 
 def run_target_cov(cnf, bam, bed):

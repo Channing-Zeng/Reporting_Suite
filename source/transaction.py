@@ -11,7 +11,7 @@ import tempfile
 
 import contextlib
 
-import bcbio_utils
+import utils_from_bcbio
 
 @contextlib.contextmanager
 def file_transaction(tmp_dir, *rollback_files):
@@ -62,8 +62,8 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            basedir = bcbio_utils.safe_mkdir(tmp_dir or os.path.join(os.path.dirname(fname), 'tx'))
-            tmpdir = bcbio_utils.safe_mkdir(tempfile.mkdtemp(dir=basedir))
+            basedir = utils_from_bcbio.safe_mkdir(tmp_dir or os.path.join(os.path.dirname(fname), 'tx'))
+            tmpdir = utils_from_bcbio.safe_mkdir(tempfile.mkdtemp(dir=basedir))
             tx_file = os.path.join(tmpdir, os.path.basename(fname))
             tx_files.append(tx_file)
             orig_files.append(fname)

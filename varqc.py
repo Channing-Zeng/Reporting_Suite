@@ -3,7 +3,7 @@ from os import makedirs
 from os.path import dirname, isdir, basename
 
 import sys
-from source.bcbio_utils import file_exists
+from source.utils_from_bcbio import file_exists
 from source.logger import critical, err
 from source.varqc.stats_gatk import gatk_qc
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):

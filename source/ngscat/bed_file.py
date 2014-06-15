@@ -3,7 +3,7 @@ import numpy
 import string
 import region
 from os.path import join, basename, expanduser
-from source.bcbio_utils import file_exists
+from source.utils_from_bcbio import file_exists
 from source.logger import err
 from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
 

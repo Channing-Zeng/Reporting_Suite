@@ -7,7 +7,7 @@ from shutil import rmtree
 from source import logger
 from source.config import Config, Defaults
 from source.logger import info, err, critical
-from source.bcbio_utils import which, file_exists
+from source.utils_from_bcbio import which, file_exists
 from source.utils import verify_file, safe_mkdir, verify_dir, make_tmpdir
 from source.ngscat.bed_file import verify_bam, verify_bed
 

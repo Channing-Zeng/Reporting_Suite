@@ -11,7 +11,7 @@ from distutils.version import LooseVersion
 
 from source.logger import info, err, critical
 from source.transaction import file_transaction
-from source.bcbio_utils import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
+from source.utils_from_bcbio import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
 
 
 def remove_quotes(s):

@@ -4,7 +4,7 @@ import os
 from os.path import basename, join, realpath, expanduser
 from collections import OrderedDict
 
-from source.bcbio_utils import open_gzipsafe, splitext_plus
+from source.utils_from_bcbio import open_gzipsafe, splitext_plus
 from source.logger import step_greetings
 from source.utils import critical, verify_file,\
     join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed, iterate_file

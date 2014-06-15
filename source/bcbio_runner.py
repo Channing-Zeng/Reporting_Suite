@@ -1,7 +1,7 @@
 import sys
 from os.path import join, dirname, abspath
 
-from source.bcbio_utils import file_exists, safe_mkdir
+from source.utils_from_bcbio import file_exists, safe_mkdir
 from source.logger import info
 from source.ngscat.bed_file import verify_bam
 from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call
@@ -114,19 +114,18 @@ class Runner():
 
         if self.varqc:
             self.steps.append('VarQC_summary')
+            self.varqc_summary = self.steps.step(
+                name='VarQC_summary',
+                script='varqc_summary.py',
+                interpreter='python',
+                param_line=' {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
         if self.targetcov:
             self.steps.append('TargetCov_summary')
-
-        self.varqc_summary = self.steps.step(
-            name='VarQC_summary',
-            script='varqc_summary.py',
-            interpreter='python',
-            param_line=' {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
-        self.targetcov_summary = self.steps.step(
-            name='TargetCov_summary',
-            script='targetcov_summary.py',
-            interpreter='python',
-            param_line=' {dir} {samples} ' + self.targetcov.name)
+            self.targetcov_summary = self.steps.step(
+                name='TargetCov_summary',
+                script='targetcov_summary.py',
+                interpreter='python',
+                param_line=' {dir} {samples} ' + self.targetcov.name)
 
     def submit(self, step, sample_name='', create_dir=False,
                wait_for_steps=list(), **kwargs):

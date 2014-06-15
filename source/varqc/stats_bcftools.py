@@ -3,7 +3,7 @@ import sys
 from os import mkdir
 from os.path import basename, join
 
-from source.bcbio_utils import file_exists
+from source.utils_from_bcbio import file_exists
 from source.logger import info, step_greetings
 from source.utils import call_subprocess, get_tool_cmdline, bgzip_and_tabix_vcf
 

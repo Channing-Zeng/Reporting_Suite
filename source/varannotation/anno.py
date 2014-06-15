@@ -7,7 +7,7 @@ from source.logger import step_greetings
 from source.utils import critical, iterate_file, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
     get_tool_cmdline, err, get_gatk_type, info, bgzip_and_tabix_vcf, index_bam
-from source.bcbio_utils import add_suffix, file_exists
+from source.utils_from_bcbio import add_suffix, file_exists
 from source.vcf import filter_rejected
 
 
