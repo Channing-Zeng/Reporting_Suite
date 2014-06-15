@@ -21,6 +21,9 @@ class Step():
         self.name = name
         self.cmdline = cmdline
 
+    def job_name(self, sample=None):
+        return self.name + ('_' + sample if sample else '')
+
 
 class Steps(list):
     def __init__(self, cnf, steps):
@@ -144,7 +147,7 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
-        job_name = step.name + '_' + sample_name if sample_name else step.name
+        job_name = step.job_name(sample_name) if sample_name else step.name
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
@@ -187,10 +190,12 @@ class Runner():
                     info(ending='')
 
                 sample_dirpath = join(self.dir, sample)
-                if not verify_dir(sample_dirpath): sys.exit(1)
+                if not verify_dir(sample_dirpath):
+                    sys.exit(1)
 
                 bam_fpath = join(sample_dirpath, sample + '-ready.bam')
-                if not verify_bam(bam_fpath): sys.exit(1)
+                if not verify_bam(bam_fpath):
+                    sys.exit(1)
 
                 vcf_fpath = join(sample_dirpath, sample + self.suf + '.vcf')
                 if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
@@ -211,17 +216,17 @@ class Runner():
                 annotated_vcf_fpath = indel_filtered_vcf_fpath
                 if self.varannotate:
                     anno_dirpath = self.submit(self.varannotate, sample, True,
-                        wait_for_steps=[sample + '_' + self.indel_filter.name] if self.indel_filter else [],
+                        wait_for_steps=[self.indel_filter.job_name(sample)] if self.indel_filter else [],
                         vcf=indel_filtered_vcf_fpath, bam=bam_fpath)
                     annotated_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.vcf')
 
                     self.submit(self.varqc, sample, True, vcf=annotated_vcf_fpath,
-                                wait_for_steps=[sample + '_' + self.varannotate.name])
+                                wait_for_steps=[self.varannotate.job_name(sample)])
 
                     if self.filter_variants:
                         filtered_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.filt.vcf')
                         self.submit(self.filter_variants, sample, False,
-                            wait_for_steps=[sample + '_' + self.varannotate.name],
+                            wait_for_steps=[self.varannotate.job_name(sample)],
                             out_fpath=filtered_vcf_fpath, vcf=annotated_vcf_fpath)
 
                 self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
@@ -240,13 +245,13 @@ class Runner():
         samples = ','.join(self.samples)
         self.submit(
             self.varqc_summary,
-            wait_for_steps=[s + '_' + self.varqc.name for s in self.samples],
+            wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
             vcf_suffix=self.suf + '.anno',
             samples=samples)
 
         self.submit(
             self.targetcov_summary,
-            wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples],
+            wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
             samples=samples)
 
         if not self.cnf.verbose:
