@@ -109,6 +109,11 @@ class Runner():
             name='QualiMap',
             param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
+        if self.varqc:
+            self.steps.append('VarQC_summary')
+        if self.targetcov:
+            self.steps.append('TargetCov_summary')
+
         self.varqc_summary = self.steps.step(
             name='VarQC_summary',
             script='varqc_summary.py',
@@ -146,9 +151,15 @@ class Runner():
             '{qsub} -pe smp {threads} -S /bin/bash -q batch.q '
             '-b y -o {out_fpath} -e {log_fpath} {hold_jid_line} '
             '-N {job_name} bash {runner_script} "{cmdline}"'.format(**locals()))
-        print qsub_cmdline
 
-        return call(self.cnf, qsub_cmdline)
+        if self.cnf.verbose:
+            info(step.name)
+            info(qsub_cmdline)
+            info()
+        else:
+            print step.name,
+
+        return call(self.cnf, qsub_cmdline, silent=True)
 
     def run(self):
         with tmpfile(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
@@ -162,6 +173,10 @@ class Runner():
                     out.write('\t'.join(ts) + '\n')
 
             for sample in self.samples:
+                info(sample)
+                if not self.cnf.verbose:
+                    info(ending='')
+
                 sample_dirpath = join(self.dir, sample)
                 if not verify_dir(sample_dirpath): sys.exit(1)
 
@@ -174,6 +189,7 @@ class Runner():
                     gunzip = get_tool_cmdline(self.cnf, 'gunzip')
                     cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
                     call(self.cnf, cmdline, output_fpath=vcf_fpath)
+                    info()
                 if not verify_file(vcf_fpath):
                     sys.exit(1)
 
@@ -195,6 +211,13 @@ class Runner():
                 self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
                 self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath)
 
+                if not self.cnf.verbose:
+                    print ''
+                    info()
+
+        if not self.cnf.verbose:
+            info('', ending='')
+
         if self.varqc:
             self.submit(
                 self.varqc_summary,
@@ -205,6 +228,11 @@ class Runner():
             self.submit(
                 self.targetcov_summary,
                 wait_for_steps=[s + '_' + self.targetcov.name for s in self.samples])
+
+        if not self.cnf.verbose:
+            print ''
+        if self.cnf.verbose:
+            info('Done.')
 
 
 def main():
@@ -217,9 +245,10 @@ def main():
     parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
-    parser.add_option('-v', dest='verbose', action='store_true', default=Defaults.verbose, help='Verbose')
-    parser.add_option('-t', dest='threads', type='int', default=Defaults.threads, help='Number of threads for each process')
-    parser.add_option('-w', dest='overwrite', action='store_true', default=Defaults.overwrite, help='Overwrite existing results')
+    parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
+    parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
+    parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
+
     parser.add_option('--sys-cnf', dest='sys_cnf', default=Defaults.sys_cnf, help='system configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
     parser.add_option('--run-cnf', dest='run_cnf', default=Defaults.run_cnf, help='run configuration yaml (see default one %s)' % Defaults.run_cnf)
 
@@ -245,6 +274,7 @@ def main():
     info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
     info('Suffix to choose VCF files: ' + cnf.vcf_suffix + ' (set with --vcf-suffix)')
     info()
+    info('*' * 70)
 
     if opts.qualimap and 'QualiMap' not in cnf.steps:
         cnf.steps.append('QualiMap')

@@ -24,7 +24,7 @@ class Defaults():
     output_dir = getcwd()
     base_tmp_dir = getcwd()
 
-    verbose = False
+    verbose = True
     threads = 4
     overwrite = False
     reuse_intermediate = True

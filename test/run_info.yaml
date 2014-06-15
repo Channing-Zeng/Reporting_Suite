@@ -1,19 +1,23 @@
 genome: hg19
 
+
 steps:
 #  - InDelFilter
   - VarAnnotate
   - VarQC
   - FilterVariants
-  - TargetCoverage
+  - TargetCov
   - NGSCat
 # - QualiMap
+
 
 filter_reject: True   ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
+
 variant_filtering:
   expression: "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+
 
 quality_control:
   databases: ['dbsnp', 'cosmic']
@@ -25,6 +29,7 @@ quality_control:
 
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+
 
 ## Annotation with various tools.
 gatk:

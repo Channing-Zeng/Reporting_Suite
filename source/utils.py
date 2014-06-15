@@ -325,25 +325,23 @@ def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
     return interp_path + ' ' + interpreter_params + ' ' + tool_path
 
 
-def call_pipe(cnf, cmdline):
-    return call_subprocess(cnf, cmdline, return_proc=True)
+def call_pipe(cnf, cmdline, *args, **kwargs):
+    return call_subprocess(cnf, cmdline, return_proc=True, *args, **kwargs)
 
 
-def call_check_output(cnf, cmdline):
-    return call_subprocess(cnf, cmdline, check_output=True)
+def call_check_output(cnf, cmdline, *args, **kwargs):
+    return call_subprocess(cnf, cmdline, check_output=True, *args, **kwargs)
 
 
-def call(cnf, cmdline, output_fpath=None, overwrite=False):
-    return call_subprocess(cnf, cmdline, None,
-                           output_fpath, overwrite=overwrite)
+def call(cnf, cmdline, output_fpath=None, *args, **kwargs):
+    return call_subprocess(cnf, cmdline, None, output_fpath, *args, **kwargs)
 
 
 def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
-         stdin_fpath=None, exit_on_error=True,
+         stdin_fpath=None, exit_on_error=True, silent=False,
 
-         overwrite=True,
-         check_output=False, return_proc=False):
+         overwrite=True, check_output=False, return_proc=False):
     """
     Required arguments:
     ------------------------------------------------------------
@@ -408,13 +406,15 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    if not silent:
+                        info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(out_fpath, 'w')
                     stderr = subprocess.PIPE
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)
-                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    if not silent:
+                        info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
 
@@ -456,13 +456,15 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
-                    info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    if not silent:
+                        info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(out_fpath, 'w')
                     stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)
-                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    if not silent:
+                        info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
 

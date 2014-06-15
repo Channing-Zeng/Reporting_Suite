@@ -18,12 +18,12 @@ def step_greetings(name):
     info('-' * 70)
 
 
-def info(msg=''):
-    _log(sys.stdout, msg)
+def info(msg='', ending='\n'):
+    _log(sys.stdout, msg, ending)
 
 
-def err(msg=''):
-    _log(sys.stderr, msg)
+def err(msg='', ending='\n'):
+    _log(sys.stderr, msg, ending)
 
 
 def critical(msg=''):
@@ -31,10 +31,10 @@ def critical(msg=''):
     sys.exit(1)
 
 
-def _log(out, msg=''):
+def _log(out, msg='', ending='\n'):
     msg = timestamp() + msg
 
-    out.write(msg + '\n')
+    out.write(msg + ending)
     sys.stdout.flush()
     sys.stderr.flush()
     if environ.get('PYCHARM'):
