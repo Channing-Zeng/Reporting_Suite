@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/vlad/vagrant/reporting_suite/tools/InDelFilter.py", line 156, in <module>
+    main()
+  File "/Users/vlad/vagrant/reporting_suite/tools/InDelFilter.py", line 31, in main
+    strand_bias_filter(lineSplit, myFilters)
+  File "/Users/vlad/vagrant/reporting_suite/tools/InDelFilter.py", line 103, in strand_bias_filter
+    for sample in abcd:
+TypeError: 'NoneType' object is not iterable
