@@ -1,2 +1,2 @@
 #!/bin/bash
-eval "${runner} ${params}"
+echo "${runner} ${params}"
