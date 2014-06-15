@@ -6,7 +6,7 @@ steps:
   - VarQC
   - FilterVariants
   - TargetCoverage
-  - NGSCat
+  - NGScat
 # - QualiMap
 
 filter_reject: True   ## Before annotation and QC, filter variants

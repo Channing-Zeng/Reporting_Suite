@@ -38,8 +38,8 @@ class Defaults():
              'VarAnnotate',
              'VarQC',
              'FilterVariants',
-             'TargetCoverage',
-             'NGSCat',
+             'TargetCov',
+             'NGScat',
              'QualiMap']
     qualimap = False
 

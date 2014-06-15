@@ -7,7 +7,7 @@ steps:
   - VarQC
   - FilterVariants
   - TargetCov
-  - NGSCat
+  - NGScat
 # - QualiMap
 
 
