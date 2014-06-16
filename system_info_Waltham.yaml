@@ -37,5 +37,4 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
 
     chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
-    genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
     exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed

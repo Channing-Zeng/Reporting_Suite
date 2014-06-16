@@ -19,7 +19,7 @@ def run_target_cov(cnf, bam, bed):
 
     chr_len_fpath = cnf['genome']['chr_lengths']
     exons_bed = cnf['genome']['exons']
-    genes_bed = cnf['genome']['genes']
+    genes_bed = cnf['genome'].get('genes')
 
     if 'summary' in cnf['reports']:
         step_greetings('Target coverage summary report')
@@ -36,7 +36,7 @@ def run_target_cov(cnf, bam, bed):
     #     run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
 
     if 'genes' in cnf['reports']:
-        if not genes_bed or not exons_bed:
+        if not exons_bed:
             if cnf['reports'] == 'genes':
                 critical('Error: no genes or exons specified for the genome in system config, '
                          'cannot run per-exon report.')
@@ -47,9 +47,12 @@ def run_target_cov(cnf, bam, bed):
             # log('Annotating amplicons.')
             # annotate_amplicons(amplicons, genes_bed)
 
-            info('Getting the gene regions that intersect with our capture panel.')
-            bed = intersect_bed(cnf, genes_bed, bed)
-            info('Getting the exons of the genes.')
+            if genes_bed:
+                info('Getting the gene regions that overlap the amplicons.')
+                bed = intersect_bed(cnf, genes_bed, bed)
+            # TODO: do it without genes: intersect with exons and then...
+            # TODO: ...add all the exons of all matched genes
+            info('Getting the exons that overlap amplicons.')
             bed = intersect_bed(cnf, exons_bed, bed)
             info('Sorting final exon BED file.')
             bed = sort_bed(cnf, bed)

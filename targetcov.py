@@ -55,8 +55,8 @@ def main(args):
 
     load_genome_resources(
         cnf,
-        required=['chr_lengths', 'genes', 'exons'],
-        optional=[])
+        required=['chr_lengths', 'exons'],
+        optional=['genes'])
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot make coverage reports.')
