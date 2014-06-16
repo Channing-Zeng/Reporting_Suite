@@ -2,6 +2,7 @@
 
 import sys
 from source.config import Defaults
+from source.ngscat.bam_file import filter_unmapped_reads
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -124,13 +125,11 @@ def process_parameters(cnf):
 
 
 def process_one(cnf):
-    bam_file = cnf['bam']
-
     bams = [cnf['bam']]
     if 'extra_bam' in cnf:
         bams.append(cnf['extra_bam'])
 
-    filtered_bams = [bam_file.filter_unmapped_reads(cnf, bam) for bam in bams]
+    filtered_bams = [filter_unmapped_reads(cnf, bam) for bam in bams]
 
     report_fpath = ngscat_main.ngscat(
         cnf, filtered_bams, cnf['bed'], cnf['output_dir'], cnf['genome'].get('seq'),
