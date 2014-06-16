@@ -1,0 +1,7 @@
+/usr/bin/python /Users/vlad/vagrant/reporting_suite/ngscat.pTraceback (most recent call last):
+  File "/Users/vlad/vagrant/reporting_suite/ngscat.py", line 20, in <module>
+    from source.ngscat import config, ngscat_main
+  File "/Users/vlad/vagrant/reporting_suite/source/ngscat/ngscat_main.py", line 15, in <module>
+    import pysam
+ImportError: No module named pysam
+понедельник, 16 июня 2014 г. 03:52:00 (MSK)

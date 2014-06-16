@@ -1,0 +1,7 @@
+/usr/bin/python /Users/vlad/vagrant/reporting_suite/filter_variants.py --sys-cnf system_info.yaml --run-cnf run_info.yaml -t 4 --vcf /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/VarAnnotate/sampl+e2-mutect.anno.vcf
+2014-06-16 03:51:58  Using system_info.yaml as a system configuration file.
+2014-06-16 03:51:58  Using run_info.yaml as a run configuration file.
+2014-06-16 03:51:58  
+2014-06-16 03:51:58  Loaded system config /Users/vlad/vagrant/reporting_suite/test/system_info.yaml
+2014-06-16 03:51:58  Loaded run config /Users/vlad/vagrant/reporting_suite/test/run_info.yaml
+2014-06-16 03:51:58  
