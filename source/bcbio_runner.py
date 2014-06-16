@@ -1,3 +1,4 @@
+import os
 import sys
 from os.path import join, dirname, abspath
 
@@ -210,6 +211,8 @@ class Runner():
                 indel_filtered_vcf_fpath = vcf_fpath
                 if self.indel_filter:
                     indel_filtered_vcf_fpath = join(sample_dirpath, sample + self.suf + '.filt_indels.vcf')
+                    if file_exists(indel_filtered_vcf_fpath):
+                        os.remove(indel_filtered_vcf_fpath)
                     self.submit(self.indel_filter, sample, create_dir=False,
                            out_fpath=indel_filtered_vcf_fpath, vcf=vcf_fpath)
 
@@ -225,6 +228,8 @@ class Runner():
 
                     if self.filter_variants:
                         filtered_vcf_fpath = join(anno_dirpath, sample + self.suf + '.anno.filt.vcf')
+                        if file_exists(filtered_vcf_fpath):
+                            os.remove(filtered_vcf_fpath)
                         self.submit(self.filter_variants, sample, False,
                             wait_for_steps=[self.varannotate.job_name(sample)],
                             out_fpath=filtered_vcf_fpath, vcf=annotated_vcf_fpath)
