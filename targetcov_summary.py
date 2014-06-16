@@ -23,7 +23,7 @@ def main(argv):  # dir samples.txt report_basedir
     samples_fname = argv[2]
     report_basedir = argv[3]
     report_suffix = '.targetseq.summary.txt'
-    #summarize_cov_report(out_dirpath,samples_fname, report_basedir)
+    summarize_cov_report(out_dirpath,samples_fname, report_basedir)
     summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir)
 
 
