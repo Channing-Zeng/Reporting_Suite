@@ -93,7 +93,7 @@ class Config(dict):
                 self[k] = v
 
             for k, v in cmd_line_opts.items():
-                if k not in self or v is not None:
+                if v is not None:
                     self[k] = v
 
             self.sys_cnf = sys_cnf_fpath
@@ -129,7 +129,7 @@ class Config(dict):
         del self.__dict__[key]
 
     def __getitem__(self, key):
-        return self.__dict__[key]
+        return self.get(key)
 
     def __setitem__(self, key, value):
         if isinstance(value, dict) and not isinstance(value, Config):

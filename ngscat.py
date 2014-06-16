@@ -76,7 +76,7 @@ def main():
 
     load_genome_resources(cnf,
         required=['chr_lengths'],
-        optional=[])
+        optional=['seq'])
 
     #load_genome_resources(cnf, ['chr_lengths']) #TODO: check whether it needed at all!
     #chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')

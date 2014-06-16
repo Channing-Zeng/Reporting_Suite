@@ -62,8 +62,8 @@ def load_coverage_file_per_exon(filename):
     fd.close()
 
     # For the last exon
-    coverage = numpy.array(coverage)
-    dictCoverage[next_exon_idx] = numpy.array(coverage).std() / float(numpy.array(coverage).mean())
+    mean = float(numpy.array(coverage).mean())
+    dictCoverage[next_exon_idx] = numpy.array(coverage).std() / mean if mean else 0
 
     return dictCoverage
 

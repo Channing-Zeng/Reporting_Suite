@@ -178,32 +178,24 @@ def load_genome_resources(cnf, required=list(), optional=list()):
 
     to_exit = False
 
-    if 'seq' in required:
-        required.remove('seq')
-
-        if 'seq' not in genome_cnf:
-            err('Please, provide path to the reference file (seq).')
-            to_exit = True
-
-        genome_cnf.seq = abspath(expanduser(genome_cnf['seq']))
-        if not verify_file(genome_cnf.seq, 'Reference seq'):
-            to_exit = True
-
-    if 'snpeff' in required:
-        required.remove('snpeff')
-        if 'snpeff' in genome_cnf:
-            genome_cnf['snpeff'] = abspath(expanduser(genome_cnf['snpeff']))
-            if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
-                to_exit = True
+    for key in genome_cnf:
+        genome_cnf[key] = expanduser(genome_cnf[key])
 
     for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if key not in genome_cnf:
-            err('Please, provide path to ' + key + ' in system config genome section.')
+            if key == 'seq':
+                err('Please, provide path to the reference file (seq).')
+            else:
+                err('Please, provide path to ' + key + ' in system config genome section.')
             to_exit = True
         else:
             genome_cnf[key] = abspath(expanduser(genome_cnf[key]))
-            if not verify_file(genome_cnf[key], key):
-                to_exit = True
+            if key == 'snpeff':
+                if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
+                    to_exit = True
+            else:
+                if not verify_file(genome_cnf[key], key):
+                    to_exit = True
 
     for key in optional:
         if key not in genome_cnf:

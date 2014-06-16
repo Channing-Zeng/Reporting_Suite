@@ -589,9 +589,10 @@ class bedgraph_file:
                 reading = False
             else:
                 for line in batch:
-                    aline = line.replace('\n', '').split(' ')
-                    #new region 
-                    r = region.region(aline[0], aline[1], aline[2], aline[3])
+                    aline = line.replace('\n', '').split()
+                    #new region
+                    r = region.region(aline[0], aline[1], aline[2])
+
                     search_open = True
 
                     while search_open:

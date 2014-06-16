@@ -48,7 +48,7 @@ class Worksheet(object):
     ## Constructor
     #################################################################
     def __init__(self, sheetname, parent_book, cell_overwrite_ok=False):
-        from xlwt import Row
+        from source.ngscat.xlwt import Row
         self.Row = Row
 
         import Column
