@@ -1,0 +1,102 @@
+2014-06-16 20:15:57  Using /Users/vladsaveliev/vagrant/reporпонедельник, 16 июня 2014 г. 20:15:58 (MSK)
+ile.
+2014-06-16 20:15:57  Using /Users/vladsaveliev/vagrant/reporting_suite/test/run_info.yaml as a run configuration file.
+2014-06-16 20:15:57  
+2014-06-16 20:15:57  Loaded system config /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml
+2014-06-16 20:15:57  Loaded run config /Users/vladsaveliev/vagrant/reporting_suite/test/run_info.yaml
+2014-06-16 20:15:57  
+2014-06-16 20:15:57  Saving into /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate
+2014-06-16 20:15:57  Loaded resources for hg19
+2014-06-16 20:15:57  Using variants bcbio_test_dir/sample1/sample1-mutect.filt_indels.vcf
+2014-06-16 20:15:57  Using alignement bcbio_test_dir/sample1/sample1-ready.bam
+2014-06-16 20:15:57  
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  Extracting dataset by filename, filtering REJECT line.
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  Saved to bcbio_test_dir/sample1/sample1-mutect.filt_indels.vcf
+2014-06-16 20:15:57  
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  GATK
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.vcf exists, reusing
+2014-06-16 20:15:57  
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  Annotate with cosmic
+2014-06-16 20:15:57  ----------------------------------------------------------------------
+2014-06-16 20:15:57  /usr/bin/java  -jar /usr/local/share/java/snpEff/SnpSift.jar annotate -v -info ID,CNT,AA,CDS /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.vcf > /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/ngs_reporting_tmpjlEFmc/tmp_zvECr/sample1-mutect.filt_indels.gatk.cosmic.vcf
+2014-06-16 20:15:58     00:00:00.000	Annotating entries from: 'null'
+2014-06-16 20:15:58     Index: /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
+2014-06-16 20:15:58     index:	chrM	51347
+2014-06-16 20:15:58     index:	chrM	8971
+2014-06-16 20:15:58     00:00:00.099	Chromosome: 'M'
+2014-06-16 20:15:58     00:00:00.102	Done.
+2014-06-16 20:15:58     Total annotated entries : 0
+2014-06-16 20:15:58     Total entries           : 2
+2014-06-16 20:15:58     Percent                 : 0.00%
+2014-06-16 20:15:58     Errors (bad references) : 0
+2014-06-16 20:15:58  Saved to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.cosmic.vcf
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Intersecting with analysis_blocks
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  /usr/local/bin/vcfannotate -b /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed -k analysis_blocks /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.cosmic.vcf > /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/ngs_reporting_tmpjlEFmc/tmprVoTOT/sample1-mutect.filt_indels.gatk.cosmic.analysis_blocks.vcf
+2014-06-16 20:15:58  Saved to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.cosmic.analysis_blocks.vcf
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Filtering incorrect fields.
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Saved to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.gatk.cosmic.analysis_blocks.vcf
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Converting to MAF
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 46.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 419, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 420, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 421, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 422, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 423, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 424, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 425, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 426, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 427, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 428, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 429, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 430, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 431, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 432, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in pattern match (m//) at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 433, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 434, <GEN0> line 47.
+2014-06-16 20:15:58     Use of uninitialized value $effect in string eq at /Users/vladsaveliev/vagrant/reporting_suite/source/varannotation/../../external/vcf2maf-1.1.0/vcf2maf.pl line 435, <GEN0> line 47.
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Extracting fields
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.anno.tsv exists, reusing
+2014-06-16 20:15:58  Saved TSV file to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.anno.tsv
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Renaming fields.
+2014-06-16 20:15:58  ----------------------------------------------------------------------
+2014-06-16 20:15:58  Saved TSV file with nice names to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/work_sample1/sample1-mutect.filt_indels.anno.renamed.tsv
+2014-06-16 20:15:58  
+2014-06-16 20:15:58  **********************************************************************
+2014-06-16 20:15:58  Saved final VCF to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/sample1-mutect.filt_indels.anno.vcf
+2014-06-16 20:15:58  Saved final MAF to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/sample1-mutect.filt_indels.anno.maf
+2014-06-16 20:15:58  Saved final TSV to /Users/vladsaveliev/vagrant/reporting_suite/test/bcbio_test_dir/sample1/VarAnnotate/sample1-mutect.filt_indels.anno.tsv

@@ -1,0 +1,10 @@
+понедельник, 16 июня 2014 г. 20:16:07 (MSK)
+Traceback (most recent call last):
+  File "/Users/vladsaveliev/vagrant/reporting_suite/tools/InDelFilter.py", line 158, in <module>
+    main()
+  File "/Users/vladsaveliev/vagrant/reporting_suite/tools/InDelFilter.py", line 30, in main
+    add_af_diff_gt_filter(lineSplit, myFilters)
+  File "/Users/vladsaveliev/vagrant/reporting_suite/tools/InDelFilter.py", line 74, in add_af_diff_gt_filter
+    maxNonRefAD = max(sample[1:])
+ValueError: max() arg is an empty sequence
+понедельник, 16 июня 2014 г. 20:16:07 (MSK)

@@ -42,4 +42,3 @@ nosetests.xml
 
 test/results*
 test/results*/*
-test/bcbio_test_dir
