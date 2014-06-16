@@ -24,12 +24,12 @@ def main(argv):  # dir samples.txt report_basedir
     report_basedir = argv[3]
     report_suffix = '.targetseq.summary.txt'
     #summarize_cov_report(out_dirpath,samples_fname, report_basedir)
-    summarize_cov_gene_report( out_dirpath,samples_fname, report_basedir)
+    summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir)
 
 
 def summarize_cov_report(out_dirpath,samples_fname, report_basedir):
     report_suffix = '.targetseq.summary.txt'
-    summary_report_fpath=join(out_dirpath, 'targetcov_summary_report.txt')
+    summary_report_fpath = join(out_dirpath, 'targetcov_summary_report.txt')
     report_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:
@@ -51,9 +51,10 @@ def summarize_cov_report(out_dirpath,samples_fname, report_basedir):
 
     summarize_cov(report_fpaths, summary_report_fpath, report_suffix)
 
+
 def summarize_cov_gene_report( out_dirpath,samples_fname, report_basedir):
     report_suffix = '.targetseq.details.gene.txt'
-    summary_report_fpath=join(out_dirpath, 'targetcov_details.gene.txt')
+    summary_report_fpath = join(out_dirpath, 'targetcov_details.gene.txt')
     report_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:

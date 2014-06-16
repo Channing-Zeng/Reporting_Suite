@@ -62,14 +62,14 @@ def filter_variants(cnf, vcf_fpath):
     err('*' * 70)
     vcf_fpath = iterate_file(cnf, vcf_fpath, lambda l: l.replace('\tPASS\t', '\t\t'))
 
-    awk_sort = subprocess.Popen( ["-c", "awk -f script.awk | sort > outfile.txt" ],
-    stdin= subprocess.PIPE, shell=True )
-    awk_sort.communicate( "input data\n" )
-    awk_sort.wait()
+    # awk_sort = subprocess.Popen( ["-c", "awk -f script.awk | sort > outfile.txt" ],
+    # stdin= subprocess.PIPE, shell=True )
+    # awk_sort.communicate( "input data\n" )
+    # awk_sort.wait()
 
     cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
     filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'filtered')
-    subprocess.call(cmdline, stdin=sys.stding, stdout=)
+    subprocess.call(cmdline, stdin=sys.stdin, stdout=)
     return filtered_fpath
 
 
