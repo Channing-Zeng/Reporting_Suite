@@ -2,7 +2,6 @@
 
 import sys
 from source.config import Defaults
-from source.ngscat.bam_file import filter_unmapped_reads
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -19,6 +18,7 @@ from source.main import read_opts_and_cnfs, check_system_resources, load_genome_
 from source.utils import verify_file, critical, info
 from source.runner import run_one
 from source.ngscat import config, ngscat_main
+from source.ngscat.bam_file import filter_unmapped_reads
 
 
 def main():
