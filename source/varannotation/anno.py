@@ -165,7 +165,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
               '{input_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(input_fpath, 'db_nsfp')
+    output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
     return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True)
 
@@ -200,7 +200,7 @@ def _snpeff(cnf, input_fpath):
     if cnf['snpeff'].get('cancer'):
         cmdline += ' -cancer '
 
-    output_fpath = intermediate_fname(input_fpath, 'snpEff')
+    output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                 stdout_to_outputfile=True), \
         stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
