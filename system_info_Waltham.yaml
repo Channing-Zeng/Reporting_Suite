@@ -18,13 +18,17 @@ resources:
   plot_vcfstats:
     path: /group/ngs/src/bcftools/plot-vcfstats
   bgzip:
-    path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/bgzip
+    path: /group/ngs/src/tabix/bgzip
   tabix:
-    path: /group/ngs/src/bcbio-nextgen/0.7.8/rhel5-x64/bin/tabix
+    path: /group/ngs/src/tabix/tabix
   indelfilter:
     path: /group/ngs/bin/InDelFilter.py
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
+  samtools:
+    path: /group/ngs/src/samtools/samtools
+  bedtools:
+    path: /group/ngs/src/bedtools/bin/bedtools
 
 genomes:
   hg19:
