@@ -1,18 +1,21 @@
 from os.path import join
+import sys
 
-from source.logger import step_greetings
+from source.logger import step_greetings, critical
 from source.utils import get_java_tool_cmdline, call_subprocess
 
 
 def gatk_qc(cnf, vcf_fpath):
     step_greetings('Quality control reports')
 
-    qc_cnf = cnf['quality_control']
-    databases = qc_cnf.get('database_vcfs')
-    novelty = qc_cnf.get('novelty')
-    metrics = qc_cnf.get('metrics')
+    qc_cnf = cnf.quality_control
+    databases = qc_cnf.database_vcfs
+    novelty = qc_cnf.novelty
+    metrics = qc_cnf.metrics
 
     executable = get_java_tool_cmdline(cnf, 'gatk')
+    if not executable:
+        sys.exit(1)
 
     gatk_opts_line = ''
     if cnf.gatk:

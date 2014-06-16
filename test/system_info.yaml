@@ -15,9 +15,9 @@ resources:
   plot_vcfstats:
     path: ~/bin/bcftools/plot-vcfstats
   indelfilter:
-    path: /Users/vlad/vagrant/reporting_suite/tools/InDelFilter.py
+    path: ~/vagrant/reporting_suite/tools/InDelFilter.py
   qsub:
-    path: /Users/vlad/vagrant/reporting_suite/tools/qsub.sh
+    path: ~/vagrant/reporting_suite/tools/qsub.sh
 
 
 genomes:

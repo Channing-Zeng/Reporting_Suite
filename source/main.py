@@ -54,7 +54,6 @@ def read_opts_and_cnfs(extra_opts,
     ]
 
     parser = OptionParser()
-    parser.set_defaults(**Defaults.__dict__)
     for args, kwargs in options:
         parser.add_option(*args, **kwargs)
 
@@ -136,11 +135,10 @@ def check_system_resources(cnf, required=list(), optional=list()):
 
     for program in required:
         if not which(program):
-            resources = cnf.get('resources')
-            if not resources:
+            if cnf.resources is None:
                 critical('No "resources" section in system config.')
 
-            data = resources.get(program)
+            data = cnf.resources.get(program)
             if data is None:
                 err(program + ' is required. Specify path in system config or in your environment.')
                 to_exit = True
@@ -187,8 +185,8 @@ def load_genome_resources(cnf, required=list(), optional=list()):
             err('Please, provide path to the reference file (seq).')
             to_exit = True
 
-        genome_cnf['seq'] = abspath(expanduser(genome_cnf['seq']))
-        if not verify_file(genome_cnf['seq'], 'Reference seq'):
+        genome_cnf.seq = abspath(expanduser(genome_cnf['seq']))
+        if not verify_file(genome_cnf.seq, 'Reference seq'):
             to_exit = True
 
     if 'snpeff' in required:

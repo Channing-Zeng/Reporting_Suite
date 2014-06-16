@@ -39,62 +39,78 @@ class Defaults():
              'VarQC',
              'FilterVariants',
              'TargetCov',
-             'NGScat',
-             'QualiMap']
-    qualimap = False
+             'NGScat']
+    qualimap = False  # True adds 'QualiMap' to steps
     qsub_runner = join(cur_dirpath, pardir, 'runner_Waltham.sh')
 
     coverage_reports = dict(
         depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
         padding=250,
-        report_types='summary,genes')
+        report_types='summary,genes'
+    )
 
     ngscat = dict(
         saturation='n',
         depthlist='auto',
         availablefeatures=[
             'percbases', 'saturation', 'specificity', 'coveragefreq',
-            'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr'])
+            'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
+    )
+
+    variant_filtering = dict(
+        freq=0.15,
+    )
 
     quality_control = dict(variant_distribution_scale=1000)
 
     clinical_reporting = False
 
 
-class Config():
-    def __init__(self, cmd_line_opts, sys_cnf, run_cnf):
+class Config(dict):
+    def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, **kwargs):
+        super(Config, self).__init__(**kwargs)
 
-        sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
+        self.level = 0
 
-        self.genome = None
+        if sys_cnf and run_cnf:
 
-        self.base_tmp_dir = None
-        self.tmp_dir = None
-        self.work_dir = None
-        self.output_dir = None
-        self.log = None
-        self.threads = None
+            self.genome = None
 
-        self.overwrite = False
-        self.reuse_intermediate = None
-        self.keep_intermediate = None
+            self.base_tmp_dir = None
+            self.tmp_dir = None
+            self.work_dir = None
+            self.output_dir = None
+            self.log = None
+            self.threads = None
 
-        self.__dict__ = _load(sys_cnf_fpath, run_cnf_fpath)
+            self.overwrite = False
+            self.reuse_intermediate = None
+            self.keep_intermediate = None
 
-        self.sys_cnf = sys_cnf_fpath
-        self.run_cnf = run_cnf_fpath
+            sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
+            loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
+            for k, v in loaded_dict.items():
+                self[k] = v
 
-        for k, v in cmd_line_opts.items():
-            if k not in self.__dict__ or v is not None:
-                self.__dict__[k] = v
+            for k, v in cmd_line_opts.items():
+                if k not in self or v is not None:
+                    self[k] = v
 
-        if self.overwrite:
-            self.reuse_intermediate = False
+            self.sys_cnf = sys_cnf_fpath
+            self.run_cnf = run_cnf_fpath
 
-        if not self.base_tmp_dir:
-            self.base_tmp_dir = self.work_dir
+            if self.overwrite:
+                self.reuse_intermediate = False
 
-    def get(self, key):
+            if not self.base_tmp_dir:
+                self.base_tmp_dir = self.work_dir
+        else:
+            for k, v in cmd_line_opts.items():
+                self[k] = v
+
+        # self.d = self.__dict__
+
+    def get(self, key, d=None):
         return self.__dict__.get(key)
 
     def __contains__(self, key):
@@ -104,6 +120,9 @@ class Config():
         return self.__dict__.get(key)
 
     def __setattr__(self, key, value):
+        if isinstance(value, dict) and not isinstance(value, Config):
+            value = Config(value)
+            value.level = self.level + 1
         self.__dict__[key] = value
 
     def __delattr__(self, key):
@@ -113,14 +132,38 @@ class Config():
         return self.__dict__[key]
 
     def __setitem__(self, key, value):
+        if isinstance(value, dict) and not isinstance(value, Config):
+            value = Config(value)
+            value.level = self.level + 1
         self.__dict__[key] = value
 
     def __delitem__(self, key):
         del self.__dict__[key]
 
     def __repr__(self):
-        return self.__dict__.__repr__()
+        s = ''
+        for k, v in self.__dict__.items():
+            if k == 'level':
+                continue
+            s += '  ' * self.level
+            s += str(k) + ': '
+            if isinstance(v, Config):
+                s += '\n'
+            s += repr(v)
+            s += '\n'
+        return s
 
+    def copy(self):
+        return Config(self.__dict__)
+
+    def keys(self):
+        return [k for k in self.__dict__.keys() if k != 'level']
+
+    def items(self):
+        return [(k, v) for k, v in self.__dict__.items() if k != 'level']
+
+    def values(self):
+        return [v for k, v in self.__dict__.items() if k != 'level']
 
 
 def _load(sys_cnf_fpath, run_cnf_fpath):

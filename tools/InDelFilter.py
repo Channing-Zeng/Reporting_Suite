@@ -69,6 +69,8 @@ def add_af_diff_gt_filter(linesplit, myFilters):
         sampleAFs = []
         sampleCounts = []
         for sample in AD:
+            # fix negative values
+            sample = [0 for item in sample if item < 0]
             maxNonRefAD = max(sample[1:])
             sampleAFs.append(float(maxNonRefAD)/(float(maxNonRefAD)+float(sample[0])))
             sampleCounts += [[sample[0], maxNonRefAD]]

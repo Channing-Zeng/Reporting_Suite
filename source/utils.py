@@ -265,7 +265,7 @@ def get_tool_cmdline(cnf, tool_name, interpreter='',
             extra_warning, suppress_warn)
 
     # IN SYSTEM CONFIG?
-    if (cnf.resources and
+    if (cnf.resources is not None and
         tool_name.lower() in cnf.resources and
         'path' in cnf.resources[tool_name.lower()]):
 
@@ -374,7 +374,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         stdout_to_outputfile = False
 
     # NEEDED TO REUSE?
-    if output_fpath and cnf.reuse_intermediate and overwrite is False:
+    if output_fpath and cnf.reuse_intermediate and not overwrite:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
@@ -447,7 +447,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
                 err('Command returned status ' + str(ret_code) +
-                    ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
+                    ('. Log in ' + cnf.log if cnf.log is not None else '.'))
                 if exit_on_error:
                     clean()
                     sys.exit(1)

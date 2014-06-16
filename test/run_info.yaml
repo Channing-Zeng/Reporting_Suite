@@ -182,4 +182,4 @@ verbose: True
 keep_intermediate: True
 reuse_intermediate: True
 
-qsub_runner: /Users/vlad/vagrant/reporting_suite/test/runner_local.sh
+qsub_runner: ~/vagrant/reporting_suite/test/runner_local.sh

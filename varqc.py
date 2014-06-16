@@ -72,12 +72,12 @@ def check_quality_control_config(cnf):
              'using default ' + ', '.join(qc_cnf['novelty']))
 
     if 'metrics' not in qc_cnf:
-        qc_cnf['metircs'] = [
+        qc_cnf['metrics'] = [
            'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
         info('Warning: no metrics for quality control, using '
-             'default ' + ', '.join(qc_cnf['metircs']))
+             'default ' + ', '.join(qc_cnf['metrics']))
 
     if 'variants_distribution_scale' not in qc_cnf:
         qc_cnf['variants_distribution_scale'] = 1000
@@ -94,10 +94,9 @@ def check_quality_control_config(cnf):
             if not verify_file(db, 'VCF'):
                 to_exit = True
             dbs_dict[basename(db)] = db
-        elif db not in cnf['genome']:
+        elif db not in cnf.genome:
             to_exit = True
-            err(db + ' for variant qc is not found '
-                                     'in genome resources in system config.')
+            err(db + ' for variant qc is not found in genome resources in system config.')
         else:
             dbs_dict[db] = cnf['genome'][db]
 
