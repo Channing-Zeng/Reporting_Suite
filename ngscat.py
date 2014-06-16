@@ -93,7 +93,7 @@ def main():
     cnf['parallel'] = False
     cnf['name'] = dirname(cnf['bam'])  # TODO: remove
 
-    run_one(cnf, required_keys, optional_keys, process_one, finalize_one)
+    run_one(cnf, process_one, finalize_one)
 
 
 def process_parameters(cnf):

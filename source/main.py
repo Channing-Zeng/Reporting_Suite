@@ -64,6 +64,7 @@ def read_opts_and_cnfs(extra_opts,
     if not check_keys(cnf, required_keys):
         parser.print_help()
         sys.exit(1)
+
     if not check_inputs(cnf, file_keys, dir_keys):
         sys.exit(1)
 
@@ -104,16 +105,18 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
         return True
 
     for key in file_keys:
-        if key and key in cnf:
+        if key and key in cnf and cnf.key:
             if not _verify_input_file(key):
                 to_exit = True
-            cnf[key] = abspath(expanduser(cnf[key]))
+            else:
+                cnf[key] = abspath(expanduser(cnf[key]))
 
     for key in dir_keys:
-        if key and key in cnf:
+        if key and key in cnf and cnf.key:
             if not verify_dir(cnf[key], key):
                 to_exit = True
-            cnf[key] = abspath(expanduser(cnf[key]))
+            else:
+                cnf[key] = abspath(expanduser(cnf[key]))
 
     return not to_exit
 
