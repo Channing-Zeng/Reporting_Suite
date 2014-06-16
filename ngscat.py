@@ -109,15 +109,13 @@ def process_parameters(cnf):
         critical('Invalid values for --depth_list option. Please, provide a comma separated '
                  'list of values without leaving spaces, e.g.: 1.0,2.5,10.0')
 
-    if 'feature' in cnf:
+    if cnf.feature:
         cnf['feature'] = cnf['feature'].lower()
-    else:
-        cnf['feature'] = None
 
-    if cnf['feature'] and cnf['feature'] not in config.availablefeatures:
+    if cnf.feature and cnf.feature not in Defaults.ngscat['availablefeatures']:
         critical('%s is not available. Please, check that the selected '
                  'feature is one of the following: %s'
-                 % (cnf['feature'], ', '.join(config.availablefeatures)))
+                 % (cnf['feature'], ', '.join(Defaults.ngscat['availablefeatures'])))
 
     if 'extend' in cnf:
         cnf['extend'] = int(cnf['extend'])
