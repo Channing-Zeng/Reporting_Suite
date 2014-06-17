@@ -53,28 +53,35 @@ def summarize_cov_report(out_dirpath,samples_fname, report_basedir):
 
 
 def summarize_cov_gene_report( out_dirpath,samples_fname, report_basedir):
-    report_suffix = '.targetseq.details.gene.txt'
-    summary_report_fpath = join(out_dirpath, 'targetcov_details.gene.txt')
+    report_details_suffix = '.targetseq.details.gene.txt'
+    report_summary_suffix = '.targetseq.summary.txt'
+
+
+
     report_fpaths = []
+    report_summary_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:
             sample_name = line.strip()
 
-            report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
-            print(report_fpath)
-            if isfile(report_fpath):
-                report_fpaths.append(report_fpath)
+            report_details_fpaths = join(out_dirpath, sample_name, report_basedir, sample_name + report_details_suffix)
+            summary_report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_summary_suffix)
+            print(report_details_fpaths)
+            if isfile(report_details_fpaths):
+                report_fpaths.append(report_details_fpaths)
+                report_summary_fpaths.append(summary_report_fpath)
             else:
-                print(report_fpath + ' does not exist, checking another')
-                report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_suffix)
-                print(report_fpath)
-                if isfile(report_fpath):
-                    report_fpaths.append(report_fpath)
+                print(report_details_fpaths + ' does not exist, checking another')
+                report_details_fpaths = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_details_suffix)
+                print(report_details_fpaths)
+                if isfile(report_details_fpaths):
+                    report_fpaths.append(report_details_fpaths)
                 else:
-                    print(report_fpath + ' does not exist! skipping')
+                    print(report_details_fpaths + ' does not exist! skipping')
             print('')
 
-    summarize_cov_gene(report_fpaths, summary_report_fpath, report_suffix)
+
+    summarize_cov_gene(report_fpaths, report_summary_fpaths, report_summary_suffix)
 
 
 if __name__ == '__main__':

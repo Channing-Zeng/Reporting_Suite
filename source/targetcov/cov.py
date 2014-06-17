@@ -30,10 +30,7 @@ def run_target_cov(cnf, bam, bed):
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
 
-    # if 'amplicons' in options['reports']:
-    #     step_greetings('Coverage report for the input BED file regions')
-    #     amplicons_report_fpath = join(output_dir, sample_name + '.targetseq.details.capture.txt')
-    #     run_amplicons_cov_report(cnf, amplicons_report_fpath, sample_name, depth_threshs, amplicons)
+
 
     if 'genes' in cnf['reports']:
         if not exons_bed:
@@ -121,8 +118,7 @@ def _run_header_report(cnf, result_fpath,
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     append_stat(format_decimal('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target, '%'))
 
-    # v_aligned_read_bases = number_bases_in_aligned_reads(bam)
-    # append_stat(format_integer('Total aligned bases in reads', v_aligned_read_bases))
+
 
     v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
     append_stat(format_integer('Read bases mapped on target', v_read_bases_on_targ))
@@ -134,15 +130,7 @@ def _run_header_report(cnf, result_fpath,
     append_stat(format_decimal('Percentage of target within 20% of mean depth',
                                percent_within_normal, '%'))
 
-    # v_percent_read_bases_on_targ = 100.0 * v_read_bases_on_targ / v_aligned_read_bases \
-    #     if v_aligned_read_bases else None
-    # format_decimal('Percent bases in reads on target', v_percent_read_bases_on_targ, '%'),
 
-    # format_integer('Bases covered (at least 1x) in target', bases_per_depth[1]),
-
-    # for depth, bases in bases_per_depth.items():
-    #     append_stat(format_integer('Bases on target covered at least by ' + str(depth) +
-    #                                ' read' + ('s' if depth != 1 else ''), bases))
 
     for depth, bases in bases_within_threshs.items():
         percent = 100.0 * bases / total_bed_size if total_bed_size else 0
@@ -212,29 +200,6 @@ def _get_amplicon_genes(amplicons, exon_genes):
     return amplicon_genes_by_name
 
 
-# def run_amplicons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
-#     for region in regions:
-#         region.feature = 'Amplicon'
-#         region.sample = sample_name
-#
-#     # exons_and_genes = add_genes_cov_analytics(regions, gene_pos=0)
-#
-#     return build_regions_cov_report(cnf, report_fpath, depth_threshs, regions)
-#
-#
-# def run_exons_cov_report(cnf, report_fpath, sample_name, depth_threshs, regions):
-#     extra_fields = ['Gene']
-#
-#     for region in regions:
-#         region.feature = 'Exon'
-#         region.sample = sample_name
-#         region.extra_fields = region.extra_fields[:1]
-#
-#     exons_with_genes = add_genes_cov_analytics(regions, gene_pos=0)
-#
-#     return build_regions_cov_report(
-#         cnf, report_fpath, depth_threshs,
-#         exons_with_genes, extra_headers=extra_fields)
 
 
 def _get_exon_genes(cnf, subregions):
@@ -261,11 +226,6 @@ def _get_exon_genes(cnf, subregions):
     return sorted_genes
 
 
-# def add_gene_names_to_amplicons(amplicons, genes):
-#     for gene in genes:
-#         for amplicon in amplicons:
-#             if gene.intersect(amplicon):
-#                 amplicon.gene_name = gene.gene_name
 
 
 def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,

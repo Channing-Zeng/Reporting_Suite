@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from os.path import basename
 from os.path import splitext
+from source.targetcov.copy_number import run_copy_number
 
 database = 'cosmic'
 novelty = 'all'
@@ -27,12 +28,18 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
     _print_full_report(full_report, output_summary_fpath)
 
 
-def summarize_cov_gene(report_fpaths, output_summary_fpath, report_suffix=None):
+def summarize_cov_gene(report_details_fpaths, report_summary_fpaths,  report_summary_suffix):
     gene_summary_lines = []
-    for report_fpath in report_fpaths:
-        gene_summary_lines += parse_report_cov_gene(report_fpath, "Gene-Amplicon")
+    sample_coverage = dict()
+    for report_details_fpath in report_details_fpaths:
+        gene_summary_lines += _parse_report_cov_gene(report_details_fpath, "Gene-Amplicon")
+    for report_summary_fpath in report_summary_fpaths:
+        report_lines = _parse_report_cov(report_summary_fpath)
+        sample_name = _get_sample_name(report_summary_fpath, report_summary_suffix)
+        sample_coverage[sample_name] = int(report_lines.get("Mapped reads").replace(",", ""))
 
-    print_full_report_gene(gene_summary_lines,  output_summary_fpath)
+    run_copy_number( sample_coverage, gene_summary_lines )
+   # print_full_report_gene(gene_summary_lines,  output_summary_fpath)
 
 
 
@@ -80,14 +87,14 @@ def _parse_report_cov(report_fpath):
     return report_dict
 
 
-def parse_report_cov_gene(report_fpath, line_type):
+def _parse_report_cov_gene(report_fpath, line_type):
     gene_summary_lines =[]
 
     with open(report_fpath, 'r') as f:
         for line in f:
             if line.find(line_type)> -1:
                 cur_value = line.split()
-                gene_summary_lines.append('\t'.join(cur_value[:8]))
+                gene_summary_lines.append(cur_value[:8])
 
     return gene_summary_lines
 
