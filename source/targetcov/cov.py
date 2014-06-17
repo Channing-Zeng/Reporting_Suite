@@ -10,26 +10,24 @@ from source.transaction import file_transaction
 from source.utils_from_bcbio import splitext_plus
 
 
-def run_target_cov(cnf, bam, bed):
+def run_target_cov(cnf, bam, amplicons_bed):
     summary_report_fpath = None
     gene_report_fpath = None
 
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, bam, bed)
+    amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, bam, amplicons_bed)
 
     chr_len_fpath = cnf['genome']['chr_lengths']
     exons_bed = cnf['genome']['exons']
-    genes_bed = cnf['genome'].get('genes')
 
     if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
         summary_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.summary.txt')
         _run_header_report(
             cnf, summary_report_fpath,
-            bed, bam, chr_len_fpath,
+            amplicons_bed, bam, chr_len_fpath,
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
-
 
 
     if 'genes' in cnf['coverage_reports']['report_types']:
@@ -44,26 +42,43 @@ def run_target_cov(cnf, bam, bed):
             # log('Annotating amplicons.')
             # annotate_amplicons(amplicons, genes_bed)
 
-            if genes_bed:
-                info('Getting the gene regions that overlap the amplicons.')
-                bed = intersect_bed(cnf, genes_bed, bed)
-            # TODO: do it without genes: intersect with exons and then...
-            # TODO: ...add all the exons of all matched genes
+            info('Sorting exons BED file.')
+            exons_bed = sort_bed(cnf, exons_bed)
             info('Getting the exons that overlap amplicons.')
-            bed = intersect_bed(cnf, exons_bed, bed)
-            info('Sorting final exon BED file.')
-            bed = sort_bed(cnf, bed)
+            overlapped_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
+            info('Adding other exons for the genes of overlapped exons.')
+            target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
 
             info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-            exons, _, _, _ = _bedcoverage_hist_stats(cnf, bam, bed)
+            exons, _, _, _ = _bedcoverage_hist_stats(cnf, bam, target_exons_bed)
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
             gene_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.details.gene.txt')
             _run_region_cov_report(cnf, gene_report_fpath, cnf['name'], cnf['coverage_reports']['depth_thresholds'],
-                                  amplicons, exons)
+                                   amplicons, exons)
 
     return summary_report_fpath, gene_report_fpath
+
+
+def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
+    gene_names = set()
+    with open(overlapped_exons_bed) as overl_f:
+        for line in overl_f:
+            if not line or not line.strip() or line.startswith('#') or len(line.split()) < 4:
+                continue
+            gene_names.add(line.split()[3])
+
+    new_overlp_exons_bed = intermediate_fname(cnf, overlapped_exons_bed, 'by_genes')
+    with open(exons_bed) as exons_f, \
+         open(new_overlp_exons_bed, 'w') as new_overl_f:
+        for line in exons_f:
+            if not line or not line.strip() or line.startswith('#') or len(line.split()) < 4:
+                new_overl_f.write(line)
+            elif line.split()[3] in gene_names:
+                new_overl_f.write(line)
+
+    return sort_bed(cnf, new_overlp_exons_bed)
 
 
 def _run_header_report(cnf, result_fpath,

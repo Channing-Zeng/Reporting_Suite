@@ -30,5 +30,4 @@ genomes:
     snpeff: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff   # data dir path
 
     chr_lengths: data/chr_lengths_hg19.txt
-#    genes: data/test_genes.bed
     exons: data/test_exons.bed
