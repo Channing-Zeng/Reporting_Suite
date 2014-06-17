@@ -1,6 +1,0 @@
-вторник, 17 июня 2014 г. 12:11:08 (MSK)
-  File "/Users/vladsaveliev/vagrant/reporting_suite/filter_variants.py", line 72
-    subprocess.call(cmdline, stdin=sys.stdin, stdout=)
-                                                     ^
-SyntaxError: invalid syntax
-вторник, 17 июня 2014 г. 12:11:08 (MSK)

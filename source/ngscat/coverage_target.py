@@ -158,8 +158,7 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
 
     pylab.rc('axes', linewidth=3.0)
     #Drawing points
-    i = 0
-    for chr in chroms:
+    for i, chr in enumerate(chroms):
         fig = matplotlib.pyplot.figure(figsize=(25, 6))
         ax = fig.add_subplot(111)
         rects = []
@@ -194,7 +193,6 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
 
         fig.savefig(outdir + chr + '_Ontarget_Coverage.png')
         matplotlib.pyplot.close(fig)
-        i = i + 1
 
     fdw = file(outdir + 'NoCoverage.txt', 'w')
     for i in range(len(coverageFiles)):

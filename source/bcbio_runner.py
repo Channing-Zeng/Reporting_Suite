@@ -95,7 +95,7 @@ class Runner():
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\'')
         self.filter_variants = self.steps.step(
             name='FilterVariants',
-            script='filter_variants.py',
+            script='varfilter.py',
             param_line=spec_params + ' --vcf {vcf}')
         self.targetcov = self.steps.step(
             name='TargetCov',

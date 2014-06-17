@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import fileinput
-from scipy.stats import fisher_exact
+# from scipy.stats import fisher_exact
 from sys import argv, exit
 
 def main():
@@ -78,8 +78,7 @@ def add_af_diff_gt_filter(linesplit, myFilters):
         if len(sampleCounts) > 1:
             AFDiffSignificant = False
             for myCounts in sampleCounts[1:]:
-                oddsratio, p_value = fisher_exact([sampleCounts[0],
-                                               myCounts])
+                oddsratio, p_value = fisher_exact([sampleCounts[0], myCounts])
                 if p_value < 0.05:
                     AFDiffSignificant = True
             if not AFDiffSignificant:
@@ -106,8 +105,7 @@ def strand_bias_filter(linesplit, myFilters):
             a, c, b, d = int(sample[0]), int(sample[1]), int(sample[2]), int(sample[3])
             if b == 0 and d == 0 and ["0/0"] in genotypes: # not an indication of strand bias but no evidence for alternate allele
                 continue 
-            oddsratio, p_value = fisher_exact([[a,b],
-                                               [c,d]])
+            oddsratio, p_value = fisher_exact([[a,b], [c,d]])
             if p_value < 0.05 or b == 0 or d == 0:
                 SB = True
     if SB == True:

@@ -22,9 +22,6 @@ from source.ngscat.bam_file import filter_unmapped_reads
 
 
 def main():
-    required_keys = ['bam', 'bed']
-    optional_keys = ['extra_bam', 'extend', 'saturation', 'depthlist', 'feature']
-
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], dict(

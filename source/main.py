@@ -106,14 +106,14 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
         return True
 
     for key in file_keys:
-        if key and key in cnf and cnf.key:
+        if key and key in cnf and cnf[key]:
             if not _verify_input_file(key):
                 to_exit = True
             else:
                 cnf[key] = abspath(expanduser(cnf[key]))
 
     for key in dir_keys:
-        if key and key in cnf and cnf.key:
+        if key and key in cnf and cnf[key]:
             if not verify_dir(cnf[key], key):
                 to_exit = True
             else:

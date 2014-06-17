@@ -69,7 +69,7 @@ def filter_variants(cnf, vcf_fpath):
 
     cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
     filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'filtered')
-    subprocess.call(cmdline, stdin=sys.stdin, stdout=)
+    # subprocess.call(cmdline, stdin=sys.stdin, stdout=)
     return filtered_fpath
 
 
