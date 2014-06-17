@@ -38,9 +38,9 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
         pos = 0
         #Calculate size of intervals
         for line in fdon:
-            pos = pos + 1
+            pos += 1
         #fix size of intervals
-        size = round(pos / npoints * 1.0)
+        size = round(float(pos) / npoints)
         fdon = file(coverageFile)
 
         # initialize variables
@@ -78,17 +78,14 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
                     zeros.append(aux)
                     zeroflag = False
 
-
-
-                    #split if is a new chromosome
+            #split if is a new chromosome
             if chrom != row[0] and chrom != '':
                 chroms.append(chrom)
-                chrom = row[0]
                 if i != 0:
                     yaux.append(sum / (i * 1.0))
                     xaux.append(a_point)
-                    x.append(xaux)
-                    y.append(yaux)
+                x.append(xaux)
+                y.append(yaux)
                 a_point = 0
                 xaux = []
                 yaux = []
@@ -127,7 +124,7 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
                 zeroflag = False
                 ###########
 
-            #            if (not warning):
+            # if (not warning):
             if (int(row[3]) < warncoveragethreshold):
                 warningcounter += 1
             else:
@@ -137,7 +134,6 @@ def print_coverage(coverageFiles, npoints, outdir, legend=None, executiongranted
 
             if (warningcounter > warnregionsize):
                 warning = True
-
 
 
         #Save the last chromosome
