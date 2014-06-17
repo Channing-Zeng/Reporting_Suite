@@ -21,8 +21,6 @@ resources:
     path: /group/ngs/src/tabix/bgzip
   tabix:
     path: /group/ngs/src/tabix/tabix
-  indelfilter:
-    path: /group/ngs/bin/InDelFilter.py
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
   samtools:

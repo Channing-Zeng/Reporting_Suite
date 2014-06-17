@@ -57,7 +57,22 @@ class Defaults():
     )
 
     variant_filtering = dict(
+        expression=expression,
+        undetermined=False,
+        fraction=0.4,
+        max_ratio=1,
+        sample_count=10,
         freq=0.15,
+        min_p_mean=5,
+        min_q_mean=25,
+        filt_p_mean=0,
+        filt_q_mean=0,
+        filt_depth=0,
+        min_freq=0.05,
+        min_mq=20,
+        min_vd=2,
+        maf=0.0025,
+        singal=4,
     )
 
     quality_control = dict(variant_distribution_scale=1000)

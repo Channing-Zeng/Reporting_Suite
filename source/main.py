@@ -16,7 +16,9 @@ def read_opts_and_cnfs(extra_opts,
                        key_for_sample_name,
                        required_keys,
                        file_keys=list(),
-                       dir_keys=list()):
+                       dir_keys=list(),
+                       description=None,
+                       extra_msg=None):
     options = extra_opts + [
         (['-o', '--output_dir'], dict(
              dest='output_dir',
@@ -55,7 +57,7 @@ def read_opts_and_cnfs(extra_opts,
          ),
     ]
 
-    parser = OptionParser()
+    parser = OptionParser(description=description)
     for args, kwargs in options:
         parser.add_option(*args, **kwargs)
 

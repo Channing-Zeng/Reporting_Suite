@@ -138,8 +138,11 @@ print <<USAGE;
 
     Options:
     -H Print this help page
+
     -b Novel or dbSNP variants with strand bias "2;1" or "2;0" and AF < 0.3 will be considered as false positive
+
     -u Undeteremined won't be counted for the sample count.
+
     -r DOUBLE
         When a novel variant is present in more than [fraction] of samples and mean allele frequency is less than -f, it's 
 	considered as likely false positive. Default 0.4.
