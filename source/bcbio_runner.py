@@ -129,13 +129,14 @@ class Runner():
             return None
 
         output_dirpath = self.dir
+        log_fpath = join(output_dirpath, step.name + '.log')
         if sample_name:
             output_dirpath = join(output_dirpath, sample_name)
         if create_dir:
             output_dirpath = join(output_dirpath, step.name)
             safe_mkdir(output_dirpath)
+            log_fpath = join(output_dirpath, 'log')
 
-        log_fpath = join(output_dirpath, step.name + '.log')
         out_fpath = out_fpath or log_fpath
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
