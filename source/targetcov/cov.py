@@ -21,7 +21,7 @@ def run_target_cov(cnf, bam, bed):
     exons_bed = cnf['genome']['exons']
     genes_bed = cnf['genome'].get('genes')
 
-    if 'summary' in cnf['reports']:
+    if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
         summary_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.summary.txt')
         _run_header_report(
@@ -32,7 +32,7 @@ def run_target_cov(cnf, bam, bed):
 
 
 
-    if 'genes' in cnf['reports']:
+    if 'genes' in cnf['coverage_reports']['report_types']:
         if not exons_bed:
             if cnf['reports'] == 'genes':
                 critical('Error: no genes or exons specified for the genome in system config, '

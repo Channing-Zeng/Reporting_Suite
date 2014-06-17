@@ -1,0 +1,9 @@
+/usr/bin/python /Users/vlad/vagrant/reporting_suite/varqc.py2014-06-16 03:51:58  vcf: /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/VarAnnotate/sampl+e2-mutect.anno.vcf does not exist.
+понедельник, 16 июня 2014 г. 03:51:58 (MSK)
+test/bcbio_test_dir/sampl+e2/VarQC
+2014-06-16 03:51:58  Using system_info.yaml as a system configuration file.
+2014-06-16 03:51:58  Using run_info.yaml as a run configuration file.
+2014-06-16 03:51:58  
+2014-06-16 03:51:58  Loaded system config /Users/vlad/vagrant/reporting_suite/test/system_info.yaml
+2014-06-16 03:51:58  Loaded run config /Users/vlad/vagrant/reporting_suite/test/run_info.yaml
+2014-06-16 03:51:58  

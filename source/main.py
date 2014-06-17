@@ -70,12 +70,12 @@ def read_opts_and_cnfs(extra_opts,
         sys.exit(1)
 
     assert key_for_sample_name and cnf[key_for_sample_name]
-    if key_for_sample_name not in cnf:
+    if not cnf[key_for_sample_name]:
         critical('Error: ' + key_for_sample_name + ' must be provided '
                  'in options or in ' + cnf.run_cnf + '.')
 
-    key_fname = basename(cnf.get(key_for_sample_name))
-    cnf.name = cnf.get('name') or key_fname.split('.')[0].split('-')[0]
+    key_fname = basename(cnf[key_for_sample_name])
+    cnf.name = cnf['name'] or key_fname.split('.')[0].split('-')[0]
 
     set_up_dirs(cnf)
 
@@ -180,7 +180,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
 
     to_exit = False
 
-    for key in genome_cnf:
+    for key in genome_cnf.keys():
         genome_cnf[key] = expanduser(genome_cnf[key])
 
     for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
@@ -211,7 +211,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
         sys.exit(1)
 
     cnf.genome = genome_cnf
-    del cnf.__dict__['genomes']
+    del cnf['genomes']
     genome_cnf['name'] = genome_name
 
     info('Loaded resources for ' + genome_cnf['name'])

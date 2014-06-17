@@ -27,21 +27,20 @@ def main(args):
              ),
             (['--padding'], dict(
                 dest='padding',
-                help='integer indicating the number of bases to extend each target region up and down-stream',
-                type='int',
-                default=Defaults.coverage_reports['padding'])
+                help='integer indicating the number of bases to extend each target region up and down-stream. '
+                     'Default is ' + str(Defaults.coverage_reports['padding']),
+                type='int')
              ),
             (['--reports'], dict(
-                dest='reports',
+                dest='report_types',
                 metavar=Defaults.coverage_reports['report_types'],
-                help='Comma-separated report names',
-                default=Defaults.coverage_reports['report_types'])
+                help='Comma-separated report names.')
              ),
             (['--depth-thresholds'], dict(
                 dest='depth_thresholds',
-                help='A,B,C..',
                 metavar='A,B,C',
-                default=','.join(map(str, Defaults.coverage_reports['depth_thresholds'])))
+                help='Default: ' + ','.join(map(str,
+                      Defaults.coverage_reports['depth_thresholds']))),
              ),
         ],
         required_keys=['bam', 'bed'],
@@ -60,6 +59,8 @@ def main(args):
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot make coverage reports.')
+        if cnf.report_types:
+            cnf.coverage_reports.report_types = cnf.report_types
 
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])

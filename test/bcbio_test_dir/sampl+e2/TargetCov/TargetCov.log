@@ -1,0 +1,75 @@
+/usr/bin/python /Users/vlad/vagrant/reporting_suite/targetcoпонедельник, 16 июня 2014 г. 03:52:00 (MSK)
+ --bam /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/sampl+e2-ready.bam --bed /Users/vlad/vagrant/reporting_suite/test/data/sample1.bed -o /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov
+2014-06-16 03:51:59  Using system_info.yaml as a system configuration file.
+2014-06-16 03:51:59  Using run_info.yaml as a run configuration file.
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  Loaded system config /Users/vlad/vagrant/reporting_suite/test/system_info.yaml
+2014-06-16 03:51:59  Loaded run config /Users/vlad/vagrant/reporting_suite/test/run_info.yaml
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  Saving into /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov
+2014-06-16 03:51:59  Loaded resources for hg19
+2014-06-16 03:51:59  Using alignement /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/sampl+e2-ready.bam
+2014-06-16 03:51:59  Using amplicons/capture panel /Users/vlad/vagrant/reporting_suite/test/data/sample1.bed
+2014-06-16 03:51:59  Calculation of coverage statistics for the regions in the input BED file...
+2014-06-16 03:51:59  processed 5 regions
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  ----------------------------------------------------------------------
+2014-06-16 03:51:59  Target coverage summary report
+2014-06-16 03:51:59  ----------------------------------------------------------------------
+2014-06-16 03:51:59  * General coverage statistics *
+2014-06-16 03:51:59  Getting number of reads...
+2014-06-16 03:51:59  Reads: 80,332
+2014-06-16 03:51:59  Getting number of mapped reads...
+2014-06-16 03:51:59  Mapped reads: 80,244
+2014-06-16 03:51:59  Unmapped reads: 88
+2014-06-16 03:51:59  Percentage of mapped reads: 99.89%
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  * Target coverage statistics *
+2014-06-16 03:51:59  Bases in target: 4,500
+2014-06-16 03:51:59  Covered bases in target: 2,499
+2014-06-16 03:51:59  Percentage of target covered by at least 1 read: 55.53%
+2014-06-16 03:51:59  Getting number of mapped reads on target...
+2014-06-16 03:51:59  Reads mapped on target: 36,951
+2014-06-16 03:51:59  Percentage of reads mapped on target : 46.05%
+2014-06-16 03:51:59  Making bed file for padded regions...
+2014-06-16 03:51:59  /usr/local/bin/bedtools slop -i /Users/vlad/vagrant/reporting_suite/test/data/sample1.bed -g /Users/vlad/vagrant/reporting_suite/test/data/chr_lengths_hg19.txt -b 250 > /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/ngs_reporting_tmp2W__7c/tmppa_gqV/sample1.padded.bed
+2014-06-16 03:51:59  Saved to /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/sample1.padded.bed
+2014-06-16 03:51:59  Getting number of mapped reads on padded target...
+2014-06-16 03:51:59  Reads mapped on padded target: 58,901
+2014-06-16 03:51:59  Percentage of reads mapped on padded target: 73.40%
+2014-06-16 03:51:59  Read bases mapped on target: 2,528,680
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  Average target coverage depth: 561.93
+2014-06-16 03:51:59  Std. dev. of target coverage depth: 613.95
+2014-06-16 03:51:59  Maximum target coverage depth: 2,024
+2014-06-16 03:51:59  Percentage of target within 20% of mean depth: 4.58%
+2014-06-16 03:51:59  Part of target covered at least by 1x: 55.53%
+2014-06-16 03:51:59  Part of target covered at least by 5x: 55.53%
+2014-06-16 03:51:59  Part of target covered at least by 10x: 55.53%
+2014-06-16 03:51:59  Part of target covered at least by 25x: 55.51%
+2014-06-16 03:51:59  Part of target covered at least by 50x: 55.49%
+2014-06-16 03:51:59  Part of target covered at least by 100x: 55.40%
+2014-06-16 03:51:59  Part of target covered at least by 500x: 45.89%
+2014-06-16 03:51:59  Part of target covered at least by 1000x: 28.67%
+2014-06-16 03:51:59  Part of target covered at least by 5000x: 0.00%
+2014-06-16 03:51:59  Part of target covered at least by 10000x: 0.00%
+2014-06-16 03:51:59  Part of target covered at least by 50000x: 0.00%
+2014-06-16 03:51:59  
+2014-06-16 03:51:59  Result: /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/sampl+e2.targetseq.summary.txt
+2014-06-16 03:51:59  Getting the gene regions that intersect with our capture panel.
+2014-06-16 03:51:59  /usr/local/bin/bedtools intersect -a /Users/vlad/vagrant/reporting_suite/test/data/test_genes.bed -b /Users/vlad/vagrant/reporting_suite/test/data/sample1.bed -u > /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/ngs_reporting_tmp2W__7c/tmpPdsz2p/test_genes__sample1.bed
+2014-06-16 03:51:59  Saved to /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/test_genes__sample1.bed
+2014-06-16 03:51:59  Getting the exons of the genes.
+2014-06-16 03:51:59  /usr/local/bin/bedtools intersect -a /Users/vlad/vagrant/reporting_suite/test/data/test_exons.bed -b /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/test_genes__sample1.bed -u > /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/ngs_reporting_tmp2W__7c/tmpNhVNZ_/test_exons__test_genes__sample1.bed
+2014-06-16 03:51:59  Saved to /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/test_exons__test_genes__sample1.bed
+2014-06-16 03:51:59  Sorting final exon BED file.
+2014-06-16 03:51:59  /usr/local/bin/bedtools sort -i /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/test_exons__test_genes__sample1.bed > /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/ngs_reporting_tmp2W__7c/tmpeKzGuX/test_exons__test_genes__sample1.sorted.bed
+2014-06-16 03:51:59  Saved to /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/work_sampl+e2/test_exons__test_genes__sample1.sorted.bed
+2014-06-16 03:51:59  Calculation of coverage statistics for exons of the genes ovelapping with the input regions...
+2014-06-16 03:51:59  processed 19 regions
+2014-06-16 03:52:00  
+2014-06-16 03:52:00  Result: /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/sampl+e2.targetseq.details.gene.txt
+2014-06-16 03:52:00  
+2014-06-16 03:52:00  **********************************************************************
+2014-06-16 03:52:00  Summary report: /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/sampl+e2.targetseq.summary.txt
+2014-06-16 03:52:00  Exons coverage report: /Users/vlad/vagrant/reporting_suite/test/bcbio_test_dir/sampl+e2/TargetCov/sampl+e2.targetseq.details.gene.txt

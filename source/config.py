@@ -66,9 +66,9 @@ class Defaults():
     clinical_reporting = False
 
 
-class Config(dict):
+class Config(object):
     def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, **kwargs):
-        super(Config, self).__init__(**kwargs)
+        object.__setattr__(self, '__d', dict())
 
         self.level = 0
 
@@ -108,41 +108,55 @@ class Config(dict):
             for k, v in cmd_line_opts.items():
                 self[k] = v
 
-        # self.d = self.__dict__
 
     def get(self, key, d=None):
-        return self.__dict__.get(key)
+        assert 'Please, use [] or . instead'
+        return self.__d.get(key)
 
     def __contains__(self, key):
-        return key in self.__dict__
+        return self[key] is not None
 
-    def __getattr__(self, key):
-        return self.__dict__.get(key)
+    def __getattribute__(self, key):
+        d = object.__getattribute__(self, '__d')
+        if key == '_Config__d':
+            return d
+        if key == 'get':
+            return self.__d.get
+        if key == 'copy':
+            return lambda: Config(d)
+        if key == 'keys':
+            return lambda: [k for k in self.__d.keys() if k != 'level']
+        if key == 'values':
+            return lambda: [v for k, v in self.__d.items() if k != 'level']
+        if key == 'items':
+            return lambda: [(k, v) for k, v in self.__d.items() if k != 'level']
+        else:
+            return d.get(key)
 
     def __setattr__(self, key, value):
         if isinstance(value, dict) and not isinstance(value, Config):
             value = Config(value)
-            value.level = self.level + 1
-        self.__dict__[key] = value
+            object.__setattr__(self, 'level', self.level + 1)
+        self.__d[key] = value
 
     def __delattr__(self, key):
-        del self.__dict__[key]
+        del self.__d[key]
 
     def __getitem__(self, key):
-        return self.get(key)
+        return self.__d.get(key)
 
     def __setitem__(self, key, value):
         if isinstance(value, dict) and not isinstance(value, Config):
             value = Config(value)
             value.level = self.level + 1
-        self.__dict__[key] = value
+        self.__d[key] = value
 
     def __delitem__(self, key):
-        del self.__dict__[key]
+        del self.__d[key]
 
     def __repr__(self):
         s = ''
-        for k, v in self.__dict__.items():
+        for k, v in self.__d.items():
             if k == 'level':
                 continue
             s += '  ' * self.level
@@ -153,17 +167,8 @@ class Config(dict):
             s += '\n'
         return s
 
-    def copy(self):
-        return Config(self.__dict__)
-
-    def keys(self):
-        return [k for k in self.__dict__.keys() if k != 'level']
-
-    def items(self):
-        return [(k, v) for k, v in self.__dict__.items() if k != 'level']
-
-    def values(self):
-        return [v for k, v in self.__dict__.items() if k != 'level']
+    def __len__(self):
+        return self.__d.__len__()
 
 
 def _load(sys_cnf_fpath, run_cnf_fpath):
