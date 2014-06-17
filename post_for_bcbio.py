@@ -20,7 +20,7 @@ def main():
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-d', dest='bcbio_final_dir', default=Defaults.bcbio_final_dir, help='Path to bcbio-nextgen final directory (default is pwd)')
+    parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-b', dest='bed', help='BED file')
     parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
@@ -61,8 +61,7 @@ def main():
     check_system_resources(cnf, required=['qsub'])
 
     with tmpdir(cnf):
-        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir,
-                               cnf.samples, cnf.bed, cnf.vcf_suffix)
+        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, cnf.vcf_suffix)
 
 
 if __name__ == '__main__':

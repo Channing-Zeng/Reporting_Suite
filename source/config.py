@@ -34,10 +34,9 @@ class Defaults():
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    steps = ['InDelFilter',
-             'VarAnnotate',
+    steps = ['VarAnnotate',
              'VarQC',
-             'FilterVariants',
+             'VarFilter',
              'TargetCov',
              'NGScat']
     qualimap = False  # True adds 'QualiMap' to steps

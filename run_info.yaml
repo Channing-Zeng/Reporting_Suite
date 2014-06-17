@@ -1,10 +1,9 @@
 genome: hg19          ## Loads from "genomes" section from system_config yaml
 
 steps:
-  - InDelFilter
   - VarAnnotate
   - VarQC
-  - FilterVariants
+  - VarFilter
   - TargetCov
   - NGScat
 # - QualiMap

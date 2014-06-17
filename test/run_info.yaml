@@ -2,10 +2,9 @@ genome: hg19
 
 
 steps:
-  - InDelFilter
   - VarAnnotate
   - VarQC
-  - FilterVariants
+  - VarFilter
   - TargetCov
   - NGScat
 # - QualiMap

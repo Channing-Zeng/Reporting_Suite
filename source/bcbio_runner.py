@@ -60,10 +60,9 @@ class Runner():
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
 
-        self.indel_filter = None
         self.varannotate = None
         self.varqc = None
-        self.filter_variants = None
+        self.varfilter = None
         self.targetcov = None
         self.ngscat = None
         self.qualimap = None
@@ -82,9 +81,6 @@ class Runner():
         overwrite_line = '-w' if self.cnf.overwrite else ''
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
 
-        self.indel_filter = self.steps.step(
-            name='InDelFilter',
-            param_line='\'{vcf}\'')
         self.varannotate = self.steps.step(
             name='VarAnnotate',
             script='varannotate.py',
@@ -93,8 +89,8 @@ class Runner():
             name='VarQC',
             script='varqc.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\'')
-        self.filter_variants = self.steps.step(
-            name='FilterVariants',
+        self.varfilter = self.steps.step(
+            name='VarFilter',
             script='varfilter.py',
             param_line=spec_params + ' --vcf {vcf}')
         self.targetcov = self.steps.step(
@@ -115,13 +111,13 @@ class Runner():
             self.varqc_summary = self.steps.step(
                 name='VarQC_summary',
                 script='varqc_summary.py',
-                param_line=' {dir} {samples} ' + self.varqc.name + ' {vcf_suffix}')
+                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.varqc.name)
         if self.targetcov:
             self.steps.append('TargetCov_summary')
             self.targetcov_summary = self.steps.step(
                 name='TargetCov_summary',
                 script='targetcov_summary.py',
-                param_line=' {dir} {samples} ' + self.targetcov.name)
+                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.targetcov.name)
 
     def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):
@@ -218,7 +214,6 @@ class Runner():
         self.submit(
             self.varqc_summary,
             wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
-            vcf_suffix=self.suf + '.anno',
             samples=samples)
 
         self.submit(
@@ -232,32 +227,23 @@ class Runner():
             info('Done.')
 
     def _run_pipeline_on_sample(self, sample, sample_dirpath, qualimap_bed_fpath, bam_fpath, vcf_fpath):
-
-        indel_filtered_vcf_fpath = vcf_fpath
-        if self.indel_filter:
-            indel_filtered_vcf_fpath = join(sample_dirpath, vcf_fpath.replace('.vcf', '.indel_filt.vcf'))
-            if file_exists(indel_filtered_vcf_fpath):
-                os.remove(indel_filtered_vcf_fpath)
-            self.submit(self.indel_filter, sample, create_dir=False,
-                        out_fpath=indel_filtered_vcf_fpath, vcf=vcf_fpath)
-
         if self.varannotate:
-            anno_dirpath = self.submit(self.varannotate, sample, True,
-                wait_for_steps=[self.indel_filter.job_name(sample)] if self.indel_filter else [],
-                vcf=indel_filtered_vcf_fpath, bam=bam_fpath)
-            annotated_vcf_fpath = join(anno_dirpath, indel_filtered_vcf_fpath.replace('.vcf', '.anno.vcf'))
+            anno_dirpath = self.submit(self.varannotate, sample, True, vcf=vcf_fpath, bam=bam_fpath)
+            annotated_vcf_fpath = join(anno_dirpath, vcf_fpath.replace('.vcf', '.anno.vcf'))
 
             self.submit(self.varqc, sample, True, vcf=annotated_vcf_fpath,
                         wait_for_steps=[self.varannotate.job_name(sample)])
 
-            if self.filter_variants:
+            if self.varfilter:
                 filtered_vcf_fpath = join(anno_dirpath, annotated_vcf_fpath.replace('.vcf', '.filt.vcf'))
                 if file_exists(filtered_vcf_fpath):
                     os.remove(filtered_vcf_fpath)
-                self.submit(self.filter_variants, sample, False,
+                self.submit(self.varfilter, sample, False,
                     wait_for_steps=[self.varannotate.job_name(sample)],
                     out_fpath=filtered_vcf_fpath, vcf=annotated_vcf_fpath)
 
         self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
+
         self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
+
         self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath)
