@@ -1,9 +1,9 @@
 # This file was produced by vcfstats(0.0.1) and can be plotted using plot-vcfstats.
-# The command line was:	bcftools stats  /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+# The command line was:	bcftools stats  /Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1.vcf.gz
 #
 # Definition of sets:
 # ID	[2]id	[3]tab-separated file names
-ID	0	/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+ID	0	/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1.vcf.gz
 # SN, Summary numbers:
 # SN	[2]id	[3]key	[4]value
 SN	0	number of samples:	1

@@ -7,10 +7,10 @@ from optparse import OptionParser
 from os.path import join
 from genericpath import isfile
 from source.config import Defaults, Config
-from source.logger import info
+from source.logger import info, critical, step_greetings
 from source.main import check_keys, check_inputs
-from source.utils import critical
 from source.summarize import summarize_cov, summarize_cov_gene
+from source.utils import verify_file
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -24,7 +24,7 @@ def main():
     parser = OptionParser(description=description)
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
-    parser.add_option('-n', dest='base_name', help='Name of targetcov directory inside sample folder. (default is TargetCov)')
+    parser.add_option('-n', dest='base_name', default='TargetCov', help='Name of targetcov directory inside sample folder. (default is TargetCov)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
@@ -50,16 +50,17 @@ def main():
     if not check_inputs(cnf, file_keys=['samples', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
-    report_suffix = '.targetseq.summary.txt'
+    summary_report_fpath = summarize_cov_report(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    summarize_cov_gene_report(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
 
     info()
     info('*' * 70)
-
-    summarize_cov_report(cnf.bcbio_final_dir, cnf.samples, 'TargetCov')
-    summarize_cov_gene_report(cnf.bcbio_final_dir, cnf.samples, 'TargetCov')
+    info('Result: ' + summary_report_fpath)
 
 
-def summarize_cov_report(out_dirpath, samples_fname, report_basedir):
+def summarize_cov_report(cnf, out_dirpath, samples_fname, report_basedir):
+    step_greetings('Summaring coverage reports')
+
     report_suffix = '.targetseq.summary.txt'
     summary_report_fpath = join(out_dirpath, 'targetcov_summary_report.txt')
     report_fpaths = []
@@ -68,47 +69,41 @@ def summarize_cov_report(out_dirpath, samples_fname, report_basedir):
             sample_name = line.strip()
 
             report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
-            print(report_fpath)
-            if isfile(report_fpath):
-                report_fpaths.append(report_fpath)
-            else:
-                print(report_fpath + ' does not exist, checking another')
-                report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_suffix)
-                print(report_fpath)
-                if isfile(report_fpath):
-                    report_fpaths.append(report_fpath)
-                else:
-                    print(report_fpath + ' does not exist! skipping')
-            print('')
+            info(sample_name + ': ' + report_fpath)
+
+            if not verify_file(report_fpath):
+                critical(report_fpath + ' does not exist.')
+
+            report_fpaths.append(report_fpath)
 
     summarize_cov(report_fpaths, summary_report_fpath, report_suffix)
+    return summary_report_fpath
 
 
-def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
+def summarize_cov_gene_report(cnf, out_dirpath, samples_fname, report_basedir):
+    step_greetings('Summaring per-gene reports')
+
     report_details_suffix = '.targetseq.details.gene.txt'
     report_summary_suffix = '.targetseq.summary.txt'
 
     report_fpaths = []
     report_summary_fpaths = []
+
     with open(samples_fname, 'r') as f:
         for line in f:
             sample_name = line.strip()
 
-            report_details_fpaths = join(out_dirpath, sample_name, report_basedir, sample_name + report_details_suffix)
+            report_details_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_details_suffix)
             summary_report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_summary_suffix)
-            print(report_details_fpaths)
-            if isfile(report_details_fpaths):
-                report_fpaths.append(report_details_fpaths)
-                report_summary_fpaths.append(summary_report_fpath)
-            else:
-                print(report_details_fpaths + ' does not exist, checking another')
-                report_details_fpaths = join(out_dirpath, sample_name, report_basedir, sample_name + '-ready' + report_details_suffix)
-                print(report_details_fpaths)
-                if isfile(report_details_fpaths):
-                    report_fpaths.append(report_details_fpaths)
-                else:
-                    print(report_details_fpaths + ' does not exist! skipping')
-            print('')
+            info(sample_name + ': ' + report_details_fpath + ', ' + summary_report_fpath)
+
+            if not verify_file(report_details_fpath):
+                critical(report_details_fpath + ' does not exist.')
+            if not verify_file(summary_report_fpath):
+                critical(summary_report_fpath + ' does not exist.')
+
+            report_fpaths.append(report_details_fpath)
+            report_summary_fpaths.append(summary_report_fpath)
 
     summarize_cov_gene(report_fpaths, report_summary_fpaths, report_summary_suffix)
 

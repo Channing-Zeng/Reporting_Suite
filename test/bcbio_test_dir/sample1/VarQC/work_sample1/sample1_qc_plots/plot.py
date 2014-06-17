@@ -1,12 +1,12 @@
 
 # This file was produced by plot-vcfstats, the command line was:
-#	plot-vcfstats -s /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_bcftools.report -p /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/ --no-PDF
+#	plot-vcfstats -s /Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_bcftools.report -p /Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/ --no-PDF
 #
 # Edit as necessary and recreate the plots by running
-#	python /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/plot.py 
+#	python /Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/plot.py 
 #
 # Title abbreviations:
-# 	 0 .. sampl .. /Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1.vcf.gz
+# 	 0 .. sampl .. /Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1.vcf.gz
 #
 
 # Set to 1 to plot in PDF instead of PNG
@@ -72,7 +72,7 @@ dat = [
 	[ 0.000000, 10, 4.000000 ],
 ]
 dat = []
-with open('//test/results_qc/work/sample1_qc_plots/tstv_by_qual.0.dat', 'rb') as f:
+with open('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/tstv_by_qual.0.dat', 'rb') as f:
 	reader = csv.reader(f, 'tab')
 	for row in reader:
 		if row[0][0] != '#': dat.append([float(x) for x in row])
@@ -87,8 +87,8 @@ ax1.set_ylim(min(2,min(row[2] for row in dat))-0.3,0.3+max(2.2,max(row[2] for ro
 
 plt.subplots_adjust(right=0.88,left=0.15,bottom=0.15)
 plt.title('sampl')
-plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/tstv_by_qual.0.png')
-if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/tstv_by_qual.0.pdf')
+plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/tstv_by_qual.0.png')
+if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/tstv_by_qual.0.pdf')
 plt.close()
 
 dat = [
@@ -104,8 +104,8 @@ ax1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
 ax1.set_xlim(-20,20)
 plt.subplots_adjust(bottom=0.17)
 plt.title('sampl')
-plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/indels.0.png')
-if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/indels.0.pdf')
+plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/indels.0.png')
+if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/indels.0.pdf')
 plt.close()
 
 dat = [
@@ -135,6 +135,6 @@ ax1.ticklabel_format(style='sci', scilimits=(0,0), axis='y')
 ax1.set_xlim(-0.5,n+0.5)
 plt.xticks([row[0] for row in dat],[row[1] for row in dat],rotation=45)
 plt.title('sampl')
-plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/substitutions.0.png')
-if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/ngs_analysis/test/results_qc/work/sample1_qc_plots/substitutions.0.pdf')
+plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/substitutions.0.png')
+if pdf_plots: plt.savefig('/Users/vladsaveliev/vagrant/reporting_suite/test/results_qc/work_sample1/sample1_qc_plots/substitutions.0.pdf')
 plt.close()

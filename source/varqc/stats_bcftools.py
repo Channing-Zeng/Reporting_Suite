@@ -8,6 +8,10 @@ from source.logger import info, step_greetings
 from source.utils import call_subprocess, get_tool_cmdline, bgzip_and_tabix_vcf
 
 
+indels_plot_ending = '_indels.png'
+substs_plot_ending = '_substitution.png'
+
+
 def bcftools_qc(cnf, vcf_fpath):
     step_greetings('Quality control basic plots')
 
@@ -22,7 +26,7 @@ def bcftools_qc(cnf, vcf_fpath):
     cmdline = '{bcftools} stats {gzipped_fpath}'.format(**locals())
     call_subprocess(cnf, cmdline, None, text_report_fpath)
 
-    viz_report_dir = join(cnf.output_dir, cnf.name + '_qc_plots/')
+    viz_report_dir = join(cnf.work_dir, cnf.name + '_qc_plots/')
     if file_exists(viz_report_dir):
         shutil.rmtree(viz_report_dir)
     mkdir(viz_report_dir)
@@ -37,7 +41,7 @@ def bcftools_qc(cnf, vcf_fpath):
 
 def _get_plots_from_bcftools(cnf, bcftools_report_dir):
     original_plots_names = ['indels.0.png', 'substitutions.0.png']
-    final_plots_names = [cnf['name'] + '_indels.png', cnf['name'] + '_substitution.png']
+    final_plots_names = [cnf['name'] + indels_plot_ending, cnf['name'] + substs_plot_ending]
     for i, original_plot in enumerate(original_plots_names):
         plot_src_filename = join(bcftools_report_dir, original_plot)
         plot_dst_filename = join(cnf.output_dir, final_plots_names[i])

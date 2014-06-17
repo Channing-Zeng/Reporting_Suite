@@ -1,8 +1,11 @@
 from os.path import join
 import sys
 
-from source.logger import step_greetings, critical
+from source.logger import step_greetings
 from source.utils import get_java_tool_cmdline, call_subprocess
+
+
+final_report_ending = '.varqc.txt'
 
 
 def gatk_qc(cnf, vcf_fpath):
@@ -42,7 +45,7 @@ def gatk_qc(cnf, vcf_fpath):
 
     report = _parse_gatk_report(report_fpath, databases.keys(), novelty, metrics)
 
-    final_report_fpath = join(cnf.output_dir, cnf.name + '_qc.report')
+    final_report_fpath = join(cnf.output_dir, cnf.name + final_report_ending)
 
     _make_final_report(report, final_report_fpath, cnf.name,
                        databases.keys(), novelty, metrics)
@@ -116,7 +119,7 @@ def _make_final_report(report_dict, report_filename, sample_name,
     out = open(report_filename, 'w')
     out.write('Sample name: ' + sample_name + '\n\n')
     for row in full_report:
-        out.write('  '.join('%-*s' % (col_width, value) for col_width, value
-                            in zip(col_widths, row)) + "\r\n")
+        out.write('  '.join('%-*s' % (col_width, value)
+                  for col_width, value in zip(col_widths, row)) + "\r\n")
     out.close()
 

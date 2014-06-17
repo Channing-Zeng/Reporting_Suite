@@ -1,4 +1,4 @@
-Sample name: data
+Sample name: sample1
 
 Metric           Novelty  dbsnp       cosmic      Average 
 nEvalVariants    all      12          12          12.00   

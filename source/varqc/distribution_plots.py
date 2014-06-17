@@ -10,6 +10,9 @@ import matplotlib
 import matplotlib.pyplot
 
 
+distr_plot_ending = '.variant_distribution.png'
+
+
 def variants_distribution_plot(cnf, vcf_fpath):
     step_greetings('Quality control variant distribution plots')
 
@@ -91,7 +94,7 @@ def variants_distribution_plot(cnf, vcf_fpath):
         fig.suptitle('Chromosomes without variants:', x=0.12, y=0.05, fontsize=fontsize, fontweight='bold', ha='left')
         fig.suptitle(chr_without_variants_wrapped, x=0.12, y=0.03, fontsize=fontsize, ha='left')
 
-    variants_distribution_plot_fpath = join(cnf.output_dir, cnf.name + '_qc_variant_distribution.png')
+    variants_distribution_plot_fpath = join(cnf.output_dir, cnf.name + distr_plot_ending)
     fig.savefig(variants_distribution_plot_fpath, bbox_inches='tight')
     matplotlib.pyplot.close(fig)
     return variants_distribution_plot_fpath

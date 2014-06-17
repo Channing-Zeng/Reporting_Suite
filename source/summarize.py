@@ -16,7 +16,7 @@ def summarize_qc(report_fpaths, output_summary_fpath, report_suffix=None):
         _, report_dict = _parse_report_qc(report_fpath)
         sample_name = _get_sample_name(report_fpath, report_suffix)
         _add_to_full_report(full_report, sample_name, report_dict)
-    _print_full_report(full_report, output_summary_fpath)
+    return _print_full_report(full_report, output_summary_fpath)
 
 
 def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
@@ -28,7 +28,7 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
     _print_full_report(full_report, output_summary_fpath)
 
 
-def summarize_cov_gene(report_details_fpaths, report_summary_fpaths,  report_summary_suffix):
+def summarize_cov_gene(report_details_fpaths, report_summary_fpaths, report_summary_suffix):
     gene_summary_lines = []
     sample_coverage = dict()
     for report_details_fpath in report_details_fpaths:
@@ -38,9 +38,8 @@ def summarize_cov_gene(report_details_fpaths, report_summary_fpaths,  report_sum
         sample_name = _get_sample_name(report_summary_fpath, report_summary_suffix)
         sample_coverage[sample_name] = int(report_lines.get("Mapped reads").replace(",", ""))
 
-    run_copy_number( sample_coverage, gene_summary_lines )
-   # print_full_report_gene(gene_summary_lines,  output_summary_fpath)
-
+    run_copy_number(sample_coverage, gene_summary_lines)
+    # print_full_report_gene(gene_summary_lines,  output_summary_fpath)
 
 
 def _get_sample_name(report_fpath, report_suffix=None):
@@ -88,7 +87,7 @@ def _parse_report_cov(report_fpath):
 
 
 def _parse_report_cov_gene(report_fpath, line_type):
-    gene_summary_lines =[]
+    gene_summary_lines = []
 
     with open(report_fpath, 'r') as f:
         for line in f:
@@ -97,8 +96,6 @@ def _parse_report_cov_gene(report_fpath, line_type):
                 gene_summary_lines.append(cur_value[:8])
 
     return gene_summary_lines
-
-
 
 
 def _add_to_full_report(full_report, sample_name, report_dict):
@@ -120,16 +117,19 @@ def _print_full_report(report, report_filename):
         for id, value in enumerate(row):
             col_widths[id] = max(len(value), col_widths[id])
 
-    out = open(report_filename, 'w')
-    for row in report:
-        out.write('\t'.join(row) + '\n')
-    out.close()
+    with open(report_filename, 'w') as out:
+        for row in report:
+            out.write('\t'.join(row) + '\n')
+
+    return report_filename
+
 
 def print_full_report_gene(report, report_filename):
     with open(report_filename, 'w') as out:
         for row in report:
             out.write(row + '\n')
 
+    return report_filename
 
 
 
