@@ -41,5 +41,5 @@ nosetests.xml
 */.DS_Store
 
 test/results*
-test/results*/*
-test/bcbio_final_dir
+test/results*/
+test/bcbio_final_dir/
