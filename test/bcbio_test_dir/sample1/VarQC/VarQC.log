@@ -1,4 +1,4 @@
-2014-06-16 20:15:58  Using /Users/vladsaveliev/vagrant/reporTraceback (most recent call last):
+2014-06-17 12:11:08  Using /Users/vladsaveliev/vagraTraceback (most recent call last):
   File "/Users/vladsaveliev/vagrant/reporting_suite/varqc.py", line 166, in <module>
     main(sys.argv[1:])
   File "/Users/vladsaveliev/vagrant/reporting_suite/varqc.py", line 48, in main
@@ -12,4 +12,4 @@
   File "/Users/vladsaveliev/vagrant/reporting_suite/source/utils.py", line 146, in iterate_file
     with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
 IOError: [Errno 2] No such file or directory: 'bcbio_test_dir/sample1/VarAnnotate/sample1-mutect.anno.vcf'
-понедельник, 16 июня 2014 г. 20:15:59 (MSK)
+вторник, 17 июня 2014 г. 12:11:08 (MSK)
