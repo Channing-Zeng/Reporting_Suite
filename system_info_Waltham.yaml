@@ -27,6 +27,8 @@ resources:
     path: /group/ngs/src/samtools/samtools
   bedtools:
     path: /group/ngs/src/bedtools/bin/bedtools
+  vcfannotate:
+    path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/bin/vcfannotate
 
 genomes:
   hg19:
