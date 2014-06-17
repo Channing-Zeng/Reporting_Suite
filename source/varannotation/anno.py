@@ -6,9 +6,8 @@ from source.logger import step_greetings
 
 from source.utils import critical, iterate_file, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
-    get_tool_cmdline, err, get_gatk_type, info, bgzip_and_tabix_vcf, index_bam
+    get_tool_cmdline, err, get_gatk_type, info, index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
-from source.vcf import filter_rejected
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -48,11 +47,13 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         if file_exists(genes_fpath):
             shutil.move(genes_fpath, cnf['output_dir'])
 
+    next_vcf_fpath = None
     if cnf.get('tracks'):
         for track in cnf['tracks']:
-            vcf_fpath = _tracks(cnf, track, vcf_fpath)
-            if vcf_fpath:
+            next_vcf_fpath = _tracks(cnf, track, vcf_fpath)
+            if next_vcf_fpath:
                 annotated = True
+                vcf_fpath = next_vcf_fpath
 
     if annotated:
         vcf_fpath = _filter_fields(cnf, vcf_fpath)
@@ -348,5 +349,6 @@ def _filter_fields(cnf, input_fpath):
         return line
 
     output_fpath = iterate_file(cnf, input_fpath, proc_line)
+
     info('Saved to ' + output_fpath)
     return output_fpath

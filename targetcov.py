@@ -57,10 +57,9 @@ def main(args):
         required=['chr_lengths', 'exons'],
         optional=['genes'])
 
-    if 'coverage_reports' not in cnf:
-        critical('No coverage_reports section in the report, cannot make coverage reports.')
-        if cnf.report_types:
-            cnf.coverage_reports.report_types = cnf.report_types
+    if cnf['report_types']:
+        cnf['coverage_reports']['report_types'] = cnf['report_types']
+        del cnf['report_types']
 
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])

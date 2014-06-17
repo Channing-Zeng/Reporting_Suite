@@ -143,8 +143,8 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
             return output_fpath
 
     with file_transaction(cnf.tmp_dir, output_fpath) as tx_fpath:
-        with open(input_fpath) as vcf, open(tx_fpath, 'w') as out:
-            for i, line in enumerate(vcf):
+        with open(input_fpath) as inp, open(tx_fpath, 'w') as out:
+            for i, line in enumerate(inp):
                 clean_line = line.strip()
                 if clean_line:
                     new_l = proc_line_fun(clean_line)
@@ -446,6 +446,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
+                err()
                 err('Command returned status ' + str(ret_code) +
                     ('. Log in ' + cnf.log if cnf.log is not None else '.'))
                 if exit_on_error:
@@ -481,6 +482,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
+                err()
                 err('Command returned status ' + str(ret_code) +
                     ('. Log in ' + cnf.log if 'log' in cnf else '.'))
                 if exit_on_error:

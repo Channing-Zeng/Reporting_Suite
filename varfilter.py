@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from collections import OrderedDict
+import re
 
 import sys
 from source.config import Defaults
@@ -11,7 +13,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.runner import run_one
-from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file
+from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call
 
 
 def main(args):
@@ -34,8 +36,8 @@ def main(args):
             )),
 
             (['-u'], dict(
-                dest='undetermined',
-                action='store_true',
+                dest='count_undetermined',
+                action='store_false',
                 help='Undeteremined won\'t be counted for the sample count.'
             )),
 
@@ -50,7 +52,7 @@ def main(args):
                 dest='fraction',
                 type='double',
                 help='When a novel variant is present in more than [fraction] '
-                     'of samples and mean allele frequency is less than -f, '
+                     'of samples and mean allele frequency is less than [freq], '
                      'it\'s considered as likely false positive. Default %f. '
                      'Used with -f and -n' % defaults['fraction'],
             )),
@@ -80,7 +82,7 @@ def main(args):
             (['-F'], dict(
                 dest='min_freq',
                 type='double',
-                help='When indivisual allele frequency < feq for variants, '
+                help='When individual allele frequency < feq for variants, '
                      'it was considered likely false poitives. '
                      'Default %f' % defaults['min_freq'],
             )),
@@ -135,8 +137,15 @@ def main(args):
                      'be considered false positive. Default is %d (meaning at least %d reads '
                      'are needed for a variant)' % (defaults['mean_vd'], defaults['mean_vd'])
             )),
+
+            (['-m'], dict(
+                dest='maf',
+                type='double',
+                help='If there is MAF with frequency, it will be considered dbSNP '
+                     'regardless of COSMIC. Default MAF is %f' % defaults['maf'],
+            )),
             (['-s'], dict(
-                dest='signal',
+                dest='signal_noise',
                 type='int',
                 help='Signal/noise value. Default %d' % defaults['signal']
             )),
@@ -151,12 +160,12 @@ def main(args):
         file_keys=['vcf'],
         key_for_sample_name='vcf')
 
-    check_system_resources(cnf,
-                           required=['java', 'snpsift'],
-                           optional=[])
+    check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
 
-    if 'expression' in cnf:
-        cnf['variant_filtering'] = {'expression': cnf['expression']}
+    for key in cnf.keys():
+        if key in cnf['variant_filtering'].keys():
+            cnf['variant_filtering'][key] = cnf[key]
+            del cnf[key]
 
     run_one(cnf, process_one, finalize_one)
 
@@ -172,23 +181,177 @@ def finalize_one(cnf, filtered_vcf_fpath):
 
 
 def filter_variants(cnf, vcf_fpath):
-    executable = get_java_tool_cmdline(cnf, 'snpsift')
-    expression = cnf['variant_filtering']['expression'] or ''
-
     err('')
     err('*' * 70)
-    vcf_fpath = iterate_file(cnf, vcf_fpath, lambda l: l.replace('\tPASS\t', '\t\t'))
 
-    # awk_sort = subprocess.Popen( ["-c", "awk -f script.awk | sort > outfile.txt" ],
-    # stdin= subprocess.PIPE, shell=True )
-    # awk_sort.communicate( "input data\n" )
-    # awk_sort.wait()
+    filt_cnf = cnf['variant_filtering']
 
+    vcf_fpath = remove_prev_pass(cnf, vcf_fpath)
+
+    vcf_fpath = main_filtering(cnf, filt_cnf, vcf_fpath)
+
+    vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
+
+    return vcf_fpath
+
+
+def _parse_info(line):
+    return OrderedDict(f.split('=') if '=' in f else (f, True) for f in line.split(';'))
+
+
+def _build_info(d):
+    return ';'.join([k + ('=' + str(v)) if v else '' for k, v in d.items()])
+
+
+def _reject(tokens, val='REJECT'):
+    if tokens[6] == 'PASS':
+        tokens[6] = val
+    return '\t'.join(tokens)
+
+
+def _pass(tokens):
+    return '\t'.join(tokens)
+
+
+def main_filtering(cnf, filt_cnf, vcf_fpath):
+    control_dict = dict()
+    sample_dict = dict()
+    var_dict = dict()
+
+    def __do(l):
+        if l.startswith('#'):
+            return l
+
+        tokens = l.split('\t')
+        vark = '\t'.join(tokens[:4])
+        d = _parse_info(tokens[7])
+
+        def less(a, b):
+            return a in d and b in filt_cnf and int(d[a]) < filt_cnf[b]
+
+        # FILTER FIRST
+        for p in ('DP', 'filt_depth'), \
+                 ('QUAL', 'filt_q_mean'), \
+                 ('PMEAN', 'filt_p_mean'):
+            if less(*p):
+                return _reject(tokens)
+
+        # FILTER NEXT
+        if (filt_cnf['control'] and 'SAMPLE' in d and
+            filt_cnf['control'] == d['SAMPLE']):
+            reject = False
+
+            for p in ('QUAL', 'min_q_mean'), \
+                     ('PMEAN', 'min_q_mean'), \
+                     ('AF', 'min_freq'),\
+                     ('MQ', 'min_mq'),\
+                     ('SN', 'signal_noise'),\
+                     ('VD', 'mean_vd'):
+                if less(*p):
+                    reject = True
+
+            id_ = tokens[2]
+            cls = 'Novel'
+            if 'COSM' in id_:
+                cls = 'COSMIC'
+            if 'rs' in id_:
+                if check_clnsig(d['CLNSIG']):
+                    cls = 'ClnSNP'
+                else:
+                    cls = 'dbSNP'
+
+            # so that any novel variants showed up in control won't be filtered:
+            if not reject and cls == 'Novel':
+                control_dict[vark] = 1
+            else:
+                return _reject(tokens)
+
+        return _pass(tokens)
+
+        # Undetermined won't count toward samples
+        if ('SAMPLE' in d and
+            (filt_cnf['count_undetermined'] or 'Undetermined' not in d['SAMPLE'])):
+
+            sample_dict[d['SAMPLE']] = 1
+        #     d['AF']
+        #     $sample{ $d{ SAMPLE } } = 1;
+        # push( @{ $var{ $vark } }, $d{ AF } );
+
+    return iterate_file(cnf, vcf_fpath, __do)
+
+
+def check_clnsig(clnsig):
+    if not clnsig:
+        return 0
+
+    for c in re.split('|,', clnsig):
+        if 3 < c < 7 or c == 255:
+            return 1
+
+    return -1
+
+
+def remove_prev_pass(cnf, vcf_fpath):
+    def __do(l):
+        if l.startswith('#'):
+            return l
+
+        tokens = l.split('\t')
+        if tokens[6] == 'PASS':
+            tokens[6] = '.'
+        return '\t'.join(tokens)
+
+    return iterate_file(cnf, vcf_fpath, __do)
+
+
+def run_snpsift(cnf, vcf_cnf, vcf_fpath):
+    expression = vcf_cnf.get('expression')
+    if not expression:
+        return vcf_fpath
+
+    executable = get_java_tool_cmdline(cnf, 'snpsift')
     cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
     filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'filtered')
-    # subprocess.call(cmdline, stdin=sys.stdin, stdout=)
+    call(cnf, cmdline, filtered_fpath)
     return filtered_fpath
 
 
 if __name__ == '__main__':
     main(sys.argv[1:])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

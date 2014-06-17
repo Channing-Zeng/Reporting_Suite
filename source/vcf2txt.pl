@@ -51,16 +51,16 @@ while( <> ) {
     next if ( $FILPMEAN && $d{ PMEAN } < $FILPMEAN );
     next if ( $FILQMEAN && $d{ QUAL } < $FILQMEAN );
     if ( $control && $control eq $d{ SAMPLE } ) {
-	my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
-	my $pass = "TRUE";
-	#$pass = "FALSE" unless ( $d{PSTD} > 0 );
-	$pass = "FALSE" if ($qmean < $MINQMEAN );
-	$pass = "FALSE" if ($pmean < $MINPMEAN );
-	$pass = "FALSE" if ( $d{AF} < $MINFREQ );
-	$pass = "FALSE" if ( $d{MQ} < $MINMQ );
-	$pass = "FALSE" if ( $d{SN} < $SN );
-	$pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
-	my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
+        my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
+        my $pass = "TRUE";
+        #$pass = "FALSE" unless ( $d{PSTD} > 0 );
+        $pass = "FALSE" if ($qmean < $MINQMEAN );
+        $pass = "FALSE" if ($pmean < $MINPMEAN );
+        $pass = "FALSE" if ($d{AF} < $MINFREQ );
+        $pass = "FALSE" if ($d{MQ} < $MINMQ );
+        $pass = "FALSE" if ($d{SN} < $SN );
+        $pass = "FALSE" if ($d{VD} && $d{VD} < $MINVD );
+	    my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
         #$CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && ($class ne "dbSNP" && $class ne "ClnSNP"));  # so that any novel or COSMIC variants showed up in control won't be filtered
         $CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && $class eq "Novel");  # so that any novel or COSMIC variants showed up in control won't be filtered
     }
@@ -107,7 +107,7 @@ foreach my $d (@data) {
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
     if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
 	my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
-	$class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
+	    $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
     }
 
     $pass = "CNTL" if ( $control && $CONTROL{ $vark } );

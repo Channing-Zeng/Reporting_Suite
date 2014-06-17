@@ -39,7 +39,7 @@ class Defaults():
              'VarFilter',
              'TargetCov',
              'NGScat']
-    qualimap = False  # True adds 'QualiMap' to steps
+    qualimap = False  # 'True' adds 'QualiMap' to steps
     qsub_runner = join(cur_dirpath, pardir, 'runner_Waltham.sh')
 
     coverage_reports = dict(
@@ -57,8 +57,8 @@ class Defaults():
     )
 
     variant_filtering = dict(
-        expression=expression,
-        undetermined=False,
+        expression="(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')",
+        count_undetermined=True,
         fraction=0.4,
         max_ratio=1,
         sample_count=10,
@@ -72,10 +72,17 @@ class Defaults():
         min_mq=20,
         min_vd=2,
         maf=0.0025,
-        singal=4,
+        signal_noize=4,
     )
 
-    quality_control = dict(variant_distribution_scale=1000)
+    quality_control = dict(
+        variant_distribution_scale=1000,
+        databases=['dbsnp'],
+        novelty=['all', 'known', 'novel'],
+        metrics=['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio'],
+    )
 
     clinical_reporting = False
 

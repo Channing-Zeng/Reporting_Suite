@@ -11,26 +11,28 @@ steps:
 filter_reject: True   ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
-#variant_filtering:
-#    Filter novel variants with strand bias
-#    - "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
-#  Effect:
-#    Impact: HIGH|MODERATE
-#  - b  # filterNovelVariantsWithStrandBias: True
-#  DontCountUndeterminedSamples: True
-#  Fraction: 0.4
-#  MaxRation: 1
-#  CNT: 10
-#  AveFreq: 0.15
-#  MinPMean: 5
-#  MinQMean: 25
-#  FilPMean: 0
-#  FilPDepth: 0
-#  MinFreq: 0.05
-#  MinMQ: 20
-#  MinVD: 2
-#  MAF: 0.0025
-#  SN: 4
+variant_filtering:
+  expression:         "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
+
+  count_undetermined: True    # Undeteremined won't be counted for the sample count.
+  bias:               0.4     # Novel or dbSNP variants with strand bias "2;1" or "2;0" and AF < 0.3 will be considered as false positive.
+
+  fraction:           1       # When a novel variant is present in more than [fraction] of samples and mean allele frequency is less than [freq], it's considered as likely false positive.
+  freq:               10      # When the average allele frequency is also below the [freq], the variant is considered likely false positive.
+  sample_cnt:         0.15    # When the variant is detected in greater or equal [sample_cnt] samples, the variant is considered likely false positive.
+
+  max_ratio:          1       # When a variant is present in more than [fraction] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
+  min_freq:           0.05    # When individual allele frequency < feq for variants, it was considered likely false poitives.
+  mean_mq:            20      # The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
+  mean_vd:            2       # The filtering variant depth. Variants with depth < [mean_vd] will be considered false positive.
+  maf:                0.0025  # If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
+  signal_noise:       4       # Signal/noise value.
+  filt_depth:         0       # The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+
+  min_p_mean:         5       # The minimum mean position in reads for variants.
+  min_q_mean:         25      # The minimum mean base quality phred score for variant.
+  filt_p_mean:        0       # The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+  filt_q_mean:        0       # The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
 quality_control:
   databases: ['dbsnp', 'cosmic', '1000genomes']

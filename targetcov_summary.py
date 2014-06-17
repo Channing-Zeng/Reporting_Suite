@@ -89,7 +89,7 @@ def summarize_cov_gene_report(cnf, out_dirpath, samples_fname, report_basedir):
     report_fpaths = []
     report_summary_fpaths = []
 
-    with open(samples_fname, 'r') as f:
+    with open(samples_fname) as f:
         for line in f:
             sample_name = line.strip()
 

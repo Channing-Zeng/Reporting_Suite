@@ -14,7 +14,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources, check_inputs
 from source.runner import run_one
 from source.summarize import summarize_qc
-from source.utils import info, verify_module, verify_dir, verify_file
+from source.utils import info, verify_module, verify_file
 from source.vcf import filter_rejected, extract_sample
 
 
@@ -38,9 +38,6 @@ def main(args):
         required=['seq', 'dbsnp'],
         optional=['cosmic', '1000genomes'])
 
-    if 'quality_control' not in cnf:
-        critical('No quality_control section in the report, cannot run quality control.')
-
     check_quality_control_config(cnf)
 
     info('Using variants ' + cnf['vcf'])
@@ -58,31 +55,7 @@ else:
 
 
 def check_quality_control_config(cnf):
-    if 'quality_control' not in cnf:
-        critical('No quality_control section in the report, cannot make reports.')
-    qc_cnf = cnf.quality_control
-
-    if 'databases' not in qc_cnf:
-        qc_cnf['databases'] = ['dbsnp']
-        info('Warning: not databases for quality control, using [dbsnp]')
-
-    if 'novelty' not in qc_cnf:
-        qc_cnf['novelty'] = ['all', 'known', 'novel']
-        info('Warning: no novelty specified for quality control, '
-             'using default ' + ', '.join(qc_cnf['novelty']))
-
-    if 'metrics' not in qc_cnf:
-        qc_cnf['metrics'] = [
-           'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
-        info('Warning: no metrics for quality control, using '
-             'default ' + ', '.join(qc_cnf['metrics']))
-
-    if 'variants_distribution_scale' not in qc_cnf:
-        qc_cnf['variants_distribution_scale'] = 1000
-        info('Warning: no variants distribution scale specified for quality control, '
-             'using default ' + str(qc_cnf['variants_distribution_scale']))
+    qc_cnf = cnf['quality_control']
 
     to_exit = False
     dbs_dict = {}
@@ -105,18 +78,19 @@ def check_quality_control_config(cnf):
 
     qc_cnf['database_vcfs'] = dbs_dict
 
-    if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
-        qc_output_fpath = qc_cnf.get('summary_output') or\
-                          cnf.get('qc_summary_output')
-        summary_output_dir = dirname(qc_output_fpath)
-        if not isdir(summary_output_dir):
-            try:
-                makedirs(summary_output_dir)
-            except OSError:
-                critical('ERROR: cannot create directory for '
-                         'qc summary report: ' + summary_output_dir)
-        if not verify_dir(summary_output_dir, 'qc_summary_output'):
-            exit()
+    ## FOR SUMMARIZING ##
+    # if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
+    #     qc_output_fpath = qc_cnf.get('summary_output') or\
+    #                       cnf.get('qc_summary_output')
+    #     summary_output_dir = dirname(qc_output_fpath)
+    #     if not isdir(summary_output_dir):
+    #         try:
+    #             makedirs(summary_output_dir)
+    #         except OSError:
+    #             critical('ERROR: cannot create directory for '
+    #                      'qc summary report: ' + summary_output_dir)
+    #     if not verify_dir(summary_output_dir, 'qc_summary_output'):
+    #         exit()
 
 
 def process_one(cnf):
