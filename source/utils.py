@@ -612,3 +612,9 @@ def format_decimal(name, value, unit=''):
 def mean(ints):
     return float(sum(ints)) / len(ints) if len(ints) > 0 else float('nan')
 
+
+def median(values):
+    if len(values) % 2 == 1:
+        return values[(len(values) - 1) / 2]
+    else:
+        return (values[(len(values) - 1) / 2] + values[(len(values) - 2) / 2]) / 2

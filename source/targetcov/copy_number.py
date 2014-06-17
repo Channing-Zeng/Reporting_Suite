@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-from collections import defaultdict
 
-from itertools import groupby, chain
 import math
-import collections
-import numpy
+from collections import defaultdict
+from itertools import groupby
+from source.utils import mean, median
 
 
 #_SAMPLE_MAPPED_READS = {'Sample1': 100, "Sample2": 200}  # cnt
@@ -45,28 +44,27 @@ def group_by(lists, element_num):
     return groups
 
 
-
-
 #TODO chanf array index to get method ?
 def median_by_column(lists, col):
     col = [l[col] for l in lists]
-    return numpy.median(col)
+    return median(col)
 
 
 def _get_factors_by_sample(mapped_reads_by_sample):
     factor_by_sample = dict()
-    mean_reads = numpy.mean(mapped_reads_by_sample.values())
+    mean_reads = mean(mapped_reads_by_sample.values())
     for k, v in mapped_reads_by_sample.items():
         factor_by_sample[k] = mean_reads / v if v else 0
     return factor_by_sample
+
 
 def _get_factors_by_gene(gene_records,med_depth):
     min_depth_by_genes = defaultdict(list)
     [min_depth_by_genes[gene_record.name].append(gene_record.min_depth) for gene_record in gene_records]
     factors_by_gene = dict()
     for k, v in min_depth_by_genes.items():
-        median = numpy.median(v)
-        factors_by_gene[k]= med_depth/median if median else 0
+        med = median(v)
+        factors_by_gene[k] = med_depth / med if med else 0
     return factors_by_gene
 
 
@@ -91,8 +89,8 @@ def get_factors_by_gene1(gene_records, med_depth):
     factors_by_gene = dict()
 
     for gene, values in values_by_gene.iteritems():
-        median = median_by_column(values, 7)
-        factors_by_gene[gene] = med_depth / median if median else 0
+        med = median_by_column(values, 7)
+        factors_by_gene[gene] = med_depth / med if med else 0
 
     return factors_by_gene
 
@@ -100,7 +98,7 @@ def get_factors_by_gene1(gene_records, med_depth):
 def run_copy_number(sample_mapped_reads, gene_depth):
     list_genes_info = report_row_to_object(gene_depth)
     records_by_sample = group_by(gene_depth, 0)
-    med_depth = numpy.median([rec.min_depth for rec in list_genes_info])
+    med_depth = median([rec.min_depth for rec in list_genes_info])
     norm_depths_by_seq_distr = get_norm_depths_by_seq_distr(sample_mapped_reads, list_genes_info)
 
 
@@ -114,7 +112,7 @@ def run_copy_number(sample_mapped_reads, gene_depth):
     norm3 = defaultdict(dict)
 
     for gene, norm_depth_by_sample in norm_depths_by_seq_distr.items():
-        for gene_info  in list_genes_info:
+        for gene_info in list_genes_info:
             sample = gene_info.sample_name
             if sample not in norm_depth_by_sample:
                 continue
@@ -123,11 +121,13 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
             norm_depths_by_gene[gene][sample] = gene_norm_depth
 
-            norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2)
+            norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
 
-            median_depth1 = numpy.median([gene_info.min_depth for gene_info in list_genes_info if gene_info.sample_name == sample])
+            median_depth1 = median([gene_info.min_depth
+                                   for gene_info in list_genes_info
+                                   if gene_info.sample_name == sample])
 
-            median_depth = numpy.median([rec[7]for rec in records_by_sample[sample]])
+            median_depth = median([float(rec[7]) for rec in records_by_sample[sample]])
 
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth, 2)
 
