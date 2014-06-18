@@ -2,7 +2,7 @@
 
 import math
 from collections import defaultdict
-from itertools import groupby
+
 from source.utils import mean, median
 
 
@@ -66,38 +66,36 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
     med_depth = median([rec.min_depth for rec in list_genes_info])
     norm_depths_by_seq_distr = get_norm_depths_by_seq_distr(sample_mapped_reads, list_genes_info)
-
-
-
     factors_by_gene = _get_factors_by_gene(list_genes_info,med_depth)
-
     norm_depths_by_gene = defaultdict(dict)
-
     norm2 = defaultdict(dict)
-
     norm3 = defaultdict(dict)
+    median_depth_by_sample = dict()
+
+    for sample_name in sample_mapped_reads:
+        median_depth_by_sample[sample_name] = median([gene_info.min_depth
+                                   for gene_info in list_genes_info
+                                   if gene_info.sample_name == sample_name])
 
     for gene, norm_depth_by_sample in norm_depths_by_seq_distr.items():
+
         for gene_info in list_genes_info:
             sample = gene_info.sample_name
             if sample not in norm_depth_by_sample:
                 continue
-
             gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1
 
             norm_depths_by_gene[gene][sample] = gene_norm_depth
 
             norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
 
-            median_depth = median([gene_info.min_depth
-                                   for gene_info in list_genes_info
-                                   if gene_info.sample_name == sample])
+            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2)
 
-            norm3[gene][sample] = math.log(gene_norm_depth / median_depth, 2)
+    for gene, sample in norm2.items():
+        for k, v in sample.items():
+            print gene + " : " + k + " : " + str(v)
 
-
-
-            #print '/t'.join(map(str,(sample, gene, gene_info.start_position, gene_info.end_position,gene_info.min_depth, norm_depth_by_sample)))
+    print '/t'.join(map(str,(sample, gene, gene_info.start_position, gene_info.end_position,gene_info.min_depth, norm_depth_by_sample)))
 def report_row_to_object(gene_depth):
 
     gene_details = []
