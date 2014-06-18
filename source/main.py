@@ -40,6 +40,11 @@ def read_opts_and_cnfs(extra_opts,
              help='do not reuse intermediate files from previous run',
              action='store_true')
          ),
+        (['-r', '--reuse'], dict(
+             dest='overwrite',
+             help='reuse intermediate files from previous run',
+             action='store_false')
+         ),
         (['--sys-cnf'], dict(
              dest='sys_cnf',
              metavar='SYS_CNF.yaml',

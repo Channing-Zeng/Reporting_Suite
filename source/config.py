@@ -104,7 +104,7 @@ class Config(object):
             self.log = None
             self.threads = None
 
-            self.overwrite = False
+            self.overwrite = None
             self.reuse_intermediate = None
             self.keep_intermediate = None
 
@@ -120,8 +120,8 @@ class Config(object):
             self.sys_cnf = sys_cnf_fpath
             self.run_cnf = run_cnf_fpath
 
-            if self.overwrite:
-                self.reuse_intermediate = False
+            if self.overwrite is not None:
+                self.reuse_intermediate = not self.overwrite
 
             if not self.base_tmp_dir:
                 self.base_tmp_dir = self.work_dir

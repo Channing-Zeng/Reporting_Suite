@@ -55,7 +55,7 @@ def main(args):
 
 def set_up_snpeff(cnf):
     if 'clinical_reporting' in cnf:
-        if 'snpeff' not in cnf:
+        if 'snpeff' in cnf:
             cnf['snpeff']['clinical_reporting'] = cnf['clinical_reporting']
         del cnf['clinical_reporting']
 
