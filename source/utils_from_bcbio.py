@@ -10,10 +10,12 @@ import random
 import ConfigParser
 import collections
 import sys
-import yaml
 import fnmatch
-from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, splitext
-from datetime import datetime, time
+from os.path import isfile, getsize, exists, expanduser, splitext
+from datetime import time
+
+import yaml
+
 try:
     from concurrent import futures
 except ImportError:
