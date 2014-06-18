@@ -76,7 +76,7 @@ while( <> ) {
         my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
         push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
     }
-    last;
+    #last;
 }
 
 sub mean {
@@ -106,7 +106,7 @@ foreach my $d (@data) {
 
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
     if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
-	my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
+	    my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
 	    $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
     }
 
@@ -122,7 +122,7 @@ sub checkCLNSIG {
     my @cs = split(/\||,/, $clnsig );
     foreach my $cs (@cs) {
         return 1 if ( $cs > 3 && $cs < 7 );
-	return 1 if ( $cs == 255 );
+	    return 1 if ( $cs == 255 );
     }
     return -1;
 }

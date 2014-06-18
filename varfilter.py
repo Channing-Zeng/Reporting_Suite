@@ -7,6 +7,7 @@ import re
 import shutil
 
 import sys
+import operator
 from source.config import Defaults
 from source.logger import err, step_greetings
 from source.utils_from_bcbio import add_suffix
@@ -18,7 +19,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.runner import run_one
-from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call
+from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call, mean
 
 
 def main(args):
@@ -170,7 +171,8 @@ def main(args):
         file_keys=['vcf'],
         key_for_sample_name='vcf')
 
-    check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
+    #check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
+    check_system_resources(cnf, required=['java'], optional=[])
 
     for key in cnf.keys():
         if key in cnf['variant_filtering'].keys():
@@ -184,8 +186,8 @@ def main(args):
 
 
 def process_one(cnf):
-    anno_vcf_fpath = filter_variants(cnf, cnf['vcf'])
-    return [anno_vcf_fpath]
+    filtered_vcf_fpath = filter_variants(cnf, cnf['vcf'])
+    return [filtered_vcf_fpath]
 
 
 def finalize_one(cnf, filtered_vcf_fpath):
@@ -200,7 +202,7 @@ def filter_variants(cnf, vcf_fpath):
 
     vcf_fpath = main_filtering(cnf, filt_cnf, vcf_fpath)
 
-    vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
+    #vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
     final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
@@ -220,7 +222,7 @@ def _build_info(d):
 
 
 def _reject(tokens, val='REJECT'):
-    if tokens[6] == 'PASS':
+    if tokens[6] == 'PASS' or tokens[6] == '.':
         tokens[6] = val
     return '\t'.join(tokens)
 
@@ -233,17 +235,19 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
     control_dict = dict()
     sample_dict = dict()
     var_dict = dict()
+    data_dict = dict()
+
+    def __comp(a, b, d, op=operator.lt):
+        return a in d and b in filt_cnf and op(float(d[a]), filt_cnf[b])
 
     def __proc_line(l):
         if l.startswith('#'):
             return l
 
         tokens = l.split('\t')
-        vark = '\t'.join(tokens[:4])
+        vark = ':'.join(tokens[0:2] + tokens[3:5])
         d = _parse_info(tokens[7])
-
-        def less(a, b):
-            return a in d and b in filt_cnf and int(d[a]) < filt_cnf[b]
+        less = lambda x, y: __comp(x, y, d=d)
 
         # FILTER FIRST
         for p in ('DP', 'filt_depth'), \
@@ -258,7 +262,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             reject = False
 
             for p in ('QUAL', 'min_q_mean'), \
-                     ('PMEAN', 'min_q_mean'), \
+                     ('PMEAN', 'min_p_mean'), \
                      ('AF', 'min_freq'),\
                      ('MQ', 'min_mq'),\
                      ('SN', 'signal_noise'),\
@@ -266,15 +270,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
                 if less(*p):
                     reject = True
 
-            id_ = tokens[2]
-            cls = 'Novel'
-            if 'COSM' in id_:
-                cls = 'COSMIC'
-            if 'rs' in id_:
-                if check_clnsig(d['CLNSIG']):
-                    cls = 'ClnSNP'
-                else:
-                    cls = 'dbSNP'
+            cls = get_class(d, tokens[2])
 
             # so that any novel variants showed up in control won't be filtered:
             if not reject or cls == 'Novel':
@@ -282,27 +278,100 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             else:
                 return _reject(tokens)
 
+        # Undetermined won't count toward samples
+        if not (filt_cnf['count_undetermined'] and ('SAMPLE' in d and 'undetermined' in d['SAMPLE'].lower())):
+            sample_name = '' if 'SAMPLE' not in d else d['SAMPLE']
+            sample_dict[sample_name] = 1
+            if vark not in var_dict:
+                var_dict[vark] = []
+            var_dict[vark].append(0 if 'AF' not in d else float(d['AF']))
+
+        # TODO: what should we do with lines without effects?
+        if 'EFF' not in d:
+            return _reject(tokens, val='NO_EFF')
+
+        data_dict[vark] = d
         return _pass(tokens)
 
-        # Undetermined won't count toward samples
-        if ('SAMPLE' in d and
-            (filt_cnf['count_undetermined'] or 'Undetermined' not in d['SAMPLE'])):
+    def __post_proc_line(l):
+        if l.startswith('#'):
+            return l
 
-            sample_dict[d['SAMPLE']] = 1
-        #     d['AF']
-        #     $sample{ $d{ SAMPLE } } = 1;
-        # push( @{ $var{ $vark } }, $d{ AF } );
+        samples_n = len(sample_dict.keys())
+        tokens = l.split('\t')
+        vark = ':'.join(tokens[0:2] + tokens[3:5])
+        d = _parse_info(tokens[7])
+        less = lambda x, y: __comp(x, y, d=d)
+        greater = lambda x, y: __comp(x, y, d=d, op=operator.gt)
+
+        if vark not in data_dict or vark not in var_dict:
+            return _pass(tokens)
+        var_n = len(var_dict[vark])
+        average_af = mean(var_dict[vark])
+        fraction = float(var_n) / samples_n
+
+        reject_val = 'PASS'
+        if fraction > filt_cnf['fraction'] and var_n >= filt_cnf['sample_cnt'] \
+            and average_af < filt_cnf['freq'] and tokens[2] == '.':
+            reject_val = 'MULTI'
+        if 'PSTD' in d and d['PSTD'] == 0 and \
+           'BIAS' in d and not (d['BIAS'].endswith('0') or d['BIAS'].endswith('1')):
+            reject_val = 'DUP'
+        if fraction >= filt_cnf['max_ratio'] and 'AF' in d and float(d['AF']) < 0.3:
+            reject_val = 'MAXRATE'
+
+        for p in ('QUAL', 'min_q_mean'),\
+                 ('PMEAN', 'min_p_mean'),\
+                 ('MQ', 'min_mq'),\
+                 ('SN', 'signal_noise'),\
+                 ('AF', 'min_freq'),\
+                 ('VD', 'mean_vd'):
+            if less(*p):
+                reject_val = p[0]
+
+        if 'control' in filt_cnf and vark in control_dict:
+            reject_val = 'CNTL'
+
+        cls = get_class(d, tokens[2])
+        if greater('GMAF', 'maf'): # if there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC
+            cls = 'dbSNP'
+        ## Not needed in our python version of vcf2txt.pl:
+        # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
+        # if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
+        #     my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
+        #     $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
+        # }
+        if 'bias' in filt_cnf and filt_cnf['bias'] and (cls == 'Novel' or cls == 'dbSNP') and \
+           'BIAS' in d and (d['BIAS'] == "2;1" or d['BIAS'] == "2;0") and 'AF' in d and float(d['AF']) < 0.3:
+            reject_val = 'BIAS'
+        if check_clnsig(d) == -1 and cls != 'COSMIC':
+            reject_val = 'NonClnSNP'
+        return _reject(tokens, reject_val)
 
     step_greetings('Filtering based on Zhongwu\'s vcf2txt.pl.')
 
-    return iterate_file(cnf, vcf_fpath, __proc_line)
+    vcf_fpath = iterate_file(cnf, vcf_fpath, __proc_line)
+    return iterate_file(cnf, vcf_fpath, __post_proc_line, suffix='mf')
 
 
-def check_clnsig(clnsig):
+def get_class(d, id_):
+    cls = 'Novel'
+    if 'COSM' in id_:
+        cls = 'COSMIC'
+    elif id_.startswith('rs'):
+        if check_clnsig(d):
+            cls = 'ClnSNP'
+        else:
+            cls = 'dbSNP'
+    return cls
+
+
+def check_clnsig(d):
+    clnsig = None if 'CLNSIG' not in d else d['CLNSIG']
     if not clnsig:
         return 0
 
-    for c in re.split('|,', clnsig):
+    for c in re.split('\||,', clnsig):
         if 3 < c < 7 or c == 255:
             return 1
 
@@ -315,13 +384,11 @@ def remove_prev_pass(cnf, vcf_fpath):
             return l
 
         tokens = l.split('\t')
-        if tokens[6] == 'PASS':
-            tokens[6] = '.'
-        return '\t'.join(tokens)
+        return _reject(tokens, val='.')
 
     step_greetings('Removing previous "PASS" values.')
 
-    return iterate_file(cnf, vcf_fpath, __proc_line)
+    return iterate_file(cnf, vcf_fpath, __proc_line, suffix='rpp')
 
 
 def run_snpsift(cnf, vcf_cnf, vcf_fpath):
