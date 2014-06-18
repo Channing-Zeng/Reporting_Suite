@@ -1,8 +1,8 @@
 import os
 import sys
-from os.path import join, dirname, abspath, expanduser
+from os.path import join, dirname, abspath, expanduser, basename
 
-from source.utils_from_bcbio import file_exists, safe_mkdir
+from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info
 from source.ngscat.bed_file import verify_bam
 from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call
@@ -92,7 +92,7 @@ class Runner():
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf {vcf}')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' --clean')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
@@ -229,18 +229,19 @@ class Runner():
     def _run_pipeline_on_sample(self, sample, sample_dirpath, qualimap_bed_fpath, bam_fpath, vcf_fpath):
         if self.varannotate:
             anno_dirpath = self.submit(self.varannotate, sample, True, vcf=vcf_fpath, bam=bam_fpath)
-            annotated_vcf_fpath = join(anno_dirpath, vcf_fpath.replace('.vcf', '.anno.vcf'))
+            annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
             self.submit(self.varqc, sample, True, vcf=annotated_vcf_fpath,
                         wait_for_steps=[self.varannotate.job_name(sample)])
 
             if self.varfilter:
-                filtered_vcf_fpath = join(anno_dirpath, annotated_vcf_fpath.replace('.vcf', '.filt.vcf'))
+                filtered_vcf_fpath = join(sample_dirpath,
+                                          basename(add_suffix(annotated_vcf_fpath, 'filt')))
                 if file_exists(filtered_vcf_fpath):
                     os.remove(filtered_vcf_fpath)
                 self.submit(self.varfilter, sample, False,
                     wait_for_steps=[self.varannotate.job_name(sample)],
-                    out_fpath=filtered_vcf_fpath, vcf=annotated_vcf_fpath)
+                    vcf=annotated_vcf_fpath)
 
         self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
 

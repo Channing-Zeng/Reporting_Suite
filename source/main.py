@@ -40,7 +40,12 @@ def read_opts_and_cnfs(extra_opts,
              help='do not reuse intermediate files from previous run',
              action='store_true')
          ),
-        (['-r', '--reuse'], dict(
+        (['--clean'], dict(
+             dest='keep_intermediate',
+             help='store work directory',
+             action='store_false')
+         ),
+        (['--reuse'], dict(
              dest='overwrite',
              help='reuse intermediate files from previous run',
              action='store_false')

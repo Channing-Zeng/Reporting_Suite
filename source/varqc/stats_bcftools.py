@@ -8,8 +8,8 @@ from source.logger import info, step_greetings
 from source.utils import call_subprocess, get_tool_cmdline, bgzip_and_tabix_vcf
 
 
-indels_plot_ending = '_indels.png'
-substs_plot_ending = '_substitution.png'
+indels_plot_ending = '.indels.png'
+substs_plot_ending = '.substitutions.png'
 
 
 def bcftools_qc(cnf, vcf_fpath):

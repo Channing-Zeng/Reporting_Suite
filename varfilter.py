@@ -1,10 +1,15 @@
 #!/usr/bin/env python
 from collections import OrderedDict
+from genericpath import isfile
+import os
+from os.path import basename, join
 import re
+import shutil
 
 import sys
 from source.config import Defaults
-from source.logger import err
+from source.logger import err, step_greetings
+from source.utils_from_bcbio import add_suffix
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -30,7 +35,12 @@ def main(args):
         'False positive variants are annotated REJECT in column FILTER, PASS otherwise.',
 
         extra_opts=[
-            (['--expression'], dict(
+            (['--vcf', '--var'], dict(
+                dest='vcf',
+                help='Annotated variants to filter')
+             ),
+
+            (['-e', '--expression'], dict(
                 dest='expression',
                 help='Filtering line for SnpSift. Default is ' + defaults['expression']
             )),
@@ -50,7 +60,7 @@ def main(args):
 
             (['-r'], dict(
                 dest='fraction',
-                type='double',
+                type='float',
                 help='When a novel variant is present in more than [fraction] '
                      'of samples and mean allele frequency is less than [freq], '
                      'it\'s considered as likely false positive. Default %f. '
@@ -58,7 +68,7 @@ def main(args):
             )),
             (['-f'], dict(
                 dest='freq',
-                type='double',
+                type='float',
                 help='When the average allele frequency is also below the [freq], '
                      'the variant is considered likely false positive. '
                      'Default %f. Used with -r and -n' % defaults['freq'],
@@ -73,7 +83,7 @@ def main(args):
 
             (['-R'], dict(
                 dest='max_ratio',
-                type='double',
+                type='float',
                 help='When a variant is present in more than [fraction] of samples, '
                      'and AF < 0.3, it\'s considered as likely false positive, '
                      'even if it\'s in COSMIC. Default %f.' % defaults['max_ratio'],
@@ -81,7 +91,7 @@ def main(args):
 
             (['-F'], dict(
                 dest='min_freq',
-                type='double',
+                type='float',
                 help='When individual allele frequency < feq for variants, '
                      'it was considered likely false poitives. '
                      'Default %f' % defaults['min_freq'],
@@ -95,7 +105,7 @@ def main(args):
             )),
             (['-q'], dict(
                 dest='min_q_mean',
-                type='double',
+                type='float',
                 help='The minimum mean base quality phred score for variant.'
                      'Default %d' % defaults['min_q_mean'],
             )),
@@ -109,7 +119,7 @@ def main(args):
             )),
             (['-Q'], dict(
                 dest='filt_q_mean',
-                type='double',
+                type='float',
                 help='The filtering mean base quality phred score for variants. '
                      'The raw variant will be filtered on first place  '
                      'if the mean quality is less then [filt_q_mean]. '
@@ -118,7 +128,7 @@ def main(args):
 
             (['-M'], dict(
                 dest='mean_mq',
-                type='double',
+                type='float',
                 help='The filtering mean mapping quality score for variants. '
                      'The raw variant will be filtered if the mean mapping quality '
                      'score is less then specified. Default %d' % defaults['mean_mq'],
@@ -140,14 +150,14 @@ def main(args):
 
             (['-m'], dict(
                 dest='maf',
-                type='double',
+                type='float',
                 help='If there is MAF with frequency, it will be considered dbSNP '
                      'regardless of COSMIC. Default MAF is %f' % defaults['maf'],
             )),
-            (['-s'], dict(
+            (['--sn'], dict(
                 dest='signal_noise',
                 type='int',
-                help='Signal/noise value. Default %d' % defaults['signal']
+                help='Signal/noise value. Default %d' % defaults['signal_noise']
             )),
             (['-c'], dict(
                 dest='control',
@@ -169,6 +179,9 @@ def main(args):
 
     run_one(cnf, process_one, finalize_one)
 
+    if not cnf['keep_intermediate']:
+        shutil.rmtree(cnf['work_dir'])
+
 
 def process_one(cnf):
     anno_vcf_fpath = filter_variants(cnf, cnf['vcf'])
@@ -181,9 +194,6 @@ def finalize_one(cnf, filtered_vcf_fpath):
 
 
 def filter_variants(cnf, vcf_fpath):
-    err('')
-    err('*' * 70)
-
     filt_cnf = cnf['variant_filtering']
 
     vcf_fpath = remove_prev_pass(cnf, vcf_fpath)
@@ -192,7 +202,13 @@ def filter_variants(cnf, vcf_fpath):
 
     vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
 
-    return vcf_fpath
+    final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
+    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
+    if isfile(final_vcf_fpath):
+        os.remove(final_vcf_fpath)
+    shutil.copyfile(vcf_fpath, final_vcf_fpath)
+
+    return final_vcf_fpath
 
 
 def _parse_info(line):
@@ -218,7 +234,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
     sample_dict = dict()
     var_dict = dict()
 
-    def __do(l):
+    def __proc_line(l):
         if l.startswith('#'):
             return l
 
@@ -261,7 +277,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
                     cls = 'dbSNP'
 
             # so that any novel variants showed up in control won't be filtered:
-            if not reject and cls == 'Novel':
+            if not reject or cls == 'Novel':
                 control_dict[vark] = 1
             else:
                 return _reject(tokens)
@@ -277,7 +293,9 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         #     $sample{ $d{ SAMPLE } } = 1;
         # push( @{ $var{ $vark } }, $d{ AF } );
 
-    return iterate_file(cnf, vcf_fpath, __do)
+    step_greetings('Filtering based on Zhongwu\'s vcf2txt.pl.')
+
+    return iterate_file(cnf, vcf_fpath, __proc_line)
 
 
 def check_clnsig(clnsig):
@@ -292,7 +310,7 @@ def check_clnsig(clnsig):
 
 
 def remove_prev_pass(cnf, vcf_fpath):
-    def __do(l):
+    def __proc_line(l):
         if l.startswith('#'):
             return l
 
@@ -301,7 +319,9 @@ def remove_prev_pass(cnf, vcf_fpath):
             tokens[6] = '.'
         return '\t'.join(tokens)
 
-    return iterate_file(cnf, vcf_fpath, __do)
+    step_greetings('Removing previous "PASS" values.')
+
+    return iterate_file(cnf, vcf_fpath, __proc_line)
 
 
 def run_snpsift(cnf, vcf_cnf, vcf_fpath):
@@ -309,9 +329,11 @@ def run_snpsift(cnf, vcf_cnf, vcf_fpath):
     if not expression:
         return vcf_fpath
 
+    step_greetings('Running SnpSift filter.')
+
     executable = get_java_tool_cmdline(cnf, 'snpsift')
     cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
-    filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'filtered')
+    filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'snpsift')
     call(cnf, cmdline, filtered_fpath)
     return filtered_fpath
 

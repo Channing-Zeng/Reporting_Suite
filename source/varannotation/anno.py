@@ -15,39 +15,40 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
     original_vcf = vcf_fpath
 
     if 'gatk' in cnf:
-        annotated = True
         vcf_fpath = _gatk(cnf, vcf_fpath, bam_fpath)
+        annotated = vcf_fpath is not None
 
     if 'dbsnp' in cnf:
-        annotated = True
         vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath)
+        annotated = vcf_fpath is not None
+
     if 'cosmic' in cnf:
-        annotated = True
         vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
+        annotated = vcf_fpath is not None
+
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
-            annotated = True
-            vcf_fpath = _snpsift_annotate(
-                cnf, custom_conf, dbname, vcf_fpath)
+            vcf_fpath = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)
+            annotated = vcf_fpath is not None
 
     if 'dbnsfp' in cnf:
-        annotated = True
         vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath)
+        annotated = vcf_fpath is not None
 
     if 'snpeff' in cnf:
-        annotated = True
         _remove_annotation(cnf, 'EFF', vcf_fpath)
         vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
-        if isfile(join(cnf['output_dir'], summary_fpath)):
-            os.remove(join(cnf['output_dir'], summary_fpath))
-        if isfile(join(cnf['output_dir'], genes_fpath)):
-            os.remove(join(cnf['output_dir'], genes_fpath))
-        if file_exists(summary_fpath):
-            shutil.move(summary_fpath, cnf['output_dir'])
-        if file_exists(genes_fpath):
-            shutil.move(genes_fpath, cnf['output_dir'])
+        annotated = vcf_fpath is not None
+        if annotated:
+            if isfile(join(cnf['output_dir'], summary_fpath)):
+                os.remove(join(cnf['output_dir'], summary_fpath))
+            if isfile(join(cnf['output_dir'], genes_fpath)):
+                os.remove(join(cnf['output_dir'], genes_fpath))
+            if file_exists(summary_fpath):
+                shutil.move(summary_fpath, cnf['output_dir'])
+            if file_exists(genes_fpath):
+                shutil.move(genes_fpath, cnf['output_dir'])
 
-    next_vcf_fpath = None
     if cnf.get('tracks'):
         for track in cnf['tracks']:
             next_vcf_fpath = _tracks(cnf, track, vcf_fpath)
@@ -56,7 +57,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
                 vcf_fpath = next_vcf_fpath
 
     if annotated:
-        vcf_fpath = _filter_fields(cnf, vcf_fpath)
+        vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
         # Copying final VCF
         final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
@@ -326,7 +327,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
                            input_fpath + '.idx'])
 
 
-def _filter_fields(cnf, input_fpath):
+def _filter_malformed_fields(cnf, input_fpath):
     step_greetings('Filtering incorrect fields.')
 
     def proc_line(line):

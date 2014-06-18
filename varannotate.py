@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import shutil
 
 import sys
 from source.logger import critical
@@ -51,6 +52,9 @@ def main(args):
     info('Using alignement ' + cnf['bam'])
 
     run_one(cnf, process_one, finalize_one)
+
+    if not cnf['keep_intermediate']:
+        shutil.rmtree(cnf['work_dir'])
 
 
 def set_up_snpeff(cnf):

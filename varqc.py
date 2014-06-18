@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from os import makedirs
 from os.path import dirname, isdir, basename
+import shutil
 
 import sys
 from source.utils_from_bcbio import file_exists
@@ -43,6 +44,9 @@ def main(args):
     info('Using variants ' + cnf['vcf'])
 
     run_one(cnf, process_one, finalize_one)
+
+    if not cnf['keep_intermediate']:
+        shutil.rmtree(cnf['work_dir'])
 
 
 if verify_module('matplotlib'):

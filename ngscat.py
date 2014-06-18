@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import shutil
 
 import sys
 from source.config import Defaults
@@ -92,6 +93,9 @@ def main():
     cnf['name'] = dirname(cnf['bam'])  # TODO: remove
 
     run_one(cnf, process_one, finalize_one)
+
+    if not cnf['keep_intermediate']:
+        shutil.rmtree(cnf['work_dir'])
 
 
 def process_parameters(cnf):

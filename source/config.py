@@ -61,7 +61,7 @@ class Defaults():
         count_undetermined=True,
         fraction=0.4,
         max_ratio=1,
-        sample_count=10,
+        sample_cnt=10,
         freq=0.15,
         min_p_mean=5,
         min_q_mean=25,
@@ -69,10 +69,10 @@ class Defaults():
         filt_q_mean=0,
         filt_depth=0,
         min_freq=0.05,
-        min_mq=20,
-        min_vd=2,
+        mean_mq=20,
+        mean_vd=2,
         maf=0.0025,
-        signal_noize=4,
+        signal_noise=4,
     )
 
     quality_control = dict(
