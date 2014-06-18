@@ -89,7 +89,8 @@ def run_copy_number(sample_mapped_reads, gene_depth):
         gene_name = gene_info.name
         sample = gene_info.sample_name
         data = [sample, gene_name, gene_info.chrom, gene_info.start_position, gene_info.end_position, gene_info.size,
-                gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample]]
+                gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample], norm_depths_by_gene[gene_name][sample],
+                norm2[gene_name][sample], norm3[gene_name][sample]]
         print '\t'.join(map(str, data))
 
 
