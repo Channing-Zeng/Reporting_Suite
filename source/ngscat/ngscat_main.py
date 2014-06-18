@@ -136,8 +136,8 @@ def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfil
 
     for bedgraphfilename in bedgraphfilenames:
         bedgraph = bedgraph_file.bedgraph_file(bedgraphfilename)
-        bedgraph.getOffTarget(offtargetoffset, offtargetthreshold, bedfilename,
-                              bedgraphfilename.replace('.bed', '.off.bed'))
+        outfile = bedgraphfilename.replace('.bed', '.off.bed') if '.off' not in bedgraphfilename else bedgraphfilename
+        bedgraph.getOffTarget(offtargetoffset, offtargetthreshold, bedfilename, outfile)
 
     if (executiongranted <> None):
         executiongranted.release()

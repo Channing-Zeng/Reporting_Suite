@@ -24,6 +24,7 @@ def main():
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-n', dest='base_name', default='VarQC', help='Name of targetcov directory inside sample folder. (default is TargetCov)')
+    parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
@@ -52,11 +53,11 @@ def main():
     info()
     info('*' * 70)
 
-    summarize_varqc_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    summarize_varqc_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name, cnf.vcf_suffix)
 
 
-def summarize_varqc_report(out_dirpath, samples_fpath, report_basedir):
-    summary_report_fpath = join(out_dirpath, 'varqc.summary.txt')
+def summarize_varqc_report(out_dirpath, samples_fpath, report_basedir, vcf_suf=''):
+    summary_report_fpath = join(out_dirpath, vcf_suf + '.varqc.summary.txt')
     report_suffix = '.varqc.txt'
 
     report_fpaths = []
@@ -65,8 +66,9 @@ def summarize_varqc_report(out_dirpath, samples_fpath, report_basedir):
         for line in f:
             sample_name = line.strip()
 
-            report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
-            info(sample_name + ': ' + report_fpath)
+            report_fpath = join(out_dirpath, sample_name, report_basedir,
+                                sample_name + '-' + vcf_suf + report_suffix)
+            info(sample_name + '-' + vcf_suf + ': ' + report_fpath)
 
             if verify_file(report_fpath):
                 report_fpaths.append(report_fpath)

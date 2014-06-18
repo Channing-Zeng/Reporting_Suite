@@ -111,7 +111,7 @@ class Runner():
             self.varqc_summary = self.steps.step(
                 name='VarQC_summary',
                 script='varqc_summary.py',
-                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.varqc.name)
+                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.varqc.name + ' --vcf-suf ' + self.suf)
         if self.targetcov:
             self.steps.append('TargetCov_summary')
             self.targetcov_summary = self.steps.step(
@@ -214,12 +214,12 @@ class Runner():
         self.submit(
             self.varqc_summary,
             wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
-            samples=samples)
+            samples=self.samples)
 
         self.submit(
             self.targetcov_summary,
             wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
-            samples=samples)
+            samples=self.samples)
 
         if not self.cnf.verbose:
             print ''
@@ -228,20 +228,25 @@ class Runner():
 
     def _run_pipeline_on_sample(self, sample, sample_dirpath, qualimap_bed_fpath, bam_fpath, vcf_fpath):
         if self.varannotate:
-            anno_dirpath = self.submit(self.varannotate, sample, True, vcf=vcf_fpath, bam=bam_fpath)
+            anno_dirpath = self.submit(
+                self.varannotate, sample, True,
+                vcf=vcf_fpath, bam=bam_fpath, name=sample + self.suf)
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-            self.submit(self.varqc, sample, True, vcf=annotated_vcf_fpath,
-                        wait_for_steps=[self.varannotate.job_name(sample)])
+            self.submit(
+                self.varqc, sample, True,
+                vcf=annotated_vcf_fpath, name=sample + self.suf,
+                wait_for_steps=[self.varannotate.job_name(sample)])
 
             if self.varfilter:
                 filtered_vcf_fpath = join(sample_dirpath,
-                                          basename(add_suffix(annotated_vcf_fpath, 'filt')))
+                    basename(add_suffix(annotated_vcf_fpath, 'filt')))
                 if file_exists(filtered_vcf_fpath):
                     os.remove(filtered_vcf_fpath)
                 self.submit(self.varfilter, sample, False,
                     wait_for_steps=[self.varannotate.job_name(sample)],
-                    vcf=annotated_vcf_fpath)
+                    vcf=annotated_vcf_fpath,
+                    name=sample + self.suf)
 
         self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
 
