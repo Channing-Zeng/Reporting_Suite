@@ -2,10 +2,8 @@
 
 from __future__ import print_function
 import sys
-import os
 from optparse import OptionParser
 from os.path import join
-from genericpath import isfile
 from source.config import Defaults, Config
 from source.logger import info, critical, step_greetings
 from source.main import check_keys, check_inputs
@@ -68,7 +66,8 @@ def summarize_cov_report(cnf, out_dirpath, samples_fname, report_basedir):
         for line in f:
             sample_name = line.strip()
 
-            report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_suffix)
+            report_fpath = join(out_dirpath, sample_name,
+                                report_basedir, sample_name + report_suffix)
             info(sample_name + ': ' + report_fpath)
 
             if not verify_file(report_fpath):

@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from os.path import basename
 from os.path import splitext
-from source.targetcov.copy_number import run_copy_number
+from targetcov.copy_number import run_copy_number
 
 database = 'cosmic'
 novelty = 'all'

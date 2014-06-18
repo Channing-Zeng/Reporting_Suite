@@ -171,7 +171,7 @@ def main(args):
         file_keys=['vcf'],
         key_for_sample_name='vcf')
 
-    #check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
+    check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
     check_system_resources(cnf, required=['java'], optional=[])
 
     for key in cnf.keys():
@@ -202,7 +202,7 @@ def filter_variants(cnf, vcf_fpath):
 
     vcf_fpath = main_filtering(cnf, filt_cnf, vcf_fpath)
 
-    #vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
+    vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
     final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
@@ -333,7 +333,8 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             reject_val = 'CNTL'
 
         cls = get_class(d, tokens[2])
-        if greater('GMAF', 'maf'): # if there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC
+        if greater('GMAF', 'maf'):  # if there's MAF with frequency, it'll be considered
+                                    # dbSNP regardless of COSMIC
             cls = 'dbSNP'
         ## Not needed in our python version of vcf2txt.pl:
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC

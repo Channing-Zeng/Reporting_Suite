@@ -427,7 +427,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
                                     stdin=open(stdin_fpath) if stdin_fpath else None)
             if return_proc:
-                # TODO: make this yield (as well as other returns), move cleaning to finally, and use this function from with statement
+                # TODO: make this yield (as well as other returns),
+                # TODO: ...move cleaning to finally, and use this function from with statement
                 clean()
                 return proc
 

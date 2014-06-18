@@ -3,8 +3,8 @@ import shutil
 
 import sys
 from source.config import Defaults
-from source.logger import critical
 from source.targetcov.cov import run_target_cov
+
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
