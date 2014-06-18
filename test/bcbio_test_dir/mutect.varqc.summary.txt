@@ -1,0 +1,13 @@
+Sample	sample1-mutect
+nEvalVariants	12
+nSNPs	10
+nInsertions	1
+nDeletions	0
+nVariantsAtComp	0
+compRate	0.00
+nConcordant	0
+concordantRate	0.00
+variantRate	0.00032812
+basesPerVariant	3047.00
+hetHomRatio	0.09
+tiTvRatio	4.00

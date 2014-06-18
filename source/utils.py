@@ -132,7 +132,7 @@ def tmpfile(cnf, *args, **kwargs):
             pass
 
 
-def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
+def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None, overwrite=False,
                  keep_original_if_not_keep_intermediate=False,
                  reuse_intermediate=True):
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
@@ -153,7 +153,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None,
                 else:
                     out.write(line)
 
-    if not suffix:
+    if not overwrite:
         os.rename(output_fpath, input_fpath)
         output_fpath = input_fpath
     else:

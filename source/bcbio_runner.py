@@ -55,7 +55,7 @@ class Runner():
         self.dir = bcbio_final_dir
         self.cnf = cnf
         self.bed = bed_fpath
-        self.suf = '-' + vcf_suffix if vcf_suffix else ''
+        self.suf = vcf_suffix
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
@@ -69,6 +69,7 @@ class Runner():
         self.targetcov_summary = None
         self.varqc_summary = None
 
+        self.samples_fpath = samples_fpath
         with open(samples_fpath) as sample_f:
             self.samples = [s.strip() for s in sample_f.readlines()
                             if s and s.strip() and not s.startswith('#')]
@@ -88,7 +89,7 @@ class Runner():
         self.varqc = self.steps.step(
             name='VarQC',
             script='varqc.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s {name}')
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
@@ -187,7 +188,7 @@ class Runner():
                 if not verify_bam(bam_fpath):
                     sys.exit(1)
 
-                vcf_fpath = join(sample_dirpath, sample + self.suf + '.vcf')
+                vcf_fpath = join(sample_dirpath, sample + '-' + self.suf + '.vcf')
                 if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
                     gz_vcf_fpath = vcf_fpath + '.gz'
                     gunzip = get_tool_cmdline(self.cnf, 'gunzip')
@@ -210,16 +211,15 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        samples = ','.join(self.samples)
         self.submit(
             self.varqc_summary,
             wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
-            samples=self.samples)
+            samples=self.samples_fpath)
 
         self.submit(
             self.targetcov_summary,
             wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
-            samples=self.samples)
+            samples=self.samples_fpath)
 
         if not self.cnf.verbose:
             print ''
@@ -230,12 +230,12 @@ class Runner():
         if self.varannotate:
             anno_dirpath = self.submit(
                 self.varannotate, sample, True,
-                vcf=vcf_fpath, bam=bam_fpath, name=sample + self.suf)
+                vcf=vcf_fpath, bam=bam_fpath, name=sample + '-' + self.suf)
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
             self.submit(
                 self.varqc, sample, True,
-                vcf=annotated_vcf_fpath, name=sample + self.suf,
+                vcf=annotated_vcf_fpath, name=sample + '-' + self.suf,
                 wait_for_steps=[self.varannotate.job_name(sample)])
 
             if self.varfilter:
@@ -246,7 +246,7 @@ class Runner():
                 self.submit(self.varfilter, sample, False,
                     wait_for_steps=[self.varannotate.job_name(sample)],
                     vcf=annotated_vcf_fpath,
-                    name=sample + self.suf)
+                    name=sample + '-' + self.suf)
 
         self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
 

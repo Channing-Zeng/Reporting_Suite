@@ -9,7 +9,7 @@ import shutil
 import sys
 import operator
 from source.config import Defaults
-from source.logger import err, step_greetings
+from source.logger import err, step_greetings, info
 from source.utils_from_bcbio import add_suffix
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -192,7 +192,7 @@ def process_one(cnf):
 
 def finalize_one(cnf, filtered_vcf_fpath):
     if filtered_vcf_fpath:
-        err('Saved filtered VCF to ' + filtered_vcf_fpath)
+        info('Saved filtered VCF to ' + filtered_vcf_fpath)
 
 
 def filter_variants(cnf, vcf_fpath):
@@ -350,8 +350,8 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
 
     step_greetings('Filtering based on Zhongwu\'s vcf2txt.pl.')
 
-    vcf_fpath = iterate_file(cnf, vcf_fpath, __proc_line)
-    return iterate_file(cnf, vcf_fpath, __post_proc_line, suffix='mf')
+    vcf_fpath = iterate_file(cnf, vcf_fpath, __proc_line, suffix='zh1')
+    return iterate_file(cnf, vcf_fpath, __post_proc_line, suffix='zh2')
 
 
 def get_class(d, id_):
