@@ -215,8 +215,6 @@ def _get_amplicon_genes(amplicons, exon_genes):
     return amplicon_genes_by_name
 
 
-
-
 def _get_exon_genes(cnf, subregions):
     genes_by_name = dict()
 
@@ -239,8 +237,6 @@ def _get_exon_genes(cnf, subregions):
     sorted_genes = sorted(genes_by_name.values(),
                           key=lambda g: (g.chrom, g.start, g.end))
     return sorted_genes
-
-
 
 
 def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,

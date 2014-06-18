@@ -11,7 +11,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.runner import run_one
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources, check_inputs
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.utils import info
 
 

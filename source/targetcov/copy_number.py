@@ -123,22 +123,3 @@ if __name__ == '__main__':
     print [i.sample_name for i in report_row_to_object(_GENE_RECORDS)]
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
