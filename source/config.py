@@ -22,7 +22,7 @@ class Defaults():
     genome = 'hg19'
 
     output_dir = getcwd()
-    base_tmp_dir = getcwd()
+    tmp_base_dir = getcwd()
 
     verbose = True
     threads = 4
@@ -97,7 +97,7 @@ class Config(object):
 
             self.genome = None
 
-            self.base_tmp_dir = None
+            self.tmp_base_dir = None
             self.tmp_dir = None
             self.work_dir = None
             self.output_dir = None
@@ -123,8 +123,8 @@ class Config(object):
             if self.overwrite is not None:
                 self.reuse_intermediate = not self.overwrite
 
-            if not self.base_tmp_dir:
-                self.base_tmp_dir = self.work_dir
+            if not self.tmp_base_dir:
+                self.tmp_base_dir = self.work_dir
         else:
             for k, v in cmd_line_opts.items():
                 self[k] = v

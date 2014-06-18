@@ -25,6 +25,11 @@ def read_opts_and_cnfs(extra_opts,
              metavar='DIR',
              help='output directory (or directory name in case of bcbio final dir)')
          ),
+        (['--tmp-base'], dict(
+             dest='tmp_base_dir',
+             metavar='DIR',
+             help='base directory for temporary files (default is /ngs/tmp')
+         ),
         (['-s', '--sample'], dict(
              dest='name',
              metavar='NAME',
@@ -54,16 +59,15 @@ def read_opts_and_cnfs(extra_opts,
              dest='sys_cnf',
              metavar='SYS_CNF.yaml',
              default=Defaults.sys_cnf,
-             help='system configuration yaml with paths '
-                  'to external tools and genome resources '
+             help='System configuration file with  to external tools and genome resources. The default is  '
                   '(see default one %s)' % Defaults.sys_cnf)
          ),
         (['--run-cnf'], dict(
              dest='run_cnf',
              metavar='RUN_CNF.yaml',
              default=Defaults.run_cnf,
-             help='run configuration yaml (see default one %s)'
-                  % Defaults.run_cnf)
+             help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
+                  'The default is %s' % Defaults.run_cnf)
          ),
     ]
 
