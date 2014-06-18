@@ -91,11 +91,15 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2)
 
-    for gene, sample in norm2.items():
-        for k, v in sample.items():
-            print gene + " : " + k + " : " + str(v)
 
-    print '/t'.join(map(str,(sample, gene, gene_info.start_position, gene_info.end_position,gene_info.min_depth, norm_depth_by_sample)))
+    #for gene_info in list_genes_info:
+        #for gene, sample in norm2.items():
+            #for k, v in sample.items():
+                 #print gene + " : " + k + " : " + str(v)
+
+
+
+
 def report_row_to_object(gene_depth):
 
     gene_details = []
