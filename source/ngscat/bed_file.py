@@ -1,6 +1,6 @@
 import string
 import region
-from os.path import join, basename, expanduser
+from os.path import expanduser
 from source.utils_from_bcbio import file_exists
 from source.logger import err
 from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
