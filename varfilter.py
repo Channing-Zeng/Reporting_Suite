@@ -235,7 +235,6 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
     control_dict = dict()
     sample_dict = dict()
     var_dict = dict()
-    data_dict = dict()
 
     def __comp(a, b, d, op=operator.lt):
         return a in d and b in filt_cnf and op(float(d[a]), filt_cnf[b])
@@ -284,13 +283,11 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             sample_dict[sample_name] = 1
             if vark not in var_dict:
                 var_dict[vark] = []
-            var_dict[vark].append(0 if 'AF' not in d else float(d['AF']))
+            var_dict[vark].append(0.0 if 'AF' not in d else float(d['AF']))
 
         # TODO: what should we do with lines without effects?
         if 'EFF' not in d:
             return _reject(tokens, val='NO_EFF')
-
-        data_dict[vark] = d
         return _pass(tokens)
 
     def __post_proc_line(l):
@@ -304,8 +301,8 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         less = lambda x, y: __comp(x, y, d=d)
         greater = lambda x, y: __comp(x, y, d=d, op=operator.gt)
 
-        if vark not in data_dict or vark not in var_dict:
-            return _pass(tokens)
+        if vark not in var_dict: # Likely just in Undetermined
+            return _reject(tokens)
         var_n = len(var_dict[vark])
         average_af = mean(var_dict[vark])
         fraction = float(var_n) / samples_n
