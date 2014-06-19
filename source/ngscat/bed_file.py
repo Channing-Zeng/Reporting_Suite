@@ -1,5 +1,3 @@
-import os
-import numpy
 import string
 import region
 from os.path import join, basename, expanduser
