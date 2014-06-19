@@ -247,13 +247,12 @@ def _filter_effects(filt_cnf, d, i, tokens):
 
     reject_values = []
 
-    if filt_cnf['impact']:
-        if filt_cnf['impact'] not in d['EFF']:
-            reject_values.append('IMPACT')
-
-    if filt_cnf['effect_type']:
-        if filt_cnf['effect_type'] not in d['EFF']:
-            reject_values.append('EFF_TYPE')
+    for f in ['impact', 'effect_type']:
+        if filt_cnf[f]:
+            values = filt_cnf[f].split('|')
+            for v in values:
+                if v.lower() not in d['EFF'].lower():
+                    reject_values.append('NO_' + v.upper())
 
     for val in reject_values:
         tokens = _add_reject(tokens, val)
