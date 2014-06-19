@@ -2,15 +2,14 @@
 import shutil
 
 import sys
-from source.logger import critical
-from source.vcf import filter_rejected, read_sample_names_from_vcf, extract_sample
+from source.vcf import filter_rejected, extract_sample
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources, check_inputs
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.runner import run_one
 from source.varannotation.tsv import make_tsv
 from source.varannotation.anno import run_annotators

@@ -45,7 +45,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     all_format_fields = set()
 
     # Split FORMAT field and sample fields
-    def proc_line(l):
+    def proc_line(l, i):
         if l.startswith('#'):
             return l
         vals = l.strip().split('\t')
@@ -63,6 +63,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 all_format_fields.add(f)
         l = '\t'.join(vals[:7] + [info_field])
         return l
+
     splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
         'split_format_fields', keep_original_if_not_keep_intermediate=True)
 

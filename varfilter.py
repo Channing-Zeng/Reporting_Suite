@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from genericpath import isfile
 import os
 from os.path import basename, join
@@ -9,7 +9,7 @@ import shutil
 import sys
 import operator
 from source.config import Defaults
-from source.logger import err, step_greetings, info
+from source.logger import err, step_greetings, info, critical
 from source.utils_from_bcbio import add_suffix
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -45,21 +45,50 @@ def main(args):
             #     dest='expression',
             #     help='Filtering line for SnpSift. Default is ' + defaults['expression']
             # )),
-
-            (['-u'], dict(
-                dest='count_undetermined',
-                action='store_false',
-                help='Undeteremined won\'t be counted for the sample count.'
+            (['-i', '--impact'], dict(
+                dest='impact',
+                help='Effect impact. Default: ' + defaults['impact']
             )),
-
-            (['-b'], dict(
+            (['-e', '--effect-type'], dict(
+                dest='effect_type',
+                help='Effect type. Default: ' + defaults['effect_type']
+            )),
+            (['-b', '--bias'], dict(
                 dest='bias',
                 action='store_true',
                 help='Novel or dbSNP variants with strand bias "2;1" or "2;0" '
                      'and AF < 0.3 will be considered as false positive.'
             )),
+            (['-M', '--mean-mq'], dict(
+                dest='mean_mq',
+                type='float',
+                help='The filtering mean mapping quality score for variants. '
+                     'The raw variant will be filtered if the mean mapping quality '
+                     'score is less then specified. Default %d' % defaults['mean_mq'],
+            )),
+            (['-D', '--filt-depth'], dict(
+                dest='filt_depth',
+                type='int',
+                help='The filtering total depth. The raw variant will be filtered '
+                     'on first place if the total depth is less then [filt_depth]. '
+                     'Default %d' % defaults['filt_depth'],
+            )),
+            (['-V', '--mean-vd'], dict(
+                dest='mean_vd',
+                type='int',
+                help='The filtering variant depth. Variants with depth < [mean_vd] will '
+                     'be considered false positive. Default is %d (meaning at least %d reads '
+                     'are needed for a variant)' % (defaults['mean_vd'], defaults['mean_vd'])
+            )),
 
-            (['-r'], dict(
+            (['-m', '--maf'], dict(
+                dest='maf',
+                type='float',
+                help='If there is MAF with frequency, it will be considered dbSNP '
+                     'regardless of COSMIC. Default MAF is %f' % defaults['maf'],
+            )),
+
+            (['-r', '--fraction'], dict(
                 dest='fraction',
                 type='float',
                 help='When a novel variant is present in more than [fraction] '
@@ -67,7 +96,7 @@ def main(args):
                      'it\'s considered as likely false positive. Default %f. '
                      'Used with -f and -n' % defaults['fraction'],
             )),
-            (['-f'], dict(
+            (['-f', '--freq'], dict(
                 dest='freq',
                 type='float',
                 help='When the average allele frequency is also below the [freq], '
@@ -82,7 +111,7 @@ def main(args):
                      'Default %d. Used with -r and -f' % defaults['sample_cnt'],
             )),
 
-            (['-R'], dict(
+            (['-R', '--max-ratio'], dict(
                 dest='max_ratio',
                 type='float',
                 help='When a variant is present in more than [fraction] of samples, '
@@ -90,7 +119,7 @@ def main(args):
                      'even if it\'s in COSMIC. Default %f.' % defaults['max_ratio'],
             )),
 
-            (['-F'], dict(
+            (['-F', '--min-freq'], dict(
                 dest='min_freq',
                 type='float',
                 help='When individual allele frequency < feq for variants, '
@@ -98,69 +127,48 @@ def main(args):
                      'Default %f' % defaults['min_freq'],
             )),
 
-            (['-p'], dict(
-                dest='min_p_mean',
-                type='int',
-                help='The minimum mean position in reads for variants.'
-                     'Default %d bp' % defaults['min_p_mean'],
-            )),
-            (['-q'], dict(
-                dest='min_q_mean',
-                type='float',
-                help='The minimum mean base quality phred score for variant.'
-                     'Default %d' % defaults['min_q_mean'],
-            )),
-            (['-P'], dict(
-                dest='filt_p_mean',
-                type='int',
-                help='The filtering mean position in reads for variants. '
-                     'The raw variant will be filtered on first place if the mean '
-                     'posititon is less then [filt_p_mean]. '
-                     'Default %d bp' % defaults['filt_p_mean'],
-            )),
-            (['-Q'], dict(
-                dest='filt_q_mean',
-                type='float',
-                help='The filtering mean base quality phred score for variants. '
-                     'The raw variant will be filtered on first place  '
-                     'if the mean quality is less then [filt_q_mean]. '
-                     'Default %f' % defaults['filt_q_mean'],
-            )),
+            # (['-p'], dict(
+            #     dest='min_p_mean',
+            #     type='int',
+            #     help='The minimum mean position in reads for variants.'
+            #          'Default %d bp' % defaults['min_p_mean'],
+            # )),
+            # (['-q'], dict(
+            #     dest='min_q_mean',
+            #     type='float',
+            #     help='The minimum mean base quality phred score for variant.'
+            #          'Default %d' % defaults['min_q_mean'],
+            # )),
+            # (['-P'], dict(
+            #     dest='filt_p_mean',
+            #     type='int',
+            #     help='The filtering mean position in reads for variants. '
+            #          'The raw variant will be filtered on first place if the mean '
+            #          'posititon is less then [filt_p_mean]. '
+            #          'Default %d bp' % defaults['filt_p_mean'],
+            # )),
+            # (['-Q'], dict(
+            #     dest='filt_q_mean',
+            #     type='float',
+            #     help='The filtering mean base quality phred score for variants. '
+            #          'The raw variant will be filtered on first place  '
+            #          'if the mean quality is less then [filt_q_mean]. '
+            #          'Default %f' % defaults['filt_q_mean'],
+            # )),
 
-            (['-M'], dict(
-                dest='mean_mq',
-                type='float',
-                help='The filtering mean mapping quality score for variants. '
-                     'The raw variant will be filtered if the mean mapping quality '
-                     'score is less then specified. Default %d' % defaults['mean_mq'],
-            )),
-            (['-D'], dict(
-                dest='filt_depth',
-                type='int',
-                help='The filtering total depth. The raw variant will be filtered '
-                     'on first place if the total depth is less then [filt_depth]. '
-                     'Default %d' % defaults['filt_depth'],
-            )),
-            (['-V'], dict(
-                dest='mean_vd',
-                type='int',
-                help='The filtering variant depth. Variants with depth < [mean_vd] will '
-                     'be considered false positive. Default is %d (meaning at least %d reads '
-                     'are needed for a variant)' % (defaults['mean_vd'], defaults['mean_vd'])
-            )),
-
-            (['-m'], dict(
-                dest='maf',
-                type='float',
-                help='If there is MAF with frequency, it will be considered dbSNP '
-                     'regardless of COSMIC. Default MAF is %f' % defaults['maf'],
-            )),
             (['--sn'], dict(
                 dest='signal_noise',
                 type='int',
                 help='Signal/noise value. Default %d' % defaults['signal_noise']
             )),
-            (['-c'], dict(
+
+            (['-u'], dict(
+                dest='count_undetermined',
+                action='store_false',
+                help='Undeteremined won\'t be counted for the sample count.'
+            )),
+
+            (['-c', '--control'], dict(
                 dest='control',
                 help='The control sample name. Any novel or COSMIC variants passing all '
                      'above filters but also detected in Control sample will be deemed '
@@ -185,24 +193,20 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_one(cnf):
-    filtered_vcf_fpath = filter_variants(cnf, cnf['vcf'])
-    return [filtered_vcf_fpath]
-
-
 def finalize_one(cnf, filtered_vcf_fpath):
     if filtered_vcf_fpath:
         info('Saved filtered VCF to ' + filtered_vcf_fpath)
 
 
-def filter_variants(cnf, vcf_fpath):
+def process_one(cnf):
+    vcf_fpath = cnf['vcf']
     filt_cnf = cnf['variant_filtering']
 
-    vcf_fpath = remove_prev_pass(cnf, vcf_fpath)
+    vcf_fpath = remove_previous_filter_rejects(cnf, vcf_fpath)
+
+    # vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
 
     vcf_fpath = main_filtering(cnf, filt_cnf, vcf_fpath)
-
-    vcf_fpath = run_snpsift(cnf, filt_cnf, vcf_fpath)
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
     final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
@@ -210,124 +214,170 @@ def filter_variants(cnf, vcf_fpath):
         os.remove(final_vcf_fpath)
     shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
-    return final_vcf_fpath
+    return [final_vcf_fpath]
 
 
-def _parse_info(line):
-    return OrderedDict(f.split('=') if '=' in f else (f, True) for f in line.split(';'))
+def _parse_fields(tokens):
+    d = OrderedDict(f.split('=') if '=' in f else (f, True) for f in tokens[7].split(';'))
+    d['QUAL'] = tokens[5]
+    return d
 
 
 def _build_info(d):
     return ';'.join([k + ('=' + str(v)) if v else '' for k, v in d.items()])
 
 
-def _reject(tokens, val='REJECT'):
-    if tokens[6] == 'PASS' or tokens[6] == '.':
+def _add_reject(tokens, val='REJECT'):
+    if tokens[6] in ['PASS', '.']:
         tokens[6] = val
+
+    elif val not in tokens[6]:
+        tokens[6] += ';' + val
+
+    return tokens
+
+
+def _make_var_line(tokens):
     return '\t'.join(tokens)
 
 
-def _pass(tokens):
-    return '\t'.join(tokens)
+def _filter_effects(filt_cnf, d, i, tokens):
+    if 'EFF' not in d:
+        critical('Warning: in line ' + str(i + 1) + ', EFF field missing in INFO column')
+
+    reject_values = []
+
+    if filt_cnf['impact']:
+        if filt_cnf['impact'] not in d['EFF']:
+            reject_values.append('IMPACT')
+
+    if filt_cnf['effect_type']:
+        if filt_cnf['effect_type'] not in d['EFF']:
+            reject_values.append('EFF_TYPE')
+
+    for val in reject_values:
+        tokens = _add_reject(tokens, val)
+    return tokens
 
 
 def main_filtering(cnf, filt_cnf, vcf_fpath):
     control_dict = dict()
     sample_dict = dict()
-    var_dict = dict()
+    var_dict = defaultdict(list)
 
-    def __comp(a, b, d, op=operator.lt):
-        return a in d and b in filt_cnf and op(float(d[a]), filt_cnf[b])
+    def __comp(real_key, test_key, d, line_num, op=operator.lt):
+        assert test_key in filt_cnf
 
-    def __proc_line(l):
+        if real_key not in d:
+            critical('Warning: in line ' + str(line_num + 1) + ', value ' +
+                     real_key + ' missing -- requied to test ' + test_key)
+
+        return op(float(d[real_key]), filt_cnf[test_key])
+
+
+    def __proc_line(l, i):
         if l.startswith('#'):
             return l
 
         tokens = l.split('\t')
         vark = ':'.join(tokens[0:2] + tokens[3:5])
-        d = _parse_info(tokens[7])
-        less = lambda x, y: __comp(x, y, d=d)
+        d = _parse_fields(tokens)
+        less = lambda x, y: __comp(x, y, d, i)
+
+        reject_values = []
 
         # FILTER FIRST
-        for p in ('DP', 'filt_depth'), \
-                 ('QUAL', 'filt_q_mean'), \
-                 ('PMEAN', 'filt_p_mean'):
-            if less(*p):
-                return _reject(tokens)
+        for real_key, test_key in [
+               ('DP', 'filt_depth'),
+               ('QUAL', 'filt_q_mean'),
+               # ('PMEAN', 'filt_p_mean')\
+            ]:
+            if less(real_key, test_key):
+                reject_values.append(test_key.upper())
+
+        for val in reject_values:
+            tokens = _add_reject(tokens, val)
+        if reject_values:
+            return _make_var_line(tokens)
 
         # FILTER NEXT
-        if (filt_cnf['control'] and 'SAMPLE' in d and
-            filt_cnf['control'] == d['SAMPLE']):
-            reject = False
+        if 'SAMPLE' in d and d['SAMPLE']:
+            if filt_cnf['control'] and filt_cnf['control'] == d['SAMPLE']:
+                reject_values = []
 
-            for p in ('QUAL', 'min_q_mean'), \
-                     ('PMEAN', 'min_p_mean'), \
-                     ('AF', 'min_freq'),\
-                     ('MQ', 'min_mq'),\
-                     ('SN', 'signal_noise'),\
-                     ('VD', 'mean_vd'):
-                if less(*p):
-                    reject = True
+                for real_key, test_key in [
+                       ('QUAL', 'min_q_mean'),
+                       # ('PMEAN', 'min_p_mean'),
+                       ('AF', 'min_freq'),
+                       ('MQ', 'min_mq'),
+                       # ('SN', 'signal_noise'),
+                       # ('VD', 'mean_vd')
+                    ]:
+                    if less(real_key, test_key):
+                        reject_values.append(test_key.upper())
 
-            cls = get_class(d, tokens[2])
+                cls = get_class(d, tokens[2])
 
-            # so that any novel variants showed up in control won't be filtered:
-            if not reject or cls == 'Novel':
-                control_dict[vark] = 1
-            else:
-                return _reject(tokens)
+                # So that any novel variants showed up in control won't be filtered:
+                if reject_values == [] or cls == 'Novel':
+                    control_dict[vark] = 1
+                else:
+                    for val in reject_values:
+                        tokens = _add_reject(tokens, val)
 
-        # Undetermined won't count toward samples
-        if not (filt_cnf['count_undetermined'] and ('SAMPLE' in d and 'undetermined' in d['SAMPLE'].lower())):
-            sample_name = '' if 'SAMPLE' not in d else d['SAMPLE']
-            sample_dict[sample_name] = 1
-            if vark not in var_dict:
-                var_dict[vark] = []
-            var_dict[vark].append(0.0 if 'AF' not in d else float(d['AF']))
+            # Undetermined won't count toward samples
+            if 'undetermined' not in d['SAMPLE'].lower() or filt_cnf['count_undetermined']:
+                sample_dict[d['SAMPLE']] = 1
+                var_dict[vark].append(0.0 if 'AF' not in d else float(d['AF']))
 
-        # TODO: what should we do with lines without effects?
-        if 'EFF' not in d:
-            return _reject(tokens, val='NO_EFF')
-        return _pass(tokens)
+        tokens = _filter_effects(filt_cnf, d, i, tokens)
 
-    def __post_proc_line(l):
+        return _make_var_line(tokens)
+
+    def __post_proc_line(l, i):
         if l.startswith('#'):
             return l
 
         samples_n = len(sample_dict.keys())
         tokens = l.split('\t')
         vark = ':'.join(tokens[0:2] + tokens[3:5])
-        d = _parse_info(tokens[7])
-        less = lambda x, y: __comp(x, y, d=d, op=operator.lt)
-        greater = lambda x, y: __comp(x, y, d=d, op=operator.gt)
+        d = _parse_fields(tokens[7])
+        less = lambda x, y: __comp(x, y, d, i, op=operator.lt)
+        greater = lambda x, y: __comp(x, y, d, i, op=operator.gt)
 
         if vark not in var_dict:  # Likely just in Undetermined
-            return _reject(tokens)
+            _add_reject(tokens, 'UNDET_SAMPLE')
+            return _make_var_line(tokens)
+
         var_n = len(var_dict[vark])
         average_af = mean(var_dict[vark])
         fraction = float(var_n) / samples_n
 
-        reject_val = 'PASS'
+        reject_values = []
         if fraction > filt_cnf['fraction'] and var_n >= filt_cnf['sample_cnt'] \
             and average_af < filt_cnf['freq'] and tokens[2] == '.':
-            reject_val = 'MULTI'
+            reject_values.append('MULTI')
+
         if 'PSTD' in d and d['PSTD'] == 0 and \
            'BIAS' in d and not (d['BIAS'].endswith('0') or d['BIAS'].endswith('1')):
-            reject_val = 'DUP'
-        if fraction >= filt_cnf['max_ratio'] and 'AF' in d and float(d['AF']) < 0.3:
-            reject_val = 'MAXRATE'
+            reject_values.append('DUP')
 
-        for p in ('QUAL', 'min_q_mean'),\
-                 ('PMEAN', 'min_p_mean'),\
-                 ('MQ', 'min_mq'),\
-                 ('SN', 'signal_noise'),\
-                 ('AF', 'min_freq'),\
-                 ('VD', 'mean_vd'):
-            if less(*p):
-                reject_val = p[0]
+        if fraction >= filt_cnf['max_ratio'] and 'AF' in d and float(d['AF']) < 0.3:
+            reject_values.append('MAXRATE')
+
+        for real_key, test_key in [
+                 ('QUAL', 'min_q_mean'),
+                 # ('PMEAN', 'min_p_mean'),
+                 ('MQ', 'min_mq'),
+                 # ('SN', 'signal_noise'),
+                 ('AF', 'min_freq'),
+                 # ('VD', 'mean_vd')
+                 ]:
+            if less(real_key, test_key):
+                reject_values.append(test_key.upper())
 
         if 'control' in filt_cnf and vark in control_dict:
-            reject_val = 'CNTL'
+            reject_values.append('CNTL')
 
         cls = get_class(d, tokens[2])
         if greater('GMAF', 'maf'):  # if there's MAF with frequency, it'll be considered
@@ -341,14 +391,20 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         # }
         if 'bias' in filt_cnf and filt_cnf['bias'] and (cls == 'Novel' or cls == 'dbSNP') and \
            'BIAS' in d and (d['BIAS'] == "2;1" or d['BIAS'] == "2;0") and 'AF' in d and float(d['AF']) < 0.3:
-            reject_val = 'BIAS'
+            reject_values.append('BIAS')
+
         if check_clnsig(d) == -1 and cls != 'COSMIC':
-            reject_val = 'NonClnSNP'
-        return _reject(tokens, reject_val)
+            reject_values.append('NonClnSNP')
+
+        for val in reject_values:
+            tokens = _add_reject(tokens, val)
+
+        return _make_var_line(tokens)
 
     step_greetings('Filtering based on Zhongwu\'s vcf2txt.pl.')
 
     vcf_fpath = iterate_file(cnf, vcf_fpath, __proc_line, suffix='zh1')
+
     return iterate_file(cnf, vcf_fpath, __post_proc_line, suffix='zh2')
 
 
@@ -376,17 +432,22 @@ def check_clnsig(d):
     return -1
 
 
-def remove_prev_pass(cnf, vcf_fpath):
-    def __proc_line(l):
+def remove_previous_filter_rejects(cnf, vcf_fpath):
+    def __proc_line(l, i):
         if l.startswith('#'):
             return l
 
         tokens = l.split('\t')
-        return _reject(tokens, val='.')
+        tokens[6] = 'PASS'
+        return _make_var_line(tokens)
 
     step_greetings('Removing previous "PASS" values.')
 
-    return iterate_file(cnf, vcf_fpath, __proc_line, suffix='rpp')
+    out_fpath = iterate_file(cnf, vcf_fpath, __proc_line, suffix='rpp')
+
+    info('Done.')
+
+    return out_fpath
 
 
 def run_snpsift(cnf, vcf_cnf, vcf_fpath):
@@ -397,9 +458,12 @@ def run_snpsift(cnf, vcf_cnf, vcf_fpath):
     step_greetings('Running SnpSift filter.')
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
-    cmdline = '{executable} filter -i PASS -f {vcf_fpath} "{expression}"'.format(**locals())
+    cmdline = '{executable} filter -a EXPR -n -p -f {vcf_fpath} "{expression}"'.format(**locals())
     filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'snpsift')
     call(cnf, cmdline, filtered_fpath)
+
+    info('Done.')
+
     return filtered_fpath
 
 

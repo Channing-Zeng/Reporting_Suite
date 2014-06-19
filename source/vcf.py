@@ -13,7 +13,7 @@ from source.utils import critical, verify_file,\
 def filter_rejected(cnf, input_fpath):
     step_greetings('Extracting dataset by filename, filtering REJECT line.')
     output_fpath = iterate_file(cnf, input_fpath,
-                                (lambda l: l if 'REJECT' not in l else None))
+                                (lambda l, i: l if 'REJECT' not in l else None))
     info('Saved to ' + output_fpath)
     return output_fpath
 

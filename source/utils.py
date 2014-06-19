@@ -147,7 +147,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None, overwrite=False,
             for i, line in enumerate(inp):
                 clean_line = line.strip()
                 if clean_line:
-                    new_l = proc_line_fun(clean_line)
+                    new_l = proc_line_fun(clean_line, i)
                     if new_l is not None:
                         out.write(new_l + '\n')
                 else:
@@ -529,7 +529,7 @@ def intermediate_fname(cnf, fname, suf):
 def dots_to_empty_cells(config, tsv_fpath):
     """Put dots instead of empty cells in order to view TSV with column -t
     """
-    def proc_line(l):
+    def proc_line(l, i):
         while '\t\t' in l:
             l = l.replace('\t\t', '\t.\t')
         return l

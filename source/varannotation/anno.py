@@ -76,7 +76,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
 
 def _remove_annotation(cnf, field_to_del, input_fpath):
-    def proc_line(l):
+    def proc_line(l, i):
         if field_to_del in l:
             if l.startswith('##INFO='):
                 try:
@@ -137,7 +137,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     # all_fields.extend(annotations)
 
-    def proc_line(line):
+    def proc_line(line, i):
         if not line.startswith('#'):
             line = line.replace(' ', '_')
             assert ' ' not in line
@@ -229,7 +229,7 @@ def _tracks(cnf, track_path, input_fpath):
                         stdout_to_outputfile=True)
 
     # Set TRUE or FALSE for tracks
-    def proc_line(line):
+    def proc_line(line, i):
         if field_name in line:
             if not line.startswith('#'):
                 fields = line.split('\t')
@@ -330,7 +330,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
 def _filter_malformed_fields(cnf, input_fpath):
     step_greetings('Filtering incorrect fields.')
 
-    def proc_line(line):
+    def proc_line(line, i):
         if not line.startswith('#'):
             if ',.' in line or '.,' in line:
                 fields = line.split('\t')
