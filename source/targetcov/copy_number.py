@@ -71,7 +71,8 @@ def _get_norm_depths_by_seq_distr(mapped_reads_by_sample, record_by_sample):
 
 def _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
     report_data = []
-
+    header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
+                   "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
     for gene_info in list_genes_info:
         gene_name = gene_info.name
         sample = gene_info.sample_name
