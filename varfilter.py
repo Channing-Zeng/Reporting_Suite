@@ -41,10 +41,10 @@ def main(args):
                 help='Annotated variants to filter')
              ),
 
-            (['-e', '--expression'], dict(
-                dest='expression',
-                help='Filtering line for SnpSift. Default is ' + defaults['expression']
-            )),
+            # (['-e', '--expression'], dict(
+            #     dest='expression',
+            #     help='Filtering line for SnpSift. Default is ' + defaults['expression']
+            # )),
 
             (['-u'], dict(
                 dest='count_undetermined',
@@ -298,10 +298,10 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         tokens = l.split('\t')
         vark = ':'.join(tokens[0:2] + tokens[3:5])
         d = _parse_info(tokens[7])
-        less = lambda x, y: __comp(x, y, d=d)
+        less = lambda x, y: __comp(x, y, d=d, op=operator.lt)
         greater = lambda x, y: __comp(x, y, d=d, op=operator.gt)
 
-        if vark not in var_dict: # Likely just in Undetermined
+        if vark not in var_dict:  # Likely just in Undetermined
             return _reject(tokens)
         var_n = len(var_dict[vark])
         average_af = mean(var_dict[vark])

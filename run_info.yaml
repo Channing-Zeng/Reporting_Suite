@@ -131,101 +131,100 @@ tracks:
 
 
 tsv_fields:
-  annotations:
-  - SAMPLE                        : Sample
-  - CHROM                         : Chromosome
-  - POS                           : Position
-  - REF                           : REF
-  - ALT                           : ALT
-  - ID                            : ID
-  - QUAL                          : QualityScore
-  - DP                            : Depth
-  - FILTER                        : Filter
-  - dbSNPBuildID                  : dbSNPBuildID
+- SAMPLE                        : Sample
+- CHROM                         : Chromosome
+- POS                           : Position
+- REF                           : REF
+- ALT                           : ALT
+- ID                            : ID
+- QUAL                          : QualityScore
+- DP                            : Depth
+- FILTER                        : Filter
+- dbSNPBuildID                  : dbSNPBuildID
 
-  - "EFF[*].EFFECT"               : Effect
-  - "EFF[*].IMPACT"               : Impact
-  - "EFF[*].FUNCLASS"             : FunctionalClass
-  - "EFF[*].CODING"               : CodingRegion
-  - "EFF[*].GENE"                 : Gene
-  - dbNSFP_Ensembl_geneid         : EnsemblGeneID
-  - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
-  - dbNSFP_Uniprot_acc            : UniportAccNumber
-  - "EFF[*].CODON"                : Codon
-  - "EFF[*].AA"                   : AminoAcid
-  - "EFF[*].AA_LEN"               : AminoAcidLength
-  - CNT                           : CountInCosmic
-  - AA                            : AminoAcidInCosmic
-  - CDS                           : CDSInCosmic
-  - om_Cancer                     : OncomineCancer
-  - om_PATIENT                    : OncominePatient
-  - om_MutClass                   : OncomineMutClass
-  - om_MutClassPC                 : OncomineMutClassPC
-  - "EFF[*].RANK"                 : Rank
-  - BaseQRankSum                  : BaseQailityRankSum
-  - FS                            : FischerScore
-  - GC                            : GC
-  - HaplotypeScore                : HaplotypeScore
-  - HRun                          : HomopolymerRunSize
-  - MQ                            : MappingQuality
-  - MQRankSum                     : MQualityRankSum
-  - MQ0                           : TotalMappingQualityZeroReads
-  - QD                            : QualityByDepth
-  - ReadPosRankSum                : ReadPosRankSum
+- "EFF[*].EFFECT"               : Effect
+- "EFF[*].IMPACT"               : Impact
+- "EFF[*].FUNCLASS"             : FunctionalClass
+- "EFF[*].CODING"               : CodingRegion
+- "EFF[*].GENE"                 : Gene
+- dbNSFP_Ensembl_geneid         : EnsemblGeneID
+- dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
+- dbNSFP_Uniprot_acc            : UniportAccNumber
+- "EFF[*].CODON"                : Codon
+- "EFF[*].AA"                   : AminoAcid
+- "EFF[*].AA_LEN"               : AminoAcidLength
+- CNT                           : CountInCosmic
+- AA                            : AminoAcidInCosmic
+- CDS                           : CDSInCosmic
+- om_Cancer                     : OncomineCancer
+- om_PATIENT                    : OncominePatient
+- om_MutClass                   : OncomineMutClass
+- om_MutClassPC                 : OncomineMutClassPC
+- "EFF[*].RANK"                 : Rank
+- BaseQRankSum                  : BaseQailityRankSum
+- FS                            : FischerScore
+- GC                            : GC
+- HaplotypeScore                : HaplotypeScore
+- HRun                          : HomopolymerRunSize
+- MQ                            : MappingQuality
+- MQRankSum                     : MQualityRankSum
+- MQ0                           : TotalMappingQualityZeroReads
+- QD                            : QualityByDepth
+- ReadPosRankSum                : ReadPosRankSum
 
-  ## FORMAT fields for the sample
-  - gt_GT                         : Genotype
+## FORMAT fields for the sample
+- gt_GT                         : Genotype
 #  - gt_FT                         : GenotypeWasCalled
 #  - gt_GL                         : GenotypeLikelihoods
 #  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-  - gt_PL                         : GenotypeLikelihoods_PhredScaled
+- gt_PL                         : GenotypeLikelihoods_PhredScaled
 #  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
 #  - gt_GQ                         : ConditionalGenotypeQuality
 #  - gt_HQ                         : HaplotypeQualities
 #  - gt_PS                         : PhaseSet
 #  - gt_PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #  - gt_EC                         : ExpAlleleCounts
-  - gt_AD                         : AllelicDepthsForRefAndAlt
+- gt_AD                         : AllelicDepthsForRefAndAlt
 #  - gt_AO                         : AlleleObservationCount
 #  - gt_QA                         : QualitySumForAltObservations
 #  - gt_QR                         : QualitySumForRefObservations
 #  - gt_RO                         : RefAlleleObservationCount
 
-  ## dbsnp
-  - SAO                           : VariantAlleleOrigin
-  - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
-  - VC                            : VariationClass
-  - TYPE                          : AlleleType
-  - PM                            : VariantIsPrecious
+## dbsnp
+- SAO                           : VariantAlleleOrigin
+- AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
+- VC                            : VariationClass
+- TYPE                          : AlleleType
+- PM                            : VariantIsPrecious
 #  - MUT                           : CitedMutation
-  - HD                            : PresentInDBGap
-  - KGPROD                        : Has1000GenomeSubmission
-  - PH3                           : HapMapValidated
-  - OM                            : InOMIM
-  - COMMON                        : CommonVariant
+- HD                            : PresentInDBGap
+- KGPROD                        : Has1000GenomeSubmission
+- PH3                           : HapMapValidated
+- OM                            : InOMIM
+- COMMON                        : CommonVariant
 #  - CLNSIG                        : ClinicalSignificance
-  - G5                            : 5%MAFinPopulationsCAF
+- G5                            : 5%MAFinPopulationsCAF
 #  - MAF                           : GlobalMinorAlleleFrequency
 #  - CDA                           : InClinicalDiagnosticAssay
-  - dbNSFP_SIFT_score             : SiftScore
-  - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
-  - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
-  - dbNSFP_LRT_score              : LrtScore
-  - dbNSFP_LRT_pred               : LrtPrediction
-  - dbNSFP_MutationTaster_score   : MutationTasterScore
-  - dbNSFP_MutationTaster_pred    : MutationTasterPrediction
-  - dbNSFP_MutationAssessor_score : MutationAssessorScore
-  - dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
-  - dbNSFP_FATHMM_score           : FATHMMScore
-  - dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
-  - dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
-  - dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
-  - dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
-  - cpgIslandExt                  : CPGIsland
-  - genomicSuperDups              : GenomicDuplication
-  - rptmk                         : KnownRepeat
-  - dgvMerged                     : KnownCopyNumber
-  - set                           : SourceVCF_forMergedRecInCombineVariants
+- dbNSFP_SIFT_score             : SiftScore
+- dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
+- dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
+- dbNSFP_LRT_score              : LrtScore
+- dbNSFP_LRT_pred               : LrtPrediction
+- dbNSFP_MutationTaster_score   : MutationTasterScore
+- dbNSFP_MutationTaster_pred    : MutationTasterPrediction
+- dbNSFP_MutationAssessor_score : MutationAssessorScore
+- dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
+- dbNSFP_FATHMM_score           : FATHMMScore
+- dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
+- dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
+- dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
+- dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
+- cpgIslandExt                  : CPGIsland
+- genomicSuperDups              : GenomicDuplication
+- rptmk                         : KnownRepeat
+- dgvMerged                     : KnownCopyNumber
+- set                           : SourceVCF_forMergedRecInCombineVariants
 
 
 verbose: True                 ## Prints tools' output
