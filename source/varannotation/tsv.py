@@ -66,7 +66,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
         'split_format_fields', keep_original_if_not_keep_intermediate=True)
 
-    manual_tsv_fields = cnf.get('tsv_fields')
+    manual_tsv_fields = cnf['tsv_fields']
+    print str(manual_tsv_fields)
     if manual_tsv_fields:
         fields_line = [
             rec.keys()[0] for rec

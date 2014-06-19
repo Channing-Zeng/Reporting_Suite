@@ -26,7 +26,7 @@ class Defaults():
 
     verbose = True
     threads = 4
-    overwrite = False
+    overwrite = None
     reuse_intermediate = True
     keep_intermediate = True
 
@@ -122,6 +122,8 @@ class Config(object):
 
             if self.overwrite is not None:
                 self.reuse_intermediate = not self.overwrite
+            else:
+                self.overwrite = not self.reuse_intermediate
 
             if not self.tmp_base_dir:
                 self.tmp_base_dir = self.work_dir
