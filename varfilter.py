@@ -346,7 +346,8 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         greater = lambda x, y: __comp(x, y, d, i, op=operator.gt)
 
         if vark not in var_dict:  # Likely just in Undetermined
-            _add_reject(tokens, 'UNDET_SAMPLE')
+            if 'SAMPLE' in d and d['SAMPLE']:
+                _add_reject(tokens, 'UNDET_SAMPLE')
             return _make_var_line(tokens)
 
         var_n = len(var_dict[vark])

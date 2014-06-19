@@ -64,8 +64,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         l = '\t'.join(vals[:7] + [info_field])
         return l
 
-    splitted_FORMAT_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
-        'split_format_fields', keep_original_if_not_keep_intermediate=True)
+    broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
+        'split_format_fields')
 
     manual_tsv_fields = cnf['tsv_fields']
     print str(manual_tsv_fields)
@@ -97,8 +97,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
               ' extractFields - ' + anno_line
 
     call_subprocess(cnf, cmdline, None, tsv_fpath,
-         stdin_fpath=(splitted_FORMAT_column_vcf_fpath or vcf_fpath),
-         to_remove=[splitted_FORMAT_column_vcf_fpath])
+         stdin_fpath=(broken_format_column_vcf_fpath or vcf_fpath),
+         to_remove=[broken_format_column_vcf_fpath])
 
     # REMOVE EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
