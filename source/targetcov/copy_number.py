@@ -48,6 +48,7 @@ def print_report(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths
 
 
 def run_copy_number(sample_mapped_reads, gene_depth):
+  
     list_genes_info = report_row_to_objects(gene_depth)
 
     med_depth = median([rec.min_depth for rec in list_genes_info])
