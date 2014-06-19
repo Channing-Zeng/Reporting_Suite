@@ -36,19 +36,20 @@ def get_norm_depths_by_seq_distr(mapped_reads_by_sample, record_by_sample):
     return norm_depths
 
 
-def print_report(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
+def get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
+    report_data = []
     for gene_info in list_genes_info:
         gene_name = gene_info.name
         sample = gene_info.sample_name
-        data = [sample, gene_name, gene_info.chrom, gene_info.start_position, gene_info.end_position, gene_info.size,
+        report_data.append(map(str,[sample, gene_name, gene_info.chrom, gene_info.start_position, gene_info.end_position, gene_info.size,
                 gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample],
                 norm_depths_by_gene[gene_name][sample],
-                norm2[gene_name][sample], norm3[gene_name][sample]]
-        print '\t'.join(map(str, data))
+                norm2[gene_name][sample], norm3[gene_name][sample]]))
+    return report_data
 
 
 def run_copy_number(sample_mapped_reads, gene_depth):
-  
+
     list_genes_info = report_row_to_objects(gene_depth)
 
     med_depth = median([rec.min_depth for rec in list_genes_info])
@@ -78,7 +79,7 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2)
 
-    print_report(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr)
+    return get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr)
 
 
 def report_row_to_objects(gene_depth):

@@ -88,6 +88,7 @@ def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
 
     report_details_suffix = '.targetseq.details.gene.txt'
     report_summary_suffix = '.targetseq.summary.txt'
+    copy_number_summary_fpath = join(out_dirpath, 'copy_number_summary_report.txt')
 
     report_fpaths = []
     report_summary_fpaths = []
@@ -108,7 +109,7 @@ def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
             report_fpaths.append(report_details_fpath)
             report_summary_fpaths.append(summary_report_fpath)
 
-    summarize_copy_number(report_fpaths, report_summary_fpaths, report_summary_suffix)
+    summarize_copy_number(report_fpaths, report_summary_fpaths, report_summary_suffix, copy_number_summary_fpath)
 
 
 if __name__ == '__main__':

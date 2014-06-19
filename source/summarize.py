@@ -28,19 +28,21 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
         _add_to_full_report(full_report, sample_name, report_dict)
     _print_full_report(full_report, output_summary_fpath)
 
+
 #parsing gene coverage and sample summary report as an input to copy number report
 #"Gene-Amplicon"row's used from gene coverage and "Mapped reads" form summary
-def summarize_copy_number(report_details_fpaths, report_summary_fpaths, report_summary_suffix):
+def summarize_copy_number(report_details_fpaths, report_summary_fpaths, report_summary_suffix, output_summary_fpath):
     gene_summary_lines = []
     sample_coverage = dict()
-    for report_details_fpath,report_summary_fpath in zip(report_details_fpaths, report_summary_fpaths):
+    for report_details_fpath, report_summary_fpath in zip(report_details_fpaths, report_summary_fpaths):
         gene_summary_lines += _parse_report_cov_gene(report_details_fpath, "Gene-Amplicon")
         report_lines = _parse_report_cov(report_summary_fpath)
         sample_name = _get_sample_name(report_summary_fpath, report_summary_suffix)
         sample_coverage[sample_name] = int(report_lines.get("Mapped reads").replace(",", ""))
-    run_copy_number(sample_coverage, gene_summary_lines)
 
+    report_data = run_copy_number(sample_coverage, gene_summary_lines)
 
+    _print_full_report(report_data, output_summary_fpath)
 
 def _get_sample_name(report_fpath, report_suffix=None):
     if report_fpath.endswith(report_suffix):
@@ -84,7 +86,7 @@ def _parse_report_cov(report_fpath):
             cur_metric_name = line.strip()[:-len(cur_value)].strip()
             report_dict[cur_metric_name] = cur_value
     if not report_dict:
-        critical("Data not found in: " + report_fpath )
+        critical("Data not found in: " + report_fpath)
     return report_dict
 
 
@@ -93,11 +95,11 @@ def _parse_report_cov_gene(report_fpath, line_type):
 
     with open(report_fpath, 'r') as f:
         for line in f:
-            if line.find(line_type)> -1:
+            if line.find(line_type) > -1:
                 cur_value = line.split()
                 gene_summary_lines.append(cur_value[:8])
     if not gene_summary_lines:
-        critical("Data not found in: " + gene_summary_lines )
+        critical("Data not found in: " + gene_summary_lines)
     return gene_summary_lines
 
 
