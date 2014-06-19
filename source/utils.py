@@ -154,7 +154,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None, overwrite=False,
                     out.write(line)
 
     if not overwrite:
-        os.rename(output_fpath, input_fpath)
+        shutil.move(output_fpath, input_fpath)
         output_fpath = input_fpath
     else:
         if (not cnf.keep_intermediate and

@@ -157,7 +157,7 @@ def annotate(sample_fpath,
             sample_fpath = pass_sample_fpath
         else:
             os.remove(sample_fpath)
-            os.rename(pass_sample_fpath, sample_fpath)
+            shutil.move(pass_sample_fpath, sample_fpath)
 
     snpsift_jar = os.path.join(snp_eff_dirpath, 'SnpSift.jar')
     snpeff_jar = os.path.join(snp_eff_dirpath, 'snpEff.jar')
@@ -221,7 +221,7 @@ def annotate(sample_fpath,
 
     # sample_fpath = _call_and_rename(cmdline, sample_fpath, 'extract',
     #                                 log_fpath, save_intermediate, stdout=True)
-    os.rename(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
+    shutil.move(sample_fpath, os.path.splitext(sample_fpath)[0] + '.tsv')
 
 
 def remove_quotes(str):
@@ -254,7 +254,7 @@ def split_genotypes(sample_fpath, result_fpath, save_intermediate):
         return result_fpath
     else:
         os.remove(sample_fpath)
-        os.rename(result_fpath, sample_fpath)
+        shutil.move(result_fpath, sample_fpath)
         return sample_fpath
 
 

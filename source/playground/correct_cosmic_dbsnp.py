@@ -1,5 +1,6 @@
 import sys
 import os
+import shutil
 
 
 def __remove_quotes(str):
@@ -28,7 +29,7 @@ def __correct_cosmic_dbsnp(sample_fpath):
                 out.write(line)
 
     os.remove(sample_fpath)
-    os.rename(result_fpath, sample_fpath)
+    shutil.move(result_fpath, sample_fpath)
     return sample_fpath
 
 

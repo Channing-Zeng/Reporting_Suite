@@ -170,7 +170,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map):
                         out.write(l)
 
     if not cnf.get('keep_intermediate'):
-        os.rename(out_tsv_fpath, inp_tsv_fpath)
+        shutil.move(out_tsv_fpath, inp_tsv_fpath)
         return inp_tsv_fpath
     else:
         return out_tsv_fpath
