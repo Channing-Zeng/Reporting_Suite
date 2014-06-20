@@ -4,6 +4,7 @@ import math
 from collections import defaultdict
 
 from source.utils import mean, median
+from operator import itemgetter, attrgetter
 
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
@@ -79,7 +80,7 @@ def _get_norm_depths_by_sample(mapped_reads_by_sample, record_by_sample):
 
 
 def _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
-    header = ["Gene", "Sample", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
+    header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
               "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
     report_data = []
 
@@ -87,14 +88,14 @@ def _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_de
         gene_name = gene_info.name
         sample = gene_info.sample_name
         report_data.append(map(str,
-           [gene_name, sample, gene_info.chrom, gene_info.start_position,
-            gene_info.end_position, gene_info.size,
-            '{0:.3f}'.format(gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample]),
-            '{0:.3f}'.format(norm_depths_by_gene[gene_name][sample]),
-            '{0:.3f}'.format(norm2[gene_name][sample]),
-            '{0:.3f}'.format(norm3[gene_name][sample])]))
+                               (sample, gene_name, gene_info.chrom, gene_info.start_position,
+                                gene_info.end_position, gene_info.size,
+                                '{0:.3f}'.format(gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample]),
+                                '{0:.3f}'.format(norm_depths_by_gene[gene_name][sample]),
+                                '{0:.3f}'.format(norm2[gene_name][sample]),
+                                '{0:.3f}'.format(norm3[gene_name][sample]))))
 
-    report_data = sorted(report_data)
+    report_data = sorted(report_data, key=itemgetter(2, 1))
     report_data = [header] + report_data
 
     return report_data
@@ -123,4 +124,8 @@ class GeneDetail():
         values = [self.sample_name, self.chrom, self.start_position, self.end_position, self.name, self.type, self.size,
                   self.min_depth]
         return '"' + '\t'.join(map(str, values)) + '"'
+
+    def __repr__(self):
+        return repr(
+            (self.name, self.sample_name))
 

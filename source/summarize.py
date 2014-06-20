@@ -29,8 +29,8 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
     _print_full_report(full_report, output_summary_fpath)
 
 
-#parsing gene coverage and sample summary report as an input to copy number report
-#"Gene-Amplicon"row's used from gene coverage and "Mapped reads" form summary
+# parsing gene coverage and sample summary report as an input to copy number report
+# "Gene-Amplicon"row's used from gene coverage and "Mapped reads" form summary
 def summarize_copy_number(report_details_fpaths, report_summary_fpaths,
                           report_summary_suffix, output_summary_fpath):
     gene_summary_lines = []
