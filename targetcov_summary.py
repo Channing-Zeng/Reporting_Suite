@@ -53,18 +53,19 @@ def main():
         sys.exit(1)
 
     summary_report_fpath = summarize_cov_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
-    summarize_cov_gene_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    cnv_report_fpath = summarize_cov_gene_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
 
     info()
     info('*' * 70)
-    info('Result: ' + summary_report_fpath)
+    info('Summary: ' + summary_report_fpath)
+    info('Gene CNV: ' + cnv_report_fpath)
 
 
 def summarize_cov_report(out_dirpath, samples_fname, report_basedir):
-    step_greetings('Coverage Report for all samples')
+    step_greetings('Coverage statistics for all samples')
 
     report_suffix = '.targetseq.summary.txt'
-    summary_report_fpath = join(out_dirpath, 'targetcov_summary_report.txt')
+    summary_report_fpath = join(out_dirpath, 'targetcov_summary.txt')
     report_fpaths = []
     with open(samples_fname, 'r') as f:
         for line in f:
@@ -84,11 +85,12 @@ def summarize_cov_report(out_dirpath, samples_fname, report_basedir):
 
 
 def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
-    step_greetings('Copy Number report for all samples')
+    step_greetings('Coverage statistics for each gene for all samples')
 
     report_details_suffix = '.targetseq.details.gene.txt'
     report_summary_suffix = '.targetseq.summary.txt'
-    copy_number_summary_fpath = join(out_dirpath, 'copy_number_summary_report.txt')
+
+    copy_number_summary_fpath = join(out_dirpath, 'targetcov_cnv.txt')
 
     report_fpaths = []
     report_summary_fpaths = []
@@ -109,7 +111,8 @@ def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
             report_fpaths.append(report_details_fpath)
             report_summary_fpaths.append(summary_report_fpath)
 
-    summarize_copy_number(report_fpaths, report_summary_fpaths, report_summary_suffix, copy_number_summary_fpath)
+    return summarize_copy_number(report_fpaths, report_summary_fpaths,
+        report_summary_suffix, copy_number_summary_fpath)
 
 
 if __name__ == '__main__':

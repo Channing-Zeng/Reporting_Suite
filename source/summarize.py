@@ -31,9 +31,11 @@ def summarize_cov(report_fpaths, output_summary_fpath, report_suffix=None):
 
 #parsing gene coverage and sample summary report as an input to copy number report
 #"Gene-Amplicon"row's used from gene coverage and "Mapped reads" form summary
-def summarize_copy_number(report_details_fpaths, report_summary_fpaths, report_summary_suffix, output_summary_fpath):
+def summarize_copy_number(report_details_fpaths, report_summary_fpaths,
+                          report_summary_suffix, output_summary_fpath):
     gene_summary_lines = []
     sample_coverage = dict()
+
     for report_details_fpath, report_summary_fpath in zip(report_details_fpaths, report_summary_fpaths):
         gene_summary_lines += _parse_report_cov_gene(report_details_fpath, "Gene-Amplicon")
         report_lines = _parse_report_cov(report_summary_fpath)
@@ -42,7 +44,8 @@ def summarize_copy_number(report_details_fpaths, report_summary_fpaths, report_s
 
     report_data = run_copy_number(sample_coverage, gene_summary_lines)
 
-    _print_full_report(report_data, output_summary_fpath)
+    return _print_full_report(report_data, output_summary_fpath)
+
 
 def _get_sample_name(report_fpath, report_suffix=None):
     if report_fpath.endswith(report_suffix):
@@ -116,25 +119,25 @@ def _add_to_full_report(full_report, sample_name, report_dict):
         full_report[id + 1].append(value)
 
 
-def _print_full_report(report, report_filename):
+def _print_full_report(report, report_fpath):
     col_widths = [0] * len(report[0])
     for row in report:
         for id, value in enumerate(row):
             col_widths[id] = max(len(value), col_widths[id])
 
-    with open(report_filename, 'w') as out:
+    with open(report_fpath, 'w') as out:
         for row in report:
             out.write('\t'.join(row) + '\n')
 
-    return report_filename
+    return report_fpath
 
 
-def print_full_report_gene(report, report_filename):
-    with open(report_filename, 'w') as out:
+def print_full_report_gene(report, report_fpath):
+    with open(report_fpath, 'w') as out:
         for row in report:
             out.write(row + '\n')
 
-    return report_filename
+    return report_fpath
 
 
 
