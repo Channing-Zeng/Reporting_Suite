@@ -132,9 +132,9 @@ def tmpfile(cnf, *args, **kwargs):
             pass
 
 
-def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None, overwrite=False,
-                 keep_original_if_not_keep_intermediate=False,
-                 reuse_intermediate=True):
+def convert_file(cnf, input_fpath, proc_file_fun,
+                 suffix=None, overwrite=False, reuse_intermediate=True):
+
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
     if suffix and cnf.reuse_intermediate and reuse_intermediate:
@@ -144,20 +144,27 @@ def iterate_file(cnf, input_fpath, proc_line_fun, suffix=None, overwrite=False,
 
     with file_transaction(cnf.tmp_dir, output_fpath) as tx_fpath:
         with open(input_fpath) as inp, open(tx_fpath, 'w') as out:
-            for i, line in enumerate(inp):
-                clean_line = line.strip()
-                if clean_line:
-                    new_l = proc_line_fun(clean_line, i)
-                    if new_l is not None:
-                        out.write(new_l + '\n')
-                else:
-                    out.write(line)
+            proc_file_fun(inp, out)
 
     if overwrite:
         shutil.move(output_fpath, input_fpath)
         output_fpath = input_fpath
 
     return output_fpath
+
+
+def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
+    def proc_file_fun(inp_f, out_f):
+        for i, line in enumerate(inp_f):
+            clean_line = line.strip()
+            if clean_line:
+                new_l = proc_line_fun(clean_line, i)
+                if new_l is not None:
+                    out_f.write(new_l + '\n')
+            else:
+                out_f.write(line)
+
+    return convert_file(cnf, input_fpath, proc_file_fun, *args, **kwargs)
 
 
 def index_bam(cnf, bam_fpath):

@@ -64,8 +64,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         l = '\t'.join(vals[:7] + [info_field])
         return l
 
-    broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line,
-        'split_format_fields')
+    broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
 
     manual_tsv_fields = cnf['tsv_fields']
     if manual_tsv_fields:

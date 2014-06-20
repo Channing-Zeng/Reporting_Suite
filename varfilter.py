@@ -1,25 +1,25 @@
 #!/usr/bin/env python
-import os
-from os.path import basename, join, isfile
-import re
-import shutil
 import sys
-import operator
-from collections import OrderedDict, defaultdict
-
-from source.config import Defaults
-from source.logger import err, step_greetings, info, critical
-from source.utils_from_bcbio import add_suffix
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import read_opts_and_cnfs, check_system_resources
-from source.runner import run_one
-from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call, mean
+import os
+from os.path import basename, join, isfile
+import re
+import shutil
+import operator
+from collections import defaultdict
 
+from source.main import read_opts_and_cnfs, check_system_resources
+from source.config import Defaults
+from source.logger import err, step_greetings, info, critical
+from source.utils_from_bcbio import add_suffix
+from source.runner import run_one
+from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call, mean, convert_file
+
+from ext_modules import vcf
 
 def main():
     defaults = Defaults.variant_filtering
@@ -216,33 +216,19 @@ def process_one(cnf):
     return [final_vcf_fpath]
 
 
-def _parse_fields(tokens):
-    d = OrderedDict(f.split('=') if '=' in f else (f, True) for f in tokens[7].split(';'))
-    d['QUAL'] = tokens[5]
-    return d
+def _add_reject(rec, val='REJECT'):
+    if rec.FILTER in ['PASS', '.']:
+        rec.FILTER = None
+
+    elif val not in rec.FILTER:
+        rec.add_filter(val)
+
+    return rec
 
 
-def _build_info(d):
-    return ';'.join([k + ('=' + str(v)) if v else '' for k, v in d.items()])
-
-
-def _add_reject(tokens, val='REJECT'):
-    if tokens[6] in ['PASS', '.']:
-        tokens[6] = val
-
-    elif val not in tokens[6]:
-        tokens[6] += ';' + val
-
-    return tokens
-
-
-def _make_var_line(tokens):
-    return '\t'.join(tokens)
-
-
-def _filter_effects(filt_cnf, d, i, tokens):
+def _filter_effects(filt_cnf, d, line_num, rec):
     if 'EFF' not in d:
-        critical('Error: in line ' + str(i + 1) + ', EFF field missing in INFO column')
+        critical('Error: in variant line ' + str(line_num + 1) + ', EFF field missing in INFO column')
 
     reject_values = []
 
@@ -250,12 +236,27 @@ def _filter_effects(filt_cnf, d, i, tokens):
         if filt_cnf[f]:
             values = filt_cnf[f].split('|')
             for v in values:
-                if v.lower() not in d['EFF'].lower():
+                if v.lower() not in ''.join(d['EFF']).lower():
                     reject_values.append('NO_' + v.upper())
 
     for val in reject_values:
-        tokens = _add_reject(tokens, val)
-    return tokens
+        rec = _add_reject(rec, val)
+
+    return rec
+
+
+def _proc_vcf(inp_f, out_f, proc_line_fun):
+    reader = vcf.Reader(inp_f)
+    writer = vcf.Writer(out_f, reader)
+
+    for i, rec in enumerate(reader):
+        vark = ':'.join(map(str, [rec.CHROM, str(rec.POS), rec.REF, rec.ALT]))
+        d = rec.INFO.copy()
+        d['QUAL'] = rec.QUAL
+
+        rec = proc_line_fun(rec, i, vark, d)
+        if rec:
+            writer.write_record(rec)
 
 
 def main_filtering(cnf, filt_cnf, vcf_fpath):
@@ -267,19 +268,12 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         assert test_key in filt_cnf
 
         if real_key not in d:
-            critical('Error: in line ' + str(line_num + 1) + ', value ' +
+            critical('Error: in variant line ' + str(line_num + 1) + ', value ' +
                      real_key + ' missing -- requied to test ' + test_key)
 
         return op(float(d[real_key]), filt_cnf[test_key])
 
-
-    def __proc_line(l, i):
-        if l.startswith('#'):
-            return l
-
-        tokens = l.split('\t')
-        vark = ':'.join(tokens[0:2] + tokens[3:5])
-        d = _parse_fields(tokens)
+    def proc_line_1st_round(rec, i, vark, d):
         less = lambda x, y: __comp(x, y, d, i)
 
         reject_values = []
@@ -289,14 +283,14 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
                ('DP', 'filt_depth'),
                ('QUAL', 'filt_q_mean'),
                # ('PMEAN', 'filt_p_mean')\
-            ]:
+        ]:
             if less(real_key, test_key):
                 reject_values.append(test_key.upper())
 
         for val in reject_values:
-            tokens = _add_reject(tokens, val)
+            rec = _add_reject(rec, val)
         if reject_values:
-            return _make_var_line(tokens)
+            return rec
 
         # FILTER NEXT
         if 'SAMPLE' in d and d['SAMPLE']:
@@ -314,39 +308,33 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
                     if less(real_key, test_key):
                         reject_values.append(test_key.upper())
 
-                cls = get_class(d, tokens[2])
+                cls = get_class(d, rec.ID)
 
                 # So that any novel variants showed up in control won't be filtered:
                 if reject_values == [] or cls == 'Novel':
                     control_dict[vark] = 1
                 else:
                     for val in reject_values:
-                        tokens = _add_reject(tokens, val)
+                        rec = _add_reject(rec, val)
 
             # Undetermined won't count toward samples
             if 'undetermined' not in d['SAMPLE'].lower() or filt_cnf['count_undetermined']:
                 sample_dict[d['SAMPLE']] = 1
                 var_dict[vark].append(0.0 if 'AF' not in d else float(d['AF']))
 
-        tokens = _filter_effects(filt_cnf, d, i, tokens)
+        rec = _filter_effects(filt_cnf, d, i, rec)
 
-        return _make_var_line(tokens)
+        return rec
 
-    def __post_proc_line(l, i):
-        if l.startswith('#'):
-            return l
-
+    def proc_line_2nd_round(rec, i, vark, d):
         samples_n = len(sample_dict.keys())
-        tokens = l.split('\t')
-        vark = ':'.join(tokens[0:2] + tokens[3:5])
-        d = _parse_fields(tokens[7])
         less = lambda x, y: __comp(x, y, d, i, op=operator.lt)
         greater = lambda x, y: __comp(x, y, d, i, op=operator.gt)
 
         if vark not in var_dict:  # Likely just in Undetermined
             if 'SAMPLE' in d and d['SAMPLE']:
-                _add_reject(tokens, 'UNDET_SAMPLE')
-            return _make_var_line(tokens)
+                rec = _add_reject(rec, 'UNDET_SAMPLE')
+            return rec
 
         var_n = len(var_dict[vark])
         average_af = mean(var_dict[vark])
@@ -354,7 +342,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
 
         reject_values = []
         if fraction > filt_cnf['fraction'] and var_n >= filt_cnf['sample_cnt'] \
-            and average_af < filt_cnf['freq'] and tokens[2] == '.':
+            and average_af < filt_cnf['freq'] and rec.ID == '.':
             reject_values.append('MULTI')
 
         if 'PSTD' in d and d['PSTD'] == 0 and \
@@ -378,9 +366,10 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         if 'control' in filt_cnf and vark in control_dict:
             reject_values.append('CNTL')
 
-        cls = get_class(d, tokens[2])
-        if greater('GMAF', 'maf'):  # if there's MAF with frequency, it'll be considered
-                                    # dbSNP regardless of COSMIC
+        cls = get_class(d, rec.ID)
+        if greater('GMAF', 'maf'):
+            # if there's MAF with frequency, it'll be considered
+            # dbSNP regardless of COSMIC
             cls = 'dbSNP'
         ## Not needed in our python version of vcf2txt.pl:
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
@@ -396,15 +385,21 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             reject_values.append('NonClnSNP')
 
         for val in reject_values:
-            tokens = _add_reject(tokens, val)
+            rec = _add_reject(rec, val)
 
-        return _make_var_line(tokens)
+        return rec
 
-    step_greetings('Filtering based on Zhongwu\'s vcf2txt.pl.')
+    proc_vcf_1st_round = lambda inp_f, out_f: _proc_vcf(inp_f, out_f, proc_line_1st_round)
 
-    vcf_fpath = iterate_file(cnf, vcf_fpath, __proc_line, suffix='zh1')
+    proc_vcf_2nd_round = lambda inp_f, out_f: _proc_vcf(inp_f, out_f, proc_line_2nd_round)
 
-    return iterate_file(cnf, vcf_fpath, __post_proc_line, suffix='zh2')
+    step_greetings('Filtering')
+
+    vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf_1st_round, suffix='zh1')
+
+    vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf_2nd_round, suffix='zh2')
+
+    return vcf_fpath
 
 
 def get_class(d, id_):
@@ -432,21 +427,19 @@ def check_clnsig(d):
 
 
 def remove_previous_filter_rejects(cnf, vcf_fpath):
-    def __proc_line(l, i):
-        if l.startswith('#'):
-            return l
-
-        tokens = l.split('\t')
-        tokens[6] = 'PASS'
-        return _make_var_line(tokens)
-
     step_greetings('Removing previous "PASS" values.')
 
-    out_fpath = iterate_file(cnf, vcf_fpath, __proc_line, suffix='rpp')
+    def proc_line(rec, i, vark, d):
+        rec.FILTER = 'PASS'
+        return rec
+
+    proc_vcf = lambda inp_f, out_f: _proc_vcf(inp_f, out_f, proc_line)
+
+    vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf, suffix='rpp')
 
     info('Done.')
 
-    return out_fpath
+    return vcf_fpath
 
 
 def run_snpsift(cnf, vcf_cnf, vcf_fpath):

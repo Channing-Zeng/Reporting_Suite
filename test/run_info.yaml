@@ -115,9 +115,9 @@ cosmic:
   - AA
   - CDS
 
-#snpeff:
-#  clinical_reporting: True
-#  cancer: True
+snpeff:
+  clinical_reporting: True
+  cancer: True
 
 tracks:
 - /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
