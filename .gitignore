@@ -40,7 +40,6 @@ nosetests.xml
 .DS_Store
 */.DS_Store
 
-test/results*
-test/results*/
 test/**/*work*
-test/err_*
+test/**/*tmp*
+test/**/err_*

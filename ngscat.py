@@ -13,10 +13,10 @@ if not 'matplotlib' in sys.modules:
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
 
-from os.path import join, expanduser, isdir, abspath, dirname
+from os.path import dirname
 
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources, check_inputs
-from source.utils import verify_file, critical, info
+from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.utils import critical, info
 from source.runner import run_one
 from source.ngscat import config, ngscat_main
 from source.ngscat.bam_file import filter_unmapped_reads
