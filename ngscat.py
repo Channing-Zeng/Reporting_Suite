@@ -1,8 +1,6 @@
 #!/usr/bin/python
 import shutil
-
 import sys
-from source.config import Defaults
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -16,6 +14,7 @@ if not 'matplotlib' in sys.modules:
 from os.path import dirname
 
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.config import Defaults
 from source.utils import critical, info
 from source.runner import run_one
 from source.ngscat import config, ngscat_main

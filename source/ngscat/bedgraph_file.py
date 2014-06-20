@@ -7,11 +7,6 @@ try:
 except ImportError:
     print 'WARNING: scipy.stats module was not imported.'
 
-try:
-    import progressbar
-except ImportError:
-    print 'WARNING: progressbar was not imported'
-
 import os
 import sys
 import bed_file
@@ -214,275 +209,6 @@ class bedgraph_file:
 
         return bedgraph_file(fileout)
 
-
-    def draw_another_bed_score(self, bedgraph, fileout):
-        """************************************************************************************************************************************************************
-        Task: draws the distribution of the scores of the regions in 'bedgraph' that overlap with the regions in self. 
-        Inputs:
-            bedgraph: bedgraph_file object representing the other bedgraph file.
-            fileout: string containing the full path to the png file were the distribution will be saved.
-        Ouputs: a new png file will be created named fileout.
-        ************************************************************************************************************************************************************"""
-
-        print 'Loading coordinates from ' + self.filename
-        starts1 = {}
-        ends1 = {}
-        fd = file(self.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        for line in fd:
-            fields = line.split('\t')
-            # Check whether there is already an entry for current chromosome in starts1            
-            if (fields[0] not in starts1):
-                starts1[fields[0]] = [float(fields[1])]
-                ends1[fields[0]] = [float(fields[2])]
-            else:
-                starts1[fields[0]].append(float(fields[1]))
-                ends1[fields[0]].append(float(fields[2]))
-        fd.close()
-        print '    Done.'
-
-        print 'Loading coordinates and scores from ' + bedgraph.filename
-        starts2 = {}
-        ends2 = {}
-        scores2 = {}
-        fd = file(bedgraph.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        for line in fd:
-            fields = line.split('\t')
-            # Check whether there is already an entry for current chromosome in starts2            
-            if (fields[0] not in starts2):
-                starts2[fields[0]] = [float(fields[1])]
-                ends2[fields[0]] = [float(fields[2])]
-                scores2[fields[0]] = [float(fields[3])]
-            else:
-                starts2[fields[0]].append(float(fields[1]))
-                ends2[fields[0]].append(float(fields[2]))
-                scores2[fields[0]].append(float(fields[3]))
-        fd.close()
-        print '    Done.'
-
-        # Transform the lists of each chromosome in a numpy.array        
-        for chr in starts1:
-            starts1[chr] = numpy.array(starts1[chr])
-            ends1[chr] = numpy.array(ends1[chr])
-
-        # Transform the lists of each chromosome in a numpy.array            
-        for chr in starts2:
-            starts2[chr] = numpy.array(starts2[chr])
-            ends2[chr] = numpy.array(ends2[chr])
-
-        widgets = ['Comparing windows: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(starts1)).start()
-
-        exactcount = 0
-        x = [];
-        y = []
-        # Compare regions in each chromosome independently        
-        for k, chr in enumerate(starts1):
-            # Check that there are regions at current chromosome in 'bedgraph'            
-            if (chr in starts2):
-                # For each region of current chromosome in self, look for overlaps in bedgraph                
-                for i in range(len(starts1[chr])):
-                    # Check whether any region in bedgraph overlaps with the 'start' limit of current region                                                                
-                    overlap = ((starts1[chr][i] >= starts2[chr]) * (starts1[chr][i] <= ends2[chr])).nonzero()[0]
-                    if (len(overlap) > 0):
-                        j = 0
-                        # Check whether any of the overlapping regions is actually the same exact region                        
-                        while (j < len(overlap) and (
-                                starts1[chr][i] <> starts2[chr][overlap[j]] or ends1[chr][i] <> ends2[chr][
-                            overlap[j]])):
-                            j += 1
-
-                        # Check whether an exact match was found in the while above                        
-                        if (j < len(overlap)):
-                            exactcount += 1
-                            x.append(scores2[chr][overlap[j]])
-                        else:
-                            x.append(scores2[chr][overlap[0]])
-                    else:
-                        # Check whether any region in bedgraph overlaps with the 'end' limit of current region                                                
-                        overlap = ((ends1[chr][i] >= starts2[chr]) * (ends1[chr][i] <= ends2[chr])).nonzero()[0]
-                        if (len(overlap) > 0):
-                            x.append(scores2[chr][overlap[0]])
-            pbar.update(k + 1)
-        print '    Done.'
-
-        pbar.finish()
-        print str(len(x)) + ' windows overlap between both tracks'
-        print str(exactcount) + ' windows perfectly match between both tracks'
-
-        fig = pyplot.figure()
-        ax = fig.add_subplot(111)
-        n, bins, patches = ax.hist(x, 50, facecolor='green')
-        ax.set_xlabel(os.path.basename(bedgraph.filename))
-        ax.set_ylabel('Frequency')
-        fig.savefig(fileout)
-
-
-    def compare_graph(self, bedgraph, fileout):
-        """************************************************************************************************************************************************************
-        Task: compares the scores of this bedgraph file with the scores in another bedgraph file. 
-        Inputs:
-            bedgraph: bedgraph_file object representing the other bedgraph file.
-            fileout: string containing the full path to the png file were the comparative graph will be saved.
-        Ouputs: a new png file will be created named fileout.
-        ************************************************************************************************************************************************************"""
-
-        starts1 = {}
-        ends1 = {}
-        scores1 = {}
-        fd = file(self.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        # Loads chr,start,end,score from each line
-        for i, line in enumerate(fd):
-            fields = line.split('\t')
-            # Check whether there is already an entry for current chromosome in starts1
-            if (fields[0] not in starts1):
-                try:
-                    scores1[fields[0]] = [float(fields[3])]
-                    starts1[fields[0]] = [float(fields[1])]
-                    ends1[fields[0]] = [float(fields[2])]
-                except ValueError:
-                    print 'WARNING: ' + fields[3] + ' at line ' + str(
-                        i + 4) + ' of file ' + self.filename + ' is not a number.'
-
-            else:
-                try:
-                    scores1[fields[0]].append(float(fields[3]))
-                    starts1[fields[0]].append(float(fields[1]))
-                    ends1[fields[0]].append(float(fields[2]))
-                except ValueError:
-                    print 'WARNING: ' + fields[3] + ' at line ' + str(
-                        i + 4) + ' of file ' + self.filename + ' is not a number.'
-
-        fd.close()
-
-        starts2 = {}
-        ends2 = {}
-        scores2 = {}
-        fd = file(bedgraph.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        # Loads chr,start,end,score from each line
-        for i, line in enumerate(fd):
-            fields = line.split('\t')
-            # Check whether there is already an entry for current chromosome in starts2
-            if (fields[0] not in starts2):
-                starts2[fields[0]] = [float(fields[1])]
-                ends2[fields[0]] = [float(fields[2])]
-
-                try:
-                    scores2[fields[0]] = [float(fields[3])]
-                except ValueError:
-                    print 'WARNING: ' + fields[3] + ' at line ' + str(
-                        i + 4) + ' of file ' + bedgraph.filename + ' is not a number.'
-
-            else:
-                starts2[fields[0]].append(float(fields[1]))
-                ends2[fields[0]].append(float(fields[2]))
-
-                try:
-                    scores2[fields[0]].append(float(fields[3]))
-                except ValueError:
-                    print 'WARNING: ' + fields[3] + ' at line ' + str(
-                        i + 4) + ' of file ' + bedgraph.filename + ' is not a number.'
-
-        fd.close()
-
-        # Transform the lists of each chromosome in a numpy.array
-        for chr in starts1:
-            starts1[chr] = numpy.array(starts1[chr])
-            ends1[chr] = numpy.array(ends1[chr])
-
-        # Transform the lists of each chromosome in a numpy.array    
-        for chr in starts2:
-            starts2[chr] = numpy.array(starts2[chr])
-            ends2[chr] = numpy.array(ends2[chr])
-
-        widgets = ['Comparing windows: ', progressbar.Percentage(), ' ',
-                   progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
-        pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(starts1)).start()
-
-        exactcount = 0
-        x = [];
-        y = []
-        # Compare regions in each chromosome independently
-        for k, chr in enumerate(starts1):
-            # Check that there are regions at current chromosome in 'bedgraph'
-            if (chr in starts2):
-                # For each region of current chromosome in self, look for overlaps in bedgraph
-                for i in range(len(starts1[chr])):
-                    # Check whether any region in bedgraph overlaps with the 'start' limit of current region                                
-                    overlap = ((starts1[chr][i] >= starts2[chr]) * (starts1[chr][i] <= ends2[chr])).nonzero()[0]
-                    if (len(overlap) > 0):
-                        j = 0
-                        # Check whether any of the overlapping regions is actually the same exact region
-                        while (j < len(overlap) and (
-                                starts1[chr][i] <> starts2[chr][overlap[j]] or ends1[chr][i] <> ends2[chr][
-                            overlap[j]])):
-                            j += 1
-
-                        # Check whether an exact match was found in the while above
-                        if (j < len(overlap)):
-                            exactcount += 1
-                            x.append(scores1[chr][i])
-                            y.append(scores2[chr][overlap[j]])
-                        else:
-                            x.append(scores1[chr][i])
-                            y.append(scores2[chr][overlap[0]])
-                    else:
-                        # Check whether any region in bedgraph overlaps with the 'end' limit of current region                        
-                        overlap = ((ends1[chr][i] >= starts2[chr]) * (ends1[chr][i] <= ends2[chr])).nonzero()[0]
-                        if (len(overlap) > 0):
-                            x.append(scores1[chr][i])
-                            y.append(scores2[chr][overlap[0]])
-                pbar.update(k + 1)
-
-        pbar.finish()
-
-        print str(len(x)) + ' windows overlap between both tracks'
-        print str(exactcount) + ' windows perfectly match between both tracks'
-
-        fig = pyplot.figure(figsize=(13, 10))
-        ax = fig.add_subplot(111)
-
-        ax.scatter(x, y)
-        ax.set_ylabel(os.path.basename(bedgraph.filename))
-        ax.set_xlabel(os.path.basename(self.filename))
-
-        #        fig = pyplot.figure()
-        #        ax = fig.add_subplot(111, projection='3d')
-        #        hist, xedges, yedges = numpy.histogram2d(x, y, bins=4)
-        #
-        #        elements = (len(xedges) - 1) * (len(yedges) - 1)
-        #        xpos, ypos = numpy.meshgrid(xedges+0.25, yedges+0.25)
-        #
-        #        xpos = xpos.flatten()
-        #        ypos = ypos.flatten()
-        #        zpos = numpy.zeros(elements)
-        #        dx = 0.5 * numpy.ones_like(zpos)
-        #        dy = dx.copy()
-        #        dz = hist.flatten()
-        #
-        #        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
-        #
-        #        ax.set_ylabel(os.path.basename(bedgraph.filename))
-        #        ax.set_xlabel(os.path.basename(self.filename))
-
-        #        ax.bar3d(dx, dy, dz, color='b', zsort='average')
-
-
-        fig.savefig(fileout)
-
-
     def rmscore(self, score, out):
         """************************************************************************************************************************************************************
         Task: removes all of those regions that present score 'score'. 
@@ -627,5 +353,277 @@ class bedgraph_file:
                                     fdw.write(str(region_selected))
         fd.close()
                 
+
+### NOT USED IN DEFAULT NGSCAT! ####
+
+#
+# try:
+#     import progressbar
+# except ImportError:
+#     print 'WARNING: progressbar was not imported'
+
+    # def draw_another_bed_score(self, bedgraph, fileout):
+    #     """************************************************************************************************************************************************************
+    #     Task: draws the distribution of the scores of the regions in 'bedgraph' that overlap with the regions in self.
+    #     Inputs:
+    #         bedgraph: bedgraph_file object representing the other bedgraph file.
+    #         fileout: string containing the full path to the png file were the distribution will be saved.
+    #     Ouputs: a new png file will be created named fileout.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     print 'Loading coordinates from ' + self.filename
+    #     starts1 = {}
+    #     ends1 = {}
+    #     fd = file(self.filename)
+    #     fd.readline();
+    #     fd.readline();
+    #     fd.readline()
+    #     for line in fd:
+    #         fields = line.split('\t')
+    #         # Check whether there is already an entry for current chromosome in starts1
+    #         if (fields[0] not in starts1):
+    #             starts1[fields[0]] = [float(fields[1])]
+    #             ends1[fields[0]] = [float(fields[2])]
+    #         else:
+    #             starts1[fields[0]].append(float(fields[1]))
+    #             ends1[fields[0]].append(float(fields[2]))
+    #     fd.close()
+    #     print '    Done.'
+    #
+    #     print 'Loading coordinates and scores from ' + bedgraph.filename
+    #     starts2 = {}
+    #     ends2 = {}
+    #     scores2 = {}
+    #     fd = file(bedgraph.filename)
+    #     fd.readline();
+    #     fd.readline();
+    #     fd.readline()
+    #     for line in fd:
+    #         fields = line.split('\t')
+    #         # Check whether there is already an entry for current chromosome in starts2
+    #         if (fields[0] not in starts2):
+    #             starts2[fields[0]] = [float(fields[1])]
+    #             ends2[fields[0]] = [float(fields[2])]
+    #             scores2[fields[0]] = [float(fields[3])]
+    #         else:
+    #             starts2[fields[0]].append(float(fields[1]))
+    #             ends2[fields[0]].append(float(fields[2]))
+    #             scores2[fields[0]].append(float(fields[3]))
+    #     fd.close()
+    #     print '    Done.'
+    #
+    #     # Transform the lists of each chromosome in a numpy.array
+    #     for chr in starts1:
+    #         starts1[chr] = numpy.array(starts1[chr])
+    #         ends1[chr] = numpy.array(ends1[chr])
+    #
+    #     # Transform the lists of each chromosome in a numpy.array
+    #     for chr in starts2:
+    #         starts2[chr] = numpy.array(starts2[chr])
+    #         ends2[chr] = numpy.array(ends2[chr])
+    #
+    #     widgets = ['Comparing windows: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(starts1)).start()
+    #
+    #     exactcount = 0
+    #     x = [];
+    #     y = []
+    #     # Compare regions in each chromosome independently
+    #     for k, chr in enumerate(starts1):
+    #         # Check that there are regions at current chromosome in 'bedgraph'
+    #         if (chr in starts2):
+    #             # For each region of current chromosome in self, look for overlaps in bedgraph
+    #             for i in range(len(starts1[chr])):
+    #                 # Check whether any region in bedgraph overlaps with the 'start' limit of current region
+    #                 overlap = ((starts1[chr][i] >= starts2[chr]) * (starts1[chr][i] <= ends2[chr])).nonzero()[0]
+    #                 if (len(overlap) > 0):
+    #                     j = 0
+    #                     # Check whether any of the overlapping regions is actually the same exact region
+    #                     while (j < len(overlap) and (
+    #                             starts1[chr][i] <> starts2[chr][overlap[j]] or ends1[chr][i] <> ends2[chr][
+    #                         overlap[j]])):
+    #                         j += 1
+    #
+    #                     # Check whether an exact match was found in the while above
+    #                     if (j < len(overlap)):
+    #                         exactcount += 1
+    #                         x.append(scores2[chr][overlap[j]])
+    #                     else:
+    #                         x.append(scores2[chr][overlap[0]])
+    #                 else:
+    #                     # Check whether any region in bedgraph overlaps with the 'end' limit of current region
+    #                     overlap = ((ends1[chr][i] >= starts2[chr]) * (ends1[chr][i] <= ends2[chr])).nonzero()[0]
+    #                     if (len(overlap) > 0):
+    #                         x.append(scores2[chr][overlap[0]])
+    #         pbar.update(k + 1)
+    #     print '    Done.'
+    #
+    #     pbar.finish()
+    #     print str(len(x)) + ' windows overlap between both tracks'
+    #     print str(exactcount) + ' windows perfectly match between both tracks'
+    #
+    #     fig = pyplot.figure()
+    #     ax = fig.add_subplot(111)
+    #     n, bins, patches = ax.hist(x, 50, facecolor='green')
+    #     ax.set_xlabel(os.path.basename(bedgraph.filename))
+    #     ax.set_ylabel('Frequency')
+    #     fig.savefig(fileout)
         
-        
+    # def compare_graph(self, bedgraph, fileout):
+    #     """************************************************************************************************************************************************************
+    #     Task: compares the scores of this bedgraph file with the scores in another bedgraph file.
+    #     Inputs:
+    #         bedgraph: bedgraph_file object representing the other bedgraph file.
+    #         fileout: string containing the full path to the png file were the comparative graph will be saved.
+    #     Ouputs: a new png file will be created named fileout.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     starts1 = {}
+    #     ends1 = {}
+    #     scores1 = {}
+    #     fd = file(self.filename)
+    #     fd.readline();
+    #     fd.readline();
+    #     fd.readline()
+    #     # Loads chr,start,end,score from each line
+    #     for i, line in enumerate(fd):
+    #         fields = line.split('\t')
+    #         # Check whether there is already an entry for current chromosome in starts1
+    #         if (fields[0] not in starts1):
+    #             try:
+    #                 scores1[fields[0]] = [float(fields[3])]
+    #                 starts1[fields[0]] = [float(fields[1])]
+    #                 ends1[fields[0]] = [float(fields[2])]
+    #             except ValueError:
+    #                 print 'WARNING: ' + fields[3] + ' at line ' + str(
+    #                     i + 4) + ' of file ' + self.filename + ' is not a number.'
+    #
+    #         else:
+    #             try:
+    #                 scores1[fields[0]].append(float(fields[3]))
+    #                 starts1[fields[0]].append(float(fields[1]))
+    #                 ends1[fields[0]].append(float(fields[2]))
+    #             except ValueError:
+    #                 print 'WARNING: ' + fields[3] + ' at line ' + str(
+    #                     i + 4) + ' of file ' + self.filename + ' is not a number.'
+    #
+    #     fd.close()
+    #
+    #     starts2 = {}
+    #     ends2 = {}
+    #     scores2 = {}
+    #     fd = file(bedgraph.filename)
+    #     fd.readline();
+    #     fd.readline();
+    #     fd.readline()
+    #     # Loads chr,start,end,score from each line
+    #     for i, line in enumerate(fd):
+    #         fields = line.split('\t')
+    #         # Check whether there is already an entry for current chromosome in starts2
+    #         if (fields[0] not in starts2):
+    #             starts2[fields[0]] = [float(fields[1])]
+    #             ends2[fields[0]] = [float(fields[2])]
+    #
+    #             try:
+    #                 scores2[fields[0]] = [float(fields[3])]
+    #             except ValueError:
+    #                 print 'WARNING: ' + fields[3] + ' at line ' + str(
+    #                     i + 4) + ' of file ' + bedgraph.filename + ' is not a number.'
+    #
+    #         else:
+    #             starts2[fields[0]].append(float(fields[1]))
+    #             ends2[fields[0]].append(float(fields[2]))
+    #
+    #             try:
+    #                 scores2[fields[0]].append(float(fields[3]))
+    #             except ValueError:
+    #                 print 'WARNING: ' + fields[3] + ' at line ' + str(
+    #                     i + 4) + ' of file ' + bedgraph.filename + ' is not a number.'
+    #
+    #     fd.close()
+    #
+    #     # Transform the lists of each chromosome in a numpy.array
+    #     for chr in starts1:
+    #         starts1[chr] = numpy.array(starts1[chr])
+    #         ends1[chr] = numpy.array(ends1[chr])
+    #
+    #     # Transform the lists of each chromosome in a numpy.array
+    #     for chr in starts2:
+    #         starts2[chr] = numpy.array(starts2[chr])
+    #         ends2[chr] = numpy.array(ends2[chr])
+    #
+    #     widgets = ['Comparing windows: ', progressbar.Percentage(), ' ',
+    #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
+    #     pbar = progressbar.ProgressBar(widgets=widgets, maxval=len(starts1)).start()
+    #
+    #     exactcount = 0
+    #     x = [];
+    #     y = []
+    #     # Compare regions in each chromosome independently
+    #     for k, chr in enumerate(starts1):
+    #         # Check that there are regions at current chromosome in 'bedgraph'
+    #         if (chr in starts2):
+    #             # For each region of current chromosome in self, look for overlaps in bedgraph
+    #             for i in range(len(starts1[chr])):
+    #                 # Check whether any region in bedgraph overlaps with the 'start' limit of current region
+    #                 overlap = ((starts1[chr][i] >= starts2[chr]) * (starts1[chr][i] <= ends2[chr])).nonzero()[0]
+    #                 if (len(overlap) > 0):
+    #                     j = 0
+    #                     # Check whether any of the overlapping regions is actually the same exact region
+    #                     while (j < len(overlap) and (
+    #                             starts1[chr][i] <> starts2[chr][overlap[j]] or ends1[chr][i] <> ends2[chr][
+    #                         overlap[j]])):
+    #                         j += 1
+    #
+    #                     # Check whether an exact match was found in the while above
+    #                     if (j < len(overlap)):
+    #                         exactcount += 1
+    #                         x.append(scores1[chr][i])
+    #                         y.append(scores2[chr][overlap[j]])
+    #                     else:
+    #                         x.append(scores1[chr][i])
+    #                         y.append(scores2[chr][overlap[0]])
+    #                 else:
+    #                     # Check whether any region in bedgraph overlaps with the 'end' limit of current region
+    #                     overlap = ((ends1[chr][i] >= starts2[chr]) * (ends1[chr][i] <= ends2[chr])).nonzero()[0]
+    #                     if (len(overlap) > 0):
+    #                         x.append(scores1[chr][i])
+    #                         y.append(scores2[chr][overlap[0]])
+    #             pbar.update(k + 1)
+    #
+    #     pbar.finish()
+    #
+    #     print str(len(x)) + ' windows overlap between both tracks'
+    #     print str(exactcount) + ' windows perfectly match between both tracks'
+    #
+    #     fig = pyplot.figure(figsize=(13, 10))
+    #     ax = fig.add_subplot(111)
+    #
+    #     ax.scatter(x, y)
+    #     ax.set_ylabel(os.path.basename(bedgraph.filename))
+    #     ax.set_xlabel(os.path.basename(self.filename))
+    #
+    #     #        fig = pyplot.figure()
+    #     #        ax = fig.add_subplot(111, projection='3d')
+    #     #        hist, xedges, yedges = numpy.histogram2d(x, y, bins=4)
+    #     #
+    #     #        elements = (len(xedges) - 1) * (len(yedges) - 1)
+    #     #        xpos, ypos = numpy.meshgrid(xedges+0.25, yedges+0.25)
+    #     #
+    #     #        xpos = xpos.flatten()
+    #     #        ypos = ypos.flatten()
+    #     #        zpos = numpy.zeros(elements)
+    #     #        dx = 0.5 * numpy.ones_like(zpos)
+    #     #        dy = dx.copy()
+    #     #        dz = hist.flatten()
+    #     #
+    #     #        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+    #     #
+    #     #        ax.set_ylabel(os.path.basename(bedgraph.filename))
+    #     #        ax.set_xlabel(os.path.basename(self.filename))
+    #
+    #     #        ax.bar3d(dx, dy, dz, color='b', zsort='average')
+    #
+    #
+    #     fig.savefig(fileout)

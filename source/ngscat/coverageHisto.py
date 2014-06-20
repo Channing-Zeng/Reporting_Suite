@@ -5,7 +5,6 @@ Created on 06/02/2013
 '''
 import numpy
 import matplotlib
-import pylab
 import xlwt
 
 

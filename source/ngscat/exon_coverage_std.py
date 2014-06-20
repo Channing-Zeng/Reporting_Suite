@@ -5,7 +5,6 @@ import string
 import os
 import sys
 import numpy
-import optparse
 
 import xlwt
 

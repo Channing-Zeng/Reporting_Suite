@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-from os.path import basename, join
+from os.path import basename, join, isfile
 import re
 import shutil
 import sys
@@ -467,7 +467,7 @@ def run_snpsift(cnf, vcf_cnf, vcf_fpath):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
 
 
 

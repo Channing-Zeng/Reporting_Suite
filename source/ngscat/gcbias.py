@@ -8,11 +8,6 @@ import optparse
 import string
 import numpy
 
-try:
-    import progressbar
-except ImportError:
-    print 'WARNING: module progressbar was not loaded.'
-
 biopython_error = False
 try:
     from Bio import SeqIO
