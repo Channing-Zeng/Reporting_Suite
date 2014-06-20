@@ -36,7 +36,7 @@ def run_copy_number(sample_mapped_reads, gene_depth):
             norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
 
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
-            median_depth_by_sample[sample] else 0
+                median_depth_by_sample[sample] else 0
 
     return _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr)
 
