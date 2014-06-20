@@ -1,4 +1,5 @@
 # -*- coding: windows-1252 -*-
+from source.ngscat.xlwt import Workbook, Column, Worksheet, Row
 
 __VERSION__ = '0.7.2'
 
@@ -7,10 +8,6 @@ if sys.version_info[:2] < (2, 3):
     print >> sys.stderr, "Sorry, xlwt requires Python 2.3 or later"
     sys.exit(1)
 
-from Workbook import Workbook
-from Worksheet import Worksheet
-from Row import Row
-from Column import Column
-from Formatting import Font, Alignment, Borders, Pattern, Protection
-from Style import XFStyle, easyxf
-from ExcelFormula import *
+from source.ngscat.xlwt.Formatting import Font, Alignment, Borders, Pattern, Protection
+from source.ngscat.xlwt.Style import XFStyle, easyxf
+from source.ngscat.xlwt.ExcelFormula import *

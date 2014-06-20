@@ -1,13 +1,12 @@
 #!/usr/bin/env python
-from collections import OrderedDict, defaultdict
-from genericpath import isfile
 import os
 from os.path import basename, join
 import re
 import shutil
-
 import sys
 import operator
+from collections import OrderedDict, defaultdict
+
 from source.config import Defaults
 from source.logger import err, step_greetings, info, critical
 from source.utils_from_bcbio import add_suffix
@@ -22,7 +21,7 @@ from source.runner import run_one
 from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call, mean
 
 
-def main(args):
+def main():
     defaults = Defaults.variant_filtering
 
     cnf = read_opts_and_cnfs(
@@ -31,16 +30,15 @@ def main(args):
         'adding PASS or REJECT into the FILTER column.\n'
         '\n'
         'A novel variant (non-dbSNP, non-COSMIC) is considered false positive '
-        'if all three conditions (-r -f -n) are met. Any variant meeting the -p '
-        'or -q conditions are also considered likely false positive. '
-        'False positive variants are annotated REJECT in column FILTER, PASS otherwise.',
+        'if all three conditions (-r -f -n) are met. False positive variants are '
+        'annotated PASS in column FILTER if the conditions are satisfied, or with '
+        'other value otherwise, where the value is ;-separated list of failed criteria.',
 
         extra_opts=[
             (['--vcf', '--var'], dict(
                 dest='vcf',
                 help='Annotated variants to filter')
              ),
-
             # (['-e', '--expression'], dict(
             #     dest='expression',
             #     help='Filtering line for SnpSift. Default is ' + defaults['expression']

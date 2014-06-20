@@ -1,1 +1,13 @@
-Sample
+Sample	Chromosome	Position	REF	ALT	ID	QualityScore	Depth	BaseQailityRankSum	FischerScore	GC	HaplotypeScore	HomopolymerRunSize	MappingQuality	MQualityRankSum	TotalMappingQualityZeroReads	QualityByDepth	ReadPosRankSum	Genotype	GenotypeLikelihoods_PhredScaled	AllelicDepthsForRefAndAlt
+sample1	chrM	150	T	C		7470.77	1078		0.000	44.55	0.0000	1	60.00		0	30.62		"1/1"	7499,722,0	0,244
+sample1	chrM	152	T	C	rs117135796	8577.77	1076		0.000	42.57	0.0000	1	60.00		0	34.31		"1/1"	8606,737,0	0,250
+sample1	chrM	195	C	TGG		7551.77	975		0.000	29.70	1.9810	0	60.00		0	30.21		"1/1"	7580,710,0	0,250
+sample1	chrM	410	A	T		7375.77	771		0.000	38.61	0.0000	3	60.00		0	29.50		"1/1"	7404,710,0	0,250
+sample1	chrM	2261	C	T		7152.77	1019		0.000	37.62	0.0000	0	60.00		0	28.61		"1/1"	7181,730,0	0,250
+sample1	chrM	2354	C	T		7216.77	1017		0.000	37.62	0.0000	1	60.00		0	28.87		"1/1"	7245,736,0	0,250
+sample1	chrM	2485	C	T		5493.77	695		0.000	41.58	0.0000	0	60.00		0	21.98		"1/1"	5522,553,0	13,237
+sample1	chrM	2708	G	A		4890.77	222		0.000	43.56	0.0000	1	59.95		0	22.43		"1/1"	4919,505,0	0,218
+sample1	chrM	3493	A	C		358.77	662	-8.442	127.154	53.47	0.0000	3	59.80	1.168	0	1.44	-2.352	"0/1"	387,0,3449	153,97
+sample1	chrM	4746	A	G		7554.77	1081		0.000	31.68	0.0000	0	60.00		0	30.22		"1/1"	7583,728,0	0,250
+sample1	chr22	150	T	C		7470.77	244		0.000	50.50	0.0000	0	60.00		0	30.62		"1/1"	7499,722,0	0,244
+sample1	chr22	153	T	TCC		7470.77	244		0.000	49.50	0.0000	0	60.00		0	30.62		"1/1"	7499,722,0	0,244

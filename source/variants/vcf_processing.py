@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import sys
-import os
-from os.path import basename, join, realpath, expanduser
+from os.path import basename, join, expanduser
 from collections import OrderedDict
+from ext_modules import vcf
 
 from source.utils_from_bcbio import open_gzipsafe, splitext_plus
 from source.logger import step_greetings
@@ -11,9 +11,20 @@ from source.utils import critical, verify_file,\
 
 
 def filter_rejected(cnf, input_fpath):
-    step_greetings('Extracting dataset by filename, filtering REJECT line.')
-    output_fpath = iterate_file(cnf, input_fpath,
-                                (lambda l, i: l if 'REJECT' not in l else None))
+    step_greetings('Extracting dataset by filename, filtering '
+                   'lines that are not . nor PASS in filter.')
+
+    def __iter_file(l, i):
+        if l.startswith('#'):
+            return l
+
+        filt = l.split('\t')[6]
+        if filt in ['PASS', '.']:
+            return l
+        else:
+            return None
+
+    output_fpath = iterate_file(cnf, input_fpath, __iter_file)
     info('Saved to ' + output_fpath)
     return output_fpath
 

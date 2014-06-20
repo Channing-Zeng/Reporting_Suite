@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import shutil
-
 import sys
-from source.vcf import filter_rejected, extract_sample
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -10,9 +8,10 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.variants.vcf_processing import filter_rejected, extract_sample
 from source.runner import run_one
-from source.varannotation.tsv import make_tsv
-from source.varannotation.anno import run_annotators
+from source.variants.tsv import make_tsv
+from source.variants.anno import run_annotators
 from source.utils import info
 
 

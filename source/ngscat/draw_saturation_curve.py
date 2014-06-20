@@ -1,11 +1,10 @@
 #!/usr/bin/python
 
-import optparse
 import os
-import sys
-from matplotlib import pyplot
 import string
-import xlwt
+
+from matplotlib import pyplot
+from source.ngscat import xlwt
 
 
 def draw_saturation_curve(filelist, ylabel, fileout, legend=None, warnthreshold=1e-5):

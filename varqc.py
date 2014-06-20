@@ -1,22 +1,21 @@
 #!/usr/bin/env python
-from os import makedirs
-from os.path import dirname, isdir, basename
+from os.path import basename
 import shutil
 
 import sys
 from source.utils_from_bcbio import file_exists
-from source.logger import critical, err
-from source.varqc.stats_gatk import gatk_qc
+from source.logger import err
+from source.variants.stats_gatk import gatk_qc
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources, check_inputs
+from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
 from source.summarize import summarize_qc
 from source.utils import info, verify_module, verify_file
-from source.vcf import filter_rejected, extract_sample
+from source.variants.vcf_processing import filter_rejected, extract_sample
 
 
 def main(args):
@@ -52,8 +51,8 @@ def main(args):
 if verify_module('matplotlib'):
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
-    from source.varqc.distribution_plots import variants_distribution_plot
-    from source.varqc.stats_bcftools import bcftools_qc
+    from source.variants.distribution_plots import variants_distribution_plot
+    from source.variants.stats_bcftools import bcftools_qc
 else:
     info('Warning: matplotlib is not installed, cannot draw plots.')
 

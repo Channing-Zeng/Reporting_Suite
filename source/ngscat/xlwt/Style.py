@@ -1,7 +1,7 @@
 # -*- coding: windows-1252 -*-
 
-import Formatting
-from BIFFRecords import *
+from source.ngscat.xlwt import Formatting
+from source.ngscat.xlwt.BIFFRecords import *
 
 FIRST_USER_DEFINED_NUM_FORMAT_IDX = 164
 

@@ -1,12 +1,12 @@
 import os
 import shutil
-from os.path import dirname, realpath, join, basename, isfile
+from os.path import dirname, realpath, join, basename, isfile, pardir
 from source.logger import step_greetings
 
 from source.transaction import file_transaction
 from source.utils_from_bcbio import which, splitext_plus, file_exists
 from source.utils import iterate_file, get_java_tool_cmdline, \
-    intermediate_fname, info, call_subprocess
+    intermediate_fname, info, call_subprocess, get_tool_cmdline
 
 
 def make_tsv(cnf, vcf_fpath):
@@ -68,7 +68,6 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         'split_format_fields')
 
     manual_tsv_fields = cnf['tsv_fields']
-    print str(manual_tsv_fields)
     if manual_tsv_fields:
         fields_line = [
             rec.keys()[0] for rec
@@ -91,7 +90,9 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     if not which('perl'):
         exit('Perl executable required, maybe you need to run "module load perl"?')
     src_fpath = join(dirname(realpath(__file__)))
-    vcfoneperline_cmline = 'perl ' + join(src_fpath, 'vcfOnePerLine.pl')
+    perl = get_tool_cmdline(cnf, 'perl')
+    external_fpath = join(src_fpath, pardir, pardir, 'external')
+    vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
 
     cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + \
               ' extractFields - ' + anno_line

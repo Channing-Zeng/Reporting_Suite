@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 import sys
-from os.path import isdir, join, realpath, expanduser, basename, abspath
+from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir
 from optparse import OptionParser
 from shutil import rmtree
+
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, pardir, 'ext_modules'))
 
 from source import logger
 from source.config import Config, Defaults
@@ -10,7 +14,6 @@ from source.logger import info, err, critical
 from source.utils_from_bcbio import which, file_exists
 from source.utils import verify_file, safe_mkdir, verify_dir
 from source.ngscat.bed_file import verify_bam, verify_bed
-
 
 def read_opts_and_cnfs(extra_opts,
                        key_for_sample_name,

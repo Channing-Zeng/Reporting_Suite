@@ -1,11 +1,11 @@
 import string
-import region
 from os.path import expanduser
+
+import region
+from source.ngscat import config
 from source.utils_from_bcbio import file_exists
 from source.logger import err
 from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
-
-import config
 
 
 def verify_bam(fpath, description=''):

@@ -1,8 +1,10 @@
 # -*- coding: windows-1252 -*-
 
-import ExcelFormulaParser, ExcelFormulaLexer
 import struct
+
+import ExcelFormulaParser
 from antlr import ANTLRException
+from source.ngscat.xlwt import ExcelFormulaLexer
 
 
 class Formula(object):

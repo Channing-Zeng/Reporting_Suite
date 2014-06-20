@@ -6,7 +6,7 @@ Created on 06/02/2013
 import numpy
 import matplotlib
 import pylab
-import xlwt
+from source.ngscat import xlwt
 
 
 def histo(alldata, xlab, ylab, outdir, legend=None):

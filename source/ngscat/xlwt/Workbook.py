@@ -40,8 +40,8 @@ Record Order in BIFF8
       EOF
 '''
 
-import BIFFRecords
-import Style
+from source.ngscat.xlwt import Utils, BIFFRecords, Worksheet, Style, CompoundDoc
+
 
 class Workbook(object):
 
@@ -312,7 +312,6 @@ class Workbook(object):
         return self.__sst.str_index(s)
 
     def add_sheet(self, sheetname, cell_overwrite_ok=False):
-        import Worksheet, Utils
         if not isinstance(sheetname, unicode):
             sheetname = sheetname.decode(self.encoding)
         if not Utils.valid_sheet_name(sheetname):
@@ -628,7 +627,6 @@ class Workbook(object):
         return before + bundlesheets + after + ext_sst + eof + sheets
 
     def save(self, filename):
-        import CompoundDoc
 
         doc = CompoundDoc.XlsDoc()
         doc.save(filename, self.get_biff_data())

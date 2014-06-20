@@ -28,7 +28,8 @@ is not set), it repeats the attributes of its style XF record.
 
 '''
 
-import BIFFRecords
+from source.ngscat.xlwt import BIFFRecords
+
 
 class Font(object):
 
