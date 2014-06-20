@@ -214,6 +214,7 @@ def process_one(cnf):
         os.remove(final_vcf_fpath)
     shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
+    info('Saved filtered VCF to ' + final_vcf_fpath)
     return [final_vcf_fpath]
 
 
@@ -243,7 +244,7 @@ def _make_var_line(tokens):
 
 def _filter_effects(filt_cnf, d, i, tokens):
     if 'EFF' not in d:
-        critical('Warning: in line ' + str(i + 1) + ', EFF field missing in INFO column')
+        critical('Error: in line ' + str(i + 1) + ', EFF field missing in INFO column')
 
     reject_values = []
 
@@ -268,7 +269,7 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
         assert test_key in filt_cnf
 
         if real_key not in d:
-            critical('Warning: in line ' + str(line_num + 1) + ', value ' +
+            critical('Error: in line ' + str(line_num + 1) + ', value ' +
                      real_key + ' missing -- requied to test ' + test_key)
 
         return op(float(d[real_key]), filt_cnf[test_key])
