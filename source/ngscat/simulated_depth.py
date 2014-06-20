@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from source.ngscat import bam_file
+import bam_file
 
 
 def simulated_depth(bam, target, depth, coveragethreshold, fileout, executiongranted=None):

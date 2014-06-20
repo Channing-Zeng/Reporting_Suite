@@ -1,22 +1,22 @@
 import gc
+import pysam
 import os
 import sys
 import string
-
-import pysam
-
 import config
-from source.ngscat import xlwt, bed_file
 from source.utils import call, get_tool_cmdline, info, intermediate_fname, call_check_output
-
 
 try:
     import numpy
 except ImportError:
     print 'WARNING: module numpy was not loaded.'
 
+import xlwt
+
 from matplotlib import pyplot
 from os.path import join, basename
+
+import bed_file
 
 
 # aux function

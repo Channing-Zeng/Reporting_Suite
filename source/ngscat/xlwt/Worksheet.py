@@ -34,15 +34,16 @@
             EOF
 '''
 
-import tempfile
-
 import BIFFRecords
 import Bitmap
+import Formatting
 import Style
-from source.ngscat.xlwt import Column
+import tempfile
 
 
 class Worksheet(object):
+    from Workbook import Workbook
+
     #################################################################
     ## Constructor
     #################################################################
@@ -50,6 +51,7 @@ class Worksheet(object):
         from source.ngscat.xlwt import Row
         self.Row = Row
 
+        import Column
         self.Column = Column.Column
 
         self.__name = sheetname

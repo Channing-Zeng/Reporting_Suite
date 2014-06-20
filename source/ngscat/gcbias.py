@@ -1,12 +1,15 @@
 #!/usr/bin/python
 
-import re
 import sys
+import re
+import os
+import sys
+import optparse
 import string
 import numpy
-from source.ngscat import bed_file
 
 try:
+    import progressbar
 except ImportError:
     print 'WARNING: module progressbar was not loaded.'
 
@@ -16,6 +19,9 @@ try:
 except ImportError:
     print('Warning: cannot import Bio module (BioPython), some equations will be slow!')
     biopython_error = True
+
+import glob
+import pysam
 
 try:
     import pybedtools
@@ -28,6 +34,9 @@ from matplotlib import pyplot
 from pylab import plot, figure, imshow, xlabel, ylabel, cm, show
 from scipy import stats, mgrid, c_, reshape, random, rot90
 #########################
+
+import bam_file
+import bed_file
 
 
 def region_coverage(coveragefile):

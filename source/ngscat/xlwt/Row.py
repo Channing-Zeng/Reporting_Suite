@@ -1,13 +1,11 @@
 # -*- coding: windows-1252 -*-
 
-import datetime as dt
-
 import BIFFRecords
 import Style
-from source.ngscat.xlwt.Cell import StrCell, BlankCell, NumberCell, FormulaCell, MulBlankCell, BooleanCell, ErrorCell, \
+from Cell import StrCell, BlankCell, NumberCell, FormulaCell, MulBlankCell, BooleanCell, ErrorCell, \
     _get_cells_biff_data_mul
 import ExcelFormula
-
+import datetime as dt
 try:
     from decimal import Decimal
 except ImportError:

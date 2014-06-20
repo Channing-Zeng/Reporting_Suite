@@ -1,16 +1,21 @@
 #!/usr/bin/python
 
 
+import optparse
+import string
 import os
-import multiprocessing
-from os.path import join
+import sys
+import glob
 
+import multiprocessing
 import pysam
 
 import simulated_depth
+import draw_saturation_curve
+
 import bam_file
 import config
-from source.ngscat import draw_saturation_curve
+from os.path import join
 
 
 def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, fileout, executiongranted=None,

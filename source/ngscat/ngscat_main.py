@@ -13,8 +13,17 @@ from os.path import join
 import numpy
 
 import pysam
-from source.ngscat import coverageHisto, exon_coverage_std, bedgraph_file, config, coverage_target, \
-    coverage_saturation, bam_file, gcbias, bed_file, coveragecorr, target_coverage
+import coverageHisto
+import coverage_target
+import coveragecorr
+import bam_file
+import bed_file
+import bedgraph_file
+import target_coverage
+import coverage_saturation
+import exon_coverage_std
+import gcbias
+import config
 from source.logger import step_greetings
 from source.utils import intermediate_fname
 

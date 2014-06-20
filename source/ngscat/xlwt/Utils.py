@@ -31,7 +31,8 @@
 __rev_id__ = """$Id: Utils.py 3844 2009-05-20 01:02:54Z sjmachin $"""
 
 import re
-from source.ngscat.xlwt.ExcelMagic import MAX_ROW, MAX_COL
+from struct import pack
+from ExcelMagic import MAX_ROW, MAX_COL
 
 
 _re_cell_ex = re.compile(r"(\$?)([A-I]?[A-Z])(\$?)(\d+)", re.IGNORECASE)

@@ -2,8 +2,12 @@
 
 
 import string
+import os
+import sys
 import numpy
-from source.ngscat import xlwt
+import optparse
+
+import xlwt
 
 from matplotlib import pyplot
 

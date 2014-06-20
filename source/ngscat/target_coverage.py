@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
+import pysam
 import sets
+import sys
 import os
+import optparse
 import string
 import numpy
 
@@ -9,9 +12,12 @@ import numpy
 #     import progressbar
 # except ImportError:
 #     print 'WARNING: module progressbar was not loaded.'
-from source.ngscat import xlwt
+
+import xlwt
 
 from matplotlib import pyplot
+
+import bam_file
 
 
 def draw_graph(fileout, values, xticklabels, xlabel, ylabel, legend=None):

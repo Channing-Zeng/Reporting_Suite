@@ -1,7 +1,7 @@
 # -*- coding: cp1252 -*-
 from struct import pack
-from source.ngscat.xlwt.UnicodeUtils import upack1, upack2
-
+from UnicodeUtils import upack1, upack2
+import sys
 
 class SharedStringTable(object):
     _SST_ID = 0x00FC

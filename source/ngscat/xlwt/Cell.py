@@ -1,8 +1,7 @@
 # -*- coding: windows-1252 -*-
 
 from struct import unpack, pack
-from source.ngscat.xlwt import BIFFRecords
-
+import BIFFRecords
 
 class StrCell(object):
     __slots__ = ["rowx", "colx", "xf_idx", "sst_idx"]

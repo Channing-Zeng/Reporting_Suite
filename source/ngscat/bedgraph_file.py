@@ -1,4 +1,3 @@
-from source.ngscat import region, bed_file, progressbar
 try:
     import numpy
 except ImportError:
@@ -9,11 +8,19 @@ except ImportError:
     print 'WARNING: scipy.stats module was not imported.'
 
 try:
+    import progressbar
 except ImportError:
     print 'WARNING: progressbar was not imported'
 
 import os
 import sys
+import bed_file
+import config
+import region
+
+from os.path import join
+from source.utils import intermediate_fname
+
 
 from matplotlib import pyplot
 
