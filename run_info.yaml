@@ -12,9 +12,7 @@ filter_reject: True   ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
 variant_filtering:
-#  expression:         "(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')"
   impact:             'MODERATE|HIGH'
-  effect_type:        'NON_SYNONYMOUS_CODING'
   bias:               0.4     # Novel or dbSNP variants with strand bias "2;1" or "2;0" and AF < 0.3 will be considered as false positive.
   filt_depth:         0       # The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
   maf:                0.0025  # If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.

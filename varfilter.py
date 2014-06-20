@@ -27,7 +27,7 @@ def main():
     cnf = read_opts_and_cnfs(
         description=
         'The program will filter an annotated VCF file by SnpEff using dbSNP and COSMIC, '
-        'adding PASS or REJECT into the FILTER column.\n'
+        'setting the value of the FILTER column.\n'
         '\n'
         'A novel variant (non-dbSNP, non-COSMIC) is considered false positive '
         'if all three conditions (-r -f -n) are met. False positive variants are '
@@ -39,17 +39,9 @@ def main():
                 dest='vcf',
                 help='Annotated variants to filter')
              ),
-            # (['-e', '--expression'], dict(
-            #     dest='expression',
-            #     help='Filtering line for SnpSift. Default is ' + defaults['expression']
-            # )),
             (['-i', '--impact'], dict(
                 dest='impact',
                 help='Effect impact. Default: ' + defaults['impact']
-            )),
-            (['-e', '--effect-type'], dict(
-                dest='effect_type',
-                help='Effect type. Default: ' + defaults['effect_type']
             )),
             (['-b', '--bias'], dict(
                 dest='bias',
