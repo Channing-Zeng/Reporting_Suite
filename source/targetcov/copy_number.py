@@ -10,7 +10,7 @@ def run_copy_number(sample_mapped_reads, gene_depth):
     list_genes_info = _report_row_to_objects(gene_depth)
 
     med_depth = median([rec.min_depth for rec in list_genes_info])
-    norm_depths_by_seq_distr = _get_norm_depths_by_seq_distr(sample_mapped_reads, list_genes_info)
+    norm_depths_by_seq_distr = _get_norm_depths_by_sample(sample_mapped_reads, list_genes_info)
     factors_by_gene = _get_factors_by_gene(list_genes_info, med_depth)
     norm_depths_by_gene = defaultdict(dict)
     norm2 = defaultdict(dict)
@@ -38,7 +38,8 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
     return _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr)
 
-
+# take mean for all the samples mapped reads
+# take each sample mapped read/mean for all the samples mapped reads
 def _get_factors_by_sample(mapped_reads_by_sample):
     factor_by_sample = dict()
     mean_reads = mean(mapped_reads_by_sample.values())
@@ -56,12 +57,10 @@ def _get_factors_by_gene(gene_records, med_depth):
         factors_by_gene[k] = med_depth / med if med else 0
     return factors_by_gene
 
-
-def _get_norm_depths_by_seq_distr(mapped_reads_by_sample, record_by_sample):
+#
+def _get_norm_depths_by_sample(mapped_reads_by_sample, record_by_sample):
     norm_depths = defaultdict(dict)  # gene -> { sample -> [] }
-
     factor_by_sample = _get_factors_by_sample(mapped_reads_by_sample)
-
     for sample, factor in factor_by_sample.items():
         for gene_info in [gene_infos for gene_infos in record_by_sample if gene_infos.sample_name == sample]:
             norm_depths[gene_info.name][sample] = gene_info.min_depth * factor
@@ -73,15 +72,17 @@ def _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_de
     report_data = []
     header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
                    "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
+
     for gene_info in list_genes_info:
         gene_name = gene_info.name
         sample = gene_info.sample_name
         report_data.append(map(str,
                                [sample, gene_name, gene_info.chrom, gene_info.start_position, gene_info.end_position,
                                 gene_info.size,
-                                gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample],
-                                norm_depths_by_gene[gene_name][sample],
-                                norm2[gene_name][sample], norm3[gene_name][sample]]))
+                                '{0:.3f}'.format(gene_info.min_depth, norm_depths_by_seq_distr[gene_name][sample]),
+                                '{0:.3f}'.format(norm_depths_by_gene[gene_name][sample]),
+                                '{0:.3f}'.format(norm2[gene_name][sample]),
+                                '{0:.3f}'.format(norm3[gene_name][sample])]))
     return report_data
 
 

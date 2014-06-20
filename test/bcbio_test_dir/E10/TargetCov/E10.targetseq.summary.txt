@@ -1,5 +1,5 @@
 Reads	 80,332
-Mapped reads	 80,244
+Mapped reads	 2383064
 Unmapped reads	 88
 Percentage of mapped reads	 99.89%
 Bases in target	 5,000
