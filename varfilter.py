@@ -179,7 +179,7 @@ def main(args):
         file_keys=['vcf'],
         key_for_sample_name='vcf')
 
-    check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
+    #check_system_resources(cnf, required=['java', 'snpsift'], optional=[])
     check_system_resources(cnf, required=['java'], optional=[])
 
     for key in cnf.keys():
