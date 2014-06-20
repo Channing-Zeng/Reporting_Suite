@@ -57,7 +57,6 @@ class Defaults():
     )
 
     variant_filtering = dict(
-        effect_type='NON_SYNONYMOUS_CODING',
         impact='MODERATE|HIGH',
         # expression="(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')",
         count_undetermined=True,
