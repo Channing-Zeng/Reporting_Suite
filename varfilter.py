@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants.snpeff import EffectDetails
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -117,34 +118,34 @@ def main():
                      'Default %f' % defaults['min_freq'],
             )),
 
-            # (['-p'], dict(
-            #     dest='min_p_mean',
-            #     type='int',
-            #     help='The minimum mean position in reads for variants.'
-            #          'Default %d bp' % defaults['min_p_mean'],
-            # )),
-            # (['-q'], dict(
-            #     dest='min_q_mean',
-            #     type='float',
-            #     help='The minimum mean base quality phred score for variant.'
-            #          'Default %d' % defaults['min_q_mean'],
-            # )),
-            # (['-P'], dict(
-            #     dest='filt_p_mean',
-            #     type='int',
-            #     help='The filtering mean position in reads for variants. '
-            #          'The raw variant will be filtered on first place if the mean '
-            #          'posititon is less then [filt_p_mean]. '
-            #          'Default %d bp' % defaults['filt_p_mean'],
-            # )),
-            # (['-Q'], dict(
-            #     dest='filt_q_mean',
-            #     type='float',
-            #     help='The filtering mean base quality phred score for variants. '
-            #          'The raw variant will be filtered on first place  '
-            #          'if the mean quality is less then [filt_q_mean]. '
-            #          'Default %f' % defaults['filt_q_mean'],
-            # )),
+            (['-p'], dict(
+                dest='min_p_mean',
+                type='int',
+                help='The minimum mean position in reads for variants.'
+                     'Default %d bp' % defaults['min_p_mean'],
+            )),
+            (['-q'], dict(
+                dest='min_q_mean',
+                type='float',
+                help='The minimum mean base quality phred score for variant.'
+                     'Default %d' % defaults['min_q_mean'],
+            )),
+            (['-P'], dict(
+                dest='filt_p_mean',
+                type='int',
+                help='The filtering mean position in reads for variants. '
+                     'The raw variant will be filtered on first place if the mean '
+                     'posititon is less then [filt_p_mean]. '
+                     'Default %d bp' % defaults['filt_p_mean'],
+            )),
+            (['-Q'], dict(
+                dest='filt_q_mean',
+                type='float',
+                help='The filtering mean base quality phred score for variants. '
+                     'The raw variant will be filtered on first place  '
+                     'if the mean quality is less then [filt_q_mean]. '
+                     'Default %f' % defaults['filt_q_mean'],
+            )),
 
             (['--sn'], dict(
                 dest='signal_noise',
@@ -204,7 +205,6 @@ def process_one(cnf):
         os.remove(final_vcf_fpath)
     shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
-    info('Saved filtered VCF to ' + final_vcf_fpath)
     return [final_vcf_fpath]
 
 
@@ -218,18 +218,38 @@ def _add_reject(rec, val='REJECT'):
     return rec
 
 
+class Effect():
+    """ EFF= Effect ( Effect_Impact | Functional_Class | Codon_Change | Amino_Acid_Change| Amino_Acid_Length |
+                      Gene_Name | Transcript_BioType | Gene_Coding | Transcript_ID | Exon_Rank  | Genotype_Number [ | ERRORS |
+                      WARNINGS ] )
+    """
+    def __init__(self, line):
+        self.efftype, rest = line[:-1].split('(')
+
+        vals = rest.split('|')
+        self.impact = vals[0]
+        self.funclas = vals[1]
+        self.cc = vals[2]
+        self.aac = vals[3]
+        self.pos = int(''.join(c for c in self.aac if c.isdigit())) if self.aac != '' else None
+        self.aal = int(vals[4]) if vals[4] != '' else None
+        self.gene = vals[5]
+        self.biotype = vals[6]
+        self.coding = vals[7] == 'CODING'
+
+
 def _filter_effects(filt_cnf, d, line_num, rec):
     if 'EFF' not in d:
         critical('Error: in variant line ' + str(line_num + 1) + ', EFF field missing in INFO column')
 
     reject_values = []
 
-    for f in ['impact', 'effect_type']:
-        if filt_cnf[f]:
-            values = filt_cnf[f].split('|')
-            for v in values:
-                if v.lower() not in ''.join(d['EFF']).lower():
-                    reject_values.append('NO_' + v.upper())
+    if filt_cnf['impact']:
+        values = [s.upper() for s in filt_cnf['impact'].split('|')]
+
+        for eff in map(Effect, d['EFF']):
+            if eff.impact not in values:
+                reject_values.append(eff.impact)
 
     for val in reject_values:
         rec = _add_reject(rec, val)
@@ -258,7 +278,6 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
 
     def __comp(real_key, test_key, d, line_num, op=operator.lt):
         assert test_key in filt_cnf
-
         if real_key not in d:
             critical('Error: in variant line ' + str(line_num + 1) + ', value ' +
                      real_key + ' missing -- requied to test ' + test_key)
@@ -363,12 +382,17 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             # if there's MAF with frequency, it'll be considered
             # dbSNP regardless of COSMIC
             cls = 'dbSNP'
-        ## Not needed in our python version of vcf2txt.pl:
-        # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
-        # if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
-        #     my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
-        #     $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
-        # }
+
+        if 'EFF' not in d:
+            critical('Error: in variant line ' + str(i + 1) + ', EFF field missing in INFO column')
+
+        # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is
+        # in dbSNP, but not in ClnSNP or COSMIC
+        for eff in map(Effect, d['EFF']):
+            if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
+                if eff.pos / int(eff.aal) < 0.95:
+                    cls = 'dbSNP_del'
+
         if 'bias' in filt_cnf and filt_cnf['bias'] and (cls == 'Novel' or cls == 'dbSNP') and \
            'BIAS' in d and (d['BIAS'] == "2;1" or d['BIAS'] == "2;0") and 'AF' in d and float(d['AF']) < 0.3:
             reject_values.append('BIAS')
@@ -389,7 +413,9 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
 
     vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf_1st_round, suffix='zh1')
 
-    vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf_2nd_round, suffix='zh2')
+    if sample_dict:
+        info('Second run (coundint...')
+        vcf_fpath = convert_file(cnf, vcf_fpath, proc_vcf_2nd_round, suffix='zh2')
 
     return vcf_fpath
 
