@@ -28,18 +28,21 @@ def run_copy_number(sample_mapped_reads, gene_depth):
             sample = gene_info.sample_name
             if sample not in norm_depth_by_sample:
                 continue
+            #norm1b
             gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1
 
             norm_depths_by_gene[gene][sample] = gene_norm_depth
 
             norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
 
-            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2)
+            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
+            median_depth_by_sample[sample] else 0
 
     return _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr)
 
-# take mean for all the samples mapped reads
-# take each sample mapped read/mean for all the samples mapped reads
+
+#mean_reads =  mean for all the samples mapped reads
+#return factor_by_sample = sample mapped read/mean for all the samples mapped reads
 def _get_factors_by_sample(mapped_reads_by_sample):
     factor_by_sample = dict()
     mean_reads = mean(mapped_reads_by_sample.values())
@@ -48,6 +51,8 @@ def _get_factors_by_sample(mapped_reads_by_sample):
     return factor_by_sample
 
 
+#med_depth = median for all gene
+#return factor_by_gene = median gene for all samples/ med_depth
 def _get_factors_by_gene(gene_records, med_depth):
     min_depth_by_genes = defaultdict(list)
     [min_depth_by_genes[gene_record.name].append(gene_record.min_depth) for gene_record in gene_records]
@@ -57,9 +62,11 @@ def _get_factors_by_gene(gene_records, med_depth):
         factors_by_gene[k] = med_depth / med if med else 0
     return factors_by_gene
 
-#
+
+#MeanDepth_Norm1
+# gene -> { sample -> [] }
 def _get_norm_depths_by_sample(mapped_reads_by_sample, record_by_sample):
-    norm_depths = defaultdict(dict)  # gene -> { sample -> [] }
+    norm_depths = defaultdict(dict)
     factor_by_sample = _get_factors_by_sample(mapped_reads_by_sample)
     for sample, factor in factor_by_sample.items():
         for gene_info in [gene_infos for gene_infos in record_by_sample if gene_infos.sample_name == sample]:
@@ -71,7 +78,7 @@ def _get_norm_depths_by_sample(mapped_reads_by_sample, record_by_sample):
 def _get_report_data(list_genes_info, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
     report_data = []
     header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
-                   "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
+              "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
 
     for gene_info in list_genes_info:
         gene_name = gene_info.name
