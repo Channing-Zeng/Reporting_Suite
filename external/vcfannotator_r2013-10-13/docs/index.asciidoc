@@ -1,0 +1,52 @@
+= VCFannotator: describing SNPs in genes and genomes =
+
+VCFannotator examines the positions of SNPs found within and between genes in an annotated genome sequence. SNPs localized within genes are annotated according to the gene structure, indicating whether the SNP is found within an untranslated region (UTR), intron, or coding exon. If the SNP is in a coding region, the impact of the SNP on the translated protein sequence is described (ex. synonomous or non-synonomous change).
+
+The VCFannotator software was written at the http://www.broadinstitute.org[Broad Institute] to assist microbial genome analyses.
+
+== Obtaining VCFannotator ==
+
+VCFannotator can be downloaded from https://sourceforge.net/projects/vcfannotator/files/[here].
+
+
+== Running VCFannotator ==
+
+VCFannotator requires three input files: a genome sequence in FASTA format, gene annotations described in http://www.sequenceontology.org/gff3.shtml[GFF3] file format, and SNPs defined in http://www.1000genomes.org/wiki/Analysis/Variant%20Call%20Format/vcf-variant-call-format-version-41[VCF] format.  Usage information is described below:
+
+ VCF_annotator.pl 
+ 
+ ##############################################################################
+ #
+ #  --gff3     gene annotations in gff3 format
+ #  --genome   genome sequence in fasta format.
+ #  --vcf      SNP data in vcf format
+ #
+ #  -X         write the .coding_mutations_described.txt file
+ #
+ ##############################################################################
+
+
+== Sample Data ==
+
+Sample input data is provided in the 'sample_data/' directory of the downloaded software. A 'runMe.sh' script is provided to demonstrate software execution.
+
+== Output Format ==
+
+The inputed VCF file is decorated with annotations by adding tab-delimited fields to each line of the VCF file.  If the SNP is localized to multiple overlapping genes or transcript isoforms, an annotation will be added separately for each feature.
+
+An example output line transposed to a column format would look like so (taken from the sample data):
+
+ 0   TY-2482_chromosome
+ 1   5080
+ 2   .
+ 3   T
+ 4   C
+ 5   8101.55
+ 6   PASS
+ 7   AC=2;AF=1.00;AN=2;DP=212;Dels=0.00;FS=0.000;HRun=1;HaplotypeScore=0.0000;MQ=59.52;MQ0=0;QD=38.21;SB=-4130.96
+ 8   GT:AD:DP:GQ:PL
+ 9   1/1:0,212:212:99:8101,605,0
+ 10  CDS,tmpTY2482_00008,tmpTY2482_00008T0,microcin H47 immunity protein mchI,trans_orient:+,loc_in_cds:46,codon_pos:1,codon:Tct-Cct,pep:S->P,Ser-16-Pro,(NSY)
+
+
+The final field is bundled with the individual feature annotation data, comma-delimited. This includes the feature type (eg. CDS, intron, UTR), gene and transcript identifiers, name of the gene, and the transcribed orientation of the gene.  If the SNP is localized to a coding region, then the relative position within that CDS sequence is provided in addition to the codon change.  The types of coding mutations are provided as synonomous (SYN), non-synonomous (NSY), read-thru (RTH), and nonsence (STP).  SNPs that are localized to intergenic regions are reported as such along with the identifiers of the neighboring genes and distance to each.

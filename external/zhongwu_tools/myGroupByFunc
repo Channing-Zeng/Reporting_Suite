@@ -1,0 +1,91 @@
+#!/usr/bin/perl -w
+
+use lib '/users/kdld047/lib/perl5';
+
+use vars qw($opt_g $opt_c $opt_d $opt_h $opt_f $opt_l $opt_s $opt_p $opt_H $opt_I);
+use Getopt::Std;
+use Util::Parser;
+use Stat::Basic;
+use strict;
+
+getopts( 'hHlg:c:d:f:s:p:I:' ) || Usage();
+$opt_H && Usage();
+my $del = qr/\t/;
+
+$del = qr/$opt_d/ if ( $opt_d );
+
+my @groups = $opt_g ? Util::Parser::indexes($opt_g) : (0);
+my @col = $opt_c ? Util::Parser::indexes($opt_c) : (1);
+my @s_col = $opt_s ? Util::Parser::indexes($opt_s) : ();
+
+my @funcs = $opt_f ? split(/:/, $opt_f, -1) : ("mean");
+if ( $opt_h ) {
+    my $h = <>;  chomp $h;
+    my @h = split( $del, $h );
+    print join("\t", @h[@groups, @col, @s_col], @funcs), "\n";
+} else {
+    if ( $opt_I ) {
+	print join("\t", split(/:/, $opt_I), @funcs), "\n";
+    } else {
+	print "\t" x (@groups + @col + @s_col-1), join("\t", @funcs), "\n";
+    }
+}
+
+my @pars = ();
+if( $opt_p ) {
+    my @a = split(/:/, $opt_p, -1);
+    @pars = map { [split(/-/)]; } @a;
+    if ( $#pars != $#funcs ) {
+        print STDERR "The number of parameters separated by ':' in -p and -f should be the same.\n";
+	exit(0);
+    }
+}
+
+my %hash;
+my %hash_s;
+while( <> ) {
+    chomp;
+    my @a = split($del);
+    my $k = $opt_g ? join("\t", @a[@groups]) : "ALL";
+    for(my $i = 0; $i < @col; $i++) {
+        my $c = $col[$i];
+	push( @{ $hash{ $k }->{ $c } }, $opt_l ? log($a[$c])/log(2) : $a[$c] );
+	$hash_s{ $k } = join("\t", @a[@s_col]);
+    }
+}
+
+my $stat = new Stat::Basic;
+while( my ($k, $v) = each %hash ) {
+    my @tmp = ();
+    for(my $i = 0; $i < @col; $i++) {
+	for(my $j = 0; $j < @funcs; $j++) {
+	    my $func = $funcs[$j];
+	    push( @tmp, $opt_p ? $stat->$func( $v->{ $col[$i] }, @{ $pars[$j] } ) : $stat->$func( $v->{ $col[$i] } ) );
+	}
+    }
+    #for(my $j = 0; $j < @funcs; $j++) {
+    #    my $f = $opt_p ? join("", "$funcs[$j](", join("-", @{$pars[$j]}), ")") : $funcs[$j];
+    #}
+
+    if ( $opt_s ) {
+	print join("\t", $k, $hash_s{ $k }, @tmp), "\n";
+    } else {
+	print join("\t", $k, @tmp ), "\n";
+    }
+}
+
+sub Usage {
+    print "USAGE: $0 [-hl] [-d delimiter] [-g columns] [-c columns] [-f function] [-s columns] [-I grp_col_names] files\n";
+    print "-d   The delimiter to split.  Default is '\\t'\n";
+    print "-h   Indicate whether there's a header line.  Default: No.\n";
+    print "-g   Specify which column(s) as the category.  If not specified, it'll do summary statistics using the whole family instead.\n";
+    print "-I   The column names separated by : for groups.  Used when there's no header.\n";
+    print "-c   Specify which column(s) in the files to be grouped by. Default to 2nd column.\n";
+    print "-s   Specify which column(s) in the files to be simply carried over, assuming they're the same for each group.  Default: no columns\n";
+    print "-l   Indicate whether to log2 transform the data.\n";
+    print "-f   Function(s) for group by.  Default: mean.  Choices are: min, max, median, var, std, sum, mean.  Can specify multiple functions separated by ':'.\n";
+    print "-p   Parameters for the function.  Default: no.  If a function needs a parameter, use this option to specify it.  Can specify multilple parameters separated by ':' and has to be the same numbers as -f option.  A function expecting multiple parameters and be further separated by '-', e.g. '90-0.5:20'.\n";
+
+    exit(0);
+}
+

@@ -11,7 +11,7 @@ from os.path import basename
 from source.logger import info, err
 
 
-class F:
+class Field:
     def __init__(self, name, unit='', thresholds=None):
         self.name = name
         self.unit = unit
@@ -23,6 +23,7 @@ class F:
         else:
             return self.name
 
+F = Field
 
 # noinspection PyClassHasNoInit
 class Fields:
