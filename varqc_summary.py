@@ -76,8 +76,10 @@ def summary_reports(cnf, sample_names):
 
     report = summarize(sample_names, sample_qc_reports, parse_qc_sample_report)
 
-    sum_report_fpaths = write_summary_reports(cnf, report, sample_names,
+    sum_report_fpaths = write_summary_reports(
+        cnf['output_dir'], cnf['work_dir'], report, sample_names,
         '-' + cnf['vcf_suffix'] + '.varqc.summary', 'Variant QC')
+
     return sum_report_fpaths
 
 

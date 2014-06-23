@@ -4,10 +4,10 @@ import os
 from os.path import join
 
 
-def save_total_report(cnf, report_base_name, sample_names, report):
+def save_total_report(work_dir, report_base_name, sample_names, report):
     t = datetime.datetime.now()
 
-    return save(join(cnf['work_dir'], report_base_name + '.json'), {
+    return save(join(work_dir, report_base_name + '.json'), {
         'date': t.strftime('%d %B %Y, %A, %H:%M:%S'),
         'report': report,
         'sampleNames': sample_names,

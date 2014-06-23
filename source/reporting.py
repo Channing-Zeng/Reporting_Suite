@@ -1,6 +1,6 @@
 from itertools import repeat, izip
 from os.path import join, basename
-from source.quast_reporting.html_saver import save_total_report
+from source.quast_reporting.html_saver import write_html_report
 
 from source.utils import OrderedDefaultDict, verify_file
 from source.logger import critical, info
@@ -59,11 +59,12 @@ def summarize(sample_names, report_fpaths, get_rows_fn):
     return report
 
 
-def write_summary_reports(cnf, report, sample_names, base_fname, caption):
-    return [fn(cnf, report, sample_names, base_fname, caption)
+def write_summary_reports(output_dirpath, work_dirpath, report,
+                          sample_names, base_fname, caption):
+    return [fn(output_dirpath, work_dirpath, report, sample_names, base_fname, caption)
         for fn in [write_txt_report,
                    write_tsv_report,
-                   save_total_report]]
+                   write_html_report]]
 
 
 def _flatten_report(report, sample_names):
@@ -75,9 +76,10 @@ def _flatten_report(report, sample_names):
     return rows
 
 
-def write_txt_report(cnf, report, sample_names, base_fname, caption=None):
+def write_txt_report(output_dirpath, work_dirpath, report,
+                     sample_names, base_fname, caption=None):
     rows = _flatten_report(report, sample_names)
-    return write_txt(rows, cnf['output_dir'], base_fname)
+    return write_txt(rows, output_dirpath, base_fname)
 
 
 def write_txt(rows, output_dirpath, base_fname):
@@ -97,9 +99,10 @@ def write_txt(rows, output_dirpath, base_fname):
     return output_fpath
 
 
-def write_tsv_report(cnf, report, sample_names, base_fname, caption=None):
+def write_tsv_report(output_dirpath, work_dirpath, report,
+                     sample_names, base_fname, caption=None):
     rows = _flatten_report(report, sample_names)
-    return write_tsv(rows, cnf['output_dir'], base_fname)
+    return write_tsv(rows, output_dirpath, base_fname)
 
 
 def write_tsv(rows, output_dirpath, base_fname):

@@ -48,16 +48,17 @@ aux_files = [
 ]
 
 
-def save_total_report(cnf, report, sample_names, report_base_name, caption):
+def write_html_report(output_dirpath, work_dirpath, report,
+                      sample_names, report_base_name, caption):
+
     json_fpath = json_saver.save_total_report(
-        cnf, report_base_name, sample_names, report)
+        work_dirpath, report_base_name, sample_names, report)
 
     if not verify_file(json_fpath):
         sys.exit(1)
 
-    html_fpath = init_html(cnf['output_dir'], report_base_name + '.html', caption)
+    html_fpath = init_html(output_dirpath, report_base_name + '.html', caption)
     append(html_fpath, json_fpath, 'totalReport')
-    # info('  HTML version saved to ' + html_fpath)
     return html_fpath
 
 

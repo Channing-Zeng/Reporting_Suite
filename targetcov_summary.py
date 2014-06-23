@@ -86,7 +86,8 @@ def summary_reports(cnf, sample_names):
     sum_report = summarize(sample_names, sample_sum_reports, parse_targetseq_sample_report)
 
     sum_report_fpaths = write_summary_reports(
-        cnf, sum_report, sample_names, '.targetseq.summary', 'Target coverage statistics')
+        cnf['output_dir'], cnf['work_dir'], sum_report,
+        sample_names, 'targetseq.summary', 'Target coverage statistics')
 
     return sample_sum_reports, sum_report_fpaths
 
@@ -99,7 +100,7 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
 
     cnv_rows = summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
 
-    cnv_report_fpath = write_tsv(cnv_rows, cnf['bcbio_final_dir'], 'targetcov_cnv')
+    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
 
     return cnv_report_fpath
 

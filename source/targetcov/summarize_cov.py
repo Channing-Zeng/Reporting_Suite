@@ -11,7 +11,7 @@ def parse_targetseq_sample_report(report_fpath):
     row_per_sample = []
 
     with open(report_fpath) as f:
-        rows = [l.split('\t') for l in f]
+        rows = [l.strip().split('\t') for l in f]
 
     for row in rows:
         row_per_sample.append(dict(
