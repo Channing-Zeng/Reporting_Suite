@@ -85,8 +85,8 @@ def summary_reports(cnf, sample_names):
 
     sum_report = summarize(sample_names, sample_sum_reports, parse_targetseq_sample_report)
 
-    sum_report_fpaths = write_summary_reports(cnf, sum_report, sample_names,
-                                              '.targetseq.summary', 'Target coverage statistics')
+    sum_report_fpaths = write_summary_reports(
+        cnf, sum_report, sample_names, '.targetseq.summary', 'Target coverage statistics')
 
     return sample_sum_reports, sum_report_fpaths
 

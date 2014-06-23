@@ -33,7 +33,7 @@ def summarize_copy_number(sample_names, report_details_fpaths, report_summary_fp
             zip(sample_names, report_details_fpaths, report_summary_fpaths):
 
         gene_summary_lines += _get_lines_by_region_type(report_details_fpath, 'Gene-Amplicon')
-        report_lines = parse_tsv(report_summary_fpath)
+        report_lines = dict(parse_tsv(report_summary_fpath))
         cov_by_sample[sample_name] = int(report_lines.get('Mapped reads').replace(',', ''))
 
     return run_copy_number(cov_by_sample, gene_summary_lines)

@@ -57,7 +57,7 @@ def save_total_report(cnf, report, sample_names, report_base_name, caption):
 
     html_fpath = init_html(cnf['output_dir'], report_base_name + '.html', caption)
     append(html_fpath, json_fpath, 'totalReport')
-    info('  HTML version saved to ' + html_fpath)
+    # info('  HTML version saved to ' + html_fpath)
     return html_fpath
 
 
