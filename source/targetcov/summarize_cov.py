@@ -15,8 +15,10 @@ def parse_targetseq_sample_report(report_fpath):
 
     for row in rows:
         row_per_sample.append(dict(
-            metricName=row[0], value=row[1:],
+            metricName=row[0], value=row[1],
             isMain=True, quality='More is better'))
+
+    return row_per_sample
 
 
 
