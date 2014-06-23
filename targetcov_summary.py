@@ -2,7 +2,9 @@
 
 from __future__ import print_function
 import sys
-from source.targetcov.summarize_cov import write_cov_summary_reports, write_cov_gene_summary_reports
+from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir, \
+    write_tsv, summarize, write_summary_reports
+from source.targetcov.summarize_cov import parse_targetseq_sample_report, summarize_copy_number
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -15,7 +17,7 @@ from os.path import join
 from optparse import OptionParser
 from source.config import Defaults, Config
 from source.logger import info, step_greetings
-from source.main import check_keys, check_inputs
+from source.main import check_keys, check_inputs, set_up_dirs
 
 
 def main():
@@ -26,6 +28,7 @@ def main():
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-n', dest='base_name', default='TargetCov',
                       help='Name of targetcov directory inside sample folder. (default is TargetCov)')
+    parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
@@ -43,6 +46,9 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
+    cnf.name = cnf['name'] or 'varqc_summary'
+    set_up_dirs(cnf)
+
     if not cnf.samples:
         cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
 
@@ -56,22 +62,47 @@ def main():
     if not check_inputs(cnf, file_keys=['samples', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
-    step_greetings('Coverage statistics for all samples')
-    summary_report_fpaths = write_cov_summary_reports(
-        cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    sample_names = read_sample_names(cnf['samples'])
 
-    step_greetings('Coverage statistics for each gene for all samples')
-    cnv_report_fpaths = write_cov_gene_summary_reports(
-        cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    sample_sum_reports, sum_report_fpaths = summary_reports(cnf, sample_names)
+
+    cnv_report_fpath = cnv_reports(cnf, sample_names, sample_sum_reports)
 
     info()
     info('*' * 70)
     info('Summary:')
-    for fpath in summary_report_fpaths:
+    for fpath in sum_report_fpaths:
         info('  ' + fpath)
     info('Gene CNV:')
-    for fpath in cnv_report_fpaths:
-        info('  ' + fpath)
+    info('  ' + cnv_report_fpath)
+
+
+def summary_reports(cnf, sample_names):
+    step_greetings('Coverage statistics for all samples')
+
+    sample_sum_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
+
+    sum_report = summarize(sample_names, sample_sum_reports, parse_targetseq_sample_report)
+
+    sum_report_fpaths = write_summary_reports(cnf, sum_report, sample_names,
+                                              '.targetseq.summary', 'Target coverage statistics')
+
+    return sample_sum_reports, sum_report_fpaths
+
+
+def cnv_reports(cnf, sample_names, sample_sum_reports):
+    step_greetings('Coverage statistics for each gene for all samples')
+
+    sample_gene_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
+
+    cnv_rows = summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
+
+    cnv_report_fpath = write_tsv(cnv_rows, cnf['bcbio_final_dir'], 'targetcov_cnv')
+
+    return cnv_report_fpath
+
 
 if __name__ == '__main__':
     main()

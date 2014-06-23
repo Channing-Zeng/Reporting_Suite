@@ -34,10 +34,6 @@
     <script type="text/javascript" src="/static/scripts/hsvToRgb.js"></script>
     <script type="text/javascript" src="/static/scripts/utils.js"></script>
     <script type="text/javascript" src="/static/scripts/build_total_report.js"></script>
-    <script type="text/javascript" src="/static/scripts/draw_cumulative_plot.js"></script>
-    <script type="text/javascript" src="/static/scripts/draw_nx_plot.js"></script>
-    <script type="text/javascript" src="/static/scripts/draw_gc_plot.js"></script>
-    <script type="text/javascript" src="/static/scripts/draw_genes_plot.js"></script>
     <script type="text/javascript" src="/static/scripts/build_report.js"></script>
     <script type="text/javascript" src="/static/dragtable.js"></script>
 
@@ -47,8 +43,6 @@
 
             dragTable.init();
 
-            $('#contigs_are_ordered').show();
-
             $("[rel=tooltip]").tooltip({ animation: false, });
         });
     </script>
@@ -57,7 +51,7 @@
 <body>
 <div class="content">
     <div id='header'>
-        <h1 style='font-size: 1.5em;'><span class='smallcapitals'>QUAST</span> report</h1>
+        <h1 style='font-size: 1.5em;'>{{ caption }}</h1>
         <p id='report_date'></p>
         <p id="extended_link"></p>
 
@@ -65,14 +59,14 @@
             <span style="display: none;" id="reference_length">Genome:
                 <span class='val'></span><span class='rhs'>&nbsp;</span>bp</span><span style='display: none;'>
 
-     </span><span style="display: none;" id="reference_gc">,
-                G+C content: <span class='val'></span><span class='rhs'>&nbsp;</span>%
-            </span>
+                <!--</span><span style="display: none;" id="reference_gc">,-->
+                    <!--G+C content: <span class='val'></span><span class='rhs'>&nbsp;</span>%-->
+                <!--</span>-->
 
-            <span style="display: none;" id="reference_genes"><br>
-                <span class='val'></span> genes</span><span style='display: none;'>
+                <!--<span style="display: none;" id="reference_genes"><br>-->
+                    <!--<span class='val'></span> genes</span><span style='display: none;'>-->
 
-     </span><span style="display: none;" id="reference_operons">, <span class='val'></span> operons
+                <!--</span><span style="display: none;" id="reference_operons">, <span class='val'></span> operons-->
             </span>
         </p>
     </div>
@@ -89,33 +83,25 @@
         <div id='report'>
         </div>
 
-        <div class='plots'>
-            <table style='margin: -3px;'>
-                <tr id='all-switches'>
-                    <td>
-                        <div id='plots-switches'></div>
-                    </td>
-                    <td style='text-align: right; padding-right: 22px;'>
-                        <span id='scale-placeholder'></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <div id='plot-placeholder' style=''></div>
-                    </td>
-                    <td>
-                        <div id='legend-placeholder'></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p id="contigs_are_ordered">Contigs are ordered from largest (contig #1) to smallest.</p>
-                        <p id="gc_info">Contigs are broken into nonoverlapping 100 bp windows.
-                            Plot shows numbers of windows for each GC percentage.</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
+        <!--<div class='plots'>-->
+            <!--<table style='margin: -3px;'>-->
+                <!--<tr id='all-switches'>-->
+                    <!--<td>-->
+                        <!--<div id='plots-switches'></div>-->
+                    <!--</td>-->
+                    <!--<td style='text-align: right; padding-right: 22px;'>-->
+                        <!--<span id='scale-placeholder'></span>-->
+                    <!--</td>-->
+                <!--</tr>-->
+                <!--<tr>-->
+                    <!--<td colspan="2">-->
+                        <!--<div id='plot-placeholder' style=''></div>-->
+                    <!--</td>-->
+                    <!--<td>-->
+                        <!--<div id='legend-placeholder'></div>-->
+                    <!--</td>-->
+            <!--</table>-->
+        <!--</div>-->
 
         <div style="clear: left"></div>
         <div style="clear: right"></div>
@@ -129,28 +115,6 @@
             </div>
             <div id='main-metrics-json'>
                 {{ mainMetrics }}
-            </div>
-
-            <div id="contigs-lengths-json">
-                {{ contigsLenghts }}
-            </div>
-            <div id='aligned-contigs-lengths-json'>
-                {{ alignedContigsLengths }}
-            </div>
-            <div id='assemblies-lengths-json'>
-                {{ assembliesLengths }}
-            </div>
-            <div id='reference-length-json'>
-                {{ referenceLength }}
-            </div>
-            <div id='genes-in-contigs-json'>
-                {{ genesInContigs }}
-            </div>
-            <div id='operons-in-contigs-json'>
-                {{ operonsInContigs }}
-            </div>
-            <div id='gc-json'>
-                {{ gcInfos }}
             </div>
         </div>
     </div>

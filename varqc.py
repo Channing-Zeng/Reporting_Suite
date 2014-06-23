@@ -5,7 +5,7 @@ import shutil
 import sys
 from source.utils_from_bcbio import file_exists
 from source.logger import err
-from source.variants.stats_gatk import gatk_qc
+from source.variants.qc_gatk import gatk_qc
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -51,7 +51,7 @@ if verify_module('matplotlib'):
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
     from source.variants.distribution_plots import variants_distribution_plot
-    from source.variants.stats_bcftools import bcftools_qc
+    from source.variants.qc_bcftools import bcftools_qc
 else:
     info('Warning: matplotlib is not installed, cannot draw plots.')
 

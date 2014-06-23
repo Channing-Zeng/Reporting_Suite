@@ -1,0 +1,13 @@
+Sample           sample1     sample2     
+nEvalVariants    12          12          
+nSNPs            10          10          
+nInsertions      1           1           
+nDeletions       0           0           
+nVariantsAtComp  0           0           
+compRate         0.00        0.00        
+nConcordant      0           0           
+concordantRate   0.00        0.00        
+variantRate      0.00032812  0.00032812  
+basesPerVariant  3047.00     3047.00     
+hetHomRatio      0.09        0.09        
+tiTvRatio        4.00        4.00        

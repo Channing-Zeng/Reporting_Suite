@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.variants.snpeff import EffectDetails
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -15,10 +14,10 @@ from collections import defaultdict
 
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.config import Defaults
-from source.logger import err, step_greetings, info, critical
+from source.logger import step_greetings, info, critical
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
-from source.utils import get_java_tool_cmdline, intermediate_fname, iterate_file, call, mean, convert_file
+from source.utils import get_java_tool_cmdline, intermediate_fname, call, mean, convert_file
 
 from ext_modules import vcf
 

@@ -7,44 +7,20 @@ from source.logger import info, critical
 
 
 database = 'cosmic'
-novelty = 'all'
+main_novelty = 'all'
 metrics_header = 'Metric'
 novelty_header = 'Novelty'
 sample_header = 'Sample name:'
 
 
-def write_qc_summart_reports(bcbio_final_dir, samples_fpath, output_dirpath,
-                             report_basedir, vcf_suf=''):
-    sample_report_suffix = '.varqc.txt'
-    sample_report_fpaths = []
-    sample_names = []
+def parse_qc_sample_report(report_fpath):
+    """ returns row_per_sample =
+            dict(metricName=None, value=None,
+            isMain=True, quality='More is better')
+    """
+    row_per_sample = []
 
-    with open(samples_fpath) as f:
-        for line in f:
-            sample_name = line.strip()
-            sample_names.append(sample_name)
-
-            sample_report_fpath = join(
-                bcbio_final_dir, sample_name, report_basedir,
-                sample_name + '-' + vcf_suf + sample_report_suffix)
-
-            info(basename(sample_report_fpath))
-
-            if not verify_file(sample_report_fpath):
-                critical(sample_report_fpath + ' does not exist.')
-
-            sample_report_fpaths.append(sample_report_fpath)
-
-    report = summarize(sample_names, sample_report_fpaths, _parse_qc_report)
-
-    return write_summary_reports(
-        report, sample_names, output_dirpath, vcf_suf + '.varqc.summary')
-
-
-def _parse_qc_report(report_fpath):
-    pairs = []
-
-    with open(report_fpath, 'r') as f:
+    with open(report_fpath) as f:
         # parsing Sample name and Database columns
         database_col_id = None
         novelty_col_id = None
@@ -61,10 +37,16 @@ def _parse_qc_report(report_fpath):
         if database_col_id:
             # parsing rest of the report
             for line in f:
-                if novelty_col_id and line.split()[novelty_col_id] != novelty:
-                    continue
-                cur_metric_name = line.split()[0]
-                cur_value = line.split()[database_col_id]
-                pairs.append((cur_metric_name, cur_value))
+                is_main = True
+                novelty = line.split()[novelty_col_id]
+                if novelty_col_id and novelty != main_novelty:
+                    is_main = False
 
-    return pairs
+                cur_metric_name = line.split()[0] + ' ' + novelty
+                cur_value = line.split()[database_col_id]
+
+                row_per_sample.append(dict(
+                    metricName=cur_metric_name, value=cur_value,
+                    isMain=is_main, quality='More is better'))
+
+    return row_per_sample

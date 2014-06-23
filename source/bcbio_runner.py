@@ -232,16 +232,16 @@ class Runner():
             info('Done.')
 
     def _run_pipeline_on_sample(self, sample, sample_dirpath, qualimap_bed_fpath, bam_fpath, vcf_fpath):
+        if self.varqc:
+            self.submit(
+                self.varqc, sample, True,
+                vcf=vcf_fpath, name=sample + '-' + self.suf)
+
         if self.varannotate:
             anno_dirpath = self.submit(
                 self.varannotate, sample, True,
                 vcf=vcf_fpath, bam=bam_fpath, name=sample + '-' + self.suf)
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
-
-            self.submit(
-                self.varqc, sample, True,
-                vcf=annotated_vcf_fpath, name=sample + '-' + self.suf,
-                wait_for_steps=[self.varannotate.job_name(sample)])
 
             if self.varfilter:
                 filtered_vcf_fpath = join(sample_dirpath,

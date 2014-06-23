@@ -9,6 +9,7 @@ import sys
 from source.quast_reporting import json_saver
 from source.logger import info, critical
 from source.utils import verify_file
+from source.utils_from_bcbio import file_exists
 
 
 def get_real_path(path_in_html_saver):
@@ -47,37 +48,41 @@ aux_files = [
 ]
 
 
-def save_total_report(results_dirpath, sample_names, report_base_name, report):
-    json_fpath = json_saver.save_total_report(results_dirpath, report_base_name,
-                                              sample_names, report)
+def save_total_report(cnf, report, sample_names, report_base_name, caption):
+    json_fpath = json_saver.save_total_report(
+        cnf, report_base_name, sample_names, report)
+
     if not verify_file(json_fpath):
         sys.exit(1)
 
-    html_fpath = append(results_dirpath, report_base_name + '.html', json_fpath, 'totalReport')
+    html_fpath = init_html(cnf['output_dir'], report_base_name + '.html', caption)
+    append(html_fpath, json_fpath, 'totalReport')
     info('  HTML version saved to ' + html_fpath)
     return html_fpath
 
 
-def _init_html(results_dirpath, report_fname):
-#    shutil.copy(template_fpath,     os.path.join(results_dirpath, report_fname))
-    aux_dirpath = os.path.join(results_dirpath, aux_dirname)
+def init_html(results_dirpath, report_fname, caption=''):
+#    shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
+    aux_dirpath = join(results_dirpath, aux_dirname)
     if not isdir(aux_dirpath):
         os.mkdir(aux_dirpath)
 
     for aux_f_relpath in aux_files:
-        src_fpath = os.path.join(static_dirpath, aux_f_relpath)
-        dst_fpath = os.path.join(aux_dirpath, aux_f_relpath)
+        src_fpath = join(static_dirpath, aux_f_relpath)
+        dst_fpath = join(aux_dirpath, aux_f_relpath)
 
-        if not os.path.exists(os.path.dirname(dst_fpath)):
-            os.makedirs(os.path.dirname(dst_fpath))
+        if not file_exists(dirname(dst_fpath)):
+            os.makedirs(dirname(dst_fpath))
 
-        if not os.path.exists(dst_fpath):
+        if not file_exists(dst_fpath):
             shutil.copyfile(src_fpath, dst_fpath)
 
     with open(template_fpath) as template_file:
         html = template_file.read()
         html = html.replace("/" + static_dirname, aux_dirname)
-        html = html.replace('{{ glossary }}', open(get_real_path('glossary.json')).read())
+        html = html.replace('{{ caption }}', caption)
+        with open(get_real_path('glossary.json')) as glos_f:
+            html = html.replace('{{ glossary }}', glos_f.read())
 
         html_fpath = os.path.join(results_dirpath, report_fname)
         if os.path.exists(html_fpath):
@@ -85,13 +90,10 @@ def _init_html(results_dirpath, report_fname):
         with open(html_fpath, 'w') as f_html:
             f_html.write(html)
 
+    return html_fpath
 
-def append(results_dirpath, report_fname, json_fpath, keyword):
-    html_fpath = join(results_dirpath, report_fname)
 
-    if not os.path.isfile(html_fpath):
-        _init_html(results_dirpath, report_fname)
-
+def append(html_fpath, json_fpath, keyword):
     # reading JSON file
     with open(json_fpath) as f_json:
         json_text = f_json.read()
@@ -109,5 +111,3 @@ def append(results_dirpath, report_fname, json_fpath, keyword):
         f_html.write(html_text)
 
     return html_fpath
-
-

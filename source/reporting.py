@@ -1,46 +1,86 @@
 from itertools import repeat, izip
-from os.path import join
-import sys
-from source.quast_reporting.html_saver import _init_html, save_total_report
+from os.path import join, basename
+from source.quast_reporting.html_saver import save_total_report
 
-from source.utils import OrderedDefaultDict
-from source.logger import critical
+from source.utils import OrderedDefaultDict, verify_file
+from source.logger import critical, info
 
 
-def summarize(sample_names, report_fpaths, get_pairs_fn):
-    report = OrderedDefaultDict(list)  # metric -> [values]
+def read_sample_names(sample_fpath):
+    sample_names = []
+
+    with open(sample_fpath) as f:
+        for line in f:
+            sample_name = line.strip()
+            sample_names.append(sample_name)
+
+    return sample_names
+
+
+def get_sample_report_fpaths_for_bcbio_final_dir(
+        bcbio_final_dir, sample_names, base_name, sample_report_suffix):
+    sample_report_fpaths = []
+
+    for sample_name in sample_names:
+        sample_report_fpath = join(
+            bcbio_final_dir, sample_name, base_name,
+            sample_name + sample_report_suffix)
+
+        info(basename(sample_report_fpath))
+
+        if not verify_file(sample_report_fpath):
+            critical(sample_report_fpath + ' does not exist.')
+
+        sample_report_fpaths.append(sample_report_fpath)
+
+    return sample_report_fpaths
+
+
+def summarize(sample_names, report_fpaths, get_rows_fn):
+    metric_values = OrderedDefaultDict(list)
+    metric_info = OrderedDefaultDict(dict)
 
     for sample_name, report_fpath in zip(sample_names, report_fpaths):
-        for metric, value in get_pairs_fn(report_fpath):
-            report[metric].append(value)
+        for metric in get_rows_fn(report_fpath):
+            metric_values[metric['metricName']].append(metric['value'])
+            metric_info[metric['metricName']]['isMain'] = metric['isMain']
+            metric_info[metric['metricName']]['quality'] = metric['quality']
+
+    group = []
+    report = [['', group]]
+
+    for (m_name1, metric_info), (m_name2, metric_values) \
+            in zip(metric_info.items(), metric_values.items()):
+        assert m_name1 == m_name2
+        group.append(dict(
+            metricName=m_name1, values=metric_values,
+            isMain=metric_info['isMain'], quality=metric_info['quality']))
 
     return report
 
 
-def write_summary_reports(report, sample_names, output_dirpath, base_fname):
-    rows = [['Sample'] + sample_names]
-    for metric, values in report.items():
-        rows.append([metric] + values)
-
-    return [fn(rows, sample_names, output_dirpath, base_fname)
+def write_summary_reports(cnf, report, sample_names, base_fname, caption):
+    return [fn(cnf, report, sample_names, base_fname, caption)
         for fn in [write_txt_report,
                    write_tsv_report,
-                   write_html_report]]
+                   save_total_report]]
 
 
-def write_html_report(rows, sample_names, output_dirpath, base_fname):
-    group_metrics = []
-    group = ['', group_metrics]
-    report = [group]
+def _flatten_report(report, sample_names):
+    rows = [['Sample'] + sample_names]
+    for group_name, group_metrics in report:
+        for metric in group_metrics:
+            rows.append([metric['metricName']] + metric['values'])
 
-    for row in rows[1:]:
-        group_metrics.append(dict(metricName=row[0], values=row[1:],
-                                  isMain=True, quality='More is better'))
-
-    return save_total_report(output_dirpath, sample_names, base_fname, report)
+    return rows
 
 
-def write_txt_report(rows, sample_names, output_dirpath, base_fname=None):
+def write_txt_report(cnf, report, sample_names, base_fname, caption=None):
+    rows = _flatten_report(report, sample_names)
+    return write_txt(rows, cnf['output_dir'], base_fname)
+
+
+def write_txt(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.txt')
 
     col_widths = repeat(0)
@@ -57,7 +97,12 @@ def write_txt_report(rows, sample_names, output_dirpath, base_fname=None):
     return output_fpath
 
 
-def write_tsv_report(rows, sample_names, output_dirpath, base_fname):
+def write_tsv_report(cnf, report, sample_names, base_fname, caption=None):
+    rows = _flatten_report(report, sample_names)
+    return write_tsv(rows, cnf['output_dir'], base_fname)
+
+
+def write_tsv(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.tsv')
 
     with open(output_fpath, 'w') as out:

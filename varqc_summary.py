@@ -2,6 +2,8 @@
 
 from __future__ import print_function
 import sys
+from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir,\
+    summarize, write_summary_reports
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -11,7 +13,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 from os.path import join
 from optparse import OptionParser
 
-from source.variants.summarize_qc import write_qc_summart_reports
+from source.variants.summarize_qc import parse_qc_sample_report
 from source.config import Defaults, Config
 from source.main import check_keys, check_inputs, set_up_dirs
 from source.logger import info
@@ -57,14 +59,26 @@ def main():
     info()
     info('*' * 70)
 
-    report_fpaths = write_qc_summart_reports(
-        cnf.bcbio_final_dir, cnf.samples, cnf.output_dir,
-        cnf.base_name, cnf.vcf_suffix)
+    sample_names = read_sample_names(cnf['samples'])
+
+    sum_report_fpaths = summary_reports(cnf, sample_names)
 
     info()
     info('*' * 70)
-    for fpath in report_fpaths:
+    for fpath in sum_report_fpaths:
         info(fpath)
+
+
+def summary_reports(cnf, sample_names):
+    sample_qc_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'],
+        '-' + cnf['vcf_suffix'] + '.varqc.txt')
+
+    report = summarize(sample_names, sample_qc_reports, parse_qc_sample_report)
+
+    sum_report_fpaths = write_summary_reports(cnf, report, sample_names,
+        '-' + cnf['vcf_suffix'] + '.varqc.summary', 'Variant QC')
+    return sum_report_fpaths
 
 
 if __name__ == '__main__':
