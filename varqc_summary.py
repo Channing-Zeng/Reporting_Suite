@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from optparse import OptionParser
 import sys
-from os.path import join
-from source.config import Defaults, Config
-from source.main import check_keys, check_inputs
-from source.summarize import summarize_qc
-from source.utils import verify_file
-from source.utils_from_bcbio import file_exists
-from source.logger import info, critical
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+
+from os.path import join
+from optparse import OptionParser
+
+from source.variants.summarize_qc import write_qc_summart_reports
+from source.config import Defaults, Config
+from source.main import check_keys, check_inputs, set_up_dirs
+from source.logger import info
 
 
 def main():
@@ -25,6 +25,7 @@ def main():
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-n', dest='base_name', default='VarQC', help='Name of targetcov directory inside sample folder. (default is TargetCov)')
     parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
+    parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
@@ -36,6 +37,9 @@ def main():
 
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+
+    cnf.name = cnf['name'] or 'varqc_summary'
+    set_up_dirs(cnf)
 
     if not cnf.samples:
         cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
@@ -53,33 +57,14 @@ def main():
     info()
     info('*' * 70)
 
-    summarize_varqc_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name, cnf.vcf_suffix)
-
-
-def summarize_varqc_report(out_dirpath, samples_fpath, report_basedir, vcf_suf=''):
-    summary_report_fpath = join(out_dirpath, vcf_suf + '.varqc.summary.txt')
-    report_suffix = '.varqc.txt'
-
-    report_fpaths = []
-
-    with open(samples_fpath) as f:
-        for line in f:
-            sample_name = line.strip()
-
-            report_fpath = join(out_dirpath, sample_name, report_basedir,
-                                sample_name + '-' + vcf_suf + report_suffix)
-            info(sample_name + '-' + vcf_suf + ': ' + report_fpath)
-
-            if verify_file(report_fpath):
-                report_fpaths.append(report_fpath)
-            else:
-                critical(report_fpath + ' does not exist.')
-
-    summarize_qc(report_fpaths, summary_report_fpath, report_suffix)
+    report_fpaths = write_qc_summart_reports(
+        cnf.bcbio_final_dir, cnf.samples, cnf.output_dir,
+        cnf.base_name, cnf.vcf_suffix)
 
     info()
     info('*' * 70)
-    info('Result: ' + summary_report_fpath)
+    for fpath in report_fpaths:
+        info(fpath)
 
 
 if __name__ == '__main__':

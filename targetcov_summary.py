@@ -2,18 +2,20 @@
 
 from __future__ import print_function
 import sys
-from optparse import OptionParser
-from os.path import join
-from source.config import Defaults, Config
-from source.logger import info, critical, step_greetings
-from source.main import check_keys, check_inputs
-from source.summarize import summarize_cov, summarize_copy_number
-from source.utils import verify_file
+from source.targetcov.summarize_cov import write_cov_summary_reports, write_cov_gene_summary_reports
+
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+
+
+from os.path import join
+from optparse import OptionParser
+from source.config import Defaults, Config
+from source.logger import info, step_greetings
+from source.main import check_keys, check_inputs
 
 
 def main():
@@ -54,68 +56,22 @@ def main():
     if not check_inputs(cnf, file_keys=['samples', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
-    summary_report_fpath = summarize_cov_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
-    cnv_report_fpath = summarize_cov_gene_report(cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+    step_greetings('Coverage statistics for all samples')
+    summary_report_fpaths = write_cov_summary_reports(
+        cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
+
+    step_greetings('Coverage statistics for each gene for all samples')
+    cnv_report_fpaths = write_cov_gene_summary_reports(
+        cnf.bcbio_final_dir, cnf.samples, cnf.base_name)
 
     info()
     info('*' * 70)
-    info('Summary: ' + summary_report_fpath)
-    info('Gene CNV: ' + cnv_report_fpath)
-
-
-def summarize_cov_report(out_dirpath, samples_fname, report_basedir):
-    step_greetings('Coverage statistics for all samples')
-
-    report_suffix = '.targetseq.summary.txt'
-    summary_report_fpath = join(out_dirpath, 'targetcov_summary.txt')
-    report_fpaths = []
-    with open(samples_fname, 'r') as f:
-        for line in f:
-            sample_name = line.strip()
-
-            report_fpath = join(out_dirpath, sample_name,
-                                report_basedir, sample_name + report_suffix)
-            info(sample_name + ': ' + report_fpath)
-
-            if not verify_file(report_fpath):
-                critical(report_fpath + ' does not exist.')
-
-            report_fpaths.append(report_fpath)
-
-    summarize_cov(report_fpaths, summary_report_fpath, report_suffix)
-    return summary_report_fpath
-
-
-def summarize_cov_gene_report(out_dirpath, samples_fname, report_basedir):
-    step_greetings('Coverage statistics for each gene for all samples')
-
-    report_details_suffix = '.targetseq.details.gene.txt'
-    report_summary_suffix = '.targetseq.summary.txt'
-
-    copy_number_summary_fpath = join(out_dirpath, 'targetcov_cnv.txt')
-
-    report_fpaths = []
-    report_summary_fpaths = []
-
-    with open(samples_fname) as f:
-        for line in f:
-            sample_name = line.strip()
-
-            report_details_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_details_suffix)
-            summary_report_fpath = join(out_dirpath, sample_name, report_basedir, sample_name + report_summary_suffix)
-            info(sample_name + ': ' + report_details_fpath)
-            info(sample_name + ': ' + summary_report_fpath)
-            if not verify_file(report_details_fpath):
-                critical(report_details_fpath + ' does not exist.')
-            if not verify_file(summary_report_fpath):
-                critical(summary_report_fpath + ' does not exist.')
-
-            report_fpaths.append(report_details_fpath)
-            report_summary_fpaths.append(summary_report_fpath)
-
-    return summarize_copy_number(report_fpaths, report_summary_fpaths,
-        report_summary_suffix, copy_number_summary_fpath)
-
+    info('Summary:')
+    for fpath in summary_report_fpaths:
+        info('  ' + fpath)
+    info('Gene CNV:')
+    for fpath in cnv_report_fpaths:
+        info('  ' + fpath)
 
 if __name__ == '__main__':
     main()

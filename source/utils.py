@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import contextlib
 import hashlib
 import sys
@@ -12,6 +13,28 @@ from distutils.version import LooseVersion
 from source.logger import info, err, critical
 from source.transaction import file_transaction
 from source.utils_from_bcbio import add_suffix, file_exists, which, open_gzipsafe, safe_mkdir
+
+
+class OrderedDefaultDict(OrderedDict):
+    def __init__(self, *args, **kwargs):
+        if not args:
+            self.default_factory = None
+        else:
+            if not (args[0] is None or callable(args[0])):
+                raise TypeError('first argument must be callable or None')
+            self.default_factory = args[0]
+            args = args[1:]
+        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
+
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError(key)
+        self[key] = default = self.default_factory()
+        return default
+
+    def __reduce__(self):  # optional, for pickle support
+        args = (self.default_factory,) if self.default_factory else ()
+        return self.__class__, args, None, None, self.iteritems()
 
 
 def remove_quotes(s):
@@ -328,6 +351,80 @@ def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
     return interp_path + ' ' + interpreter_params + ' ' + tool_path
 
 
+def get_gatk_cmdline(cnf):
+    executable = get_java_tool_cmdline(cnf, 'gatk')
+    if not executable:
+        sys.exit(1)
+    gatk_opts_line = ''
+    if cnf.gatk:
+        if 'options' in cnf.gatk:
+            gatk_opts_line = ' '.join(cnf.gatk['options'])
+    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
+        gatk_opts_line += ' -nt ' + str(cnf.threads)
+    return executable + ' ' + gatk_opts_line
+
+
+def get_gatk_type(tool_cmdline):
+    """Retrieve type of GATK jar, allowing support for older GATK lite.
+    Returns either `lite` (targeting GATK-lite 2.3.9) or `restricted`,
+    the latest 2.4+ restricted version of GATK.
+    """
+    if LooseVersion(_gatk_major_version(tool_cmdline)) > LooseVersion("2.3"):
+        return "restricted"
+    else:
+        return "lite"
+
+
+def _gatk_major_version(config):
+    """Retrieve the GATK major version, handling multiple GATK distributions.
+
+    Has special cases for GATK nightly builds, Appistry releases and
+    GATK prior to 2.3.
+    """
+    full_version = _get_gatk_version(config)
+    # Working with a recent version if using nightlies
+    if full_version.startswith("nightly-"):
+        return "2.8"
+    parts = full_version.split("-")
+    if len(parts) == 4:
+        appistry_release, version, subversion, githash = parts
+    elif len(parts) == 3:
+        version, subversion, githash = parts
+    # version was not properly implemented in earlier GATKs
+    else:
+        version = "2.3"
+    if version.startswith("v"):
+        version = version[1:]
+    return version
+
+
+def _get_gatk_version(tool_cmdline):
+    cmdline = tool_cmdline + ' -version'
+
+    version = None
+    with subprocess.Popen(cmdline,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          shell=True).stdout as stdout:
+        out = stdout.read().strip()
+        last_line = out.split('\n')[-1].strip()
+        # versions earlier than 2.4 do not have explicit version command,
+        # parse from error output from GATK
+        if out.find("ERROR") >= 0:
+            flag = "The Genome Analysis Toolkit (GATK)"
+            for line in last_line.split("\n"):
+                if line.startswith(flag):
+                    version = line.split(flag)[-1].split(",")[0].strip()
+        else:
+            version = last_line
+    if not version:
+        info('WARNING: could not determine Gatk version, using 1.0')
+        return '1.0'
+    if version.startswith("v"):
+        version = version[1:]
+    return version
+
+
 def call_pipe(cnf, cmdline, *args, **kwargs):
     return call_subprocess(cnf, cmdline, return_proc=True, *args, **kwargs)
 
@@ -537,67 +634,6 @@ def dots_to_empty_cells(config, tsv_fpath):
             l = l.replace('\t\t', '\t.\t')
         return l
     return iterate_file(config, tsv_fpath, proc_line, 'dots')
-
-
-def get_gatk_type(tool_cmdline):
-    """Retrieve type of GATK jar, allowing support for older GATK lite.
-    Returns either `lite` (targeting GATK-lite 2.3.9) or `restricted`,
-    the latest 2.4+ restricted version of GATK.
-    """
-    if LooseVersion(_gatk_major_version(tool_cmdline)) > LooseVersion("2.3"):
-        return "restricted"
-    else:
-        return "lite"
-
-
-def _gatk_major_version(config):
-    """Retrieve the GATK major version, handling multiple GATK distributions.
-
-    Has special cases for GATK nightly builds, Appistry releases and
-    GATK prior to 2.3.
-    """
-    full_version = _get_gatk_version(config)
-    # Working with a recent version if using nightlies
-    if full_version.startswith("nightly-"):
-        return "2.8"
-    parts = full_version.split("-")
-    if len(parts) == 4:
-        appistry_release, version, subversion, githash = parts
-    elif len(parts) == 3:
-        version, subversion, githash = parts
-    # version was not properly implemented in earlier GATKs
-    else:
-        version = "2.3"
-    if version.startswith("v"):
-        version = version[1:]
-    return version
-
-
-def _get_gatk_version(tool_cmdline):
-    cmdline = tool_cmdline + ' -version'
-
-    version = None
-    with subprocess.Popen(cmdline,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          shell=True).stdout as stdout:
-        out = stdout.read().strip()
-        last_line = out.split('\n')[-1].strip()
-        # versions earlier than 2.4 do not have explicit version command,
-        # parse from error output from GATK
-        if out.find("ERROR") >= 0:
-            flag = "The Genome Analysis Toolkit (GATK)"
-            for line in last_line.split("\n"):
-                if line.startswith(flag):
-                    version = line.split(flag)[-1].split(",")[0].strip()
-        else:
-            version = last_line
-    if not version:
-        info('WARNING: could not determine Gatk version, using 1.0')
-        return '1.0'
-    if version.startswith("v"):
-        version = version[1:]
-    return version
 
 
 def format_integer(name, value, unit=''):

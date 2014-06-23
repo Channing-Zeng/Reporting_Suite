@@ -2,7 +2,7 @@ from os.path import join
 import sys
 
 from source.logger import step_greetings
-from source.utils import get_java_tool_cmdline, call_subprocess
+from source.utils import get_java_tool_cmdline, call_subprocess, get_gatk_cmdline
 
 
 final_report_ending = '.varqc.txt'
@@ -16,22 +16,12 @@ def gatk_qc(cnf, vcf_fpath):
     novelty = qc_cnf.novelty
     metrics = qc_cnf.metrics
 
-    executable = get_java_tool_cmdline(cnf, 'gatk')
-    if not executable:
-        sys.exit(1)
-
-    gatk_opts_line = ''
-    if cnf.gatk:
-        if 'options' in cnf.gatk:
-            gatk_opts_line = ' '.join(cnf.gatk['options'])
-
-    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
-        gatk_opts_line += ' -nt ' + str(cnf.threads)
+    gatk = get_gatk_cmdline(cnf)
 
     ref_fpath = cnf.genome['seq']
     report_fpath = join(cnf.work_dir, cnf.name + '_gatk.report')
 
-    cmdline = ('{executable} {gatk_opts_line} -R {ref_fpath} -T VariantEval '
+    cmdline = ('{gatk} -R {ref_fpath} -T VariantEval '
                '--eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
 
     if 'dbsnp' in databases:

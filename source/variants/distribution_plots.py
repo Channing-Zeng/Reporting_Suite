@@ -22,12 +22,13 @@ def variants_distribution_plot(cnf, vcf_fpath):
         chr_len_fpath = expanduser(cnf['genome'].get('chr_lengths'))
     if not verify_file(chr_len_fpath):
         exit(1)
-        # no chromosome lengths file for the genome! TODO: process reference fasta and get lengths from it
+        # no chromosome lengths file for the genome!
+        # TODO: process reference fasta and get lengths from it
     chr_lengths = _get_chr_lengths(chr_len_fpath)
 
     # step 2: get variants distribution (per chromosome)
     qc_cnf = cnf['quality_control']
-    variants_per_kbp = qc_cnf.get('variants_distribution_scale')
+    variants_per_kbp = qc_cnf.get('variant_distribution_scale')
     plot_scale = 1000 * variants_per_kbp
     variants_distribution, not_counted = _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale)
     if not_counted:

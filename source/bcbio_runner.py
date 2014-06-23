@@ -112,13 +112,16 @@ class Runner():
             self.varqc_summary = self.steps.step(
                 name='VarQC_summary',
                 script='varqc_summary.py',
-                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.varqc.name + ' --vcf-suf ' + self.suf)
+                param_line=' -o \'{output_dir}\' -d \'' + self.dir +
+                           '\' -s \'{samples}\' -n ' + self.varqc.name +
+                           ' --vcf-suf ' + self.suf)
         if self.targetcov:
             self.steps.append('TargetCov_summary')
             self.targetcov_summary = self.steps.step(
                 name='TargetCov_summary',
                 script='targetcov_summary.py',
-                param_line=' -d \'' + self.dir + '\' -s \'{samples}\' -n ' + self.targetcov.name)
+                param_line=' -o \'{output_dir}\' -d \'' + self.dir +
+                           '\' -s \'{samples}\' -n ' + self.targetcov.name)
 
     def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):
@@ -213,11 +216,13 @@ class Runner():
 
         self.submit(
             self.varqc_summary,
+            create_dir=True,
             wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
             samples=self.samples_fpath)
 
         self.submit(
             self.targetcov_summary,
+            create_dir=True,
             wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
             samples=self.samples_fpath)
 

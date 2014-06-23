@@ -13,7 +13,6 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
-from source.summarize import summarize_qc
 from source.utils import info, verify_module, verify_file
 from source.variants.vcf_processing import filter_rejected, extract_sample
 
@@ -109,7 +108,9 @@ def process_one(cnf):
 
     if verify_module('matplotlib'):
         qc_plots_fpaths = bcftools_qc(cnf, vcf_fpath)
+
         qc_var_distr_plot_fpath = variants_distribution_plot(cnf, vcf_fpath)
+
         return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_plots_fpaths
     else:
         return qc_report_fpath, None
@@ -134,7 +135,7 @@ def finalize_all(cnf, samples, results):
     qc_cnf = cnf.get('quality_control')
     if qc_cnf and 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
         qc_output_fpath = cnf.get('qc_summary_output') or qc_cnf.get('summary_output')
-        summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
+        # summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
         info('Variant QC summary:')
         info('  ' + qc_output_fpath)
 

@@ -6,7 +6,7 @@ from source.logger import step_greetings
 
 from source.utils import critical, iterate_file, \
     get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
-    get_tool_cmdline, err, get_gatk_type, info, index_bam
+    get_tool_cmdline, err, get_gatk_type, info, index_bam, get_gatk_cmdline
 from source.utils_from_bcbio import add_suffix, file_exists
 
 
@@ -255,15 +255,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
     if bam_fpath:
         index_bam(cnf, bam_fpath)
 
-    executable = get_java_tool_cmdline(cnf, 'gatk')
-
-    gatk_opts_line = ''
-    if cnf.gatk:
-        if 'options' in cnf.gatk:
-            gatk_opts_line = ' '.join(cnf.gatk['options'])
-
-    if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
-        gatk_opts_line += ' -nt ' + str(cnf.threads)
+    gatk = get_gatk_cmdline(cnf)
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
 
@@ -282,7 +274,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
     ref_fpath = cnf['genome']['seq']
 
-    cmdline = ('{executable} {gatk_opts_line} -R {ref_fpath} -T VariantAnnotator'
+    cmdline = ('{gatk} -R {ref_fpath} -T VariantAnnotator'
                ' --variant {input_fpath} -o {output_fpath}').format(**locals())
     if bam_fpath:
         cmdline += ' -I ' + bam_fpath

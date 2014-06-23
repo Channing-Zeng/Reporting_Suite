@@ -15,6 +15,7 @@ from source.utils_from_bcbio import which, file_exists
 from source.utils import verify_file, safe_mkdir, verify_dir
 from source.ngscat.bed_file import verify_bam, verify_bed
 
+
 def read_opts_and_cnfs(extra_opts,
                        key_for_sample_name,
                        required_keys,
