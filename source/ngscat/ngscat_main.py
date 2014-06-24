@@ -25,6 +25,7 @@ import config
 
 from source.file_utils import intermediate_fname
 from source.logger import step_greetings
+from source.utils import human_sorted
 from os.path import join
 
 
@@ -318,7 +319,7 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
     # ********************************************************* Detailed results ******************************************************************
     chromosomeimages = ''
     ontarget_coverage_files = glob.glob(outdir + '/data/*_Ontarget_Coverage.png')
-    ontarget_coverage_files.sort()
+    ontarget_coverage_files = human_sorted(ontarget_coverage_files)
     for afile in ontarget_coverage_files:
         chromosomeimages += '<a href="data/' + os.path.basename(
             afile) + '"><img style="width: 33%; float: left;" src="data/' + os.path.basename(afile) + '" /></a>'

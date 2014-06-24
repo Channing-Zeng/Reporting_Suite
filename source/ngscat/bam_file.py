@@ -8,6 +8,7 @@ from source.calling_process import call_check_output, call
 from source.file_utils import intermediate_fname
 from source.logger import info
 from source.tools_from_cnf import get_tool_cmdline
+from source.utils import human_sorted
 
 try:
     import numpy
@@ -819,7 +820,7 @@ class BamFile(pysam.Samfile):
         for i in range(len(onperchr)):
             # Calculate on-target percentajes per contig (chr)
             y = []
-            for chr in contigids:
+            for chr in human_sorted(contigids):
                 # If there are no reads in current contig, let y be the lowest value (0) to avoid division by 0
                 if (totalperchr[i][chr] > 0):
                     y.append(onperchr[i][chr] * 100.0 / totalperchr[i][chr])
@@ -864,35 +865,35 @@ class BamFile(pysam.Samfile):
             # Create header font
             header_style = xlwt.easyxf('font: bold on')
 
-            ws.write(0, 0, 'Enrichment: ', header_style);
+            ws.write(0, 0, 'Enrichment: ', header_style)
             ws.write(0, 1, enrichment[j])
-            ws.write(4, 1, 'Reads on target', header_style);
-            ws.write(4, 2, 'Reads off target', header_style);
-            ws.write(4, 3, '% reads on target', header_style);
-            ws.write(4, 4, '% reads off target', header_style);
-            ws.write(5, 0, 'Total', header_style);
+            ws.write(4, 1, 'Reads on target', header_style)
+            ws.write(4, 2, 'Reads off target', header_style)
+            ws.write(4, 3, '% reads on target', header_style)
+            ws.write(4, 4, '% reads off target', header_style)
+            ws.write(5, 0, 'Total', header_style)
 
             percontarget[j] = nread[j] * 100.0 / tread[j]
-            ws.write(5, 1, nread[j]);
-            ws.write(5, 2, tread[j] - nread[j]);
-            ws.write(5, 3, percontarget[j]);
-            ws.write(5, 4, (tread[j] - nread[j]) * 100.0 / tread[j]);
+            ws.write(5, 1, nread[j])
+            ws.write(5, 2, tread[j] - nread[j])
+            ws.write(5, 3, percontarget[j])
+            ws.write(5, 4, (tread[j] - nread[j]) * 100.0 / tread[j])
 
             # Write
-            for i, chr in enumerate(contigids):
-                ws.write((i + 6), 0, chr, header_style);
+            for i, chr in enumerate(human_sorted(contigids)):
+                ws.write((i + 6), 0, chr, header_style)
 
                 # Leave an empty cell if the number of reads mapped in current contig is 0 (avoid division by zero)
                 if (totalperchr[j][chr] > 0):
-                    ws.write((i + 6), 1, onperchr[j][chr]);
-                    ws.write((i + 6), 2, totalperchr[j][chr] - onperchr[j][chr]);
-                    ws.write((i + 6), 3, onperchr[j][chr] * 100.0 / totalperchr[j][chr]);
-                    ws.write((i + 6), 4, (totalperchr[j][chr] - onperchr[j][chr]) * 100.0 / totalperchr[j][chr]);
+                    ws.write((i + 6), 1, onperchr[j][chr])
+                    ws.write((i + 6), 2, totalperchr[j][chr] - onperchr[j][chr])
+                    ws.write((i + 6), 3, onperchr[j][chr] * 100.0 / totalperchr[j][chr])
+                    ws.write((i + 6), 4, (totalperchr[j][chr] - onperchr[j][chr]) * 100.0 / totalperchr[j][chr])
                 else:
-                    ws.write((i + 6), 1, onperchr[j][chr]);
-                    ws.write((i + 6), 2, totalperchr[j][chr] - onperchr[j][chr]);
-                    ws.write((i + 6), 3, '');
-                    ws.write((i + 6), 4, '');
+                    ws.write((i + 6), 1, onperchr[j][chr])
+                    ws.write((i + 6), 2, totalperchr[j][chr] - onperchr[j][chr])
+                    ws.write((i + 6), 3, '')
+                    ws.write((i + 6), 4, '')
 
         wb.save(outdir + '/reads_on_target.xls')
         fig.savefig(outdir + '/reads_on_target.png')
@@ -1140,17 +1141,17 @@ class BamFile(pysam.Samfile):
             tread.append(bam.nreads())
 
         # Calculate number of reads and duplicated reads on/off target per chromosome
-        nread = [];
-        onperchr = [];
-        totalperchr = [];
-        onduplicates = [];
+        nread = []
+        onperchr = []
+        totalperchr = []
+        onduplicates = []
         offduplicates = []
         for bam in bamlist:
             nread_tmp, onperchr_tmp, totalperchr_tmp, onduplicates_tmp, offduplicates_tmp = bam.myReadsOnTarget(bed)
-            nread.append(nread_tmp);
-            onperchr.append(onperchr_tmp);
-            totalperchr.append(totalperchr_tmp);
-            onduplicates.append(onduplicates_tmp);
+            nread.append(nread_tmp)
+            onperchr.append(onperchr_tmp)
+            totalperchr.append(totalperchr_tmp)
+            onduplicates.append(onduplicates_tmp)
             offduplicates.append(offduplicates_tmp)
 
         bedobj = bed_file.BedFile(bed)
