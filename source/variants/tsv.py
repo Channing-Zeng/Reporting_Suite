@@ -1,12 +1,13 @@
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
-from source.logger import step_greetings
 
+from source.calling_process import call_subprocess
+from source.file_utils import iterate_file, intermediate_fname
+from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.transaction import file_transaction
 from source.utils_from_bcbio import which, splitext_plus, file_exists
-from source.utils import iterate_file, get_java_tool_cmdline, \
-    intermediate_fname, info, call_subprocess, get_tool_cmdline
+from source.logger import step_greetings, info
 
 
 def make_tsv(cnf, vcf_fpath):

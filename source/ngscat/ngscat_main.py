@@ -8,10 +8,8 @@ import string
 import multiprocessing
 import shutil
 import math
-from os.path import join
 
 import numpy
-
 import pysam
 import coverageHisto
 import coverage_target
@@ -24,8 +22,10 @@ import coverage_saturation
 import exon_coverage_std
 import gcbias
 import config
+
+from source.file_utils import intermediate_fname
 from source.logger import step_greetings
-from source.utils import intermediate_fname
+from os.path import join
 
 
 def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongranted):

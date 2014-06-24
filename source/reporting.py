@@ -1,9 +1,10 @@
 from itertools import repeat, izip
 from os.path import join, basename
+from source.file_utils import verify_file
 from source.quast_reporting.html_saver import write_html_report
 
-from source.utils import OrderedDefaultDict, verify_file
 from source.logger import critical, info
+from source.utils import OrderedDefaultDict
 
 
 def read_sample_names(sample_fpath):
@@ -47,7 +48,7 @@ def summarize(sample_names, report_fpaths, get_rows_fn):
             metric_info[metric['metricName']]['quality'] = metric['quality']
 
     group = []
-    report = [['', group]]
+    report = [['Sample', group]]
 
     for (m_name1, metric_info), (m_name2, metric_values) \
             in zip(metric_info.items(), metric_values.items()):

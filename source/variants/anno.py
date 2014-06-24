@@ -1,12 +1,13 @@
-from genericpath import isfile
-from os.path import splitext, basename, join, dirname, realpath
-import os
 import shutil
-from source.logger import step_greetings
+import os
 
-from source.utils import critical, iterate_file, \
-    get_java_tool_cmdline, verify_file, intermediate_fname, call_subprocess, \
-    get_tool_cmdline, err, get_gatk_type, info, index_bam, get_gatk_cmdline
+from os.path import splitext, basename, join, dirname, realpath, isfile
+
+from source.calling_process import call_subprocess
+from source.file_utils import iterate_file, intermediate_fname, verify_file
+from source.logger import step_greetings, critical, info
+from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
+from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
 
 

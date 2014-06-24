@@ -1,11 +1,13 @@
 import copy
 from itertools import izip, chain, repeat
 from os.path import join, basename
+from source.calling_process import call, call_check_output, call_pipe
+from source.file_utils import intermediate_fname
 
-from source.logger import step_greetings, critical
+from source.logger import step_greetings, critical, info, err
 from source.targetcov.Region import Region
-from source.utils import intermediate_fname, get_tool_cmdline, info, err, \
-    call_check_output, call_pipe, call, format_integer, format_decimal, get_chr_len_fpath
+from source.tools_from_cnf import get_tool_cmdline
+from source.utils import format_integer, format_decimal, get_chr_len_fpath
 from source.transaction import file_transaction
 from source.utils_from_bcbio import splitext_plus
 

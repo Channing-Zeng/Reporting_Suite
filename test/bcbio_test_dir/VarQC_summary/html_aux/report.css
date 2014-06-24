@@ -12,7 +12,7 @@
     margin: 0;
     padding: 2px 0.6em 0 14px;
     min-width: 100px;
-    max-width: 200px;
+    /*max-width: 200px;*/
     white-space: nowrap;
 }
 
@@ -231,4 +231,8 @@ table.draggable td.right_to_cell_of_empty_space {
         3px -3px 0 white,
         -3px 3px 0 white,
         3px 3px 0 white;
+}
+
+#extended_link {
+    display: block;
 }

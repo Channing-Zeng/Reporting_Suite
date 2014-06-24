@@ -4,7 +4,10 @@ import os
 import sys
 import string
 import config
-from source.utils import call, get_tool_cmdline, info, intermediate_fname, call_check_output
+from source.calling_process import call_check_output, call
+from source.file_utils import intermediate_fname
+from source.logger import info
+from source.tools_from_cnf import get_tool_cmdline
 
 try:
     import numpy

@@ -1,11 +1,3 @@
-from collections import OrderedDict
-from os.path import join, basename
-
-from source.reporting import write_summary_reports, summarize
-from source.utils import verify_file
-from source.logger import info, critical
-
-
 database = 'cosmic'
 main_novelty = 'all'
 metrics_header = 'Metric'

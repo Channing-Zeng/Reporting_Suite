@@ -78,7 +78,7 @@ def summary_reports(cnf, sample_names):
 
     sum_report_fpaths = write_summary_reports(
         cnf['output_dir'], cnf['work_dir'], report, sample_names,
-        '-' + cnf['vcf_suffix'] + '.varqc.summary', 'Variant QC')
+        cnf['vcf_suffix'] + '.varqc.summary', 'Variant QC')
 
     return sum_report_fpaths
 

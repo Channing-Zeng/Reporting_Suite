@@ -5,14 +5,14 @@ from optparse import OptionParser
 from shutil import rmtree
 
 from site import addsitedir
+from source.file_utils import verify_file, verify_dir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, pardir, 'ext_modules'))
 
 from source import logger
 from source.config import Config, Defaults
 from source.logger import info, err, critical
-from source.utils_from_bcbio import which, file_exists
-from source.utils import verify_file, safe_mkdir, verify_dir
+from source.utils_from_bcbio import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
 
 

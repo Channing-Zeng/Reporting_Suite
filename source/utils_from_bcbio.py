@@ -180,18 +180,6 @@ def chdir(new_dir):
     finally:
         os.chdir(cur_dir)
 
-@contextlib.contextmanager
-def tmpfile(*args, **kwargs):
-    """Make a tempfile, safely cleaning up file descriptors on completion.
-    """
-    (fd, fname) = tempfile.mkstemp(*args, **kwargs)
-    try:
-        yield fname
-    finally:
-        os.close(fd)
-        if os.path.exists(fname):
-            os.remove(fname)
-
 def file_exists(fname):
     """Check if a file exists and is non-empty.
     """

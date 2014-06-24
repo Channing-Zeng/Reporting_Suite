@@ -3,8 +3,9 @@ from os.path import basename
 import shutil
 
 import sys
+from source.file_utils import verify_module, verify_file
 from source.utils_from_bcbio import file_exists
-from source.logger import err
+from source.logger import err, info
 from source.variants.qc_gatk import gatk_qc
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -13,7 +14,6 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
-from source.utils import info, verify_module, verify_file
 from source.variants.vcf_processing import filter_rejected, extract_sample
 
 

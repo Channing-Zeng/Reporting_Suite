@@ -6,8 +6,6 @@ String.prototype.trunc =
 function buildTotalReport(sampleNames, report, order, date, glossary, qualities, mainMetrics) {
     $('#report_date').html('<p>' + date + '</p>');
 
-    $('#extended_link').css('width', '183');
-
     $('#extended_link').append('' +
         '<div id="extended_report_link_div" style="float: left;"><a class="dotted-link" id="extended_report_link">Extended report</a>' +
         '</div>' +
@@ -204,6 +202,8 @@ function buildTotalReport(sampleNames, report, order, date, glossary, qualities,
         legend += '</span>';
     }
     legend += '</span>';
+
+    $('#extended_link').width($('#top_left_td').outerWidth() + 200);
     $('#extended_report_link_div').width($('#top_left_td').outerWidth());
 
     $('#report_legend').append(legend);

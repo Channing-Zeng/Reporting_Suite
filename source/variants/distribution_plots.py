@@ -1,10 +1,8 @@
-import shutil
 import textwrap
-from os import mkdir, makedirs
-from os.path import basename, join, isdir, dirname, expanduser
+from os.path import join
 
-from source.utils import info, verify_file, human_sorted, get_chr_len_fpath
-from source.logger import step_greetings
+from source.utils import human_sorted, get_chr_len_fpath
+from source.logger import step_greetings, info
 
 import matplotlib
 import matplotlib.pyplot

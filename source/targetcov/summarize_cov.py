@@ -21,7 +21,6 @@ def parse_targetseq_sample_report(report_fpath):
     return row_per_sample
 
 
-
 def summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
     """ Parsing gene coverage and sample summary report as an input to copy number report
         "Gene-Amplicon" row's used from gene coverage and "Mapped reads" form summary

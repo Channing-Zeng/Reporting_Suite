@@ -1,9 +1,9 @@
 import sys
 from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
+from source.file_utils import verify_file, verify_module
 
 from source.logger import info, err, critical
-from source.utils import verify_file, verify_module
 
 if verify_module('yaml'):
     from yaml import load as load_yaml
@@ -243,4 +243,12 @@ def _check_paths(sys_cnf, run_cnf):
         sys.exit(1)
 
     return sys_cnf_path, run_cnf_path
+
+
+def join_parent_conf(child_conf, parent_conf):
+    bc = parent_conf.copy()
+    bc.update(child_conf)
+    child_conf.update(bc)
+    return child_conf
+
 

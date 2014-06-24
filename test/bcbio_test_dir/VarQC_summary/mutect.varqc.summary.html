@@ -34,10 +34,6 @@
     <script type="text/javascript" src="html_aux/scripts/hsvToRgb.js"></script>
     <script type="text/javascript" src="html_aux/scripts/utils.js"></script>
     <script type="text/javascript" src="html_aux/scripts/build_total_report.js"></script>
-    <script type="text/javascript" src="html_aux/scripts/draw_cumulative_plot.js"></script>
-    <script type="text/javascript" src="html_aux/scripts/draw_nx_plot.js"></script>
-    <script type="text/javascript" src="html_aux/scripts/draw_gc_plot.js"></script>
-    <script type="text/javascript" src="html_aux/scripts/draw_genes_plot.js"></script>
     <script type="text/javascript" src="html_aux/scripts/build_report.js"></script>
     <script type="text/javascript" src="html_aux/dragtable.js"></script>
 
@@ -47,8 +43,6 @@
 
             dragTable.init();
 
-            $('#contigs_are_ordered').show();
-
             $("[rel=tooltip]").tooltip({ animation: false, });
         });
     </script>
@@ -57,24 +51,24 @@
 <body>
 <div class="content">
     <div id='header'>
-        <h1 style='font-size: 1.5em;'><span class='smallcapitals'>QUAST</span> report</h1>
+        <h1 style='font-size: 1.5em;'>Variant QC</h1>
         <p id='report_date'></p>
         <p id="extended_link"></p>
 
-        <p id="data_set_p">
-            <span style="display: none;" id="reference_length">Genome:
-                <span class='val'></span><span class='rhs'>&nbsp;</span>bp</span><span style='display: none;'>
+        <!--<p id="data_set_p">-->
+            <!--<span style="display: none;" id="reference_length">Genome:-->
+                <!--<span class='val'></span><span class='rhs'>&nbsp;</span>bp</span><span style='display: none;'>-->
 
-     </span><span style="display: none;" id="reference_gc">,
-                G+C content: <span class='val'></span><span class='rhs'>&nbsp;</span>%
-            </span>
+                <!--</span><span style="display: none;" id="reference_gc">,-->
+                    <!--G+C content: <span class='val'></span><span class='rhs'>&nbsp;</span>%-->
+                <!--</span>-->
 
-            <span style="display: none;" id="reference_genes"><br>
-                <span class='val'></span> genes</span><span style='display: none;'>
+                <!--<span style="display: none;" id="reference_genes"><br>-->
+                    <!--<span class='val'></span> genes</span><span style='display: none;'>-->
 
-     </span><span style="display: none;" id="reference_operons">, <span class='val'></span> operons
-            </span>
-        </p>
+                <!--</span><span style="display: none;" id="reference_operons">, <span class='val'></span> operons-->
+            <!--</span>-->
+        <!--</p>-->
     </div>
 
     <noscript>
@@ -89,68 +83,39 @@
         <div id='report'>
         </div>
 
-        <div class='plots'>
-            <table style='margin: -3px;'>
-                <tr id='all-switches'>
-                    <td>
-                        <div id='plots-switches'></div>
-                    </td>
-                    <td style='text-align: right; padding-right: 22px;'>
-                        <span id='scale-placeholder'></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="2">
-                        <div id='plot-placeholder' style=''></div>
-                    </td>
-                    <td>
-                        <div id='legend-placeholder'></div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <p id="contigs_are_ordered">Contigs are ordered from largest (contig #1) to smallest.</p>
-                        <p id="gc_info">Contigs are broken into nonoverlapping 100 bp windows.
-                            Plot shows numbers of windows for each GC percentage.</p>
-                    </td>
-                </tr>
-            </table>
-        </div>
+        <!--<div class='plots'>-->
+            <!--<table style='margin: -3px;'>-->
+                <!--<tr id='all-switches'>-->
+                    <!--<td>-->
+                        <!--<div id='plots-switches'></div>-->
+                    <!--</td>-->
+                    <!--<td style='text-align: right; padding-right: 22px;'>-->
+                        <!--<span id='scale-placeholder'></span>-->
+                    <!--</td>-->
+                <!--</tr>-->
+                <!--<tr>-->
+                    <!--<td colspan="2">-->
+                        <!--<div id='plot-placeholder' style=''></div>-->
+                    <!--</td>-->
+                    <!--<td>-->
+                        <!--<div id='legend-placeholder'></div>-->
+                    <!--</td>-->
+                <!--</tr>-->
+            <!--</table>-->
+        <!--</div>-->
 
         <div style="clear: left"></div>
         <div style="clear: right"></div>
 
         <div class='json-code'>
             <div id='total-report-json'>
-                {"date":"23 June 2014, Monday, 11:28:44","report":[["",[{"isMain":true,"values":["12","12"],"quality":"More is better","metricName":"nEvalVariants"},{"isMain":true,"values":["10","10"],"quality":"More is better","metricName":"nSNPs"},{"isMain":true,"values":["1","1"],"quality":"More is better","metricName":"nInsertions"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nDeletions"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nVariantsAtComp"},{"isMain":true,"values":["0.00","0.00"],"quality":"More is better","metricName":"compRate"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nConcordant"},{"isMain":true,"values":["0.00","0.00"],"quality":"More is better","metricName":"concordantRate"},{"isMain":true,"values":["0.00032812","0.00032812"],"quality":"More is better","metricName":"variantRate"},{"isMain":true,"values":["3047.00","3047.00"],"quality":"More is better","metricName":"basesPerVariant"},{"isMain":true,"values":["0.09","0.09"],"quality":"More is better","metricName":"hetHomRatio"},{"isMain":true,"values":["4.00","4.00"],"quality":"More is better","metricName":"tiTvRatio"}]]],"sampleNames":["sample1","sample2"]}
+                {"date":"24 June 2014, Tuesday, 18:43:57","report":[["Sample",[{"isMain":true,"values":["12","12"],"quality":"More is better","metricName":"nEvalVariants all"},{"isMain":false,"values":["1","1"],"quality":"More is better","metricName":"nEvalVariants known"},{"isMain":false,"values":["11","11"],"quality":"More is better","metricName":"nEvalVariants novel"},{"isMain":true,"values":["10","10"],"quality":"More is better","metricName":"nSNPs all"},{"isMain":false,"values":["1","1"],"quality":"More is better","metricName":"nSNPs known"},{"isMain":false,"values":["9","9"],"quality":"More is better","metricName":"nSNPs novel"},{"isMain":true,"values":["1","1"],"quality":"More is better","metricName":"nInsertions all"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nInsertions known"},{"isMain":false,"values":["1","1"],"quality":"More is better","metricName":"nInsertions novel"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nDeletions all"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nDeletions known"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nDeletions novel"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nVariantsAtComp all"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nVariantsAtComp known"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nVariantsAtComp novel"},{"isMain":true,"values":["0.00","0.00"],"quality":"More is better","metricName":"compRate all"},{"isMain":false,"values":["0.00","0.00"],"quality":"More is better","metricName":"compRate known"},{"isMain":false,"values":["0.00","0.00"],"quality":"More is better","metricName":"compRate novel"},{"isMain":true,"values":["0","0"],"quality":"More is better","metricName":"nConcordant all"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nConcordant known"},{"isMain":false,"values":["0","0"],"quality":"More is better","metricName":"nConcordant novel"},{"isMain":true,"values":["0.00","0.00"],"quality":"More is better","metricName":"concordantRate all"},{"isMain":false,"values":["0.00","0.00"],"quality":"More is better","metricName":"concordantRate known"},{"isMain":false,"values":["0.00","0.00"],"quality":"More is better","metricName":"concordantRate novel"},{"isMain":true,"values":["0.00032812","0.00032812"],"quality":"More is better","metricName":"variantRate all"},{"isMain":false,"values":["0.00002734","0.00002734"],"quality":"More is better","metricName":"variantRate known"},{"isMain":false,"values":["0.00030078","0.00030078"],"quality":"More is better","metricName":"variantRate novel"},{"isMain":true,"values":["3047.00","3047.00"],"quality":"More is better","metricName":"basesPerVariant all"},{"isMain":false,"values":["36572.00","36572.00"],"quality":"More is better","metricName":"basesPerVariant known"},{"isMain":false,"values":["3324.00","3324.00"],"quality":"More is better","metricName":"basesPerVariant novel"},{"isMain":true,"values":["0.09","0.09"],"quality":"More is better","metricName":"hetHomRatio all"},{"isMain":false,"values":["0.00","0.00"],"quality":"More is better","metricName":"hetHomRatio known"},{"isMain":false,"values":["0.10","0.10"],"quality":"More is better","metricName":"hetHomRatio novel"},{"isMain":true,"values":["4.00","4.00"],"quality":"More is better","metricName":"tiTvRatio all"},{"isMain":false,"values":["1.00","1.00"],"quality":"More is better","metricName":"tiTvRatio known"},{"isMain":false,"values":["3.50","3.50"],"quality":"More is better","metricName":"tiTvRatio novel"}]]],"sampleNames":["sample1","sample2"]}
             </div>
             <div id='qualities-json'>
                 {{ qualities }}
             </div>
             <div id='main-metrics-json'>
                 {{ mainMetrics }}
-            </div>
-
-            <div id="contigs-lengths-json">
-                {{ contigsLenghts }}
-            </div>
-            <div id='aligned-contigs-lengths-json'>
-                {{ alignedContigsLengths }}
-            </div>
-            <div id='assemblies-lengths-json'>
-                {{ assembliesLengths }}
-            </div>
-            <div id='reference-length-json'>
-                {{ referenceLength }}
-            </div>
-            <div id='genes-in-contigs-json'>
-                {{ genesInContigs }}
-            </div>
-            <div id='operons-in-contigs-json'>
-                {{ operonsInContigs }}
-            </div>
-            <div id='gc-json'>
-                {{ gcInfos }}
             </div>
         </div>
     </div>

@@ -3,14 +3,13 @@ import hashlib
 import shutil
 import os
 from os.path import join, isdir, isfile
-from source.logger import step_greetings
+from source.file_utils import tmpdir
+from source.logger import step_greetings, info
 
 try:
     from yaml import CDumper as Dumper
 except ImportError:
     from yaml import Dumper
-
-from source.utils import critical, info, iterate_file, tmpdir
 
 
 # def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,

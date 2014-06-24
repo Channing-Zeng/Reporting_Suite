@@ -1,11 +1,13 @@
 import os
 import sys
 from os.path import join, dirname, abspath, expanduser, basename
+from source.calling_process import call
+from source.file_utils import verify_dir, verify_file, tmpfile
+from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info
 from source.ngscat.bed_file import verify_bam
-from source.utils import verify_dir, verify_file, get_tool_cmdline, tmpfile, call
 
 
 basic_dirpath = dirname(dirname(abspath(__file__)))

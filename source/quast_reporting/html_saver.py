@@ -5,10 +5,9 @@ import shutil
 import re
 from os.path import join, abspath, dirname, isdir
 import sys
+from source.file_utils import verify_file
 
 from source.quast_reporting import json_saver
-from source.logger import info, critical
-from source.utils import verify_file
 from source.utils_from_bcbio import file_exists
 
 
@@ -65,8 +64,9 @@ def write_html_report(output_dirpath, work_dirpath, report,
 def init_html(results_dirpath, report_fname, caption=''):
 #    shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
     aux_dirpath = join(results_dirpath, aux_dirname)
-    if not isdir(aux_dirpath):
-        os.mkdir(aux_dirpath)
+    if isdir(aux_dirpath):
+        shutil.rmtree(aux_dirpath)
+    os.mkdir(aux_dirpath)
 
     for aux_f_relpath in aux_files:
         src_fpath = join(static_dirpath, aux_f_relpath)

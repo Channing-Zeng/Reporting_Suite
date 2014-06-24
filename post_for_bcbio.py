@@ -4,10 +4,10 @@ from optparse import OptionParser
 from os.path import join, abspath, dirname
 
 from source.config import Defaults, Config
+from source.file_utils import tmpdir
 from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
 from source.bcbio_runner import run_on_bcbio_final_dir
-from source.utils import tmpdir
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):

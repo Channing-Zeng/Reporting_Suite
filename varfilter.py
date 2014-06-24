@@ -1,15 +1,19 @@
 #!/usr/bin/env python
 import sys
+from source.calling_process import call
+from source.file_utils import intermediate_fname, convert_file
+from source.tools_from_cnf import get_java_tool_cmdline
+from source.utils import mean
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-import os
-from os.path import basename, join, isfile
 import re
 import shutil
 import operator
+import os
+from os.path import basename, join, isfile
 from collections import defaultdict
 
 from source.main import read_opts_and_cnfs, check_system_resources
@@ -17,16 +21,16 @@ from source.config import Defaults
 from source.logger import step_greetings, info, critical
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
-from source.utils import get_java_tool_cmdline, intermediate_fname, call, mean, convert_file
 
 from ext_modules import vcf
+
 
 def main():
     defaults = Defaults.variant_filtering
 
     cnf = read_opts_and_cnfs(
         description=
-        'The program will filter an annotated VCF file by SnpEff using dbSNP and COSMIC, '
+        'The program filters an annotated VCF file by SnpEff using dbSNP and COSMIC, '
         'setting the value of the FILTER column.\n'
         '\n'
         'A novel variant (non-dbSNP, non-COSMIC) is considered false positive '
@@ -290,9 +294,9 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
 
         # FILTER FIRST
         for real_key, test_key in [
-               ('DP', 'filt_depth'),
-               ('QUAL', 'filt_q_mean'),
-               # ('PMEAN', 'filt_p_mean')\
+            ('DP', 'filt_depth'),
+            ('QUAL', 'filt_q_mean'),
+            # ('PMEAN', 'filt_p_mean')\
         ]:
             if less(real_key, test_key):
                 reject_values.append(test_key.upper())
@@ -363,13 +367,13 @@ def main_filtering(cnf, filt_cnf, vcf_fpath):
             reject_values.append('MAXRATE')
 
         for real_key, test_key in [
-                 ('QUAL', 'min_q_mean'),
-                 # ('PMEAN', 'min_p_mean'),
-                 ('MQ', 'min_mq'),
-                 # ('SN', 'signal_noise'),
-                 ('AF', 'min_freq'),
-                 # ('VD', 'mean_vd')
-                 ]:
+             ('QUAL', 'min_q_mean'),
+             # ('PMEAN', 'min_p_mean'),
+             ('MQ', 'min_mq'),
+             # ('SN', 'signal_noise'),
+             ('AF', 'min_freq'),
+             # ('VD', 'mean_vd')
+        ]:
             if less(real_key, test_key):
                 reject_values.append(test_key.upper())
 

@@ -1,20 +1,15 @@
 try:
     import numpy
 except ImportError:
-    print 'WARNING: numpy module was not imported.'
+    print 'WARNING: numpy module is not available.'
 try:
     from scipy import stats
 except ImportError:
-    print 'WARNING: scipy.stats module was not imported.'
+    print 'WARNING: scipy.stats module is not available.'
 
-import os
 import sys
 import bed_file
-import config
 import region
-
-from os.path import join
-from source.utils import intermediate_fname
 
 
 from matplotlib import pyplot

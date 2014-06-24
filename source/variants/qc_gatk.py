@@ -1,8 +1,8 @@
 from os.path import join
-import sys
+from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
-from source.utils import get_java_tool_cmdline, call_subprocess, get_gatk_cmdline
+from source.tools_from_cnf import get_gatk_cmdline
 
 
 final_report_ending = '.varqc.txt'

@@ -2,12 +2,14 @@
 import sys
 from os.path import basename, join, expanduser
 from collections import OrderedDict
-from ext_modules import vcf
+from source.calling_process import call_subprocess
 
+from source.change_checking import check_file_changed
+from source.config import join_parent_conf
+from source.file_utils import iterate_file, verify_file
+from source.tools_from_cnf import get_java_tool_cmdline
 from source.utils_from_bcbio import open_gzipsafe, splitext_plus
-from source.logger import step_greetings
-from source.utils import critical, verify_file,\
-    join_parent_conf, info, get_java_tool_cmdline, call_subprocess, safe_mkdir, check_file_changed, iterate_file
+from source.logger import step_greetings, info, critical
 
 
 def filter_rejected(cnf, input_fpath):

@@ -1,9 +1,11 @@
 import string
 import region
 from os.path import expanduser
+from source.calling_process import call
+from source.file_utils import verify_file, intermediate_fname
+from source.tools_from_cnf import get_tool_cmdline
 from source.utils_from_bcbio import file_exists
 from source.logger import err
-from source.utils import intermediate_fname, call, get_tool_cmdline, verify_file
 
 import config
 
@@ -20,7 +22,7 @@ def verify_bam(fpath, description=''):
         return None
 
     textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
-    is_binary_string = lambda bytes: bool(bytes.translate(None, textchars))
+    is_binary_string = lambda baitiki: bool(baitiki.translate(None, textchars))
     if not is_binary_string(open(fpath).read(3)):
         err('The BAM file ' + fpath + ' must be a binary file.')
         return None
