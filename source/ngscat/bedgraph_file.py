@@ -249,7 +249,9 @@ class bedgraph_file:
         fd = file(self.filename)
         regions = []
         for line in fd:
-            aline = line.split('\t')
+            aline = line.replace('\n', '').split('\t')
+            if not len(aline): # skipping empty lines
+                continue
             #new region 
             r = region.region(aline[0], aline[1], aline[2], aline[3])
             regions.append(r)
@@ -311,6 +313,8 @@ class bedgraph_file:
             else:
                 for line in batch:
                     aline = line.replace('\n', '').split()
+                    if not len(aline): # skipping empty lines
+                        continue
                     #new region
                     r = region.region(aline[0], aline[1], aline[2])
 

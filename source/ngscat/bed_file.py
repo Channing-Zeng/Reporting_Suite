@@ -428,6 +428,8 @@ class BedFile:
         regions = []
         for line in fd:
             aline = line.replace('\n', '').split('\t')
+            if not len(aline): # skipping empty lines
+                continue
             #new region
             r = region.region(aline[0], aline[1], aline[2])
             regions.append(r)
