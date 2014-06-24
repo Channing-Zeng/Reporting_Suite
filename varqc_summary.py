@@ -2,8 +2,6 @@
 
 from __future__ import print_function
 import sys
-from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir,\
-    summarize, write_summary_reports
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -13,7 +11,8 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 from os.path import join
 from optparse import OptionParser
 
-from source.variants.summarize_qc import parse_qc_sample_report
+from source.reporting import read_sample_names
+from source.variants.summarize_qc import make_summary_reports
 from source.config import Defaults, Config
 from source.main import check_keys, check_inputs, set_up_dirs
 from source.logger import info
@@ -25,8 +24,8 @@ def main():
     parser = OptionParser(description=description)
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
-    parser.add_option('-n', dest='base_name', default='VarQC', help='Name of targetcov directory inside sample folder. (default is TargetCov)')
-    parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
+    parser.add_option('-n', dest='base_name', default='VarQC', help='Name of variant QC directory inside sample folder. (default is VarQC)')
+    parser.add_option('--vcf-suf', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
     parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
@@ -61,27 +60,23 @@ def main():
 
     sample_names = read_sample_names(cnf['samples'])
 
-    sum_report_fpaths = summary_reports(cnf, sample_names)
-
-    info()
-    info('*' * 70)
-    for fpath in sum_report_fpaths:
-        info(fpath)
-
-
-def summary_reports(cnf, sample_names):
-    sample_qc_reports = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'],
-        '-' + cnf['vcf_suffix'] + '.varqc.txt')
-
-    report = summarize(sample_names, sample_qc_reports, parse_qc_sample_report)
-
-    sum_report_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], report, sample_names,
-        cnf['vcf_suffix'] + '.varqc.summary', 'Variant QC')
-
-    return sum_report_fpaths
+    make_summary_reports(cnf, sample_names)
 
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

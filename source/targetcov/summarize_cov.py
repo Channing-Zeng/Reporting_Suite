@@ -1,9 +1,38 @@
-from source.reporting import parse_tsv
+from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
+    summarize, write_summary_reports, write_tsv
 from source.targetcov.copy_number import run_copy_number
-from source.logger import critical
+from source.logger import critical, step_greetings
 
 
-def parse_targetseq_sample_report(report_fpath):
+def summary_reports(cnf, sample_names):
+    step_greetings('Coverage statistics for all samples')
+
+    sample_sum_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
+
+    sum_report = summarize(sample_names, sample_sum_reports, _parse_targetseq_sample_report)
+
+    sum_report_fpaths = write_summary_reports(
+        cnf['output_dir'], cnf['work_dir'], sum_report,
+        sample_names, 'targetseq.summary', 'Target coverage statistics')
+
+    return sample_sum_reports, sum_report_fpaths
+
+
+def cnv_reports(cnf, sample_names, sample_sum_reports):
+    step_greetings('Coverage statistics for each gene for all samples')
+
+    sample_gene_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
+
+    cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
+
+    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
+
+    return cnv_report_fpath
+
+
+def _parse_targetseq_sample_report(report_fpath):
     """ returns row_per_sample =
             dict(metricName=None, value=None,
             isMain=True, quality='More is better')
@@ -21,7 +50,7 @@ def parse_targetseq_sample_report(report_fpath):
     return row_per_sample
 
 
-def summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
+def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
     """ Parsing gene coverage and sample summary report as an input to copy number report
         "Gene-Amplicon" row's used from gene coverage and "Mapped reads" form summary
     """

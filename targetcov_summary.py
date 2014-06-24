@@ -2,22 +2,21 @@
 
 from __future__ import print_function
 import sys
-from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir, \
-    write_tsv, summarize, write_summary_reports
-from source.targetcov.summarize_cov import parse_targetseq_sample_report, summarize_copy_number
-
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-
 from os.path import join
 from optparse import OptionParser
 from source.config import Defaults, Config
-from source.logger import info, step_greetings
+from source.logger import info
 from source.main import check_keys, check_inputs, set_up_dirs
+from source.reporting import read_sample_names
+from source.targetcov.summarize_cov import summary_reports, cnv_reports
+
+
 
 
 def main():
@@ -75,34 +74,6 @@ def main():
         info('  ' + fpath)
     info('Gene CNV:')
     info('  ' + cnv_report_fpath)
-
-
-def summary_reports(cnf, sample_names):
-    step_greetings('Coverage statistics for all samples')
-
-    sample_sum_reports = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
-
-    sum_report = summarize(sample_names, sample_sum_reports, parse_targetseq_sample_report)
-
-    sum_report_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], sum_report,
-        sample_names, 'targetseq.summary', 'Target coverage statistics')
-
-    return sample_sum_reports, sum_report_fpaths
-
-
-def cnv_reports(cnf, sample_names, sample_sum_reports):
-    step_greetings('Coverage statistics for each gene for all samples')
-
-    sample_gene_reports = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
-
-    cnv_rows = summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
-
-    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
-
-    return cnv_report_fpath
 
 
 if __name__ == '__main__':

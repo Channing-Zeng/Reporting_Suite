@@ -23,7 +23,7 @@ def main():
     parser.add_option('-d', '-o', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', '--samples', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-b', '--bed', dest='bed', help='BED file')
-    parser.add_option('--vcf-suffix', dest='vcf_suffix', help='Suffix to choose VCF file s(mutect, ensembl, freebayes, etc)')
+    parser.add_option('--vcf-suf', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
@@ -43,7 +43,7 @@ def main():
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
     info('Samples: ' + cnf.samples + ' (set with -s)')
 
-    if not check_keys(cnf, ['bcbio_final_dir', 'samples', 'bed', 'vcf_suffix']):
+    if not check_keys(cnf, ['bcbio_final_dir', 'samples', 'bed', 'vcf_suf']):
         parser.print_help()
         sys.exit(1)
 
@@ -51,7 +51,7 @@ def main():
         sys.exit(1)
 
     info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
-    info('Suffix to choose VCF files: ' + cnf.vcf_suffix + ' (set with --vcf-suffix)')
+    info('Suffix(es) to choose VCF files: ' + cnf.vcf_suf + ' (set with --vcf-suf)')
     info()
     info('*' * 70)
 
@@ -61,7 +61,7 @@ def main():
     check_system_resources(cnf, required=['qsub'])
 
     with tmpdir(cnf):
-        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, cnf.vcf_suffix)
+        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, cnf.vcf_suf)
 
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ EOF
 
 DIR=`pwd`
 SAMPLES=
-VCF_SUFFIX=
+vcf_suf=
 BED=
 QUALIMAP=0
 VERBOSE=0
@@ -39,7 +39,7 @@ do
              BED=$OPTARG
              ;;
          v)
-             VCF_SUFFIX="-$OPTARG"
+             vcf_suf="-$OPTARG"
              ;;
          z)
              VERBOSE=1
@@ -51,7 +51,7 @@ do
      esac
 done
 
-if [[ -z ${BED} ]] || [[ -z ${VCF_SUFFIX} ]]
+if [[ -z ${BED} ]] || [[ -z ${vcf_suf} ]]
 then
      usage
      exit 1
@@ -65,7 +65,7 @@ fi
 echo "Using BED file: "${BED}
 echo "Running on bcbio-nextgen final diretory: "${DIR}
 echo "Using the list of samples: "${SAMPLES}
-echo "Searching VCFs with the suffix "${VCF_SUFFIX}
+echo "Searching VCFs with the suffix "${vcf_suf}
 if [ ${QUALIMAP} = 1 ] ; then
     echo 'Running QualiMap for each sample.'
 else
@@ -140,7 +140,7 @@ varqc_summary_name="varqc_summary"
 targetcov_summary_name="targetcov_summary"
 
 
-filtered_vcf_suffix=${VCF_SUFFIX}.filtered
+filtered_vcf_suf=${vcf_suf}.filtered
 
 for sample in `cat ${SAMPLES}`
 do
@@ -149,25 +149,25 @@ do
 
     cd "${DIR}/${sample}"
 
-    # rm -rf "${sample}${filtered_vcf_suffix}.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
+    # rm -rf "${sample}${filtered_vcf_suf}.vcf" annotation varQC targetSeq NGSCat QualiMap *tmp* work *ready_stats*
 
-    if [ ! -f "${sample}${VCF_SUFFIX}.vcf" ]; then
-        gunzip -c "${sample}${VCF_SUFFIX}.vcf.gz" > "${sample}${VCF_SUFFIX}.vcf"
+    if [ ! -f "${sample}${vcf_suf}.vcf" ]; then
+        gunzip -c "${sample}${vcf_suf}.vcf.gz" > "${sample}${vcf_suf}.vcf"
     fi
 
     ### InDelFilter ###
     name=${indel_filter_name}
-    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${VCF_SUFFIX}.vcf\" > \"${sample}${filtered_vcf_suffix}.vcf\""
-    run_on_grid "${cmdline}" ${name}_${sample} . "${sample}${filtered_vcf_suffix}.vcf" 1
+    cmdline="python /group/ngs/bin/InDelFilter.py \"${sample}${vcf_suf}.vcf\" > \"${sample}${filtered_vcf_suf}.vcf\""
+    run_on_grid "${cmdline}" ${name}_${sample} . "${sample}${filtered_vcf_suf}.vcf" 1
 
     ### VarAnn ###
     name=${varannotate_name}
-    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suffix}.vcf\" --bam \"${sample}-ready.bam\" -o ${name}"
+    cmdline="python /group/ngs/src/varannotate.py --var \"${sample}${filtered_vcf_suf}.vcf\" --bam \"${sample}-ready.bam\" -o ${name}"
     run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 1 ${indel_filter_name}_${sample}
 
     ### VarQC ###
     name=${varqc_name}
-    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suffix}.vcf\" -o ${name}"
+    cmdline="python /group/ngs/src/varqc.py --var \"${sample}${filtered_vcf_suf}.vcf\" -o ${name}"
     run_on_grid "${cmdline}" ${name}_${sample} ${name} ${name}/log 1 ${indel_filter_name}_${sample}
 
     if [ ! -z "${qc_jobids}" ]; then
@@ -202,7 +202,7 @@ done
 
 ## VarQC summary ##
 name=${varqc_summary_name}
-cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py ${DIR} ${SAMPLES} ${varqc_name} ${filtered_vcf_suffix}"
+cmdline="python /gpfs/group/ngs/src/ngs_reporting/varqc_summary.py ${DIR} ${SAMPLES} ${varqc_name} ${filtered_vcf_suf}"
 run_on_grid "${cmdline}" ${name} . log_${name} 1 ${qc_jobids}
 
 ## Target coverage summary ##

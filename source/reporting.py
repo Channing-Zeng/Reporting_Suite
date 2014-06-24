@@ -19,22 +19,23 @@ def read_sample_names(sample_fpath):
 
 
 def get_sample_report_fpaths_for_bcbio_final_dir(
-        bcbio_final_dir, sample_names, base_name, sample_report_suffix):
-    sample_report_fpaths = []
+        bcbio_final_dir, sample_names, varqc_dir, ending):
+
+    single_report_fpaths = []
 
     for sample_name in sample_names:
-        sample_report_fpath = join(
-            bcbio_final_dir, sample_name, base_name,
-            sample_name + sample_report_suffix)
+        single_report_fpath = join(
+            bcbio_final_dir, sample_name, varqc_dir,
+            sample_name + ending)
 
-        info(basename(sample_report_fpath))
+        info(basename(single_report_fpath))
 
-        if not verify_file(sample_report_fpath):
-            critical(sample_report_fpath + ' does not exist.')
+        if not verify_file(single_report_fpath):
+            critical(single_report_fpath + ' does not exist.')
 
-        sample_report_fpaths.append(sample_report_fpath)
+        single_report_fpaths.append(single_report_fpath)
 
-    return sample_report_fpaths
+    return single_report_fpaths
 
 
 def summarize(sample_names, report_fpaths, get_rows_fn):
@@ -62,7 +63,9 @@ def summarize(sample_names, report_fpaths, get_rows_fn):
 
 def write_summary_reports(output_dirpath, work_dirpath, report,
                           sample_names, base_fname, caption):
-    return [fn(output_dirpath, work_dirpath, report, sample_names, base_fname, caption)
+
+    return [fn(output_dirpath, work_dirpath, report,
+               sample_names, base_fname, caption)
         for fn in [write_txt_report,
                    write_tsv_report,
                    write_html_report]]

@@ -14,9 +14,9 @@ basic_dirpath = dirname(dirname(abspath(__file__)))
 
 
 def run_on_bcbio_final_dir(cnf, bcbio_final_dir, samples_fpath,
-                           bed_fpath, vcf_suffix):
+                           bed_fpath, vcf_suf):
     return Runner(cnf, bcbio_final_dir, samples_fpath,
-                  bed_fpath, vcf_suffix).run()
+                  bed_fpath, vcf_suf).run()
 
 
 class Step():
@@ -53,11 +53,11 @@ class Steps(list):
 
 
 class Runner():
-    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_suffix):
+    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_suf):
         self.dir = bcbio_final_dir
         self.cnf = cnf
         self.bed = bed_fpath
-        self.suf = vcf_suffix
+        self.suf = vcf_suf
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
