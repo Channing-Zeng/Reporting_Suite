@@ -12,7 +12,7 @@ warnstd = 0.3
 offtargetoffset = 1000
 offtargetthreshold = 15
 
-# CHR_LENGTHS = join(dirname(realpath(__file__)), 'chr_lengths_hg19.txt')
+chr_lengths = None
 
 DATASRC = join(dirname(realpath(__file__)), 'html')
 IMGSRC = join(dirname(realpath(__file__)), 'img')

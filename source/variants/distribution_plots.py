@@ -1,7 +1,7 @@
 import textwrap
 from os.path import join
 
-from source.utils import human_sorted, get_chr_len_fpath
+from source.utils import human_sorted, get_chr_lengths
 from source.logger import step_greetings, info
 
 import matplotlib
@@ -15,7 +15,7 @@ def variants_distribution_plot(cnf, vcf_fpath):
     step_greetings('Quality control variant distribution plots')
 
     # step 1: get chr lengths
-    chr_lengths = _get_chr_lengths(cnf)
+    chr_lengths = get_chr_lengths(cnf)
 
     # step 2: get variants distribution (per chromosome)
     qc_cnf = cnf['quality_control']
@@ -90,19 +90,6 @@ def variants_distribution_plot(cnf, vcf_fpath):
     fig.savefig(variants_distribution_plot_fpath, bbox_inches='tight')
     matplotlib.pyplot.close(fig)
     return variants_distribution_plot_fpath
-
-
-def _get_chr_lengths(cnf):
-    chr_len_fpath = get_chr_len_fpath(cnf)
-
-    chr_lengths = dict()
-    with open(chr_len_fpath, 'r') as f:
-        for line in f:
-            if len(line.split()) == 2:
-                chr_name = line.split()[0]
-                chr_length = int(line.split()[1])
-                chr_lengths[chr_name] = chr_length
-    return chr_lengths
 
 
 def _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale):

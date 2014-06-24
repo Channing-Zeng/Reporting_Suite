@@ -72,15 +72,8 @@ def main():
         optional=[])
 
     load_genome_resources(cnf,
-        required=['chr_lengths'],
-        optional=['seq'])
-
-    #load_genome_resources(cnf, ['chr_lengths']) #TODO: check whether it needed at all!
-    #chr_len_fpath = cnf.get('chr_lengths') or cnf['genome'].get('chr_lengths')
-    #if not chr_len_fpath:
-    #    critical('Specify chromosome lengths for the genome'
-    #             ' in system info or in run info.')
-    #config.CHR_LENGTHS = chr_len_fpath
+        required=[],
+        optional=['seq', 'chr_lengths'])
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot run NGScat.')

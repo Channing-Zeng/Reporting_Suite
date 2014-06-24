@@ -286,7 +286,7 @@ class bedgraph_file:
         #tmpbed_fpath = join(cnf['work_dir'], pid + '.extended.bed')
 
         bed = bed_file.BedFile(target_fpath)
-        extendedBed = bed.extendnoref(offset)
+        extendedBed = bed.extend(offset)
         sortedBed = extendedBed.sort_bed()
         nonOverlappingBed = sortedBed.non_overlapping_exons(-1)  # Base 0, it is a standard BED
         finalBed = nonOverlappingBed.sort_bed()  # BED file in base 0

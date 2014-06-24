@@ -6,6 +6,7 @@ from source.file_utils import verify_file, intermediate_fname
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils_from_bcbio import file_exists
 from source.logger import err
+from source.utils import get_chr_lengths
 
 import config
 
@@ -97,19 +98,6 @@ class BedFile:
             filename = self.filename
         return len(open(filename).readlines())
 
-    def load_chr_lengths(self):
-        lengths = {}
-
-        print 'Loading chr lengths...'
-        fd = file(config.CHR_LENGTHS)
-        for line in fd:
-            parts = line.split('\t')
-            lengths[parts[0]] = string.atoi(parts[1])
-        print '	Done.'
-        fd.close()
-
-        return lengths
-
     def extend(self, n, out_fpath=None):
         """*******************************************************************************************************************************************
         Task: generates a new bed file in which regions of this bed are extended +-n bases.
@@ -120,58 +108,38 @@ class BedFile:
             self.filename and ended in .extended.bed
         *******************************************************************************************************************************************"""
 
-        # If an output filename is not provided generates one
+        cnf = config.cnf
+        if cnf['genome'].get('chr_lengths') or cnf['genome'].get('seq'):
+            no_ref = False
+        else:
+            no_ref = True
+
         if out_fpath is None:
             cnf = config.cnf
-            out_fpath = intermediate_fname(cnf, self.filename, 'extended_' + str(n))
+            out_fpath = intermediate_fname(cnf, self.filename,
+                                           'extended_' + ('no_ref_' if no_ref else '') + str(n))
 
         if file_exists(out_fpath):
             return BedFile(out_fpath)
 
-        lengths = self.load_chr_lengths()
+        if not no_ref and not config.chr_lengths:
+            config.chr_lengths = get_chr_lengths(config.cnf)
 
         # Each region in each line is extended +-n bases
         fd = file(self.filename)
         fdw = file(out_fpath, 'w')
         for line in fd:
             parts = line.split('\t')
-            fdw.write(parts[0] + '\t' + str(max(0, string.atoi(parts[1]) - n)) + '\t' + str(
-                min(lengths[parts[0]], string.atoi(parts[2]) + n)) + '\n')
+            if no_ref:
+                fdw.write(parts[0] + '\t' + str(max(0, string.atoi(parts[1]) - n)) +
+                          '\t' + str(string.atoi(parts[2]) + n) + '\n')
+            else:
+                fdw.write(parts[0] + '\t' + str(max(0, string.atoi(parts[1]) - n)) +
+                          '\t' + str(min(config.chr_lengths[parts[0]], string.atoi(parts[2]) + n)) + '\n')
         fd.close()
         fdw.close()
 
         return BedFile(out_fpath)
-
-    def extendnoref(self, n, output_fpath=None):
-        """*******************************************************************************************************************************************
-        Task: generates a new bed file in which regions of this bed are extended +-n bases.
-        Inputs:
-            n: integer with the number of bases to extend.
-            fileout: string containing the full path to the new bed file.
-        Outputs: a new bed file will be created named fileout. In case fileout is not provided, a new file will be created named with the prefix of
-            self.filename and ended in .extended.bed
-        *******************************************************************************************************************************************"""
-
-        cnf = config.cnf
-        # If an output filename is not provided generates one
-        if output_fpath is None:
-            output_fpath = intermediate_fname(cnf, self.filename, 'extended_' + str(n))
-
-        if file_exists(output_fpath):
-            #info(output_fpath + ' exists, reusing!')
-            return BedFile(output_fpath)
-
-        # Each region in each line is extended +-n bases
-        fd = open(self.filename)
-        fdw = open(output_fpath, 'w')
-        for line in fd:
-            parts = line.split('\t')
-            fdw.write(
-                parts[0] + '\t' + str(max(0, string.atoi(parts[1]) - n)) + '\t' + str(string.atoi(parts[2]) + n) + '\n')
-        fd.close()
-        fdw.close()
-
-        return BedFile(output_fpath)
 
     def load(self):
         """************************************************************************************************************************************************************
@@ -492,6 +460,50 @@ class BedFile:
         #     cmdline = "%s subtract -a %s -b %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename, other.filename)
         #     call(cnf, cmdline, newbed_fpath)
         #     return bed_file(newbed_fpath)
+        #
+        # def load_chr_lengths(self):
+        #     lengths = {}
+        #
+        #     print 'Loading chr lengths...'
+        #     fd = file(config.CHR_LENGTHS)
+        #     for line in fd:
+        #         parts = line.split('\t')
+        #         lengths[parts[0]] = string.atoi(parts[1])
+        #     print '	Done.'
+        #     fd.close()
+        #
+        #     return lengths
+        #
+        # def extendnoref(self, n, output_fpath=None):
+        #     """*******************************************************************************************************************************************
+        #     Task: generates a new bed file in which regions of this bed are extended +-n bases.
+        #     Inputs:
+        #         n: integer with the number of bases to extend.
+        #         fileout: string containing the full path to the new bed file.
+        #     Outputs: a new bed file will be created named fileout. In case fileout is not provided, a new file will be created named with the prefix of
+        #         self.filename and ended in .extended.bed
+        #     *******************************************************************************************************************************************"""
+        #
+        #     cnf = config.cnf
+        #     # If an output filename is not provided generates one
+        #     if output_fpath is None:
+        #         output_fpath = intermediate_fname(cnf, self.filename, 'extended_' + str(n))
+        #
+        #     if file_exists(output_fpath):
+        #         #info(output_fpath + ' exists, reusing!')
+        #         return BedFile(output_fpath)
+        #
+        #     # Each region in each line is extended +-n bases
+        #     fd = open(self.filename)
+        #     fdw = open(output_fpath, 'w')
+        #     for line in fd:
+        #         parts = line.split('\t')
+        #         fdw.write(
+        #             parts[0] + '\t' + str(max(0, string.atoi(parts[1]) - n)) + '\t' + str(string.atoi(parts[2]) + n) + '\n')
+        #     fd.close()
+        #     fdw.close()
+        #
+        #     return BedFile(output_fpath)
         #
         # def meansize(self):
         #     total = 0

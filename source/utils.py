@@ -99,8 +99,13 @@ def get_chr_len_fpath(cnf):
         info(chr_len_fpath + ' exists, reusing')
         return chr_len_fpath
 
+    genome_seq_fpath = cnf['genome'].get('seq')
+    if not genome_seq_fpath:
+        return None
+
+    info('Reading genome to get chromosome lengths')
     chr_lengths = dict()
-    with open(cnf['genome']['seq'], 'r') as handle:
+    with open(genome_seq_fpath, 'r') as handle:
         from Bio import SeqIO
         reference_records = SeqIO.parse(handle, 'fasta')
         for record in reference_records:
@@ -109,6 +114,21 @@ def get_chr_len_fpath(cnf):
         for chr_name in sorted(chr_lengths, key=chr_lengths.get, reverse=True):
             handle.write(chr_name + '\t' + str(chr_lengths[chr_name]) + '\n')
     return chr_len_fpath
+
+
+def get_chr_lengths(cnf):
+    chr_len_fpath = get_chr_len_fpath(cnf)
+    if not chr_len_fpath:
+        return None
+
+    chr_lengths = dict()
+    with open(chr_len_fpath, 'r') as f:
+        for line in f:
+            if len(line.split()) == 2:
+                chr_name = line.split()[0]
+                chr_length = int(line.split()[1])
+                chr_lengths[chr_name] = chr_length
+    return chr_lengths
 
 
 def format_integer(name, value, unit=''):

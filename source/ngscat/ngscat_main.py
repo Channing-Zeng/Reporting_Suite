@@ -146,7 +146,7 @@ def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfil
 def launch_offclusters(bedgraphfilenames, bedfilename, executiongranted):
     ### sorting all at once and reuse in the future
     bed = bed_file.BedFile(bedfilename)
-    extendedBed = bed.extendnoref(config.offtargetoffset)
+    extendedBed = bed.extend(config.offtargetoffset)
     sortedBed = extendedBed.sort_bed()
     nonOverlappingBed = sortedBed.non_overlapping_exons(-1)  # Base 0, it is a standard BED
     nonOverlappingBed.sort_bed()
@@ -503,7 +503,7 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
     executiongranted = multiprocessing.Semaphore(nthreads)
 
     if (extend <> None):
-        bedfilename = bed_file.BedFile(originalbedfilename).extendnoref(extend).filename
+        bedfilename = bed_file.BedFile(originalbedfilename).extend(extend).filename
     else:
         bedfilename = originalbedfilename
 
