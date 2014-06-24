@@ -151,6 +151,8 @@ def mean(ints):
 
 
 def median(values):
+    ints = sorted(values)
+
     if len(values) % 2 == 1:
         return values[(len(values) - 1) / 2]
     else:

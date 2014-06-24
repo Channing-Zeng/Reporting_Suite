@@ -1,0 +1,28 @@
+Sample	TestSampleChrM_00	TestSampleChrM_01
+Reads	 277,241	 585,167
+Mapped reads	 277,241	 585,167
+Unmapped reads	 0	 0
+Percentage of mapped reads	 100.00%	 100.00%
+Bases in target	 11,333	 11,333
+Covered bases in target	 11,333	 11,333
+Percentage of target covered by at least 1 read	 100.00%	 100.00%
+Reads mapped on target	 223,237	 467,556
+Percentage of reads mapped on target 	 80.52%	 79.90%
+Reads mapped on padded target	 223,237	 467,556
+Percentage of reads mapped on padded target	 80.52%	 79.90%
+Read bases mapped on target	 20,912,737	 43,889,526
+Average target coverage depth	 1845.30	 3872.72
+Std. dev. of target coverage depth	 423.74	 881.64
+Maximum target coverage depth	 2,815	 5,972
+Percentage of target within 20% of mean depth	 54.43%	 55.08%
+Part of target covered at least by 1x	 100.00%	 100.00%
+Part of target covered at least by 5x	 100.00%	 100.00%
+Part of target covered at least by 10x	 100.00%	 100.00%
+Part of target covered at least by 25x	 100.00%	 100.00%
+Part of target covered at least by 50x	 100.00%	 100.00%
+Part of target covered at least by 100x	 100.00%	 100.00%
+Part of target covered at least by 500x	 100.00%	 100.00%
+Part of target covered at least by 1000x	 99.51%	 100.00%
+Part of target covered at least by 5000x	 0.00%	 12.60%
+Part of target covered at least by 10000x	 0.00%	 0.00%
+Part of target covered at least by 50000x	 0.00%	 0.00%

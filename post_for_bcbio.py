@@ -8,6 +8,7 @@ from source.file_utils import tmpdir
 from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
 from source.bcbio_runner import run_on_bcbio_final_dir
+from source.utils import median, mean
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -61,7 +62,9 @@ def main():
     check_system_resources(cnf, required=['qsub'])
 
     with tmpdir(cnf):
-        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, cnf.vcf_suf)
+        vcf_sufs = cnf['vcf_suf'].split(',')
+
+        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
 
 
 if __name__ == '__main__':

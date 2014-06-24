@@ -14,9 +14,9 @@ basic_dirpath = dirname(dirname(abspath(__file__)))
 
 
 def run_on_bcbio_final_dir(cnf, bcbio_final_dir, samples_fpath,
-                           bed_fpath, vcf_suf):
+                           bed_fpath, vcf_sufs):
     return Runner(cnf, bcbio_final_dir, samples_fpath,
-                  bed_fpath, vcf_suf).run()
+                  bed_fpath, vcf_sufs).run()
 
 
 class Step():
@@ -53,11 +53,11 @@ class Steps(list):
 
 
 class Runner():
-    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_suf):
+    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs):
         self.dir = bcbio_final_dir
         self.cnf = cnf
         self.bed = bed_fpath
-        self.suf = vcf_suf
+        self.sufs = vcf_sufs
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
@@ -87,27 +87,28 @@ class Runner():
         self.varannotate = self.steps.step(
             name='VarAnnotate',
             script='varannotate.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' --bam \'{bam}\' -o \'{output_dir}\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' --bam \'{bam}\' -o \'{output_dir}\' -s \'{sample}\'')
         self.varqc = self.steps.step(
             name='VarQC',
             script='varqc.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s {name}')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\'')
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' --clean')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\'')
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\'')
         self.ngscat = self.steps.step(
             name='NGScat',
             script='ngscat.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' --saturation y')
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --saturation y')
         self.qualimap = self.steps.step(
             name='QualiMap',
             interpreter=None,
-            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
+            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam '
+                       '\'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
         if self.varqc:
             self.steps.append('VarQC_summary')
@@ -116,7 +117,7 @@ class Runner():
                 script='varqc_summary.py',
                 param_line=' -o \'{output_dir}\' -d \'' + self.dir +
                            '\' -s \'{samples}\' -n ' + self.varqc.name +
-                           ' --vcf-suf ' + self.suf)
+                           ' --vcf-suf ' + ','.join(self.sufs))
         if self.targetcov:
             self.steps.append('TargetCov_summary')
             self.targetcov_summary = self.steps.step(
@@ -147,10 +148,15 @@ class Runner():
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
+
         runner_script = self.qsub_runner
+
         cmdline = step.cmdline.format(**params)
+
         qsub = get_tool_cmdline(self.cnf, 'qsub')
+
         threads = str(self.threads)
+
         qsub_cmdline = (
             '{qsub} -pe smp {threads} -S /bin/bash -q batch.q '
             '-j n -o {out_fpath} -e {log_fpath} {hold_jid_line} '
@@ -193,19 +199,25 @@ class Runner():
                 if not verify_bam(bam_fpath):
                     sys.exit(1)
 
-                vcf_fpath = join(sample_dirpath, sample + '-' + self.suf + '.vcf')
-                if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
-                    gz_vcf_fpath = vcf_fpath + '.gz'
-                    gunzip = get_tool_cmdline(self.cnf, 'gunzip')
-                    cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
-                    call(self.cnf, cmdline, output_fpath=vcf_fpath)
-                    info()
-                if not verify_file(vcf_fpath):
-                    sys.exit(1)
+                for vcf_suf in self.sufs:
+                    vcf_fpath = join(sample_dirpath, sample + '-' + vcf_suf + '.vcf')
 
-                self._run_pipeline_on_sample(
-                    sample, sample_dirpath, qualimap_bed_fpath,
-                    bam_fpath, vcf_fpath)
+                    if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
+                        gz_vcf_fpath = vcf_fpath + '.gz'
+                        gunzip = get_tool_cmdline(self.cnf, 'gunzip')
+                        cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
+                        call(self.cnf, cmdline, output_fpath=vcf_fpath)
+                        info()
+                    if not verify_file(vcf_fpath):
+                        sys.exit(1)
+
+                    self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
+
+                self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+
+                self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+
+                self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
 
                 if self.cnf.verbose:
                     info('-' * 70)
@@ -233,16 +245,16 @@ class Runner():
         if self.cnf.verbose:
             info('Done.')
 
-    def _run_pipeline_on_sample(self, sample, sample_dirpath, qualimap_bed_fpath, bam_fpath, vcf_fpath):
+    def _process_vcf(self, sample, sample_dirpath, bam_fpath, vcf_fpath, suf):
         if self.varqc:
             self.submit(
                 self.varqc, sample, True,
-                vcf=vcf_fpath, name=sample + '-' + self.suf)
+                vcf=vcf_fpath, sample=sample + '-' + suf)
 
         if self.varannotate:
             anno_dirpath = self.submit(
                 self.varannotate, sample, True,
-                vcf=vcf_fpath, bam=bam_fpath, name=sample + '-' + self.suf)
+                vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
             if self.varfilter:
@@ -253,10 +265,4 @@ class Runner():
                 self.submit(self.varfilter, sample, False,
                     wait_for_steps=[self.varannotate.job_name(sample)],
                     vcf=annotated_vcf_fpath,
-                    name=sample + '-' + self.suf)
-
-        self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed)
-
-        self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed)
-
-        self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath)
+                    sample=sample + '-' + suf)

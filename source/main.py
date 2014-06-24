@@ -34,7 +34,7 @@ def read_opts_and_cnfs(extra_opts,
              metavar='DIR',
              help='base directory for temporary files (default is /ngs/tmp')
          ),
-        (['-s', '--sample'], dict(
+        (['-s', '--sample', '--name'], dict(
              dest='name',
              metavar='NAME',
              help='sample name (default is part of name of the first parameter prior to the first - or .')
@@ -95,7 +95,7 @@ def read_opts_and_cnfs(extra_opts,
                  'in options or in ' + cnf.run_cnf + '.')
 
     key_fname = basename(cnf[key_for_sample_name])
-    cnf.name = cnf['name'] or key_fname.split('.')[0].split('-')[0]
+    cnf.name = cnf['name'] or key_fname.split('.')[0]
 
     set_up_dirs(cnf)
 

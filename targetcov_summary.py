@@ -17,8 +17,6 @@ from source.reporting import read_sample_names
 from source.targetcov.summarize_cov import summary_reports, cnv_reports
 
 
-
-
 def main():
     description = 'This script generates project-level summaries based on per-sample targetcov reports.'
 
@@ -27,7 +25,8 @@ def main():
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-n', dest='base_name', default='TargetCov',
                       help='Name of targetcov directory inside sample folder. (default is TargetCov)')
-    parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
+    parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR',
+                      help='output directory (or directory name in case of bcbio final dir)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
