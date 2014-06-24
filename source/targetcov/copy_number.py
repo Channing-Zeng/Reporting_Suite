@@ -9,7 +9,7 @@ from numpy import mean, median
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
-def norm_depths_by_gene(sample_mapped_reads, gene_depth):
+def run_copy_number(sample_mapped_reads, gene_depth):
     list_genes_info = _report_row_to_objects(gene_depth)
     norm_depths_by_seq_distr, med_depth = _get_norm_depths_by_sample(sample_mapped_reads, list_genes_info)
     factors_by_gene = _get_factors_by_gene(list_genes_info, med_depth)
