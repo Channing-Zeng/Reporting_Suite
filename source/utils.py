@@ -7,6 +7,7 @@ import tempfile
 import os
 import shutil
 import re
+from Bio import SeqIO
 from os.path import join, basename, isfile, isdir, getsize, exists, expanduser, dirname, abspath
 from distutils.version import LooseVersion
 
@@ -217,6 +218,24 @@ def bgzip_and_tabix_vcf(cnf, vcf_fpath):
         call_subprocess(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
 
     return gzipped_fpath, tbi_fpath
+
+
+def generate_chr_lengths_file(cnf):
+    chr_lengths_fpath = join(cnf['work_dir'], 'chr_lengths.txt')
+
+    if cnf.reuse_intermediate and file_exists(chr_lengths_fpath):
+        info(chr_lengths_fpath + ' exists, reusing')
+        return chr_lengths_fpath
+
+    chr_lengths = dict()
+    with open(cnf['genome']['seq'], 'r') as handle:
+        reference_records = SeqIO.parse(handle, 'fasta')
+        for record in reference_records:
+            chr_lengths[record.id] = len(record.seq)
+    with open(chr_lengths_fpath, 'w') as handle:
+        for chr_name in sorted(chr_lengths, key=chr_lengths.get, reverse=True):
+            handle.write(chr_name + '\t' + str(chr_lengths[chr_name]) + '\n')
+    return chr_lengths_fpath
 
 
 def md5_for_file(f, block_size=2**20):

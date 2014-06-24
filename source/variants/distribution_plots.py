@@ -3,7 +3,7 @@ import textwrap
 from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
-from source.utils import info, verify_file, human_sorted
+from source.utils import info, verify_file, human_sorted, generate_chr_lengths_file
 from source.logger import step_greetings
 
 import matplotlib
@@ -17,14 +17,7 @@ def variants_distribution_plot(cnf, vcf_fpath):
     step_greetings('Quality control variant distribution plots')
 
     # step 1: get chr lengths
-    chr_len_fpath = cnf.get('chr_lengths')
-    if not chr_len_fpath:
-        chr_len_fpath = expanduser(cnf['genome'].get('chr_lengths'))
-    if not verify_file(chr_len_fpath):
-        exit(1)
-        # no chromosome lengths file for the genome!
-        # TODO: process reference fasta and get lengths from it
-    chr_lengths = _get_chr_lengths(chr_len_fpath)
+    chr_lengths = _get_chr_lengths(cnf)
 
     # step 2: get variants distribution (per chromosome)
     qc_cnf = cnf['quality_control']
@@ -101,7 +94,11 @@ def variants_distribution_plot(cnf, vcf_fpath):
     return variants_distribution_plot_fpath
 
 
-def _get_chr_lengths(chr_len_fpath):
+def _get_chr_lengths(cnf):
+    chr_len_fpath = cnf['genome'].get('chr_lengths')
+    if not chr_len_fpath:
+        chr_len_fpath = generate_chr_lengths_file(cnf)
+
     chr_lengths = dict()
     with open(chr_len_fpath, 'r') as f:
         for line in f:

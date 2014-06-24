@@ -17,8 +17,9 @@ def bcftools_qc(cnf, vcf_fpath):
 
     bcftools = get_tool_cmdline(cnf, 'bcftools')
     plot_vcfstats = get_tool_cmdline(cnf, 'plot_vcfstats')
-    if not bcftools or not bcftools or not plot_vcfstats:
-        sys.exit(1)
+    if not bcftools or not plot_vcfstats:
+        info('Warning: cannot draw basic plots without bcftools and plot_vcfstats.')
+        return []
 
     gzipped_fpath, tbi_fpath = bgzip_and_tabix_vcf(cnf, vcf_fpath)
 

@@ -30,12 +30,12 @@ def main(args):
         key_for_sample_name='vcf')
 
     check_system_resources(cnf,
-        required=['java', 'gatk', 'snpeff', 'bgzip', 'tabix'],
-        optional=['bcftools', 'plot_vcfstats'])
+        required=['java', 'gatk', 'snpeff'],
+        optional=['bgzip', 'tabix', 'bcftools', 'plot_vcfstats'])
 
     load_genome_resources(cnf,
         required=['seq', 'dbsnp'],
-        optional=['cosmic', '1000genomes'])
+        optional=['chr_lengths', 'cosmic', '1000genomes'])
 
     check_quality_control_config(cnf)
 
