@@ -5,7 +5,7 @@ from os.path import join, basename
 from source.logger import step_greetings, critical
 from source.targetcov.Region import Region
 from source.utils import intermediate_fname, get_tool_cmdline, info, err, \
-    call_check_output, call_pipe, call, format_integer, format_decimal
+    call_check_output, call_pipe, call, format_integer, format_decimal, get_chr_len_fpath
 from source.transaction import file_transaction
 from source.utils_from_bcbio import splitext_plus
 
@@ -17,7 +17,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
     info('Calculation of coverage statistics for the regions in the input BED file...')
     amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, bam, amplicons_bed)
 
-    chr_len_fpath = cnf['genome']['chr_lengths']
+    chr_len_fpath = get_chr_len_fpath(cnf)
     exons_bed = cnf['genome']['exons']
 
     if 'summary' in cnf['coverage_reports']['report_types']:

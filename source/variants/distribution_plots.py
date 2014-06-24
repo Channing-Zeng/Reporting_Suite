@@ -3,7 +3,7 @@ import textwrap
 from os import mkdir, makedirs
 from os.path import basename, join, isdir, dirname, expanduser
 
-from source.utils import info, verify_file, human_sorted, generate_chr_lengths_file
+from source.utils import info, verify_file, human_sorted, get_chr_len_fpath
 from source.logger import step_greetings
 
 import matplotlib
@@ -95,9 +95,7 @@ def variants_distribution_plot(cnf, vcf_fpath):
 
 
 def _get_chr_lengths(cnf):
-    chr_len_fpath = cnf['genome'].get('chr_lengths')
-    if not chr_len_fpath:
-        chr_len_fpath = generate_chr_lengths_file(cnf)
+    chr_len_fpath = get_chr_len_fpath(cnf)
 
     chr_lengths = dict()
     with open(chr_len_fpath, 'r') as f:

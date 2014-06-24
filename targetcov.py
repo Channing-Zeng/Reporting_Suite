@@ -55,8 +55,8 @@ def main(args):
 
     load_genome_resources(
         cnf,
-        required=['chr_lengths', 'exons'],
-        optional=['genes'])
+        required=['seq', 'exons'],
+        optional=['chr_lengths', 'genes'])
 
     if cnf['report_types']:
         cnf['coverage_reports']['report_types'] = cnf['report_types']

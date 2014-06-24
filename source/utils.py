@@ -220,22 +220,25 @@ def bgzip_and_tabix_vcf(cnf, vcf_fpath):
     return gzipped_fpath, tbi_fpath
 
 
-def generate_chr_lengths_file(cnf):
-    chr_lengths_fpath = join(cnf['work_dir'], 'chr_lengths.txt')
+def get_chr_len_fpath(cnf):
+    chr_len_fpath = cnf['genome'].get('chr_lengths')
+    if chr_len_fpath:
+        return chr_len_fpath
 
-    if cnf.reuse_intermediate and file_exists(chr_lengths_fpath):
-        info(chr_lengths_fpath + ' exists, reusing')
-        return chr_lengths_fpath
+    chr_len_fpath = join(cnf['work_dir'], 'chr_lengths.txt')
+    if cnf.reuse_intermediate and file_exists(chr_len_fpath):
+        info(chr_len_fpath + ' exists, reusing')
+        return chr_len_fpath
 
     chr_lengths = dict()
     with open(cnf['genome']['seq'], 'r') as handle:
         reference_records = SeqIO.parse(handle, 'fasta')
         for record in reference_records:
             chr_lengths[record.id] = len(record.seq)
-    with open(chr_lengths_fpath, 'w') as handle:
+    with open(chr_len_fpath, 'w') as handle:
         for chr_name in sorted(chr_lengths, key=chr_lengths.get, reverse=True):
             handle.write(chr_name + '\t' + str(chr_lengths[chr_name]) + '\n')
-    return chr_lengths_fpath
+    return chr_len_fpath
 
 
 def md5_for_file(f, block_size=2**20):
