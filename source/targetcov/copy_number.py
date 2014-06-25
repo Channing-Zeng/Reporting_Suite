@@ -33,6 +33,7 @@ def run_copy_number(sample_mapped_reads, gene_depth):
 
             if sample not in norm_depth_by_sample:
                 continue
+
             #norm1b
             norm_depths_by_gene[gene][sample] = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1
 

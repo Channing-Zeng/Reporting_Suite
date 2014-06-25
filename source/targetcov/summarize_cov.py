@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, write_tsv
 from source.targetcov.copy_number import run_copy_number
@@ -30,7 +31,7 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
 
     return cnv_report_fpath
-
+# /Users/vladsaveliev/vagrant/reporting_suite/external/zhongwu_tools/cov2cnv.pl
 
 def _parse_targetseq_sample_report(report_fpath):
     """ returns row_per_sample =
@@ -58,7 +59,7 @@ def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_f
             zip(sample_names, report_details_fpaths, report_summary_fpaths):
 
         gene_summary_lines += _get_lines_by_region_type(report_details_fpath, 'Gene-Amplicon')
-        report_lines = dict(parse_tsv(report_summary_fpath))
+        report_lines = OrderedDict(parse_tsv(report_summary_fpath))
         cov_by_sample[sample_name] = int(report_lines.get('Mapped reads').replace(',', ''))
 
     return run_copy_number(cov_by_sample, gene_summary_lines)

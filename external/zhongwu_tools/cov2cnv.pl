@@ -3,7 +3,7 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Stat::Basic;
+use Statistics::Basic;
 use Getopt::Std;
 use strict;
 
@@ -68,10 +68,11 @@ foreach my $s (@samples) {
 
 while( my ($k, $v) = each %norm1) {
     foreach my $s (@samples) {
-	$norm1b{ $k }->{ $s } = $v->{$s} * $factor2{ $k }+0.1;
+	    $norm1b{ $k }->{ $s } = $v->{$s} * $factor2{ $k }+0.1;
+        print "$k : $v->{$s} : $factor2{ $k } : $norm1b{ $k }->{ $s }";
         $norm2{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
         $norm3{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
-	#$v->{$s} = log($v->{$s}/$meddepth)/log(2);
+	    #$v->{$s} = log($v->{$s}/$meddepth)/log(2);
     }
 }
 
