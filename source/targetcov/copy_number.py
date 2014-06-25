@@ -38,12 +38,8 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
 
             norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
 
-            print median_depth_by_sample[sample]
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
                 median_depth_by_sample[sample] else 0
-            print math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
-                median_depth_by_sample[sample] else 0
-            pass
 
     return _get_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
 
@@ -125,16 +121,16 @@ def _get_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_
     return report_data
 
 
-sample_order = '''PC9_IRLR PC9_9291-L0B_1 PC9_IR-GM PC9_9291_6 PC9_9291-5 PC9_IR-4
-PC9_IR-6 PC9_9291-2 PC9 PC9_9291-3 gDNA'''.split()
-
-gene_order = 'PIK3CA KRAS NRAS HRAS BRAF EGFR'.split()
+# sample_order = '''PC9_IRLR PC9_9291-L0B_1 PC9_IR-GM PC9_9291_6 PC9_9291-5 PC9_IR-4
+# PC9_IR-6 PC9_9291-2 PC9 PC9_9291-3 gDNA'''.split()
+#
+# gene_order = 'PIK3CA KRAS NRAS HRAS BRAF EGFR'.split()
 
 def _report_row_to_objects(gene_depth):
     inputs = OrderedDefaultDict(OrderedDict)
-    for gene_name in gene_order:
-        for sample_name in sample_order:
-            inputs[gene_name][sample_name] = None
+    # for gene_name in gene_order:
+    #     for sample_name in sample_order:
+    #         inputs[gene_name][sample_name] = None
 
     for read in gene_depth:
         rec = Record(*read)
