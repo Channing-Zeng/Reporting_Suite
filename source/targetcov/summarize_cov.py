@@ -51,9 +51,6 @@ def _parse_targetseq_sample_report(report_fpath):
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
-    """ Parsing gene coverage and sample summary report as an input to copy number report
-        "Gene-Amplicon" row's used from gene coverage and "Mapped reads" form summary
-    """
     gene_summary_lines = []
     cov_by_sample = dict()
 

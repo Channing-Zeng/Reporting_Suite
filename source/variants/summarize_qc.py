@@ -54,7 +54,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
 
         caller.summary_qc_rep_fpaths = write_summary_reports(
             cnf['output_dir'], cnf['work_dir'], caller.summary_qc_report,
-            sample_names, '-' + caller.suf + '.varqc.summary', 'Variant QC for ' + caller.name)
+            sample_names, caller.suf + '.varqc.summary', 'Variant QC for ' + caller.name)
 
     all_single_reports = [r for c in callers for r in c.single_qc_rep_fpaths]
     all_sample_names = [sample_name + '-' + c.suf for sample_name in sample_names for c in callers]

@@ -75,7 +75,8 @@ def _flatten_report(report, sample_names):
     rows = [['Sample'] + sample_names]
     for group_name, group_metrics in report:
         for metric in group_metrics:
-            rows.append([metric['metricName']] + metric['values'])
+            if metric['isMain']:
+                rows.append([metric['metricName']] + metric['values'])
 
     return rows
 
