@@ -10,8 +10,4 @@ PC9_9291-5	876306
 PC9_IR-6	1030856
 PC9_IRLR	1834287
 Undetermined	2948968
-<<<<<<< Updated upstream
 gDNA	2241
-=======
-gDNA	2241
->>>>>>> Stashed changes
