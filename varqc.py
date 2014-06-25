@@ -126,7 +126,8 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
 
 
 def finalize_all(cnf, samples, results):
-    for (sample_name, cnf), (qc_dir, qc_report, qc_plots) in zip(samples.items(), results):
+    for (sample_name, cnf), (qc_dir, qc_report, qc_plots) \
+            in zip(samples.items(), results):
         if qc_dir:
             info(sample_name + ':')
             info('  ' + qc_report)
