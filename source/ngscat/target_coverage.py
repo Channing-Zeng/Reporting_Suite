@@ -1,18 +1,14 @@
 #!/usr/bin/python
 
-import pysam
 import sets
-import sys
 import os
-import optparse
 import string
 import numpy
 
 import xlwt
 
 from matplotlib import pyplot
-
-import bam_file
+from source.logger import info
 
 
 def draw_graph(fileout, values, xticklabels, xlabel, ylabel, legend=None):
@@ -124,7 +120,7 @@ def draw_graph_wreplicates(fileout, values_wreplicates, xticklabels, xlabel, yla
 
 
 def count_lines(filename):
-    print 'Calculating file size...'
+    info('Calculating file size...')
     #    tmp = os.popen('wc -l '+filename)
     #    nlines = string.atof(tmp.readline().split(' ')[0])
     #
@@ -163,7 +159,7 @@ def precalculated_target_coverage(coveragefile, coveragelist):
     covered_positions_per_depth = [0 for i in range(len(coveragelist))]
 
     # A progress bar is initialized
-    print 'Counting covered positions...'
+    info('Counting covered positions...')
     #    widgets = ['Counting: ', progressbar.Percentage(), ' ',
     #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
     #    pbar = progressbar.ProgressBar(widgets=widgets, maxval=ntotal_positions).start()
@@ -242,7 +238,7 @@ def target_coverage_lite(filenames, coveragelist, outprefix, graph_legend=None, 
 
             # Check whether the output directory is already created
     if (not os.path.isdir(os.path.dirname(outprefix))):
-        print 'WARNING: directory ' + os.path.dirname(outprefix) + ' not found. Creating new directory.'
+        info('Directory ' + os.path.dirname(outprefix) + ' not found. Creating new directory.')
         os.mkdir(os.path.dirname(outprefix))
 
     if (xticklabels == None): xticklabels = ['>=' + str(cov) + 'x' for cov in coveragelist]
@@ -252,7 +248,7 @@ def target_coverage_lite(filenames, coveragelist, outprefix, graph_legend=None, 
     draw_graph(outprefix + 'covered_positions.png', covered_positions_per_depth_list, xticklabels, 'Coverage threshold',
                '% covered positions', graph_legend)
 
-    print 'Graph saved at ' + outprefix + 'covered_positions.png'
+    info('Graph saved at ' + outprefix + 'covered_positions.png')
 
     if (coveredbases <> None):
         for i, covered_positions_per_depth in enumerate(covered_positions_per_depth_list):
@@ -266,7 +262,6 @@ def target_coverage_lite(filenames, coveragelist, outprefix, graph_legend=None, 
         while ((i < len(filenames)) and (covered_positions_per_depth_list[i][0] >= warnthreshold)):
             i += 1
         status.value = (i == len(filenames))
-
 
 
 

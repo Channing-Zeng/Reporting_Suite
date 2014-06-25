@@ -1,262 +1,10 @@
-try:
-    import numpy
-except ImportError:
-    print 'WARNING: numpy module is not available.'
-try:
-    from scipy import stats
-except ImportError:
-    print 'WARNING: scipy.stats module is not available.'
-
-import sys
 import bed_file
 import region
-
-
-from matplotlib import pyplot
 
 
 class bedgraph_file:
     def __init__(self, _filename):
         self.filename = _filename
-
-
-    def scores(self):
-        sampling = []
-
-        print 'Loading scores from ' + self.filename + '...'
-        fd = file(self.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        for i, line in enumerate(fd):
-            value = (line.split('\t')[-1])
-            try:
-                sampling.append(float(value))
-            except ValueError:
-                if (value <> 'none\n' and value <> 'None\n'):
-                    print 'ERROR: invalid score value at line ' + str(i + 4)
-                    sys.exit(1)
-        fd.close()
-        print '    Done.'
-
-        return numpy.array(sampling)
-
-
-    def windowsscores(self):  #ESTA FUNCION NO LA HE COMPROBADO
-        data = []
-        print 'Loading data from ' + self.filename + ' ...'
-        fd = file(self.filename)
-        fd.readline();
-        fd.readline();
-        fd.readline()
-        for i, line in enumerate(fd):
-            fields = (line.split('\t'))
-            try:
-                data.append(fields[0], fields[1], fields[2], float(fields[-1]))
-            except ValueError:
-                if (fields[-1] <> 'none\n' and fields[-1] <> 'None\n'):
-                    print 'ERROR at bedgraph_file.windowsscores: invalid score value at line ' + str(i + 4)
-                    sys.exit(1)
-
-        return data
-
-
-    def spearman(self, bedgraph):
-        sampling1 = self.scores()
-        sampling2 = bedgraph.scores()
-
-        return stats.spearmanr(sampling1, sampling2)
-
-
-    def pearson(self, bedgraph):
-        sampling1 = self.scores()
-        sampling2 = bedgraph.scores()
-
-        return stats.pearsonr(sampling1, sampling2)
-
-
-    def outliers(self, fileout, prob=0.01):
-        """************************************************************************************************************************************************************
-        Task: selects those regions with a score <= percentile '100*prob' or >= percentile '100-prob*100'.   
-        Inputs:            
-            fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
-            prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
-        Ouputs: a new bedgraph file will be created named fileout.
-        ************************************************************************************************************************************************************"""
-
-        sampling = self.scores()
-        inferior = numpy.percentile(sampling, int(prob * 100))
-        superior = numpy.percentile(sampling, 100 - int(prob * 100))
-
-        print 'Lower bond: ' + str(inferior)
-        print 'Higher bond: ' + str(superior)
-
-        print 'Selecting outliers...'
-        writtenlow = 0
-        writtenhigh = 0
-        fdw = file(fileout, 'w')
-        fdr = file(self.filename)
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline())
-        for i, line in enumerate(fdr):
-            # Scores may be 'none'
-            try:
-                score = float(line.split('\t')[-1])
-                #Check whether the score is lower/higher than the percentiles used as thresholds
-                if (score <= inferior):
-                    fdw.write(line)
-                    writtenlow += 1
-                elif (score >= superior):
-                    fdw.write(line)
-                    writtenhigh += 1
-            except ValueError:
-                continue;
-
-        fdr.close()
-        fdw.close()
-        print '    Done.'
-
-        print str(writtenlow) + ' outliers below the lower bond'
-        print str(writtenhigh) + ' outliers above the upper bond'
-
-        return bedgraph_file(fileout)
-
-
-    def loutliers(self, fileout, prob=0.01):
-        """************************************************************************************************************************************************************
-        Task: selects those regions with a score <= percentile '100*prob'   
-        Inputs:            
-            fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
-            prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
-        Ouputs: a new bedgraph file will be created named fileout.
-        ************************************************************************************************************************************************************"""
-
-        sampling = self.scores()
-        inferior = numpy.percentile(sampling, int(prob * 100))
-
-        print 'Lower bond: ' + str(inferior)
-
-        print 'Selecting outliers...'
-        writtenlow = 0
-        fdw = file(fileout, 'w')
-        fdr = file(self.filename)
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline())
-        for i, line in enumerate(fdr):
-            # Scores may be 'none'            
-            try:
-                score = float(line.split('\t')[-1])
-                #Check whether the score is lower than the percentile used as the threshold                
-                if (score <= inferior):
-                    fdw.write(line)
-                    writtenlow += 1
-            except ValueError:
-                continue;
-
-        fdr.close()
-        fdw.close()
-        print '    Done.'
-
-        print str(writtenlow) + ' outliers below the lower bond'
-
-        return bedgraph_file(fileout)
-
-
-    def houtliers(self, fileout, prob=0.01):
-        """************************************************************************************************************************************************************
-        Task: selects those regions with a score >= percentile '100-prob*100'.   
-        Inputs:            
-            fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
-            prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
-        Ouputs: a new bedgraph file will be created named fileout.
-        ************************************************************************************************************************************************************"""
-
-        sampling = self.scores()
-        superior = numpy.percentile(sampling, 100 - int(prob * 100))
-
-        print 'Higher bond: ' + str(superior)
-
-        print 'Selecting outliers...'
-        writtenhigh = 0
-        fdw = file(fileout, 'w')
-        fdr = file(self.filename)
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline())
-        for i, line in enumerate(fdr):
-            # Scores may be 'none'                        
-            try:
-                score = float(line.split('\t')[-1])
-                #Check whether the score is higher than the percentile used as the threshold                                
-                if (score >= superior):
-                    fdw.write(line)
-                    writtenhigh += 1
-            except ValueError:
-                continue;
-
-        fdr.close()
-        fdw.close()
-        print '    Done.'
-
-        print str(writtenhigh) + ' outliers above the upper bond'
-
-        return bedgraph_file(fileout)
-
-    def rmscore(self, score, out):
-        """************************************************************************************************************************************************************
-        Task: removes all of those regions that present score 'score'. 
-        Inputs:       
-            out: string containing the full path to the bedgraph file were unfiltered regions will be saved.
-            score: float indicating the score of the regions that should be removed.
-        Ouputs: a new bedgraph file will be created containing the unfiltered regions.
-        ************************************************************************************************************************************************************"""
-
-        fdr = file(self.filename)
-        fdw = file(out, 'w')
-
-        removed = 0
-        remain = 0
-        print 'Filtering...'
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline());
-        fdw.write(fdr.readline())
-        for line in fdr:
-            fields = line.split('\t')
-            if (float(fields[-1]) <> score):
-                fdw.write(line)
-                remain += 1
-            else:
-                removed += 1
-        print '    Done.'
-
-        fdw.close()
-        fdr.close()
-
-        print str(removed) + ' regions removed'
-        print str(remain) + ' regions remain'
-        print str(removed + remain) + ' regions in total'
-
-
-    def get_region(self):
-        """************************************************************************************************************************************************************
-        Task: returns a list of regions with all intervals
-        Output:
-            regions: list of regions
-        ************************************************************************************************************************************************************"""
-
-        fd = file(self.filename)
-        regions = []
-        for line in fd:
-            aline = line.replace('\n', '').split('\t')
-            if not len(aline): # skipping empty lines
-                continue
-            #new region 
-            r = region.region(aline[0], aline[1], aline[2], aline[3])
-            regions.append(r)
-        return regions
-
 
     def get_batch(self, fd, size):
         """************************************************************************************************************************************************************
@@ -271,7 +19,6 @@ class bedgraph_file:
         batch = []
         batch = fd.readlines(size)
         return batch, fd
-
 
     def getOffTarget(self, offset, coverageThreshold, target_fpath, outfile):
         """************************************************************************************************************************************************************
@@ -355,12 +102,261 @@ class bedgraph_file:
 
 ### NOT USED IN DEFAULT NGSCAT! ####
 
+#from matplotlib import pyplot
+
 #
 # try:
 #     import progressbar
 # except ImportError:
 #     print 'WARNING: progressbar was not imported'
 
+# try:
+#     from scipy import stats
+# except ImportError:
+#     err('WARNING: scipy.stats module is not available.')
+
+# from source.logger import err, info
+#
+# try:
+#     import numpy
+# except ImportError:
+#     err('WARNING: numpy module is not available.')
+#
+# import sys
+
+    # def scores(self):
+    #     sampling = []
+    #
+    #     info('Loading scores from ' + self.filename + '...')
+    #     fd = file(self.filename)
+    #     fd.readline()
+    #     fd.readline()
+    #     fd.readline()
+    #     for i, line in enumerate(fd):
+    #         value = (line.split('\t')[-1])
+    #         try:
+    #             sampling.append(float(value))
+    #         except ValueError:
+    #             if value.strip().lower() != 'none':
+    #                 err('ERROR: invalid score value at line ' + str(i + 4))
+    #                 sys.exit(1)
+    #     fd.close()
+    #     info('\tDone.')
+    #
+    #     return numpy.array(sampling)
+    #
+    # def get_region(self):
+    #     """************************************************************************************************************************************************************
+    #     Task: returns a list of regions with all intervals
+    #     Output:
+    #         regions: list of regions
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     fd = file(self.filename)
+    #     regions = []
+    #     for line in fd:
+    #         aline = line.replace('\n', '').split('\t')
+    #         if not len(aline): # skipping empty lines
+    #             continue
+    #         #new region
+    #         r = region.region(aline[0], aline[1], aline[2], aline[3])
+    #         regions.append(r)
+    #     return regions
+    #
+    # def rmscore(self, score, out):
+    #     """************************************************************************************************************************************************************
+    #     Task: removes all of those regions that present score 'score'.
+    #     Inputs:
+    #         out: string containing the full path to the bedgraph file were unfiltered regions will be saved.
+    #         score: float indicating the score of the regions that should be removed.
+    #     Ouputs: a new bedgraph file will be created containing the unfiltered regions.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     fdr = file(self.filename)
+    #     fdw = file(out, 'w')
+    #
+    #     removed = 0
+    #     remain = 0
+    #     print 'Filtering...'
+    #     fdw.write(fdr.readline())
+    #     fdw.write(fdr.readline())
+    #     fdw.write(fdr.readline())
+    #     for line in fdr:
+    #         fields = line.split('\t')
+    #         if (float(fields[-1]) <> score):
+    #             fdw.write(line)
+    #             remain += 1
+    #         else:
+    #             removed += 1
+    #     print '    Done.'
+    #
+    #     fdw.close()
+    #     fdr.close()
+    #
+    #     print str(removed) + ' regions removed'
+    #     print str(remain) + ' regions remain'
+    #     print str(removed + remain) + ' regions in total'
+    #
+    # def outliers(self, fileout, prob=0.01):
+    #     """************************************************************************************************************************************************************
+    #     Task: selects those regions with a score <= percentile '100*prob' or >= percentile '100-prob*100'.
+    #     Inputs:
+    #         fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
+    #         prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
+    #     Ouputs: a new bedgraph file will be created named fileout.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     sampling = self.scores()
+    #     inferior = numpy.percentile(sampling, int(prob * 100))
+    #     superior = numpy.percentile(sampling, 100 - int(prob * 100))
+    #
+    #     print 'Lower bond: ' + str(inferior)
+    #     print 'Higher bond: ' + str(superior)
+    #
+    #     print 'Selecting outliers...'
+    #     writtenlow = 0
+    #     writtenhigh = 0
+    #     fdw = file(fileout, 'w')
+    #     fdr = file(self.filename)
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline())
+    #     for i, line in enumerate(fdr):
+    #         # Scores may be 'none'
+    #         try:
+    #             score = float(line.split('\t')[-1])
+    #             #Check whether the score is lower/higher than the percentiles used as thresholds
+    #             if (score <= inferior):
+    #                 fdw.write(line)
+    #                 writtenlow += 1
+    #             elif (score >= superior):
+    #                 fdw.write(line)
+    #                 writtenhigh += 1
+    #         except ValueError:
+    #             continue;
+    #
+    #     fdr.close()
+    #     fdw.close()
+    #     print '    Done.'
+    #
+    #     print str(writtenlow) + ' outliers below the lower bond'
+    #     print str(writtenhigh) + ' outliers above the upper bond'
+    #
+    #     return bedgraph_file(fileout)
+    #
+    #
+    # def loutliers(self, fileout, prob=0.01):
+    #     """************************************************************************************************************************************************************
+    #     Task: selects those regions with a score <= percentile '100*prob'
+    #     Inputs:
+    #         fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
+    #         prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
+    #     Ouputs: a new bedgraph file will be created named fileout.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     sampling = self.scores()
+    #     inferior = numpy.percentile(sampling, int(prob * 100))
+    #
+    #     print 'Lower bond: ' + str(inferior)
+    #
+    #     print 'Selecting outliers...'
+    #     writtenlow = 0
+    #     fdw = file(fileout, 'w')
+    #     fdr = file(self.filename)
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline())
+    #     for i, line in enumerate(fdr):
+    #         # Scores may be 'none'
+    #         try:
+    #             score = float(line.split('\t')[-1])
+    #             #Check whether the score is lower than the percentile used as the threshold
+    #             if (score <= inferior):
+    #                 fdw.write(line)
+    #                 writtenlow += 1
+    #         except ValueError:
+    #             continue;
+    #
+    #     fdr.close()
+    #     fdw.close()
+    #     print '    Done.'
+    #
+    #     print str(writtenlow) + ' outliers below the lower bond'
+    #
+    #     return bedgraph_file(fileout)
+    #
+    #
+    # def houtliers(self, fileout, prob=0.01):
+    #     """************************************************************************************************************************************************************
+    #     Task: selects those regions with a score >= percentile '100-prob*100'.
+    #     Inputs:
+    #         fileout: string containing the full path to the bedgraph file were outlier regions will be saved.
+    #         prob: float indicating the percentile (/100) to use as the threshold that determines a region to be an outlier.
+    #     Ouputs: a new bedgraph file will be created named fileout.
+    #     ************************************************************************************************************************************************************"""
+    #
+    #     sampling = self.scores()
+    #     superior = numpy.percentile(sampling, 100 - int(prob * 100))
+    #
+    #     print 'Higher bond: ' + str(superior)
+    #
+    #     print 'Selecting outliers...'
+    #     writtenhigh = 0
+    #     fdw = file(fileout, 'w')
+    #     fdr = file(self.filename)
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline());
+    #     fdw.write(fdr.readline())
+    #     for i, line in enumerate(fdr):
+    #         # Scores may be 'none'
+    #         try:
+    #             score = float(line.split('\t')[-1])
+    #             #Check whether the score is higher than the percentile used as the threshold
+    #             if (score >= superior):
+    #                 fdw.write(line)
+    #                 writtenhigh += 1
+    #         except ValueError:
+    #             continue;
+    #
+    #     fdr.close()
+    #     fdw.close()
+    #     print '    Done.'
+    #
+    #     print str(writtenhigh) + ' outliers above the upper bond'
+    #
+    #     return bedgraph_file(fileout)
+    #
+    # def spearman(self, bedgraph):
+    #     sampling1 = self.scores()
+    #     sampling2 = bedgraph.scores()
+    #
+    #     return stats.spearmanr(sampling1, sampling2)
+    #
+    #
+    # def pearson(self, bedgraph):
+    #     sampling1 = self.scores()
+    #     sampling2 = bedgraph.scores()
+    #
+    #     return stats.pearsonr(sampling1, sampling2)
+    #
+    # def windowsscores(self):  #ESTA FUNCION NO LA HE COMPROBADO
+    #     data = []
+    #     print 'Loading data from ' + self.filename + ' ...'
+    #     fd = file(self.filename)
+    #     fd.readline()
+    #     fd.readline()
+    #     fd.readline()
+    #     for i, line in enumerate(fd):
+    #         fields = (line.split('\t'))
+    #         try:
+    #             data.append(fields[0], fields[1], fields[2], float(fields[-1]))
+    #         except ValueError:
+    #             if (fields[-1] <> 'none\n' and fields[-1] <> 'None\n'):
+    #                 print 'ERROR at bedgraph_file.windowsscores: invalid score value at line ' + str(i + 4)
+    #                 sys.exit(1)
+    #
+    #     return data
+    #
     # def draw_another_bed_score(self, bedgraph, fileout):
     #     """************************************************************************************************************************************************************
     #     Task: draws the distribution of the scores of the regions in 'bedgraph' that overlap with the regions in self.

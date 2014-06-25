@@ -1,11 +1,10 @@
-import sys
 import numpy
 
 from matplotlib import pyplot
-import matplotlib
 
-from pylab import plot, figure, imshow, xlabel, ylabel, cm, show, polyfit, polyval
+from pylab import cm
 from scipy import stats, mgrid, c_, reshape, random, rot90
+from source.logger import info, err
 
 
 def region_coverage(coveragefile):
@@ -24,7 +23,7 @@ def region_coverage(coveragefile):
         coverage: dictionary. Keys are region coordinates in the form of tuples. Elements are floats containing mean coverage per region.
     ************************************************************************************************************************************************************"""
 
-    print 'Calculating mean coverage per region...'
+    info('Calculating mean coverage per region...')
 
     # Each line contains the coverage of one base    
     i = 1
@@ -156,7 +155,7 @@ def coveragecorr(coveragefiles, fileout, legend, executiongranted=None, status=N
             status.value = r_value >= warnthreshold
 
     else:
-        print 'WARNING: only one region found in the bed file. Skipping coverage correlation calculation.'
+        err('WARNING: only one region found in the bed file. Skipping coverage correlation calculation.')
 
         # In case status variable is set, return False as correlation could not be calculated
         if (status <> None):
@@ -168,6 +167,8 @@ def coveragecorr(coveragefiles, fileout, legend, executiongranted=None, status=N
 
 
 #################### NOT NEEDED IN DEFAULT ngsCAT! #########################
+
+#from pylab import plot, figure, imshow, xlabel, ylabel, cm, show, polyfit, polyval
 
 # def coveragecorrtest():
 #     x = numpy.array(list(numpy.random.normal(30, 5, 1000)) + list(numpy.random.normal(130, 5, 1000)))

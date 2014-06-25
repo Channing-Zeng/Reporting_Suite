@@ -6,14 +6,15 @@ import string
 import config
 from source.calling_process import call_check_output, call
 from source.file_utils import intermediate_fname
-from source.logger import info
+from source.logger import info, err
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import human_sorted
 
 try:
     import numpy
 except ImportError:
-    print 'WARNING: module numpy was not loaded.'
+    err('ERROR: module numpy was not loaded.')
+    sys.exit(1)
 
 import xlwt
 
@@ -54,7 +55,7 @@ class BamFile(pysam.Samfile):
 
 
     def issorted(self):
-        print 'Checking sorting of ' + self.filename
+        info('Checking sorting of ' + self.filename)
 
         visitedcontigs = set()
         previouscontig = None
@@ -76,7 +77,7 @@ class BamFile(pysam.Samfile):
                                        (previousstart <= read.pos))):
 
             if (not rc % 1000000):
-                print str(rc) + ' reads checked'
+                info(str(rc) + ' reads checked')
 
             visitedcontigs.add(read.rname)
             previouscontig = read.rname
@@ -90,24 +91,22 @@ class BamFile(pysam.Samfile):
             except StopIteration:
                 readsavailable = False
             except TypeError:
-                if (read.is_unmapped):
-                    print 'ERROR: unmapped reads found at ' + self.filename
-                    #print 'WARNING: unmapped reads found at '+self.filename
+                if read.is_unmapped:
+                    err('ERROR: unmapped reads found at ' + self.filename)
                 else:
-                    print 'ERROR: incorrect bam format'
-                print '	Read position: ' + str(rc)
-                print '	Alignment entry: ' + str(read)
-                print '	Exiting.'
+                    err('ERROR: incorrect bam format')
+                err('Read position: ' + str(rc))
+                err('Alignment entry: ' + str(read))
+                err('Exiting.')
                 sys.exit(1)
-
             rc += 1
 
-        print '	Done.'
+        info('\tDone.')
 
         if (readsavailable):
-            print 'WARNING: bam not sorted.'
-            print '	Check read ' + str(read)
-            print '	and the read before.'
+            info(' WARNING: bam not sorted.')
+            info(' Check read ' + str(read))
+            info(' and the read before.')
 
             return False
         else:
@@ -115,7 +114,6 @@ class BamFile(pysam.Samfile):
 
     def nreads(self):
         return self.mapped + self.unmapped
-
     #		print 'Calculating number or reads...'
     #
     #		if(self._nreads<>None): return self._nreads
@@ -133,11 +131,6 @@ class BamFile(pysam.Samfile):
     #
     #		return nlines
 
-
-
-
-
-
     def mappingsize(self):
         totalsize = 0
 
@@ -146,7 +139,6 @@ class BamFile(pysam.Samfile):
 
         return totalsize
 
-
     def skip_header(self, fd):
         line = fd.readline()
         while (line.startswith('@')):
@@ -154,10 +146,8 @@ class BamFile(pysam.Samfile):
 
         return fd
 
-
     def get_mapped_reads(self):
-
-        print 'Loading mapped reads...'
+        info('Loading mapped reads...')
         nunmapped = 0
         mapped_reads = {}
         for read in self:
@@ -166,43 +156,25 @@ class BamFile(pysam.Samfile):
             else:
                 mapped_reads[read.qname] = read
 
-        print str(len(mapped_reads)) + ' mapped reads loaded'
-        print str(nunmapped) + ' unmapped reads found'
+        info(str(len(mapped_reads)) + ' mapped reads loaded')
+        info(str(nunmapped) + ' unmapped reads found')
 
         return mapped_reads
 
-
     def get_mapped_reads_ids(self):
-
-        print 'Loading mapped reads ids...'
+        info('Loading mapped reads ids...')
         nunmapped = 0
         mapped_reads = {}
         for read in self:
-            if (read.is_unmapped):
+            if read.is_unmapped:
                 nunmapped += 1
             else:
                 mapped_reads[read.qname] = None
 
-        print str(len(mapped_reads)) + ' mapped reads loaded'
-        print str(nunmapped) + ' unmapped reads found'
+        info(str(len(mapped_reads)) + ' mapped reads loaded')
+        info(str(nunmapped) + ' unmapped reads found')
 
         return mapped_reads
-
-
-    def count_lines(self, filename):
-        print 'Calculating file size...'
-        tmp = os.popen('wc -l ' + filename)
-        nlines = string.atof(tmp.readline().split(' ')[0])
-
-        if (tmp.close() <> None):
-            print 'Error: some error occurred while running '
-            print '	wc -l ' + filename
-            print 'at bam_file.py'
-            print 'Exiting'
-            sys.exit(1)
-        print '	Done.'
-
-        return nlines
 
     def draw_coverage_distribution(self, on_points, noton_points, off_points, base0, lengths, fileout):
         fig = pyplot.figure(figsize=(13, 6))
@@ -637,8 +609,8 @@ class BamFile(pysam.Samfile):
                 currentChromosome = self.getrname(currentRead.tid)
             except ValueError:
                 if (currentRead.tid < 0):
-                    print "\nPlease, check that BAM file has only mapped reads"
-                    exit()
+                    err("ERROR: Please, check that BAM file has only mapped reads")
+                    sys.exit(1)
             if (currentChromosome != previousChromosome):
                 #				print "Examining Chromosome "+str(currentChromosome)+'... \n'
                 if (thereisInfo):  # A new chromosome is started. Store information about previous chromosome
@@ -971,9 +943,10 @@ class BamFile(pysam.Samfile):
                 ind = numpy.array(ind)
                 rects.append(ax.bar(ind, y, width, color='#46a246'))
             else:
-                print 'WARNING: no ON-target reads were found at bam ' + bam.filename
-                print '	The most probable reason for this is an incorrect target (bed) file. Check that contig ids are exactly the same that appear in the bam'
-                print '	file, e.g. check whether chromosome ids start with "chr" or not'
+                err('WARNING: no ON-target reads were found at bam ' + bam.filename + '\n' + \
+                    'The most probable reason for this is an incorrect target (bed) file.\n ' + \
+                    'Check that contig ids are exactly the same that appear in the bam ' + \
+                    'file, e.g. check whether chromosome ids start with "chr" or not')
 
             # Check that there are off-target reads to avoid a division by zero. Then build bars for off-target reads.
             if (offtargetreads[j] > 0):
@@ -1353,7 +1326,23 @@ class BamFile(pysam.Samfile):
 #     import progressbar
 # except ImportError:
 #     print 'WARNING: module progressbar was not loaded.'
-
+    #
+    #
+    # def count_lines(self, filename):
+    #     info('Calculating file size...')
+    #     tmp = os.popen('wc -l ' + filename)
+    #     nlines = string.atof(tmp.readline().split(' ')[0])
+    #
+    #     if (tmp.close() <> None):
+    #         err('Error: some error occurred while running ')
+    #         err('wc -l ' + filename)
+    #         err('at bam_file.py')
+    #         err('Exiting')
+    #         sys.exit(1)
+    #     info('Done.')
+    #
+    #     return nlines
+    #
     # def coverageperbase(self, currentChromosome):
     #     """*******************************************************************************************************************************************
     #     Task:  almost the same code as the first part of myCoverageBed. Gets the coverage per position for a given chromosome without focussing on

@@ -2,13 +2,13 @@
 
 
 import string
-import os
-import sys
 import numpy
 
 import xlwt
 
 from matplotlib import pyplot
+from source.logger import info
+
 
 def load_coverage_file_per_exon(filename):
     """*********************************************************************************************************************************************************
@@ -29,7 +29,7 @@ def load_coverage_file_per_exon(filename):
     next_exon_idx = 0
 
     # A progress bar is initialized
-    print 'Loading exon coverage...'
+    info('Loading exon coverage...')
     #    widgets = ['Loading exon coverage: ', progressbar.Percentage(), ' ',
     #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
     #    pbar = progressbar.ProgressBar(widgets=widgets, maxval=count_lines(filename)).start()

@@ -24,9 +24,9 @@ import gcbias
 import config
 
 from source.file_utils import intermediate_fname
-from source.logger import step_greetings
+from source.logger import step_greetings, info
 from source.utils import human_sorted
-from os.path import join
+from os.path import join, islink, isfile, samefile
 
 
 def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongranted):
@@ -38,15 +38,15 @@ def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongrant
         coveragefile = join(cnf["work_dir"], os.path.basename(bamfilename)[:-len('bam')] + 'coverage')
         coveragebedgraph = join(outdir, 'data', legend[i][:-len('bam')] + 'bed')
 
-        print 'Coveragefile = ' + coveragefile
+        info('Coveragefile = ' + coveragefile)
         bam = bam_file.BamFile(bamfilename, 'rb')
 
-        print 'Launching coverageBed...'
+        info('Launching coverageBed...')
         Pcoveragebed = multiprocessing.Process(target=bam.myCoverageBed, args=(
         bedfilename, None, coveragefile, executiongranted, coveragebedgraph,))
         Pcoveragebed.start()
 
-        print '    Done.'
+        info('\tDone.')
 
         coveragefiles.append(coveragefile)
         Pcoveragebeds.append(Pcoveragebed)
@@ -59,13 +59,11 @@ def launch_covered_positions(coveragefiles, coveragethresholds, outdir, legend, 
     status = multiprocessing.Value('b', False)
     coveredbases = multiprocessing.Array('f', len(coveragefiles))
 
-    #    print 'outdir = '+outdir
-    #    print 'coveragefile = '+coveragefile
     Pcoveredpositions = multiprocessing.Process(target=target_coverage.target_coverage_lite,
                                                 args=(coveragefiles, coveragethresholds, outdir, legend, None,
                                                       executiongranted, status, coveredbases, config.warnbasescovered,))
 
-    print 'Launching covered positions calculation...'
+    info('Launching covered positions calculation...')
     Pcoveredpositions.start()
 
     return Pcoveredpositions, status, coveredbases
@@ -79,7 +77,7 @@ def launch_coverage_saturation(bamfilenames, bedfilename, depthlist, legend, out
                                                 depthlist, 10, legend, outdir + '/coverage_saturation_10x.png',
                                                 executiongranted, status, saturationslopes,
                                                 config.warnsaturation,))
-    print 'Launching coverage saturation calculation...'
+    info('Launching coverage saturation calculation...')
     Psaturation.start()
 
     return Psaturation, status, saturationslopes
@@ -92,7 +90,7 @@ def launch_coverage_distribution(coveragefiles, outdir, legend, executiongranted
     Pcoveragedistribution = multiprocessing.Process(target=coverageHisto.histo_CV, args=(
     coveragefiles, outdir, legend, executiongranted, status, meancoverage,
     config.warnmeancoverage,))
-    print 'Launching coverage distribution calculation...'
+    info('Launching coverage distribution calculation...')
     Pcoveragedistribution.start()
 
     return Pcoveragedistribution, status, meancoverage
@@ -105,7 +103,7 @@ def launch_coveragecorr(coveragefiles, fileout, legend, executiongranted):
     Pcoveragecorr = multiprocessing.Process(target=coveragecorr.coveragecorr,
                                             args=(coveragefiles, fileout, legend, executiongranted, status, corr,
                                                   config.warncoveragecorrelation,))
-    print 'Launching coverage correlation calculation...'
+    info('Launching coverage correlation calculation...')
     Pcoveragecorr.start()
 
     return Pcoveragecorr, status, corr
@@ -120,7 +118,7 @@ def launch_onoff_reads(bamfilenames, bedfilename, legend, outdir, executiongrant
     offduplicates = multiprocessing.Array('f', len(bamfilenames))
 
     bam = bam_file.BamFile(bamfilenames[0], 'rb')
-    print 'Launching on/off target enrichment calculation...'
+    info('Launching on/off target enrichment calculation...')
     Ponoff_reads = multiprocessing.Process(target=bam.reads_on_target, args=(
     bedfilename, outdir, [bam_file.BamFile(bamfilenames[i]) for i in range(1, len(bamfilenames))],
     legend, executiongranted, onoff_status, duplicates_status, onduplicates,
@@ -156,7 +154,7 @@ def launch_offclusters(bedgraphfilenames, bedfilename, executiongranted):
     Poffclusters = multiprocessing.Process(target=sequential_offclusters_call,
                                            args=(config.offtargetoffset, config.offtargetthreshold, bedgraphfilenames,
                                                  bedfilename, executiongranted,))
-    print 'Launching off target clusters...'
+    info('Launching off target clusters...')
     Poffclusters.start()
 
     return Poffclusters
@@ -173,7 +171,7 @@ def launch_coverage_through_target(coveragefiles, outdir, legend, executiongrant
     coveragefiles, 1000, outdir, legend, executiongranted, status,
     lowcovbases,
     config.warncoverageregion, config.warncoveragethreshold,))
-    print 'Launching coverage throught target calculation...'
+    info('Launching coverage throught target calculation...')
     Pcoveragethroughtarget.start()
 
     return Pcoveragethroughtarget, status, lowcovbases
@@ -187,7 +185,7 @@ def launch_coverage_std(coveragefiles, outdir, legend, executiongranted):
                                            args=([[coveragefile] for coveragefile in coveragefiles], outdir,
                                                  legend, executiongranted, status, coveragestd, config.warnstd,))
 
-    print 'Launching coverage std calculation...'
+    info('Launching coverage std calculation...')
     Pcoveragestd.start()
 
     return Pcoveragestd, status, coveragestd
@@ -199,7 +197,7 @@ def launch_gcbias(coveragefile, bedfilename, reference, fileout, graphtitle, exe
     Pgcbias = multiprocessing.Process(target=gcbias.gcbias_lite, args=(
     coveragefile, bedfilename, reference, fileout, graphtitle, executiongranted, status,))
 
-    print 'Launching coverage std calculation...'
+    info('Launching coverage std calculation...')
     Pgcbias.start()
 
     return Pgcbias, status
@@ -396,14 +394,9 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
         fd = open(join(config.DATASRC, 'saturation_content.html'))
         saturation_content = string.join(fd.readlines(), sep='')
         fd.close()
-        reportcontent = reportcontent.replace('<SATURATIONCONTENT>', saturation_content).replace('<DEPTHLIST>',
-                                                                                                 string.join(map(str,
-                                                                                                                 depthlist[
-                                                                                                                 :-1]),
-                                                                                                             sep='x10<sup>6</sup>, ') + 'x10<sup>6</sup> and ' + str(
-                                                                                                     depthlist[
-                                                                                                         -1]) + 'x10<sup>6</sup>').replace(
-            'depthlist', str(depthlist)[1:-1])
+        reportcontent = reportcontent.replace('<SATURATIONCONTENT>', saturation_content).replace(
+            '<DEPTHLIST>', string.join(map(str, depthlist[:-1]), sep='x10<sup>6</sup>, ') + 'x10<sup>6</sup> and ' + \
+                           str(depthlist[-1]) + 'x10<sup>6</sup>').replace('depthlist', str(depthlist)[1:-1])
         reportcontent = reportcontent.replace('<WARNSATURATION>', str(config.warnsaturation))
 
         if (coverage_saturation_status.value):
@@ -437,61 +430,43 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
 
 
 def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, saturation=False, nthreads=2, extend=None,
-           depthlist='auto', coveragethresholds=[1, 5, 10, 20, 30],
-           onefeature=None):
+           depthlist='auto', coveragethresholds=[1, 5, 10, 20, 30], onefeature=None):
 
     step_greetings('ngsCAT starting! Assesses capture performance in terms of sensibility, '
                    'specificity and uniformity of the coverage.\n')
 
     if (not (os.path.isdir(outdir) or os.path.islink(outdir))):
-        print 'WARNING: ' + outdir + ' does not exist. Creating directory.'
+        info('Directory ' + outdir + ' does not exist. Creating directory.')
         os.mkdir(outdir)
 
     if (not (os.path.isdir(outdir + '/data') or os.path.islink(outdir + '/data'))):
-        print 'Creating ' + outdir + '/data'
+        info('Creating ' + outdir + '/data')
         os.mkdir(outdir + '/data')
 
     if (not (os.path.isdir(outdir + '/img') or os.path.islink(outdir + '/img'))):
-        print 'Creating ' + outdir + '/img'
+        info('Creating ' + outdir + '/img')
         os.mkdir(outdir + '/img')
 
     sortedbams = []
     for bamfilename in bamfilenames:
         filelink = join(cnf["work_dir"], os.path.basename(bamfilename))
-        try:
-            os.symlink(bamfilename, filelink)
-        except OSError:
-            print 'WARNING: when trying to create a symbolic link at the temporary directory pointing to ' + bamfilename + ', a file named ' + filelink + ' was already found.'
-            print '    Probably the temporary and origin directories are the same. The only problem this could cause is that the new index overwrites an existing one.'
-            #print '    Continue (y/n)?'
+        if islink(filelink) or (isfile(filelink) and not samefile(bamfilename, filelink)):
+            os.remove(filelink)
+        os.symlink(bamfilename, filelink)
 
-            #goahead = raw_input()
-            goahead = 'y'
-            if (goahead == 'n' or goahead == 'N'):
-                print 'Exiting...'
-                sys.exit(1)
-            elif (goahead <> 'y' and goahead <> 'Y'):
-                print 'Unknown choice ' + goahead
-                print 'Exiting...'
-                sys.exit(1)
-
-            if os.path.dirname(bamfilename) != os.path.dirname(filelink):
-                os.remove(filelink)
-                os.symlink(bamfilename, filelink)
-
-        print 'Indexing...'
+        info('Indexing...')
         pysam.index(filelink)
-        print '    Done.'
+        info('\tDone.')
 
-        if (not bam_file.BamFile(filelink).issorted()):
-            print 'WARNING: ' + bamfilename + ' is not sorted'
-            print 'Sorting...'
+        if not bam_file.BamFile(filelink).issorted():
+            info('Bam file: ' + bamfilename + ' is not sorted')
+            info('Sorting...')
             newsortedbam_fpath = intermediate_fname(cnf, bamfilename, 'sorted')
             sortedbams.append(newsortedbam_fpath)
             pysam.sort(filelink, newsortedbam_fpath[:-len('.bam')])
-            print 'Indexing...'
+            info('Indexing...')
             pysam.index(sortedbams[-1])
-            print '    Done.'
+            info('\tDone.')
         else:
             sortedbams.append(filelink)
 

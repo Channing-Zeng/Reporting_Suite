@@ -1,11 +1,6 @@
 #!/usr/bin/python
 
-
-import optparse
-import string
 import os
-import sys
-import glob
 
 import multiprocessing
 import pysam
@@ -16,6 +11,7 @@ import draw_saturation_curve
 import bam_file
 import config
 from os.path import join
+from source.logger import info, err
 
 
 def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, fileout, executiongranted=None,
@@ -42,8 +38,8 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
     for i, bam in enumerate(bamlist):
 
         # Check whether there is an index for current bam
-        if (not os.path.isfile(bam + '.bai') and not os.path.isfile(bam.replace('.bam', '.bai'))):
-            print 'WARNING: index not found for ' + bam + '. Indexing...'
+        if not os.path.isfile(bam + '.bai') and not os.path.isfile(bam.replace('.bam', '.bai')):
+            info('Index not found for ' + bam + '. Indexing...')
             pysam.index(bam)
 
         # Threads are launched for each bam and depth point. If provided depth values are greater than the number of reads in the bam file, the maximum depth
@@ -62,7 +58,7 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
                 else:
                     jobid = 'coverage_' + pid + '_' + str(depth) + '_' + os.path.basename(bamlist[i])
 
-                print "Submitting depth " + str(depth) + ", file " + bam
+                info("Submitting depth " + str(depth) + ", file " + bam)
 
                 # Activate the flag to indicate that following depth values are greater than the number of reads in the bam
                 if ((depth * 1000000) >= nreads_bam):
@@ -79,17 +75,17 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
                 result_files.append(result_fpath)
                 j += 1
         else:
-            print 'WARNING: the number of reads in ' + str(bam) + ' is ' + str(nreads_bam)
-            print '    The set of depths provided for coverage saturation calculus is 10e6*' + str(depthlist)
-            print '    At least two depths equal or lower than the number of mapped reads are required.'
+            err('Warning: the number of reads in ' + str(bam) + ' is ' + str(nreads_bam) + '\n' + \
+                'The set of depths provided for coverage saturation calculus is 10e6*' + str(depthlist) + '\n' + \
+                'At least two depths equal or lower than the number of mapped reads are required.')
 
-    if (len(simulated_depth_processes) > 0):
+    if len(simulated_depth_processes) > 0:
         # Wait for all the processess to finish
         for process in simulated_depth_processes:
             process.join()
             process.terminate()
 
-        print 'Submitting draw saturation curve...'
+        info('Submitting draw saturation curve...')
         slope_status, tmpslopes = draw_saturation_curve.draw_saturation_curve(result_files, '% covered positions',
                                                                               fileout, legend,
                                                                               warnthreshold=warnthreshold)
@@ -101,8 +97,6 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
         # Calculate status flag as an OR among the flags for each bam file
         if (status <> None):
             status.value = (sum(slope_status) == len(bamlist))
-
-
         # Remove temporary files # automatically
         #for afile in result_files: os.remove(afile)
     else:

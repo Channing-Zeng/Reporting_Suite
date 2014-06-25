@@ -2,6 +2,7 @@
 
 import os
 import bam_file
+from source.logger import info
 
 
 def simulated_depth(bam, target, depth, coveragethreshold, fileout, executiongranted=None):
@@ -24,7 +25,7 @@ def simulated_depth(bam, target, depth, coveragethreshold, fileout, executiongra
     #    totalregions = sum([len(processedbed.chrs[chr]) for chr in processedbed.chrs])
 
     # A progress bar is initialized
-    print 'Loading coverage...'
+    info('Loading coverage...')
     #    widgets = ['Progress: ', progressbar.Percentage(), ' ',
     #                progressbar.Bar(marker=progressbar.RotatingMarker()), ' ', progressbar.ETA()]
     #    pbar = progressbar.ProgressBar(widgets=widgets, maxval=totalregions).start()
@@ -51,13 +52,13 @@ def simulated_depth(bam, target, depth, coveragethreshold, fileout, executiongra
 
         #    pbar.finish()
 
-    print 'Writing results at ' + fileout + ' ...'
+    info('Writing results at ' + fileout + ' ...')
     fd = file(fileout, 'w')
     fd.write(os.path.basename(bam.filename) + '\n')
     fd.write(str(min(bam.nreads(), depth * 1000000)) + '\t' + str(ncovered_positions) + '\t' + str(
         ncovered_positions * 100.0 / npositions))
     fd.close()
-    print '    Done.'
+    info('\tDone.')
 
     if (executiongranted <> None):
         executiongranted.release()

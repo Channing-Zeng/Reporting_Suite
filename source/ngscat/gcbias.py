@@ -1,27 +1,17 @@
 #!/usr/bin/python
 
-import sys
 import re
-import os
 import sys
-import optparse
 import string
 import numpy
+from source.logger import err, info
 
 biopython_error = False
 try:
     from Bio import SeqIO
 except ImportError:
-    print('Warning: cannot import Bio module (BioPython), some equations will be slow!')
+    err('Warning: cannot import Bio module (BioPython), some equations will be slow!')
     biopython_error = True
-
-import glob
-import pysam
-
-try:
-    import pybedtools
-except ImportError:
-    pass  #print 'WARNING: module pybedtools was not imported'
 
 from matplotlib import pyplot
 
@@ -129,7 +119,6 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
     if (len(coverage) > 1):
 
         if not bedTools:  # Own method
-            #			print 'Own method'
             chromosomes = {}
             allKeys = coverage.keys()
 
@@ -185,43 +174,50 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
             region_ids = coverage.keys()
 
             if not len(gccontent):
-                print 'ERROR: G+C content values can not be calculated. Probably the provided reference file ' + reference + ' does not match with '
-                print '	the target file ' + bedfilename + '. That is, sequences of regions in the target file are probably not included within the'
-                print '	reference file.'
+                err('ERROR: G+C content values can not be calculated. Probably the provided reference file ' +
+                    reference + ' does not match with the target file ' + bedfilename + '.\n' + \
+                    'That is, sequences of regions in the target file are probably not included ' + \
+                    'within the reference file.')
                 sys.exit(1)
 
         else:
-            print 'Calculating nt content by means of pybedtools...'
-            bed = bed_file.BedFile(bedfilename)
-            sortedBed = bed.sort_bed()
-            nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # base one!!!
-            finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1
-            bedfd = pybedtools.BedTool(finalBed.filename)
-            bedfd = bedfd.remove_invalid()  # Remove negative coordinates or features with length=0, which do not work with bedtools
-            pybedtools._bedtools_installed = True
-            pybedtools.set_bedtools_path(BEDTOOLSPATH)
-            ntcontent = bedfd.nucleotide_content(reference)
-
-            # Each entry in ntcontent is parsed to extract the gc content of each exon
-            gccontent = {}
-            for entry in ntcontent:
-                gccontent[(entry.fields[0], string.atoi(entry.fields[1]), string.atoi(entry.fields[2]))] = string.atof(
-                    entry.fields[-8]) * 100
-            print '	Done.'
-            # gccontent keys in dictionary: chromosome, exon init, exon end
-
-            region_ids = []
-            for currentKey in coverage.keys():  # Pybedtools does not work with regions with zero length -> remove them (there are a few of them)
-                if currentKey[1] != currentKey[2]:
-                    region_ids.append(currentKey)
-
-
-                ##
-                ##		fdw=file('gcContent.txt','w')
-                ##		for element in sorted(gccontent.keys()):
-                ##			fdw.write(str(element)+'\n')
-                ##		fdw.close()
-                ##
+            err('ERROR: unexpected ngsCAT error! Should not be here!')
+            # try:
+            #     import pybedtools
+            # except ImportError:
+            #     pass  #print 'WARNING: module pybedtools was not imported'
+            #
+            # print 'Calculating nt content by means of pybedtools...'
+            # bed = bed_file.BedFile(bedfilename)
+            # sortedBed = bed.sort_bed()
+            # nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # base one!!!
+            # finalBed = nonOverlappingBed.sort_bed()  # BED file in base 1
+            # bedfd = pybedtools.BedTool(finalBed.filename)
+            # bedfd = bedfd.remove_invalid()  # Remove negative coordinates or features with length=0, which do not work with bedtools
+            # pybedtools._bedtools_installed = True
+            # pybedtools.set_bedtools_path(BEDTOOLSPATH)
+            # ntcontent = bedfd.nucleotide_content(reference)
+            #
+            # # Each entry in ntcontent is parsed to extract the gc content of each exon
+            # gccontent = {}
+            # for entry in ntcontent:
+            #     gccontent[(entry.fields[0], string.atoi(entry.fields[1]), string.atoi(entry.fields[2]))] = string.atof(
+            #         entry.fields[-8]) * 100
+            # print '	Done.'
+            # # gccontent keys in dictionary: chromosome, exon init, exon end
+            #
+            # region_ids = []
+            # for currentKey in coverage.keys():  # Pybedtools does not work with regions with zero length -> remove them (there are a few of them)
+            #     if currentKey[1] != currentKey[2]:
+            #         region_ids.append(currentKey)
+            #
+            #
+            #     ##
+            #     ##		fdw=file('gcContent.txt','w')
+            #     ##		for element in sorted(gccontent.keys()):
+            #     ##			fdw.write(str(element)+'\n')
+            #     ##		fdw.close()
+            #     ##
         #region_ids = gccontent.keys()
         coveragearray = numpy.array([coverage[id] for id in region_ids])
         gccontentarray = numpy.array([gccontent[id] for id in region_ids])  # Values in [0,1]
@@ -271,7 +267,7 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
 
 
     else:
-        print 'WARNING: only one region found in the bed file. Skipping GC bias calculation.'
+        err('Warning: only one region found in the bed file. Skipping GC bias calculation.')
 
     if (executiongranted <> None):
         executiongranted.release()
