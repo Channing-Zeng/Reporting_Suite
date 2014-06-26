@@ -45,14 +45,13 @@ def launch_coveragebed(bamfilenames, bedfilename, legend, outdir, executiongrant
         Pcoveragebed = multiprocessing.Process(target=bam.myCoverageBed, args=(
         bedfilename, None, coveragefile, executiongranted, coveragebedgraph,))
         Pcoveragebed.start()
-
         info('\tDone.')
 
         coveragefiles.append(coveragefile)
         Pcoveragebeds.append(Pcoveragebed)
 
     #    return [positions,coverage,chromosomes,processedbed]
-    return [Pcoveragebeds, coveragefiles]
+    return Pcoveragebeds, coveragefiles
 
 
 def launch_covered_positions(coveragefiles, coveragethresholds, outdir, legend, executiongranted):
@@ -134,8 +133,10 @@ def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfil
         executiongranted.acquire()
 
     for bedgraphfilename in bedgraphfilenames:
+        if bedgraphfilename.endswith('.off.bed'):
+            continue # already processed bed
         bedgraph = bedgraph_file.bedgraph_file(bedgraphfilename)
-        outfile = bedgraphfilename.replace('.bed', '.off.bed') if '.off' not in bedgraphfilename else bedgraphfilename
+        outfile = bedgraphfilename.replace('.bed', '.off.bed')
         bedgraph.getOffTarget(offtargetoffset, offtargetthreshold, bedfilename, outfile)
 
     if (executiongranted <> None):
@@ -270,8 +271,8 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
             summaryrows += '<td class="table-cell">%.1e</td>\n' % saturationslopes[i]
 
         summaryrows += '<td class="table-cell">%.1f' % (percontarget[i]) + '% </td>\n'
-        summaryrows += ('<td class="table-cell">ON-%.1f%%' % onduplicates[i]) + '; OFF: %.1f' % (
-        offduplicates[i]) + '% </td>'
+        summaryrows += ('<td class="table-cell">ON-%.1f%%' % onduplicates[i]) + \
+                       '; OFF: %.1f' % (offduplicates[i]) + '% </td>'
         summaryrows += '<td class="table-cell">%.1fx' % meancoverage[i] + '</td>\n'
         summaryrows += '<td class="table-cell">%d consecutive bases<br>with coverage <= <WARNCOVERAGETHRESHOLD></td>\n' % (
         lowcovbases[i])
@@ -319,8 +320,8 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
     ontarget_coverage_files = glob.glob(outdir + '/data/*_Ontarget_Coverage.png')
     ontarget_coverage_files = human_sorted(ontarget_coverage_files)
     for afile in ontarget_coverage_files:
-        chromosomeimages += '<a href="data/' + os.path.basename(
-            afile) + '"><img style="width: 33%; float: left;" src="data/' + os.path.basename(afile) + '" /></a>'
+        chromosomeimages += '<a href="data/' + os.path.basename(afile) + \
+                            '"><img style="width: 33%; float: left;" src="data/' + os.path.basename(afile) + '" /></a>'
     reportcontent = reportcontent.replace('<CHROMOSOMEIMAGES>', chromosomeimages)
 
     if (coveredpositions_status.value):
@@ -432,8 +433,8 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
 def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, saturation=False, nthreads=2, extend=None,
            depthlist='auto', coveragethresholds=[1, 5, 10, 20, 30], onefeature=None):
 
-    step_greetings('ngsCAT starting! Assesses capture performance in terms of sensibility, '
-                   'specificity and uniformity of the coverage.\n')
+    step_greetings('ngsCAT starting! Assesses capture performance in terms of sensibility, ' +
+                   'specificity and uniformity of the coverage.')
 
     if (not (os.path.isdir(outdir) or os.path.islink(outdir))):
         info('Directory ' + outdir + ' does not exist. Creating directory.')
@@ -452,7 +453,8 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
         filelink = join(cnf["work_dir"], os.path.basename(bamfilename))
         if islink(filelink) or (isfile(filelink) and not samefile(bamfilename, filelink)):
             os.remove(filelink)
-        os.symlink(bamfilename, filelink)
+        if not isfile(filelink):
+            os.symlink(bamfilename, filelink)
 
         info('Indexing...')
         pysam.index(filelink)
@@ -492,7 +494,8 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
         ###
 
     if (onefeature == None or onefeature <> 'saturation' or onefeature <> 'specificity'):
-        Pcoveragebeds, coveragefiles = launch_coveragebed(sortedbams, bedfilename, legend, outdir, executiongranted)
+        Pcoveragebeds, coveragefiles = launch_coveragebed(sortedbams, bedfilename, legend,
+                                                          outdir, executiongranted)
 
     if ((saturation and onefeature == None) or onefeature == 'saturation'):
         Psaturation, coverage_saturation_status, saturationslopes = launch_coverage_saturation(sortedbams, bedfilename,
