@@ -98,7 +98,7 @@ class BedFile:
             filename = self.filename
         return len(open(filename).readlines())
 
-    def extend(self, n, out_fpath=None):
+    def extend(self, n, out_fpath=None, overwrite=False):
         """*******************************************************************************************************************************************
         Task: generates a new bed file in which regions of this bed are extended +-n bases.
         Inputs:
@@ -119,7 +119,7 @@ class BedFile:
             out_fpath = intermediate_fname(cnf, self.filename,
                                            'extended_' + ('no_ref_' if no_ref else '') + str(n))
 
-        if file_exists(out_fpath):
+        if file_exists(out_fpath) and not overwrite:
             return BedFile(out_fpath)
 
         if not no_ref and not config.chr_lengths:
@@ -289,7 +289,7 @@ class BedFile:
 
         return nbases
 
-    def non_overlapping_exons(self, baseCodification, output_fpath=None):
+    def non_overlapping_exons(self, baseCodification, output_fpath=None, overwrite=False):
         """************************************************************************************************************************************************************
         JPFLORIDO
         Task: Get exons of a given bed file removing overlapping areas
@@ -305,7 +305,7 @@ class BedFile:
         if output_fpath is None:
             output_fpath = intermediate_fname(cnf, self.filename,
                                               'noOverlapping_base' + str(baseCodification))
-        if file_exists(output_fpath):
+        if file_exists(output_fpath) and not overwrite:
             #info(output_fpath + ' exists, reusing!')
             return BedFile(output_fpath)
 
@@ -386,7 +386,7 @@ class BedFile:
 
         return BedFile(output_fpath)
 
-    def sort_bed(self):
+    def sort_bed(self, overwrite=False):
         """************************************************************************************************************************************************************
         JPFLORIDO
         Task: Sort a BED file by chromosome and start position
@@ -396,11 +396,11 @@ class BedFile:
         ************************************************************************************************************************************************************"""
         cnf = config.cnf
         output_fpath = intermediate_fname(cnf, self.filename, 'sorted')
-        if file_exists(output_fpath):
+        if file_exists(output_fpath) and not overwrite:
             #info(output_fpath + ' exists, reusing!')
             return BedFile(output_fpath)
         cmdline = "%s sort -i %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename)
-        call(cnf, cmdline, output_fpath)
+        call(cnf, cmdline, output_fpath, overwrite=overwrite)
         return BedFile(output_fpath)
 
     def size(self):

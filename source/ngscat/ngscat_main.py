@@ -145,11 +145,12 @@ def sequential_offclusters_call(offtargetoffset, offtargetthreshold, bedgraphfil
 
 def launch_offclusters(bedgraphfilenames, bedfilename, executiongranted):
     ### sorting all at once and reuse in the future
+    cnf = config.cnf
     bed = bed_file.BedFile(bedfilename)
-    extendedBed = bed.extend(config.offtargetoffset)
-    sortedBed = extendedBed.sort_bed()
-    nonOverlappingBed = sortedBed.non_overlapping_exons(-1)  # Base 0, it is a standard BED
-    nonOverlappingBed.sort_bed()
+    extendedBed = bed.extend(config.offtargetoffset, overwrite=(not cnf.reuse_intermediate))
+    sortedBed = extendedBed.sort_bed(overwrite=(not cnf.reuse_intermediate))
+    nonOverlappingBed = sortedBed.non_overlapping_exons(-1, overwrite=(not cnf.reuse_intermediate))  # Base 0, it is a standard BED
+    nonOverlappingBed.sort_bed(overwrite=(not cnf.reuse_intermediate))
     ###
 
     Poffclusters = multiprocessing.Process(target=sequential_offclusters_call,
@@ -488,9 +489,9 @@ def ngscat(cnf, bamfilenames, originalbedfilename, outdir, reference=None, satur
     if onefeature == None or onefeature == 'specificity' or onefeature == 'gcbias':
         ### sorting all at once and reuse in the future
         bed = bed_file.BedFile(bedfilename)
-        sortedBed = bed.sort_bed()
-        nonOverlappingBed = sortedBed.non_overlapping_exons(1)  # This generates a BED file in base 1 (Non-standard BED)
-        nonOverlappingBed.sort_bed()
+        sortedBed = bed.sort_bed(overwrite=(not cnf.reuse_intermediate))
+        nonOverlappingBed = sortedBed.non_overlapping_exons(1, overwrite=(not cnf.reuse_intermediate))  # This generates a BED file in base 1 (Non-standard BED)
+        nonOverlappingBed.sort_bed(overwrite=(not cnf.reuse_intermediate))
         ###
 
     if (onefeature == None or onefeature <> 'saturation' or onefeature <> 'specificity'):

@@ -50,9 +50,7 @@ def load_coverage_file_per_exon(filename):
                 next_exon_idx += 1
                 if (next_exon_idx >= 2):  #Measure normalized standard deviation values
                     coverage = numpy.array(coverage)
-                    if (
-                            len((coverage > 0).nonzero()[
-                                0])):  # Avoid exons with zero coverage values in all bases of exons
+                    if len((coverage > 0).nonzero()[0]): # Avoid exons with zero coverage values in all bases of exons
                         dictCoverage[next_exon_idx - 1] = coverage.std() / float(coverage.mean())
                     coverage = []
             coverage.append(string.atof(parts[-1]))  #Coverage (last column)
@@ -98,7 +96,7 @@ def exon_coverage_std_lite(groups, fileoutprefix, legend=None, executiongranted=
         # Samples std for each exon in current file
         for filename in filelist:
             # Loads exons and coverage per position       
-            filename = filename.replace("\n", "")
+            filename = filename.strip()
 
             dictCoverage = load_coverage_file_per_exon(filename)
 
