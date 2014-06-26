@@ -40,7 +40,7 @@ while( <> ) {
     $a[7] .= ";";
     my %d;
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
-	$d{ $1 } = $2;
+        $d{ $1 } = $2;
     }
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
@@ -50,30 +50,30 @@ while( <> ) {
     next if ( $FILPMEAN && $d{ PMEAN } < $FILPMEAN );
     next if ( $FILQMEAN && $d{ QUAL } < $FILQMEAN );
     if ( $control && $control eq $d{ SAMPLE } ) {
-	my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
-	my $pass = "TRUE";
-	#$pass = "FALSE" unless ( $d{PSTD} > 0 );
-	$pass = "FALSE" if ($qmean < $MINQMEAN );
-	$pass = "FALSE" if ($pmean < $MINPMEAN );
-	$pass = "FALSE" if ( $d{AF} < $MINFREQ );
-	$pass = "FALSE" if ( $d{MQ} < $MINMQ );
-	$pass = "FALSE" if ( $d{SN} < $SN );
-	$pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
-	my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
+        my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
+        my $pass = "TRUE";
+        #$pass = "FALSE" unless ( $d{PSTD} > 0 );
+        $pass = "FALSE" if ($qmean < $MINQMEAN );
+        $pass = "FALSE" if ($pmean < $MINPMEAN );
+        $pass = "FALSE" if ( $d{AF} < $MINFREQ );
+        $pass = "FALSE" if ( $d{MQ} < $MINMQ );
+        $pass = "FALSE" if ( $d{SN} < $SN );
+        $pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
+	    my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
         #$CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && ($class ne "dbSNP" && $class ne "ClnSNP"));  # so that any novel or COSMIC variants showed up in control won't be filtered
         $CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && $class eq "Novel");  # so that any novel or COSMIC variants showed up in control won't be filtered
     }
     unless( $opt_u && $d{ SAMPLE } =~ /Undetermined/i ) { # Undetermined won't count toward samples
-	$sample{ $d{ SAMPLE } } = 1;
-	push( @{ $var{ $vark } }, $d{ AF } );
+        $sample{ $d{ SAMPLE } } = 1;
+        push( @{ $var{ $vark } }, $d{ AF } );
     }
     foreach my $eff (@effs) {
         $eff =~ s/\)$//;
-	my @e = split(/\|/, $eff, -1);
-	my ($type, $effect) = split(/\(/, $e[0]);
-	my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
-	my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
-	push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
+        my @e = split(/\|/, $eff, -1);
+        my ($type, $effect) = split(/\(/, $e[0]);
+        my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
+        my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
+	    push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
     }
 }
 
@@ -100,8 +100,8 @@ foreach my $d (@data) {
 
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
     if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
-	my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
-	$class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
+        my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
+        $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
     }
 
     $pass = "CNTL" if ( $control && $CONTROL{ $vark } );
@@ -116,7 +116,7 @@ sub checkCLNSIG {
     my @cs = split(/\||,/, $clnsig );
     foreach my $cs (@cs) {
         return 1 if ( $cs > 3 && $cs < 7 );
-	return 1 if ( $cs == 255 );
+	    return 1 if ( $cs == 255 );
     }
     return -1;
 }

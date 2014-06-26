@@ -34,11 +34,12 @@ class Defaults():
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    steps = ['VarAnnotate',
-             'VarQC',
-             'VarFilter',
-             'TargetCov',
-             'NGScat']
+    steps = [
+        'VarAnnotate',
+        'VarQC',
+        'VarFilter',
+        'TargetCov',
+        'NGScat']
     qualimap = False  # 'True' adds 'QualiMap' to steps
     qsub_runner = join(cur_dirpath, pardir, 'runner_Waltham.sh')
 
@@ -58,22 +59,26 @@ class Defaults():
 
     variant_filtering = dict(
         impact='MODERATE|HIGH',
-        # expression="(EFF[*].IMPACT = 'HIGH')|(EFF[*].IMPACT = 'MODERATE')",
-        count_undetermined=True,
+        vardict_mode=False,
+
+        filt_p_mean=0,
+        filt_q_mean=0,
+        filt_depth=0,
+
+        min_p_mean=5,
+        min_q_mean=25,
+        min_freq=0.05,
+        mean_mq=20,
+        mean_vd=2,
+        signal_noise=4,
+
         fraction=0.4,
         max_ratio=1,
         sample_cnt=10,
         freq=0.15,
-        min_p_mean=5,
-        min_q_mean=25,
-        filt_p_mean=0,
-        filt_q_mean=0,
-        filt_depth=0,
-        min_freq=0.05,
-        mean_mq=20,
-        mean_vd=2,
+        count_undetermined=True,
+        bias=False,
         maf=0.0025,
-        signal_noise=4,
     )
 
     quality_control = dict(
