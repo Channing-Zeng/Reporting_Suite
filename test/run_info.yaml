@@ -168,7 +168,7 @@ tsv_fields:
   #- gt_PQ                         : PhasingQuality      # phred-scaled probability
                                                          # that alleles are ordered
                                                          # incorrectly in a heterozygote
-  #- gt_EC                         : ExpAlleleCounts
+  - GEN[*].EC                         : ExpAlleleCounts
   - GEN[*].AD                         : AllelicDepthsForRefAndAlt
   #- gt_AO                         : AlleleObservationCount
   #- gt_QA                         : QualitySumForAltObservations

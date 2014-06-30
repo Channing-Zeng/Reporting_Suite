@@ -1,6 +1,7 @@
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
+import sys
 from ext_modules import vcf
 
 from source.calling_process import call_subprocess
@@ -84,8 +85,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     if manual_tsv_fields:
         fields = [
             rec.keys()[0] for rec
-            in manual_tsv_fields
-            if rec.keys()[0] != 'SAMPLE']
+            in manual_tsv_fields]
     # else:
         # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
         #   if l.strip().startswith('#CHROM'))
@@ -103,7 +103,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     # fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
 
-    anno_line = ' '.join(fields)
+    anno_line = ' '.join([f for f in fields if f != 'SAMPLE'])
     snpsift_cmline = get_java_tool_cmdline(cnf, 'snpsift')
 
     if not which('perl'):
@@ -113,8 +113,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     external_fpath = join(src_fpath, pardir, pardir, 'external')
     vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
 
-    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + \
-              ' extractFields - ' + anno_line
+    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
     call_subprocess(cnf, cmdline, None, tsv_fpath,
          stdin_fpath=vcf_fpath)
@@ -147,7 +146,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                         out.write(cnf['name'])
                     out.write('\t')
 
-                out.write('\t'.join([v for j, v in enumerate(values) if col_counts[j] and '\n' not in v]) + '\n')
+                # values = [v.replace('\n', '') for v in values]
+                out.write('\t'.join([v.replace('\n', '') for j, v in enumerate(values) if col_counts[j]]) + '\n')
 
     # with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx_tsv_fpath:
     #     info(cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
