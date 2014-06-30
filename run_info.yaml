@@ -176,21 +176,21 @@ tsv_fields:
 
 ## FORMAT fields for the sample
 - GEN[*].GT                         : Genotype
-#  - gt_FT                         : GenotypeWasCalled
-#  - gt_GL                         : GenotypeLikelihoods
-#  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+#  - GEN[*].FT                         : GenotypeWasCalled
+#  - GEN[*].GL                         : GenotypeLikelihoods
+#  - GEN[*].GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
 - GEN[*].PL                         : GenotypeLikelihoods_PhredScaled
-#  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
-#  - gt_GQ                         : ConditionalGenotypeQuality
-#  - gt_HQ                         : HaplotypeQualities
-#  - gt_PS                         : PhaseSet
-#  - gt_PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-#  - gt_EC                         : ExpAlleleCounts
+#  - GEN[*].GP                         : GenotypePosteriorProbs_PhredScaled
+#  - GEN[*].GQ                         : ConditionalGenotypeQuality
+#  - GEN[*].HQ                         : HaplotypeQualities
+#  - GEN[*].PS                         : PhaseSet
+#  - GEN[*].PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+#  - GEN[*].EC                         : ExpAlleleCounts
 - GEN[*].AD                         : AllelicDepthsForRefAndAlt
-#  - gt_AO                         : AlleleObservationCount
-#  - gt_QA                         : QualitySumForAltObservations
-#  - gt_QR                         : QualitySumForRefObservations
-#  - gt_RO                         : RefAlleleObservationCount
+#  - GEN[*].AO                         : AlleleObservationCount
+#  - GEN[*].QA                         : QualitySumForAltObservations
+#  - GEN[*].QR                         : QualitySumForRefObservations
+#  - GEN[*].RO                         : RefAlleleObservationCount
 
 ## dbsnp
 - SAO                           : VariantAlleleOrigin
