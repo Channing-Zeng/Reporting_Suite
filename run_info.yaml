@@ -175,18 +175,18 @@ tsv_fields:
 - ReadPosRankSum                : ReadPosRankSum
 
 ## FORMAT fields for the sample
-- gt_GT                         : Genotype
+- GEN[*].GT                         : Genotype
 #  - gt_FT                         : GenotypeWasCalled
 #  - gt_GL                         : GenotypeLikelihoods
 #  - gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-- gt_PL                         : GenotypeLikelihoods_PhredScaled
+- GEN[*].PL                         : GenotypeLikelihoods_PhredScaled
 #  - gt_GP                         : GenotypePosteriorProbs_PhredScaled
 #  - gt_GQ                         : ConditionalGenotypeQuality
 #  - gt_HQ                         : HaplotypeQualities
 #  - gt_PS                         : PhaseSet
 #  - gt_PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #  - gt_EC                         : ExpAlleleCounts
-- gt_AD                         : AllelicDepthsForRefAndAlt
+- GEN[*].AD                         : AllelicDepthsForRefAndAlt
 #  - gt_AO                         : AlleleObservationCount
 #  - gt_QA                         : QualitySumForAltObservations
 #  - gt_QR                         : QualitySumForRefObservations
