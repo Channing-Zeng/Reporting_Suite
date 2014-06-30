@@ -1,6 +1,7 @@
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
+from ext_modules import vcf
 
 from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname
@@ -30,6 +31,18 @@ def make_tsv(cnf, vcf_fpath):
     shutil.copyfile(tsv_fpath, final_tsv_fpath)
 
     return final_tsv_fpath
+
+
+def filter_info_tsv_fileds(inp_f, fields):
+    reader = vcf.Reader(inp_f)
+    new_fields = fields[:]
+
+    for i, rec in enumerate(reader):
+        for field in fields:
+            if field.split('[')[0] in rec.INFO:
+                new_fields.append(field)
+
+    return new_fields
 
 
 def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
@@ -69,7 +82,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     manual_tsv_fields = cnf['tsv_fields']
     if manual_tsv_fields:
-        fields_line = [
+        fields = [
             rec.keys()[0] for rec
             in manual_tsv_fields
             if rec.keys()[0] != 'SAMPLE']
@@ -84,7 +97,13 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     else:
         return None
 
-    anno_line = ' '.join(fields_line)
+    # info_fields = [f for f in fields if f not in ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'ID'm ]
+    # with open(broken_format_column_vcf_fpath) as vcf_f:
+    #     fields = filter_info_tsv_fileds(vcf_f, fields)
+
+    fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
+
+    anno_line = ' '.join(fields)
     snpsift_cmline = get_java_tool_cmdline(cnf, 'snpsift')
 
     if not which('perl'):

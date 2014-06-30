@@ -1,28 +1,30 @@
 resources:
-  gatk:
-    jvm_opts: ["-Xms750m", "-Xmx2500m"]
-    path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
-  snpeff:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.5/snpEff.jar
-  snpsift:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.5/SnpSift.jar
-  bcftools:
-    path: /ngs/RDI/PROGRAMS/bcftools/bcftools
-  plot_vcfstats:
-    path: /ngs/RDI/PROGRAMS/bcftools/plot-vcfstats
+  gatk:
+    jvm_opts: ["-Xms750m", "-Xmx4000m"]
+    path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.2-34-gce410d5/GenomeAnalysisTK.jar
+    options: ["-U","ALLOW_N_CIGAR_READS"]
+  snpeff:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    path: /ngs/RDI/PROGRAMS/snpEff3.6/snpEff.jar
+  snpsift:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    path: /ngs/RDI/PROGRAMS/snpEff3.6/SnpSift.jar
+  bcbfools:
+    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/bin/bcftools
+  plot_vcfstats:
+    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/bin/plot-vcfstats
+  vcfannotate:
+    path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
 
 genomes:
-  hg19:  # incorrect paths?
-    seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  hg19: # incorrect paths?
+    seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
-    cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
-    dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-    snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
-
-    chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
-    genes: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
-    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonical_sorted.bed
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
+    cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+    dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+    snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff # data dir path
+    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
+    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    genes: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
+    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
