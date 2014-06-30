@@ -176,22 +176,24 @@ tsv_fields:
 
 ## FORMAT fields for the sample
 - GEN[*].GT                         : Genotype
-#  - GEN[*].FT                         : GenotypeWasCalled
-#  - GEN[*].GL                         : GenotypeLikelihoods
-#  - GEN[*].GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-- GEN[*].PL                         : GenotypeLikelihoods_PhredScaled
-#  - GEN[*].GP                         : GenotypePosteriorProbs_PhredScaled
-#  - GEN[*].GQ                         : ConditionalGenotypeQuality
-#  - GEN[*].HQ                         : HaplotypeQualities
-#  - GEN[*].PS                         : PhaseSet
-#  - GEN[*].PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-#  - GEN[*].EC                         : ExpAlleleCounts
+- GEN[*].FT                         : GenotypeWasCalled
+- GEN[*].GL                         : GenotypeLikelihoods
+- GEN[*].GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
+- GEN[*].PL[0]                      : GenotypeLikelihoods_AA
+- GEN[*].PL[1]                      : GenotypeLikelihoods_AB
+- GEN[*].PL[2]                      : GenotypeLikelihoods_BB
+- GEN[*].GP                         : GenotypePosteriorProbs_PhredScaled
+- GEN[*].GQ                         : ConditionalGenotypeQuality
+- GEN[*].HQ                         : HaplotypeQualities
+- GEN[*].PS                         : PhaseSet
+- GEN[*].PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+- GEN[*].EC                         : ExpAlleleCounts
 - GEN[*].AD[0]                      : AllelicDepths_Alt
 - GEN[*].AD[1]                      : AllelicDepths_Ref
-#  - GEN[*].AO                         : AlleleObservationCount
-#  - GEN[*].QA                         : QualitySumForAltObservations
-#  - GEN[*].QR                         : QualitySumForRefObservations
-#  - GEN[*].RO                         : RefAlleleObservationCount
+- GEN[*].AO                         : AlleleObservationCount
+- GEN[*].QA                         : QualitySumForAltObservations
+- GEN[*].QR                         : QualitySumForRefObservations
+- GEN[*].RO                         : RefAlleleObservationCount
 
 ## dbsnp
 - SAO                           : VariantAlleleOrigin
