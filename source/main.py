@@ -253,4 +253,4 @@ def set_up_dirs(cnf):
     safe_mkdir(cnf.work_dir, 'working directory')
 
     cnf.log = join(cnf.work_dir, cnf.name + '_log.txt')
-    logger.log_fname = cnf.log
+    logger.log_fpath = cnf.log

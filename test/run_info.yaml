@@ -49,23 +49,23 @@ coverage_reports:
 
 
 ## Annotation with various tools.
-gatk:
-  options: ['-dt NONE']
-  all-annotations: False
-  annotations:                # Field names in final VCF:
-  - Coverage                  # DP
-  - BaseQualityRankSumTest    # BaseQRankSum
-  - FisherStrand              # FS
-  - GCContent                 # GC
-  - HaplotypeScore            # HaplotypeScore
-  - HomopolymerRun            # HRun
-  - RMSMappingQuality         # MQ
-  - MappingQualityRankSumTest # MQRankSum
-  - MappingQualityZero        # MQ0
-  - QualByDepth               # QD
-  - ReadPosRankSumTest        # ReadPosRankSum
-  - DepthPerAlleleBySample
-  - AlleleBalanceBySample     # AB
+#gatk:
+#  options: ['-dt NONE']
+#  all-annotations: False
+#  annotations:                # Field names in final VCF:
+#  - Coverage                  # DP
+#  - BaseQualityRankSumTest    # BaseQRankSum
+#  - FisherStrand              # FS
+#  - GCContent                 # GC
+#  - HaplotypeScore            # HaplotypeScore
+#  - HomopolymerRun            # HRun
+#  - RMSMappingQuality         # MQ
+#  - MappingQualityRankSumTest # MQRankSum
+#  - MappingQualityZero        # MQ0
+#  - QualByDepth               # QD
+#  - ReadPosRankSumTest        # ReadPosRankSum
+#  - DepthPerAlleleBySample
+#  - AlleleBalanceBySample     # AB
 
 #db_nsfp:
 #  annotations:
@@ -156,7 +156,7 @@ tsv_fields:
   - ReadPosRankSum                : ReadPosRankSum
 
   # FORMAT fields for the sample
-  - gt_GT                         : Genotype
+  - GEN[*].GT: Geno #gt_GT                         : Genotype
   #- gt_FT                         : GenotypeWasCalled
   #- gt_GL                         : GenotypeLikelihoods
   #- gt_GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
