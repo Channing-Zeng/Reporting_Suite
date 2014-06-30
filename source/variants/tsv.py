@@ -58,27 +58,27 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     all_format_fields = set()
 
-    # Split FORMAT field and sample fields
-    def proc_line(l, i):
-        if l.startswith('#'):
-            return l
-        vals = l.strip().split('\t')
-        if len(vals) <= 9:
-            return l
-        info_field = vals[7]
-        format_fields = vals[8].split(':')
-        sample_fields = vals[9].split(':')
-        for f, s in zip(format_fields, sample_fields):
-            if f not in ['DP', 'MQ']:
-                if f == 'GT':
-                    s = '"' + s + '"'
-                f = 'gt_' + f
-                info_field += ';' + f + '=' + s
-                all_format_fields.add(f)
-        l = '\t'.join(vals[:7] + [info_field])
-        return l
+    # # Split FORMAT field and sample fields
+    # def proc_line(l, i):
+    #     if l.startswith('#'):
+    #         return l
+    #     vals = l.strip().split('\t')
+    #     if len(vals) <= 9:
+    #         return l
+    #     info_field = vals[7]
+    #     format_fields = vals[8].split(':')
+    #     sample_fields = vals[9].split(':')
+    #     for f, s in zip(format_fields, sample_fields):
+    #         if f not in ['DP', 'MQ']:
+    #             if f == 'GT':
+    #                 s = '"' + s + '"'
+    #             f = 'GEN[*].' + f
+    #             info_field += ';' + f + '=' + s
+    #             all_format_fields.add(f)
+    #     l = '\t'.join(vals[:7] + [info_field])
+    #     return l
 
-    broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
+    # broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
 
     manual_tsv_fields = cnf['tsv_fields']
     if manual_tsv_fields:
@@ -101,7 +101,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     # with open(broken_format_column_vcf_fpath) as vcf_f:
     #     fields = filter_info_tsv_fileds(vcf_f, fields)
 
-    fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
+    # fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
 
     anno_line = ' '.join(fields)
     snpsift_cmline = get_java_tool_cmdline(cnf, 'snpsift')
@@ -117,8 +117,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
               ' extractFields - ' + anno_line
 
     call_subprocess(cnf, cmdline, None, tsv_fpath,
-         stdin_fpath=(broken_format_column_vcf_fpath or vcf_fpath),
-         to_remove=[broken_format_column_vcf_fpath])
+         stdin_fpath=vcf_fpath)
 
     # REMOVE EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
