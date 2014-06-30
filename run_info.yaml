@@ -186,7 +186,8 @@ tsv_fields:
 #  - GEN[*].PS                         : PhaseSet
 #  - GEN[*].PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #  - GEN[*].EC                         : ExpAlleleCounts
-- GEN[*].AD                         : AllelicDepthsForRefAndAlt
+- GEN[*].AD[0]                      : AllelicDepths_Alt
+- GEN[*].AD[1]                      : AllelicDepths_Ref
 #  - GEN[*].AO                         : AlleleObservationCount
 #  - GEN[*].QA                         : QualitySumForAltObservations
 #  - GEN[*].QR                         : QualitySumForRefObservations
