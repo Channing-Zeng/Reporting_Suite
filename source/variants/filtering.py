@@ -11,11 +11,9 @@ from collections import defaultdict
 from ext_modules import vcf
 from ext_modules.vcf.model import _Record
 
-from source.variants import Effect
+from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical
-from source.calling_process import call
-from source.file_utils import intermediate_fname, convert_file
-from source.tools_from_cnf import get_java_tool_cmdline
+from source.file_utils import convert_file
 from source.utils import mean
 
 
@@ -25,7 +23,7 @@ class Filter:
     def __init__(self, word, check=None, required=True):
         self.check = check
         self.required = required
-        self.word = word
+        self.word = word.upper()
 
         self.num_passed = 0
         self.num_rejected = 0
@@ -43,7 +41,7 @@ class Filter:
         else:
             self.num_rejected += 1
 
-            if self.word() not in rec.FILTER:
+            if self.word not in rec.FILTER:
                 self.__remove_pass(rec)
                 rec.add_filter(self.word)
 
@@ -173,15 +171,45 @@ class Filtering:
         self.bias_filter = CnfFilter('bias')
         self.nonclnsnp_filter = Filter('NonClnSNP')
 
+    def run_filtering(self):
+        step_greetings('Filtering')
+
+        proc_vcf_rm_prev = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_remove_prev_filter)
+
+        proc_vcf_1st_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_1st_round)
+
+        proc_vcf_2nd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_2nd_round)
+
+        proc_vcf_3rd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_3rd_round)
+
+        vcf_fpath = self.vcf_fpath
+
+        info('Removing previous FILTER values')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_rm_prev, suffix='rm')
+
+        info('First round')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_1st_round, suffix='r1')
+
+        info('Second round')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_2nd_round, suffix='r2')
+
+        info('Third round')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_3rd_round, suffix='r3')
+
+        return vcf_fpath
+
+    @staticmethod
     def proc_line_remove_prev_filter(self, rec):
         rec.FILTER = 'PASS'
         return rec
 
+    @staticmethod
     def proc_line_1st_round(self, rec):
         [f.apply(rec) for f in self.round1_filters]
         if rec.is_rejected():
             return rec
 
+    @staticmethod
     def proc_line_2nd_round(self, rec):
         if self.vardict_mode:
             sample = rec.sample()
@@ -200,6 +228,7 @@ class Filtering:
                     self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', .0))
         return rec
 
+    @staticmethod
     def proc_line_3rd_round(self, rec):
         self.impact_filter.apply(rec)
 
@@ -260,37 +289,10 @@ class Filtering:
         writer = vcf.Writer(out_f, reader)
 
         for i, rec in enumerate(reader):
-            rec = proc_line_fun(self, Record(rec, i))
+            args = self, Record(rec, i)
+            rec = proc_line_fun(*args)
             if rec:
                 writer.write_record(rec)
-
-    def run(self):
-        step_greetings('Filtering')
-
-        proc_vcf_rm_prev = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_remove_prev_filter)
-
-        proc_vcf_1st_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_1st_round)
-
-        proc_vcf_2nd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_2nd_round)
-
-        proc_vcf_3rd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_3rd_round)
-
-        vcf_fpath = self.vcf_fpath
-
-        info('Removing previous FILTER values')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_rm_prev, suffix='rm')
-
-        info('First round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_1st_round, suffix='r1')
-
-        info('Second round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_2nd_round, suffix='r2')
-
-        info('Third round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_3rd_round, suffix='r3')
-
-        return vcf_fpath
-
 
 # def run_snpsift(cnf, vcf_cnf, vcf_fpath):
 #     expression = vcf_cnf.get('expression')
