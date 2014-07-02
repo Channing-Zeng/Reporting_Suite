@@ -157,14 +157,12 @@ class Filtering:
 
         return vcf_fpath
 
-    @staticmethod
     def get_proc_line_remove_prev_filter(self):
         def __f(rec):
             rec.FILTER = 'PASS'
             return rec
         return __f
 
-    @staticmethod
     def get_proc_line_1st_round(self):
         def __f(rec):
             [f.apply(rec) for f in self.round1_filters]
@@ -172,7 +170,6 @@ class Filtering:
                 return rec
         return __f
 
-    @staticmethod
     def get_proc_line_2nd_round(self):
         def __f(rec):
             if self.vardict_mode:
@@ -193,7 +190,6 @@ class Filtering:
             return rec
         return __f
 
-    @staticmethod
     def get_proc_line_3rd_round(self):
         def __f(rec):
             self.impact_filter.apply(rec)

@@ -175,25 +175,25 @@ tsv_fields:
 - ReadPosRankSum                : ReadPosRankSum
 
 ## FORMAT fields for the sample
-- GEN[*].GT                         : Genotype
-- GEN[*].FT                         : GenotypeWasCalled
-- GEN[*].GL                         : GenotypeLikelihoods
-- GEN[*].GLE                        : GenotypeLikelihoodsOfHeterogeneousPloidy
-- GEN[*].PL[0]                      : GenotypeLikelihoods_AA
-- GEN[*].PL[1]                      : GenotypeLikelihoods_AB
-- GEN[*].PL[2]                      : GenotypeLikelihoods_BB
-- GEN[*].GP                         : GenotypePosteriorProbs_PhredScaled
-- GEN[*].GQ                         : ConditionalGenotypeQuality
-- GEN[*].HQ                         : HaplotypeQualities
-- GEN[*].PS                         : PhaseSet
-- GEN[*].PQ                         : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-- GEN[*].EC                         : ExpAlleleCounts
-- GEN[*].AD[0]                      : AllelicDepths_Alt
-- GEN[*].AD[1]                      : AllelicDepths_Ref
-- GEN[*].AO                         : AlleleObservationCount
-- GEN[*].QA                         : QualitySumForAltObservations
-- GEN[*].QR                         : QualitySumForRefObservations
-- GEN[*].RO                         : RefAlleleObservationCount
+- GEN[*].GT                     : Genotype
+- GEN[*].FT                     : GenotypeWasCalled
+- GEN[*].GL                     : GenotypeLikelihoods
+- GEN[*].GLE                    : GenotypeLikelihoodsOfHeterogeneousPloidy
+- GEN[*].PL[0]                  : GenotypeLikelihoods_AA
+- GEN[*].PL[1]                  : GenotypeLikelihoods_AB
+- GEN[*].PL[2]                  : GenotypeLikelihoods_BB
+- GEN[*].GP                     : GenotypePosteriorProbs_PhredScaled
+- GEN[*].GQ                     : ConditionalGenotypeQuality
+- GEN[*].HQ                     : HaplotypeQualities
+- GEN[*].PS                     : PhaseSet
+- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
+- GEN[*].EC                     : ExpAlleleCounts
+- GEN[*].AD[0]                  : AllelicDepths_Ref
+- GEN[*].AD[1]                  : AllelicDepths_Alt
+- GEN[*].AO                     : AlleleObservationCount
+- GEN[*].QA                     : QualitySumForAltObservations
+- GEN[*].QR                     : QualitySumForRefObservations
+- GEN[*].RO                     : RefAlleleObservationCount
 
 ## dbsnp
 - SAO                           : VariantAlleleOrigin
@@ -201,16 +201,16 @@ tsv_fields:
 - VC                            : VariationClass
 - TYPE                          : AlleleType
 - PM                            : VariantIsPrecious
-#  - MUT                           : CitedMutation
+# - MUT                         : CitedMutation
 - HD                            : PresentInDBGap
 - KGPROD                        : Has1000GenomeSubmission
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
 - COMMON                        : CommonVariant
-#  - CLNSIG                        : ClinicalSignificance
+# - CLNSIG                      : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
-#  - MAF                           : GlobalMinorAlleleFrequency
-#  - CDA                           : InClinicalDiagnosticAssay
+# - MAF                         : GlobalMinorAlleleFrequency
+# - CDA                         : InClinicalDiagnosticAssay
 - dbNSFP_SIFT_score             : SiftScore
 - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
 - dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
