@@ -44,3 +44,4 @@ test/**/*work*
 test/**/*tmp*
 test/**/err_*
 test/data/miika-ensemble.anno.vcf
+test/results_anno_miika

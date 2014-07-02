@@ -1,4 +1,5 @@
 import sys
+from source.variants.vcf_processing import proc_vcf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -7,9 +8,6 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 import operator
 from collections import defaultdict
-
-from ext_modules import vcf
-from ext_modules.vcf.model import _Record
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical
@@ -93,45 +91,6 @@ class EffectFilter(CnfFilter):
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
 
-class Record(_Record):
-    # noinspection PyMissingConstructor
-    def __init__(self, _record, line_num):
-        self.__dict__.update(_record.__dict__)
-        self.line_num = line_num
-
-    def cls(self):
-        cls = 'Novel'
-        if 'COSM' in self.ID:
-            cls = 'COSMIC'
-        elif self.ID.startswith('rs'):
-            if self.check_clnsig:
-                cls = 'ClnSNP'
-            else:
-                cls = 'dbSNP'
-        return cls
-
-    def is_rejected(self):
-        if self.FILTER:
-            assert '.' not in self.FILTER
-        return self.FILTER and 'PASS' not in self.FILTER
-
-    def check_clnsig(self):
-        if not self.INFO.get('CLNSIG'):
-            return 0
-
-        for c in self.INFO.get('CLNSIG'):
-            if 3 < c < 7 or c == 255:
-                return 1
-
-        return -1
-
-    def sample(self):
-        return self.INFO.get('SAMPLE')
-
-    def var_id(self):
-        return ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
-
-
 class Filtering:
     def __init__(self, cnf, filt_cnf, vcf_fpath):
         self.cnf = cnf
@@ -174,13 +133,13 @@ class Filtering:
     def run_filtering(self):
         step_greetings('Filtering')
 
-        proc_vcf_rm_prev = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_remove_prev_filter)
+        proc_vcf_rm_prev = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_remove_prev_filter())
 
-        proc_vcf_1st_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_1st_round)
+        proc_vcf_1st_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_1st_round())
 
-        proc_vcf_2nd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_2nd_round)
+        proc_vcf_2nd_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_2nd_round())
 
-        proc_vcf_3rd_round = lambda inp_f, out_f: self._proc_vcf(inp_f, out_f, self.proc_line_3rd_round)
+        proc_vcf_3rd_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_3rd_round())
 
         vcf_fpath = self.vcf_fpath
 
@@ -199,100 +158,99 @@ class Filtering:
         return vcf_fpath
 
     @staticmethod
-    def proc_line_remove_prev_filter(self, rec):
-        rec.FILTER = 'PASS'
-        return rec
-
-    @staticmethod
-    def proc_line_1st_round(self, rec):
-        [f.apply(rec) for f in self.round1_filters]
-        if rec.is_rejected():
+    def get_proc_line_remove_prev_filter(self):
+        def __f(rec):
+            rec.FILTER = 'PASS'
             return rec
+        return __f
 
     @staticmethod
-    def proc_line_2nd_round(self, rec):
-        if self.vardict_mode:
-            sample = rec.sample()
-
-            if sample and self.control and sample == self.control:
-                [f.apply(rec) for f in self.round2_filters]
-
-                if not rec.is_rejected() or rec.cls() == 'Novel':
-                # So that any novel variants showed up in control won't be filtered:
-                    self.control_vars.add(rec.var_id())
-
-            if sample:
-                if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
-                # Undetermined won't count toward samples
-                    self.samples.add(sample)
-                    self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', .0))
-        return rec
-
-    @staticmethod
-    def proc_line_3rd_round(self, rec):
-        self.impact_filter.apply(rec)
-
-        if self.vardict_mode:
-            self.undet_sample_filter.apply(rec)
+    def get_proc_line_1st_round(self):
+        def __f(rec):
+            [f.apply(rec) for f in self.round1_filters]
             if rec.is_rejected():
                 return rec
+        return __f
 
-            var_n = len(self.af_by_varid[rec.var_id()])
-            fraction = float(var_n) / len(self.samples)
-            avg_af = mean(self.af_by_varid[rec.var_id()])
-            self.multi_filter.check = lambda _: not (  # novel and present in [max_ratio] samples
-                fraction > self.filt_cnf['fraction'] and
-                var_n >= self.filt_cnf['sample_cnt'] and
-                avg_af < self.filt_cnf['freq'] and
-                rec.ID == '.')  # TODO: check if "." converted to None in the vcf lib
-            self.multi_filter.apply(rec)
+    @staticmethod
+    def get_proc_line_2nd_round(self):
+        def __f(rec):
+            if self.vardict_mode:
+                sample = rec.sample()
 
-            pstd = rec.INFO.get('PSTD')
-            bias = rec.INFO.get('BIAS')
-            # all variants from one position in reads
-            self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
-            self.dup_filter.apply(rec)
+                if sample and self.control and sample == self.control:
+                    [f.apply(rec) for f in self.round2_filters]
 
-            max_ratio = self.filt_cnf.get('max_ratio')
-            af = float(rec.INFO.get('AF'))
-            self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
-            self.max_rate_filter.apply(rec)
+                    if not rec.is_rejected() or rec.cls() == 'Novel':
+                    # So that any novel variants showed up in control won't be filtered:
+                        self.control_vars.add(rec.var_id())
 
-            gmaf = rec.INFO.get('GMAF')
-            req_maf = self.filt_cnf['maf']
-            # if there's MAF with frequency, it'll be considered
-            # dbSNP regardless of COSMIC
-            cls = 'dbSNP' if req_maf and gmaf > req_maf else rec.cls()
+                if sample:
+                    if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
+                    # Undetermined won't count toward samples
+                        self.samples.add(sample)
+                        self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', .0))
+            return rec
+        return __f
 
-            self.control_filter.apply(rec)
+    @staticmethod
+    def get_proc_line_3rd_round(self):
+        def __f(rec):
+            self.impact_filter.apply(rec)
 
-            # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
-            # but not in ClnSNP or COSMIC.
-            for eff in map(Effect, rec.FILT['EFF']):
-                if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
-                    if eff.pos / int(eff.aal) < 0.95:
-                        cls = 'dbSNP_del'
+            if self.vardict_mode:
+                self.undet_sample_filter.apply(rec)
+                if rec.is_rejected():
+                    return rec
 
-            self.bias_filter.check = lambda _: not (  # Filter novel variants with strand bias.
-                self.filt_cnf['bias'] is True and
-                cls in ['Novel', 'dbSNP'] and
-                bias and bias in ['2;1', '2;0'] and af < 0.3)
-            self.bias_filter.apply(rec)
+                var_n = len(self.af_by_varid[rec.var_id()])
+                fraction = float(var_n) / len(self.samples)
+                avg_af = mean(self.af_by_varid[rec.var_id()])
+                self.multi_filter.check = lambda _: not (  # novel and present in [max_ratio] samples
+                    fraction > self.filt_cnf['fraction'] and
+                    var_n >= self.filt_cnf['sample_cnt'] and
+                    avg_af < self.filt_cnf['freq'] and
+                    rec.ID == '.')  # TODO: check if "." converted to None in the vcf lib
+                self.multi_filter.apply(rec)
 
-            self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'
-            self.nonclnsnp_filter.apply(rec)
+                pstd = rec.INFO.get('PSTD')
+                bias = rec.INFO.get('BIAS')
+                # all variants from one position in reads
+                self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
+                self.dup_filter.apply(rec)
 
-        return rec
+                max_ratio = self.filt_cnf.get('max_ratio')
+                af = float(rec.INFO.get('AF'))
+                self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
+                self.max_rate_filter.apply(rec)
 
-    def _proc_vcf(self, inp_f, out_f, proc_line_fun):
-        reader = vcf.Reader(inp_f)
-        writer = vcf.Writer(out_f, reader)
+                gmaf = rec.INFO.get('GMAF')
+                req_maf = self.filt_cnf['maf']
+                # if there's MAF with frequency, it'll be considered
+                # dbSNP regardless of COSMIC
+                cls = 'dbSNP' if req_maf and gmaf > req_maf else rec.cls()
 
-        for i, rec in enumerate(reader):
-            args = self, Record(rec, i)
-            rec = proc_line_fun(*args)
-            if rec:
-                writer.write_record(rec)
+                self.control_filter.apply(rec)
+
+                # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
+                # but not in ClnSNP or COSMIC.
+                for eff in map(Effect, rec.FILT['EFF']):
+                    if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
+                        if eff.pos / int(eff.aal) < 0.95:
+                            cls = 'dbSNP_del'
+
+                self.bias_filter.check = lambda _: not (  # Filter novel variants with strand bias.
+                    self.filt_cnf['bias'] is True and
+                    cls in ['Novel', 'dbSNP'] and
+                    bias and bias in ['2;1', '2;0'] and af < 0.3)
+                self.bias_filter.apply(rec)
+
+                self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'
+                self.nonclnsnp_filter.apply(rec)
+
+            return rec
+        return __f
+
 
 # def run_snpsift(cnf, vcf_cnf, vcf_fpath):
 #     expression = vcf_cnf.get('expression')

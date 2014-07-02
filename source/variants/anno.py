@@ -5,7 +5,7 @@ from os.path import splitext, basename, join, dirname, realpath, isfile
 
 from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname, verify_file
-from source.logger import step_greetings, critical, info
+from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
@@ -37,7 +37,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         annotated = vcf_fpath is not None
 
     if 'snpeff' in cnf:
-        _remove_annotation(cnf, 'EFF', vcf_fpath)
+        vcf_fpath = _remove_annotation(cnf, 'EFF', vcf_fpath)
         vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
         annotated = vcf_fpath is not None
         if annotated:
@@ -90,7 +90,7 @@ def _remove_annotation(cnf, field_to_del, input_fpath):
                 info_line = fields[7]
                 info_pairs = [attr.split('=') for attr in info_line.split(';')]
                 info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                info_line = ';'.join('='.join(pair) if len(pair) == 2
+                info_line = ';'.join('='.join(pair) if len(pair) == 2 and pair[0] != field_to_del
                                      else pair[0] for pair in info_pairs)
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
@@ -186,18 +186,18 @@ def _snpeff(cnf, input_fpath):
 
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
+    stats_fpath = join(cnf['name'] + '.snpEff_summary.html')
+    extra_opts = cnf['snpeff'].get('opts', '')
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
         critical('Please, provide a path to SnpEff data in '
                  'the "genomes" section in the system config.')
 
-    stats_fpath = join(cnf['name'] + '.snpEff_summary.html')
     cmdline = ('{executable} eff -dataDir {db_path} -stats {stats_fpath} '
-               '-csvStats -noLog -1 -i vcf -o vcf {ref_name} '
+               '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
                '{input_fpath}').format(**locals())
 
-    if cnf['snpeff'].get('clinical_reporting') or \
-            cnf['snpeff'].get('canonical'):
+    if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
         cmdline += ' -canon -hgvs '
 
     if cnf['snpeff'].get('cancer'):

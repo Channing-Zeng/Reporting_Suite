@@ -1,15 +1,68 @@
 #!/usr/bin/env python
 import sys
+
 from os.path import basename, join, expanduser
 from collections import OrderedDict
-from source.calling_process import call_subprocess
 
+from ext_modules import vcf
+from ext_modules.vcf.model import _Record
+
+from source.calling_process import call_subprocess
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file
 from source.tools_from_cnf import get_java_tool_cmdline
 from source.utils_from_bcbio import open_gzipsafe, splitext_plus
 from source.logger import step_greetings, info, critical
+
+
+class Record(_Record):
+    # noinspection PyMissingConstructor
+    def __init__(self, _record, line_num):
+        self.__dict__.update(_record.__dict__)
+        self.line_num = line_num
+
+    def cls(self):
+        cls = 'Novel'
+        if 'COSM' in self.ID:
+            cls = 'COSMIC'
+        elif self.ID.startswith('rs'):
+            if self.check_clnsig:
+                cls = 'ClnSNP'
+            else:
+                cls = 'dbSNP'
+        return cls
+
+    def is_rejected(self):
+        if self.FILTER:
+            assert '.' not in self.FILTER
+        return self.FILTER and 'PASS' not in self.FILTER
+
+    def check_clnsig(self):
+        if not self.INFO.get('CLNSIG'):
+            return 0
+
+        for c in self.INFO.get('CLNSIG'):
+            if 3 < c < 7 or c == 255:
+                return 1
+
+        return -1
+
+    def sample(self):
+        return self.INFO.get('SAMPLE')
+
+    def var_id(self):
+        return ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
+
+
+def proc_vcf(inp_f, out_f, proc_line_fun):
+    reader = vcf.Reader(inp_f)
+    writer = vcf.Writer(out_f, reader)
+
+    for i, rec in enumerate(reader):
+        rec = proc_line_fun(Record(rec, i))
+        if rec:
+            writer.write_record(rec)
 
 
 def filter_rejected(cnf, input_fpath):
