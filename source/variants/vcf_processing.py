@@ -26,7 +26,7 @@ class Record(_Record):
         cls = 'Novel'
         if 'COSM' in self.ID:
             cls = 'COSMIC'
-        elif self.ID.startswith('rs'):
+        elif self.ID and self.ID.startswith('rs'):
             if self.check_clnsig:
                 cls = 'ClnSNP'
             else:

@@ -118,7 +118,7 @@ class Filtering:
             InfoFilter('min_p_mean', 'PMEAN'),
             InfoFilter('min_q_mean', 'QUAL'),
             InfoFilter('min_freq', 'AF'),
-            InfoFilter('min_mq', 'MQ'),
+            InfoFilter('mean_mq', 'MQ'),
             InfoFilter('signal_noise', 'SN'),
             InfoFilter('mean_vd', 'VD', required=False)]
 
