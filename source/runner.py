@@ -3,8 +3,9 @@ import hashlib
 import shutil
 import os
 from os.path import join, isdir, isfile
-from source.file_utils import tmpdir
+from source.file_utils import verify_file
 from source.logger import step_greetings, info
+from source.utils_from_bcbio import file_exists
 
 try:
     from yaml import CDumper as Dumper
@@ -66,34 +67,35 @@ except ImportError:
 def run_one(cnf, process_one_fun, finalize_one_fun=None,
             multiple_samples=False):
 
-    with tmpdir(cnf):
+    # input_fpaths = []
+    # for key in required_inputs:
+    #     input_fpaths.append(cnf[key])
+    # for key in optional_inputs:
+    #     if key in cnf:
+    #         input_fpaths.append(cnf[key])
 
-        # input_fpaths = []
-        # for key in required_inputs:
-        #     input_fpaths.append(cnf[key])
-        # for key in optional_inputs:
-        #     if key in cnf:
-        #         input_fpaths.append(cnf[key])
+    if multiple_samples:
+        info('')
+        info('*' * 70)
+        msg = '*' * 3 + ' Sample ' + cnf['name'] + ' '
+        info(msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
 
+        # info('Input:')
+        # for fpath in input_fpaths:
+        #     info('  ' + fpath)
+
+    results_one = process_one_fun(cnf)
+
+    if finalize_one_fun:
+        info('')
+        info('*' * 70)
         if multiple_samples:
-            info('')
-            info('*' * 70)
-            msg = '*' * 3 + ' Sample ' + cnf['name'] + ' '
-            info(msg + ('*' * (70 - len(msg)) if len(msg) < 70 else ''))
+            info(cnf['name'])
 
-            # info('Input:')
-            # for fpath in input_fpaths:
-            #     info('  ' + fpath)
+        finalize_one_fun(cnf, *results_one)
 
-        results_one = process_one_fun(cnf)
+    for fpath in results_one:
+        verify_file(fpath)
 
-        if finalize_one_fun:
-            info('')
-            info('*' * 70)
-            if multiple_samples:
-                info(cnf['name'])
-
-            finalize_one_fun(cnf, *results_one)
-
-        return results_one
+    return results_one
 

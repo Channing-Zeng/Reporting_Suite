@@ -29,11 +29,6 @@ def read_opts_and_cnfs(extra_opts,
              metavar='DIR',
              help='output directory (or directory name in case of bcbio final dir)')
          ),
-        (['--tmp-base'], dict(
-             dest='tmp_base_dir',
-             metavar='DIR',
-             help='base directory for temporary files (default is /ngs/tmp')
-         ),
         (['-s', '--sample', '--name'], dict(
              dest='name',
              metavar='NAME',

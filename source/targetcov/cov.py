@@ -155,7 +155,7 @@ def _run_header_report(cnf, result_fpath,
                                    'x', percent, '%'))
 
     max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
-    with file_transaction(cnf.tmp_dir, result_fpath) as tx, open(tx, 'w') as out:
+    with file_transaction(cnf, result_fpath) as tx, open(tx, 'w') as out:
         for l in stats:
             text, val = l.rsplit(':', 1)
             # spaces = ' ' * (max_len - len(text) + 1)
@@ -276,7 +276,7 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
         all_values.append(line_fields)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
 
-    with file_transaction(cnf['tmp_dir'], report_fpath) as tx:
+    with file_transaction(cnf, report_fpath) as tx:
         with open(tx, 'w') as out, \
                 open(join(cnf['work_dir'], basename(report_fpath)), 'w') as nice_out:
             out.write('\t'.join(header_fields) + '\n')

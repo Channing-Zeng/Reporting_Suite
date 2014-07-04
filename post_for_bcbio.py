@@ -61,10 +61,9 @@ def main():
 
     check_system_resources(cnf, required=['qsub'])
 
-    with tmpdir(cnf):
-        vcf_sufs = cnf['vcf_suf'].split(',')
+    vcf_sufs = cnf['vcf_suf'].split(',')
 
-        run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
+    run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
 
 
 if __name__ == '__main__':

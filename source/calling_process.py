@@ -2,7 +2,7 @@ import sys
 import subprocess
 import os
 import shutil
-from os.path import isfile
+from os.path import isfile, exists, join
 from source.file_utils import make_tmpfile
 
 from source.logger import info, err
@@ -70,8 +70,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             os.remove(output_fpath)
 
     # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
-    err_fpath = None
-    _, err_fpath = make_tmpfile(cnf, prefix='err_tmp', suffix='.txt')
+    err_fpath = join(cnf['work_dir'], '.subprocess_stderr.txt')
+    if exists(err_fpath):
+        os.remove(err_fpath)
+
     to_remove.append(err_fpath)
 
     def clean():
@@ -183,7 +185,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
 
     if output_fpath and not output_is_dir:
-        with file_transaction(cnf.tmp_dir, output_fpath) as tx_out_fpath:
+        with file_transaction(cnf, output_fpath) as tx_out_fpath:
             do(cmdline, tx_out_fpath)
     else:
         res = do(cmdline)

@@ -7,11 +7,26 @@ interruption.
 """
 import os
 import shutil
-import tempfile
-
 import contextlib
+from os.path import exists
+from source.utils_from_bcbio import add_suffix
 
-import utils_from_bcbio
+
+def _remove_tmpdirs(fnames):
+    for x in fnames:
+        xdir = os.path.dirname(os.path.abspath(x))
+        if xdir and os.path.exists(xdir):
+            shutil.rmtree(xdir, ignore_errors=True)
+
+
+def _remove_files(fnames):
+    for x in fnames:
+        if x and os.path.exists(x):
+            if os.path.isfile(x):
+                os.remove(x)
+            elif os.path.isdir(x):
+                shutil.rmtree(x, ignore_errors=True)
+
 
 @contextlib.contextmanager
 def file_transaction(tmp_dir, *rollback_files):
@@ -27,32 +42,17 @@ def file_transaction(tmp_dir, *rollback_files):
             yield tuple(safe_names)
     except:  # failure -- delete any temporary files
         _remove_files(safe_names)
-        _remove_tmpdirs(safe_names)
         raise
     else:  # worked -- move the temporary files to permanent location
         for safe, orig in zip(safe_names, orig_names):
-            if os.path.exists(safe):
+            if exists(safe):
                 shutil.move(safe, orig)
                 for check_ext, check_idx in exts.iteritems():
                     if safe.endswith(check_ext):
                         safe_idx = safe + check_idx
-                        if os.path.exists(safe_idx):
+                        if exists(safe_idx):
                             shutil.move(safe_idx, orig + check_idx)
-        _remove_tmpdirs(safe_names)
 
-def _remove_tmpdirs(fnames):
-    for x in fnames:
-        xdir = os.path.dirname(os.path.abspath(x))
-        if xdir and os.path.exists(xdir):
-            shutil.rmtree(xdir, ignore_errors=True)
-
-def _remove_files(fnames):
-    for x in fnames:
-        if x and os.path.exists(x):
-            if os.path.isfile(x):
-                os.remove(x)
-            elif os.path.isdir(x):
-                shutil.rmtree(x, ignore_errors=True)
 
 def _flatten_plus_safe(tmp_dir, rollback_files):
     """Flatten names of files and create temporary file names.
@@ -62,9 +62,7 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            basedir = utils_from_bcbio.safe_mkdir(tmp_dir or os.path.join(os.path.dirname(fname), 'tx'))
-            tmpdir = utils_from_bcbio.safe_mkdir(tempfile.mkdtemp(dir=basedir))
-            tx_file = os.path.join(tmpdir, os.path.basename(fname))
+            tx_file = add_suffix(fname, 'tmp')
             tx_files.append(tx_file)
             orig_files.append(fname)
     return tx_files, orig_files

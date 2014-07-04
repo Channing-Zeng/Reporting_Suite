@@ -2,7 +2,7 @@ import os
 import sys
 from os.path import join, dirname, abspath, expanduser, basename
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file, tmpfile
+from source.file_utils import verify_dir, verify_file, file_transaction
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
@@ -176,7 +176,7 @@ class Runner():
         return output_dirpath
 
     def run(self):
-        with tmpfile(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
+        with file_transaction(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
             with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
                 for l in inn:
                     ts = l.strip().split('\t')

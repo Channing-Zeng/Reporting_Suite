@@ -57,35 +57,31 @@ def verify_dir(fpath, description=''):
     return fpath
 
 
-def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
-    base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
-    if not verify_dir(base_dir, 'Base directory for temporary files'):
-        sys.exit(1)
+# def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
+#     base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
+#     if not verify_dir(base_dir, 'Base directory for temporary files'):
+#         sys.exit(1)
+#
+#     return tempfile.mkdtemp(dir=base_dir, prefix=prefix)
 
-    return tempfile.mkdtemp(dir=base_dir, prefix=prefix)
 
-
-@contextlib.contextmanager
-def tmpdir(cnf, *args, **kwargs):
-    prev_tmp_dir = cnf.tmp_dir
-
-    cnf.tmp_dir = make_tmpdir(cnf, *args, **kwargs)
-    try:
-        yield cnf.tmp_dir
-    finally:
-        try:
-            shutil.rmtree(cnf.tmp_dir)
-        except OSError:
-            pass
-        cnf.tmp_dir = prev_tmp_dir
+# @contextlib.contextmanager
+# def tmpdir(cnf, *args, **kwargs):
+#     prev_tmp_dir = cnf.tmp_dir
+#
+#     cnf.tmp_dir = make_tmpdir(cnf, *args, **kwargs)
+#     try:
+#         yield cnf.tmp_dir
+#     finally:
+#         try:
+#             shutil.rmtree(cnf.tmp_dir)
+#         except OSError:
+#             pass
+#         cnf.tmp_dir = prev_tmp_dir
 
 
 def make_tmpfile(cnf, *args, **kwargs):
-    base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
-    if not verify_dir(base_dir, 'Base directory for temporary files'):
-        sys.exit(1)
-
-    return tempfile.mkstemp(dir=base_dir, *args, **kwargs)
+    return tempfile.mkstemp(dir=cnf['work_dir'], *args, **kwargs)
 
 
 @contextlib.contextmanager
@@ -115,7 +111,7 @@ def convert_file(cnf, input_fpath, proc_file_fun,
             info(output_fpath + ' exists, reusing')
             return output_fpath
 
-    with file_transaction(cnf.tmp_dir, output_fpath) as tx_fpath:
+    with file_transaction(cnf, output_fpath) as tx_fpath:
         with open(input_fpath) as inp, open(tx_fpath, 'w') as out:
             proc_file_fun(inp, out)
 
