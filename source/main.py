@@ -46,7 +46,7 @@ def read_opts_and_cnfs(extra_opts,
          ),
         (['--clean'], dict(
              dest='keep_intermediate',
-             help='store work directory',
+             help='do not store work directory',
              action='store_false')
          ),
         (['--reuse'], dict(
@@ -67,6 +67,10 @@ def read_opts_and_cnfs(extra_opts,
              default=Defaults.run_cnf,
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
                   'The default is %s' % Defaults.run_cnf)
+         ),
+        (['--work-dir'], dict(
+            dest='work_dir',
+            metavar='DIR')
          ),
     ]
 
@@ -240,10 +244,13 @@ def set_up_dirs(cnf):
     safe_mkdir(cnf.output_dir, 'output_dir')
     info('Saving into ' + cnf.output_dir)
 
-    work_dir_name = 'work_' + cnf.name
-    cnf.work_dir = join(cnf.output_dir, work_dir_name)
-    if not cnf.reuse_intermediate and isdir(cnf.work_dir):
-        rmtree(cnf.work_dir)
+    if not cnf.work_dir:
+        work_dir_name = 'work_' + cnf.name
+        cnf.work_dir = join(cnf.output_dir, work_dir_name)
+        if not cnf.reuse_intermediate and isdir(cnf.work_dir):
+            rmtree(cnf.work_dir)
+    else:
+        cnf.work_dir = realpath(expanduser(cnf.work_dir))
 
     safe_mkdir(cnf.work_dir, 'working directory')
 

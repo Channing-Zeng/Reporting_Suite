@@ -87,23 +87,23 @@ class Runner():
         self.varannotate = self.steps.step(
             name='VarAnnotate',
             script='varannotate.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' --bam \'{bam}\' -o \'{output_dir}\' -s \'{sample}\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' --bam \'{bam}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varannotate') + '\'')
         self.varqc = self.steps.step(
             name='VarQC',
             script='varqc.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\'')
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\'')
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\'')
         self.ngscat = self.steps.step(
             name='NGScat',
             script='ngscat.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --saturation y')
+            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '\'')
         self.qualimap = self.steps.step(
             name='QualiMap',
             interpreter=None,
@@ -115,16 +115,17 @@ class Runner():
             self.varqc_summary = self.steps.step(
                 name='VarQC_summary',
                 script='varqc_summary.py',
-                param_line=' -o \'{output_dir}\' -d \'' + self.dir +
-                           '\' -s \'{samples}\' -n ' + self.varqc.name +
-                           ' --vcf-suf ' + ','.join(self.sufs))
+                param_line=' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
+                           self.varqc.name + ' --vcf-suf ' + ','.join(self.sufs) +
+                           ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
         if self.targetcov:
             self.steps.append('TargetCov_summary')
             self.targetcov_summary = self.steps.step(
                 name='TargetCov_summary',
                 script='targetcov_summary.py',
                 param_line=' -o \'{output_dir}\' -d \'' + self.dir +
-                           '\' -s \'{samples}\' -n ' + self.targetcov.name)
+                           '\' -s \'{samples}\' -n ' + self.targetcov.name +
+                           ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
     def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):

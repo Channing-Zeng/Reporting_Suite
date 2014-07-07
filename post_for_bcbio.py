@@ -61,7 +61,7 @@ def main():
 
     vcf_sufs = cnf['vcf_suf'].split(',')
 
-    cnf['work_dir'] = join(cnf.bcbio_final_dir, pardir, 'work')
+    cnf['work_dir'] = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
     # cnf['bcbio_cnf'] = join(cnf.bcbio_final_dir, pardir, 'config')
 
     run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
