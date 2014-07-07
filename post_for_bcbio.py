@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 import sys
 from optparse import OptionParser
-from os.path import join, abspath, dirname
+from os.path import join, abspath, dirname, pardir
 
 from source.config import Defaults, Config
-from source.file_utils import tmpdir
 from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
 from source.bcbio_runner import run_on_bcbio_final_dir
-from source.utils import median, mean
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -62,6 +60,9 @@ def main():
     check_system_resources(cnf, required=['qsub'])
 
     vcf_sufs = cnf['vcf_suf'].split(',')
+
+    cnf['work_dir'] = join(cnf.bcbio_final_dir, pardir, 'work')
+    # cnf['bcbio_cnf'] = join(cnf.bcbio_final_dir, pardir, 'config')
 
     run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
 
