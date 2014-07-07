@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from os.path import join, dirname, abspath, expanduser, basename
 from source.calling_process import call
@@ -76,6 +77,12 @@ class Runner():
             self.samples = [s.strip() for s in sample_f.readlines()
                             if s and s.strip() and not s.startswith('#')]
 
+        date_dir_pattern = re.compile(r'\d\d\d\d\-\d\d-\d\d.*')
+        self.date_dirpath = next((join(cnf.bcbio_final_dir, dir_name)
+                             for dir_name in os.listdir(cnf.bcbio_final_dir)
+                             if date_dir_pattern.match(dir_name)),
+                            cnf.bcbio_final_dir)
+
         self.set_up_steps(cnf)
 
 
@@ -135,9 +142,15 @@ class Runner():
         output_dirpath = self.dir
         if sample_name:
             output_dirpath = join(output_dirpath, sample_name)
+        else:
+            output_dirpath = self.date_dirpath
+            # if output_dirpath != self.dir:
+            #     create_dir = False
+
         log_fpath = join(output_dirpath, step.name + '.log')
+
         if create_dir:
-            output_dirpath = join(output_dirpath, step.name)
+            output_dirpath = join(output_dirpath, step.name.lower())
             safe_mkdir(output_dirpath)
             log_fpath = join(output_dirpath, 'log')
 

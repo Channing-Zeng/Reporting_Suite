@@ -95,7 +95,14 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None,
         finalize_one_fun(cnf, *results_one)
 
     for fpath in results_one:
-        verify_file(fpath)
+        try:
+            verify_file(fpath)
+        except:
+            try:
+                for fpath in fpath:
+                    verify_file(fpath)
+            except:
+                pass
 
     return results_one
 
