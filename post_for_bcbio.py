@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 from optparse import OptionParser
-from os.path import join, abspath, dirname, pardir
+from os.path import join, abspath, dirname, pardir, isdir
 
 from source.config import Defaults, Config
 from source.logger import info
@@ -36,19 +36,24 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    if not cnf.samples:
-        cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
-
-    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
-    info('Samples: ' + cnf.samples + ' (set with -s)')
-
-    if not check_keys(cnf, ['bcbio_final_dir', 'samples', 'bed', 'vcf_suf']):
+    if not check_keys(cnf, ['bcbio_final_dir', 'bed', 'vcf_suf']):
         parser.print_help()
         sys.exit(1)
+
+    if not check_inputs(cnf, dir_keys=['bcbio_final_dir']):
+        sys.exit(1)
+
+    if isdir(join(cnf.bcbio_final_dir, 'final')):
+        cnf.bcbio_final_dir = join(cnf.bcbio_final_dir, 'final')
+
+    if not cnf.samples:
+        cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
 
     if not check_inputs(cnf, file_keys=['samples', 'bed', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
+    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
+    info('Samples: ' + cnf.samples + ' (set with -s)')
     info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
     info('Suffix(es) to choose VCF files: ' + cnf.vcf_suf + ' (set with --vcf-suf)')
     info()
