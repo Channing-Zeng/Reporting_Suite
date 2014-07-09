@@ -31,9 +31,7 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
         info(single_report_fpath)
 
-        if (not file_exists(single_report_fpath) and
-                ('mutect' in single_report_fpath or
-                 'vardict' in single_report_fpath)):
+        if not file_exists(single_report_fpath):
             info('No ' + single_report_fpath + ', skipping.')
             continue
 
