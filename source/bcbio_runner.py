@@ -3,7 +3,7 @@ import re
 import sys
 from os.path import join, dirname, abspath, expanduser, basename
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file, file_transaction
+from source.file_utils import verify_dir, verify_file, file_transaction, make_tmpfile
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
@@ -190,58 +190,58 @@ class Runner():
         return output_dirpath
 
     def run(self):
-        with file_transaction(self.cnf, 'tmp_qualimap.bed') as qualimap_bed_fpath:
-            with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
-                for l in inn:
-                    ts = l.strip().split('\t')
-                    if len(ts) < 5:
-                        ts += ['0']
-                    if len(ts) < 6:
-                        ts += ['+']
-                    out.write('\t'.join(ts) + '\n')
+        qualimap_bed_fpath = 'tmp_qualimap.bed'
+        with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
+            for l in inn:
+                ts = l.strip().split('\t')
+                if len(ts) < 5:
+                    ts += ['0']
+                if len(ts) < 6:
+                    ts += ['+']
+                out.write('\t'.join(ts) + '\n')
 
-            for sample in self.samples:
-                info(sample)
-                if not self.cnf.verbose:
-                    info(ending='')
+        for sample in self.samples:
+            info(sample)
+            if not self.cnf.verbose:
+                info(ending='')
 
-                sample_dirpath = join(self.dir, sample)
-                if not verify_dir(sample_dirpath):
-                    sys.exit(1)
+            sample_dirpath = join(self.dir, sample)
+            if not verify_dir(sample_dirpath):
+                sys.exit(1)
 
-                bam_fpath = join(sample_dirpath, sample + '-ready.bam')
-                if not verify_bam(bam_fpath):
-                    sys.exit(1)
+            bam_fpath = join(sample_dirpath, sample + '-ready.bam')
+            if not verify_bam(bam_fpath):
+                sys.exit(1)
 
-                for vcf_suf in self.sufs:
-                    vcf_fpath = join(sample_dirpath, sample + '-' + vcf_suf + '.vcf')
+            for vcf_suf in self.sufs:
+                vcf_fpath = join(sample_dirpath, sample + '-' + vcf_suf + '.vcf')
 
-                    if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
-                        gz_vcf_fpath = vcf_fpath + '.gz'
-                        gunzip = get_tool_cmdline(self.cnf, 'gunzip')
-                        cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
-                        call(self.cnf, cmdline, output_fpath=vcf_fpath)
-                        info()
-
-                    if 'mutect' in vcf_suf and not file_exists(vcf_fpath):
-                        continue
-
-                    if not verify_file(vcf_fpath):
-                        sys.exit(1)
-
-                    self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
-
-                self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
-
-                self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
-
-                self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
-
-                if self.cnf.verbose:
-                    info('-' * 70)
-                else:
-                    print ''
+                if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
+                    gz_vcf_fpath = vcf_fpath + '.gz'
+                    gunzip = get_tool_cmdline(self.cnf, 'gunzip')
+                    cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
+                    call(self.cnf, cmdline, output_fpath=vcf_fpath)
                     info()
+
+                if 'mutect' in vcf_suf and not file_exists(vcf_fpath):
+                    continue
+
+                if not verify_file(vcf_fpath):
+                    sys.exit(1)
+
+                self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
+
+            self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+
+            self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+
+            self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
+
+            if self.cnf.verbose:
+                info('-' * 70)
+            else:
+                print ''
+                info()
 
         if not self.cnf.verbose:
             info('', ending='')

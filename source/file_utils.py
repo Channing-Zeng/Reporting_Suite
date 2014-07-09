@@ -81,7 +81,7 @@ def verify_dir(fpath, description=''):
 
 
 def make_tmpfile(cnf, *args, **kwargs):
-    return tempfile.mkstemp(dir=cnf['work_dir'], *args, **kwargs)
+    yield tempfile.mkstemp(dir=cnf['work_dir'], *args, **kwargs)
 
 
 @contextlib.contextmanager
