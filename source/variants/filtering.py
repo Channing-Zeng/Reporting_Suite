@@ -31,8 +31,11 @@ class Filter:
         if rec.FILTER in ['PASS', '.']:
             rec.FILTER = None
 
-    def apply(self, rec):
+    def apply(self, rec, only_check=False):
         assert self.check, 'check function must be specified for filter before applying'
+
+        if only_check:
+            return self.check(rec)
 
         if self.check(rec):
             self.num_passed += 1
@@ -49,11 +52,11 @@ class CnfFilter(Filter):
         self.key = key
         Filter.__init__(self, key.upper(), *args, **kvargs)
 
-    def apply(self, rec):
+    def apply(self, rec, only_check=False):
         if Filter.filt_cnf.get(self.key) is None:
-            return
+            return True
 
-        Filter.apply(self, rec)
+        return Filter.apply(self, rec, only_check)
 
 
 class InfoFilter(CnfFilter):
@@ -163,6 +166,7 @@ class Filtering:
             return rec
         return __f
 
+    # DP, QUAL, PMEAN
     def get_proc_line_1st_round(self):
         def __f(rec):
             [f.apply(rec) for f in self.round1_filters]
@@ -170,15 +174,16 @@ class Filtering:
                 return rec
         return __f
 
+    # counting samples, variants and AF_by_vark
     def get_proc_line_2nd_round(self):
         def __f(rec):
             if self.vardict_mode:
                 sample = rec.sample()
 
                 if sample and self.control and sample == self.control:
-                    [f.apply(rec) for f in self.round2_filters]
+                    all_passed = all([f.apply(rec, only_check=True) for f in self.round2_filters])
 
-                    if not rec.is_rejected() or rec.cls() == 'Novel':
+                    if all_passed or rec.cls() == 'Novel':
                     # So that any novel variants showed up in control won't be filtered:
                         self.control_vars.add(rec.var_id())
 
@@ -190,6 +195,10 @@ class Filtering:
             return rec
         return __f
 
+    # based on counted samples, variants and AF_by_vark:
+    #   var_n    = number of variants for vark       must be >= [sample_cnt]
+    #   fraction = var_n / number of total samples   must be > [fraction]
+    #   avg_af   = avg AF for this vark              must be < [freq]
     def get_proc_line_3rd_round(self):
         def __f(rec):
             self.impact_filter.apply(rec)
@@ -203,8 +212,8 @@ class Filtering:
                 fraction = float(var_n) / len(self.samples)
                 avg_af = mean(self.af_by_varid[rec.var_id()])
                 self.multi_filter.check = lambda _: not (  # novel and present in [max_ratio] samples
-                    fraction > self.filt_cnf['fraction'] and
                     var_n >= self.filt_cnf['sample_cnt'] and
+                    fraction > self.filt_cnf['fraction'] and
                     avg_af < self.filt_cnf['freq'] and
                     rec.ID == '.')  # TODO: check if "." converted to None in the vcf lib
                 self.multi_filter.apply(rec)
