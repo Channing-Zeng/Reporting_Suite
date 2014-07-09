@@ -190,7 +190,7 @@ class Runner():
         return output_dirpath
 
     def run(self):
-        qualimap_bed_fpath = 'tmp_qualimap.bed'
+        qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
         with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
             for l in inn:
                 ts = l.strip().split('\t')
