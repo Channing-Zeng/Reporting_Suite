@@ -8,12 +8,14 @@ from source.logger import info, err
 from source.utils_from_bcbio import file_exists, which
 
 
-def get_tool_cmdline(cnf, tool_name, interpreter='',
+def get_tool_cmdline(cnf, tool_name, interpreter=None,
                      extra_warning='', suppress_warn=False):
     if interpreter:
         return get_script_cmdline(
             cnf, tool_name, interpreter,
             extra_warning, suppress_warn)
+    else:
+        interpreter = ''
 
     # IN SYSTEM CONFIG?
     if (cnf.resources is not None and
