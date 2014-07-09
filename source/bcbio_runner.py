@@ -222,6 +222,10 @@ class Runner():
                         cmdline = '{gunzip} -c {gz_vcf_fpath}'.format(**locals())
                         call(self.cnf, cmdline, output_fpath=vcf_fpath)
                         info()
+
+                    if 'mutect' in vcf_suf and not file_exists(vcf_fpath):
+                        continue
+
                     if not verify_file(vcf_fpath):
                         sys.exit(1)
 

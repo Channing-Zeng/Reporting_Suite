@@ -200,6 +200,13 @@ class Config(object):
         return self.__d.__len__()
 
 
+def load_yaml_config(fpath):
+    if not verify_file(fpath):
+        sys.exit(1)
+    dic = load_yaml(open(fpath), Loader=Loader)
+    return dic
+
+
 def _load(sys_cnf_fpath, run_cnf_fpath):
     sys_dict = load_yaml(open(sys_cnf_fpath), Loader=Loader)
     run_dict = load_yaml(open(run_cnf_fpath), Loader=Loader)

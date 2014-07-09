@@ -5,6 +5,7 @@ from source.quast_reporting.html_saver import write_html_report
 
 from source.logger import critical, info
 from source.utils import OrderedDefaultDict
+from source.utils_from_bcbio import file_exists
 
 
 def read_sample_names(sample_fpath):
@@ -30,9 +31,11 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
         info(basename(single_report_fpath))
 
+        if not file_exists(single_report_fpath) and 'mutect' in single_report_fpath:
+            continue
+
         if not verify_file(single_report_fpath):
             critical(single_report_fpath + ' does not exist.')
-
         single_report_fpaths.append(single_report_fpath)
 
     return single_report_fpaths
