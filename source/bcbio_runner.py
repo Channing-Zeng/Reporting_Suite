@@ -1,3 +1,4 @@
+from genericpath import isfile
 import os
 import re
 import sys
@@ -147,7 +148,7 @@ class Runner():
             # if output_dirpath != self.dir:
             #     create_dir = False
 
-        log_fpath = join(output_dirpath, step.name + '.log')
+        log_fpath = join(output_dirpath, step.name.lower() + '.log')
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
@@ -155,6 +156,11 @@ class Runner():
             log_fpath = join(output_dirpath, 'log')
 
         out_fpath = out_fpath or log_fpath
+
+        if isfile(out_fpath):
+            os.remove(out_fpath)
+        if isfile(log_fpath):
+            os.remove(log_fpath)
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
