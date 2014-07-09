@@ -229,7 +229,7 @@ class Runner():
                     call(self.cnf, cmdline, output_fpath=vcf_fpath)
                     info()
 
-                if 'mutect' in vcf_suf and 'vardict' in vcf_suf and not file_exists(vcf_fpath):
+                if 'mutect' in vcf_suf or 'vardict' in vcf_suf and not file_exists(vcf_fpath):
                     continue
 
                 if not verify_file(vcf_fpath):
