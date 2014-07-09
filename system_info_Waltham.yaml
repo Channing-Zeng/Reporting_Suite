@@ -28,6 +28,8 @@ resources:
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/bin/vcfannotate
 
+queue: batch.q
+
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

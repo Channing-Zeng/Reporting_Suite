@@ -28,3 +28,5 @@ genomes:
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     genes: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_canonical.sorted.bed
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
+
+queue: ngs.q

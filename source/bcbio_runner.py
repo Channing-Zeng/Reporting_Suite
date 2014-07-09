@@ -177,8 +177,10 @@ class Runner():
 
         threads = str(self.threads)
 
+        queue = self.cnf.queue
+
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -S /bin/bash -q batch.q '
+            '{qsub} -pe smp {threads} -S /bin/bash -q {queue} '
             '-j n -o {out_fpath} -e {log_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} "{cmdline}"'.format(**locals()))
 
