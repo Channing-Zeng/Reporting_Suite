@@ -28,8 +28,6 @@ resources:
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/bin/vcfannotate
 
-queue: batch.q
-
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
@@ -42,3 +40,7 @@ genomes:
 
     chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+
+queue: batch.q
+
+qsub_runner: runner_Waltham.sh

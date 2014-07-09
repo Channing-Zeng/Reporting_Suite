@@ -2,7 +2,7 @@ resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx2500m"]
     path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
-#    path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
+    # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /usr/local/share/java/snpEff/snpEff.jar
@@ -17,7 +17,6 @@ resources:
   qsub:
     path: ~/vagrant/reporting_suite/tools/qsub.sh
 
-
 genomes:
   hg19:
     seq: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/seq/hg19.fa
@@ -30,5 +29,6 @@ genomes:
     chr_lengths: data/chr_lengths_hg19.txt
     exons: data/test_exons.bed
 
-
 queue: ngs.q
+
+qsub_runner: runner_Waltham.sh

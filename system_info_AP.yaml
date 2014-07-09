@@ -17,7 +17,7 @@ resources:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
 
 genomes:
-  hg19: # incorrect paths 
+  hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
@@ -30,3 +30,5 @@ genomes:
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
 
 queue: ngs.q
+
+qsub_runner: runner_AP.sh

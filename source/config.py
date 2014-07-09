@@ -41,7 +41,7 @@ class Defaults():
         'TargetCov',
         'NGScat']
     qualimap = False  # 'True' adds 'QualiMap' to steps
-    qsub_runner = join(cur_dirpath, pardir, 'runner_Waltham.sh')
+    qsub_runner = 'runner_Waltham.sh'
 
     coverage_reports = dict(
         depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
