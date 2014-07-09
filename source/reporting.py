@@ -29,9 +29,10 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
             bcbio_final_dir, sample_name, varqc_dir,
             sample_name + ending)
 
-        info(basename(single_report_fpath))
+        info(single_report_fpath)
 
         if not file_exists(single_report_fpath) and 'mutect' in single_report_fpath:
+            info('No ' + single_report_fpath + ', skipping.')
             continue
 
         if not verify_file(single_report_fpath):

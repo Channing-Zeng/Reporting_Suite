@@ -124,7 +124,7 @@ class Runner():
                 name='VarQC_summary',
                 script='varqc_summary.py',
                 param_line=' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
-                           self.varqc.name + ' --vcf-suf ' + ','.join(self.sufs) +
+                           self.varqc.name.lower() + ' --vcf-suf ' + ','.join(self.sufs) +
                            ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
         if self.targetcov:
             self.steps.append('TargetCov_summary')
@@ -132,7 +132,7 @@ class Runner():
                 name='TargetCov_summary',
                 script='targetcov_summary.py',
                 param_line=' -o \'{output_dir}\' -d \'' + self.dir +
-                           '\' -s \'{samples}\' -n ' + self.targetcov.name +
+                           '\' -s \'{samples}\' -n ' + self.targetcov.name.lower() +
                            ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
     def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
@@ -164,7 +164,7 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
-        job_name = step.job_name(sample_name) if sample_name else step.name
+        job_name = step.job_name(sample_name) if sample_name else step.name.lower()
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())

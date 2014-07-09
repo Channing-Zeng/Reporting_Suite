@@ -23,9 +23,11 @@ def make_summary_reports(cnf, sample_names):
     callers = [VariantCaller(suf) for suf in vcf_sufs]
 
     for caller in callers:
-        caller.single_qc_rep_fpaths = get_sample_report_fpaths_for_bcbio_final_dir(
+        fpaths = get_sample_report_fpaths_for_bcbio_final_dir(
             cnf['bcbio_final_dir'], sample_names, varqc_dir,
             '-' + caller.suf + '.varqc.txt')
+        if fpaths:
+            caller.single_qc_rep_fpaths = fpaths
 
     if len(callers) > 1:
         _make_for_multiple_variant_callers(callers, cnf, sample_names)

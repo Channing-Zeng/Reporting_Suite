@@ -24,7 +24,7 @@ def main():
     parser = OptionParser(description=description)
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
-    parser.add_option('-n', dest='base_name', default='VarQC', help='Name of variant QC directory inside sample folder. (default is VarQC)')
+    parser.add_option('-n', dest='base_name', default='varqc', help='Name of variant QC directory inside sample folder. (default is VarQC)')
     parser.add_option('--vcf-suf', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
     parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
 
