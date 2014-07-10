@@ -113,6 +113,8 @@ cosmic:
   - AA
   - CDS
 
+custom_vcfs: {}
+
 snpeff:
   clinical_reporting: True
   cancer: True
