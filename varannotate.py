@@ -46,8 +46,8 @@ def main(args):
 
     set_up_snpeff(cnf)
 
-    info('Using variants ' + cnf['vcf'])
-    info('Using alignement ' + cnf['bam'])
+    # info('Using variants ' + cnf['vcf'])
+    # info('Using alignement ' + cnf['bam'])
 
     run_one(cnf, process_one, finalize_one)
 
