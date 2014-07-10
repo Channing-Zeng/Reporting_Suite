@@ -17,6 +17,9 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 
 def main():
+    info(' '.join(sys.argv))
+    info()
+
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)

@@ -18,6 +18,9 @@ from source.targetcov.summarize_cov import summary_reports, cnv_reports
 
 
 def main():
+    info(' '.join(sys.argv))
+    info()
+
     description = 'This script generates project-level summaries based on per-sample targetcov reports.'
 
     parser = OptionParser(description=description)

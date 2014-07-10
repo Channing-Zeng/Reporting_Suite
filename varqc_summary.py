@@ -19,6 +19,9 @@ from source.logger import info
 
 
 def main():
+    info(' '.join(sys.argv))
+    info()
+
     description = 'This script generates project-level summaries based on per-sample targetcov reports.'
 
     parser = OptionParser(description=description)
