@@ -11,10 +11,10 @@ import ConfigParser
 import collections
 import sys
 import fnmatch
-from os.path import isfile, getsize, exists, expanduser, splitext
-from datetime import time
-
+import time
 import yaml
+
+from os.path import isfile, getsize, exists, expanduser, splitext
 
 try:
     from concurrent import futures
