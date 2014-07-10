@@ -37,6 +37,7 @@ genomes:
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
     snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
+    oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
 
     chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed

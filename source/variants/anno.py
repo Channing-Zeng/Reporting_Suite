@@ -27,6 +27,10 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
         annotated = vcf_fpath is not None
 
+    if 'oncomine' in cnf:
+        vcf_fpath = _snpsift_annotate(cnf, cnf['oncomine'], 'oncomine', vcf_fpath)
+        annotated = vcf_fpath is not None
+
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
             vcf_fpath = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)

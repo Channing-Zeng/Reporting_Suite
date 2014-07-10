@@ -42,7 +42,7 @@ def main(args):
 
     load_genome_resources(cnf,
         required=['seq', 'snpeff'],
-        optional=['dbsnp', 'cosmic'])
+        optional=['dbsnp', 'cosmic', 'oncomine'])
 
     set_up_snpeff(cnf)
 

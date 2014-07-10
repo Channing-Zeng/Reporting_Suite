@@ -109,15 +109,15 @@ cosmic:
   - AA
   - CDS
 
+oncomine:
+  all-annotations: False
+  annotations:
+  - om_Cancer
+  - om_PATIENT
+  - om_MutClass
+  - om_MutClassPC
+
 custom_vcfs:
-  oncomine:
-    path: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
-    all-annotations: False
-    annotations:
-    - om_Cancer
-    - om_PATIENT
-    - om_MutClass
-    - om_MutClassPC
 
 snpeff:
   clinical_reporting: False    ## Canonical transcripts + output in HGVS notation

@@ -89,7 +89,15 @@ class Runner():
 
     def set_up_steps(self, cnf):
         cnfs_line = '--sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
-        overwrite_line = '-w' if self.cnf.overwrite else ''
+
+        if cnf.overwrite is not None:
+            if cnf.overwrite is True:
+                overwrite_line = '-w'
+            else:
+                overwrite_line = '--reuse'
+        else:
+            overwrite_line = ''
+
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
 
         self.varannotate = self.steps.step(
@@ -115,8 +123,7 @@ class Runner():
         self.qualimap = self.steps.step(
             name='QualiMap',
             interpreter=None,
-            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam '
-                       '\'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
+            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
         if self.varqc:
             self.steps.append('VarQC_summary')
