@@ -26,8 +26,8 @@ class Step():
         self.name = name
         self.cmdline = cmdline
 
-    def job_name(self, sample=None):
-        return self.name + ('_' + sample if sample else '')
+    def job_name(self, sample=None, caller=None):
+        return self.name + ('_' + sample if sample else '') + ('_' + caller if caller else '')
 
 
 class Steps(list):
@@ -142,7 +142,7 @@ class Runner():
                            '\' -s \'{samples}\' -n ' + self.targetcov.name.lower() +
                            ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
-    def submit(self, step, sample_name='', create_dir=False, out_fpath=None,
+    def submit(self, step, sample_name='', suf=None, create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):
         if not step or step.name not in self.steps:
             return None
@@ -155,12 +155,12 @@ class Runner():
             # if output_dirpath != self.dir:
             #     create_dir = False
 
-        log_fpath = join(output_dirpath, step.name.lower() + '.log')
+        log_fpath = join(output_dirpath, step.job_name(sample_name, suf).lower() + '.log')
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
             safe_mkdir(output_dirpath)
-            log_fpath = join(output_dirpath, 'log')
+            log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
 
         out_fpath = out_fpath or log_fpath
 
@@ -171,7 +171,7 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
-        job_name = step.job_name(sample_name) if sample_name else step.name.lower()
+        job_name = step.job_name(sample_name, suf)
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
@@ -247,11 +247,11 @@ class Runner():
 
                 self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
 
-            self.submit(self.targetcov, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+            self.submit(self.targetcov, sample, create_dir=True, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.ngscat, sample, True, bam=bam_fpath, bed=self.bed, sample=sample)
+            self.submit(self.ngscat, sample, create_dir=True, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.qualimap, sample, True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
+            self.submit(self.qualimap, sample, create_dir=True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -266,7 +266,7 @@ class Runner():
             self.submit(
                 self.varqc_summary,
                 create_dir=True,
-                wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
+                wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs],
                 samples=self.samples_fpath)
 
         if self.targetcov_summary:
@@ -284,12 +284,12 @@ class Runner():
     def _process_vcf(self, sample, sample_dirpath, bam_fpath, vcf_fpath, suf):
         if self.varqc:
             self.submit(
-                self.varqc, sample, True,
+                self.varqc, sample, suf=suf, create_dir=True,
                 vcf=vcf_fpath, sample=sample + '-' + suf)
 
         if self.varannotate:
             anno_dirpath = self.submit(
-                self.varannotate, sample, True,
+                self.varannotate, sample, suf=suf, create_dir=True,
                 vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
@@ -298,7 +298,6 @@ class Runner():
                     basename(add_suffix(annotated_vcf_fpath, 'filt')))
                 if file_exists(filtered_vcf_fpath):
                     os.remove(filtered_vcf_fpath)
-                self.submit(self.varfilter, sample, False,
-                    wait_for_steps=[self.varannotate.job_name(sample)],
-                    vcf=annotated_vcf_fpath,
-                    sample=sample + '-' + suf)
+                self.submit(self.varfilter, sample, suf=suf, create_dir=False,
+                    wait_for_steps=[self.varannotate.job_name(sample, suf)],
+                    vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
