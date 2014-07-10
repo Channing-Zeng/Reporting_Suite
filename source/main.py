@@ -73,7 +73,7 @@ def read_opts_and_cnfs(extra_opts,
             metavar='DIR')
          ),
     ]
-    
+
     info(' '.join(sys.argv))
     info()
 
