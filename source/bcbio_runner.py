@@ -88,7 +88,7 @@ class Runner():
 
 
     def set_up_steps(self, cnf):
-        cnfs_line = '--sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
+        cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
 
         if cnf.overwrite is not None:
             if cnf.overwrite is True:
@@ -130,7 +130,7 @@ class Runner():
             self.varqc_summary = self.steps.step(
                 name='VarQC_summary',
                 script='varqc_summary.py',
-                param_line=' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
+                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
                            self.varqc.name.lower() + ' --vcf-suf ' + ','.join(self.sufs) +
                            ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
         if self.targetcov:
@@ -138,7 +138,7 @@ class Runner():
             self.targetcov_summary = self.steps.step(
                 name='TargetCov_summary',
                 script='targetcov_summary.py',
-                param_line=' -o \'{output_dir}\' -d \'' + self.dir +
+                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir +
                            '\' -s \'{samples}\' -n ' + self.targetcov.name.lower() +
                            ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 

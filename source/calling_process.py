@@ -26,7 +26,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
-         overwrite=True, check_output=False, return_proc=False):
+         overwrite=False, check_output=False, return_proc=False):
     """
     Required arguments:
     ------------------------------------------------------------
