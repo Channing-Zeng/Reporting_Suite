@@ -262,17 +262,19 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        self.submit(
-            self.varqc_summary,
-            create_dir=True,
-            wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
-            samples=self.samples_fpath)
+        if self.varqc:
+            self.submit(
+                self.varqc_summary,
+                create_dir=True,
+                wait_for_steps=[self.varqc.job_name(s) for s in self.samples],
+                samples=self.samples_fpath)
 
-        self.submit(
-            self.targetcov_summary,
-            create_dir=True,
-            wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
-            samples=self.samples_fpath)
+        if self.targetcov_summary:
+            self.submit(
+                self.targetcov_summary,
+                create_dir=True,
+                wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
+                samples=self.samples_fpath)
 
         if not self.cnf.verbose:
             print ''
