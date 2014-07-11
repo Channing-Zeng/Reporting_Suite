@@ -15,17 +15,68 @@ indels_plot_ending = '.indels.png'
 substs_plot_ending = '.substitutions.png'
 
 
-def variants_distribution_plot(cnf, vcf_fpath):
-    step_greetings('Quality control variant distribution plots')
+def draw_plots(cnf, vcf_fpath):
+    step_greetings('Quality control plots')
 
-    # step 1: get chr lengths
     chr_lengths = get_chr_lengths(cnf)
-
-    # step 2: get variants distribution (per chromosome)
     qc_cnf = cnf['quality_control']
     variants_per_kbp = qc_cnf.get('variant_distribution_scale')
     plot_scale = 1000 * variants_per_kbp
-    variants_distribution, not_counted = _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale)
+
+    variants_distribution, substituitions, indel_lengths = _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale)
+    variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp)
+    substs_plot_fpath = _draw_substitutions(cnf, substituitions)
+    indels_plot_fpath = _draw_indel_lengths(cnf, indel_lengths)
+    return [variants_distribution_plot_fpath, substs_plot_fpath, indels_plot_fpath]
+
+
+def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
+    reader = vcf.Reader(open(vcf_fpath, 'r'))
+
+    variants_distribution = dict()
+    for chr_name, chr_length in chr_lengths.items():
+        variants_distribution[chr_name] = [0] * max(1, chr_length / plot_scale)
+    variants_distribution['OTHER'] = 0
+
+    substituitions = OrderedDict()
+    nucleotides = ['A', 'C', 'G', 'T']
+    for nucl1 in nucleotides:
+        substituitions[nucl1] = OrderedDict()
+        for nucl2 in nucleotides:
+            if nucl1 != nucl2:
+                substituitions[nucl1][nucl2] = 0
+    indel_lengths = []
+
+    for rec in reader:
+        # for variants distribution plot
+        if rec.CHROM not in variants_distribution:
+            variants_distribution['OTHER'] += 1
+        else:
+            region_id = min((rec.POS - 1) / plot_scale, len(variants_distribution[chr_name]) - 1)
+            variants_distribution[rec.CHROM][region_id] += 1
+        # for substitution and indel plots
+        for alt in rec.ALT:
+            if rec.is_snp:
+                substituitions[rec.REF][str(alt)] += 1
+            elif rec.is_indel:
+                if alt is None:
+                    indel_lengths.append(-1)
+                else:
+                    indel_lengths.append(len(alt) - len(rec.REF))
+
+    # the last region in each chromosome is not exactly equal to plot_scale
+    for chr_name, chr_length in chr_lengths.items():
+        last_region_length = chr_length % plot_scale + (0 if chr_length < plot_scale else plot_scale)
+        variants_distribution[chr_name][-1] = int(variants_distribution[chr_name][-1] * plot_scale /
+                                                  float(last_region_length))
+    return variants_distribution, substituitions, indel_lengths
+
+
+def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp):
+    plot_fpath = join(cnf.output_dir, cnf['name'] + distr_plot_ending)
+
+    not_counted = variants_distribution['OTHER']
+    del variants_distribution['OTHER']
     if not_counted:
         info('Warning: some variants were not counted (chromosome names not found): ' + str(not_counted))
     empty_chr = []
@@ -36,7 +87,6 @@ def variants_distribution_plot(cnf, vcf_fpath):
     if empty_chr:
         info('Chromosomes without variants: ' + ', '.join(human_sorted(empty_chr)))
 
-    # step 3: plotting
     nplots = len(variants_distribution.keys())
     ncols = min(4, nplots)
     nrows = 1 + (nplots - 1) / 4
@@ -44,14 +94,11 @@ def variants_distribution_plot(cnf, vcf_fpath):
     mbp = 10**6
     fig = matplotlib.pyplot.figure(figsize=(6 * ncols, 3 * nrows))
     for id, chr_name in enumerate(human_sorted(variants_distribution.keys())):
-        #fig = matplotlib.pyplot.figure(figsize=(25,6))
-
         ax = fig.add_subplot(nrows, ncols, id + 1)
         ax.plot(range(len(variants_distribution[chr_name])), variants_distribution[chr_name], color='#46a246', linewidth=3.0)
         ax.axhline(linewidth=3.0)
         ax.axvline(linewidth=3.0)
 
-        #Axe style###############################
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.get_xaxis().tick_bottom()
@@ -85,49 +132,14 @@ def variants_distribution_plot(cnf, vcf_fpath):
             chr_without_variants_wrapped = textwrap.fill(chr_without_variants, wrap_width)
         else:
             chr_without_variants_wrapped = empty_chr[0]
-        fig.suptitle('Number of variants from chromosomes not found in reference: ' + str(not_counted),
+        fig.suptitle('Variants on other chromosomes (not found in reference): ' + str(not_counted),
                      x=0.12, y=0.07, fontsize=fontsize, fontweight='bold', ha='left')
         fig.suptitle('Chromosomes without variants:', x=0.12, y=0.05, fontsize=fontsize, fontweight='bold', ha='left')
         fig.suptitle(chr_without_variants_wrapped, x=0.12, y=0.03, fontsize=fontsize, ha='left')
 
-    variants_distribution_plot_fpath = join(cnf.output_dir, cnf.name + distr_plot_ending)
-    fig.savefig(variants_distribution_plot_fpath, bbox_inches='tight')
+    fig.savefig(plot_fpath, bbox_inches='tight')
     matplotlib.pyplot.close(fig)
-    return variants_distribution_plot_fpath
-
-
-def basic_plots(cnf, vcf_fpath):
-    step_greetings('Quality control basic plots')
-
-    substituitions, indel_lengths = _get_subs_and_indel_stats(vcf_fpath)
-    substs_plot_fpath = _draw_substitutions(cnf, substituitions)
-    indels_plot_fpath = _draw_indel_lengths(cnf, indel_lengths)
-    return [substs_plot_fpath, indels_plot_fpath]
-
-
-def _get_subs_and_indel_stats(vcf_fpath):
-    reader = vcf.Reader(open(vcf_fpath, 'r'))
-
-    substituitions = OrderedDict()
-    nucleotides = ['A', 'C', 'G', 'T']
-    for nucl1 in nucleotides:
-        substituitions[nucl1] = OrderedDict()
-        for nucl2 in nucleotides:
-            if nucl1 != nucl2:
-                substituitions[nucl1][nucl2] = 0
-    indel_lengths = []
-
-    for rec in reader:
-        for alt in rec.ALT:
-            if rec.is_snp:
-                substituitions[rec.REF][str(alt)] += 1
-            elif rec.is_indel:
-                if alt is None:
-                    indel_lengths.append(-1)
-                else:
-                    indel_lengths.append(len(alt) - len(rec.REF))
-
-    return substituitions, indel_lengths
+    return plot_fpath
 
 
 def _draw_substitutions(cnf, substituitions):
@@ -191,30 +203,4 @@ def _draw_indel_lengths(cnf, indel_lengths):
     matplotlib.pyplot.savefig(plot_fpath)
     matplotlib.pyplot.close()
     return plot_fpath
-
-
-def _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale):
-    variants_distribution = dict()
-    for chr_name, chr_length in chr_lengths.items():
-        variants_distribution[chr_name] = [0] * max(1, chr_length / plot_scale)
-    not_counted = 0
-
-    with open(vcf_fpath, 'r') as f:
-        for line in f:
-            if line.startswith('#') or len(line.split()) < 8:
-                continue
-            chr_name = line.split()[0]
-            chr_pos = int(line.split()[1])
-            if chr_name not in variants_distribution:
-                not_counted += 1
-            else:
-                region_id = min((chr_pos - 1) / plot_scale, len(variants_distribution[chr_name]) - 1)
-                variants_distribution[chr_name][region_id] += 1
-
-    # the last region in each chromosome is not exactly equal to plot_scale
-    for chr_name, chr_length in chr_lengths.items():
-        last_region_length = chr_length % plot_scale + (0 if chr_length < plot_scale else plot_scale)
-        variants_distribution[chr_name][-1] = int(variants_distribution[chr_name][-1] * plot_scale /
-                                                  float(last_region_length))
-    return variants_distribution, not_counted
 

@@ -51,7 +51,7 @@ def main(args):
 if verify_module('matplotlib'):
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
-    from source.variants.qc_plots import variants_distribution_plot, basic_plots
+    from source.variants.qc_plots import draw_plots
 else:
     info('Warning: matplotlib is not installed, cannot draw plots.')
 
@@ -107,9 +107,8 @@ def process_one(cnf):
     qc_report_fpath = gatk_qc(cnf, vcf_fpath)
 
     if verify_module('matplotlib'):
-        qc_basic_plots_fpaths = basic_plots(cnf, vcf_fpath)
-        qc_var_distr_plot_fpath = variants_distribution_plot(cnf, vcf_fpath)
-        return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_basic_plots_fpaths
+        qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
+        return qc_report_fpath, qc_plots_fpaths
     else:
         return qc_report_fpath, None
 
