@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 import sys
+
+if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
+    sys.exit('Python 2, versions 2.7 and higher is supported '
+             '(you are running %d.%d.%d)' %
+             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+
 from optparse import OptionParser
 from os.path import join, abspath, dirname, pardir, isdir
 
@@ -8,12 +14,6 @@ from source.logger import info
 from source.main import check_system_resources, check_inputs, check_keys
 from source.bcbio_runner import run_on_bcbio_final_dir
 from source.utils_from_bcbio import safe_mkdir
-
-
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 
 def main():

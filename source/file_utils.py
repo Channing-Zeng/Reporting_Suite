@@ -4,7 +4,7 @@ import sys
 import tempfile
 import os
 import shutil
-from os.path import isfile, isdir, getsize, exists, expanduser, basename, join
+from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath
 
 from source.logger import info, err
 from source.transaction import file_transaction
@@ -24,7 +24,7 @@ def verify_file(fpath, description=''):
         err((description + ': f' if description else 'F') + 'ile name is empty.')
         return None
 
-    fpath = expanduser(fpath)
+    fpath = abspath(expanduser(fpath))
     if not exists(fpath):
         err((description + ': ' if description else '') + fpath + ' does not exist.')
         return None

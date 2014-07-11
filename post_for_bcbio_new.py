@@ -1,20 +1,19 @@
 #!/usr/bin/env python
-from os import listdir
 import sys
-from optparse import OptionParser
-from os.path import join, abspath, dirname, pardir, isdir
-
-from source.config import Defaults, Config, load_yaml_config
-from source.file_utils import verify_file
-from source.logger import info, critical
-from source.main import check_system_resources, check_inputs, check_keys
-from source.bcbio_runner_new import run_on_bcbio_final_dir
-
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
+
+from optparse import OptionParser
+from os.path import join, pardir, isdir
+from os import listdir
+
+from source.config import Defaults, Config, load_yaml_config
+from source.logger import info, critical
+from source.main import check_system_resources, check_inputs, check_keys
+from source.bcbio_runner_new import run_on_bcbio_final_dir
 
 
 def main():
