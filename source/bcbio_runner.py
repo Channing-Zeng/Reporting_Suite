@@ -296,3 +296,9 @@ class Runner():
                 self.submit(self.varfilter, sample, suf=suf, create_dir=False,
                     wait_for_steps=[self.varannotate.job_name(sample, suf)],
                     vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+
+                if self.varqc:
+                    self.submit(
+                        self.varqc, sample, suf=suf, create_dir=True,
+                        wait_for_steps=self.varfilter.job_name(sample, suf),
+                        vcf=vcf_fpath, sample=sample + '-' + suf)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 
-from os.path import basename, join, expanduser
+from os.path import basename, join, expanduser, splitext, realpath, dirname
 from collections import OrderedDict
 
 from ext_modules import vcf
@@ -11,7 +11,7 @@ from source.calling_process import call_subprocess
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file
-from source.tools_from_cnf import get_java_tool_cmdline
+from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.utils_from_bcbio import open_gzipsafe, splitext_plus
 from source.logger import step_greetings, info, critical
 
@@ -164,6 +164,21 @@ def read_samples_info_and_split(common_cnf, options, inputs):
         info('Using samples: ' + ', '.join(all_samples) + '.')
 
     return all_samples
+
+
+def convert_to_maf(cnf, final_vcf_fpath):
+    step_greetings('Converting to MAF')
+
+    final_vcf_fname = basename(final_vcf_fpath)
+
+    final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
+    perl = get_tool_cmdline(cnf, 'perl')
+    vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
+    cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
+              '--output-maf {final_maf_fpath}'.format(**locals())
+    call_subprocess(cnf, cmdline, None, None)
+    return final_maf_fpath
+
 
 
 def read_sample_names_from_vcf(vcf_fpath):

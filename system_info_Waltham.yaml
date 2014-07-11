@@ -20,7 +20,7 @@ resources:
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/bin/vcfannotate
   python:
-    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
+    path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/anaconda/bin/python
   perl:
     path: /usr/bin/perl
   java:

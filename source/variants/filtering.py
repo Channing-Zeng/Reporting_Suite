@@ -99,7 +99,7 @@ class Filtering:
         self.cnf = cnf
         self.filt_cnf = filt_cnf
         self.vcf_fpath = vcf_fpath
-        self.vardict_mode = cnf['vardict_mode']
+        self.vardict_mode = False
         Filter.filt_cnf = self.filt_cnf
 
         self.control_vars = set()

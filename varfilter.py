@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants.vcf_processing import convert_to_maf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -37,12 +38,12 @@ def main():
                 help='Annotated variants to filter'
             )),
 
-            (['--vardict'], dict(
-                dest='vardict_mode',
-                action='store_true',
-                default=False,
-                help='Vardict mode: assumes Vardict annotations.'
-            )),
+            # (['--vardict'], dict(
+            #     dest='vardict_mode',
+            #     action='store_true',
+            #     default=False,
+            #     help='Vardict mode: assumes Vardict annotations.'
+            # )),
 
             (['-i', '--impact'], dict(
                 dest='impact',
@@ -196,9 +197,11 @@ def main():
         shutil.rmtree(cnf['work_dir'])
 
 
-def finalize_one(cnf, filtered_vcf_fpath):
+def finalize_one(cnf, filtered_vcf_fpath, maf_fpath):
     if filtered_vcf_fpath:
         info('Saved filtered VCF to ' + filtered_vcf_fpath)
+    if maf_fpath:
+        info('Saved MAF to ' + maf_fpath)
 
 
 def process_one(cnf):
@@ -214,7 +217,9 @@ def process_one(cnf):
         os.remove(final_vcf_fpath)
     shutil.copyfile(filtered_vcf_fpath, final_vcf_fpath)
 
-    return [final_vcf_fpath]
+    final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
+
+    return [final_vcf_fpath, final_maf_fpath]
 
 
 if __name__ == '__main__':

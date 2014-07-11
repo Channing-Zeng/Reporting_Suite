@@ -9,6 +9,7 @@ from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
+from source.variants.vcf_processing import convert_to_maf
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -89,7 +90,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
         # Converting to MAF
-        final_maf_fpath = _convert_to_maf(cnf, final_vcf_fpath)
+        final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
 
         return final_vcf_fpath, final_maf_fpath
     else:
@@ -117,20 +118,6 @@ def _remove_annotation(cnf, field_to_del, input_fpath):
                 return '\t'.join(fields)
         return l
     return iterate_file(cnf, input_fpath, proc_line)
-
-
-def _convert_to_maf(cnf, final_vcf_fpath):
-    step_greetings('Converting to MAF')
-
-    final_vcf_fname = basename(final_vcf_fpath)
-
-    final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
-    perl = get_tool_cmdline(cnf, 'perl')
-    vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
-    cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
-              '--output-maf {final_maf_fpath}'.format(**locals())
-    call_subprocess(cnf, cmdline, None, None)
-    return final_maf_fpath
 
 
 def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
