@@ -142,6 +142,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     sys.exit(1)
                 else:
                     return None
+            return output_fpath
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
             if out_fpath:
@@ -187,6 +188,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
                         log_f.write(err_f.read())
                         log_f.write('')
+            return output_fpath
 
     res = None
     if output_fpath and not output_is_dir:

@@ -43,10 +43,11 @@ class Steps(list):
                [self.__normalize(el) for el in self]
 
     def step(self, name, script=None, interpreter='python', param_line=None):
-        if name not in self:
-            return None
+        if not name in self:
+            return Step(name, None)
 
         cmd = get_tool_cmdline(self.cnf, interpreter, script or name)
+
         if not cmd:
             sys.exit(1)
 
@@ -65,6 +66,7 @@ class Runner():
 
         self.varannotate = None
         self.varqc = None
+        self.varqc_after = None
         self.varfilter = None
         self.targetcov = None
         self.ngscat = None
@@ -107,6 +109,10 @@ class Runner():
             name='VarQC',
             script='varqc.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\'')
+        self.varqc_after = self.steps.step(
+            name='VarQC_after',
+            script='varqc.py',
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\'')
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
@@ -137,10 +143,8 @@ class Runner():
                        '\' -s \'{samples}\' -n ' + 'targetcov' +
                        ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
-    def submit(self, step, sample_name='', suf=None, create_dir=False, out_fpath=None,
+    def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True, out_fpath=None,
                wait_for_steps=list(), **kwargs):
-        if not step or step.name not in self.steps:
-            return None
 
         output_dirpath = self.dir
         if sample_name:
@@ -154,8 +158,14 @@ class Runner():
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
-            safe_mkdir(output_dirpath)
             log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
+
+        # Skipping steps
+        if not step or step.name not in self.steps:
+            return output_dirpath
+
+        if create_dir:
+            safe_mkdir(output_dirpath)
 
         out_fpath = out_fpath or log_fpath
 
@@ -242,11 +252,11 @@ class Runner():
 
                 self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
 
-            self.submit(self.targetcov, sample, create_dir=True, bam=bam_fpath, bed=self.bed, sample=sample)
+            self.submit_if_needed(self.targetcov, sample, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.ngscat, sample, create_dir=True, bam=bam_fpath, bed=self.bed, sample=sample)
+            self.submit_if_needed(self.ngscat, sample, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.qualimap, sample, create_dir=True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
+            self.submit_if_needed(self.qualimap, sample, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -257,19 +267,15 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        if self.varqc_summary:
-            self.submit(
-                self.varqc_summary,
-                create_dir=True,
-                wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs if self.varqc],
-                samples=self.samples_fpath)
+        self.submit_if_needed(
+            self.varqc_summary,
+            wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs if self.varqc.name in self.steps],
+            samples=self.samples_fpath)
 
-        if self.targetcov_summary:
-            self.submit(
-                self.targetcov_summary,
-                create_dir=True,
-                wait_for_steps=[self.targetcov.job_name(s) for s in self.samples if self.targetcov],
-                samples=self.samples_fpath)
+        self.submit_if_needed(
+            self.targetcov_summary,
+            wait_for_steps=[self.targetcov.job_name(s) for s in self.samples if self.targetcov.name in self.steps],
+            samples=self.samples_fpath)
 
         if not self.cnf.verbose:
             print ''
@@ -277,26 +283,23 @@ class Runner():
             info('Done.')
 
     def _process_vcf(self, sample, sample_dirpath, bam_fpath, vcf_fpath, suf):
-        if self.varqc:
-            self.submit(
-                self.varqc, sample, suf=suf, create_dir=True,
-                vcf=vcf_fpath, sample=sample + '-' + suf)
+        self.submit_if_needed(
+            self.varqc, sample, suf=suf,
+            vcf=vcf_fpath, sample=sample + '-' + suf)
 
-        if self.varannotate:
-            anno_dirpath = self.submit(
-                self.varannotate, sample, suf=suf, create_dir=True,
-                vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
-            annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
+        anno_dirpath = self.submit_if_needed(
+            self.varannotate, sample, suf=suf,
+            vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
 
-            if self.varfilter:
-                filter_dirpath = self.submit(self.varfilter, sample, suf=suf, create_dir=True,
-                    wait_for_steps=[self.varannotate.job_name(sample, suf)],
-                    vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+        annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-                filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+        filter_dirpath = self.submit_if_needed(self.varfilter, sample, suf=suf,
+            wait_for_steps=[self.varannotate.job_name(sample, suf)] if self.varannotate.name in self.steps else [],
+            vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
 
-                if self.varqc:
-                    self.submit(
-                        self.varqc, sample, suf=suf, create_dir=True,
-                        wait_for_steps=self.varfilter.job_name(sample, suf),
-                        vcf=filtered_vcf_fpath, sample=sample + '-' + suf)
+        filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+
+        self.submit_if_needed(
+            self.varqc_after, sample, suf=suf,
+            wait_for_steps=[self.varfilter.job_name(sample, suf)] if self.varfilter.name in self.steps else [],
+            vcf=filtered_vcf_fpath, sample=sample + '-' + suf)

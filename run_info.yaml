@@ -4,6 +4,7 @@ steps:
 - VarAnnotate
 - VarQC
 - VarFilter
+- VarQC_after
 - TargetCov
 - NGScat
 - QualiMap

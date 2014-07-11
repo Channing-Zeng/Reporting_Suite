@@ -107,8 +107,12 @@ def process_one(cnf):
     qc_report_fpath = gatk_qc(cnf, vcf_fpath)
 
     if verify_module('matplotlib'):
-        qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
-        return qc_report_fpath, qc_plots_fpaths
+        try:
+            qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
+        except:
+            return qc_report_fpath, None
+        else:
+            return qc_report_fpath, qc_plots_fpaths
     else:
         return qc_report_fpath, None
 

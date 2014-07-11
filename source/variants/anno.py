@@ -143,6 +143,9 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True, exit_on_error=False)
+    if not output_fpath:
+        err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
+        return output_fpath
 
     # all_fields.extend(annotations)
 
@@ -197,7 +200,7 @@ def _snpeff(cnf, input_fpath):
 
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
-    stats_fpath = join(cnf['name'] + '.snpEff_summary.html')
+    stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
     extra_opts = cnf['snpeff'].get('opts', '')
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
@@ -239,9 +242,13 @@ def _tracks(cnf, track_path, input_fpath):
 
     cmdline = '{toolpath} -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
 
+    assert input_fpath
     output_fpath = intermediate_fname(cnf, input_fpath, field_name)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                         stdout_to_outputfile=True)
+    if not output_fpath:
+        err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_path)
+        return output_fpath
 
     # Set TRUE or FALSE for tracks
     def proc_line(line, i):
@@ -258,6 +265,8 @@ def _tracks(cnf, track_path, input_fpath):
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
         return line
+
+    assert output_fpath
     return iterate_file(cnf, output_fpath, proc_line)
 
 
