@@ -31,4 +31,4 @@ genomes:
 
 queue: ngs.q
 
-qsub_runner: test/qsub_runner_local.sh
+qsub_runner: qsub_runner_local.sh

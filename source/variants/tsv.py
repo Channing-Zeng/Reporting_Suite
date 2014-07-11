@@ -1,11 +1,10 @@
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
-import sys
 from ext_modules import vcf
 
 from source.calling_process import call_subprocess
-from source.file_utils import iterate_file, intermediate_fname
+from source.file_utils import intermediate_fname
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.transaction import file_transaction
 from source.utils_from_bcbio import which, splitext_plus, file_exists
@@ -129,6 +128,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 values = [v for v in l.split('\t') if v != '\n']
                 for i, v in enumerate(values):
                     if v:
+                        while len(col_counts) <= i:
+                            col_counts.append(0)
                         col_counts[i] += 1
 
     with file_transaction(cnf, tsv_fpath) as tx:
