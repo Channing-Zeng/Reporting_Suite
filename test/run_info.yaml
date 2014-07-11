@@ -7,8 +7,8 @@ steps:
 #  - TargetCov
 #  - NGScat
   #- QualiMap
-  - VarQC_Summary
-  - TargetCov_Summary
+- VarQC_Summary
+- TargetCov_Summary
 
 filter_reject: True   ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
