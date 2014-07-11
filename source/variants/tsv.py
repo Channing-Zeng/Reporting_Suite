@@ -148,7 +148,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                     out.write('\t')
 
                 # values = [v.replace('\n', '') for v in values]
-                out.write('\t'.join([v.replace('\n', '') for j, v in enumerate(values) if col_counts[j]]) + '\n')
+                out.write('\t'.join([v.replace('\n', '') for j, v in enumerate(values) if j < len(col_counts) and col_counts[j]]) + '\n')
 
     # with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx_tsv_fpath:
     #     info(cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath
