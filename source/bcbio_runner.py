@@ -110,7 +110,7 @@ class Runner():
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --vardict --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
