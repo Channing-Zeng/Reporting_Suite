@@ -9,10 +9,13 @@ from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.transaction import file_transaction
 from source.utils_from_bcbio import which, splitext_plus, file_exists
 from source.logger import step_greetings, info
+from source.variants.vcf_processing import read_sample_names_from_vcf
 
 
 def make_tsv(cnf, vcf_fpath):
     tsv_fpath = _extract_fields(cnf, vcf_fpath, cnf['work_dir'], cnf['name'])
+    if not tsv_fpath:
+        return tsv_fpath
 
     manual_tsv_fields = cnf.get('tsv_fields')
     if manual_tsv_fields:
@@ -96,6 +99,10 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     else:
         return None
 
+    column_names = read_sample_names_from_vcf(vcf_fpath)
+    if len(column_names) == 0:
+        manual_tsv_fields = [f for f in manual_tsv_fields if f.startswith('GEN[*]')]
+
     # info_fields = [f for f in fields if f not in ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'ID'm ]
     # with open(broken_format_column_vcf_fpath) as vcf_f:
     #     fields = filter_info_tsv_fileds(vcf_f, fields)
@@ -114,8 +121,10 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
 
-    call_subprocess(cnf, cmdline, None, tsv_fpath,
-         stdin_fpath=vcf_fpath)
+    res = call_subprocess(cnf, cmdline, None, tsv_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
+
+    if res is None:
+        return None
 
     # REMOVE EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
@@ -148,7 +157,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                     out.write('\t')
 
                 # values = [v.replace('\n', '') for v in values]
-                out.write('\t'.join([v.replace('\n', '') for j, v in enumerate(values) if j < len(col_counts) and col_counts[j]]) + '\n')
+                out.write('\t'.join([v.replace('\n', '') for j, v in enumerate(values)
+                                     if j < len(col_counts) and col_counts[j]]) + '\n')
 
     # with file_transaction(cnf['tmp_dir'], tsv_fpath) as tx_tsv_fpath:
     #     info(cmdline + ' < ' + (splitted_FORMAT_column_vcf_fpath

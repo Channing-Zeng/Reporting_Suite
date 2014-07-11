@@ -140,6 +140,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if exit_on_error:
                     clean()
                     sys.exit(1)
+                else:
+                    return None
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
             if out_fpath:
@@ -176,6 +178,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if exit_on_error:
                     clean()
                     sys.exit(1)
+                else:
+                    return None
             else:
                 if cnf.log and err_fpath:
                     with open(err_fpath) as err_f, \
@@ -184,9 +188,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write(err_f.read())
                         log_f.write('')
 
+    res = None
     if output_fpath and not output_is_dir:
         with file_transaction(cnf, output_fpath) as tx_out_fpath:
-            do(cmdline, tx_out_fpath)
+            res = do(cmdline, tx_out_fpath)
     else:
         res = do(cmdline)
         if res is not None:
@@ -195,7 +200,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     clean()
 
-    if output_fpath and not output_is_dir:
-        info('Saved to ' + output_fpath)
+    if res:
+        if output_fpath and not output_is_dir:
+            info('Saved to ' + output_fpath)
 
-    return output_fpath
+        return output_fpath
+    else:
+        return res

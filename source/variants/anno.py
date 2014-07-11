@@ -16,35 +16,52 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
     original_vcf = vcf_fpath
 
     if 'gatk' in cnf:
-        vcf_fpath = _gatk(cnf, vcf_fpath, bam_fpath)
-        annotated = vcf_fpath is not None
+        res = _gatk(cnf, vcf_fpath, bam_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
 
     if 'dbsnp' in cnf:
-        vcf_fpath = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath)
-        annotated = vcf_fpath is not None
+        res = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
 
     if 'cosmic' in cnf:
-        vcf_fpath = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
-        annotated = vcf_fpath is not None
+        res = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
 
     if 'oncomine' in cnf:
-        vcf_fpath = _snpsift_annotate(cnf, cnf['oncomine'], 'oncomine', vcf_fpath)
-        annotated = vcf_fpath is not None
+        res = _snpsift_annotate(cnf, cnf['oncomine'], 'oncomine', vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
 
     if 'custom_vcfs' in cnf:
         for dbname, custom_conf in cnf['custom_vcfs'].items():
-            vcf_fpath = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)
-            annotated = vcf_fpath is not None
+            res = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)
+            if res:
+                vcf_fpath = res
+                annotated = True
 
     if 'dbnsfp' in cnf:
-        vcf_fpath = _snpsift_db_nsfp(cnf, vcf_fpath)
-        annotated = vcf_fpath is not None
+        res = _snpsift_db_nsfp(cnf, vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
 
     if 'snpeff' in cnf:
-        vcf_fpath = _remove_annotation(cnf, 'EFF', vcf_fpath)
-        vcf_fpath, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
-        annotated = vcf_fpath is not None
-        if annotated:
+        res = _remove_annotation(cnf, 'EFF', vcf_fpath)
+        if res:
+            vcf_fpath = res
+
+        res, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
+
             if isfile(join(cnf['output_dir'], summary_fpath)):
                 os.remove(join(cnf['output_dir'], summary_fpath))
             if isfile(join(cnf['output_dir'], genes_fpath)):
@@ -56,10 +73,10 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
     if cnf.get('tracks'):
         for track in cnf['tracks']:
-            next_vcf_fpath = _tracks(cnf, track, vcf_fpath)
-            if next_vcf_fpath:
+            res = _tracks(cnf, track, vcf_fpath)
+            if res:
                 annotated = True
-                vcf_fpath = next_vcf_fpath
+                vcf_fpath = res
 
     if annotated:
         vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
@@ -138,7 +155,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                        stdout_to_outputfile=True)
+                        stdout_to_outputfile=True, exit_on_error=False)
 
     # all_fields.extend(annotations)
 
@@ -153,7 +170,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
 def _snpsift_db_nsfp(cnf, input_fpath):
     if 'dbnsfp' not in cnf:
-        return input_fpath
+        return None
 
     step_greetings('DB SNFP')
 
@@ -173,13 +190,16 @@ def _snpsift_db_nsfp(cnf, input_fpath):
     cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
-    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=True)
+    if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
+                stdout_to_outputfile=True, exit_on_error=False):
+        return output_fpath
+    else:
+        return None
 
 
 def _snpeff(cnf, input_fpath):
     if 'snpeff' not in cnf:
-        return input_fpath, None, None
+        return None, None, None
 
     step_greetings('SnpEff')
 
@@ -208,9 +228,12 @@ def _snpeff(cnf, input_fpath):
         cmdline += ' -cancer '
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
-    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=True), \
-        stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
+    res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
+                          exit_on_error=False, stdout_to_outputfile=True)
+    if res:
+        return output_fpath, stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
+    else:
+        return None, None, None
 
 
 def _tracks(cnf, track_path, input_fpath):
@@ -253,7 +276,7 @@ def _tracks(cnf, track_path, input_fpath):
 
 def _gatk(cnf, input_fpath, bam_fpath):
     if 'gatk' not in cnf:
-        return input_fpath
+        return None
 
     step_greetings('GATK')
 
@@ -318,10 +341,13 @@ def _gatk(cnf, input_fpath, bam_fpath):
         cmdline += " -A " + ann
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
-    return call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=False,
+    if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
+                stdout_to_outputfile=False, exit_on_error=False,
                 to_remove=[output_fpath + '.idx',
-                           input_fpath + '.idx'])
+                           input_fpath + '.idx']):
+        return output_fpath
+    else:
+        return None
 
 
 def _filter_malformed_fields(cnf, input_fpath):
