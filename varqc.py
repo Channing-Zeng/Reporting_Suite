@@ -7,6 +7,7 @@ from source.file_utils import verify_module, verify_file
 from source.utils_from_bcbio import file_exists
 from source.logger import err, info
 from source.variants.qc_gatk import gatk_qc
+
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -31,7 +32,7 @@ def main(args):
 
     check_system_resources(cnf,
         required=['java', 'gatk', 'snpeff'],
-        optional=['bgzip', 'tabix', 'bcftools', 'plot_vcfstats'])
+        optional=[])
 
     load_genome_resources(cnf,
         required=['seq', 'dbsnp'],
@@ -50,8 +51,7 @@ def main(args):
 if verify_module('matplotlib'):
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
-    from source.variants.distribution_plots import variants_distribution_plot
-    from source.variants.qc_bcftools import bcftools_qc
+    from source.variants.qc_plots import variants_distribution_plot, basic_plots
 else:
     info('Warning: matplotlib is not installed, cannot draw plots.')
 
@@ -107,11 +107,9 @@ def process_one(cnf):
     qc_report_fpath = gatk_qc(cnf, vcf_fpath)
 
     if verify_module('matplotlib'):
-        qc_plots_fpaths = bcftools_qc(cnf, vcf_fpath)
-
+        qc_basic_plots_fpaths = basic_plots(cnf, vcf_fpath)
         qc_var_distr_plot_fpath = variants_distribution_plot(cnf, vcf_fpath)
-
-        return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_plots_fpaths
+        return qc_report_fpath, [qc_var_distr_plot_fpath] + qc_basic_plots_fpaths
     else:
         return qc_report_fpath, None
 

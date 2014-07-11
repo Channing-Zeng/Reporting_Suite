@@ -9,10 +9,6 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: /ngs/RDI/PROGRAMS/snpEff3.6/SnpSift.jar
-  bcbfools:
-    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/bin/bcftools
-  plot_vcfstats:
-    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/bin/plot-vcfstats
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
 

@@ -3,12 +3,16 @@ from os.path import join
 
 from source.utils import human_sorted, get_chr_lengths
 from source.logger import step_greetings, info
+from ext_modules import vcf
 
 import matplotlib
 import matplotlib.pyplot
-
+from collections import OrderedDict
+import numpy
 
 distr_plot_ending = '.variant_distribution.png'
+indels_plot_ending = '.indels.png'
+substs_plot_ending = '.substitutions.png'
 
 
 def variants_distribution_plot(cnf, vcf_fpath):
@@ -37,7 +41,7 @@ def variants_distribution_plot(cnf, vcf_fpath):
     ncols = min(4, nplots)
     nrows = 1 + (nplots - 1) / 4
     fontsize = 15
-    mbp = 1000000
+    mbp = 10**6
     fig = matplotlib.pyplot.figure(figsize=(6 * ncols, 3 * nrows))
     for id, chr_name in enumerate(human_sorted(variants_distribution.keys())):
         #fig = matplotlib.pyplot.figure(figsize=(25,6))
@@ -90,6 +94,103 @@ def variants_distribution_plot(cnf, vcf_fpath):
     fig.savefig(variants_distribution_plot_fpath, bbox_inches='tight')
     matplotlib.pyplot.close(fig)
     return variants_distribution_plot_fpath
+
+
+def basic_plots(cnf, vcf_fpath):
+    step_greetings('Quality control basic plots')
+
+    substituitions, indel_lengths = _get_subs_and_indel_stats(vcf_fpath)
+    substs_plot_fpath = _draw_substitutions(cnf, substituitions)
+    indels_plot_fpath = _draw_indel_lengths(cnf, indel_lengths)
+    return [substs_plot_fpath, indels_plot_fpath]
+
+
+def _get_subs_and_indel_stats(vcf_fpath):
+    reader = vcf.Reader(open(vcf_fpath, 'r'))
+
+    substituitions = OrderedDict()
+    nucleotides = ['A', 'C', 'G', 'T']
+    for nucl1 in nucleotides:
+        substituitions[nucl1] = OrderedDict()
+        for nucl2 in nucleotides:
+            if nucl1 != nucl2:
+                substituitions[nucl1][nucl2] = 0
+    indel_lengths = []
+
+    for rec in reader:
+        for alt in rec.ALT:
+            if rec.is_snp:
+                substituitions[rec.REF][str(alt)] += 1
+            elif rec.is_indel:
+                if alt is None:
+                    indel_lengths.append(-1)
+                else:
+                    indel_lengths.append(len(alt) - len(rec.REF))
+
+    return substituitions, indel_lengths
+
+
+def _draw_substitutions(cnf, substituitions):
+    plot_fpath = join(cnf.output_dir, cnf['name'] + substs_plot_ending)
+
+    colors = ['#CC0000', '#CC6600', '#CCCC00', '#66CC00']
+    # params of bars
+    width = 0.3
+    interval = width / 3
+    start_pos = interval / 2
+
+    counts = []
+    labels = []
+    for nucl1 in substituitions.iterkeys():
+        for nucl2, count in substituitions[nucl1].iteritems():
+            counts.append(count)
+            labels.append('%s>%s' % (nucl1, nucl2))
+    total = sum(counts)
+
+    def __to_percents(x):
+        return float(x) * 100 / total
+
+    positions = []
+    ax = matplotlib.pyplot.gca()
+    alty = ax.twinx()
+    for i, val in enumerate(counts):
+        positions.append(start_pos + (width + interval) * i)
+        ax.bar(positions[-1], val, width, color=colors[i * len(colors) / len(counts)])
+        alty.bar(positions[-1], __to_percents(val), width, color=colors[i * len(colors) / len(counts)])
+
+    matplotlib.pyplot.title('Substitutions')
+    ax.set_ylabel('Count')
+    alty.set_ylabel('Rate, %')
+
+    ax.yaxis.grid(True)
+    ax.set_ylim(0, ax.get_ylim()[1])
+    alty.set_ylim(0, __to_percents(ax.get_ylim()[1]))
+    ax.set_xticks([position + float(width) / 2 for position in positions])
+    ax.set_xticklabels(labels)
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    #alty.yaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%1.1f %%'))
+
+    matplotlib.pyplot.savefig(plot_fpath)
+    matplotlib.pyplot.close()
+    return plot_fpath
+
+
+def _draw_indel_lengths(cnf, indel_lengths):
+    plot_fpath = join(cnf.output_dir, cnf['name'] + indels_plot_ending)
+
+    bins = list(numpy.arange(min(indel_lengths) - 0.5, max(indel_lengths) + 1.0, 1.0))
+    matplotlib.pyplot.hist(indel_lengths, bins=bins, color='#CC0000')
+    matplotlib.pyplot.title('Indel length distribution')
+    matplotlib.pyplot.ylim(0, matplotlib.pyplot.ylim()[1])
+    ax = matplotlib.pyplot.gca()
+    ax.set_ylabel('Count')
+    ax.set_xlabel('Indel length, bp')
+    ax.yaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+    ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+
+    matplotlib.pyplot.savefig(plot_fpath)
+    matplotlib.pyplot.close()
+    return plot_fpath
 
 
 def _get_variants_distribution(vcf_fpath, chr_lengths, plot_scale):

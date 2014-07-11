@@ -69,26 +69,6 @@ def index_bam(cnf, bam_fpath):
     call_subprocess(cnf, cmdline, None, None)
 
 
-def bgzip_and_tabix_vcf(cnf, vcf_fpath):
-    bgzip = get_tool_cmdline(cnf, 'bgzip', suppress_warn=True)
-    tabix = get_tool_cmdline(cnf, 'tabix', suppress_warn=True)
-
-    gzipped_fpath = join(cnf['work_dir'], basename(vcf_fpath) + '.gz')
-    tbi_fpath = gzipped_fpath + '.tbi'
-
-    if bgzip and not file_exists(gzipped_fpath):
-        info('BGzipping VCF')
-        cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
-        call_subprocess(cnf, cmdline, None, gzipped_fpath, exit_on_error=False)
-
-    if tabix and not file_exists(tbi_fpath):
-        info('Tabixing VCF')
-        cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
-        call_subprocess(cnf, cmdline, None, tbi_fpath, exit_on_error=False)
-
-    return gzipped_fpath, tbi_fpath
-
-
 def get_chr_len_fpath(cnf):
     chr_len_fpath = cnf['genome'].get('chr_lengths')
     if chr_len_fpath:
