@@ -1,37 +1,13 @@
-Sample	sample1	sample2
-nEvalVariants all	12	12
-nEvalVariants known	1	1
-nEvalVariants novel	11	11
-nSNPs all	10	10
-nSNPs known	1	1
-nSNPs novel	9	9
-nInsertions all	1	1
-nInsertions known	0	0
-nInsertions novel	1	1
-nDeletions all	0	0
-nDeletions known	0	0
-nDeletions novel	0	0
-nVariantsAtComp all	0	0
-nVariantsAtComp known	0	0
-nVariantsAtComp novel	0	0
-compRate all	0.00	0.00
-compRate known	0.00	0.00
-compRate novel	0.00	0.00
-nConcordant all	0	0
-nConcordant known	0	0
-nConcordant novel	0	0
-concordantRate all	0.00	0.00
-concordantRate known	0.00	0.00
-concordantRate novel	0.00	0.00
-variantRate all	0.00032812	0.00032812
-variantRate known	0.00002734	0.00002734
-variantRate novel	0.00030078	0.00030078
-basesPerVariant all	3047.00	3047.00
-basesPerVariant known	36572.00	36572.00
-basesPerVariant novel	3324.00	3324.00
-hetHomRatio all	0.09	0.09
-hetHomRatio known	0.00	0.00
-hetHomRatio novel	0.10	0.10
-tiTvRatio all	4.00	4.00
-tiTvRatio known	1.00	1.00
-tiTvRatio novel	3.50	3.50
+Sample	sample1-mutect	sample1-freebayes	sample2-mutect	sample2-freebayes
+nEvalVariants all	12
+nSNPs all	10
+nInsertions all	1
+nDeletions all	0
+nVariantsAtComp all	0
+compRate all	0.00
+nConcordant all	0
+concordantRate all	0.00
+variantRate all	0.00032812
+basesPerVariant all	3047.00
+hetHomRatio all	0.09
+tiTvRatio all	4.00

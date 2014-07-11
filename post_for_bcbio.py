@@ -54,8 +54,11 @@ def main():
     if not cnf.samples:
         cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
 
-    cur_dirpath = dirname(abspath(__file__))
-    cnf.qsub_runner = abspath(join(cur_dirpath, cnf.qsub_runner))
+    # cur_dirpath = dirname(abspath(__file__))
+    # cnf.qsub_runner = abspath(join(cur_dirpath, cnf.qsub_runner))
+
+    if 'qsub_runner' in cnf:
+        cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
 
     if not check_inputs(cnf, file_keys=['samples', 'bed', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)

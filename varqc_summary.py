@@ -8,7 +8,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join
+from os.path import join, pardir
 from optparse import OptionParser
 
 from source.reporting import read_sample_names
@@ -56,6 +56,9 @@ def main():
     if not check_keys(cnf, ['bcbio_final_dir', 'samples']):
         parser.print_help()
         sys.exit(1)
+
+    if 'qsub_runner' in cnf:
+        cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
 
     if not check_inputs(cnf, file_keys=['samples', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)

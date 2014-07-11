@@ -54,6 +54,9 @@ def main():
     #     if not verify_file(cnf.samples):
     #         sys.exit(1)
 
+    if 'qsub_runner' in cnf:
+        cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
+
     if not check_inputs(cnf, file_keys=['bed', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 

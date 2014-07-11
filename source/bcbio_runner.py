@@ -124,22 +124,18 @@ class Runner():
             interpreter=None,
             param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
-        if self.varqc:
-            self.steps.append('VarQC_summary')
-            self.varqc_summary = self.steps.step(
-                name='VarQC_summary',
-                script='varqc_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
-                           self.varqc.name.lower() + ' --vcf-suf ' + ','.join(self.sufs) +
-                           ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
-        if self.targetcov:
-            self.steps.append('TargetCov_summary')
-            self.targetcov_summary = self.steps.step(
-                name='TargetCov_summary',
-                script='targetcov_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir +
-                           '\' -s \'{samples}\' -n ' + self.targetcov.name.lower() +
-                           ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
+        self.varqc_summary = self.steps.step(
+            name='VarQC_summary',
+            script='varqc_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
+                       'varqc' + ' --vcf-suf ' + ','.join(self.sufs) +
+                       ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
+        self.targetcov_summary = self.steps.step(
+            name='TargetCov_summary',
+            script='targetcov_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir +
+                       '\' -s \'{samples}\' -n ' + 'targetcov' +
+                       ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
     def submit(self, step, sample_name='', suf=None, create_dir=False, out_fpath=None,
                wait_for_steps=list(), **kwargs):
@@ -261,18 +257,18 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        if self.varqc:
+        if self.varqc_summary:
             self.submit(
                 self.varqc_summary,
                 create_dir=True,
-                wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs],
+                wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs if self.varqc],
                 samples=self.samples_fpath)
 
         if self.targetcov_summary:
             self.submit(
                 self.targetcov_summary,
                 create_dir=True,
-                wait_for_steps=[self.targetcov.job_name(s) for s in self.samples],
+                wait_for_steps=[self.targetcov.job_name(s) for s in self.samples if self.targetcov],
                 samples=self.samples_fpath)
 
         if not self.cnf.verbose:
