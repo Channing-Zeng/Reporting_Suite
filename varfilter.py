@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.variants.vcf_processing import convert_to_maf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -17,6 +16,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
+from source.variants.vcf_processing import convert_to_maf
 
 
 def main():

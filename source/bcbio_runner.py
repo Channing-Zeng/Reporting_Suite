@@ -110,7 +110,7 @@ class Runner():
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --vardict --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
@@ -289,16 +289,14 @@ class Runner():
             annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
             if self.varfilter:
-                filtered_vcf_fpath = join(sample_dirpath,
-                    basename(add_suffix(annotated_vcf_fpath, 'filt')))
-                if file_exists(filtered_vcf_fpath):
-                    os.remove(filtered_vcf_fpath)
-                self.submit(self.varfilter, sample, suf=suf, create_dir=False,
+                filter_dirpath = self.submit(self.varfilter, sample, suf=suf, create_dir=True,
                     wait_for_steps=[self.varannotate.job_name(sample, suf)],
                     vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+
+                filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
 
                 if self.varqc:
                     self.submit(
                         self.varqc, sample, suf=suf, create_dir=True,
                         wait_for_steps=self.varfilter.job_name(sample, suf),
-                        vcf=vcf_fpath, sample=sample + '-' + suf)
+                        vcf=filtered_vcf_fpath, sample=sample + '-' + suf)
