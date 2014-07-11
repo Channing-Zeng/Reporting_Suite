@@ -8,7 +8,7 @@ from source.config import Defaults, Config, load_yaml_config
 from source.file_utils import verify_file
 from source.logger import info, critical
 from source.main import check_system_resources, check_inputs, check_keys
-from source.bcbio_runner import run_on_bcbio_final_dir
+from source.bcbio_runner_new import run_on_bcbio_final_dir
 
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -22,9 +22,9 @@ def main():
 
     parser = OptionParser(description=description)
     parser.add_option('-d', '-o', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
-    parser.add_option('-s', '--samples', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
+    # parser.add_option('-s', '--samples', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-b', '--bed', dest='bed', help='BED file')
-    parser.add_option('--vcf-suf', '--vcf-suffix', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
+    # parser.add_option('--vcf-suf', '--vcf-suffix', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
@@ -51,16 +51,16 @@ def main():
     if isdir(join(cnf.bcbio_final_dir, 'final')):
         cnf.bcbio_final_dir = join(cnf.bcbio_final_dir, 'final')
 
-    if cnf.samples:
-        if not verify_file(cnf.samples):
-            sys.exit(1)
+    # if cnf.samples:
+    #     if not verify_file(cnf.samples):
+    #         sys.exit(1)
 
     if not check_inputs(cnf, file_keys=['bed', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir)
-    if cnf.samples:
-        info('Samples: ' + cnf.samples)
+    # if cnf.samples:
+    #     info('Samples: ' + cnf.samples)
     info('Capture/amplicons BED file: ' + cnf.bed)
     if cnf.vcf_suf:
         info('Suffix(es) to choose VCF files: ' + cnf.vcf_suf + ' (set with --vcf-suf)')
@@ -75,13 +75,12 @@ def main():
     cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
 
     load_bcbio_cnf(cnf)
+    # if cnf.vcf_suf:
+    #     vcf_sufs = cnf['vcf_suf'].split(',')
+    # else:
+    #     vcf_sufs = 'mutect'
 
-    if cnf.vcf_suf:
-        vcf_sufs = cnf['vcf_suf'].split(',')
-    else:
-        vcf_sufs = 'mutect'
-
-    run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
+    run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.bed, cnf.bcbio_cnf)
 
 
 def load_bcbio_cnf(cnf):

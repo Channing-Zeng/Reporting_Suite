@@ -15,8 +15,8 @@ from source.ngscat.bed_file import verify_bam
 basic_dirpath = dirname(dirname(abspath(__file__)))
 
 
-def run_on_bcbio_final_dir(cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs):
-    return Runner(cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs).run()
+def run_on_bcbio_final_dir(cnf, bcbio_final_dir, bed_fpath, bcbio_cnf):
+    return Runner(cnf, bcbio_final_dir, bed_fpath, bcbio_cnf).run()
 
 
 class Step():
@@ -54,11 +54,11 @@ class Steps(list):
 
 
 class Runner():
-    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs):
+    def __init__(self, cnf, bcbio_final_dir, bed_fpath, bcbio_cnf):
         self.dir = bcbio_final_dir
         self.cnf = cnf
         self.bed = bed_fpath
-        self.sufs = vcf_sufs
+        self.bcbio_cnf = bcbio_cnf
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
@@ -72,16 +72,8 @@ class Runner():
         self.targetcov_summary = None
         self.varqc_summary = None
 
-        self.samples_fpath = samples_fpath
-        with open(samples_fpath) as sample_f:
-            self.samples = [s.strip() for s in sample_f.readlines()
-                            if s and s.strip() and not s.startswith('#')]
-
-        date_dir_pattern = re.compile(r'\d\d\d\d\-\d\d-\d\d.*')
-        self.date_dirpath = next((join(cnf.bcbio_final_dir, dir_name)
-                             for dir_name in os.listdir(cnf.bcbio_final_dir)
-                             if date_dir_pattern.match(dir_name)),
-                            cnf.bcbio_final_dir)
+        self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
+        assert verify_dir(self.date_dirpath)
 
         self.set_up_steps(cnf)
 
