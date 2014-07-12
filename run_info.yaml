@@ -50,22 +50,22 @@ quality_control:
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
 
-#gatk:
-#  options: ['-dt NONE']
-#  annotations:                ## Field names in final VCF:
-#  - Coverage                  ## DP
-#  - BaseQualityRankSumTest    ## BaseQRankSum
-#  - FisherStrand              ## FS
-#  - GCContent                 ## GC
-#  - HaplotypeScore            ## HaplotypeScore
-#  - HomopolymerRun            ## HRun
-#  - RMSMappingQuality         ## MQ
-#  - MappingQualityRankSumTest ## MQRankSum
-#  - MappingQualityZero        ## MQ0
-#  - QualByDepth               ## QD
-#  - ReadPosRankSumTest        ## ReadPosRankSum
-#  - DepthPerAlleleBySample
-#  - AlleleBalanceBySample     ## AB
+gatk:
+  options: ['-dt NONE']
+  annotations:                ## Field names in final VCF:
+  - Coverage                  ## DP
+  - BaseQualityRankSumTest    ## BaseQRankSum
+  - FisherStrand              ## FS
+  - GCContent                 ## GC
+  - HaplotypeScore            ## HaplotypeScore
+  - HomopolymerRun            ## HRun
+  - RMSMappingQuality         ## MQ
+  - MappingQualityRankSumTest ## MQRankSum
+  - MappingQualityZero        ## MQ0
+  - QualByDepth               ## QD
+  - ReadPosRankSumTest        ## ReadPosRankSum
+  - DepthPerAlleleBySample
+  - AlleleBalanceBySample     ## AB
 
 dbnsfp:
   annotations:
