@@ -133,7 +133,7 @@ def mean(ints):
 def median(values):
     values = sorted(values)
 
-    if len(values) % 2 == 1:
+    if len(values) % 2 == 1:  # odd number of values
         return values[(len(values) - 1) / 2]
-    else:
-        return (values[(len(values) - 1) / 2] + values[(len(values) - 2) / 2]) / 2
+    else:  # even number of values - take the avg of central
+        return (values[len(values) / 2] + values[len(values) / 2 - 1]) / 2
