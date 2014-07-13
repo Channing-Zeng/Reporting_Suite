@@ -3,7 +3,7 @@ from os.path import join
 
 from source.utils import human_sorted, get_chr_lengths
 from source.logger import step_greetings, info
-from ext_modules import vcf
+from ext_modules import vcf_parser as vcf
 
 import matplotlib
 import matplotlib.pyplot

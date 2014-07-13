@@ -4,8 +4,8 @@ import sys
 from os.path import basename, join, expanduser, splitext, realpath, dirname
 from collections import OrderedDict
 
-from ext_modules import vcf
-from ext_modules.vcf.model import _Record
+from ext_modules import vcf_parser
+from ext_modules.vcf_parser.model import _Record
 
 from source.calling_process import call_subprocess
 from source.change_checking import check_file_changed
@@ -56,8 +56,8 @@ class Record(_Record):
 
 
 def proc_vcf(inp_f, out_f, proc_line_fun):
-    reader = vcf.Reader(inp_f)
-    writer = vcf.Writer(out_f, reader)
+    reader = vcf_parser.Reader(inp_f)
+    writer = vcf_parser.Writer(out_f, reader)
 
     for i, rec in enumerate(reader):
         rec = proc_line_fun(Record(rec, i))

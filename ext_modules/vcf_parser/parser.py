@@ -747,8 +747,9 @@ class Writer(object):
 
 
 def __update_readme():
-    import sys, vcf
-    file('README.rst', 'w').write(vcf.__doc__)
+    import sys
+    import ext_modules.vcf_parser
+    file('README.rst', 'w').write(ext_modules.vcf_parser.__doc__)
 
 
 # backwards compatibility

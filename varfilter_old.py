@@ -22,7 +22,7 @@ from source.logger import step_greetings, info, critical
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 
-from ext_modules import vcf
+from ext_modules import vcf_parser
 
 
 def main():
@@ -261,8 +261,8 @@ def _filter_effects(filt_cnf, d, line_num, rec):
 
 
 def _proc_vcf(inp_f, out_f, proc_line_fun):
-    reader = vcf.Reader(inp_f)
-    writer = vcf.Writer(out_f, reader)
+    reader = vcf_parser.Reader(inp_f)
+    writer = vcf_parser.Writer(out_f, reader)
 
     for i, rec in enumerate(reader):
         vark = ':'.join(map(str, [rec.CHROM, str(rec.POS), rec.REF, rec.ALT]))

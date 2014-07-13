@@ -1,7 +1,7 @@
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
-from ext_modules import vcf
+from ext_modules import vcf_parser as vcf
 
 from source.calling_process import call_subprocess
 from source.file_utils import intermediate_fname

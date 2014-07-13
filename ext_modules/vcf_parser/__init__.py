@@ -14,8 +14,8 @@ return strings.
 There main interface is the class: ``Reader``.  It takes a file-like
 object and acts as a reader::
 
-    >>> import vcf
-    >>> vcf_reader = vcf.Reader(open('vcf/test/example-4.0.vcf', 'r'))
+    >>> from ext_modules import vcf_parser
+    >>> vcf_reader = vcf_parser.Reader(open('vcf/test/example-4.0.vcf', 'r'))
     >>> for record in vcf_reader:
     ...     print record
     Record(CHROM=20, POS=14370, REF=G, ALT=[A])
@@ -173,9 +173,9 @@ see :doc:`FILTERS` for full description.
 
 '''
 
-from vcf.parser import Reader, Writer
-from vcf.parser import VCFReader, VCFWriter
-from vcf.filters import Base as Filter
-from vcf.parser import RESERVED_INFO, RESERVED_FORMAT
+from ext_modules.vcf_parser.parser import Reader, Writer
+from ext_modules.vcf_parser.parser import VCFReader, VCFWriter
+from ext_modules.vcf_parser.filters import Base as Filter
+from ext_modules.vcf_parser.parser import RESERVED_INFO, RESERVED_FORMAT
 
 VERSION = '0.6.7'
