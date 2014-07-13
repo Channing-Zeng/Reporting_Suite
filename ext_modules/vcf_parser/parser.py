@@ -470,9 +470,15 @@ class Reader(object):
                         try:
                             sampdat[i] = int(vals)
                         except ValueError:
-                            sampdat[i] = float(vals)
+                            try:
+                                sampdat[i] = float(vals)
+                            except ValueError:
+                                sampdat[i] = None
                     elif entry_type == 'Float':
-                        sampdat[i] = float(vals)
+                        try:
+                            sampdat[i] = float(vals)
+                        except ValueError:
+                            sampdat[i] = None
                     else:
                         sampdat[i] = vals
 
@@ -487,9 +493,15 @@ class Reader(object):
                     try:
                         sampdat[i] = _map(int, vals)
                     except ValueError:
-                        sampdat[i] = _map(float, vals)
+                        try:
+                            sampdat[i] = _map(float, vals)
+                        except ValueError:
+                            sampdat[i] = [None for v in vals]
                 elif entry_type == 'Float' or entry_type == 'Numeric':
-                    sampdat[i] = _map(float, vals)
+                    try:
+                        sampdat[i] = _map(float, vals)
+                    except ValueError:
+                        sampdat[i] = [None for v in vals]
                 else:
                     sampdat[i] = vals
 
