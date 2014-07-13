@@ -86,10 +86,8 @@ class EffectFilter(CnfFilter):
             if required:
                 req_values = [s.upper() for s in required.split('|')]
 
-
-                for eff in map(Effect, rec.INFO['EFF']):
-                    if eff.impact.upper() not in req_values:
-                        return False
+                return any(eff.impact.upper() in req_values
+                           for eff in map(Effect, rec.INFO['EFF']))
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
