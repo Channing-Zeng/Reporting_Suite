@@ -8,7 +8,7 @@ from source.file_utils import verify_dir, verify_file, file_transaction, make_tm
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
-from source.logger import info
+from source.logger import info, err
 from source.ngscat.bed_file import verify_bam
 
 
@@ -170,9 +170,16 @@ class Runner():
         out_fpath = out_fpath or log_fpath
 
         if isfile(out_fpath):
-            os.remove(out_fpath)
+            try:
+                os.remove(out_fpath)
+            except OSError:
+                err('Cannot remove log file ' + out_fpath + ', probably permission denied.')
+
         if isfile(log_fpath):
-            os.remove(log_fpath)
+            try:
+                os.remove(log_fpath)
+            except OSError:
+                err('Cannot remove log file ' + out_fpath + ', probably permission denied.')
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
