@@ -381,13 +381,13 @@ class Reader(object):
                     try:
                         val = self._map(float, vals)
                     except ValueError:
-                        val = None
+                        val = [None for v in vals]
             elif entry_type == 'Float':
                 vals = entry[1].split(',')
                 try:
                     val = self._map(float, vals)
                 except ValueError:
-                    val = None
+                    val = [None for v in vals]
             elif entry_type == 'Flag':
                 val = True
             elif entry_type in ('String', 'Character'):
@@ -398,7 +398,7 @@ class Reader(object):
                     val = True
 
             try:
-                if self.infos[ID].num == 1 and entry_type not in ( 'Flag', ):
+                if self.infos[ID].num == 1 and entry_type not in ('Flag',):
                     val = val[0]
             except KeyError:
                 pass
