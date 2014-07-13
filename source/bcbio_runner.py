@@ -211,14 +211,15 @@ class Runner():
 
     def run(self):
         qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
-        with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
-            for l in inn:
-                ts = l.strip().split('\t')
-                if len(ts) < 5:
-                    ts += ['0']
-                if len(ts) < 6:
-                    ts += ['+']
-                out.write('\t'.join(ts) + '\n')
+        if 'QualiMap' in self.steps:
+            with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
+                for l in inn:
+                    ts = l.strip().split('\t')
+                    if len(ts) < 5:
+                        ts += ['0']
+                    if len(ts) < 6:
+                        ts += ['+']
+                    out.write('\t'.join(ts) + '\n')
 
         for sample in self.samples:
             info(sample)

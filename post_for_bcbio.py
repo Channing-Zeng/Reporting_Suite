@@ -41,7 +41,7 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    if not check_keys(cnf, ['bcbio_final_dir', 'bed', 'vcf_suf']):
+    if not check_keys(cnf, ['bcbio_final_dir', 'vcf_suf']):
         parser.print_help()
         sys.exit(1)
 
@@ -60,12 +60,21 @@ def main():
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
 
-    if not check_inputs(cnf, file_keys=['samples', 'bed', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
+    file_keys = ['samples', 'qsub_runner']
+
+    if 'TargetCov' in cnf.steps or 'NGScat' in cnf.steps or 'TargetCov_Summary' in cnf.steps:
+        if not check_keys(cnf, ['bed']):
+            parser.print_help()
+            sys.exit(1)
+        file_keys.append('bed')
+
+    if not check_inputs(cnf, file_keys=file_keys, dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
     info('Samples: ' + cnf.samples + ' (set with -s)')
-    info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
+    if cnf.bed:
+        info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
     info('Suffix(es) to choose VCF files: ' + cnf.vcf_suf + ' (set with --vcf-suf)')
     info()
     info('*' * 70)

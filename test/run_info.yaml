@@ -70,60 +70,60 @@ coverage_reports:
 #  - DepthPerAlleleBySample
 #  - AlleleBalanceBySample     # AB
 
-#db_nsfp:
-#  all-annotations: False
-#  annotations:
-#  - SIFT_score
-#  - Polyphen2_HVAR_score
-#  - Polyphen2_HVAR_pred
-#  - LRT_score
-#  - LRT_pred
-#  - MutationTaster_score
-#  - MutationTaster_pred
-#  - MutationAssessor_score
-#  - MutationAssessor_pred
-#  - FATHMM_score
-#  - Ensembl_geneid
-#  - Ensembl_transcriptid
-#  - Uniprot_acc
-#  - 1000Gp1_AC
-#  - 1000Gp1_AF
-#  - ESP6500_AA_AF
-#  - ESP6500_EA_AF
-#
-#db_snp:
-#  all-annotations: False
-#  annotations:
-#  - ID
-#  - SAO
-#  - VC
-#  - PM
-#  - HD
-#  - KGPROD
-#  - PH3
-#  - OM
-#  - CAF
-#  - COMMON
-#  - dbSNPBuildID
-#  - G5
-#  - CDA
-#
-#cosmic:
-#  all-annotations: False
-#  annotations:
-#  - ID
-#  - CNT
-#  - AA
-#  - CDS
-#
+db_nsfp:
+  all-annotations: False
+  annotations:
+  - SIFT_score
+  - Polyphen2_HVAR_score
+  - Polyphen2_HVAR_pred
+  - LRT_score
+  - LRT_pred
+  - MutationTaster_score
+  - MutationTaster_pred
+  - MutationAssessor_score
+  - MutationAssessor_pred
+  - FATHMM_score
+  - Ensembl_geneid
+  - Ensembl_transcriptid
+  - Uniprot_acc
+  - 1000Gp1_AC
+  - 1000Gp1_AF
+  - ESP6500_AA_AF
+  - ESP6500_EA_AF
+
+db_snp:
+  all-annotations: False
+  annotations:
+  - ID
+  - SAO
+  - VC
+  - PM
+  - HD
+  - KGPROD
+  - PH3
+  - OM
+  - CAF
+  - COMMON
+  - dbSNPBuildID
+  - G5
+  - CDA
+
+cosmic:
+  all-annotations: False
+  annotations:
+  - ID
+  - CNT
+  - AA
+  - CDS
+
 #custom_vcfs: {}
 
 snpeff:
   clinical_reporting: True
   cancer: True
 
-#tracks:
-#- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
+tracks:
+- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
 
 tsv_fields:
 - SAMPLE                        : Sample
