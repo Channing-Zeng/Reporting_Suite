@@ -378,10 +378,16 @@ class Reader(object):
                 # Allow specified integers to be flexibly parsed as floats.
                 # Handles cases with incorrectly specified header types.
                 except ValueError:
-                    val = self._map(float, vals)
+                    try:
+                        val = self._map(float, vals)
+                    except ValueError:
+                        val = None
             elif entry_type == 'Float':
                 vals = entry[1].split(',')
-                val = self._map(float, vals)
+                try:
+                    val = self._map(float, vals)
+                except ValueError:
+                    val = None
             elif entry_type == 'Flag':
                 val = True
             elif entry_type in ('String', 'Character'):
