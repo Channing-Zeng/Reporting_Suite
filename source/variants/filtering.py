@@ -224,13 +224,14 @@ class Filtering:
                 pstd = rec.INFO.get('PSTD')
                 bias = rec.INFO.get('BIAS')
                 # all variants from one position in reads
-                if pstd and bias:
+                if pstd is not None and bias is not None:
                     self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
                     self.dup_filter.apply(rec)
 
                 max_ratio = self.filt_cnf.get('max_ratio')
-                af = float(rec.INFO.get('AF'))
-                if af:
+                af = rec.INFO.get('AF')
+                if af is not None:
+                    af = float(af)
                     self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
                     self.max_rate_filter.apply(rec)
 
