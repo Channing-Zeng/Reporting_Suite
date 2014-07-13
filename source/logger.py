@@ -41,4 +41,11 @@ def _log(out, msg='', ending='\n'):
         sleep(0.01)
 
     if log_fpath:
-        open(log_fpath, 'a').write(msg + '\n')
+        try:
+            open(log_fpath, 'a').write(msg + '\n')
+        except IOError:
+            sys.stderr.write('Cannot append to ' + log_fpath)
+            try:
+                open(log_fpath, 'w').write(msg + '\n')
+            except IOError:
+                sys.stderr.write('Cannot write to ' + log_fpath)

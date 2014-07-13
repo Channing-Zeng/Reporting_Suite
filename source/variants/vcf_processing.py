@@ -73,11 +73,16 @@ def filter_rejected(cnf, input_fpath):
         if l.startswith('#'):
             return l
 
-        filt = l.split('\t')[6]
-        if filt in ['PASS', '.']:
-            return l
+        try:
+            filt = l.split('\t')[6]
+        except:
+            if len(l.split('\t')) < 6 and len(l.split()) >= 6:
+                critical('Error at line number ' + str(i) + ': fields separated by spaces rather than tabs?')
         else:
-            return None
+            if filt in ['PASS', '.']:
+                return l
+            else:
+                return None
 
     output_fpath = iterate_file(cnf, input_fpath, __iter_file)
     info('Saved to ' + output_fpath)

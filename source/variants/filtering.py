@@ -10,7 +10,7 @@ import operator
 from collections import defaultdict
 
 from source.variants.Effect import Effect
-from source.logger import step_greetings, info, critical
+from source.logger import step_greetings, info, critical, err
 from source.file_utils import convert_file
 from source.utils import mean
 
@@ -79,13 +79,13 @@ class EffectFilter(CnfFilter):
     def __init__(self, cnf_key, *args, **kwargs):
         def check(rec):
             if 'EFF' not in rec.INFO:
-                critical('Error: in variant line ' + str(rec.line_num + 1) +
-                         ' (' + rec.CHROM + ':' + str(rec.POS) +
-                         '), EFF field missing in INFO column')
+                err('Warning: EFF field is missing for variant at line ' + str(rec.line_num))
+                return False
 
-            req = Filter.filt_cnf[cnf_key]
-            if req:
-                req_values = [s.upper() for s in req.split('|')]
+            required = Filter.filt_cnf[cnf_key]
+            if required:
+                req_values = [s.upper() for s in required.split('|')]
+
 
                 for eff in map(Effect, rec.INFO['EFF']):
                     if eff.impact.upper() not in req_values:
@@ -247,7 +247,7 @@ class Filtering:
 
                     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
                     # but not in ClnSNP or COSMIC.
-                    for eff in map(Effect, rec.FILT['EFF']):
+                    for eff in map(Effect, rec.FILT.get('EFF', [])):
                         if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
                             if eff.pos / int(eff.aal) < 0.95:
                                 cls = 'dbSNP_del'
