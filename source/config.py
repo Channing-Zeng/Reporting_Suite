@@ -90,7 +90,10 @@ class Defaults():
            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio'],
     )
 
-    clinical_reporting = False
+    snpeff = dict(
+        clinical_reporting=True,
+        cancer=True,
+    )
 
 
 class Config(object):

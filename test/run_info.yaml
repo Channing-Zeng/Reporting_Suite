@@ -226,3 +226,5 @@ tsv_fields:
 verbose: True
 keep_intermediate: True
 reuse_intermediate: False
+
+make_maf: True

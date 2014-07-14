@@ -29,7 +29,8 @@ def main(args):
             (['--clinical_reporting'], dict(
                 dest='clinical_reporting',
                 help='used to generate some annotations by GATK',
-                action='store_true')
+                action='store_true',
+                default=None)
              ),
         ],
         required_keys=['vcf'],
@@ -56,7 +57,7 @@ def main(args):
 
 
 def set_up_snpeff(cnf):
-    if 'clinical_reporting' in cnf:
+    if cnf.get('clinical_reporting') is not None:
         if 'snpeff' in cnf:
             cnf['snpeff']['clinical_reporting'] = cnf['clinical_reporting']
         del cnf['clinical_reporting']
