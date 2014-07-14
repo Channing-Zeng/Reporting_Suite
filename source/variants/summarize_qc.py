@@ -92,6 +92,8 @@ def parse_qc_sample_report(report_fpath):
         database_col_id = None
         novelty_col_id = None
         for line in f:
+            if not line.strip():
+                continue
             if line.startswith(sample_header):
                 sample_name = line[len(sample_header):].strip()
             elif line.startswith(metrics_header):

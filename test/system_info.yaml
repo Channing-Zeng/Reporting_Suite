@@ -15,7 +15,7 @@ resources:
   plot_vcfstats:
     path: ~/bin/bcftools/plot-vcfstats
   qsub:
-    path: ~/vagrant/reporting_suite/tools/qsub.sh
+    path: ../tools/qsub.sh
 
 genomes:
   hg19:

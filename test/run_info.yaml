@@ -40,7 +40,7 @@ variant_filtering:
 
 
 quality_control:
-  databases: ['dbsnp', 'cosmic']
+  databases: ['dbsnp']
   novelty: ['all', 'known', 'novel']
   metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',

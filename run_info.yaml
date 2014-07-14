@@ -11,7 +11,7 @@ steps:
 - VarQC_Summary
 - TargetCov_Summary
 
-filter_reject: True   ## Before annotation and QC, filter variants
+filter_reject: False  ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
 variant_filtering:
