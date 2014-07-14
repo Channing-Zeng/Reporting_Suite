@@ -85,11 +85,11 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     # broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
 
-    manual_tsv_fields = cnf['tsv_fields']
-    if manual_tsv_fields:
+    _manual_tsv_fields = cnf['tsv_fields']
+    if _manual_tsv_fields:
         fields = [
             rec.keys()[0] for rec
-            in manual_tsv_fields]
+            in _manual_tsv_fields]
     # else:
         # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
         #   if l.strip().startswith('#CHROM'))
@@ -103,7 +103,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     sample_names = read_sample_names_from_vcf(vcf_fpath)
     if len(sample_names) == 0:
-        manual_tsv_fields = [f for f in manual_tsv_fields if f.startswith('GEN[*]')]
+        fields = [f for f in fields if not f.startswith('GEN[*]')]
 
     # info_fields = [f for f in fields if f not in ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'ID'm ]
     # with open(broken_format_column_vcf_fpath) as vcf_f:
@@ -156,7 +156,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
                 if i == 0:
                     values[0] = values[0][1:]
 
-                if manual_tsv_fields[0].keys()[0] == 'SAMPLE':
+                if fields[0] == 'SAMPLE':
                     if i == 0:
                         out.write('SAMPLE')
                     else:
