@@ -90,7 +90,10 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         shutil.copyfile(vcf_fpath, final_vcf_fpath)
 
         # Converting to MAF
-        final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
+        if cnf.make_maf:
+            final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
+        else:
+            final_maf_fpath = None
 
         return final_vcf_fpath, final_maf_fpath
     else:
@@ -218,8 +221,8 @@ def _snpeff(cnf, input_fpath):
         cmdline += ' -cancer '
 
     custom_transcripts = cnf['snpeff'].get('only_transcripts')
-    verify_file(custom_transcripts, 'Transcripts for only_tr')
     if custom_transcripts:
+        verify_file(custom_transcripts, 'Transcripts for only_tr')
         cmdline += ' -onlyTr ' + custom_transcripts + ' '
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')

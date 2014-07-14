@@ -95,6 +95,8 @@ class Defaults():
         cancer=True,
     )
 
+    make_maf = True
+
 
 class Config(object):
     def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, **kwargs):

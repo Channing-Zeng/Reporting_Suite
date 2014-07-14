@@ -236,3 +236,4 @@ verbose: True                 ## Prints tools' output
 keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
 reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
 
+make_maf: True
