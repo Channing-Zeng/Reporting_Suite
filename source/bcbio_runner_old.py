@@ -8,15 +8,15 @@ from source.file_utils import verify_dir, verify_file, file_transaction, make_tm
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
-from source.logger import info
+from source.logger import info, err
 from source.ngscat.bed_file import verify_bam
 
 
 basic_dirpath = dirname(dirname(abspath(__file__)))
 
 
-def run_on_bcbio_final_dir(cnf, bcbio_final_dir, bcbio_cnf):
-    return Runner(cnf, bcbio_final_dir, bcbio_cnf).run()
+def run_on_bcbio_final_dir(cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs):
+    return Runner(cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs).run()
 
 
 class Step():
@@ -43,10 +43,11 @@ class Steps(list):
                [self.__normalize(el) for el in self]
 
     def step(self, name, script=None, interpreter='python', param_line=None):
-        if name not in self:
-            return None
+        if not name in self:
+            return Step(name, None)
 
         cmd = get_tool_cmdline(self.cnf, interpreter, script or name)
+
         if not cmd:
             sys.exit(1)
 
@@ -54,17 +55,18 @@ class Steps(list):
 
 
 class Runner():
-    def __init__(self, cnf, bcbio_final_dir, bcbio_cnf):
+    def __init__(self, cnf, bcbio_final_dir, samples_fpath, bed_fpath, vcf_sufs):
         self.dir = bcbio_final_dir
         self.cnf = cnf
-        self.bcbio_cnf = bcbio_cnf
-
+        self.bed = bed_fpath
+        self.sufs = vcf_sufs
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
 
         self.varannotate = None
         self.varqc = None
+        self.varqc_after = None
         self.varfilter = None
         self.targetcov = None
         self.ngscat = None
@@ -72,8 +74,16 @@ class Runner():
         self.targetcov_summary = None
         self.varqc_summary = None
 
-        self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
-        assert verify_dir(self.date_dirpath)
+        self.samples_fpath = samples_fpath
+        with open(samples_fpath) as sample_f:
+            self.samples = [s.strip() for s in sample_f.readlines()
+                            if s and s.strip() and not s.startswith('#')]
+
+        date_dir_pattern = re.compile(r'\d\d\d\d\-\d\d-\d\d.*')
+        self.date_dirpath = next((join(cnf.bcbio_final_dir, dir_name)
+                             for dir_name in os.listdir(cnf.bcbio_final_dir)
+                             if date_dir_pattern.match(dir_name)),
+                            cnf.bcbio_final_dir)
 
         self.set_up_steps(cnf)
 
@@ -99,10 +109,14 @@ class Runner():
             name='VarQC',
             script='varqc.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\'')
+        self.varqc_after = self.steps.step(
+            name='VarQC_after',
+            script='varqc.py',
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\'')
         self.varfilter = self.steps.step(
             name='VarFilter',
             script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --clean --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
+            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
         self.targetcov = self.steps.step(
             name='TargetCov',
             script='targetcov.py',
@@ -116,31 +130,21 @@ class Runner():
             interpreter=None,
             param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
-        all_suffixes = set()
-        for s_info in self.bcbio_cnf.details:
-            all_suffixes |= set(s_info['algorithm'].get('variantcaller')) or set()
+        self.varqc_summary = self.steps.step(
+            name='VarQC_summary',
+            script='varqc_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
+                       'varqc' + ' --vcf-suf ' + ','.join(self.sufs) +
+                       ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
+        self.targetcov_summary = self.steps.step(
+            name='TargetCov_summary',
+            script='targetcov_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir +
+                       '\' -s \'{samples}\' -n ' + 'targetcov' +
+                       ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
-        if self.varqc:
-            self.steps.append('VarQC_summary')
-            self.varqc_summary = self.steps.step(
-                name='VarQC_summary',
-                script='varqc_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\' -n ' +
-                           self.varqc.name.lower() + ' --vcf-suf ' + ','.join(all_suffixes) +
-                           ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
-        if self.targetcov:
-            self.steps.append('TargetCov_summary')
-            self.targetcov_summary = self.steps.step(
-                name='TargetCov_summary',
-                script='targetcov_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir +
-                           '\' -s \'{samples}\' -n ' + self.targetcov.name.lower() +
-                           ' --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
-
-    def submit(self, step, sample_name='', suf=None, create_dir=False, out_fpath=None,
+    def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True, out_fpath=None,
                wait_for_steps=list(), **kwargs):
-        if not step or step.name not in self.steps:
-            return None
 
         output_dirpath = self.dir
         if sample_name:
@@ -154,15 +158,28 @@ class Runner():
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
-            safe_mkdir(output_dirpath)
             log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
+
+        # Skipping steps
+        if not step or step.name not in self.steps:
+            return output_dirpath
+
+        if create_dir:
+            safe_mkdir(output_dirpath)
 
         out_fpath = out_fpath or log_fpath
 
         if isfile(out_fpath):
-            os.remove(out_fpath)
+            try:
+                os.remove(out_fpath)
+            except OSError:
+                err('Cannot remove log file ' + out_fpath + ', probably permission denied.')
+
         if isfile(log_fpath):
-            os.remove(log_fpath)
+            try:
+                os.remove(log_fpath)
+            except OSError:
+                err('Cannot remove log file ' + out_fpath + ', probably permission denied.')
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
@@ -199,11 +216,10 @@ class Runner():
 
         return output_dirpath
 
-    def qualimap_bed(self, bed_fpath):
-        if 'QualiMap' in self.steps and bed_fpath:
-            qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
-
-            with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
+    def run(self):
+        qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
+        if 'QualiMap' in self.steps:
+            with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
                 for l in inn:
                     fields = l.strip().split('\t')
 
@@ -226,16 +242,7 @@ class Runner():
 
                     out.write('\t'.join(fields) + '\n')
 
-            bed_fpath = qualimap_bed_fpath
-        return bed_fpath
-
-    def run(self):
-        for sample_info in self.bcbio_cnf.details:
-            sample = sample_info['description']
-
-            bed_fpath = sample_info['algorithm'].get('variant_regions')
-            qualimap_bed_fpath = self.qualimap_bed(bed_fpath)
-
+        for sample in self.samples:
             info(sample)
             if not self.cnf.verbose:
                 info(ending='')
@@ -248,8 +255,8 @@ class Runner():
             if not verify_bam(bam_fpath):
                 sys.exit(1)
 
-            for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
-                vcf_fpath = join(sample_dirpath, sample + '-' + variant_caller + '.vcf')
+            for vcf_suf in self.sufs:
+                vcf_fpath = join(sample_dirpath, sample + '-' + vcf_suf + '.vcf')
 
                 if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
                     gz_vcf_fpath = vcf_fpath + '.gz'
@@ -265,13 +272,13 @@ class Runner():
                 if not verify_file(vcf_fpath):
                     sys.exit(1)
 
-                self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, variant_caller)
+                self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, vcf_suf)
 
-            self.submit(self.targetcov, sample, create_dir=True, bam=bam_fpath, bed=bed_fpath, sample=sample)
+            self.submit_if_needed(self.targetcov, sample, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.ngscat, sample, create_dir=True, bam=bam_fpath, bed=bed_fpath, sample=sample)
+            self.submit_if_needed(self.ngscat, sample, bam=bam_fpath, bed=self.bed, sample=sample)
 
-            self.submit(self.qualimap, sample, create_dir=True, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
+            self.submit_if_needed(self.qualimap, sample, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -282,33 +289,15 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        all_variantcallers = set()
-        for s_info in self.bcbio_cnf.details:
-            all_variantcallers |= set(s_info['algorithm'].get('variantcaller')) or set()
+        self.submit_if_needed(
+            self.varqc_summary,
+            wait_for_steps=[self.varqc.job_name(s, v) for s in self.samples for v in self.sufs if self.varqc.name in self.steps],
+            samples=self.samples_fpath)
 
-        samples_fpath = abspath(join(self.cnf.work_dir, 'samples.txt'))
-        #if not isfile(samples_fpath):
-        with open(samples_fpath, 'w') as f:
-            for sample_info in self.bcbio_cnf.details:
-                sample = sample_info['description']
-                f.write(sample + '\n')
-
-        if self.varqc:
-            self.submit(
-                self.varqc_summary,
-                create_dir=True,
-                wait_for_steps=[self.varqc.job_name(d['description'], v)
-                                for d in self.bcbio_cnf.details
-                                for v in all_variantcallers],
-                samples=samples_fpath)
-
-        if self.targetcov_summary:
-            self.submit(
-                self.targetcov_summary,
-                create_dir=True,
-                wait_for_steps=[self.targetcov.job_name(d['description'])
-                                for d in self.bcbio_cnf.details],
-                samples=samples_fpath)
+        self.submit_if_needed(
+            self.targetcov_summary,
+            wait_for_steps=[self.targetcov.job_name(s) for s in self.samples if self.targetcov.name in self.steps],
+            samples=self.samples_fpath)
 
         if not self.cnf.verbose:
             print ''
@@ -316,22 +305,23 @@ class Runner():
             info('Done.')
 
     def _process_vcf(self, sample, sample_dirpath, bam_fpath, vcf_fpath, suf):
-        if self.varqc:
-            self.submit(
-                self.varqc, sample, suf=suf, create_dir=True,
-                vcf=vcf_fpath, sample=sample + '-' + suf)
+        self.submit_if_needed(
+            self.varqc, sample, suf=suf,
+            vcf=vcf_fpath, sample=sample + '-' + suf)
 
-        if self.varannotate:
-            anno_dirpath = self.submit(
-                self.varannotate, sample, suf=suf, create_dir=True,
-                vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
-            annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
+        anno_dirpath = self.submit_if_needed(
+            self.varannotate, sample, suf=suf,
+            vcf=vcf_fpath, bam=bam_fpath, sample=sample + '-' + suf)
 
-            if self.varfilter:
-                filtered_vcf_fpath = join(sample_dirpath,
-                    basename(add_suffix(annotated_vcf_fpath, 'filt')))
-                if file_exists(filtered_vcf_fpath):
-                    os.remove(filtered_vcf_fpath)
-                self.submit(self.varfilter, sample, suf=suf, create_dir=False,
-                    wait_for_steps=[self.varannotate.job_name(sample, suf)],
-                    vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+        annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
+
+        filter_dirpath = self.submit_if_needed(self.varfilter, sample, suf=suf,
+            wait_for_steps=[self.varannotate.job_name(sample, suf)] if self.varannotate.name in self.steps else [],
+            vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+
+        filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+
+        self.submit_if_needed(
+            self.varqc_after, sample, suf=suf,
+            wait_for_steps=[self.varfilter.job_name(sample, suf)] if self.varfilter.name in self.steps else [],
+            vcf=filtered_vcf_fpath, sample=sample + '-' + suf)

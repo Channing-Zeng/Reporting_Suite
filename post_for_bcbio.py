@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.utils_from_bcbio import safe_mkdir
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -7,26 +8,21 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from optparse import OptionParser
-from os.path import join, abspath, dirname, pardir, isdir
+from os.path import join, pardir, isdir
+from os import listdir
 
-from source.config import Defaults, Config
-from source.logger import info
+from source.config import Defaults, Config, load_yaml_config
+from source.logger import info, critical
 from source.main import check_system_resources, check_inputs, check_keys
 from source.bcbio_runner import run_on_bcbio_final_dir
-from source.utils_from_bcbio import safe_mkdir
 
 
 def main():
-    info(' '.join(sys.argv))
-    info()
-
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
     parser.add_option('-d', '-o', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
-    parser.add_option('-s', '--samples', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('-b', '--bed', dest='bed', help='BED file')
-    parser.add_option('--vcf-suf', '--vcf-suffix', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
@@ -40,8 +36,10 @@ def main():
 
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+    if not opts.bcbio_final_dir and len(args) > 0:
+        cnf.bcbio_final_dir = args[0]
 
-    if not check_keys(cnf, ['bcbio_final_dir', 'vcf_suf']):
+    if not check_keys(cnf, ['bcbio_final_dir']):
         parser.print_help()
         sys.exit(1)
 
@@ -51,31 +49,13 @@ def main():
     if isdir(join(cnf.bcbio_final_dir, 'final')):
         cnf.bcbio_final_dir = join(cnf.bcbio_final_dir, 'final')
 
-    if not cnf.samples:
-        cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
-
-    # cur_dirpath = dirname(abspath(__file__))
-    # cnf.qsub_runner = abspath(join(cur_dirpath, cnf.qsub_runner))
-
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
 
-    file_keys = ['samples', 'qsub_runner']
-
-    if 'TargetCov' in cnf.steps or 'NGScat' in cnf.steps or 'TargetCov_Summary' in cnf.steps:
-        if not check_keys(cnf, ['bed']):
-            parser.print_help()
-            sys.exit(1)
-        file_keys.append('bed')
-
-    if not check_inputs(cnf, file_keys=file_keys, dir_keys=['bcbio_final_dir']):
+    if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
-    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
-    info('Samples: ' + cnf.samples + ' (set with -s)')
-    if cnf.bed:
-        info('Capture/amplicons BED file: ' + cnf.bed + ' (set with -b)')
-    info('Suffix(es) to choose VCF files: ' + cnf.vcf_suf + ' (set with --vcf-suf)')
+    info('BCBio "final" dir: ' + cnf.bcbio_final_dir)
     info()
     info('*' * 70)
 
@@ -84,14 +64,27 @@ def main():
 
     check_system_resources(cnf, required=['qsub'])
 
-    vcf_sufs = cnf['vcf_suf'].split(',')
-
-    cnf['work_dir'] = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
+    cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
     if not isdir(cnf.work_dir):
         safe_mkdir(cnf.work_dir)
-    # cnf['bcbio_cnf'] = join(cnf.bcbio_final_dir, pardir, 'config')
 
-    run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.samples, cnf.bed, vcf_sufs)
+    load_bcbio_cnf(cnf)
+    # if cnf.vcf_suf:
+    #     vcf_sufs = cnf['vcf_suf'].split(',')
+    # else:
+    #     vcf_sufs = 'mutect'
+
+    run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
+
+
+def load_bcbio_cnf(cnf):
+    bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
+    yaml_files = [join(bcbio_config_dirpath, fname) for fname in listdir(bcbio_config_dirpath) if fname.endswith('.yaml')]
+    if len(yaml_files) > 1:
+        critical('More than one YAML file in config directory: ' + ' '.join(yaml_files))
+    if len(yaml_files) == 0:
+        critical('No YAML file in config directory.')
+    cnf.bcbio_cnf = load_yaml_config(yaml_files[0])
 
 
 if __name__ == '__main__':
