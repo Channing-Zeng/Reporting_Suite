@@ -122,6 +122,7 @@ oncomine:
 
 snpeff:
   clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+  # only_transcripts: my_transcripts.txt
   cancer: True
   ## no "annotations" section here, always applied all annotations
 

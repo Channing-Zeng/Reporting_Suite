@@ -217,6 +217,11 @@ def _snpeff(cnf, input_fpath):
     if cnf['snpeff'].get('cancer'):
         cmdline += ' -cancer '
 
+    custom_transcripts = cnf['snpeff'].get('only_transcripts')
+    verify_file(custom_transcripts, 'Transcripts for only_tr')
+    if custom_transcripts:
+        cmdline += ' -onlyTr ' + custom_transcripts + ' '
+
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)
