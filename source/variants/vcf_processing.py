@@ -7,7 +7,7 @@ from collections import OrderedDict
 from ext_modules import vcf_parser
 from ext_modules.vcf_parser.model import _Record
 
-from source.calling_process import call_subprocess
+from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname
@@ -181,7 +181,10 @@ def convert_to_maf(cnf, final_vcf_fpath):
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
               '--output-maf {final_maf_fpath}'.format(**locals())
-    call_subprocess(cnf, cmdline, None, None)
+    final_maf_fpath = call(cnf, cmdline, final_maf_fpath, stdout_to_outputfile=False)
+    #if final_maf_fpath:
+    #    info('MAF file saved to ' + final_maf_fpath)
+
     return final_maf_fpath
 
 
