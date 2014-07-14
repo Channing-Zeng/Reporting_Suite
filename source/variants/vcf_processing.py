@@ -10,7 +10,7 @@ from ext_modules.vcf_parser.model import _Record
 from source.calling_process import call_subprocess
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
-from source.file_utils import iterate_file, verify_file
+from source.file_utils import iterate_file, verify_file, intermediate_fname
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.utils_from_bcbio import open_gzipsafe, splitext_plus
 from source.logger import step_greetings, info, critical
@@ -196,9 +196,27 @@ def read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def extract_sample(cnf, input_fpath, samplename, work_dir=None):
-    if work_dir is None:
-        work_dir = cnf['work_dir']
+def leave_first_sample(cnf, vcf_fpath):
+    vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
+
+    if len(vcf_header_samples) <= 1:
+        return vcf_fpath
+
+    sample_name = vcf_header_samples[1]
+
+    def _f(rec):
+        rec.samples = rec.samples[:1]
+        return rec
+
+    out_fpath = intermediate_fname(cnf, vcf_fpath, sample_name)
+    with open(vcf_fpath) as in_f, open(out_fpath, 'w') as out_f:
+        proc_vcf(in_f, out_f, _f)
+
+    return out_fpath
+
+
+def extract_sample(cnf, input_fpath, samplename):
+    work_dir = cnf['work_dir']
 
     vcf_header_samples = read_sample_names_from_vcf(input_fpath)
 

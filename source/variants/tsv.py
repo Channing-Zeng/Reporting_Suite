@@ -8,11 +8,13 @@ from source.file_utils import intermediate_fname
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.transaction import file_transaction
 from source.utils_from_bcbio import which, splitext_plus, file_exists
-from source.logger import step_greetings, info
-from source.variants.vcf_processing import read_sample_names_from_vcf
+from source.logger import step_greetings, info, err
+from source.variants.vcf_processing import read_sample_names_from_vcf, extract_sample, leave_first_sample
 
 
 def make_tsv(cnf, vcf_fpath):
+    vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+
     tsv_fpath = _extract_fields(cnf, vcf_fpath, cnf['work_dir'], cnf['name'])
     if not tsv_fpath:
         return tsv_fpath
@@ -132,21 +134,18 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         for i, l in enumerate(tsv):
             if i == 0:
                 names = [v for v in l.split('\t') if v != '\n']
-
-                print len(names)
-                for n in names: print '%20s' % n,
-
                 col_counts = [0 for _ in names]
             else:
                 values = [v for v in l.split('\t') if v != '\n']
 
-                print len(values)
-                for n in values: print '%20s' % n,
-
                 for i, v in enumerate(values):
                     if v:
-                        #while len(col_counts) <= i:
-                        #    col_counts.append(0)
+                        if len(col_counts) <= i:
+                            err('TSV file may be incorrectly geenrated (number of '
+                                'column names (%d) less than number of fields '
+                                'in the record (%d)). Please, contact Vlad.' %
+                                (len(names), len(values)))
+
                         col_counts[i] += 1
 
     with file_transaction(cnf, tsv_fpath) as tx:
