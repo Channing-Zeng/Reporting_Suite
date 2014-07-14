@@ -202,7 +202,7 @@ def leave_first_sample(cnf, vcf_fpath):
     if len(vcf_header_samples) <= 1:
         return vcf_fpath
 
-    sample_name = vcf_header_samples[1]
+    sample_name = vcf_header_samples[0]
 
     def _f(rec):
         rec.samples = rec.samples[:1]
