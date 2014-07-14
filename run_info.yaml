@@ -11,8 +11,8 @@ steps:
 - VarQC_Summary
 - TargetCov_Summary
 
-filter_reject: False  ## Before annotation and QC, filter variants
-                      ## that set REJECT in the FILTER field
+filter_reject: True  ## Before annotation and QC, filter variants
+                     ## that set REJECT in the FILTER field
 
 variant_filtering:
   impact:             'MODERATE|HIGH'
@@ -121,7 +121,7 @@ oncomine:
   - om_MutClassPC
 
 snpeff:
-  clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
+  clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
   cancer: True
   ## no "annotations" section here, always applied all annotations
 
@@ -204,6 +204,7 @@ tsv_fields:
 - KGPROD                        : Has1000GenomeSubmission
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
+- CAF                           : CAF
 - COMMON                        : CommonVariant
 # - CLNSIG                      : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
