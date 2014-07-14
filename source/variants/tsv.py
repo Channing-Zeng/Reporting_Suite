@@ -99,8 +99,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     else:
         return None
 
-    column_names = read_sample_names_from_vcf(vcf_fpath)
-    if len(column_names) == 0:
+    sample_names = read_sample_names_from_vcf(vcf_fpath)
+    if len(sample_names) == 0:
         manual_tsv_fields = [f for f in manual_tsv_fields if f.startswith('GEN[*]')]
 
     # info_fields = [f for f in fields if f not in ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'ID'm ]
@@ -132,13 +132,21 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
         for i, l in enumerate(tsv):
             if i == 0:
                 names = [v for v in l.split('\t') if v != '\n']
+
+                print len(names)
+                for n in names: print '%20s' % n,
+
                 col_counts = [0 for _ in names]
             else:
                 values = [v for v in l.split('\t') if v != '\n']
+
+                print len(values)
+                for n in values: print '%20s' % n,
+
                 for i, v in enumerate(values):
                     if v:
-                        while len(col_counts) <= i:
-                            col_counts.append(0)
+                        #while len(col_counts) <= i:
+                        #    col_counts.append(0)
                         col_counts[i] += 1
 
     with file_transaction(cnf, tsv_fpath) as tx:

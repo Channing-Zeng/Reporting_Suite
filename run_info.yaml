@@ -7,7 +7,7 @@ steps:
 - VarQC_after
 - TargetCov
 - NGScat
-- QualiMap
+#- QualiMap
 - VarQC_Summary
 - TargetCov_Summary
 

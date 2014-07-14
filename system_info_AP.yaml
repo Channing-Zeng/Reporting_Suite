@@ -11,6 +11,8 @@ resources:
     path: /ngs/RDI/PROGRAMS/snpEff3.6/SnpSift.jar
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
+  qualimap:
+    path: /home/klpf990/qualimap/qualimap
 
 genomes:
   hg19:

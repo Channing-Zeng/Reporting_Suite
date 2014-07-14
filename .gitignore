@@ -41,6 +41,7 @@ nosetests.xml
 
 test/**/*work*
 test/**/*tmp*
-test/data/miika-ensemble.anno.vcf
+test/data/big
 test/results_anno_miika
+test/results_big_vcf
 test/bcbio
