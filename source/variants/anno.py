@@ -54,10 +54,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
             annotated = True
 
     if 'snpeff' in cnf:
-        res = _remove_annotation(cnf, 'EFF', vcf_fpath)
-        if res:
-            vcf_fpath = res
-
         res, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
@@ -191,10 +187,17 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
 
 def _snpeff(cnf, input_fpath):
+    step_greetings('SnpEff')
+
+    info('Removing previous EFF annotations...')
+    res = _remove_annotation(cnf, 'EFF', input_fpath)
+    if res:
+        vcf_fpath = res
+    info('Done.')
+    info('')
+
     if 'snpeff' not in cnf:
         return None, None, None
-
-    step_greetings('SnpEff')
 
     # self.all_fields.extend([
     #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
