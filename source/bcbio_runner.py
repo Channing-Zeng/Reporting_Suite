@@ -221,12 +221,26 @@ class Runner():
         if 'QualiMap' in self.steps:
             with open(qualimap_bed_fpath, 'w') as out, open(self.bed) as inn:
                 for l in inn:
-                    ts = l.strip().split('\t')
-                    if len(ts) < 5:
-                        ts += ['0']
-                    if len(ts) < 6:
-                        ts += ['+']
-                    out.write('\t'.join(ts) + '\n')
+                    fields = l.strip().split('\t')
+
+                    if len(fields) < 3:
+                        continue
+                    try:
+                        n = int(fields[1])
+                        n = int(fields[2])
+                    except ValueError:
+                        continue
+
+                    if len(fields) < 4:
+                        fields.append('-')
+
+                    if len(fields) < 5:
+                        fields.append('0')
+
+                    if len(fields) < 6:
+                        fields.append('+')
+
+                    out.write('\t'.join(fields) + '\n')
 
         for sample in self.samples:
             info(sample)
