@@ -74,9 +74,6 @@ def read_opts_and_cnfs(extra_opts,
          ),
     ]
 
-    info(' '.join(sys.argv))
-    info()
-
     parser = OptionParser(description=description)
     for args, kwargs in options:
         parser.add_option(*args, **kwargs)
@@ -100,6 +97,8 @@ def read_opts_and_cnfs(extra_opts,
     cnf.name = cnf['name'] or key_fname.split('.')[0]
 
     set_up_dirs(cnf)
+    info(' '.join(sys.argv))
+    info()
 
     return cnf
 
@@ -245,7 +244,6 @@ def set_up_dirs(cnf):
     cnf.output_dir = realpath(expanduser(cnf.output_dir))
 
     safe_mkdir(cnf.output_dir, 'output_dir')
-    info('Saving into ' + cnf.output_dir)
 
     if not cnf.work_dir:
         work_dir_name = 'work_' + cnf.name
@@ -259,3 +257,5 @@ def set_up_dirs(cnf):
 
     cnf.log = join(cnf.work_dir, cnf.name + '_log.txt')
     logger.log_fpath = cnf.log
+
+    info('Saving into ' + cnf.output_dir)
