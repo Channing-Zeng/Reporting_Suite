@@ -16,6 +16,8 @@ resources:
     path: ~/bin/bcftools/plot-vcfstats
   qsub:
     path: ../tools/qsub.sh
+  python:
+    path: /opt/az/local/psf/python/64_2.7.3/python
 
 genomes:
   hg19:

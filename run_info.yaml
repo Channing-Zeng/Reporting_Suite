@@ -134,7 +134,6 @@ tracks:
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
 #- /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
-
 tsv_fields:
 - SAMPLE                        : Sample
 - CHROM                         : Chromosome
