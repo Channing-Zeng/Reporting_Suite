@@ -24,7 +24,7 @@ def summary_reports(cnf, sample_names):
 def cnv_reports(cnf, sample_names, sample_sum_reports):
     step_greetings('Coverage statistics for each gene for all samples')
 
-    sample_gene_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+    sample_gene_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
 
     cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
@@ -53,6 +53,8 @@ def _parse_targetseq_sample_report(report_fpath):
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
+    print report_details_fpaths
+
     gene_summary_lines = []
     cov_by_sample = dict()
 

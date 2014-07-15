@@ -198,9 +198,11 @@ def main():
         shutil.rmtree(cnf['work_dir'])
 
 
-def finalize_one(cnf, filtered_vcf_fpath, maf_fpath):
+def finalize_one(cnf, filtered_vcf_fpath, tsv_fpath, maf_fpath):
     if filtered_vcf_fpath:
         info('Saved filtered VCF to ' + filtered_vcf_fpath)
+    if tsv_fpath:
+        info('Saved TSV to ' + tsv_fpath)
     if maf_fpath:
         info('Saved MAF to ' + maf_fpath)
 

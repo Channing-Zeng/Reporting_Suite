@@ -177,17 +177,18 @@ def convert_to_maf(cnf, final_vcf_fpath):
     final_vcf_fname = basename(final_vcf_fpath)
 
     final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
-    final_maf_fpath.replace('.tmp', '')
+    final_maf_fpath = final_maf_fpath.replace('.tmp', '')
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
               '--output-maf {final_maf_fpath}'.format(**locals())
-    final_maf_fpath = call(cnf, cmdline, final_maf_fpath, stdout_to_outputfile=False)
+    call(cnf, cmdline, None, stdout_to_outputfile=False)
     #if final_maf_fpath:
     #    info('MAF file saved to ' + final_maf_fpath)
 
-    return final_maf_fpath
+    info('Saved to ' + final_maf_fpath)
 
+    return final_maf_fpath
 
 
 def read_sample_names_from_vcf(vcf_fpath):
