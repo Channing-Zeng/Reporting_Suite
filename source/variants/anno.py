@@ -222,7 +222,8 @@ def _snpeff(cnf, input_fpath):
 
     custom_transcripts = cnf['snpeff'].get('only_transcripts')
     if custom_transcripts:
-        verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr')
+        if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
+            return None, None, None
         cmdline += ' -onlyTr ' + custom_transcripts + ' '
 
     elif cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):

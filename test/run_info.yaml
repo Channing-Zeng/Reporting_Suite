@@ -121,7 +121,7 @@ coverage_reports:
 snpeff:
   clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
   cancer: True
-  only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
+  # only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
   extra_opts: ''
 
 #tracks:
