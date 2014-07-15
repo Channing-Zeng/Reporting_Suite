@@ -3,19 +3,21 @@ import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
 from ext_modules import vcf_parser as vcf
 
-from source.calling_process import call_subprocess
-from source.file_utils import intermediate_fname
-from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
+from source.calling_process import call
+from source.file_utils import intermediate_fname, verify_file
+from source.tools_from_cnf import get_java_tool_cmdline
 from source.transaction import file_transaction
-from source.utils_from_bcbio import which, splitext_plus, file_exists
-from source.logger import step_greetings, info, err
-from source.variants.vcf_processing import read_sample_names_from_vcf, extract_sample, leave_first_sample
+from source.utils_from_bcbio import splitext_plus, file_exists
+from source.logger import step_greetings, info, err, critical
+from source.variants.vcf_processing import read_sample_names_from_vcf, leave_first_sample, vcf_one_per_line
 
 
 def make_tsv(cnf, vcf_fpath):
     final_tsv_fname = splitext_plus(basename(vcf_fpath))[0] + '.tsv'
 
     vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+
+    vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
     tsv_fpath = _extract_fields(cnf, vcf_fpath, cnf['work_dir'], cnf['name'])
     if not tsv_fpath:
@@ -112,22 +114,15 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
 
     # fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
 
+
     anno_line = ' '.join([f for f in fields if f != 'SAMPLE'])
-    snpsift_cmline = get_java_tool_cmdline(cnf, 'snpsift')
+    snpsift = get_java_tool_cmdline(cnf, 'snpsift')
+    snpsift_cmdline = snpsift + ' extractFields - ' + anno_line
 
-    if not which('perl'):
-        exit('Perl executable required, maybe you need to run "module load perl"?')
-    src_fpath = join(dirname(realpath(__file__)))
-    perl = get_tool_cmdline(cnf, 'perl')
-    external_fpath = join(src_fpath, pardir, pardir, 'external')
-    vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
-
-    cmdline = vcfoneperline_cmline + ' | ' + snpsift_cmline + ' extractFields - ' + anno_line
-
-    res = call_subprocess(cnf, cmdline, None, tsv_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
-
+    res = call(cnf, snpsift_cmdline, tsv_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
     if res is None:
-        return None
+        return None  # oneperline_vcf_fpath
+    info()
 
     # REMOVE EMPTY, ADD SAMPLE COLUMN
     with open(tsv_fpath) as tsv:
@@ -183,6 +178,8 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     #     critical('Command returned status ' + str(res) +
     #              ('. Log in ' + cnf['log'] if 'log' in cnf else '.'))
 
+    if not verify_file(tsv_fpath):
+        critical('Error: "snpsift extract" did not generate output file ' + tsv_fpath)
     return tsv_fpath
 
 

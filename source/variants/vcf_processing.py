@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 
-from os.path import basename, join, expanduser, splitext, realpath, dirname
+from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir
 from collections import OrderedDict
 
 from ext_modules import vcf_parser
@@ -12,7 +12,7 @@ from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
-from source.utils_from_bcbio import open_gzipsafe, splitext_plus
+from source.utils_from_bcbio import open_gzipsafe, splitext_plus, which
 from source.logger import step_greetings, info, critical
 
 
@@ -175,20 +175,41 @@ def convert_to_maf(cnf, final_vcf_fpath):
     step_greetings('Converting to MAF')
 
     final_vcf_fname = basename(final_vcf_fpath)
-
     final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
     final_maf_fpath = final_maf_fpath.replace('.tmp', '')
+
+    vcf_fpath = vcf_one_per_line(cnf, final_vcf_fpath)
+
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
-    cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \
-              '--output-maf {final_maf_fpath}'.format(**locals())
+    cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {final_maf_fpath}'.format(**locals())
     call(cnf, cmdline, None, stdout_to_outputfile=False)
     #if final_maf_fpath:
     #    info('MAF file saved to ' + final_maf_fpath)
 
+    if not verify_file(final_maf_fpath):
+        critical('Converting to MAF didn\'t generate output file ' + final_maf_fpath)
     info('Saved to ' + final_maf_fpath)
 
     return final_maf_fpath
+
+
+def vcf_one_per_line(cnf, vcf_fpath):
+    if not which('perl'):
+        exit('Perl executable required, maybe you need to run "module load perl"?')
+
+    src_fpath = join(dirname(realpath(__file__)))
+    perl = get_tool_cmdline(cnf, 'perl')
+    external_fpath = join(src_fpath, pardir, pardir, 'external')
+    vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
+    oneperline_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'opl')
+
+    call(cnf, vcfoneperline_cmline, oneperline_vcf_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
+    info()
+
+    if not verify_file(oneperline_vcf_fpath):
+        critical('Error: vcf_one_per_line didn\'t generate output file.')
+    return oneperline_vcf_fpath
 
 
 def read_sample_names_from_vcf(vcf_fpath):
@@ -217,6 +238,8 @@ def leave_first_sample(cnf, vcf_fpath):
     with open(vcf_fpath) as in_f, open(out_fpath, 'w') as out_f:
         proc_vcf(in_f, out_f, _f)
 
+    if not verify_file(out_fpath):
+        critical('Error: leave_first_sample didnt generate output file.')
     return out_fpath
 
 
