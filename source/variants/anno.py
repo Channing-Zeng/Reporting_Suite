@@ -238,6 +238,8 @@ def _snpeff(cnf, input_fpath):
     extra_opts = cnf['snpeff'].get('extra_opts')
     if extra_opts:
         opts += ' ' + extra_opts + ' '
+    else:
+        extra_opts = ''
 
     cmdline = ('{executable} eff {opts} -dataDir {db_path} -stats {stats_fpath} '
                '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
