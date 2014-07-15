@@ -8,8 +8,9 @@ from source.logger import critical, step_greetings
 def summary_reports(cnf, sample_names):
     step_greetings('Coverage statistics for all samples')
 
-    sample_sum_reports = get_sample_report_fpaths_for_bcbio_final_dir(
+    sample_sum_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
+
 
     sum_report = summarize(sample_names, sample_sum_reports, _parse_targetseq_sample_report)
 

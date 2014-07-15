@@ -24,6 +24,7 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
     single_report_fpaths = []
 
+    fixed_sample_names = []
     for sample_name in sample_names:
         single_report_fpath = join(
             bcbio_final_dir, sample_name, varqc_dir,
@@ -37,9 +38,11 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
         if not verify_file(single_report_fpath):
             critical(single_report_fpath + ' does not exist.')
-        single_report_fpaths.append(single_report_fpath)
 
-    return single_report_fpaths
+        single_report_fpaths.append(single_report_fpath)
+        fixed_sample_names.append(sample_name)
+
+    return single_report_fpaths, fixed_sample_names
 
 
 def summarize(sample_names, report_fpaths, get_rows_fn):
