@@ -213,27 +213,28 @@ def _snpeff(cnf, input_fpath):
         critical('Please, provide a path to SnpEff data in '
                  'the "genomes" section in the system config.')
 
-    cmdline = ('{executable} eff -dataDir {db_path} -stats {stats_fpath} '
-               '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
-               '{input_fpath}').format(**locals())
-
+    opts = ''
     if cnf['snpeff'].get('cancer'):
-        cmdline += ' -cancer '
+        opts += ' -cancer '
 
     custom_transcripts = cnf['snpeff'].get('only_transcripts')
     if custom_transcripts:
         if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
             return None, None, None
-        cmdline += ' -onlyTr ' + custom_transcripts + ' '
+        opts += ' -onlyTr ' + custom_transcripts + ' '
 
     if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
-        cmdline += ' -hgvs '
+        opts += ' -hgvs '
         if not custom_transcripts:
-            cmdline += ' -canon '
+            opts += ' -canon '
 
     extra_opts = cnf['snpeff'].get('extra_opts')
     if extra_opts:
-        cmdline += ' ' + extra_opts + ' '
+        opts += ' ' + extra_opts + ' '
+
+    cmdline = ('{executable} eff {opts} -dataDir {db_path} -stats {stats_fpath} '
+               '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
+               '{input_fpath}').format(**locals())
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,

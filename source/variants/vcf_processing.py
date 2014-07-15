@@ -177,6 +177,7 @@ def convert_to_maf(cnf, final_vcf_fpath):
     final_vcf_fname = basename(final_vcf_fpath)
 
     final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
+    final_maf_fpath.replace('.tmp', '')
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {final_vcf_fpath} ' \

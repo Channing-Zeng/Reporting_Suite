@@ -220,9 +220,9 @@ def process_one(cnf):
 
     final_tsv_fpath = None
     if filtered_vcf_fpath and 'tsv_fields' in cnf:
-        final_tsv_fpath = make_tsv(cnf, filtered_vcf_fpath)
+        final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
 
-    clean_filtered_vcf_fpath = filter_rejected(cnf, filtered_vcf_fpath)
+    clean_filtered_vcf_fpath = filter_rejected(cnf, final_vcf_fpath)
     final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
