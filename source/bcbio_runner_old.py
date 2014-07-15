@@ -81,9 +81,9 @@ class Runner():
 
         date_dir_pattern = re.compile(r'\d\d\d\d\-\d\d-\d\d.*')
         self.date_dirpath = next((join(cnf.bcbio_final_dir, dir_name)
-                             for dir_name in os.listdir(cnf.bcbio_final_dir)
-                             if date_dir_pattern.match(dir_name)),
-                            cnf.bcbio_final_dir)
+                                 for dir_name in os.listdir(cnf.bcbio_final_dir)
+                                 if date_dir_pattern.match(dir_name)),
+                                 cnf.bcbio_final_dir)
 
         self.set_up_steps(cnf)
 

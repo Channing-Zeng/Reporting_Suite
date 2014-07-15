@@ -16,7 +16,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
-from source.variants.vcf_processing import convert_to_maf
+from source.variants.vcf_processing import convert_to_maf, filter_rejected
 
 
 def main():
@@ -217,7 +217,8 @@ def process_one(cnf):
         os.remove(final_vcf_fpath)
     shutil.copyfile(filtered_vcf_fpath, final_vcf_fpath)
 
-    final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
+    clean_filtered_vcf_fpath = filter_rejected(cnf, filtered_vcf_fpath)
+    final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
 
     return [final_vcf_fpath, final_maf_fpath]
 
