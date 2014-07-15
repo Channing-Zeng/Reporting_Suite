@@ -192,7 +192,14 @@ def _snpeff(cnf, input_fpath):
     info('Removing previous EFF annotations...')
     res = _remove_annotation(cnf, 'EFF', input_fpath)
     if res:
-        vcf_fpath = res
+        input_fpath = res
+
+    def proc_line(l, i):
+        return l if not l.startswith('##SnpEff') else None
+    res = iterate_file(cnf, input_fpath, proc_line)
+    if res:
+        input_fpath = res
+
     info('Done.')
     info('')
 
