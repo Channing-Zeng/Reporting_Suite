@@ -122,8 +122,9 @@ oncomine:
 
 snpeff:
   clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
-  # only_transcripts: my_transcripts.txt
   cancer: True
+  only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
+  extra_opts: ''
   ## no "annotations" section here, always applied all annotations
 
 tracks:

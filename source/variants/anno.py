@@ -93,7 +93,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         return final_vcf_fpath, final_maf_fpath
     else:
-        info('No annotations were run on ' + original_vcf + '. Please, specify some in run_info.')
+        info('No annotations were applied to ' + original_vcf + '..')
         return None, None
 
 
@@ -217,16 +217,20 @@ def _snpeff(cnf, input_fpath):
                '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
                '{input_fpath}').format(**locals())
 
-    if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
-        cmdline += ' -canon -hgvs '
-
     if cnf['snpeff'].get('cancer'):
         cmdline += ' -cancer '
 
     custom_transcripts = cnf['snpeff'].get('only_transcripts')
     if custom_transcripts:
-        verify_file(custom_transcripts, 'Transcripts for only_tr')
+        verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr')
         cmdline += ' -onlyTr ' + custom_transcripts + ' '
+
+    elif cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
+        cmdline += ' -canon -hgvs '
+
+    extra_opts = cnf['snpeff'].get('extra_opts')
+    if extra_opts:
+        cmdline += ' ' + extra_opts + ' '
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,

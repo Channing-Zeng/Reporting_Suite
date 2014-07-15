@@ -119,9 +119,10 @@ coverage_reports:
 #custom_vcfs: {}
 
 snpeff:
-  clinical_reporting: True
+  clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
   cancer: True
-#  only_transcripts: my_transcripts.txt
+  only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
+  extra_opts: ''
 
 #tracks:
 #- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed
