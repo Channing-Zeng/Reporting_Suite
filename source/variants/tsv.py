@@ -29,7 +29,7 @@ def make_tsv(cnf, vcf_fpath):
             info('Saved TSV file with nice names to ' + tsv_fpath)
 
     # Copying final TSV
-    final_tsv_fname = splitext_plus(basename(cnf['vcf']))[0] + '.anno.tsv'
+    final_tsv_fname = splitext_plus(basename(vcf_fpath))[0] + '.tsv'
     final_tsv_fpath = join(cnf['output_dir'], final_tsv_fname)
     if isfile(final_tsv_fpath):
         os.remove(final_tsv_fpath)

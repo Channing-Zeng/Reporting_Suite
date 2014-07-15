@@ -226,8 +226,10 @@ def _snpeff(cnf, input_fpath):
             return None, None, None
         cmdline += ' -onlyTr ' + custom_transcripts + ' '
 
-    elif cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
-        cmdline += ' -canon -hgvs '
+    if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
+        cmdline += ' -hgvs '
+        if not custom_transcripts:
+            cmdline += ' -canon '
 
     extra_opts = cnf['snpeff'].get('extra_opts')
     if extra_opts:

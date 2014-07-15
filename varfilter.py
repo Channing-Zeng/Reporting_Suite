@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants.tsv import make_tsv
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -217,10 +218,14 @@ def process_one(cnf):
         os.remove(final_vcf_fpath)
     shutil.copyfile(filtered_vcf_fpath, final_vcf_fpath)
 
+    final_tsv_fpath = None
+    if filtered_vcf_fpath and 'tsv_fields' in cnf:
+        final_tsv_fpath = make_tsv(cnf, filtered_vcf_fpath)
+
     clean_filtered_vcf_fpath = filter_rejected(cnf, filtered_vcf_fpath)
     final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
 
-    return [final_vcf_fpath, final_maf_fpath]
+    return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 
 
 if __name__ == '__main__':
