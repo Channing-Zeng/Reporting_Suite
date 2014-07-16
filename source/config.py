@@ -91,8 +91,8 @@ class Defaults():
     )
 
     snpeff = dict(
-        clinical_reporting=True,
-        cancer=True,
+        clinical_reporting=False,
+        cancer=False,
     )
 
     make_maf = True
