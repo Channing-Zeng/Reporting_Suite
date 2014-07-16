@@ -174,7 +174,7 @@ def _snpeff(cnf, input_fpath):
 
     def proc_line(l, i):
         return l if not l.startswith('##SnpEff') else None
-    res = iterate_file(cnf, input_fpath, proc_line)
+    res = iterate_file(cnf, input_fpath, proc_line, 'header2')
     if res:
         input_fpath = res
 
