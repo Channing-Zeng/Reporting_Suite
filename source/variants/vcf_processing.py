@@ -252,8 +252,6 @@ def read_sample_names_from_vcf(vcf_fpath):
 
 
 def leave_first_sample(cnf, vcf_fpath):
-    info('Leaving SAMPLE fileds only for the first sample...')
-
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
     if len(vcf_header_samples) <= 1:
@@ -265,7 +263,8 @@ def leave_first_sample(cnf, vcf_fpath):
         rec.samples = rec.samples[:1]
         return rec
 
-    out_fpath = iterate_vcf(cnf, vcf_fpath, _f, sample_name)
+    info('Keeping SAMPLE only for the first sample...')
+    out_fpath = iterate_vcf(cnf, vcf_fpath, _f, suffix=sample_name)
     info()
 
     if not verify_file(out_fpath):

@@ -106,12 +106,11 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
-    if suffix and cnf.reuse_intermediate and reuse_intermediate and not overwrite:
-        if file_exists(output_fpath):
-            info(output_fpath + ' exists, reusing')
-            return output_fpath
-        else:
-            info('Writing to ' + output_fpath)
+    if suffix and cnf.reuse_intermediate and reuse_intermediate and not overwrite and file_exists(output_fpath):
+        info(output_fpath + ' exists, reusing')
+        return output_fpath
+    else:
+        info('Writing to ' + output_fpath)
 
     with file_transaction(cnf, output_fpath) as tx_fpath:
         with open(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:

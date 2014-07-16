@@ -139,7 +139,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         os.remove(to_remove_fpath)
                 err()
                 err('Command returned status ' + str(ret_code) +
-                    ('. Log in ' + cnf.log if cnf.log is not None else '.'))
+                    ('. Log saved to ' + cnf.log if cnf.log is not None else '.'))
                 if exit_on_error:
                     clean()
                     sys.exit(1)
@@ -178,7 +178,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         os.remove(to_remove_fpath)
                 err()
                 err('Command returned status ' + str(ret_code) +
-                    ('. Log in ' + cnf.log if 'log' in cnf else '.'))
+                    ('. Log saved to ' + cnf.log if 'log' in cnf else '.'))
                 if exit_on_error:
                     clean()
                     sys.exit(1)
