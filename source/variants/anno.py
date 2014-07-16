@@ -272,7 +272,7 @@ def _tracks(cnf, track_path, input_fpath):
         return line
 
     assert output_fpath
-    return iterate_file(cnf, output_fpath, proc_line)
+    return iterate_file(cnf, output_fpath, proc_line, 'trk')
 
 
 def _gatk(cnf, input_fpath, bam_fpath):
