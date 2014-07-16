@@ -26,7 +26,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
-         overwrite=False, check_output=False, return_proc=False):
+         overwrite=False, check_output=False, return_proc=False, print_stderr=True):
     """
     Required arguments:
     ------------------------------------------------------------
@@ -127,7 +127,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
                         info('   ' + line.strip())
-                elif proc.stderr:
+                elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
                         info('   ' + line.strip())
 
@@ -162,6 +162,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                     stderr = subprocess.STDOUT
+            else:
+                if not silent:
+                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
 
             ret_code = subprocess.call(
                 cmdl, shell=True, stdout=stdout, stderr=stderr,

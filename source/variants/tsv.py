@@ -119,7 +119,7 @@ def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
     snpsift = get_java_tool_cmdline(cnf, 'snpsift')
     snpsift_cmdline = snpsift + ' extractFields ' + vcf_fpath + ' ' + anno_line
 
-    res = call(cnf, snpsift_cmdline, tsv_fpath, exit_on_error=False)
+    res = call(cnf, snpsift_cmdline, tsv_fpath, exit_on_error=False, print_stderr=False)
     if res is None:
         return None
     info()
