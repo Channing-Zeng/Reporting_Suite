@@ -62,7 +62,7 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            tx_file = add_suffix(fname, 'tmp')
+            tx_file = add_suffix(fname, 'tx')
             tx_fpath = join(tmp_dir, tx_file)
             tx_fpaths.append(tx_fpath)
             orig_files.append(fname)
