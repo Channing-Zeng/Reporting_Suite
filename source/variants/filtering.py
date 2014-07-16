@@ -140,17 +140,17 @@ class Filtering:
         info()
 
         info('First round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
+        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
         info('Saved to ' + vcf_fpath)
         info()
 
         info('Second round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
+        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
         info('Saved to ' + vcf_fpath)
         info()
 
         info('Third round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
+        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
         info('Saved to ' + vcf_fpath)
         info()
 
