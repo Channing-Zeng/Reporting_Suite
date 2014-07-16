@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import shutil
 
 from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir
 from collections import OrderedDict
@@ -10,10 +11,11 @@ from ext_modules.vcf_parser.model import _Record
 from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
-from source.file_utils import iterate_file, verify_file, intermediate_fname
+from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
-from source.utils_from_bcbio import open_gzipsafe, splitext_plus, which
-from source.logger import step_greetings, info, critical
+from source.transaction import file_transaction
+from source.utils_from_bcbio import open_gzipsafe, splitext_plus, which, file_exists
+from source.logger import step_greetings, info, critical, err
 
 
 class Record(_Record):
@@ -55,38 +57,64 @@ class Record(_Record):
         return ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
 
 
-def proc_vcf(inp_f, out_f, proc_line_fun):
-    reader = vcf_parser.Reader(inp_f)
-    writer = vcf_parser.Writer(out_f, reader)
+def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
+                overwrite=False, reuse_intermediate=True):
+    def _convert_vcf(inp_f, out_f):
+        reader = vcf_parser.Reader(inp_f)
+        writer = vcf_parser.Writer(out_f, reader)
 
-    for i, rec in enumerate(reader):
-        rec = proc_line_fun(Record(rec, i))
-        if rec:
-            writer.write_record(rec)
+        for i, rec in enumerate(reader):
+            rec = proc_rec_fun(Record(rec, i))
+            if rec:
+                writer.write_record(rec)
+
+    return convert_file(cnf, input_fpath, _convert_vcf,
+                        suffix, overwrite, reuse_intermediate)
 
 
-def filter_rejected(cnf, input_fpath):
-    step_greetings('Extracting dataset by filename, filtering '
-                   'lines that are not . nor PASS in filter.')
+def remove_rejected(cnf, input_fpath):
+    step_greetings('Removing rejeted records...')
 
-    def __iter_file(l, i):
-        if l.startswith('#'):
-            return l
-
-        try:
-            filt = l.split('\t')[6]
-        except:
-            if len(l.split('\t')) < 6 and len(l.split()) >= 6:
-                critical('Error at line number ' + str(i) + ': fields separated by spaces rather than tabs?')
+    def _proc_rec(rec):
+        if rec.FILTER is None or rec.FILTER == ['PASS']:
+            return rec
         else:
-            if filt in ['PASS', '.']:
-                return l
-            else:
-                return None
+            return None
 
-    output_fpath = iterate_file(cnf, input_fpath, __iter_file)
-    info('Saved to ' + output_fpath)
-    return output_fpath
+    out_fpath = iterate_vcf(cnf, input_fpath, _proc_rec, 'no_rej')
+
+    if not verify_file(out_fpath):
+        exit(1)
+
+    no_vcfs = True
+    with open(out_fpath) as vcf:
+        reader = vcf_parser.Reader(vcf)
+        for rec in reader:
+            no_vcfs = False
+            break
+
+    if no_vcfs:
+        return None
+    return out_fpath
+
+    #def __iter_file(l, i):
+    #    if l.startswith('#'):
+    #        return l
+    #
+    #    try:
+    #        filt = l.split('\t')[6]
+    #    except:
+    #        if len(l.split('\t')) < 6 and len(l.split()) >= 6:
+    #            critical('Error at line number ' + str(i) + ': fields separated by spaces rather than tabs?')
+    #    else:
+    #        if filt in ['PASS', '.']:
+    #            return l
+    #        else:
+    #            return None
+
+    #output_fpath = iterate_file(cnf, input_fpath, __iter_file)
+    #info('Saved to ' + output_fpath)
+    #return output_fpath
 
 
 def read_samples_info_and_split(common_cnf, options, inputs):
@@ -184,17 +212,18 @@ def convert_to_maf(cnf, final_vcf_fpath):
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {final_maf_fpath}'.format(**locals())
     call(cnf, cmdline, None, stdout_to_outputfile=False)
-    #if final_maf_fpath:
-    #    info('MAF file saved to ' + final_maf_fpath)
-
-    if not verify_file(final_maf_fpath):
-        critical('Converting to MAF didn\'t generate output file ' + final_maf_fpath)
-    info('Saved to ' + final_maf_fpath)
+    if verify_file(final_maf_fpath, 'MAF'):
+        info('MAF file saved to ' + final_maf_fpath)
+    else:
+        err('Converting to MAF didn\'t generate output file ' + final_maf_fpath)
+        final_maf_fpath = None
 
     return final_maf_fpath
 
 
 def vcf_one_per_line(cnf, vcf_fpath):
+    info('Converting VCF to one-effect-per-line...')
+
     if not which('perl'):
         exit('Perl executable required, maybe you need to run "module load perl"?')
 
@@ -223,6 +252,8 @@ def read_sample_names_from_vcf(vcf_fpath):
 
 
 def leave_first_sample(cnf, vcf_fpath):
+    info('Leaving SAMPLE fileds only for the first sample...')
+
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
     if len(vcf_header_samples) <= 1:
@@ -234,9 +265,8 @@ def leave_first_sample(cnf, vcf_fpath):
         rec.samples = rec.samples[:1]
         return rec
 
-    out_fpath = intermediate_fname(cnf, vcf_fpath, sample_name)
-    with open(vcf_fpath) as in_f, open(out_fpath, 'w') as out_f:
-        proc_vcf(in_f, out_f, _f)
+    out_fpath = iterate_vcf(cnf, vcf_fpath, _f, sample_name)
+    info()
 
     if not verify_file(out_fpath):
         critical('Error: leave_first_sample didnt generate output file.')
@@ -299,3 +329,24 @@ def _verify_sample_info(vcf_conf, vcf_header_samples):
                          ' is not in VCF header ' + vcf_header_samples + '\n'
                          'Available samples: ' + ', '.join(vcf_header_samples))
     return sample_cnfs
+
+
+def remove_annotation(cnf, field_to_del, input_fpath):
+    def _proc_rec(rec):
+        if field_to_del in rec.INFO:
+            del rec.INFO[field_to_del]
+        return rec
+    result_vcf = iterate_vcf(cnf, input_fpath, _proc_rec, overwrite=True)
+
+    def proc_line(l, i):
+        if field_to_del in l:
+            if l.startswith('##INFO='):
+                try:
+                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                        return None
+                except IndexError:
+                    critical('Incorrect VCF at line: ' + l)
+        return l
+    return iterate_file(cnf, result_vcf, proc_line, 'no_' + field_to_del.lower())
+
+

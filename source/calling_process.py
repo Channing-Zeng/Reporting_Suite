@@ -104,6 +104,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.PIPE
                     stderr = subprocess.STDOUT
+            else:
+                if not silent:
+                    info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
 
             if check_output:
                 res = subprocess.check_output(

@@ -13,6 +13,8 @@ from source.variants.vcf_processing import read_sample_names_from_vcf, leave_fir
 
 
 def make_tsv(cnf, vcf_fpath):
+    step_greetings('Exporting to TSV...')
+
     final_tsv_fname = splitext_plus(basename(vcf_fpath))[0] + '.tsv'
 
     vcf_fpath = leave_first_sample(cnf, vcf_fpath)
@@ -54,8 +56,6 @@ def filter_info_tsv_fileds(inp_f, fields):
 
 
 def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
-    step_greetings('Extracting fields')
-
     name, _ = splitext_plus(basename(vcf_fpath))
     tsv_fpath = join(work_dir, name + '.tsv')
 

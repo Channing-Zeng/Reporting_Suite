@@ -101,29 +101,32 @@ def intermediate_fname(cnf, fname, suf):
     return join(cnf['work_dir'], basename(output_fname))
 
 
-def convert_file(cnf, input_fpath, proc_file_fun,
-                 suffix=None, overwrite=False, reuse_intermediate=True):
+def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
+                 overwrite=False, reuse_intermediate=True):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
 
-    if suffix and cnf.reuse_intermediate and reuse_intermediate:
+    if suffix and cnf.reuse_intermediate and reuse_intermediate and not overwrite:
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
 
     with file_transaction(cnf, output_fpath) as tx_fpath:
-        with open(input_fpath) as inp, open(tx_fpath, 'w') as out:
-            proc_file_fun(inp, out)
+        with open(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
+            convert_file_fn(inp_f, out_f)
 
     if overwrite:
         shutil.move(output_fpath, input_fpath)
         output_fpath = input_fpath
 
+    if suffix:
+        info('Saved to ' + output_fpath)
+
     return output_fpath
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
-    def proc_file_fun(inp_f, out_f):
+    def _proc_file(inp_f, out_f):
         for i, line in enumerate(inp_f):
             clean_line = line.strip()
             if clean_line:
@@ -133,7 +136,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
             else:
                 out_f.write(line)
 
-    return convert_file(cnf, input_fpath, proc_file_fun, *args, **kwargs)
+    return convert_file(cnf, input_fpath, _proc_file, *args, **kwargs)
 
 
 def dots_to_empty_cells(config, tsv_fpath):

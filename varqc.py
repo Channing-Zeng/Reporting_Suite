@@ -15,7 +15,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
-from source.variants.vcf_processing import filter_rejected, extract_sample
+from source.variants.vcf_processing import remove_rejected, extract_sample
 
 
 def main(args):
@@ -99,7 +99,7 @@ def process_one(cnf):
     vcf_fpath = cnf['vcf']
 
     if cnf.get('filter_reject'):
-        vcf_fpath = filter_rejected(cnf, vcf_fpath)
+        vcf_fpath = remove_rejected(cnf, vcf_fpath)
 
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])

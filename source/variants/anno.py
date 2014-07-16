@@ -9,7 +9,7 @@ from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
-from source.variants.vcf_processing import convert_to_maf
+from source.variants.vcf_processing import convert_to_maf, remove_annotation, iterate_vcf
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -97,28 +97,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         return None, None
 
 
-def _remove_annotation(cnf, field_to_del, input_fpath):
-    def proc_line(l, i):
-        if field_to_del in l:
-            if l.startswith('##INFO='):
-                try:
-                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
-                        return None
-                except IndexError:
-                    critical('Incorrect VCF at line: ' + l)
-            elif not l.startswith('#'):
-                fields = l.split('\t')
-                info_line = fields[7]
-                info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                info_line = ';'.join('='.join(pair) if len(pair) == 2 and pair[0] != field_to_del
-                                     else pair[0] for pair in info_pairs)
-                fields = fields[:7] + [info_line] + fields[8:]
-                return '\t'.join(fields)
-        return l
-    return iterate_file(cnf, input_fpath, proc_line)
-
-
 def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     step_greetings('Annotate with ' + dbname)
 
@@ -180,7 +158,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=True, exit_on_error=False):
+            stdout_to_outputfile=True, exit_on_error=False):
         return output_fpath
     else:
         return None
@@ -190,7 +168,7 @@ def _snpeff(cnf, input_fpath):
     step_greetings('SnpEff')
 
     info('Removing previous EFF annotations...')
-    res = _remove_annotation(cnf, 'EFF', input_fpath)
+    res = remove_annotation(cnf, 'EFF', input_fpath)
     if res:
         input_fpath = res
 
@@ -200,7 +178,6 @@ def _snpeff(cnf, input_fpath):
     if res:
         input_fpath = res
 
-    info('Done.')
     info('')
 
     if 'snpeff' not in cnf:
@@ -375,7 +352,16 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
 
 def _filter_malformed_fields(cnf, input_fpath):
-    step_greetings('Filtering incorrect fields.')
+    step_greetings('Filtering malformed fields...')
+
+    def proc_rec(rec):
+        for k, v in rec.INFO.items():
+            if isinstance(v, list):
+                if v[-1] == '.':
+                    rec.INFO[k] = rec.INFO[k][:-1]
+                if v[0] == '.':
+                    rec.INFO[k] = rec.INFO[k][1:]
+        return rec
 
     def proc_line(line, i):
         if not line.startswith('#'):
@@ -396,7 +382,7 @@ def _filter_malformed_fields(cnf, input_fpath):
                 return '\t'.join(fields)
         return line
 
-    output_fpath = iterate_file(cnf, input_fpath, proc_line)
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
+    output_fpath_2 = iterate_file(cnf, input_fpath, proc_line, 'corr_old')
 
-    info('Saved to ' + output_fpath)
     return output_fpath

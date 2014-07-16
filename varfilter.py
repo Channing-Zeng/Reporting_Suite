@@ -17,7 +17,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
-from source.variants.vcf_processing import convert_to_maf, filter_rejected
+from source.variants.vcf_processing import convert_to_maf, remove_rejected
 
 
 def main():
@@ -224,7 +224,7 @@ def process_one(cnf):
     if filtered_vcf_fpath and 'tsv_fields' in cnf:
         final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
 
-    clean_filtered_vcf_fpath = filter_rejected(cnf, final_vcf_fpath)
+    clean_filtered_vcf_fpath = remove_rejected(cnf, final_vcf_fpath)
     final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]

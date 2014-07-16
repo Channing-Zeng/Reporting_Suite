@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import shutil
 import sys
+from source.logger import err
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -8,7 +9,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
-from source.variants.vcf_processing import filter_rejected, extract_sample
+from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf
 from source.runner import run_one
 from source.variants.tsv import make_tsv
 from source.variants.anno import run_annotators
@@ -68,7 +69,10 @@ def process_one(cnf):
     bam_fpath = cnf['bam']
 
     if cnf.get('filter_reject'):
-        vcf_fpath = filter_rejected(cnf, vcf_fpath)
+        vcf_fpath = remove_rejected(cnf, vcf_fpath)
+        if vcf_fpath is None:
+            err('No variants left: all rejected and removed.')
+            return None, None, None
 
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])

@@ -1,5 +1,5 @@
 import sys
-from source.variants.vcf_processing import proc_vcf
+from source.variants.vcf_processing import iterate_vcf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -28,7 +28,7 @@ class Filter:
 
     @staticmethod
     def __remove_pass(rec):
-        if rec.FILTER in ['PASS', '.']:
+        if rec.FILTER == ['PASS']:
             rec.FILTER = None
 
     def apply(self, rec, only_check=False):
@@ -132,33 +132,25 @@ class Filtering:
     def run_filtering(self):
         step_greetings('Filtering')
 
-        proc_vcf_rm_prev = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_remove_prev_filter())
-
-        proc_vcf_1st_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_1st_round())
-
-        proc_vcf_2nd_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_2nd_round())
-
-        proc_vcf_3rd_round = lambda inp_f, out_f: proc_vcf(inp_f, out_f, self.get_proc_line_3rd_round())
-
         vcf_fpath = self.vcf_fpath
 
         info('Removing previous FILTER values')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_rm_prev, suffix='rm')
+        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
         info('Saved to ' + vcf_fpath)
         info()
 
         info('First round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_1st_round, suffix='r1')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
         info('Saved to ' + vcf_fpath)
         info()
 
         info('Second round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_2nd_round, suffix='r2')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
         info('Saved to ' + vcf_fpath)
         info()
 
         info('Third round')
-        vcf_fpath = convert_file(self.cnf, vcf_fpath, proc_vcf_3rd_round, suffix='r3')
+        vcf_fpath = convert_file(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
         info('Saved to ' + vcf_fpath)
         info()
 
@@ -166,7 +158,7 @@ class Filtering:
 
     def get_proc_line_remove_prev_filter(self):
         def __f(rec):
-            rec.FILTER = 'PASS'
+            rec.FILTER = ['PASS']
             return rec
         return __f
 
