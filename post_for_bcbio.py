@@ -51,9 +51,13 @@ def main():
 
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
-
     if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
+
+    cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
+    if not isdir(cnf.work_dir):
+        safe_mkdir(cnf.work_dir)
+    info(' '.join(sys.argv))
 
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir)
     info()
@@ -63,10 +67,6 @@ def main():
         cnf.steps.append('QualiMap')
 
     check_system_resources(cnf, required=['qsub'])
-
-    cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
-    if not isdir(cnf.work_dir):
-        safe_mkdir(cnf.work_dir)
 
     load_bcbio_cnf(cnf)
     # if cnf.vcf_suf:

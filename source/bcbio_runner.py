@@ -125,20 +125,16 @@ class Runner():
         for s_info in self.bcbio_cnf.details:
             all_suffixes |= set(s_info['algorithm'].get('variantcaller')) or set()
 
-        if self.varqc:
-            self.steps.append('VarQC_summary')
-            self.varqc_summary = self.steps.step(
-                name='VarQC_summary',
-                script='varqc_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
-                           ' -n varqc --vcf-suf ' + ','.join(all_suffixes) + ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
-        if self.targetcov:
-            self.steps.append('TargetCov_summary')
-            self.targetcov_summary = self.steps.step(
-                name='TargetCov_summary',
-                script='targetcov_summary.py',
-                param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
-                           ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
+        self.varqc_summary = self.steps.step(
+            name='VarQC_summary',
+            script='varqc_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
+                       ' -n varqc --vcf-suf ' + ','.join(all_suffixes) + ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
+        self.targetcov_summary = self.steps.step(
+            name='TargetCov_summary',
+            script='targetcov_summary.py',
+            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
+                       ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
     def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True, out_fpath=None,
                wait_for_steps=list(), **kwargs):
