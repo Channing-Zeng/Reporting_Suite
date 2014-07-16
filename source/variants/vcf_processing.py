@@ -330,22 +330,32 @@ def _verify_sample_info(vcf_conf, vcf_header_samples):
     return sample_cnfs
 
 
-def remove_annotation(cnf, field_to_del, input_fpath):
-    def _proc_rec(rec):
-        if field_to_del in rec.INFO:
-            del rec.INFO[field_to_del]
-        return rec
-    result_vcf = iterate_vcf(cnf, input_fpath, _proc_rec, suffix='no_' + field_to_del.lower())
+def remove_prev_eff_annotation(cnf, input_fpath):
+    field_to_del = 'EFF'
 
     def proc_line(l, i):
-        if field_to_del in l:
+        if l.startswith('##SnpEff'):
+            return None
+
+        elif field_to_del in l:
             if l.startswith('##INFO='):
                 try:
                     if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
                         return None
                 except IndexError:
                     critical('Incorrect VCF at line: ' + l)
+
+            elif not l.startswith('#'):
+                fields = l.split('\t')
+                info_line = fields[7]
+                info_pairs = [attr.split('=') for attr in info_line.split(';')]
+                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
+                info_line = ';'.join('='.join(pair) if len(pair) == 2 and pair[0] != field_to_del
+                                     else pair[0] for pair in info_pairs)
+                fields = fields[:7] + [info_line] + fields[8:]
+                return '\t'.join(fields)
         return l
-    return iterate_file(cnf, result_vcf, proc_line, suffix='header')
+
+    return iterate_file(cnf, input_fpath, proc_line, suffix='no_' + field_to_del.lower())
 
 

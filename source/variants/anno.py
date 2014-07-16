@@ -9,7 +9,7 @@ from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
-from source.variants.vcf_processing import convert_to_maf, remove_annotation, iterate_vcf
+from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -168,16 +168,10 @@ def _snpeff(cnf, input_fpath):
     step_greetings('SnpEff')
 
     info('Removing previous EFF annotations...')
-    res = remove_annotation(cnf, 'EFF', input_fpath)
+
+    res = remove_prev_eff_annotation(cnf, input_fpath)
     if res:
         input_fpath = res
-
-    def proc_line(l, i):
-        return l if not l.startswith('##SnpEff') else None
-    res = iterate_file(cnf, input_fpath, proc_line, 'header2')
-    if res:
-        input_fpath = res
-
     info('')
 
     if 'snpeff' not in cnf:
