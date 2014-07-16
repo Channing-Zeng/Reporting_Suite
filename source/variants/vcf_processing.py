@@ -336,7 +336,7 @@ def remove_annotation(cnf, field_to_del, input_fpath):
         if field_to_del in rec.INFO:
             del rec.INFO[field_to_del]
         return rec
-    result_vcf = iterate_vcf(cnf, input_fpath, _proc_rec, overwrite=True)
+    result_vcf = iterate_vcf(cnf, input_fpath, _proc_rec, suffix='no_' + field_to_del.lower())
 
     def proc_line(l, i):
         if field_to_del in l:
@@ -347,6 +347,6 @@ def remove_annotation(cnf, field_to_del, input_fpath):
                 except IndexError:
                     critical('Incorrect VCF at line: ' + l)
         return l
-    return iterate_file(cnf, result_vcf, proc_line, 'no_' + field_to_del.lower())
+    return iterate_file(cnf, result_vcf, proc_line, suffix='header')
 
 
