@@ -225,7 +225,11 @@ def process_one(cnf):
         final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
 
     clean_filtered_vcf_fpath = remove_rejected(cnf, final_vcf_fpath)
-    final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+    if clean_filtered_vcf_fpath is None:
+        info('All variants are rejected.')
+        final_maf_fpath = None
+    else:
+        final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 
