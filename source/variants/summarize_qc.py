@@ -111,7 +111,7 @@ def parse_qc_sample_report(report_fpath):
                 if novelty_col_id and novelty != main_novelty:
                     is_main = False
 
-                cur_metric_name = line.split()[0]
+                cur_metric_name = line.split()[0] + ', ' + line.split()[1]
                 cur_value = line.split()[database_col_id]
 
                 row_per_sample.append(dict(
