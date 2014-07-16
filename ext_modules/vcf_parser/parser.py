@@ -666,17 +666,27 @@ class Writer(object):
         self.stream.write('#' + '\t'.join(self.template._column_headers
                                           + self.template.samples) + '\n')
 
-    def write_record(self, record):
-        """ write a record to the file """
-        ffs = self._map(str, [record.CHROM, record.POS, record.ID, record.REF]) \
-              + [self._format_alt(record.ALT), record.QUAL or '.', self._format_filter(record.FILTER),
-                 self._format_info(record.INFO)]
+    def record_to_tsv(self, record):
+        tsv = (self._map(str, [record.CHROM, record.POS, record.ID, record.REF]) +
+               [self._format_alt(record.ALT), record.QUAL or '.',
+                self._format_filter(record.FILTER), self._format_info(record.INFO)])
+
         if record.FORMAT:
-            ffs.append(record.FORMAT)
+            tsv.append(record.FORMAT)
 
         samples = [self._format_sample(record.FORMAT, sample)
-            for sample in record.samples]
-        self.writer.writerow(ffs + samples)
+                   for sample in record.samples]
+        tsv += samples
+
+        return tsv
+
+    def write_record(self, record):
+        """ write a record to the file """
+        tsv = self.record_to_tsv(record)
+        self.writer.writerow(tsv)
+
+    def write_records(self, records):
+        self.writer.writerows(self.record_to_tsv(rec) for rec in records)
 
     def flush(self):
         """Flush the writer"""

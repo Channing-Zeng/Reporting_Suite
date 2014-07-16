@@ -60,13 +60,26 @@ class Record(_Record):
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                 overwrite=False, reuse_intermediate=True):
     def _convert_vcf(inp_f, out_f):
+        max_bunch_size = 1000 * 1000
+        written_records = 0
+        bunch = []
+
         reader = vcf_parser.Reader(inp_f)
         writer = vcf_parser.Writer(out_f, reader)
 
         for i, rec in enumerate(reader):
             rec = proc_rec_fun(Record(rec, i))
             if rec:
-                writer.write_record(rec)
+                bunch.append(rec)
+                written_records += 1
+
+            if len(bunch) >= max_bunch_size:
+                writer.write_records(bunch)
+                info('Written lines: ' + str(written_records))
+                bunch = []
+
+        writer.write_records(bunch)
+        info('Written lines: ' + str(written_records))
 
     return convert_file(cnf, input_fpath, _convert_vcf,
                         suffix, overwrite, reuse_intermediate)

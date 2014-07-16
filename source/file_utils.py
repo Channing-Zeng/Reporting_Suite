@@ -128,14 +128,28 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
 
 def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
     def _proc_file(inp_f, out_f):
+        max_bunch_size = 1000 * 1000
+        written_lines = 0
+        bunch = []
+
         for i, line in enumerate(inp_f):
             clean_line = line.strip()
             if clean_line:
                 new_l = proc_line_fun(clean_line, i)
                 if new_l is not None:
-                    out_f.write(new_l + '\n')
+                    bunch.append(new_l + '\n')
+                    written_lines += 1
             else:
-                out_f.write(line)
+                bunch.append(line)
+                written_lines += 1
+
+            if len(bunch) >= max_bunch_size:
+                out_f.writelines(bunch)
+                info('Written lines: ' + str(written_lines))
+                bunch = []
+
+        out_f.writelines(bunch)
+        info('Written lines: ' + str(written_lines))
 
     return convert_file(cnf, input_fpath, _proc_file, *args, **kwargs)
 

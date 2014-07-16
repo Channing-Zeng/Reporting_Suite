@@ -227,3 +227,4 @@ keep_intermediate: True
 reuse_intermediate: False
 
 make_maf: True
+no_correct_vcf: True
