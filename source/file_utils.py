@@ -110,6 +110,8 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
+        else:
+            info('Writing to ' + output_fpath)
 
     with file_transaction(cnf, output_fpath) as tx_fpath:
         with open(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
