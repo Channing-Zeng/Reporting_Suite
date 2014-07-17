@@ -121,9 +121,9 @@ oncomine:
   - om_MutClassPC
 
 snpeff:
-  clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+  clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
   cancer: False
-  # only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
+  only_transcripts: '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt'
   extra_opts: ''
   ## no "annotations" section here, always applied all annotations
 
@@ -157,6 +157,11 @@ tsv_fields:
 - "EFF[*].CODON"                : Codon
 - "EFF[*].AA"                   : AminoAcid
 - "EFF[*].AA_LEN"               : AminoAcidLength
+- "EFF[*].AA"                   : AminoAcid
+- "EFF[*].AA_LEN"               : AminoAcidLength
+- "EFF[*].TRID"			        : TranscriptID
+- "EFF[*].BIOTYPE"		        : TranscriptBioType
+- "EFF[*].RANK" 		        : Exon_Rank
 - CNT                           : CountInCosmic
 - AA                            : AminoAcidInCosmic
 - CDS                           : CDSInCosmic
