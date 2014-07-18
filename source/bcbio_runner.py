@@ -136,8 +136,8 @@ class Runner():
             param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
                        ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
-    def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True, out_fpath=None,
-               wait_for_steps=list(), **kwargs):
+    def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True,
+                         out_fpath=None, wait_for_steps=list(), **kwargs):
 
         output_dirpath = self.dir
         if sample_name:
@@ -335,7 +335,8 @@ class Runner():
 
         annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-        filter_dirpath = self.submit_if_needed(self.varfilter, sample, suf=suf,
+        filter_dirpath = self.submit_if_needed(
+            self.varfilter, sample, suf=suf,
             wait_for_steps=[self.varannotate.job_name(sample, suf)],
             vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
 

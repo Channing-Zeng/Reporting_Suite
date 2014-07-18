@@ -159,9 +159,9 @@ tsv_fields:
 - "EFF[*].AA_LEN"               : AminoAcidLength
 - "EFF[*].AA"                   : AminoAcid
 - "EFF[*].AA_LEN"               : AminoAcidLength
-- "EFF[*].TRID"			        : TranscriptID
-- "EFF[*].BIOTYPE"		        : TranscriptBioType
-- "EFF[*].RANK" 		        : Exon_Rank
+- "EFF[*].TRID"                 : TranscriptID
+- "EFF[*].BIOTYPE"              : TranscriptBioType
+- "EFF[*].RANK"                 : Exon_Rank
 - CNT                           : CountInCosmic
 - AA                            : AminoAcidInCosmic
 - CDS                           : CDSInCosmic
