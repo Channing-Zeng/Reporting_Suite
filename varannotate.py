@@ -77,34 +77,30 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
 
-    anno_vcf_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
+    anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
 
-    anno_tsv_fpath = None
-    if anno_vcf_fpath and 'tsv_fields' in cnf:
-        anno_tsv_fpath = make_tsv(cnf, anno_vcf_fpath)
-
-    return anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath
+    return anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath
 
 
-def finalize_one(cnf, anno_vcf_fpath, anno_maf_fpath, anno_tsv_fpath):
+def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath):
     if anno_vcf_fpath:
         info('Saved final VCF to ' + anno_vcf_fpath)
-    if anno_maf_fpath:
-        info('Saved final MAF to ' + anno_maf_fpath)
     if anno_tsv_fpath:
         info('Saved final TSV to ' + anno_tsv_fpath)
+    if anno_maf_fpath:
+        info('Saved final MAF to ' + anno_maf_fpath)
 
 
 def finalize_all(cnf, samples, results):
-    for (sample_name, cnf), (vcf, maf, tsv) in zip(samples.items(), results):
+    for (sample_name, cnf), (vcf, tsv, maf) in zip(samples.items(), results):
         if vcf or tsv:
             info(sample_name + ':')
         if vcf:
             info('  ' + vcf)
-        if maf:
-            info('  ' + maf)
         if tsv:
             info('  ' + tsv)
+        if maf:
+            info('  ' + maf)
 
 
 if __name__ == '__main__':

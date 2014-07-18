@@ -15,13 +15,11 @@ from source.variants.vcf_processing import read_sample_names_from_vcf, leave_fir
 def make_tsv(cnf, vcf_fpath):
     step_greetings('Exporting to TSV...')
 
-    final_tsv_fname = splitext_plus(basename(vcf_fpath))[0] + '.tsv'
-
     vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
-    tsv_fpath = _extract_fields(cnf, vcf_fpath, cnf['work_dir'], cnf['name'])
+    tsv_fpath = _extract_fields(cnf, vcf_fpath)
     if not tsv_fpath:
         return tsv_fpath
 
@@ -34,13 +32,7 @@ def make_tsv(cnf, vcf_fpath):
         if cnf.get('keep_intermediate'):
             info('Saved TSV file with nice names to ' + tsv_fpath)
 
-    # Copying final TSV
-    final_tsv_fpath = join(cnf['output_dir'], final_tsv_fname)
-    if isfile(final_tsv_fpath):
-        os.remove(final_tsv_fpath)
-    shutil.copyfile(tsv_fpath, final_tsv_fpath)
-
-    return final_tsv_fpath
+    return tsv_fpath
 
 
 def filter_info_tsv_fileds(inp_f, fields):
@@ -55,9 +47,9 @@ def filter_info_tsv_fileds(inp_f, fields):
     return new_fields
 
 
-def _extract_fields(cnf, vcf_fpath, work_dir, sample_name=None):
-    name, _ = splitext_plus(basename(vcf_fpath))
-    tsv_fpath = join(work_dir, name + '.tsv')
+def _extract_fields(cnf, vcf_fpath):
+    fname, _ = splitext_plus(basename(vcf_fpath))
+    tsv_fpath = join(cnf['work_dir'], fname + '.tsv')
 
     if cnf.get('reuse_intermediate'):
         if file_exists(tsv_fpath):

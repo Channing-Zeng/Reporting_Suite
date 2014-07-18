@@ -9,6 +9,7 @@ from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
 from source.utils_from_bcbio import add_suffix, file_exists
+from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation
 
 
@@ -79,20 +80,39 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         if not cnf.get('no_correct_vcf'):
             vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
-        # Copying final VCF
         final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
-        final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
+        vcf_basename = splitext(final_vcf_fname)[0]
+        final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
+        final_tsv_fpath = join(cnf['output_dir'], vcf_basename + '.tsv')
+        final_maf_fpath = join(cnf['output_dir'], vcf_basename + '.maf')
+
+        # Moving final VCF
         if isfile(final_vcf_fpath):
             os.remove(final_vcf_fpath)
-        shutil.copyfile(vcf_fpath, final_vcf_fpath)
+        shutil.move(vcf_fpath, final_vcf_fpath)
+        os.symlink(final_vcf_fpath, vcf_fpath)
+
+        # Converting to TSV
+        if 'tsv_fields' in cnf:
+            tsv_fpath = make_tsv(cnf, vcf_fpath)
+
+            if isfile(final_tsv_fpath):
+                os.remove(final_tsv_fpath)
+            shutil.move(tsv_fpath, final_tsv_fpath)
+        else:
+            final_tsv_fpath = None
 
         # Converting to MAF
         if cnf.make_maf:
-            final_maf_fpath = convert_to_maf(cnf, final_vcf_fpath)
+            maf_fpath = convert_to_maf(cnf, vcf_fpath)
+
+            if isfile(final_maf_fpath):
+                os.remove(final_maf_fpath)
+            shutil.move(maf_fpath, final_maf_fpath)
         else:
             final_maf_fpath = None
 
-        return final_vcf_fpath, final_maf_fpath
+        return final_vcf_fpath, final_tsv_fpath, final_maf_fpath
     else:
         info('No annotations were applied to ' + original_vcf + '..')
         return None, None

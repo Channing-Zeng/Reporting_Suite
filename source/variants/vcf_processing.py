@@ -212,26 +212,25 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     return all_samples
 
 
-def convert_to_maf(cnf, final_vcf_fpath):
+def convert_to_maf(cnf, vcf_fpath):
     step_greetings('Converting to MAF')
 
-    final_vcf_fname = basename(final_vcf_fpath)
-    final_maf_fpath = join(cnf['output_dir'], splitext(final_vcf_fname)[0] + '.maf')
-    final_maf_fpath = final_maf_fpath.replace('.tmp', '')
+    vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
-    vcf_fpath = vcf_one_per_line(cnf, final_vcf_fpath)
+    fname, _ = splitext_plus(basename(vcf_fpath))
+    maf_fpath = join(cnf['work_dir'], fname + '.maf')
 
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
-    cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {final_maf_fpath}'.format(**locals())
+    cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {maf_fpath}'.format(**locals())
     call(cnf, cmdline, None, stdout_to_outputfile=False)
-    if verify_file(final_maf_fpath, 'MAF'):
-        info('MAF file saved to ' + final_maf_fpath)
+    if verify_file(maf_fpath, 'MAF'):
+        info('MAF file saved to ' + maf_fpath)
     else:
-        err('Converting to MAF didn\'t generate output file ' + final_maf_fpath)
+        err('Converting to MAF didn\'t generate output file ' + maf_fpath)
         final_maf_fpath = None
 
-    return final_maf_fpath
+    return maf_fpath
 
 
 def vcf_one_per_line(cnf, vcf_fpath):
