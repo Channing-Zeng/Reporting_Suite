@@ -191,7 +191,7 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
     i = 0
     for exon_gene in exon_genes:
         if i and i % 10000 == 0:
-            info('Processed {0:.3g} genes, current gene {}'.format(i, exon_gene.gene_name))
+            info('Processed {0:.3g} genes, current gene {1}'.format(i, exon_gene.gene_name))
         i += 1
 
         for exon in exon_gene.subregions:
@@ -217,7 +217,7 @@ def _get_amplicon_genes(amplicons, exon_genes):
     i = 0
     for exon_gene in exon_genes:
         if i and i % 10000 == 0:
-            info('Processed {0:.3g} regions, current gene {}'.format(i, exon_gene.gene_name))
+            info('Processed {0:.3g} regions, current gene {1}'.format(i, exon_gene.gene_name))
         i += 1
 
         for amplicon in amplicons:
@@ -250,7 +250,7 @@ def _get_exon_genes(cnf, subregions):
             continue
 
         if i and i % 10000 == 0:
-            info('Processed {0:.3g} exons, current gene {}'.format(i, exon.gene_name))
+            info('Processed {0:.3g} exons, current gene {1}'.format(i, exon.gene_name))
         i += 1
 
         gene = genes_by_name.get(exon.gene_name)
