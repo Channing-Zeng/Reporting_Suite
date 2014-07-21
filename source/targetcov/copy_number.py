@@ -34,6 +34,7 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
     norm3 = OrderedDefaultDict(dict)
 
     info()
+    info('Norm depth by gene, norm2, norm3')
     for gene, norm_depth_by_sample in norm_depths_by_sample.items():
         info('Gene ' + str(gene))
         for gene_info in records:
