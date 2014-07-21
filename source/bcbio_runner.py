@@ -1,4 +1,6 @@
+import base64
 from genericpath import isfile
+import hashlib
 import os
 import re
 import sys
@@ -20,19 +22,23 @@ def run_on_bcbio_final_dir(cnf, bcbio_final_dir, bcbio_cnf):
 
 
 class Step():
-    def __init__(self, name, cmdline=None):
+    def __init__(self, run_id, short_name, name, cmdline=None):
+        self.short_name = short_name
         self.name = name
         self.cmdline = cmdline
+        self.run_id = run_id
 
     def job_name(self, sample=None, caller=None):
-        return self.name + ('_' + sample if sample else '') + \
-               ('_' + caller if caller else '')
+        return self.short_name + \
+               ('_' + sample if sample else '') + \
+               ('_' + caller if caller else '') + '_' + self.run_id
 
 
 class Steps(list):
-    def __init__(self, cnf, steps):
+    def __init__(self, cnf, run_id, steps):
         super(Steps, self).__init__(steps)
         self.cnf = cnf
+        self.run_id = run_id
 
     @staticmethod
     def __normalize(item):
@@ -42,15 +48,15 @@ class Steps(list):
         return self.__normalize(item) in \
                [self.__normalize(el) for el in self]
 
-    def step(self, name, script=None, interpreter='python', param_line=None):
+    def step(self, name, short_name, script=None, interpreter='python', param_line=None):
         if name not in self:
-            return Step(name, None)
+            return Step(self.run_id, short_name, name, None)
 
         cmd = get_tool_cmdline(self.cnf, interpreter, script or name)
         if not cmd:
             sys.exit(1)
 
-        return Step(name, cmd + ' ' + param_line)
+        return Step(self.run_id, short_name, name, cmd + ' ' + param_line)
 
 
 class Runner():
@@ -59,8 +65,11 @@ class Runner():
         self.cnf = cnf
         self.bcbio_cnf = bcbio_cnf
 
+        hasher = hashlib.sha1(bcbio_final_dir)
+        self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])
+
         self.threads = str(self.cnf.threads)
-        self.steps = Steps(cnf, cnf.steps)
+        self.steps = Steps(cnf, self.run_id, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
 
         self.varannotate = None
@@ -94,31 +103,31 @@ class Runner():
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
 
         self.varannotate = self.steps.step(
-            name='VarAnnotate',
+            name='VarAnnotate', short_name='va',
             script='varannotate.py',
             param_line=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varannotate') + '\'')
         self.varqc = self.steps.step(
-            name='VarQC',
+            name='VarQC', short_name='vq',
             script='varqc.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\'')
         self.varqc_after = self.steps.step(
-            name='VarQC_after',
+            name='VarQC_after', short_name='vqa',
             script='varqc.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\'')
         self.varfilter = self.steps.step(
-            name='VarFilter',
+            name='VarFilter', short_name='vf',
             script='varfilter.py',
             param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
         self.targetcov = self.steps.step(
-            name='TargetCov',
+            name='TargetCov', short_name='tc',
             script='targetcov.py',
             param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\'')
         self.ngscat = self.steps.step(
-            name='NGScat',
+            name='NGScat', short_name='nc',
             script='ngscat.py',
             param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '\'')
         self.qualimap = self.steps.step(
-            name='QualiMap',
+            name='QualiMap', short_name='qm',
             interpreter=None,
             param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
 
@@ -127,12 +136,12 @@ class Runner():
             all_suffixes |= set(s_info['algorithm'].get('variantcaller')) or set()
 
         self.varqc_summary = self.steps.step(
-            name='VarQC_summary',
+            name='VarQC_summary', short_name='vqs',
             script='varqc_summary.py',
             param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
                        ' -n varqc --vcf-suf ' + ','.join(all_suffixes) + ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
         self.targetcov_summary = self.steps.step(
-            name='TargetCov_summary',
+            name='TargetCov_summary', short_name='tcs',
             script='targetcov_summary.py',
             param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
                        ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
