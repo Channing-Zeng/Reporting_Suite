@@ -38,12 +38,12 @@ def main():
     parser.add_option('--runner', dest='qsub_runner',
                       help='Bash script that takes command line as the 1st argument. This script will be submitted '
                            'to GRID. Default: ' + Defaults.qsub_runner)
-    parser.add_option('--sys-cnf', dest='sys_cnf', default=Defaults.sys_cnf,
-                      help='System configuration yaml with paths to external tools and genome resources '
-                           '(see default one %s)' % Defaults.sys_cnf)
-    parser.add_option('--run-cnf', dest='run_cnf', default=Defaults.run_cnf,
-                      help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
+
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf,
+                      help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf,
+                      help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
 
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
