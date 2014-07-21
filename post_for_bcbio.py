@@ -8,7 +8,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 from optparse import OptionParser
-from os.path import join, pardir, isdir
+from os.path import join, pardir, isdir, basename, splitext, abspath
 from os import listdir
 
 from source.config import Defaults, Config, load_yaml_config
@@ -62,8 +62,6 @@ def main():
     info(' '.join(sys.argv))
 
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir)
-    info()
-    info('*' * 70)
 
     if opts.qualimap and 'QualiMap' not in cnf.steps:
         cnf.steps.append('QualiMap')
@@ -75,6 +73,8 @@ def main():
     #     vcf_sufs = cnf['vcf_suf'].split(',')
     # else:
     #     vcf_sufs = 'mutect'
+    info()
+    info('*' * 70)
 
     run_on_bcbio_final_dir(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
 
@@ -82,11 +82,23 @@ def main():
 def load_bcbio_cnf(cnf):
     bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
     yaml_files = [join(bcbio_config_dirpath, fname) for fname in listdir(bcbio_config_dirpath) if fname.endswith('.yaml')]
-    if len(yaml_files) > 1:
-        critical('More than one YAML file in config directory: ' + ' '.join(yaml_files))
+
     if len(yaml_files) == 0:
         critical('No YAML file in config directory.')
-    cnf.bcbio_cnf = load_yaml_config(yaml_files[0])
+
+    yaml_file = yaml_files[0]
+    if len(yaml_files) > 1:
+        some_yaml_files = [f for f in yaml_files if splitext(basename(f))[0] in cnf.bcbio_final_dir]
+        if len(some_yaml_files) == 0:
+            critical('More than one YAML file in config directory ' + ' '.join(yaml_files) +
+                     ', and no YAML file named after the project.')
+        yaml_file = some_yaml_files[0]
+
+    yaml_file = abspath(yaml_file)
+
+    info('Using bcbio YAML config ' + yaml_file)
+
+    cnf.bcbio_cnf = load_yaml_config(yaml_file)
 
 
 if __name__ == '__main__':
