@@ -337,43 +337,46 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
     cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+    bedcov_output = join(cnf.work_dir, splitext_plus(basename(bed))[0] + '_bedcov_output.txt')
+    call(cnf, cmdline, bedcov_output)
 
     _total_regions_count = 0
 
-    for next_line in call_pipe(cnf, cmdline).stdout:
-        if not next_line.strip() or next_line.startswith('#'):
-            continue
+    with open(bedcov_output) as f:
+        for next_line in f:
+            if not next_line.strip() or next_line.startswith('#'):
+                continue
 
-        line_tokens = next_line.strip().split()
-        chrom = line_tokens[0]
-        start, end = None, None
-        try:
-            depth, bases, region_size = map(int, line_tokens[-4:-1])
-        except:
-            critical('Undexpected error: incorrect line in the coverageBed output:\n' + next_line)
+            line_tokens = next_line.strip().split()
+            chrom = line_tokens[0]
+            start, end = None, None
+            try:
+                depth, bases, region_size = map(int, line_tokens[-4:-1])
+            except:
+                critical('Undexpected error: incorrect line in the coverageBed output:\n' + next_line)
 
-        if next_line.startswith('all'):
-            max_depth = max(max_depth, depth)
-            total_bed_size += bases
-            extra_fields = []
-        else:
-            start, end = map(int, line_tokens[1:3])
-            extra_fields = line_tokens[3:-4]
+            if next_line.startswith('all'):
+                max_depth = max(max_depth, depth)
+                total_bed_size += bases
+                extra_fields = []
+            else:
+                start, end = map(int, line_tokens[1:3])
+                extra_fields = line_tokens[3:-4]
 
-        line_region_key_tokens = (None, chrom, start, end)
+            line_region_key_tokens = (None, chrom, start, end)
 
-        if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
-            region = Region(sample=None, chrom=chrom,
-                            start=start, end=end, size=region_size,
-                            extra_fields=extra_fields)
-            regions.append(region)
+            if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
+                region = Region(sample=None, chrom=chrom,
+                                start=start, end=end, size=region_size,
+                                extra_fields=extra_fields)
+                regions.append(region)
 
-            _total_regions_count += 1
+                _total_regions_count += 1
 
-            if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                info('  Processed {0:.3g} regions'.format(_total_regions_count))
+                if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
+                    info('  Processed {0:.3g} regions'.format(_total_regions_count))
 
-        regions[-1].add_bases_for_depth(depth, bases)
+            regions[-1].add_bases_for_depth(depth, bases)
 
     if _total_regions_count % 100000 != 0:
         info('Processed {0:.3g} regions'.format(_total_regions_count))
