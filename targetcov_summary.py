@@ -69,9 +69,9 @@ def main():
 
     sample_names = read_sample_names(cnf['samples'])
 
-    sample_sum_reports, sum_report_fpaths = summary_reports(cnf, sample_names)
+    _sample_sum_reports, sum_report_fpaths = summary_reports(cnf, sample_names)
 
-    cnv_report_fpath = cnv_reports(cnf, sample_names, sample_sum_reports)
+    cnv_report_fpath = cnv_reports(cnf, sample_names, _sample_sum_reports)
 
     info()
     info('*' * 70)

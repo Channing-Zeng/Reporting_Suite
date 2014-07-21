@@ -2,6 +2,7 @@
 
 import math
 from collections import defaultdict, OrderedDict
+from source.logger import info
 
 from source.utils import OrderedDefaultDict
 # from numpy import median, mean
@@ -13,21 +14,28 @@ from source.utils import median, mean
 
 def run_copy_number(mapped_reads_by_sample, gene_depth):
     mapped_reads_by_sample = {k: v for k, v in mapped_reads_by_sample.items() if 'Undetermined' not in k}
+
+    info('Parsing rows...')
     records = _report_row_to_objects(gene_depth)
 
+    info('Calculating depths normalized by samples...')
     norm_depths_by_sample = _get_norm_depths_by_sample(mapped_reads_by_sample, records)
 
     med_depth = median([depth for gn, vs in norm_depths_by_sample.items() for sn, depth in vs.items()])
 
+    info('Getting factors by genes...')
     factors_by_gene = _get_factors_by_gene(norm_depths_by_sample, med_depth)
 
+    info('Getting median norm...')
     median_depth_by_sample = _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample)
 
     norm_depths_by_gene = OrderedDefaultDict(dict)
     norm2 = OrderedDefaultDict(dict)
     norm3 = OrderedDefaultDict(dict)
 
+    info()
     for gene, norm_depth_by_sample in norm_depths_by_sample.items():
+        info('Gene ' + str(gene))
         for gene_info in records:
             sample = gene_info.sample_name
             if sample not in norm_depth_by_sample:
@@ -88,13 +96,14 @@ def _get_factors_by_gene(norm_depths_1, med_depth):
 
 #MeanDepth_Norm1
 # gene -> { sample -> [] }
-def _get_norm_depths_by_sample(mapped_reads_by_sample, record_by_sample):
+def _get_norm_depths_by_sample(mapped_reads_by_sample, records):
     norm_depths = defaultdict(dict)
 
     factor_by_sample = _get_factors_by_sample(mapped_reads_by_sample)
 
     for sample, factor in factor_by_sample.items():
-        for rec in [rec for rec in record_by_sample if rec.sample_name == sample]:
+        info('  ' + sample)
+        for rec in [rec for rec in records if rec.sample_name == sample]:
             norm_depths[rec.gene_name][sample] = rec.mean_depth * factor
 
     return norm_depths

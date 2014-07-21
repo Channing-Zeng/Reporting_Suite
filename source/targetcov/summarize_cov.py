@@ -2,7 +2,7 @@ from collections import OrderedDict
 from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, write_tsv
 from source.targetcov.copy_number import run_copy_number
-from source.logger import critical, step_greetings
+from source.logger import critical, step_greetings, info
 
 
 def summary_reports(cnf, sample_names):
@@ -24,9 +24,11 @@ def summary_reports(cnf, sample_names):
 def cnv_reports(cnf, sample_names, sample_sum_reports):
     step_greetings('Coverage statistics for each gene for all samples')
 
+    info('Collecting sample reports...')
     sample_gene_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
 
+    info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
 
     cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
