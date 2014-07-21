@@ -8,7 +8,7 @@ from source.file_utils import verify_dir, verify_file, file_transaction, make_tm
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
-from source.logger import info, err
+from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bam
 
 
@@ -74,7 +74,8 @@ class Runner():
         self.varqc_summary = None
 
         self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
-        assert verify_dir(self.date_dirpath)
+        if not verify_dir(self.date_dirpath):
+            critical('The project directory must have format {fc_date}_{fc_name}, here: ' + self.date_dirpath)
 
         self.set_up_steps(cnf)
 

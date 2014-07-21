@@ -21,7 +21,7 @@ def main():
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-d', '-o', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
+    parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-b', '--bed', dest='bed', help='BED file')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
 
@@ -38,6 +38,8 @@ def main():
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
     if not opts.bcbio_final_dir and len(args) > 0:
         cnf.bcbio_final_dir = args[0]
+    else:
+        critical('Usage: ./post_for_bcbio.py <final_dir>')
 
     if not check_keys(cnf, ['bcbio_final_dir']):
         parser.print_help()

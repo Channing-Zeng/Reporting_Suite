@@ -316,7 +316,7 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
         try:
             depth, bases, region_size = map(int, line_tokens[-4:-1])
         except:
-            critical('Undexpected error: incorrect line in coverageBed output:\n' + next_line)
+            critical('Undexpected error: incorrect line in the coverageBed output:\n' + next_line)
 
         if next_line.startswith('all'):
             max_depth = max(max_depth, depth)
@@ -329,17 +329,17 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
         line_region_key_tokens = (None, chrom, start, end)
 
         if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
-            _total_regions_count += 1
-
             region = Region(sample=None, chrom=chrom,
                             start=start, end=end, size=region_size,
                             extra_fields=extra_fields)
             regions.append(region)
 
-        regions[-1].add_bases_for_depth(depth, bases)
+            _total_regions_count += 1
 
-        if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-            info('processed %i regions' % _total_regions_count)
+            if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
+                info('processed %i00k regions' % _total_regions_count / 100000)
+
+        regions[-1].add_bases_for_depth(depth, bases)
 
     if _total_regions_count % 100000 != 0:
         info('processed %i regions' % _total_regions_count)

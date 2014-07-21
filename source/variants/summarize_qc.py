@@ -76,6 +76,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
             info('  ' + fpath)
         info()
 
+    info('Total')
     for fpath in full_summary_fpaths:
         info('  ' + fpath)
 
