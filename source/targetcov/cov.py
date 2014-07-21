@@ -16,6 +16,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
     summary_report_fpath = None
     gene_report_fpath = None
 
+    info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
     amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, bam, amplicons_bed)
 
@@ -30,7 +31,6 @@ def run_target_cov(cnf, bam, amplicons_bed):
             amplicons_bed, bam, chr_len_fpath,
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
-
 
     if 'genes' in cnf['coverage_reports']['report_types']:
         if not exons_bed:
@@ -244,9 +244,6 @@ def _get_exon_genes(cnf, subregions):
 
     i = 0
     for exon in subregions:
-        info(exon.gene_name, ending=' ', print_date=False)
-        i += 1
-
         if not exon.gene_name:
             info()
             err('No gene name info in the record: ' + str(exon) + '. Skipping.')
@@ -254,6 +251,7 @@ def _get_exon_genes(cnf, subregions):
 
         if i and i % 10000 == 0:
             info('Processed {0:.3g} exons, current gene {}'.format(i, exon.gene_name))
+        i += 1
 
         gene = genes_by_name.get(exon.gene_name)
         if gene is None:
@@ -374,13 +372,12 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
             _total_regions_count += 1
 
             if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                info('processed %d00k regions' % (_total_regions_count / 100000))
+                info('  Processed {0:.3g} regions'.format(_total_regions_count / 100000))
 
         regions[-1].add_bases_for_depth(depth, bases)
 
     if _total_regions_count % 100000 != 0:
-        info('processed %d regions' % _total_regions_count)
-        info()
+        info('Processed {0:.3g} regions'.format(_total_regions_count))
 
     return regions[:-1], regions[-1], max_depth, total_bed_size
 
