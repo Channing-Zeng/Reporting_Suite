@@ -1,0 +1,6 @@
+while read -r -a cols; do
+    (
+        IFS=$'\t'
+        echo "${cols[*]}"
+    )
+done <$1

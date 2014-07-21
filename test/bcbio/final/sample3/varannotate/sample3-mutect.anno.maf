@@ -1,0 +1,18 @@
+#version 2.4
+Hugo_Symbol	Entrez_Gene_Id	Center	NCBI_Build	Chromosome	Start_Position	End_Position	Strand	Variant_Classification	Variant_Type	Reference_Allele	Tumor_Seq_Allele1	Tumor_Seq_Allele2	dbSNP_RS	dbSNP_Val_Status	Tumor_Sample_Barcode	Matched_Norm_Sample_Barcode	Match_Norm_Seq_Allele1	Match_Norm_Seq_Allele2	Tumor_Validation_Allele1	Tumor_Validation_Allele2	Match_Norm_Validation_Allele1	Match_Norm_Validation_Allele2	Verification_Status	Validation_Status	Mutation_Status	Sequencing_Phase	Sequence_Source	Validation_Method	Score	BAM_File	Sequencer	Tumor_Sample_UUID	Matched_Norm_Sample_UUID	HGVSc	HGVSp	Transcript_ID	Exon_Number	Effect	Effect_Impact	Functional_Class	Codon_Change	Amino_Acid_Change	Amino_Acid_Length	Gene_Name	Transcript_BioType	Gene_Coding	Transcript_ID	Exon_Rank	Genotype_Number	ERRORS	WARNINGS
+Unknown	0	.	37	chr22	16157603	16157603	+	IGR	SNP	G	C	C	rs370790235		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	16157622	16157622	+	IGR	SNP	G	C	C	rs374192809		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	16157762	16157762	+	IGR	SNP	C	T	T	rs199985193		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17586716	17586719	+	IGR	DEL	CACG	-	-			TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17600293	17600293	+	IGR	SNP	G	A	A	rs13056456		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17600497	17600497	+	IGR	SNP	G	A	A	rs3827295		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17600977	17600977	+	IGR	SNP	G	A	A	rs5994165		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17601748	17601748	+	IGR	SNP	C	T	T	rs9606620		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17602839	17602841	+	IGR	TNP	GCG	ACG	ACG			TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17603477	17603477	+	IGR	SNP	A	G	G	rs5748871		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17603503	17603503	+	IGR	SNP	G	A	A	rs28360663		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17603623	17603623	+	IGR	SNP	T	C	C	rs34087371		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17622267	17622267	+	IGR	SNP	C	T	T	rs2286955		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17640045	17640045	+	IGR	SNP	G	A	A	rs7287672		TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17640177	17640178	+	IGR	DEL	CG	-	-			TUMOR	NORMAL																						intergenic_variant													
+Unknown	0	.	37	chr22	17662793	17662793	+	IGR	SNP	A	G	G	rs7289170		TUMOR	NORMAL																						intergenic_variant													
