@@ -84,5 +84,6 @@ class Region():
                self.percent_within_normal(avg_depth)
 
     def intersect(self, reg2):
-        return (reg2.start < self.start < reg2.end or
+        return self.chrom == reg2.chrom and \
+               (reg2.start < self.start < reg2.end or
                 self.start < reg2.start < self.end)
