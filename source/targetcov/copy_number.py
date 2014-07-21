@@ -2,7 +2,7 @@
 
 import math
 from collections import defaultdict, OrderedDict
-from source.logger import info
+from source.logger import info, err
 
 from source.utils import OrderedDefaultDict
 # from numpy import median, mean
@@ -60,6 +60,9 @@ def _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample):
 
     for sample_name in mapped_reads_by_sample:
         for gn, v_by_sample in norm_depths_by_sample.items():
+            if sample_name not in v_by_sample:
+                err(sample_name + ' not in ' + str(v_by_sample))
+                continue
             mean_depths_by_sample[sample_name].append(v_by_sample[sample_name])
 
     median_depth_by_sample = OrderedDict()
