@@ -336,8 +336,7 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
     regions, max_depth, total_bed_size = [], 0, 0
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
-    cmdline = '{bedtools} coverage -abam {bam} -b {bed} ' \
-              '-hist'.format(**locals())
+    cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
 
     _total_regions_count = 0
 
@@ -372,7 +371,7 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
             _total_regions_count += 1
 
             if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                info('  Processed {0:.3g} regions'.format(_total_regions_count / 100000))
+                info('  Processed {0:.3g} regions'.format(_total_regions_count))
 
         regions[-1].add_bases_for_depth(depth, bases)
 

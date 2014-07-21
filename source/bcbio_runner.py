@@ -66,7 +66,7 @@ class Runner():
         self.bcbio_cnf = bcbio_cnf
 
         hasher = hashlib.sha1(bcbio_final_dir)
-        self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])
+        self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])[:-1]
 
         self.threads = str(self.cnf.threads)
         self.steps = Steps(cnf, self.run_id, cnf.steps)
