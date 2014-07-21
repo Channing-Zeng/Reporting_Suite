@@ -84,10 +84,12 @@ class Defaults():
     quality_control = dict(
         variant_distribution_scale=1000,
         databases=['dbsnp'],
+        db_for_summary='cosmic',
         novelty=['all', 'known', 'novel'],
-        metrics=['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-           'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-           'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio'],
+        metrics=[
+            'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio'],
     )
 
     snpeff = dict(

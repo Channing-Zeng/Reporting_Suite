@@ -246,17 +246,15 @@ class Runner():
 
                     out.write('\t'.join(fields) + '\n')
 
-            bed_fpath = qualimap_bed_fpath
-        return bed_fpath
+            return qualimap_bed_fpath
+        else:
+            return bed_fpath
 
     def run(self):
         for sample_info in self.bcbio_cnf.details:
             sample = sample_info['description']
 
-            bed_fpath = sample_info['algorithm'].get('variant_regions')
-            qualimap_bed_fpath = self.qualimap_bed(bed_fpath)
-
-            info(sample)
+            info('Processing "' + sample + '"')
             if not self.cnf.verbose:
                 info(ending='')
 
@@ -264,13 +262,22 @@ class Runner():
             if not verify_dir(sample_dirpath):
                 sys.exit(1)
 
+            bed_fpath = sample_info['algorithm'].get('variant_regions')
             bam_fpath = join(sample_dirpath, sample + '-ready.bam')
             if 'TargetCov' in self.steps or 'NGScat' in self.steps or 'Qualimap' in self.steps:
-                if not verify_bam(bam_fpath):
+                if not verify_bam(bam_fpath) or not verify_file(bed_fpath):
                     sys.exit(1)
+                else:
+                    bam_fpath = abspath(expanduser(bam_fpath))
+                    bed_fpath = abspath(expanduser(bed_fpath))
+
+                if 'QualiMap' in self.steps:
+                    bed_fpath = self.qualimap_bed(bed_fpath)
             else:
                 if not file_exists(bam_fpath):
                     bam_fpath = None
+                if not file_exists(bed_fpath):
+                    bed_fpath = None
 
             for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
                 vcf_fpath = join(sample_dirpath, sample + '-' + variant_caller + '.vcf')
@@ -295,7 +302,7 @@ class Runner():
 
             self.submit_if_needed(self.ngscat, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
 
-            self.submit_if_needed(self.qualimap, sample, bam=bam_fpath, bed=qualimap_bed_fpath, sample=sample)
+            self.submit_if_needed(self.qualimap, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
