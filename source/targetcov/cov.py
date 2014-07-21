@@ -178,18 +178,21 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
         exon.feature = 'Exon'
         exon.sample = sample_name
 
-    info('Groupping exons per gene...', ending=' ')
+    info('Groupping exons per gene...')
     exon_genes = _get_exon_genes(cnf, exons)
     info()
 
-    info('Groupping amplicons per gene...', ending=' ')
+    info('Groupping amplicons per gene...')
     amplicon_genes_by_name = _get_amplicon_genes(amplicons, exon_genes)
     info()
 
     result_regions = []
-    info('Combining...', ending=' ')
+    info('Combining...')
+    i = 0
     for exon_gene in exon_genes:
-        info(exon_gene.gene_name, ending=' ', print_date=False)
+        if i and i % 10000 == 0:
+            info('Processed {0:.3g} genes, current gene {}'.format(i, exon_gene.gene_name))
+        i += 1
 
         for exon in exon_gene.subregions:
             result_regions.append(exon)
@@ -200,7 +203,7 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
             for amplicon in amplicon_gene.subregions:
                 result_regions.append(amplicon)
             result_regions.append(amplicon_gene)
-    info(print_date=False)
+    info('Processed {0:.3g} genes.'.format(i))
 
     info()
     info('Building final regions report...')
@@ -211,8 +214,11 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
 def _get_amplicon_genes(amplicons, exon_genes):
     amplicon_genes_by_name = dict()
 
+    i = 0
     for exon_gene in exon_genes:
-        info(exon_gene.gene_name, ending=' ', print_date=False)
+        if i and i % 10000 == 0:
+            info('Processed {0:.3g} regions, current gene {}'.format(i, exon_gene.gene_name))
+        i += 1
 
         for amplicon in amplicons:
             if exon_gene.intersect(amplicon):
@@ -227,7 +233,8 @@ def _get_amplicon_genes(amplicons, exon_genes):
                 amplicon_copy = copy.copy(amplicon)
                 amplicon_gene.add_subregion(amplicon_copy)
                 amplicon_copy.gene_name = amplicon_gene.gene_name
-    info(print_date=False)
+
+    info('Processed {0:.3g} regions.'.format(i))
 
     return amplicon_genes_by_name
 
@@ -235,14 +242,18 @@ def _get_amplicon_genes(amplicons, exon_genes):
 def _get_exon_genes(cnf, subregions):
     genes_by_name = dict()
 
+    i = 0
     for exon in subregions:
         info(exon.gene_name, ending=' ', print_date=False)
+        i += 1
 
         if not exon.gene_name:
             info()
-            err('No gene name info in the record: ' +
-                str(exon) + '. Skipping.')
+            err('No gene name info in the record: ' + str(exon) + '. Skipping.')
             continue
+
+        if i and i % 10000 == 0:
+            info('Processed {0:.3g} exons, current gene {}'.format(i, exon.gene_name))
 
         gene = genes_by_name.get(exon.gene_name)
         if gene is None:
@@ -254,9 +265,10 @@ def _get_exon_genes(cnf, subregions):
             genes_by_name[exon.gene_name] = gene
         gene.add_subregion(exon)
 
-    sorted_genes = sorted(genes_by_name.values(),
-                          key=lambda g: (g.chrom, g.start, g.end))
-    info(print_date=False)
+    sorted_genes = sorted(genes_by_name.values(), key=lambda g: (g.chrom, g.start, g.end))
+
+    info('Processed {0:.3g} exons.'.format(i))
+
     return sorted_genes
 
 
@@ -269,7 +281,12 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
 
     all_values = []
 
-    for i, region in enumerate(regions):
+    i = 0
+    for region in regions:
+        i += 1
+        if i % 10000 == 0:
+            info('Processed {0:.3g} regions.'.format(i))
+
         bases_within_threshs, avg_depth, std_dev, percent_within_normal = region.sum_up(depth_threshs)
 
         line_fields = map(str, [region.sample,
@@ -294,6 +311,7 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
 
         all_values.append(line_fields)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
+    info('Processed {0:.3g} regions.'.format(i))
 
     with file_transaction(cnf, report_fpath) as tx:
         with open(tx, 'w') as out, \
