@@ -34,7 +34,10 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
 
     return cnv_report_fpath
+
+
 # /Users/vladsaveliev/vagrant/reporting_suite/external/zhongwu_tools/cov2cnv.pl
+
 
 def _parse_targetseq_sample_report(report_fpath):
     """ returns row_per_sample =

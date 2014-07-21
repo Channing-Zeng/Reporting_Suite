@@ -57,6 +57,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
                 exon.gene_name = exon.extra_fields[0]
 
             gene_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.details.gene.txt')
+            info('Region cov report...')
             _run_region_cov_report(cnf, gene_report_fpath, cnf['name'], cnf['coverage_reports']['depth_thresholds'],
                                    amplicons, exons)
 
@@ -177,11 +178,19 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
         exon.feature = 'Exon'
         exon.sample = sample_name
 
+    info('Groupping exons per gene...', ending=' ')
     exon_genes = _get_exon_genes(cnf, exons)
+    info()
+
+    info('Groupping amplicons per gene...', ending=' ')
     amplicon_genes_by_name = _get_amplicon_genes(amplicons, exon_genes)
+    info()
 
     result_regions = []
+    info('Combining...', ending=' ')
     for exon_gene in exon_genes:
+        info(exon_gene.gene_name, ending=' ', print_date=False)
+
         for exon in exon_gene.subregions:
             result_regions.append(exon)
         result_regions.append(exon_gene)
@@ -191,7 +200,10 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
             for amplicon in amplicon_gene.subregions:
                 result_regions.append(amplicon)
             result_regions.append(amplicon_gene)
+    info(print_date=False)
 
+    info()
+    info('Building final regions report...')
     return _build_regions_cov_report(
         cnf, report_fpath, depth_threshs, result_regions)
 
@@ -200,6 +212,8 @@ def _get_amplicon_genes(amplicons, exon_genes):
     amplicon_genes_by_name = dict()
 
     for exon_gene in exon_genes:
+        info(exon_gene.gene_name, ending=' ', print_date=False)
+
         for amplicon in amplicons:
             if exon_gene.intersect(amplicon):
                 amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
@@ -213,6 +227,7 @@ def _get_amplicon_genes(amplicons, exon_genes):
                 amplicon_copy = copy.copy(amplicon)
                 amplicon_gene.add_subregion(amplicon_copy)
                 amplicon_copy.gene_name = amplicon_gene.gene_name
+    info(print_date=False)
 
     return amplicon_genes_by_name
 
@@ -221,7 +236,10 @@ def _get_exon_genes(cnf, subregions):
     genes_by_name = dict()
 
     for exon in subregions:
+        info(exon.gene_name, ending=' ', print_date=False)
+
         if not exon.gene_name:
+            info()
             err('No gene name info in the record: ' +
                 str(exon) + '. Skipping.')
             continue
@@ -238,6 +256,7 @@ def _get_exon_genes(cnf, subregions):
 
     sorted_genes = sorted(genes_by_name.values(),
                           key=lambda g: (g.chrom, g.start, g.end))
+    info(print_date=False)
     return sorted_genes
 
 
@@ -343,6 +362,7 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
 
     if _total_regions_count % 100000 != 0:
         info('processed %d regions' % _total_regions_count)
+        info()
 
     return regions[:-1], regions[-1], max_depth, total_bed_size
 

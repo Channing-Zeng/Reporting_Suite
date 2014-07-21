@@ -34,9 +34,9 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
     norm3 = OrderedDefaultDict(dict)
 
     info()
-    info('Norm depth by gene, norm2, norm3')
+    info('Norm depth by gene, norm2, norm3...')
     for gene, norm_depth_by_sample in norm_depths_by_sample.items():
-        info('Gene ' + str(gene))
+        info(str(gene), ending=' ', print_date=False)
         for gene_info in records:
             sample = gene_info.sample_name
             if sample not in norm_depth_by_sample:
@@ -50,6 +50,7 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
 
             norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
                 median_depth_by_sample[sample] else 0
+    info(print_date=False)
 
     return _get_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
 

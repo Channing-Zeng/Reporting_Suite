@@ -18,12 +18,12 @@ def step_greetings(name):
     info('-' * 70)
 
 
-def info(msg='', ending='\n'):
-    _log(sys.stdout, msg, ending)
+def info(msg='', ending='\n', print_date=True):
+    _log(sys.stdout, msg, ending, print_date)
 
 
-def err(msg='', ending='\n'):
-    _log(sys.stderr, msg, ending)
+def err(msg='', ending='\n', print_date=True):
+    _log(sys.stderr, msg, ending, print_date)
 
 
 def critical(msg=''):
@@ -31,8 +31,9 @@ def critical(msg=''):
     sys.exit(1)
 
 
-def _log(out, msg='', ending='\n'):
-    msg = timestamp() + msg
+def _log(out, msg='', ending='\n', print_date=True):
+    if print_date:
+        msg = timestamp() + msg
 
     out.write(msg + ending)
     sys.stdout.flush()
