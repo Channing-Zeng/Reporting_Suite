@@ -337,7 +337,7 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
             _total_regions_count += 1
 
             if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                info('processed %d00k regions' % _total_regions_count / 100000)
+                info('processed %d00k regions' % (_total_regions_count / 100000))
 
         regions[-1].add_bases_for_depth(depth, bases)
 
