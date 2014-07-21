@@ -318,9 +318,6 @@ class Runner():
 
         self.submit_if_needed(
             self.targetcov_summary,
-            wait_for_steps=[
-                self.targetcov.job_name(d['description'])
-                for d in self.bcbio_cnf.details],
             samples=samples_fpath)
 
         if not self.cnf.verbose:
