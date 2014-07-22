@@ -9,22 +9,23 @@ from itertools import repeat, izip, count
 import subprocess
 import sys
 
-p = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE)
+# f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
+f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
 
 cur_tokens = None
-for i, l in enumerate(p.stdout):
+for i, l in enumerate(f):
     if i == 0:
         rows.append(l.split())
+        continue
     if i == 1:
         continue
-
-    if not l[0] != ' ' and len(l.split()) == 9:
+    if not l[0] == ' ' and len(l.split()) == 9:
         cur_tokens = l.split()
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
-        full_name = l.strip().split()[1]
+        full_name = l.strip().split()[2]
         rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:])
         cur_tokens = None
 
@@ -33,10 +34,12 @@ col_widths = repeat(0)
 for row in rows:
     col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
 
-for row in rows:
-    for i, val, w in izip(count(), row, col_widths):
-        line = val + (' ' * (w - len(val) + 2))
-        sys.stdout.write(line)
-        if i == 0:
-            sys.stdout.write('-' * len(line))
+for i, row in enumerate(rows):
+    line = ''
+    for val, w in izip(row, col_widths):
+        cell = val + (' ' * (w - len(val) + 2))
+        sys.stdout.write(cell)
+        line += cell
     sys.stdout.write('\n')
+    if i == 0:
+        sys.stdout.write('-' * len(line) + '\n')
