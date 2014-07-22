@@ -20,7 +20,7 @@ for i, l in enumerate(p.stdout):
     if i == 1:
         continue
 
-    if not l.startswith(' ') and len(l.split()) == 9:
+    if not l[0] != ' ' and len(l.split()) == 9:
         cur_tokens = l.split()
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
