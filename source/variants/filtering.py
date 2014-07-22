@@ -82,12 +82,12 @@ class EffectFilter(CnfFilter):
                 err('Warning: EFF field is missing for variant at line ' + str(rec.line_num))
                 return False
 
-            required = Filter.filt_cnf[cnf_key]
-            if required:
-                values_to_reject = [s.upper() for s in required.split('|')]
+            impact_filter_line = Filter.filt_cnf[cnf_key]
+            if impact_filter_line:
+                important_impacts = [s.upper() for s in impact_filter_line.split('|')]
 
-                return not any(eff.impact.upper() in values_to_reject
-                           for eff in map(Effect, rec.INFO['EFF']))
+                return any(eff.impact.upper() in important_impacts
+                       for eff in map(Effect, rec.INFO['EFF']))
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
