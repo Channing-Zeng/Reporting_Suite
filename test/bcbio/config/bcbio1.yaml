@@ -1,0 +1,53 @@
+details:
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variantcaller:
+    - mutect
+    - freebayes
+  analysis: variant2
+  background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+  description: sample1
+  files:
+  - /ngs/oncology/datasets/hiseq/Dev_0040_WGS_Colo829_DW/Unalign/Project_Development/fastq/Colo829_0.2pM_R1.fastq.gz
+  - /ngs/oncology/datasets/hiseq/Dev_0040_WGS_Colo829_DW/Unalign/Project_Development/fastq/Colo829_0.2pM_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample1
+    phenotype: tumor
+  remove_lcr: true
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variantcaller:
+    - mutect
+    - freebayes
+  analysis: variant2
+  background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+  description: sample2
+  files:
+  - /ngs/oncology/datasets/hiseq/Dev_0040_WGS_Colo829_DW/Unalign/Project_Development/fastq/Colo829_2pM_R1.fastq.gz
+  - /ngs/oncology/datasets/hiseq/Dev_0040_WGS_Colo829_DW/Unalign/Project_Development/fastq/Colo829_2pM_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample1
+    phenotype: normal
+  remove_lcr: true
+
+fc_date: '2014-07-08'
+fc_name: bcbio
+upload:
+  dir: ../final

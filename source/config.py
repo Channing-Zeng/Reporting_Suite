@@ -219,7 +219,7 @@ def _load(sys_cnf_fpath, run_cnf_fpath):
     run_dict = load_yaml(open(run_cnf_fpath), Loader=Loader)
 
     loaded_dict = dict(run_dict.items() + sys_dict.items())
-    loaded_dict = _fill_dict_from_defaults(loaded_dict, Defaults.__dict__)
+    loaded_dict = fill_dict_from_defaults(loaded_dict, Defaults.__dict__)
 
     info('Loaded system config ' + sys_cnf_fpath)
     info('Loaded run config ' + run_cnf_fpath)
@@ -227,11 +227,11 @@ def _load(sys_cnf_fpath, run_cnf_fpath):
     return loaded_dict
 
 
-def _fill_dict_from_defaults(cur_cnf, defaults_dict):
+def fill_dict_from_defaults(cur_cnf, defaults_dict):
     for key in defaults_dict:
         if key in cur_cnf:
             if isinstance(cur_cnf[key], dict) and isinstance(defaults_dict[key], dict):
-                _fill_dict_from_defaults(cur_cnf[key], defaults_dict[key])
+                fill_dict_from_defaults(cur_cnf[key], defaults_dict[key])
         else:
             cur_cnf[key] = defaults_dict[key]
     return cur_cnf

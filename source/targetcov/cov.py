@@ -191,7 +191,7 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
     i = 0
     for exon_gene in exon_genes:
         if i and i % 10000 == 0:
-            info('Processed {0:.3g} genes, current gene {1}'.format(i, exon_gene.gene_name))
+            info('Processed {0:,} genes, current gene {1}'.format(i, exon_gene.gene_name))
         i += 1
 
         for exon in exon_gene.subregions:
@@ -203,7 +203,7 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
             for amplicon in amplicon_gene.subregions:
                 result_regions.append(amplicon)
             result_regions.append(amplicon_gene)
-    info('Processed {0:.3g} genes.'.format(i))
+    info('Processed {0:,} genes.'.format(i))
 
     info()
     info('Building final regions report...')
@@ -216,8 +216,8 @@ def _get_amplicon_genes(amplicons, exon_genes):
 
     i = 0
     for exon_gene in exon_genes:
-        if i and i % 10000 == 0:
-            info('Processed {0:.3g} regions, current gene {1}'.format(i, exon_gene.gene_name))
+        if i and i % 1000 == 0:
+            info('Processed {0:,} regions, current gene {1}'.format(i, exon_gene.gene_name))
         i += 1
 
         for amplicon in amplicons:
@@ -234,7 +234,7 @@ def _get_amplicon_genes(amplicons, exon_genes):
                 amplicon_gene.add_subregion(amplicon_copy)
                 amplicon_copy.gene_name = amplicon_gene.gene_name
 
-    info('Processed {0:.3g} regions.'.format(i))
+    info('Processed {0:,} regions.'.format(i))
 
     return amplicon_genes_by_name
 
@@ -250,7 +250,7 @@ def _get_exon_genes(cnf, subregions):
             continue
 
         if i and i % 10000 == 0:
-            info('Processed {0:.3g} exons, current gene {1}'.format(i, exon.gene_name))
+            info('Processed {0:,} exons, current gene {1}'.format(i, exon.gene_name))
         i += 1
 
         gene = genes_by_name.get(exon.gene_name)
@@ -265,7 +265,7 @@ def _get_exon_genes(cnf, subregions):
 
     sorted_genes = sorted(genes_by_name.values(), key=lambda g: (g.chrom, g.start, g.end))
 
-    info('Processed {0:.3g} exons.'.format(i))
+    info('Processed {0:,} exons.'.format(i))
 
     return sorted_genes
 
@@ -283,7 +283,7 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
     for region in regions:
         i += 1
         if i % 10000 == 0:
-            info('Processed {0:.3g} regions.'.format(i))
+            info('Processed {0:,} regions.'.format(i))
 
         bases_within_threshs, avg_depth, std_dev, percent_within_normal = region.sum_up(depth_threshs)
 
@@ -309,7 +309,7 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
 
         all_values.append(line_fields)
         max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
-    info('Processed {0:.3g} regions.'.format(i))
+    info('Processed {0:,} regions.'.format(i))
 
     with file_transaction(cnf, report_fpath) as tx:
         with open(tx, 'w') as out, \
@@ -374,12 +374,12 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
                 _total_regions_count += 1
 
                 if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                    info('  Processed {0:.3g} regions'.format(_total_regions_count))
+                    info('  Processed {0:,} regions'.format(_total_regions_count))
 
             regions[-1].add_bases_for_depth(depth, bases)
 
     if _total_regions_count % 100000 != 0:
-        info('Processed {0:.3g} regions'.format(_total_regions_count))
+        info('Processed {0:,} regions'.format(_total_regions_count))
 
     return regions[:-1], regions[-1], max_depth, total_bed_size
 

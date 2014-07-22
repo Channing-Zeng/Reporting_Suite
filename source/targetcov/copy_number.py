@@ -2,15 +2,45 @@
 
 import math
 from collections import defaultdict, OrderedDict
+from source.config import fill_dict_from_defaults
 from source.logger import info, err
 
 from source.utils import OrderedDefaultDict
 # from numpy import median, mean
 from source.utils import median, mean
+from joblib import Parallel, delayed
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
+
+def __proc_sample(sample, norm_depths_by_sample, factors_by_gene, med_depth, median_depth_by_sample):
+    info('  Processing ' + sample + '...')
+    norm_depths_by_gene = OrderedDefaultDict(dict)
+    norm2 = OrderedDefaultDict(dict)
+    norm3 = OrderedDefaultDict(dict)
+
+    i = 0
+    for gene, norm_depth_by_sample in norm_depths_by_sample.items():
+        if i % 1000 == 0:
+            info('    ' + sample + ': processing gene #{0:,}: {1}'.format(i, str(gene)))
+        i += 1
+
+        if sample not in norm_depth_by_sample:
+            continue
+
+        gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1  # norm1b
+
+        norm_depths_by_gene[gene][sample] = gene_norm_depth
+
+        norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
+
+        norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
+            median_depth_by_sample[sample] else 0
+
+    info('  ' + sample + ': Done. Processed {0:,} genes.'.format(i))
+
+    return norm_depths_by_gene, norm2, norm3
 
 def run_copy_number(mapped_reads_by_sample, gene_depth):
     mapped_reads_by_sample = {k: v for k, v in mapped_reads_by_sample.items() if 'Undetermined' not in k}
@@ -20,7 +50,6 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
 
     info('Calculating depths normalized by samples...')
     norm_depths_by_sample = _get_norm_depths_by_sample(mapped_reads_by_sample, records)
-    info('  Debug: norm_depths_by_sample = ' + str(norm_depths_by_sample))
 
     med_depth = median([depth for gn, vs in norm_depths_by_sample.items() for sn, depth in vs.items()])
 
@@ -30,33 +59,22 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
     info('Getting median norm...')
     median_depth_by_sample = _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample)
 
-    norm_depths_by_gene = OrderedDefaultDict(dict)
-    norm2 = OrderedDefaultDict(dict)
-    norm3 = OrderedDefaultDict(dict)
-
     info()
     info('Norm depth by gene, norm2, norm3...')
-    i = 0
-    for gene, norm_depth_by_sample in norm_depths_by_sample.items():
-        if i % 10000 == 0:
-            info('  Processing gene #{0:.3g}: {1}'.format(i, str(gene)))
-        i += 1
-        for gene_info in records:
-            sample = gene_info.sample_name
-            if sample not in norm_depth_by_sample:
-                continue
 
-            gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1  # norm1b
+    samples = set(rec.sample_name for rec in records)
 
-            norm_depths_by_gene[gene][sample] = gene_norm_depth
+    results = Parallel(n_jobs=len(samples))(delayed(__proc_sample)(
+        sample, norm_depths_by_sample, factors_by_gene, med_depth, median_depth_by_sample)
+                                  for sample in samples)
 
-            norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
+    norm_depths_by_gene, norm2, norm3 = dict(), dict(), dict()
+    for norm_depths_by_gene__sample, norm2__sample, norm3__sample in results:
+        fill_dict_from_defaults(norm_depths_by_gene, norm_depths_by_gene__sample)
+        fill_dict_from_defaults(norm2, norm2__sample)
+        fill_dict_from_defaults(norm3, norm3__sample)
 
-            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
-                median_depth_by_sample[sample] else 0
-
-    info('Processed {0:.3g} genes.'.format(i))
-    return _get_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
+    return _make_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
 
 
 def _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample):
@@ -65,9 +83,8 @@ def _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample):
     for sample_name in mapped_reads_by_sample:
         for gn, v_by_sample in norm_depths_by_sample.items():
             if sample_name not in v_by_sample:
-                err(sample_name + ' not in ' + str(v_by_sample))
-                continue
-            mean_depths_by_sample[sample_name].append(v_by_sample[sample_name])
+                info(sample_name + ' - no ' + gn)
+            mean_depths_by_sample[sample_name].append(v_by_sample.get(sample_name, 0))
 
     median_depth_by_sample = OrderedDict()
     for sample_name in mapped_reads_by_sample:
@@ -82,8 +99,8 @@ def _get_factors_by_sample(mapped_reads_by_sample):
     factor_by_sample = dict()
 
     mean_reads = mean(mapped_reads_by_sample.values())
-    for k, v in mapped_reads_by_sample.items():
-        factor_by_sample[k] = mean_reads / v if v else 0
+    for sample, mapped_reads in mapped_reads_by_sample.items():
+        factor_by_sample[sample] = mean_reads / mapped_reads if mapped_reads else 0
 
     return factor_by_sample
 
@@ -110,15 +127,22 @@ def _get_norm_depths_by_sample(mapped_reads_by_sample, records):
 
     factor_by_sample = _get_factors_by_sample(mapped_reads_by_sample)
 
+    # Initialization
+    for sample, factor in factor_by_sample.items():
+        for rec in records:
+            norm_depths[rec.gene_name][sample] = 0
+
+    # Filling the dict with available balues
     for sample, factor in factor_by_sample.items():
         info('  ' + sample)
+
         for rec in [rec for rec in records if rec.sample_name == sample]:
             norm_depths[rec.gene_name][sample] = rec.mean_depth * factor
 
     return norm_depths
 
 
-def _get_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
+def _make_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
     header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
               "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
     report_data = []

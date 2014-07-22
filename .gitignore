@@ -44,3 +44,13 @@ test/**/*tmp*
 test/data/big
 test/results_big_vcf
 
+test/bcbio/final/*/varannotate
+test/bcbio/final/*/varqc
+test/bcbio/final/*/varqc_after
+test/bcbio/final/*/varfilter
+test/bcbio/final/*/ngscat
+test/bcbio/final/*/targetcov
+test/bcbio/final/*/qualimap
+test/bcbio/final/2014-07-08_bcbio/varqc_summary
+test/bcbio/final/2014-07-08_bcbio/targetcov_summary
+test/results_summary_targetcov_bk
