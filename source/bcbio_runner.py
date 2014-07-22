@@ -332,7 +332,7 @@ class Runner():
                 self.varqc.job_name(d['description'], v)
                 for d in self.bcbio_cnf.details
                 for v in all_variantcallers],
-            threads=samples_num + 1,
+            # threads=samples_num + 1,
             samples=samples_fpath)
 
         self.submit_if_needed(
@@ -340,7 +340,7 @@ class Runner():
             wait_for_steps=[
                 self.targetcov.job_name(d['description'])
                 for d in self.bcbio_cnf.details],
-            threads=samples_num + 1,
+            # threads=samples_num + 1,
             samples=samples_fpath)
 
         if not self.cnf.verbose:

@@ -54,3 +54,4 @@ test/bcbio/final/*/qualimap
 test/bcbio/final/2014-07-08_bcbio/varqc_summary
 test/bcbio/final/2014-07-08_bcbio/targetcov_summary
 test/results_summary_targetcov_bk
+test/results_summary_targetcov_parallel

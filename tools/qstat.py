@@ -28,7 +28,10 @@ for i, l in enumerate(f):
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
         full_name = l.strip().split()[2]
-        rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:])
+        if len(cur_tokens) == 8:
+            rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:7] + [''] + cur_tokens[7:])
+        else:
+            rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:])
         cur_tokens = None
 
 col_widths = repeat(0)
@@ -44,4 +47,4 @@ for i, row in enumerate(rows):
         line += cell
     sys.stdout.write('\n')
     if i == 0:
-        sys.stdout.write('-' * len(line) + '\n')
+        sys.stdout.write('-' * len(line[:-2]) + '\n')
