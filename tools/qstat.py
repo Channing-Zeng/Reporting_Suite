@@ -9,7 +9,7 @@ from itertools import repeat, izip, count
 import subprocess
 import sys
 
-p = subprocess.Popen('qstat -r', shell=True)
+p = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE)
 
 rows = []
 
