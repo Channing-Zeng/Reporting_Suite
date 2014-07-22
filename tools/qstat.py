@@ -2,7 +2,7 @@ from itertools import repeat, izip, count
 import subprocess
 import sys
 
-p = subprocess.Popen('qstat -r')
+p = subprocess.Popen('qstat -r', shell=True)
 
 rows = []
 
