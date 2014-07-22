@@ -89,7 +89,7 @@ def remove_rejected(cnf, input_fpath):
     step_greetings('Removing rejeted records...')
 
     def _proc_rec(rec):
-        if rec.FILTER is None or rec.FILTER == ['PASS']:
+        if rec.FILTER is None or rec.FILTER == [] or rec.FILTER == ['PASS']:
             return rec
         else:
             return None
@@ -224,6 +224,7 @@ def convert_to_maf(cnf, vcf_fpath):
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {maf_fpath}'.format(**locals())
     call(cnf, cmdline, None, stdout_to_outputfile=False)
+
     if verify_file(maf_fpath, 'MAF'):
         info('MAF file saved to ' + maf_fpath)
     else:

@@ -9,7 +9,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 import shutil
 import os
-from os.path import basename, join, isfile
+from os.path import basename, join, isfile, splitext
 
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.config import Defaults
@@ -17,7 +17,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
-from source.variants.vcf_processing import convert_to_maf, remove_rejected
+from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line
 
 
 def main():
@@ -200,36 +200,57 @@ def main():
 
 def finalize_one(cnf, filtered_vcf_fpath, tsv_fpath, maf_fpath):
     if filtered_vcf_fpath:
-        info('Saved filtered VCF to ' + filtered_vcf_fpath)
+        info('Saved VCF to ' + filtered_vcf_fpath)
     if tsv_fpath:
         info('Saved TSV to ' + tsv_fpath)
     if maf_fpath:
-        info('Saved MAF to ' + maf_fpath)
+        info('Saved MAF (only passed) to ' + maf_fpath)
 
 
 def process_one(cnf):
     vcf_fpath = cnf['vcf']
     filt_cnf = cnf['variant_filtering']
 
+    vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
+
     filtering = Filtering(cnf, filt_cnf, vcf_fpath)
-    filtered_vcf_fpath = filtering.run_filtering()
+    vcf_fpath = filtering.run_filtering()
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
-    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
+    vcf_basename = splitext(final_vcf_fname)[0]
+    final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
+    final_tsv_fpath = join(cnf['output_dir'], vcf_basename + '.tsv')
+    final_maf_fpath = join(cnf['output_dir'], vcf_basename + '.maf')
+
+    # Moving final VCF
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
-    shutil.copyfile(filtered_vcf_fpath, final_vcf_fpath)
+    shutil.move(vcf_fpath, final_vcf_fpath)
+    os.symlink(final_vcf_fpath, vcf_fpath)
 
-    final_tsv_fpath = None
-    if filtered_vcf_fpath and 'tsv_fields' in cnf:
-        final_tsv_fpath = make_tsv(cnf, final_vcf_fpath)
+    # Converting to TSV
+    if vcf_fpath and 'tsv_fields' in cnf:
+        tsv_fpath = make_tsv(cnf, vcf_fpath)
 
-    clean_filtered_vcf_fpath = remove_rejected(cnf, final_vcf_fpath)
-    if clean_filtered_vcf_fpath is None:
-        info('All variants are rejected.')
-        final_maf_fpath = None
+        if isfile(final_tsv_fpath):
+            os.remove(final_tsv_fpath)
+        shutil.move(tsv_fpath, final_tsv_fpath)
     else:
-        final_maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+        final_tsv_fpath = None
+
+    # Converting to MAF
+    if cnf.make_maf:
+        clean_filtered_vcf_fpath = remove_rejected(cnf, final_vcf_fpath)
+        if clean_filtered_vcf_fpath is None:
+            info('All variants are rejected.')
+            final_maf_fpath = None
+        else:
+            maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+            if isfile(final_maf_fpath):
+                os.remove(final_maf_fpath)
+            shutil.move(maf_fpath, final_maf_fpath)
+    else:
+        final_maf_fpath = None
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 

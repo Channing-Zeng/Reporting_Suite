@@ -84,9 +84,9 @@ class EffectFilter(CnfFilter):
 
             required = Filter.filt_cnf[cnf_key]
             if required:
-                req_values = [s.upper() for s in required.split('|')]
+                values_to_reject = [s.upper() for s in required.split('|')]
 
-                return any(eff.impact.upper() in req_values
+                return not any(eff.impact.upper() in values_to_reject
                            for eff in map(Effect, rec.INFO['EFF']))
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
@@ -173,6 +173,10 @@ class Filtering:
     def get_proc_line_2nd_round(self):
         def __f(rec):
             sample = rec.sample()
+            try:
+                sample = sample[0]
+            except:
+                pass
 
             if sample and self.control and sample == self.control:
                 all_passed = all([f.apply(rec, only_check=True) for f in self.round2_filters])

@@ -188,9 +188,9 @@ tsv_fields:
 #- GEN[*].FT                     : GenotypeWasCalled
 #- GEN[*].GL                     : GenotypeLikelihoods
 #- GEN[*].GLE                    : GenotypeLikelihoodsOfHeterogeneousPloidy
-- GEN[*].PL[0]                  : GenotypeLikelihoods_AA
-- GEN[*].PL[1]                  : GenotypeLikelihoods_AB
-- GEN[*].PL[2]                  : GenotypeLikelihoods_BB
+- GEN[*].PL                  : GenotypeLikelihoods
+#- GEN[*].PL[1]                  : GenotypeLikelihoods_AB
+#- GEN[*].PL[2]                  : GenotypeLikelihoods_BB
 #- GEN[*].GP                     : GenotypePosteriorProbs_PhredScaled
 - GEN[*].GQ                     : ConditionalGenotypeQuality
 #- GEN[*].HQ                     : HaplotypeQualities
