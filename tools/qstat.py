@@ -9,8 +9,8 @@ from itertools import repeat, izip, count
 import subprocess
 import sys
 
-# f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
-f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
+f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
+# f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
 
