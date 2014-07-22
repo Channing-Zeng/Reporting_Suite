@@ -31,7 +31,7 @@ class Step():
     def job_name(self, sample=None, caller=None):
         return self.run_id + '_' + self.short_name.upper() + \
                ('_' + sample if sample else '') + \
-               ('_' + caller if caller else '') + '_'
+               ('_' + caller if caller else '')
 
 
 class Steps(list):
