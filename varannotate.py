@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-import shutil
 import sys
-from source.logger import err
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf
 from source.runner import run_one
 from source.variants.tsv import make_tsv
 from source.variants.anno import run_annotators
 from source.utils import info
+from source.logger import err
 
 
 def main(args):
