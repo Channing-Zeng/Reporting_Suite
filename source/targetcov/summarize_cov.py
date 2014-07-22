@@ -58,8 +58,6 @@ def _parse_targetseq_sample_report(report_fpath):
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
-    info('Debug: report_details_fpaths = ' + str(report_details_fpaths))
-
     gene_summary_lines = []
     cov_by_sample = dict()
 

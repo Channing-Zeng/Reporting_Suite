@@ -147,7 +147,7 @@ class Runner():
                        ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
 
     def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True,
-                         out_fpath=None, wait_for_steps=list(), **kwargs):
+                         out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
 
         output_dirpath = self.dir
         if sample_name:
@@ -197,7 +197,7 @@ class Runner():
 
         qsub = get_tool_cmdline(self.cnf, 'qsub')
 
-        threads = str(self.threads)
+        threads = str(threads or self.threads)
 
         queue = self.cnf.queue
 
@@ -319,10 +319,12 @@ class Runner():
 
         samples_fpath = abspath(join(self.cnf.work_dir, 'samples.txt'))
         #if not isfile(samples_fpath):
+        samples_num = 0
         with open(samples_fpath, 'w') as f:
             for sample_info in self.bcbio_cnf.details:
                 sample = sample_info['description']
                 f.write(sample + '\n')
+                samples_num += 1
 
         self.submit_if_needed(
             self.varqc_summary,
@@ -330,6 +332,7 @@ class Runner():
                 self.varqc.job_name(d['description'], v)
                 for d in self.bcbio_cnf.details
                 for v in all_variantcallers],
+            threads=samples_num + 1,
             samples=samples_fpath)
 
         self.submit_if_needed(
@@ -337,6 +340,7 @@ class Runner():
             wait_for_steps=[
                 self.targetcov.job_name(d['description'])
                 for d in self.bcbio_cnf.details],
+            threads=samples_num + 1,
             samples=samples_fpath)
 
         if not self.cnf.verbose:
