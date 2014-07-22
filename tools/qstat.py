@@ -19,9 +19,11 @@ for i, l in enumerate(f):
     if i == 0:
         rows.append(l.split())
         continue
+
     if i == 1:
         continue
-    if not l[0] == ' ' and len(l.split()) == 9:
+
+    if l[0] != ' ':
         cur_tokens = l.split()
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
