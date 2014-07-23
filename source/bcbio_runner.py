@@ -1,4 +1,5 @@
 import base64
+from collections import defaultdict
 from genericpath import isfile
 import hashlib
 import os
@@ -7,7 +8,7 @@ import sys
 from os.path import join, dirname, abspath, expanduser, basename
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, file_transaction, make_tmpfile
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info, err, critical
@@ -101,6 +102,31 @@ class Runner():
             overwrite_line = ''
 
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
+
+        af_thr = cnf.variant_filtering.min_freq
+
+        zh_tools_dirpath = ''
+        # vardict_pl = get_script_cmdline(cnf, 'perl', join(zh_tools_dirpath, 'vardict_pl'))
+        testsomatic_r = get_script_cmdline(cnf, 'R', join(zh_tools_dirpath, 'testsomatic_r'))
+        var2vcf_somatic_pl = get_script_cmdline(cnf, 'perl', join(zh_tools_dirpath, 'var2vcf_somatic_pl'))
+        self.vardict = self.steps.step(
+            name='VarDict', short_name='vardict',
+            interpreter='perl',
+            script='vardict_pl',
+            param_line=' -G {ref} -f {af_thr} -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
+                       ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} '
+                       '| {testsomatic_r} '
+                       '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr}'.format(
+                testsomatic_r=testsomatic_r,
+                var2vcf_somatic_pl=var2vcf_somatic_pl,
+                af_thr=af_thr,
+                ref=cnf.genome.seq,
+                bed='{bed}',
+                tumor_bam='{tumor_bam}',
+                normal_bam='{normal_bam}',
+                tumor_name='{tumor_name}',
+                normal_name='{normal_name}')
+        )
 
         self.varannotate = self.steps.step(
             name='VarAnnotate', short_name='va',
@@ -251,6 +277,8 @@ class Runner():
             return bed_fpath
 
     def run(self):
+        batches = defaultdict(dict)
+
         for sample_info in self.bcbio_cnf.details:
             sample = sample_info['description']
 
@@ -264,7 +292,8 @@ class Runner():
 
             bed_fpath = sample_info['algorithm'].get('variant_regions')
             bam_fpath = join(sample_dirpath, sample + '-ready.bam')
-            if 'TargetCov' in self.steps or 'NGScat' in self.steps or 'Qualimap' in self.steps:
+
+            if 'TargetCov' in self.steps or 'NGScat' in self.steps or 'Qualimap' in self.steps or 'VarDict' in self.steps:
                 if not verify_bam(bam_fpath) or not verify_file(bed_fpath):
                     sys.exit(1)
                 else:
@@ -278,6 +307,12 @@ class Runner():
                     bam_fpath = None
                 if not file_exists(bed_fpath):
                     bed_fpath = None
+
+            if 'VarDict' in self.steps:
+                batch_name = sample_info['metadata']['batch']
+                phenotype = sample_info['metadata']['phenotype']
+                batches[batch_name]['bed'] = bed_fpath
+                batches[batch_name][phenotype] = sample, bam_fpath
 
             for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
                 vcf_fpath = join(sample_dirpath, sample + '-' + variant_caller + '.vcf')
@@ -312,6 +347,18 @@ class Runner():
 
         if not self.cnf.verbose:
             info('', ending='')
+
+        for batch_name, batch in batches.items():
+            tumor_name, tumor_bam_fpath = batch['tumor']
+            normal_name, normal_bam_fpath = batch['normal']
+            bed_fpath = batch['bed']
+
+            self.submit_if_needed(self.vardict, tumor_name,
+                                  tumor_name=tumor_name,
+                                  normal_name=normal_name,
+                                  tumor_bam=tumor_bam_fpath,
+                                  normal_bam=normal_bam_fpath,
+                                  bed=bed_fpath)
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:

@@ -13,7 +13,7 @@ from os import listdir
 
 from source.config import Defaults, Config, load_yaml_config
 from source.logger import info, critical
-from source.main import check_system_resources, check_inputs, check_keys
+from source.main import check_system_resources, check_inputs, check_keys, load_genome_resources
 from source.bcbio_runner import run_on_bcbio_final_dir
 
 
@@ -67,6 +67,8 @@ def main():
         cnf.steps.append('QualiMap')
 
     check_system_resources(cnf, required=['qsub'])
+
+    load_genome_resources(cnf, required=['seq'])
 
     load_bcbio_cnf(cnf)
     # if cnf.vcf_suf:

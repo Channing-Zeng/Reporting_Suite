@@ -16,6 +16,13 @@ resources:
     path: ~/bin/bcftools/plot-vcfstats
   qsub:
     path: ../tools/qsub.sh
+  vardict_pl:
+    path: /Users/vladsaveliev/vagrant/VarDict/vardict.pl
+  testsomatic_r:
+    path: /Users/vladsaveliev/vagrant/VarDict/testsomatic.R
+  var2vcf_somatic_pl:
+    path: /Users/vladsaveliev/vagrant/VarDict/var2vcf_somatic.pl
+
 
 genomes:
   hg19:
