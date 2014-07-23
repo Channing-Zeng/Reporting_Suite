@@ -70,7 +70,11 @@ class InfoFilter(CnfFilter):
                 else:
                     return True  # PASS
 
-            return op(Filter.filt_cnf[cnf_key], rec.INFO[info_key])
+            try:
+                v = rec.INFO[info_key][0]
+            except:
+                v = rec.INFO[info_key]
+            return op(Filter.filt_cnf[cnf_key], v)
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
@@ -179,7 +183,7 @@ class Filtering:
                 pass
 
             if sample and self.control and sample == self.control:
-                all_passed = all([f.apply(rec, only_check=True) for f in self.round2_filters])
+                all_passed = all(f.apply(rec, only_check=True) for f in self.round2_filters)
 
                 if all_passed or rec.cls() == 'Novel':
                 # So that any novel variants showed up in control won't be filtered:
@@ -189,7 +193,7 @@ class Filtering:
                 if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
                 # Undetermined won't count toward samples
                     self.samples.add(sample)
-                    self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', .0))
+                    self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', [.0])[0])
             return rec
         return __f
 
@@ -217,21 +221,21 @@ class Filtering:
                     rec.ID == '.')  # TODO: check if "." converted to None in the vcf lib
                 self.multi_filter.apply(rec)
 
-                pstd = rec.INFO.get('PSTD')
-                bias = rec.INFO.get('BIAS')
+                pstd = rec.INFO.get('PSTD', [None])[0]
+                bias = rec.INFO.get('BIAS', [None])[0]
                 # all variants from one position in reads
                 if pstd is not None and bias is not None:
                     self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
                     self.dup_filter.apply(rec)
 
                 max_ratio = self.filt_cnf.get('max_ratio')
-                af = rec.INFO.get('AF')
+                af = rec.INFO.get('AF', [None])[0]
                 if af is not None:
                     af = float(af)
                     self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
                     self.max_rate_filter.apply(rec)
 
-                gmaf = rec.INFO.get('GMAF')
+                gmaf = rec.INFO.get('GMAF', [None])[0]
                 req_maf = self.filt_cnf['maf']
                 # if there's MAF with frequency, it'll be considered
                 # dbSNP regardless of COSMIC
