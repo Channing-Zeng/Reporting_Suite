@@ -25,11 +25,11 @@ resources:
     path: /usr/bin/java
   python:
     path: /opt/az/local/psf/python/64_2.7.3/python
-  vardict:
+  vardict_pl:
     path: /gpfs/group/ngs/src/vardict/vardict
-  vardict:
+  testsomatic_r:
     path: /gpfs/group/ngs/src/vardict/testsomatic.R
-  vardict:
+  var2vcf_somatic_pl:
     path: /gpfs/group/ngs/src/vardict/var2vcf_somatic.pl
 
 genomes:
