@@ -30,7 +30,7 @@ class Step():
         self.run_id = run_id
 
     def job_name(self, sample=None, caller=None):
-        return self.run_id + '_' + self.short_name.upper() + \
+        return self.short_name.upper() + '_' + self.run_id + \
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
 
