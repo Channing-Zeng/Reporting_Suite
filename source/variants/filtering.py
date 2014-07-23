@@ -60,7 +60,7 @@ class CnfFilter(Filter):
 
 
 class InfoFilter(CnfFilter):
-    def __init__(self, cnf_key, info_key, op=operator.ge, *args, **kwargs):
+    def __init__(self, cnf_key, info_key, op=operator.gt, *args, **kwargs):
         def check(rec):
             if info_key not in rec.INFO:
                 if self.required:
@@ -71,10 +71,21 @@ class InfoFilter(CnfFilter):
                     return True  # PASS
 
             try:
-                v = rec.INFO[info_key][0]
+                v1 = float(Filter.filt_cnf[cnf_key])
+            except ValueError:
+                v1 = int(Filter.filt_cnf[cnf_key])
+
+            try:
+                ann = rec.INFO[info_key][0]
             except:
-                v = rec.INFO[info_key]
-            return op(Filter.filt_cnf[cnf_key], v)
+                ann = rec.INFO[info_key]
+
+            try:
+                v2 = float(ann)
+            except ValueError:
+                v2 = int(ann)
+
+            return op(v2, v1)
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
@@ -101,16 +112,19 @@ class Filtering:
         self.cnf = cnf
         self.filt_cnf = filt_cnf
         self.vcf_fpath = vcf_fpath
-        self.vardict_mode = False
         Filter.filt_cnf = self.filt_cnf
 
         self.control_vars = set()
         self.samples = {''}
         self.af_by_varid = defaultdict(list)
 
-        self.round1_filters = [InfoFilter('filt_depth', 'DP', required=False)]
-        self.round1_filters.append(InfoFilter('filt_q_mean', 'QUAL', required=False))
-        self.round1_filters.append(InfoFilter('filt_p_mean', 'PMEAN', required=False))
+        self.round1_filters = []
+        if filt_cnf.get('filt_depth') is not None:
+            self.round1_filters.append(InfoFilter('filt_depth', 'DP', required=False))
+        if filt_cnf.get('filt_q_mean') is not None:
+            self.round1_filters.append(InfoFilter('filt_q_mean', 'QUAL', required=False))
+        if filt_cnf.get('filt_p_mean') is not None:
+            self.round1_filters.append(InfoFilter('filt_p_mean', 'PMEAN', required=False))
         # self.round1_filters.append(Filter('min_q_mean', lambda rec: rec.QUAL >= filt_cnf['filt_q_mean']))
 
         self.control = self.filt_cnf.get('control')

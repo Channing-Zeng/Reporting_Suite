@@ -17,11 +17,9 @@ filter_reject: False  ## Before annotation and QC, filter variants
 variant_filtering:
   impact:             'MODERATE|HIGH'
 
-  vardict_mode:       False
-
-  filt_depth:         None    # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
-  filt_p_mean:        None    # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
-  filt_q_mean:        None    # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
+#  filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+#  filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+#  filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
   min_freq:           0.05    # AF.     When individual allele frequency < feq for variants, it was considered likely false poitives.
   mean_mq:            20      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
