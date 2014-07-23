@@ -363,7 +363,7 @@ class Runner():
                                   tumor_bam=tumor_bam_fpath,
                                   normal_bam=normal_bam_fpath,
                                   bed=bed_fpath,
-                                  outp_fpath=join(tumor_bam_fpath, pardir, 'vardict', 'vardict.vcf'))
+                                  outp_fpath=abspath(join(dirname(tumor_bam_fpath), 'vardict', 'vardict.vcf')))
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
