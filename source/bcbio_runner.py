@@ -5,7 +5,7 @@ import hashlib
 import os
 import re
 import sys
-from os.path import join, dirname, abspath, expanduser, basename
+from os.path import join, dirname, abspath, expanduser, basename, pardir
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, file_transaction, make_tmpfile
 from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline
@@ -360,7 +360,8 @@ class Runner():
                                   normal_name=normal_name,
                                   tumor_bam=tumor_bam_fpath,
                                   normal_bam=normal_bam_fpath,
-                                  bed=bed_fpath)
+                                  bed=bed_fpath,
+                                  out_fpath=join(tumor_bam_fpath, pardir, 'vardict', 'vardict.vcf'))
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
