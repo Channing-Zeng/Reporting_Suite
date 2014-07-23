@@ -116,7 +116,7 @@ class Runner():
             param_line=' -G {ref} -f {af_thr} -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
                        ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} '
                        '| {testsomatic_r} '
-                       '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr}'.format(
+                       '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr} > {out_fpath}'.format(
                 testsomatic_r=testsomatic_r,
                 var2vcf_somatic_pl=var2vcf_somatic_pl,
                 af_thr=af_thr,
@@ -125,7 +125,8 @@ class Runner():
                 tumor_bam='{tumor_bam}',
                 normal_bam='{normal_bam}',
                 tumor_name='{tumor_name}',
-                normal_name='{normal_name}')
+                normal_name='{normal_name}',
+                out_fpath='{outp_fpath}')
         )
 
         self.varannotate = self.steps.step(
@@ -361,7 +362,7 @@ class Runner():
                                   tumor_bam=tumor_bam_fpath,
                                   normal_bam=normal_bam_fpath,
                                   bed=bed_fpath,
-                                  out_fpath=join(tumor_bam_fpath, pardir, 'vardict', 'vardict.vcf'))
+                                  outp_fpath=join(tumor_bam_fpath, pardir, 'vardict', 'vardict.vcf'))
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
