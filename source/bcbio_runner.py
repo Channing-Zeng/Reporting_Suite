@@ -116,7 +116,8 @@ class Runner():
             param_line=' -G {ref} -f {af_thr} -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
                        ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} '
                        '| {testsomatic_r} '
-                       '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr} > {out_fpath}'.format(
+                       '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr} '
+                       '| tee {out_fpath}'.format(
                 testsomatic_r=testsomatic_r,
                 var2vcf_somatic_pl=var2vcf_somatic_pl,
                 af_thr=af_thr,
