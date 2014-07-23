@@ -310,7 +310,7 @@ class Runner():
 
             if 'VarDict' in self.steps:
                 if not 'metadata' in sample_info:
-                    print sample_info
+                    continue
                 batch_name = sample_info['metadata']['batch']
                 phenotype = sample_info['metadata']['phenotype']
                 batches[batch_name]['bed'] = bed_fpath
