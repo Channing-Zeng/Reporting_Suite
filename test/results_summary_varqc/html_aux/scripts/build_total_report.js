@@ -208,7 +208,7 @@ function buildTotalReport(sampleNames, report, order, date, glossary, qualities,
 
     $('#report_legend').append(legend);
 
-    $(".report_table td[number]").mouseenter(function() {
+    function heatmap() {
         if (dragTable && dragTable.isDragging)
             return;
 
@@ -244,10 +244,9 @@ function buildTotalReport(sampleNames, report, order, date, glossary, qualities,
 
         if (numbers.length > 1)
             $('#report_legend').show('fast');
+    }
 
-    }).mouseleave(function() {
-        $(this).parent().find('td[number]').css('color', 'black');
-    });
+    $( document ).load(heatmap);
 }
 
 //function buildNewTotalReport(report, glossary) {

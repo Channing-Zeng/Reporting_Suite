@@ -1,15 +1,15 @@
 #!/usr/bin/perl -w
 
-# Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
+# Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Statistics::Basic;
+use Stat::Basic;
 use Getopt::Std;
 use strict;
 
-our ($opt_c);
+our ($opt_c, $opt_a, $opt_i);
 
-getopts( 'c:' );
+getopts( 'aic:' );
 
 my $CNT = shift;
 my %cnt;
@@ -37,17 +37,30 @@ my %norm2; # key: gene value: hash of (key: sample; value: normalized by gene me
 my %norm3; # key: gene value: hash of (key: sample; value: normalized by sample median scaling log2)
 my %samples;
 my @depth;
+my %data;
+my %loc;
 while( <> ) {
-    next unless( /Whole-/ );
+    next if ( /Whole-/ );
     next if ( /_CONTROL_/ );
+    next if ( /^Sample/ );
     my ($sample, $gene, $chr, $s, $e, $t, $len, $depth) = split(/\t/);
     next if ( $sample eq "Undetermined" );
-    my $k = join("\t", $gene, $chr, $s, $e, $len);
-    $norm1{ $k }->{ $sample } = sprintf("%.3f", $depth*$factor{ $sample });
-    $raw{ $k }->{ $sample } = $depth;
-    $samples{ $sample } = 1;
-    push(@depth, $depth*$factor{ $sample });
-    #print join("\t", $sample, $k, $depth*$factor{ $sample }), "\n";
+    my $k = $opt_a ? join("\t", $gene, $chr, $s, $e, $len) : $gene;
+    $data{ $k }->{ $sample }->{ len } += $len;
+    $loc{ $k }->{ chr } = $chr;
+    $loc{ $k }->{ start } = $s unless( $loc{ $k }->{ start } && $loc{ $k }->{ start } < $s );
+    $loc{ $k }->{ end } = $e unless( $loc{ $k }->{ end } && $loc{ $k }->{ end } > $e );
+    $data{ $k }->{ $sample }->{ cov } += $len*$depth;
+}
+
+while(my($k, $v) = each %data) {
+    while( my($sample, $dv) = each %$v ) {
+        $raw{ $k }->{ $sample } = sprintf("%.2f", $dv->{cov}/$dv->{len});
+        $norm1{ $k }->{ $sample } = sprintf("%.2f", $raw{ $k }->{ $sample }*$factor{ $sample });
+        $samples{ $sample } = 1;
+        push(@depth, $norm1{ $k }->{ $sample } );
+        #print join("\t", $sample, $k, $depth*$factor{ $sample }), "\n";
+    }
 }
 my $meddepth = $stat->median(\@depth);
 my %factor2;  # Gene factor
@@ -63,16 +76,13 @@ foreach my $s (@samples) {
         push( @tmp, $v->{ $s } );
     }
     $samplemedian{ $s } = $stat->median( \@tmp );
-    #print STDERR "$s\t", $stat->median( \@tmp ), "\n";
 }
 
 while( my ($k, $v) = each %norm1) {
     foreach my $s (@samples) {
-	    $norm1b{ $k }->{ $s } = $v->{$s} * $factor2{ $k }+0.1;
-        print "$k : $v->{$s} : $factor2{ $k } : $norm1b{ $k }->{ $s }";
-        $norm2{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
-        $norm3{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
-	    #$v->{$s} = log($v->{$s}/$meddepth)/log(2);
+        $norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
+        $norm2{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
+        $norm3{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
     }
 }
 
@@ -81,7 +91,9 @@ print "\tlog2Ratio_normContr" if ( $opt_c );
 print "\n";
 while( my ($k, $v) = each %norm2) {
     while( my ($s, $d) = each %$v ) {
-        print join("\t", $s, $k, $raw{ $k }->{ $s }, $norm1{ $k }->{ $s }, $norm1b{ $k }->{ $s }, $d, $norm3{ $k }->{ $s });
+        next if ( $opt_i && $factor2{ $k } == 0);
+        my $t = $opt_a ? $k : "$k\t$loc{$k}->{chr}\t$loc{$k}->{start}\t$loc{$k}->{end}\t$data{$k}->{$s}->{len}";
+        print join("\t", $s, $t, $raw{ $k }->{ $s }, $norm1{ $k }->{ $s }, $norm1b{ $k }->{ $s }, $d, $norm3{ $k }->{ $s });
         if ( $opt_c ) {
             my @controls = split(/:/, $opt_c);
             my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
