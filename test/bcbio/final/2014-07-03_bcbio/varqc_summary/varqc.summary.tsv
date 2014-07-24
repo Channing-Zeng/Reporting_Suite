@@ -1,7 +1,7 @@
 Sample	sample2	sample1
 nEvalVariants, all	10	10
 nSNPs, all	9	9
-nInsertions, all	1	0
+nInsertions, all	0	0
 nDeletions, all	0	0
 nVariantsAtComp, all	1	1
 compRate, all	10.00	10.00

@@ -27,9 +27,11 @@ def _normalize(name):
 
 
 class Step():
-    def __init__(self, cnf, name, script, interpreter=None, short_name=None, paramln=None):
+    def __init__(self, cnf, run_id, name, script, interpreter=None, short_name=None, paramln=None):
         self.name = name
         self.cnf = cnf
+        assert run_id
+        self.run_id_ = run_id
         self.short_name = short_name or name
         self.param_line = paramln
         self.run_id = None
@@ -37,20 +39,15 @@ class Step():
         self.interpreter = interpreter
 
     def job_name(self, sample=None, caller=None):
-        assert self.run_id, 'run_id must be set when adding the step to Steps'
-        return self.short_name.upper() + '_' + self.run_id + \
+        return self.short_name.upper() + '_' + self.run_id_ + \
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
 
 class Steps(list):
-    def __init__(self, cnf, run_id):
+    def __init__(self):
         super(Steps, self).__init__()
-        self.cnf = cnf
-        self.run_id = run_id
 
     def add_step(self, step):
-        step.cnf = self.cnf
-        step.run_id = self.run_id
         self.append(step)
 
     def extend(self, iterable):
@@ -74,10 +71,10 @@ class Runner():
         if not verify_dir(self.date_dirpath):
             critical('The project directory must have format {fc_date}_{fc_name}, here: ' + self.date_dirpath)
 
-        self.steps = Steps(cnf, self.run_id)
-        self.vardict_steps = Steps(cnf, self.run_id)
+        self.steps = Steps()
+        self.vardict_steps = Steps()
 
-        self.set_up_steps(cnf)
+        self.set_up_steps(cnf, self.run_id)
 
         def contains(x, xs):
             return _normalize(x) in [_normalize(y) for y in (xs or [])]
@@ -105,7 +102,7 @@ class Runner():
             self.targetcov_summary] if contains(s.name, cnf.steps)
         ])
 
-    def set_up_steps(self, cnf):
+    def set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
 
         if cnf.overwrite is not None:
@@ -120,19 +117,19 @@ class Runner():
 # vardict_pl
         # VARDICT
         af_thr = str(cnf.variant_filtering.min_freq)
-        self.vardict = Step(cnf,
+        self.vardict = Step(cnf, run_id,
             name='VarDict',
             interpreter='perl',
             script='vardict_pl',
             paramln=' -G ' + cnf.genome.seq + ' -f ' + af_thr + ' -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
                     ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} > {vars_txt}'
         )
-        self.testsomatic = Step(cnf,
+        self.testsomatic = Step(cnf, run_id,
             name='TestSomatic',
             script='testsomatic_r',
             paramln=' < {vars_txt} > {somatic_vars_txt}',
         )
-        self.var_to_txt_somatic = Step(cnf,
+        self.var_to_txt_somatic = Step(cnf, run_id,
             name='Var2Vcf_Somatic',
             interpreter='perl',
             script='var2vcf_somatic_pl',
@@ -141,49 +138,49 @@ class Runner():
         )
         # END VARDICT
 
-        self.varannotate = Step(cnf,
+        self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
             interpreter='python',
             script='varannotate',
             paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} '
                     '-o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varannotate') + '\''
         )
-        self.varqc = Step(cnf,
+        self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
             interpreter='python',
             script='varqc',
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\''
                     ' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\''
         )
-        self.varqc_after = Step(cnf,
+        self.varqc_after = Step(cnf, run_id,
             name='VarQC_after', short_name='vqa',
             interpreter='python',
             script='varqc',
             paramln=spec_params + ' --vcf \'{vcf}\' -o '
                     '\'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\''
         )
-        self.varfilter = Step(cnf,
+        self.varfilter = Step(cnf, run_id,
             name='VarFilter', short_name='vf',
             interpreter='python',
             script='varfilter',
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\''
         )
-        self.targetcov = Step(cnf,
+        self.targetcov = Step(cnf, run_id,
             interpreter='python',
             script='targetcov',
             name='TargetCov', short_name='tc',
             paramln=' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\''
         )
-        self.ngscat = Step(cnf,
+        self.ngscat = Step(cnf, run_id,
             interpreter='python',
             script='ngscat',
             name='NGScat', short_name='nc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' '
                     '-o \'{output_dir}\' -s \'{sample}\' --saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '\''
         )
-        self.qualimap = Step(cnf,
+        self.qualimap = Step(cnf, run_id,
             script='qualimap',
             name='QualiMap', short_name='qm',
             paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
@@ -194,7 +191,7 @@ class Runner():
         for s_info in self.bcbio_cnf.details:
             all_suffixes |= set(s_info['algorithm'].get('variantcaller')) or set()
 
-        self.varqc_summary = Step(cnf,
+        self.varqc_summary = Step(cnf, run_id,
             name='VarQC_summary', short_name='vqs',
             interpreter='python',
             script='varqc_summary',
@@ -202,7 +199,7 @@ class Runner():
                     + self.dir + '\' -s \'{samples}\' -n varqc --vcf-suf ' + ','.join(all_suffixes) +
                     ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\''
         )
-        self.targetcov_summary = Step(cnf,
+        self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',
             interpreter='python',
             script='targetcov_summary',
