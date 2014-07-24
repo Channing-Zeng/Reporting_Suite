@@ -1,16 +1,26 @@
 genome: hg19
 
 steps:
-- VarDict
+- VarAnnotate
+- VarQC
+- VarFilter
+- VarQC_after
+- TargetCov
+- NGScat
+- QualiMap
+- VarQC_Summary
+- TargetCov_Summary
+
+#vardict_steps:
+#- VarDict
+#- TestSomatic
+#- Var2Txt_Somatic
 #- VarAnnotate
 #- VarQC
 #- VarFilter
 #- VarQC_after
-#- TargetCov
-#- NGScat
-#- QualiMap
 #- VarQC_Summary
-#- TargetCov_Summary
+
 
 filter_reject: False   ## Before annotation and QC, drop variants
                        ## that set REJECT in the FILTER field

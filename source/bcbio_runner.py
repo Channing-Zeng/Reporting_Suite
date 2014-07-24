@@ -8,7 +8,7 @@ import sys
 from os.path import join, dirname, abspath, expanduser, basename, pardir
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, file_transaction, make_tmpfile
-from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline
+from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline, tool_cmdline
 
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info, err, critical
@@ -22,42 +22,40 @@ def run_on_bcbio_final_dir(cnf, bcbio_final_dir, bcbio_cnf):
     return Runner(cnf, bcbio_final_dir, bcbio_cnf).run()
 
 
+def _normalize(name):
+    return name.lower().replace('_', '').replace('-', '')
+
+
 class Step():
-    def __init__(self, run_id, short_name, name, cmdline=None):
-        self.short_name = short_name
+    def __init__(self, cnf, name, script, interpreter=None, short_name=None, paramln=None):
         self.name = name
-        self.cmdline = cmdline
-        self.run_id = run_id
+        self.cnf = cnf
+        self.short_name = short_name or name
+        self.param_line = paramln
+        self.run_id = None
+        self.script = script
+        self.interpreter = interpreter
 
     def job_name(self, sample=None, caller=None):
+        assert self.run_id, 'run_id must be set when adding the step to Steps'
         return self.short_name.upper() + '_' + self.run_id + \
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
 
-
 class Steps(list):
-    def __init__(self, cnf, run_id, steps):
-        super(Steps, self).__init__(steps)
+    def __init__(self, cnf, run_id):
+        super(Steps, self).__init__()
         self.cnf = cnf
         self.run_id = run_id
 
-    @staticmethod
-    def __normalize(item):
-        return item.lower().replace('_', '').replace('-', '')
+    def add_step(self, step):
+        step.cnf = self.cnf
+        step.run_id = self.run_id
+        self.append(step)
 
-    def __contains__(self, item):
-        return self.__normalize(item) in \
-               [self.__normalize(el) for el in self]
-
-    def step(self, name, short_name, script=None, interpreter='python', param_line=None):
-        if name not in self:
-            return Step(self.run_id, short_name, name, None)
-
-        cmd = get_tool_cmdline(self.cnf, interpreter, script or name)
-        if not cmd:
-            sys.exit(1)
-
-        return Step(self.run_id, short_name, name, cmd + ' ' + param_line)
+    def extend(self, iterable):
+        for step in iterable:
+            self.add_step(step)
 
 
 class Runner():
@@ -70,25 +68,42 @@ class Runner():
         self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])[:-1]
 
         self.threads = str(self.cnf.threads)
-        self.steps = Steps(cnf, self.run_id, cnf.steps)
         self.qsub_runner = expanduser(cnf.qsub_runner)
-
-        self.varannotate = None
-        self.varqc = None
-        self.varqc_after = None
-        self.varfilter = None
-        self.targetcov = None
-        self.ngscat = None
-        self.qualimap = None
-        self.targetcov_summary = None
-        self.varqc_summary = None
 
         self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath):
             critical('The project directory must have format {fc_date}_{fc_name}, here: ' + self.date_dirpath)
 
+        self.steps = Steps(cnf, self.run_id)
+        self.vardict_steps = Steps(cnf, self.run_id)
+
         self.set_up_steps(cnf)
 
+        def contains(x, xs):
+            return _normalize(x) in [_normalize(y) for y in (xs or [])]
+
+        self.vardict_steps.extend([s for s in [
+            self.vardict,
+            self.testsomatic,
+            self.var_to_txt_somatic,
+            self.varqc,
+            self.varannotate,
+            self.varfilter,
+            self.varqc_after,
+            self.varqc_summary] if contains(s.name, cnf.vardict_steps)
+        ])
+
+        self.steps.extend([s for s in [
+            self.varqc,
+            self.varannotate,
+            self.varfilter,
+            self.varqc_after,
+            self.varqc_summary,
+            self.targetcov,
+            self.ngscat,
+            self.qualimap,
+            self.targetcov_summary] if contains(s.name, cnf.steps)
+        ])
 
     def set_up_steps(self, cnf):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
@@ -102,98 +117,122 @@ class Runner():
             overwrite_line = ''
 
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
-
-        af_thr = cnf.variant_filtering.min_freq
-
-        zh_tools_dirpath = ''
-        # vardict_pl = get_script_cmdline(cnf, 'perl', join(zh_tools_dirpath, 'vardict_pl'))
-        testsomatic_r = get_script_cmdline(cnf, 'R', join(zh_tools_dirpath, 'testsomatic_r'))
-        var2vcf_somatic_pl = get_script_cmdline(cnf, 'perl', join(zh_tools_dirpath, 'var2vcf_somatic_pl'))
-        self.vardict = self.steps.step(
-            name='VarDict', short_name='vardict',
+# vardict_pl
+        # VARDICT
+        af_thr = str(cnf.variant_filtering.min_freq)
+        self.vardict = Step(cnf,
+            name='VarDict',
             interpreter='perl',
             script='vardict_pl',
-            param_line=' -G {ref} -f {af_thr} -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
-                       ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} > {out_fpath}'.format(
-                       # '| {testsomatic_r} '
-                       # '| {var2vcf_somatic_pl} -N \'{tumor_name}|{normal_name}\' -f {af_thr} '
-                       # '| tee {out_fpath}'.format(
-                testsomatic_r=testsomatic_r,
-                var2vcf_somatic_pl=var2vcf_somatic_pl,
-                af_thr=af_thr,
-                ref=cnf.genome.seq,
-                bed='{bed}',
-                tumor_bam='{tumor_bam}',
-                normal_bam='{normal_bam}',
-                tumor_name='{tumor_name}',
-                normal_name='{normal_name}',
-                out_fpath='{outp_fpath}')
+            paramln=' -G ' + cnf.genome.seq + ' -f ' + af_thr + ' -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
+                    ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} > {vars_txt}'
         )
+        self.testsomatic = Step(cnf,
+            name='TestSomatic',
+            script='testsomatic_r',
+            paramln=' < {vars_txt} > {somatic_vars_txt}',
+        )
+        self.var_to_txt_somatic = Step(cnf,
+            name='Var2Vcf_Somatic',
+            interpreter='perl',
+            script='var2vcf_somatic_pl',
+            paramln=' -N \'{tumor_name}|{normal_name}\' -f ' +
+                    af_thr + ' < {somatic_vars_txt} > {vardict_vcf}',
+        )
+        # END VARDICT
 
-        self.varannotate = self.steps.step(
+        self.varannotate = Step(cnf,
             name='VarAnnotate', short_name='va',
-            script='varannotate.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varannotate') + '\'')
-        self.varqc = self.steps.step(
+            interpreter='python',
+            script='varannotate',
+            paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} '
+                    '-o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varannotate') + '\''
+        )
+        self.varqc = Step(cnf,
             name='VarQC', short_name='vq',
-            script='varqc.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\'')
-        self.varqc_after = self.steps.step(
+            interpreter='python',
+            script='varqc',
+            paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\''
+                    ' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc') + '\''
+        )
+        self.varqc_after = Step(cnf,
             name='VarQC_after', short_name='vqa',
-            script='varqc.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\'')
-        self.varfilter = self.steps.step(
+            interpreter='python',
+            script='varqc',
+            paramln=spec_params + ' --vcf \'{vcf}\' -o '
+                    '\'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '\''
+        )
+        self.varfilter = Step(cnf,
             name='VarFilter', short_name='vf',
-            script='varfilter.py',
-            param_line=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\'')
-        self.targetcov = self.steps.step(
+            interpreter='python',
+            script='varfilter',
+            paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' '
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '\''
+        )
+        self.targetcov = Step(cnf,
+            interpreter='python',
+            script='targetcov',
             name='TargetCov', short_name='tc',
-            script='targetcov.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\'')
-        self.ngscat = self.steps.step(
+            paramln=' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\''
+        )
+        self.ngscat = Step(cnf,
+            interpreter='python',
+            script='ngscat',
             name='NGScat', short_name='nc',
-            script='ngscat.py',
-            param_line=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' --saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '\'')
-        self.qualimap = self.steps.step(
+            paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' '
+                    '-o \'{output_dir}\' -s \'{sample}\' --saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '\''
+        )
+        self.qualimap = Step(cnf,
+            script='qualimap',
             name='QualiMap', short_name='qm',
-            interpreter=None,
-            param_line=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 -bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN')
+            paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
+                    '-bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN'
+        )
 
         all_suffixes = set()
         for s_info in self.bcbio_cnf.details:
             all_suffixes |= set(s_info['algorithm'].get('variantcaller')) or set()
 
-        self.varqc_summary = self.steps.step(
+        self.varqc_summary = Step(cnf,
             name='VarQC_summary', short_name='vqs',
-            script='varqc_summary.py',
-            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
-                       ' -n varqc --vcf-suf ' + ','.join(all_suffixes) + ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\'')
-        self.targetcov_summary = self.steps.step(
+            interpreter='python',
+            script='varqc_summary',
+            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
+                    + self.dir + '\' -s \'{samples}\' -n varqc --vcf-suf ' + ','.join(all_suffixes) +
+                    ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\''
+        )
+        self.targetcov_summary = Step(cnf,
             name='TargetCov_summary', short_name='tcs',
-            script='targetcov_summary.py',
-            param_line=cnfs_line + ' -o \'{output_dir}\' -d \'' + self.dir + '\' -s \'{samples}\''
-                       ' -n targetcov --work-dir \'' + join(cnf.work_dir, 'targetcov_summary') + '\'')
+            interpreter='python',
+            script='targetcov_summary',
+            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
+                    + self.dir + '\' -s \'{samples}\' -n targetcov --work-dir \'' +
+                    join(cnf.work_dir, 'targetcov_summary') + '\''
+        )
 
-    def submit_if_needed(self, step, sample_name='', suf=None, create_dir=True,
-                         out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
-
+    def step_output_dir_and_log_paths(self, step, sample_name, caller=None, create_dir=True):
         output_dirpath = self.dir
         if sample_name:
             output_dirpath = join(output_dirpath, sample_name)
         else:
             output_dirpath = self.date_dirpath
-            # if output_dirpath != self.dir:
-            #     create_dir = False
 
-        log_fpath = join(output_dirpath, step.job_name(sample_name, suf).lower() + '.log')
+        output_dirpath = abspath(output_dirpath)
+
+        log_fpath = join(output_dirpath, step.job_name(sample_name, caller).lower() + '.log')
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
-            log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
+            log_fpath = join(output_dirpath, 'log' + ('_' + caller if caller else ''))
 
-        # Skipping steps
-        if not step or step.name not in self.steps:
-            return output_dirpath
+        return output_dirpath, log_fpath
+
+
+    def submit(self, step, sample_name='', caller=None, create_dir=True,
+               out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
+
+        output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, caller, create_dir)
 
         if create_dir:
             safe_mkdir(output_dirpath)
@@ -214,14 +253,17 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
-        job_name = step.job_name(sample_name, suf)
+        job_name = step.job_name(sample_name, caller)
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
 
         runner_script = self.qsub_runner
 
-        cmdline = step.cmdline.format(**params)
+        tool_cmdline = get_tool_cmdline(self.cnf, step.interpreter, step.script)
+        if not tool_cmdline:
+            sys.exit(1)
+        cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 
         qsub = get_tool_cmdline(self.cnf, 'qsub')
 
@@ -295,7 +337,9 @@ class Runner():
             bed_fpath = sample_info['algorithm'].get('variant_regions')
             bam_fpath = join(sample_dirpath, sample + '-ready.bam')
 
-            if 'TargetCov' in self.steps or 'NGScat' in self.steps or 'Qualimap' in self.steps or 'VarDict' in self.steps:
+            if any(step in self.steps for step in [self.targetcov, self.qualimap, self.ngscat]) \
+                    or self.vardict in self.vardict_steps:
+
                 if not verify_bam(bam_fpath) or not verify_file(bed_fpath):
                     sys.exit(1)
                 else:
@@ -310,7 +354,7 @@ class Runner():
                 if not file_exists(bed_fpath):
                     bed_fpath = None
 
-            if 'VarDict' in self.steps:
+            if self.vardict_steps:
                 if not 'metadata' in sample_info:
                     continue
                 batch_name = sample_info['metadata']['batch']
@@ -335,13 +379,11 @@ class Runner():
                 if not verify_file(vcf_fpath):
                     sys.exit(1)
 
-                self._process_vcf(sample, sample_dirpath, bam_fpath, vcf_fpath, variant_caller)
+                self._process_vcf(sample, bam_fpath, vcf_fpath, variant_caller)
 
-            self.submit_if_needed(self.targetcov, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
-
-            self.submit_if_needed(self.ngscat, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
-
-            self.submit_if_needed(self.qualimap, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
+            for step in [self.targetcov, self.qualimap, self.ngscat]:
+                if step in self.steps:
+                    self.submit(step, sample, bam=bam_fpath, bed=bed_fpath, sample=sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -356,14 +398,36 @@ class Runner():
             tumor_name, tumor_bam_fpath = batch['tumor']
             normal_name, normal_bam_fpath = batch['normal']
             bed_fpath = batch['bed']
+            output_dirpath, log_fpath = self.step_output_dir_and_log_paths(self.vardict, tumor_name)
+            vars_txt = join(output_dirpath, 'vardict.txt')
 
-            self.submit_if_needed(self.vardict, tumor_name,
-                                  tumor_name=tumor_name,
-                                  normal_name=normal_name,
-                                  tumor_bam=tumor_bam_fpath,
-                                  normal_bam=normal_bam_fpath,
-                                  bed=bed_fpath,
-                                  outp_fpath=abspath(join(dirname(tumor_bam_fpath), 'vardict', 'vardict.txt')))
+            if self.vardict in self.vardict_steps:
+                self.submit(
+                    self.vardict, tumor_name,
+                    tumor_name=tumor_name,
+                    normal_name=normal_name,
+                    tumor_bam=tumor_bam_fpath,
+                    normal_bam=normal_bam_fpath,
+                    bed=bed_fpath,
+                    vars_txt=vars_txt)
+
+            somatic_vars_txt = join(output_dirpath, 'somatic_variants.txt')
+            if self.testsomatic in self.vardict_steps:
+                self.submit(
+                    self.testsomatic, tumor_name,
+                    vars_txt=vars_txt,
+                    somatic_vars_txt=somatic_vars_txt)
+
+            vardict_vcf = join(output_dirpath, 'somatic_variants-vardict_standalone.vcf')
+            if self.var_to_txt_somatic in self.vardict_steps:
+                self.submit(
+                    self.var_to_txt_somatic, tumor_name,
+                    tumor_name=tumor_name,
+                    normal_name=normal_name,
+                    somatic_vars_txt=somatic_vars_txt,
+                    vardict_vcf=vardict_vcf)
+
+            self._process_vcf(tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone')
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
@@ -378,44 +442,57 @@ class Runner():
                 f.write(sample + '\n')
                 samples_num += 1
 
-        self.submit_if_needed(
-            self.varqc_summary,
-            wait_for_steps=[
-                self.varqc.job_name(d['description'], v)
-                for d in self.bcbio_cnf.details
-                for v in all_variantcallers],
-            # threads=samples_num + 1,
-            samples=samples_fpath)
+        if self.varqc_summary in self.steps:
+            self.submit(
+                self.varqc_summary,
+                wait_for_steps=[
+                    self.varqc.job_name(d['description'], v)
+                    for d in self.bcbio_cnf.details
+                    for v in all_variantcallers],
+                # threads=samples_num + 1,
+                samples=samples_fpath)
 
-        self.submit_if_needed(
-            self.targetcov_summary,
-            wait_for_steps=[
-                self.targetcov.job_name(d['description'])
-                for d in self.bcbio_cnf.details],
-            # threads=samples_num + 1,
-            samples=samples_fpath)
+        if self.targetcov_summary in self.steps:
+            self.submit(
+                self.targetcov_summary,
+                wait_for_steps=[
+                    self.targetcov.job_name(d['description'])
+                    for d in self.bcbio_cnf.details],
+                # threads=samples_num + 1,
+                samples=samples_fpath)
 
         if not self.cnf.verbose:
             print ''
         if self.cnf.verbose:
             info('Done.')
 
-    def _process_vcf(self, sample, sample_dirpath, bam_fpath, vcf_fpath, suf):
-        self.submit_if_needed(self.varqc, sample, suf=suf, vcf=vcf_fpath, sample=sample + '-' + suf)
+    def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller, steps=None):
+        steps = steps or self.steps
+
+        if self.varqc in steps:
+            self.submit(self.varqc, sample, caller=caller, vcf=vcf_fpath, sample=sample + '-' + caller)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
-        anno_dirpath = self.submit_if_needed(self.varannotate, sample, suf=suf, vcf=vcf_fpath, bam_cmdline=bam_cmdline, sample=sample + '-' + suf)
 
+        if self.varannotate in steps:
+            self.submit(
+                self.varannotate, sample, caller=caller, vcf=vcf_fpath,
+                bam_cmdline=bam_cmdline, sample=sample + '-' + caller)
+
+        anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample)
         annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-        filter_dirpath = self.submit_if_needed(
-            self.varfilter, sample, suf=suf,
-            wait_for_steps=[self.varannotate.job_name(sample, suf)],
-            vcf=annotated_vcf_fpath, sample=sample + '-' + suf)
+        if self.varfilter in steps:
+            self.submit(
+                self.varfilter, sample, caller=caller,
+                wait_for_steps=[self.varannotate.job_name(sample, caller)],
+                vcf=annotated_vcf_fpath, sample=sample + '-' + caller)
 
+        filter_dirpath, _ = self.step_output_dir_and_log_paths(self.varfilter, sample)
         filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
 
-        self.submit_if_needed(
-            self.varqc_after, sample, suf=suf,
-            wait_for_steps=[self.varfilter.job_name(sample, suf)] if self.varfilter.name in self.steps else [],
-            vcf=filtered_vcf_fpath, sample=sample + '-' + suf)
+        if self.varqc_after in steps:
+            self.submit(
+                self.varqc_after, sample, caller=caller,
+                wait_for_steps=[self.varfilter.job_name(sample, caller)] if self.varfilter.name in self.steps else [],
+                vcf=filtered_vcf_fpath, sample=sample + '-' + caller)

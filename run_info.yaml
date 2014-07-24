@@ -12,6 +12,16 @@ steps:
 - VarQC_Summary
 - TargetCov_Summary
 
+#vardict_steps:
+#- VarDict
+#- TestSomatic
+#- Var2Txt_Somatic
+#- VarAnnotate
+#- VarQC
+#- VarFilter
+#- VarQC_after
+#- VarQC_Summary
+
 filter_reject: False  ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 

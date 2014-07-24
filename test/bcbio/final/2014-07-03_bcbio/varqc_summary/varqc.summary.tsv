@@ -1,13 +1,13 @@
-Sample	sample2	sample3	sample4	sample5	sample6	sample7	sample8
-nEvalVariants, all	10	0	0	0	0	0	0
-nSNPs, all	9	0	0	0	0	0	0
-nInsertions, all	1	0	0	0	0	0	0
-nDeletions, all	0	0	0	0	0	0	0
-nVariantsAtComp, all	1	0	0	0	0	0	0
-compRate, all	10.00	0.00	0.00	0.00	0.00	0.00	0.00
-nConcordant, all	1	0	0	0	0	0	0
-concordantRate, all	100.00	0.00	0.00	0.00	0.00	0.00	0.00
-variantRate, all	0.00027343	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000	0.00000000
-basesPerVariant, all	3657.00	0.00	0.00	0.00	0.00	0.00	0.00
-hetHomRatio, all	0.11	0.00	0.00	0.00	0.00	0.00	0.00
-tiTvRatio, all	3.50	0.00	0.00	0.00	0.00	0.00	0.00
+Sample	sample2	sample1
+nEvalVariants, all	10	10
+nSNPs, all	9	9
+nInsertions, all	1	0
+nDeletions, all	0	0
+nVariantsAtComp, all	1	1
+compRate, all	10.00	10.00
+nConcordant, all	1	1
+concordantRate, all	100.00	100.00
+variantRate, all	0.00027343	0.00027343
+basesPerVariant, all	3657.00	3657.00
+hetHomRatio, all	0.11	0.11
+tiTvRatio, all	3.50	3.50

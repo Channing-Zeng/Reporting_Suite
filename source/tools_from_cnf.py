@@ -8,6 +8,13 @@ from source.logger import info, err
 from source.utils_from_bcbio import file_exists, which
 
 
+def tool_cmdline(*args, **kwargs):
+    cmdline = get_tool_cmdline(*args, **kwargs)
+    if not cmdline:
+        exit(1)
+    return cmdline
+
+
 def get_tool_cmdline(cnf, interpreter, tool_name=None,
                      extra_warning='', suppress_warn=False):
     if tool_name is None:
