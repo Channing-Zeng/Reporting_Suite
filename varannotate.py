@@ -9,7 +9,6 @@ import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf
 from source.runner import run_one
-from source.variants.tsv import make_tsv
 from source.variants.anno import run_annotators
 from source.utils import info
 from source.logger import err

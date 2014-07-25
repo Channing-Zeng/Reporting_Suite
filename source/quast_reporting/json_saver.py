@@ -1,17 +1,21 @@
 import datetime
-import json
+from json import dump, JSONEncoder
 import os
 from os.path import join
 
 
-def save_total_report(work_dir, report_base_name, sample_names, report):
+class Encoder(JSONEncoder):
+    def default(self, o):
+        return o.__dict__
+
+
+def save_total_report(work_dir, report_base_name, report):
     t = datetime.datetime.now()
 
-    return save(join(work_dir, report_base_name + '.json'), {
-        'date': t.strftime('%d %B %Y, %A, %H:%M:%S'),
-        'report': report,
-        'sampleNames': sample_names,
-    })
+    return save(join(work_dir, report_base_name + '.json'), dict(
+        date=t.strftime('%d %B %Y, %A, %H:%M:%S'),
+        report=report,
+    ))
 
 
 def save(fpath, contents):
@@ -19,7 +23,7 @@ def save(fpath, contents):
         os.remove(fpath)
 
     with open(fpath, 'w') as f:
-        json.dump(contents, f, separators=(',', ':'))
+        dump(contents, f, separators=(',', ':'), cls=Encoder)
 
     return fpath
 

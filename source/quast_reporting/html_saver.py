@@ -47,11 +47,8 @@ aux_files = [
 ]
 
 
-def write_html_report(output_dirpath, work_dirpath, report,
-                      sample_names, report_base_name, caption):
-
-    json_fpath = json_saver.save_total_report(
-        work_dirpath, report_base_name, sample_names, report)
+def write_html_report(output_dirpath, work_dirpath, report, report_base_name, caption):
+    json_fpath = json_saver.save_total_report(work_dirpath, report_base_name, report)
 
     if not verify_file(json_fpath):
         sys.exit(1)

@@ -1,8 +1,9 @@
 from collections import OrderedDict
 from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
-    summarize, write_summary_reports, write_tsv
+    summarize, write_summary_reports, write_tsv, Metric
 from source.targetcov.copy_number import run_copy_number
 from source.logger import critical, step_greetings, info
+from source.utils import OrderedDefaultDict
 
 
 def summary_reports(cnf, sample_names):
@@ -11,12 +12,10 @@ def summary_reports(cnf, sample_names):
     sample_sum_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
 
-
     sum_report = summarize(sample_names, sample_sum_reports, _parse_targetseq_sample_report)
 
     sum_report_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], sum_report,
-        sample_names, 'targetseq.summary', 'Target coverage statistics')
+        cnf['output_dir'], cnf['work_dir'], sum_report, 'targetseq.summary', 'Target coverage statistics')
 
     return sample_sum_reports, sum_report_fpaths
 
@@ -44,17 +43,17 @@ def _parse_targetseq_sample_report(report_fpath):
             dict(metricName=None, value=None,
             isMain=True, quality='More is better')
     """
-    row_per_sample = []
+    metrics = OrderedDefaultDict(Metric)
 
     with open(report_fpath) as f:
         rows = [l.strip().split('\t') for l in f]
 
     for row in rows:
-        row_per_sample.append(dict(
-            metricName=row[0], value=row[1],
-            isMain=True, quality='More is better'))
+        metric_name = row[0]
+        metrics[metric_name].name = metric_name
+        metrics[metric_name].quality = 'More is better'
 
-    return row_per_sample
+    return metrics
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):

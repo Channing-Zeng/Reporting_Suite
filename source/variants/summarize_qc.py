@@ -1,10 +1,12 @@
+from collections import OrderedDict
 from source.logger import info
-from source.reporting import summarize, write_summary_reports, get_sample_report_fpaths_for_bcbio_final_dir
+from source.reporting import summarize, write_summary_reports, get_sample_report_fpaths_for_bcbio_final_dir, Metric
+from source.utils import OrderedDefaultDict
 
 main_novelty = 'all'
 metrics_header = 'Metric'
 novelty_header = 'Novelty'
-sample_header = 'Sample name:'
+average_header = 'Average'
 
 
 class VariantCaller:
@@ -40,8 +42,7 @@ def _make_for_single_variant_caller(callers, cnf, sample_names):
     full_report = summarize(sample_names, callers[0].single_qc_rep_fpaths, get_parse_qc_sample_report(cnf))
 
     full_summary_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], full_report,
-        sample_names, 'varqc.summary', 'Variant QC')
+        cnf['output_dir'], cnf['work_dir'], full_report, 'varqc.summary', 'Variant QC')
 
     info()
     info('*' * 70)
@@ -56,7 +57,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
 
         caller.summary_qc_rep_fpaths = write_summary_reports(
             cnf['output_dir'], cnf['work_dir'], caller.summary_qc_report,
-            sample_names, caller.suf + '.varqc.summary', 'Variant QC for ' + caller.name)
+            caller.suf + '.varqc.summary', 'Variant QC for ' + caller.name)
 
     all_single_reports = [r for c in callers for r in c.single_qc_rep_fpaths]
     all_sample_names = [sample_name + '-' + c.suf for sample_name in sample_names for c in callers]
@@ -64,8 +65,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
     full_summary_report = summarize(all_sample_names, all_single_reports, get_parse_qc_sample_report(cnf))
 
     full_summary_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], full_summary_report,
-        all_sample_names, 'varqc.summary', 'Variant QC')
+        cnf['output_dir'], cnf['work_dir'], full_summary_report, 'varqc.summary', 'Variant QC')
 
     info()
     info('*' * 70)
@@ -87,38 +87,39 @@ def get_parse_qc_sample_report(cnf):
                 dict(metricName=None, value=None,
                 isMain=True, quality='More is better')
         """
-        row_per_sample = []
 
+        metrics = OrderedDefaultDict(Metric)
+        rest_headers = []
+                # metrics[metric_name]['meta']
         with open(report_fpath) as f:
             # parsing Sample name and Database columns
-            database_col_id = None
+            main_value_col_id = None
             novelty_col_id = None
             for line in f:
                 if not line.strip():
                     continue
-                if line.startswith(sample_header):
-                    sample_name = line[len(sample_header):].strip()
+
                 elif line.startswith(metrics_header):
                     if cnf.quality_control.db_for_summary in line:
-                        database_col_id = line.split().index(cnf.quality_control.db_for_summary)
+                        main_value_col_id = line.split().index(cnf.quality_control.db_for_summary)
+
                     if novelty_header in line:
                         novelty_col_id = line.split().index(novelty_header)
-                    break
 
-            if database_col_id:
-                # parsing rest of the report
-                for line in f:
-                    is_main = True
+                    rest_headers = line.split()[2:]
+
+                elif novelty_col_id:
+                    # parsing rest of the report
+                    metric_name = line.split()[0]
                     novelty = line.split()[novelty_col_id]
-                    if novelty_col_id and novelty != main_novelty:
-                        is_main = False
 
-                    cur_metric_name = line.split()[0] + ', ' + line.split()[1]
-                    cur_value = line.split()[database_col_id]
+                    metrics[metric_name].name = metric_name
+                    metrics[metric_name].quality = 'More is better'
+                    metrics[metric_name].meta[novelty] = dict(zip(rest_headers, line.split()[2:]))
+                    if novelty == main_novelty:
+                        metrics[metric_name].value = line.split()[main_value_col_id]
 
-                    row_per_sample.append(dict(
-                        metricName=cur_metric_name, value=cur_value,
-                        isMain=is_main, quality='More is better'))
+        return metrics
 
-        return row_per_sample
     return _parse_qc_sample_report
+
