@@ -50,8 +50,10 @@ def _parse_targetseq_sample_report(report_fpath):
 
     for row in rows:
         metric_name = row[0]
+        value = row[1]
         metrics[metric_name].name = metric_name
         metrics[metric_name].quality = 'More is better'
+        metrics[metric_name].value = value
 
     return metrics
 

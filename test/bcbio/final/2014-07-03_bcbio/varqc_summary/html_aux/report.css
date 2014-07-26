@@ -236,3 +236,9 @@ table.draggable td.right_to_cell_of_empty_space {
 #extended_link {
     display: block;
 }
+
+.meta_info_span {
+    height:100%;
+    width:100%;
+    display: inline-block;
+}

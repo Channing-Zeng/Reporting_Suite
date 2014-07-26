@@ -7,9 +7,9 @@ nEvalVariants    novel    9           9.00
 nSNPs            all      9           9.00    
 nSNPs            known    1           1.00    
 nSNPs            novel    8           8.00    
-nInsertions      all      0           0.00    
+nInsertions      all      1           1.00    
 nInsertions      known    0           0.00    
-nInsertions      novel    0           0.00    
+nInsertions      novel    1           1.00    
 nDeletions       all      0           0.00    
 nDeletions       known    0           0.00    
 nDeletions       novel    0           0.00    
