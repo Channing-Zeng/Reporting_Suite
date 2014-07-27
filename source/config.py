@@ -34,12 +34,6 @@ class Defaults():
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    steps = [
-        'VarAnnotate',
-        'VarQC',
-        'VarFilter',
-        'TargetCov',
-        'NGScat']
     qualimap = False  # 'True' adds 'QualiMap' to steps
     qsub_runner = 'runner_Waltham.sh'
 

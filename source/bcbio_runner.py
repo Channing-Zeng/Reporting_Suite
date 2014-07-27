@@ -114,7 +114,7 @@ class Runner():
             overwrite_line = ''
 
         spec_params = cnfs_line + ' -t ' + self.threads + ' ' + overwrite_line + ' '
-# vardict_pl
+
         # VARDICT
         af_thr = str(cnf.variant_filtering.min_freq)
         self.vardict = Step(cnf, run_id,
