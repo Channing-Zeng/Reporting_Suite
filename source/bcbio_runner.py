@@ -217,7 +217,7 @@ class Runner():
 
         output_dirpath = abspath(output_dirpath)
 
-        log_fpath = join(output_dirpath, (step.name + sample_name + '_' + suf).lower() + '.log')
+        log_fpath = join(output_dirpath, (step.name + (('_' + sample_name) if sample_name else '') + '_' + suf).lower() + '.log')
 
         if dir_name is None:
             dir_name = step.name
