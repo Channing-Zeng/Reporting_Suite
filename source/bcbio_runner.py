@@ -217,10 +217,11 @@ class Runner():
 
         output_dirpath = abspath(output_dirpath)
 
-        log_fpath = join(output_dirpath, step.job_name(sample_name, suf).lower() + '.log')
+        log_fpath = join(output_dirpath, (step.name + sample_name + '_' + suf).lower() + '.log')
 
         if dir_name is None:
-            dir_name = step.name.lower()
+            dir_name = step.name
+        dir_name = dir_name.lower()
         if dir_name != '':
             output_dirpath = join(output_dirpath, dir_name)
             log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
@@ -426,8 +427,9 @@ class Runner():
                     somatic_vars_txt=somatic_vars_txt,
                     vardict_vcf=vardict_vcf)
 
-            self._process_vcf(tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone',
-                              dir_name=self.vardict.name, steps=self.vardict_steps)
+            self._process_vcf(
+                tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone',
+                dir_name=self.vardict.name, steps=self.vardict_steps)
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
