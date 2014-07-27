@@ -424,7 +424,8 @@ class Runner():
                     somatic_vars_txt=somatic_vars_txt,
                     vardict_vcf=vardict_vcf)
 
-            self._process_vcf(tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone')
+            self._process_vcf(tumor_name, tumor_bam_fpath, vardict_vcf,
+                              'vardict_standalone', steps=self.vardict_steps)
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:

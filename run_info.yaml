@@ -14,7 +14,7 @@ steps:
 #vardict_steps:
 #- VarDict
 #- TestSomatic
-#- Var2Txt_Somatic
+#- Var2Vcf_Somatic
 #- VarAnnotate
 #- VarQC
 #- VarFilter
