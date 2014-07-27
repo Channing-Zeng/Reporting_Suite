@@ -351,13 +351,13 @@ class Runner():
                 if not file_exists(bed_fpath):
                     bed_fpath = None
 
-            if self.vardict_steps:
-                if not 'metadata' in sample_info:
-                    continue
+            phenotype = None
+            if 'metadata' in sample_info:
                 batch_name = sample_info['metadata']['batch']
                 phenotype = sample_info['metadata']['phenotype']
-                batches[batch_name]['bed'] = bed_fpath
-                batches[batch_name][phenotype] = sample, bam_fpath
+                if self.vardict_steps:
+                    batches[batch_name]['bed'] = bed_fpath
+                    batches[batch_name][phenotype] = sample, bam_fpath
 
             for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
                 vcf_fpath = join(sample_dirpath, sample + '-' + variant_caller + '.vcf')
@@ -370,13 +370,13 @@ class Runner():
                     info()
 
                 if not file_exists(vcf_fpath):
-                    info('No ' + vcf_fpath + ', skipping')
-                    continue
+                    if phenotype != 'normal':
+                        err('No ' + vcf_fpath + ', skipping')
+                else:
+                    if not verify_file(vcf_fpath):
+                        sys.exit(1)
 
-                if not verify_file(vcf_fpath):
-                    sys.exit(1)
-
-                self._process_vcf(sample, bam_fpath, vcf_fpath, variant_caller)
+                    self._process_vcf(sample, bam_fpath, vcf_fpath, variant_caller)
 
             for step in [self.targetcov, self.qualimap, self.ngscat]:
                 if step in self.steps:
