@@ -82,7 +82,7 @@ class Runner():
         self.vardict_steps.extend([s for s in [
             self.vardict,
             self.testsomatic,
-            self.var_to_txt_somatic,
+            self.var_to_vcf_somatic,
             self.varqc,
             self.varannotate,
             self.varfilter,
@@ -129,7 +129,7 @@ class Runner():
             script='testsomatic_r',
             paramln=' < {vars_txt} > {somatic_vars_txt}',
         )
-        self.var_to_txt_somatic = Step(cnf, run_id,
+        self.var_to_vcf_somatic = Step(cnf, run_id,
             name='Var2Vcf_Somatic',
             interpreter='perl',
             script='var2vcf_somatic_pl',
@@ -208,7 +208,7 @@ class Runner():
                     join(cnf.work_dir, 'targetcov_summary') + '\''
         )
 
-    def step_output_dir_and_log_paths(self, step, sample_name, caller=None, create_dir=True):
+    def step_output_dir_and_log_paths(self, step, sample_name, suf=None, create_dir=True):
         output_dirpath = self.dir
         if sample_name:
             output_dirpath = join(output_dirpath, sample_name)
@@ -217,19 +217,19 @@ class Runner():
 
         output_dirpath = abspath(output_dirpath)
 
-        log_fpath = join(output_dirpath, step.job_name(sample_name, caller).lower() + '.log')
+        log_fpath = join(output_dirpath, step.job_name(sample_name, suf).lower() + '.log')
 
         if create_dir:
             output_dirpath = join(output_dirpath, step.name.lower())
-            log_fpath = join(output_dirpath, 'log' + ('_' + caller if caller else ''))
+            log_fpath = join(output_dirpath, 'log' + ('_' + suf if suf else ''))
 
         return output_dirpath, log_fpath
 
 
-    def submit(self, step, sample_name='', caller=None, create_dir=True,
+    def submit(self, step, sample_name='', suf=None, create_dir=True,
                out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
 
-        output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, caller, create_dir)
+        output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf, create_dir)
 
         if create_dir:
             safe_mkdir(output_dirpath)
@@ -250,7 +250,7 @@ class Runner():
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
 
-        job_name = step.job_name(sample_name, caller)
+        job_name = step.job_name(sample_name, suf)
 
         params = dict({'output_dir': output_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
@@ -395,12 +395,12 @@ class Runner():
             tumor_name, tumor_bam_fpath = batch['tumor']
             normal_name, normal_bam_fpath = batch['normal']
             bed_fpath = batch['bed']
-            output_dirpath, log_fpath = self.step_output_dir_and_log_paths(self.vardict, tumor_name)
+            output_dirpath, _ = self.step_output_dir_and_log_paths(self.vardict, tumor_name)
             vars_txt = join(output_dirpath, 'vardict.txt')
 
             if self.vardict in self.vardict_steps:
                 self.submit(
-                    self.vardict, tumor_name,
+                    self.vardict, tumor_name, suf='vardict',
                     tumor_name=tumor_name,
                     normal_name=normal_name,
                     tumor_bam=tumor_bam_fpath,
@@ -411,14 +411,14 @@ class Runner():
             somatic_vars_txt = join(output_dirpath, 'somatic_variants.txt')
             if self.testsomatic in self.vardict_steps:
                 self.submit(
-                    self.testsomatic, tumor_name,
+                    self.testsomatic, tumor_name, suf='testsomatic',
                     vars_txt=vars_txt,
                     somatic_vars_txt=somatic_vars_txt)
 
             vardict_vcf = join(output_dirpath, 'somatic_variants-vardict_standalone.vcf')
-            if self.var_to_txt_somatic in self.vardict_steps:
+            if self.var_to_vcf_somatic in self.vardict_steps:
                 self.submit(
-                    self.var_to_txt_somatic, tumor_name,
+                    self.var_to_vcf_somatic, tumor_name, suf='var2vcf',
                     tumor_name=tumor_name,
                     normal_name=normal_name,
                     somatic_vars_txt=somatic_vars_txt,
@@ -468,13 +468,13 @@ class Runner():
         steps = steps or self.steps
 
         if self.varqc in steps:
-            self.submit(self.varqc, sample, caller=caller, vcf=vcf_fpath, sample=sample + '-' + caller)
+            self.submit(self.varqc, sample, suf=caller, vcf=vcf_fpath, sample=sample + '-' + caller)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
 
         if self.varannotate in steps:
             self.submit(
-                self.varannotate, sample, caller=caller, vcf=vcf_fpath,
+                self.varannotate, sample, suf=caller, vcf=vcf_fpath,
                 bam_cmdline=bam_cmdline, sample=sample + '-' + caller)
 
         anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample)
@@ -482,7 +482,7 @@ class Runner():
 
         if self.varfilter in steps:
             self.submit(
-                self.varfilter, sample, caller=caller,
+                self.varfilter, sample, suf=caller,
                 wait_for_steps=[self.varannotate.job_name(sample, caller)],
                 vcf=annotated_vcf_fpath, sample=sample + '-' + caller)
 
@@ -491,6 +491,6 @@ class Runner():
 
         if self.varqc_after in steps:
             self.submit(
-                self.varqc_after, sample, caller=caller,
+                self.varqc_after, sample, suf=caller,
                 wait_for_steps=[self.varfilter.job_name(sample, caller)] if self.varfilter.name in self.steps else [],
                 vcf=filtered_vcf_fpath, sample=sample + '-' + caller)
