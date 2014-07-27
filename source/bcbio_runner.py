@@ -217,7 +217,9 @@ class Runner():
 
         output_dirpath = abspath(output_dirpath)
 
-        log_fpath = join(output_dirpath, (step.name + (('_' + sample_name) if sample_name else '') + '_' + suf).lower() + '.log')
+        log_fpath = join(output_dirpath, (step.name +
+                                          ('_' + sample_name if sample_name else '') +
+                                          ('_' + suf if suf else '')).lower() + '.log')
 
         if dir_name is None:
             dir_name = step.name
@@ -245,7 +247,7 @@ class Runner():
             except OSError:
                 err('Cannot remove log file ' + out_fpath + ', probably permission denied.')
 
-        if isfile(log_fpath):
+        if log_fpath and isfile(log_fpath):
             try:
                 os.remove(log_fpath)
             except OSError:
