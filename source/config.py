@@ -5,14 +5,14 @@ from source.file_utils import verify_file, verify_module
 
 from source.logger import info, err, critical
 
-if verify_module('yaml'):
-    from yaml import load as load_yaml
-    try:
-        from yaml import CDumper as Dumper, CLoader as Loader
-    except ImportError:
-        from yaml import Dumper, Loader
-else:
-    critical('Cannot import module yaml.')
+# if verify_module('yaml'):
+from yaml import load as load_yaml
+try:
+    from yaml import CDumper as Dumper, CLoader as Loader
+except ImportError:
+    from yaml import Dumper, Loader
+# else:
+#     critical('Error: cannot import module yaml. ')
 
 cur_dirpath = dirname(abspath(__file__))
 
