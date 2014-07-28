@@ -11,7 +11,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 from os.path import abspath, dirname, realpath, pardir, join
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
-addsitedir(join(source_dir, pardir, 'ext_modules'))
+addsitedir(join(source_dir, 'ext_modules'))
 
 from os.path import join, pardir
 from optparse import OptionParser
