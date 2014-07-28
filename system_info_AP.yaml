@@ -13,6 +13,8 @@ resources:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
     path: /home/klpf990/qualimap/qualimap
+  python:
+    path: /apps/python/2.7.8/rhel6-x64/bin/python
 
 genomes:
   hg19:
