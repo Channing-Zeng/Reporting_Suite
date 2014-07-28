@@ -8,16 +8,18 @@ report =
 
 metric =
     name: ''
+    short_name: ''
+    description: ''
     quality: ''
     value: ''
     meta: ''
 
 
-get_meta_span = (meta) ->
+get_meta_tag_contents = (meta) ->
     if meta? and (k for own k of meta).length isnt 0
         meta_table = '<table class=\'qc_meta_table\'>\n<tr><td></td>'
         for novelty, values of meta
-            meta_table += '<td>' + novelty + '</td>'
+            meta_table += "<td>#{novelty}</td>"
         meta_table += '</tr>\n'
 
         for novelty, values of meta
@@ -25,13 +27,13 @@ get_meta_span = (meta) ->
             break
 
         for db in dbs
-            meta_table += '<tr>' + '<td>' + db + '</td>'
+            meta_table += "<tr><td>#{db}</td>"
             for novelty, values of meta
-                meta_table += '<td>' + values[db] + '</td>'
+                meta_table += "<td>#{values[db]}</td>"
             meta_table += '</tr>\n'
         meta_table += '</table>\n'
 
-        return 'class="meta_info_span" rel="tooltip" title="' + meta_table + '"'
+        return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
     else
         return ''
 
@@ -41,42 +43,45 @@ GREEN_HUE = 120
 GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
 
 
-reporting.buildTotalReport = (report, columnOrder, date, glossary) ->
+reporting.buildTotalReport = (report, columnOrder, date) ->
     $('#report_date').html('<p>' + date + '</p>');
 
-    table = '<table cellspacing="0" class="report_table draggable" id="main_report_table">'
-    table += '<tr class="top_row_tr">
-                      <td id="top_left_td" class="left_column_td">
-                        <span>Sample</span>
-                      </td>'
+    table = "<table cellspacing=\"0\" class=\"report_table draggable\" id=\"main_report_table\">"
+    table += "<tr class=\"top_row_tr\">
+                  <td id=\"top_left_td\" class=\"left_column_td\">
+                    <span>Sample</span>
+                  </td>"
 
     for metricNum in [0...report[0].metrics.length]
         pos = columnOrder[metricNum]
         metric = report[0].metrics[pos]
-        table +=
-            '<td class="second_through_last_col_headers_td" position="' + pos + '">' +
-            '<span class="drag_handle"><span class="drag_image"></span></span>' +
-            '<span class="metric_name">' +
-            nbsp(addTooltipIfDefinitionExists(glossary, metric.name), metric.name) +
-            '</span>
-                               </td>'
+        if metric.description
+            metric_html = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{metric.description}\">
+                #{metric.short_name}
+            </a>"
+        else
+            metric_html = metric.short_name
+        table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
+             <span class='drag_handle'><span class='drag_image'></span></span>
+             <span class='metric_name'>#{metric_html}</span>
+        </td>"
 
     for sampleReport in report
         sampleName = sampleReport.name
         if sampleReport.name.length > 30
-            sampleName = '<span class="tooltip-link" rel="tooltip" title="' + sampleName + '">' +
-            sampleName.trunc(80) + '</span>'
+            sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
 
-        table += '<tr><td class="left_column_td"><a class="sample_name" href="html_aux/' + sampleName + '.html">' + sampleName + '</a></td>'
+        table += "<tr>
+            <td class=\"left_column_td\">
+                <a class=\"sample_name\" href=\"html_aux/#{sampleName}.html\">#{sampleName}</a>
+            </td>"
 
         for metricNum in [0...sampleReport.metrics.length]
             pos = columnOrder[metricNum]
             metric = sampleReport.metrics[pos]
-            quality = metric.quality
             value = metric.value
-            meta_span = get_meta_span metric.meta
 
-            table += '<td metric="' + metric.name + '" quality="' + metric.quality + '"'
+            table += "<td metric=\"#{metric.name}\" quality=\"#{metric.quality}\""
 
             if not value? or value == ''
                 cell_contents = '-'
@@ -93,9 +98,9 @@ reporting.buildTotalReport = (report, columnOrder, date, glossary) ->
                 if num?
                     table += ' number="' + value + '">'
 
-            table += '<span ' + meta_span + '>' + cell_contents + '</span></td>'
-        table += '</tr>'
-    table += '</table>'
+            table += "<a #{get_meta_tag_contents metric.meta}>#{cell_contents}</a></td>"
+        table += "</tr>"
+    table += "</table>"
 
     $('#report').append table
     $('#report_legend').append legend
@@ -105,7 +110,7 @@ reporting.buildTotalReport = (report, columnOrder, date, glossary) ->
     step = 6;
     for hue in [RED_HUE..GREEN_HUE] by step
         lightness = (Math.pow(hue - 75, 2)) / 350 + 35
-        legend += '<span style="color: hsl(' + hue + ', 80%, ' + lightness + '%);">'
+        legend += "<span style=\"color: hsl(#{hue}, 80%, #{lightness}%);\">"
 
         switch hue
             when RED_HUE              then legend += 'w'
@@ -117,21 +122,20 @@ reporting.buildTotalReport = (report, columnOrder, date, glossary) ->
             when GREEN_HUE - 2 * step then legend += 'e'
             when GREEN_HUE - step     then legend += 's'
             when GREEN_HUE            then legend += 't'
-            else
-                legend += '.'
-        legend += '</span>'
-    legend += '</span>'
+            else                           legend += '.'
+        legend += "</span>"
+    legend += "</span>"
 
 
 add_heatmap = ->
     $(".report_table td[number]").each ->
         metric = $(this).attr 'metric'
         quality = $(this).attr 'quality'
-        other_cells = $('.report_table').find 'td[metric="' + metric + '"][number]'
+        other_cells = $('.report_table').find "td[metric=\"#{metric}\"][number]"
         orther_numbers = ($(cell).attr 'number' for cell in other_cells)
 
-        min = Math.min.apply(null, orther_numbers)
-        max = Math.max.apply(null, orther_numbers)
+        min = Math.min.apply null, orther_numbers
+        max = Math.max.apply null, orther_numbers
 
         maxHue = GREEN_HUE
         minHue = RED_HUE
@@ -141,7 +145,7 @@ add_heatmap = ->
             minHue = GREEN_HUE
 
         if max == min
-            $(other_cells).css('color', GREEN_HSL)
+            $(other_cells).css 'color', GREEN_HSL
         else
             k = (maxHue - minHue) / (max - min)
             hue = 0

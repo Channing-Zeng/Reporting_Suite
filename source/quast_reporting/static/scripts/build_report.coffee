@@ -62,8 +62,6 @@ totalReportData =
 
 
 reporting.buildReport = ->
-  glossary = JSON.parse $('#glossary-json').html()
-
   unless (totalReportData = readJson('total-report'))
     console.log "Error: cannot read #total-report-json"
     return 1
@@ -77,7 +75,7 @@ reporting.buildReport = ->
   columnNames = (metric.name for metric in report[0].metrics)
   columnOrder = recoverOrderFromCookies() or order or [0...columnNames.length]
 
-  reporting.buildTotalReport(report, columnOrder, date, glossary)
+  reporting.buildTotalReport(report, columnOrder, date)
 
   return 0
 

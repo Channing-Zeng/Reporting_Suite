@@ -55,3 +55,8 @@ test/bcbio/final/2014-07-08_bcbio/varqc_summary
 test/bcbio/final/2014-07-08_bcbio/targetcov_summary
 test/results_summary_targetcov_bk
 test/results_summary_targetcov_parallel
+
+test/bcbio/final/sample1/varannotate
+test/bcbio/final/sample1/varqc
+test/bcbio/final/2014-07-03_bcbio/targetcov_summary
+test/bcbio/final/2014-07-03_bcbio/vaqc_summary
