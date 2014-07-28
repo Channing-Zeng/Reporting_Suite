@@ -56,7 +56,15 @@ test/bcbio/final/2014-07-08_bcbio/targetcov_summary
 test/results_summary_targetcov_bk
 test/results_summary_targetcov_parallel
 
-test/bcbio/final/sample1/varannotate
-test/bcbio/final/sample1/varqc
-test/bcbio/final/2014-07-03_bcbio/targetcov_summary
-test/bcbio/final/2014-07-03_bcbio/vaqc_summary
+test/bcbio/final/**/varannotate
+test/bcbio/final/**/varqc
+test/bcbio/final/**/ngscat
+test/bcbio/final/**/qualimap
+test/bcbio/final/**/targetcov
+test/bcbio/final/**/varqc_after
+test/bcbio/final/**/varfilter
+test/bcbio/final/**/targetcov_summary
+test/bcbio/final/**/vaqc_summary
+test/bcbio/final/**/vardict
+
+test/results_anno
