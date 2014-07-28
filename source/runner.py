@@ -8,9 +8,9 @@ from source.logger import step_greetings, info
 from source.utils_from_bcbio import file_exists
 
 try:
-    from yaml import CDumper as Dumper
+    from ext_modules.yaml import CDumper as Dumper
 except ImportError:
-    from yaml import Dumper
+    from ext_modules.yaml import Dumper
 
 
 # def run_all(cnf, cnfs_by_sample, required_inputs, optional_inputs,

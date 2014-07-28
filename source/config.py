@@ -6,11 +6,11 @@ from source.file_utils import verify_file, verify_module
 from source.logger import info, err, critical
 
 if verify_module('yaml'):
-    from yaml import load as load_yaml
+    from ext_modules.yaml import load as load_yaml
     try:
-        from yaml import CDumper as Dumper, CLoader as Loader
+        from ext_modules.yaml import CDumper as Dumper, CLoader as Loader
     except ImportError:
-        from yaml import Dumper, Loader
+        from ext_modules.yaml import Dumper, Loader
 else:
     critical('Cannot import module yaml.')
 

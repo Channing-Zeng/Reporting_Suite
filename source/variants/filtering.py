@@ -1,5 +1,4 @@
 import sys
-from source.variants.vcf_processing import iterate_vcf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -12,6 +11,7 @@ from collections import defaultdict
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
 from source.file_utils import convert_file
+from source.variants.vcf_processing import iterate_vcf
 from source.utils import mean
 
 

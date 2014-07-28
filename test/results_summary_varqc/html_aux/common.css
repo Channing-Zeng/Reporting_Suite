@@ -140,6 +140,21 @@ ul.mdash li:before {
     color: #b33;
     border-bottom: 1px dashed #b33;
 }
+
+/* Meta info tooltips */
+.tooltip-meta,
+.tooltip-meta:visited {
+    text-decoration: none;
+    color: inherit;
+    cursor: hand;
+    border-bottom: none;
+}
+.tooltip-meta:hover {
+    text-decoration: none;
+    color: inherit;
+    border-bottom: none;
+}
+
 /************/
 
 /*********/
