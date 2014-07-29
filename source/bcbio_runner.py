@@ -170,7 +170,7 @@ class Runner():
             interpreter='python',
             script='targetcov',
             name='TargetCov', short_name='tc',
-            paramln=' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
+            paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetcov') + '\''
         )
         self.ngscat = Step(cnf, run_id,
