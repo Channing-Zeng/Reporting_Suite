@@ -23,7 +23,7 @@ for i, l in enumerate(f):
     if i == 1:
         continue
 
-    if l[0] != ' ' and cur_tokens.strip().split()[3] == 'klpf990':
+    if l[0] != ' ' and l.strip().split()[3] == 'klpf990':
         cur_tokens = l.split()
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
