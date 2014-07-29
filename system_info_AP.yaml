@@ -14,7 +14,7 @@ resources:
   qualimap:
     path: /home/klpf990/qualimap/qualimap
   python:
-    path: /apps/python/2.7.8/rhel6-x64/bin/python
+    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
 
 genomes:
   hg19:
