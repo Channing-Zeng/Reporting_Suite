@@ -372,6 +372,16 @@ def remove_prev_eff_annotation(cnf, input_fpath):
     return iterate_file(cnf, input_fpath, proc_line, suffix='no_' + field_to_del.lower())
 
 
+def igvtools_index(cnf, vcf_fpath):
+    igvtools = get_tool_cmdline(cnf, 'igvtools')
+    if not igvtools:
+        err('Warning: no igvtools found, cannot index VCF.')
+        return None
+    cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
+    call(cnf, cmdline)
+    return vcf_fpath + '.idx'
+
+
 def tabix_vcf(cnf, vcf_fpath):
     bgzip = get_tool_cmdline(cnf, 'bgzip')
     tabix = get_tool_cmdline(cnf, 'tabix')

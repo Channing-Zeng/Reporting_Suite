@@ -13,7 +13,6 @@ from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline, tool_cmd
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bam
-from source.variants.vcf_processing import tabix_vcf
 
 
 basic_dirpath = dirname(dirname(abspath(__file__)))

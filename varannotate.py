@@ -12,7 +12,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
-from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf, tabix_vcf
+from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf, tabix_vcf, igvtools_index
 from source.runner import run_one
 from source.variants.anno import run_annotators
 from source.utils import info
@@ -81,7 +81,11 @@ def process_one(cnf):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
 
     anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
-    gzipped_fpath, tbi_fpath = tabix_vcf(cnf, anno_vcf_fpath)
+
+    info()
+    info('Indexing ' + anno_vcf_fpath)
+    igvtools_index(cnf, anno_vcf_fpath)
+    igvtools_index(cnf, anno_vcf_fpath)
 
     return anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath
 
