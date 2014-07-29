@@ -22,7 +22,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
-from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line
+from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line, tabix_vcf
 
 
 def main():
@@ -257,6 +257,7 @@ def process_one(cnf):
     else:
         final_maf_fpath = None
 
+    tabix_vcf(cnf, final_vcf_fpath)
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 
 

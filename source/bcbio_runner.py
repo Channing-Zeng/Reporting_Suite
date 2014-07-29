@@ -13,6 +13,7 @@ from source.tools_from_cnf import get_tool_cmdline, get_script_cmdline, tool_cmd
 from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
 from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bam
+from source.variants.vcf_processing import tabix_vcf
 
 
 basic_dirpath = dirname(dirname(abspath(__file__)))
@@ -498,17 +499,16 @@ class Runner():
         steps = steps or self.steps
 
         if self.varqc in steps:
-            self.submit(self.varqc, sample, suf=caller, dir_name=dir_name,
-                        vcf=vcf_fpath, sample=sample + '-' + caller,
-                        wait_for_steps=job_names_to_wait)
+            self.submit(
+                self.varqc, sample, suf=caller, dir_name=dir_name, vcf=vcf_fpath,
+                sample=sample + '-' + caller, wait_for_steps=job_names_to_wait)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
 
         if self.varannotate in steps:
             self.submit(
                 self.varannotate, sample, suf=caller, dir_name=dir_name, vcf=vcf_fpath,
-                bam_cmdline=bam_cmdline, sample=sample + '-' + caller,
-                wait_for_steps=job_names_to_wait)
+                bam_cmdline=bam_cmdline, sample=sample + '-' + caller, wait_for_steps=job_names_to_wait)
 
         anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample, suf=caller, dir_name=dir_name)
         annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
