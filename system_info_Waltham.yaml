@@ -31,6 +31,8 @@ resources:
     path: /gpfs/group/ngs/src/vardict/testsomatic.R
   var2vcf_somatic_pl:
     path: /gpfs/group/ngs/src/vardict/var2vcf_somatic.pl
+  igvtools:
+    path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
 
 genomes:
   hg19:
