@@ -358,6 +358,8 @@ class Reader(object):
         retdict = {}
 
         for entry in entries:
+            if 'MLEAF' in entry:
+                pass
             entry = entry.split('=')
             ID = entry[0]
             try:
@@ -383,7 +385,11 @@ class Reader(object):
                     except ValueError:
                         val = [None for v in vals]
             elif entry_type == 'Float':
-                vals = entry[1].split(',')
+                try:
+                    vals = entry[1].split(',')
+                except:
+                    print entry
+                    pass
                 try:
                     val = self._map(float, vals)
                 except ValueError:
