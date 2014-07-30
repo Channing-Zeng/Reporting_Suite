@@ -199,6 +199,14 @@ class Runner():
                     + self.dir + '\' -s \'{samples}\' -n varqc --vcf-suf ' + ','.join(all_suffixes) +
                     ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\''
         )
+        self.varfilter_summary = Step(cnf, run_id,
+            name='VarFilter_summary', short_name='vfs',
+            interpreter='python',
+            script='varfilter_all',
+            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
+                    + self.dir + '\' -s \'{samples}\' --vcf-suf ' + ','.join(all_suffixes) +
+                    ' --work-dir \'' + join(cnf.work_dir, 'varfilter_all') + '\''
+        )
         self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',
             interpreter='python',
@@ -220,7 +228,6 @@ class Runner():
         log_fpath = join(output_dirpath, (step.name +
                                           ('_' + sample_name if sample_name else '') +
                                           ('_' + suf if suf else '')).lower() + '.log')
-
         if dir_name is None:
             dir_name = step.name
         dir_name = dir_name.lower()
@@ -465,6 +472,15 @@ class Runner():
                 # threads=samples_num + 1,
                 samples=samples_fpath)
 
+        if self.varfilter in self.steps:
+            self.submit(
+                self.varfilter_summary,
+                wait_for_steps=[
+                    self.varqc.job_name(d['description'], v)
+                    for d in self.bcbio_cnf.details
+                    for v in all_variantcallers],
+                samples=samples_fpath)
+
         if not self.cnf.verbose:
             print ''
         if self.cnf.verbose:
@@ -487,17 +503,17 @@ class Runner():
         anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample)
         annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-        if self.varfilter in steps:
-            self.submit(
-                self.varfilter, sample, suf=caller, dir_name=dir_name,
-                wait_for_steps=[self.varannotate.job_name(sample, caller)],
-                vcf=annotated_vcf_fpath, sample=sample + '-' + caller)
-
-        filter_dirpath, _ = self.step_output_dir_and_log_paths(self.varfilter, sample)
-        filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
-
-        if self.varqc_after in steps:
-            self.submit(
-                self.varqc_after, sample, suf=caller, dir_name=dir_name,
-                wait_for_steps=[self.varfilter.job_name(sample, caller)] if self.varfilter.name in self.steps else [],
-                vcf=filtered_vcf_fpath, sample=sample + '-' + caller)
+        # if self.varfilter in steps:
+        #     self.submit(
+        #         self.varfilter, sample, suf=caller, dir_name=dir_name,
+        #         wait_for_steps=[self.varannotate.job_name(sample, caller)],
+        #         vcf=annotated_vcf_fpath, sample=sample + '-' + caller)
+        #
+        # filter_dirpath, _ = self.step_output_dir_and_log_paths(self.varfilter, sample)
+        # filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+        #
+        # if self.varqc_after in steps:
+        #     self.submit(
+        #         self.varqc_after, sample, suf=caller, dir_name=dir_name,
+        #         wait_for_steps=[self.varfilter.job_name(sample, caller)] if self.varfilter.name in self.steps else [],
+        #         vcf=filtered_vcf_fpath, sample=sample + '-' + caller)

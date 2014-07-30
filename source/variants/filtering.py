@@ -61,6 +61,7 @@ class CnfFilter(Filter):
 
 class InfoFilter(CnfFilter):
     def __init__(self, cnf_key, info_key, op=operator.gt, *args, **kwargs):
+        # True if PASS
         def check(rec):
             if info_key not in rec.INFO:
                 if self.required:
@@ -108,10 +109,10 @@ class EffectFilter(CnfFilter):
 
 
 class Filtering:
-    def __init__(self, cnf, filt_cnf, vcf_fpath):
+    def __init__(self, cnf, filt_cnf, vcf_fpaths):
         self.cnf = cnf
         self.filt_cnf = filt_cnf
-        self.vcf_fpath = vcf_fpath
+        self.vcf_fpaths = vcf_fpaths
         Filter.filt_cnf = self.filt_cnf
 
         self.control_vars = set()
@@ -150,29 +151,31 @@ class Filtering:
     def run_filtering(self):
         step_greetings('Filtering')
 
-        vcf_fpath = self.vcf_fpath
-
         info('Removing previous FILTER values')
-        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
-        info('Saved to ' + vcf_fpath)
+        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
+                           for vcf_fpath in self.vcf_fpaths]
+        info('Saved: ' + ', '.join(self.vcf_fpaths))
         info()
 
         info('First round')
-        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
-        info('Saved to ' + vcf_fpath)
+        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
+                           for vcf_fpath in self.vcf_fpaths]
+        info('Saved: ' + ', '.join(self.vcf_fpaths))
         info()
 
         info('Second round')
-        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
-        info('Saved to ' + vcf_fpath)
+        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
+                           for vcf_fpath in self.vcf_fpaths]
+        info('Saved: ' + ', '.join(self.vcf_fpaths))
         info()
 
         info('Third round')
-        vcf_fpath = iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
-        info('Saved to ' + vcf_fpath)
+        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
+                           for vcf_fpath in self.vcf_fpaths]
+        info('Saved: ' + ', '.join(self.vcf_fpaths))
         info()
 
-        return vcf_fpath
+        return self.vcf_fpaths
 
     def get_proc_line_remove_prev_filter(self):
         def __f(rec):
@@ -232,7 +235,7 @@ class Filtering:
                     var_n >= self.filt_cnf['sample_cnt'] and
                     fraction > self.filt_cnf['fraction'] and
                     avg_af < self.filt_cnf['freq'] and
-                    rec.ID == '.')  # TODO: check if "." converted to None in the vcf lib
+                    rec.ID is None)  # TODO: check if "." converted to None in the vcf lib
                 self.multi_filter.apply(rec)
 
                 pstd = rec.INFO.get('PSTD', [None])[0]
