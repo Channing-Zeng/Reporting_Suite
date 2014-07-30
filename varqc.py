@@ -1,18 +1,21 @@
 #!/usr/bin/env python
-from os.path import basename
-import shutil
-
 import sys
-from source.file_utils import verify_module, verify_file
-from source.utils_from_bcbio import file_exists
-from source.logger import err, info
-from source.variants.qc_gatk import gatk_qc
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+from os.path import abspath, dirname, realpath, pardir, join, basename
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, 'ext_modules'))
+
+import shutil
+from source.file_utils import verify_module, verify_file
+from source.utils_from_bcbio import file_exists
+from source.logger import err, info
+from source.variants.qc_gatk import gatk_qc
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample

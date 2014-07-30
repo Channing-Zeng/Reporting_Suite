@@ -12,7 +12,7 @@ if verify_module('yaml'):
     except ImportError:
         from yaml import Dumper, Loader
 else:
-    critical('Cannot import module yaml.')
+    critical('Error: cannot import module yaml. ')
 
 cur_dirpath = dirname(abspath(__file__))
 

@@ -7,6 +7,11 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+from os.path import abspath, dirname, realpath, pardir, join
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, 'ext_modules'))
+
 import shutil
 import os
 from os.path import basename, join, isfile, splitext
@@ -17,7 +22,7 @@ from source.logger import info
 from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
-from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line
+from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line, tabix_vcf, igvtools_index
 
 
 def main():
@@ -252,6 +257,9 @@ def process_one(cnf):
     else:
         final_maf_fpath = None
 
+    info()
+    info('Indexing ' + final_vcf_fpath)
+    igvtools_index(cnf, final_vcf_fpath)
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 
 

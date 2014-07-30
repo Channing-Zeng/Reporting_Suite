@@ -337,7 +337,8 @@ def _bedcoverage_hist_stats(cnf, bam, bed):
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
     cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
-    bedcov_output = join(cnf.work_dir, splitext_plus(basename(bed))[0] + '_bedcov_output.txt')
+    bedcov_output = join(cnf.work_dir, splitext_plus(basename(bed))[0] + '_' +
+                                       splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
     call(cnf, cmdline, bedcov_output)
 
     _total_regions_count = 0

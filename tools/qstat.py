@@ -23,11 +23,12 @@ for i, l in enumerate(f):
     if i == 1:
         continue
 
-    if l[0] != ' ':
+    if l[0] != ' ' and l.strip().split()[3] == 'klpf990':
         cur_tokens = l.split()
 
     elif cur_tokens and l.strip().startswith('Full jobname:'):
         full_name = l.strip().split()[2]
+
         if len(cur_tokens) == 8:
             rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:7] + [''] + cur_tokens[7:])
         else:

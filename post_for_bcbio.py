@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 import sys
-from source.utils_from_bcbio import safe_mkdir
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+from os.path import abspath, dirname, realpath, pardir, join, basename
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, 'ext_modules'))
+
 from optparse import OptionParser
 from os.path import join, pardir, isdir, basename, splitext, abspath
 from os import listdir
 
+from source.utils_from_bcbio import safe_mkdir
 from source.config import Defaults, Config, load_yaml_config
 from source.logger import info, critical
 from source.main import check_system_resources, check_inputs, check_keys, load_genome_resources

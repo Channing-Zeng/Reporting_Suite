@@ -81,6 +81,22 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
         info('  ' + fpath)
 
 
+METRICS = dict(
+    nEvalVariants   = ['total',     'Total variants evaluated'],
+    nSNPs           = ['SNP',       'SNPs'],
+    nInsertions     = ['ins',       'Insertions'],
+    nDeletions      = ['del',       'Deletions'],
+    nVariantsAtComp = ['at comp',   'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'],
+    compRate        = ['comp rate', 'Percentage of eval sites at comp sites'],
+    nConcordant     = ['concord',   'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'],
+    concordantRate  = ['conc rate', 'Concordance rate'],
+    variantRate     = ['var/loci',  'Variants per loci rate'],
+    basesPerVariant = ['bp/var',    'Bases per variant rate'],
+    hetHomRatio     = ['het/hom',   'Heterozygosity to homozygosity ratio'],
+    tiTvRatio       = ['ti/tv',     'Transition to transversion ratio'],
+)
+
+
 def get_parse_qc_sample_report(cnf):
     def _parse_qc_sample_report(report_fpath):
         """ returns row_per_sample =
@@ -114,6 +130,8 @@ def get_parse_qc_sample_report(cnf):
                     novelty = line.split()[novelty_col_id]
 
                     metrics[metric_name].name = metric_name
+                    metrics[metric_name].short_name = METRICS[metric_name][0]
+                    metrics[metric_name].description = METRICS[metric_name][1]
                     metrics[metric_name].quality = 'More is better'
                     metrics[metric_name].meta[novelty] = dict(zip(rest_headers, line.split()[2:]))
                     if novelty == main_novelty:

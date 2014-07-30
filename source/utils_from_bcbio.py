@@ -12,7 +12,7 @@ import collections
 import sys
 import fnmatch
 import time
-import yaml
+from ext_modules import yaml
 
 from os.path import isfile, getsize, exists, expanduser, splitext
 

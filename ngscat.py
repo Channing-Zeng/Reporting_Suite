@@ -6,6 +6,11 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
+from os.path import abspath, dirname, realpath, pardir, join, basename
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, 'ext_modules'))
+
 if not 'matplotlib' in sys.modules:
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend

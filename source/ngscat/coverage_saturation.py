@@ -53,10 +53,11 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
             while (j < len(depthlist) and not endreached):
                 depth = depthlist[j]
                 # If a legend is provided, use it to differentiate job ids
-                if (legend <> None):
-                    jobid = 'coverage_' + pid + '_' + str(depth) + '_' + legend[i].lower()
+                if legend is not None:
+                    jobid = legend[i].lower()
                 else:
-                    jobid = 'coverage_' + pid + '_' + str(depth) + '_' + os.path.basename(bamlist[i])
+                    jobid = os.path.basename(bamlist[i])
+                jobid += '-coverage_' + str(depth)
 
                 info("Submitting depth " + str(depth) + ", file " + bam)
 
@@ -65,9 +66,9 @@ def coverage_saturation_lite(bamlist, targets, depthlist, coverage, legend, file
                     endreached = True
 
                     #            queue.wait()
-                result_fpath = join(cnf.tmp_dir, jobid)
+                result_fpath = join(cnf['work_dir'], jobid)
                 newprocess = multiprocessing.Process(target=simulated_depth.simulated_depth, args=(
-                bam, targets[i], depth, coverage, result_fpath, executiongranted,))
+                             bam, targets[i], depth, coverage, result_fpath, executiongranted,))
                 simulated_depth_processes.append(newprocess)
                 newprocess.start()
                 #            queue.push(newprocess)

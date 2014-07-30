@@ -79,8 +79,6 @@ def init_html(results_dirpath, report_fname, caption=''):
         html = template_file.read()
         html = html.replace("/" + static_dirname, aux_dirname)
         html = html.replace('{{ caption }}', caption)
-        with open(get_real_path('glossary.json')) as glos_f:
-            html = html.replace('{{ glossary }}', glos_f.read())
 
         html_fpath = os.path.join(results_dirpath, report_fname)
         if os.path.exists(html_fpath):

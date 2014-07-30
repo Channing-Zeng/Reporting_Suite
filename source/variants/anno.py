@@ -95,6 +95,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         # Converting to TSV
         if 'tsv_fields' in cnf:
             tsv_fpath = make_tsv(cnf, vcf_fpath)
+            if not tsv_fpath:
+                critical('TSV convertion didn\'t work')
 
             if isfile(final_tsv_fpath):
                 os.remove(final_tsv_fpath)
