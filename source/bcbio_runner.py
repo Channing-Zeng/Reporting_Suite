@@ -85,7 +85,7 @@ class Runner():
             self.var_to_vcf_somatic,
             self.varqc,
             self.varannotate,
-            self.varfilter,
+            self.varfilter_all,
             self.varqc_after,
             self.varqc_summary] if contains(s.name, cnf.vardict_steps)
         ])
@@ -93,7 +93,7 @@ class Runner():
         self.steps.extend([s for s in [
             self.varqc,
             self.varannotate,
-            self.varfilter,
+            self.varfilter_all,
             self.varqc_after,
             self.varqc_summary,
             self.targetcov,
@@ -159,13 +159,13 @@ class Runner():
             paramln=spec_params + ' --vcf \'{vcf}\' -o '
                     '\'{output_dir}\' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varqc_after') + '_{sample}\''
         )
-        self.varfilter = Step(cnf, run_id,
-            name='VarFilter', short_name='vf',
-            interpreter='python',
-            script='varfilter',
-            paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '_{sample}\''
-        )
+        # self.varfilter = Step(cnf, run_id,
+        #     name='VarFilter', short_name='vf',
+        #     interpreter='python',
+        #     script='varfilter',
+        #     paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' '
+        #             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varfilter') + '_{sample}\''
+        # )
         self.targetcov = Step(cnf, run_id,
             interpreter='python',
             script='targetcov',
@@ -199,8 +199,8 @@ class Runner():
                     + self.dir + '\' -s \'{samples}\' -n varqc --vcf-suf ' + ','.join(all_suffixes) +
                     ' --work-dir \'' + join(cnf.work_dir, 'varqc_summary') + '\''
         )
-        self.varfilter_summary = Step(cnf, run_id,
-            name='VarFilter_summary', short_name='vfs',
+        self.varfilter_all = Step(cnf, run_id,
+            name='VarFilter', short_name='vfs',
             interpreter='python',
             script='varfilter_all',
             paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
@@ -495,9 +495,9 @@ class Runner():
                 # threads=samples_num + 1,
                 samples=samples_fpath)
 
-        if self.varfilter in self.steps:
+        if self.varfilter_all in self.steps:
             self.submit(
-                self.varfilter_summary,
+                self.varfilter_all,
                 wait_for_steps=[
                     self.varqc.job_name(d['description'], v)
                     for d in self.bcbio_cnf.details

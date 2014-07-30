@@ -54,7 +54,7 @@ test/bcbio/final/**/qualimap
 test/bcbio/final/**/targetcov
 test/bcbio/final/**/varqc_after
 test/bcbio/final/**/varfilter
-test/bcbio/final/**/varfilter2
+test/bcbio/final/**/varfilter_2
 test/bcbio/final/**/targetcov_summary
 test/bcbio/final/**/vaqc_summary
 test/bcbio/final/**/vardict
