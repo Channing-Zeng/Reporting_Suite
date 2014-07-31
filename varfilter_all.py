@@ -256,11 +256,7 @@ def filter_all(cnf, sample_names):
             cnf['bcbio_final_dir'], sample_names, varannotate_dir,
             '-' + caller.suf + '.anno.vcf')
 
-        info()
-        info('One per line:')
-        opl_vcf_fpaths = [vcf_one_per_line(cnf, vcf_fpath) for vcf_fpath in anno_vcf_fpaths]
-
-        filtering = Filtering(cnf, filt_cnf, opl_vcf_fpaths)
+        filtering = Filtering(cnf, filt_cnf, anno_vcf_fpaths)
         filt_anno_vcf_fpaths = filtering.run_filtering()
 
         global cnfs_for_samples

@@ -12,7 +12,7 @@ from joblib import Parallel, delayed
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
 from source.file_utils import convert_file
-from source.variants.vcf_processing import iterate_vcf
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line
 from source.utils import mean
 
 
@@ -158,6 +158,10 @@ class Filtering:
                  for vcf_fpath in self.vcf_fpaths)
         info()
 
+        info('One effect per line')
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(vcf_one_per_line)
+                (self.cnf, vcf_fpath) for vcf_fpath in self.vcf_fpaths)
+
         info('Second round')
         self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
                 (self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
@@ -246,13 +250,13 @@ class Filtering:
                     return rec
 
                 var_n = len(self.af_by_varid[rec.var_id()])
-                fraction = float(var_n) / len(self.samples)
+                frac = float(var_n) / len(self.samples)
                 avg_af = mean(self.af_by_varid[rec.var_id()])
                 self.multi_filter.check = lambda _: not (  # novel and present in [max_ratio] samples
                     var_n >= self.filt_cnf['sample_cnt'] and
-                    fraction > self.filt_cnf['fraction'] and
+                    frac > self.filt_cnf['fraction'] and
                     avg_af < self.filt_cnf['freq'] and
-                    rec.ID is None)  # TODO: check if "." converted to None in the vcf lib
+                    rec.ID is None)
                 self.multi_filter.apply(rec)
 
                 pstd = rec.get_val('PSTD')
@@ -271,8 +275,7 @@ class Filtering:
                 max_ratio = self.filt_cnf.get('max_ratio')
                 af = rec.get_val('AF')
                 if af is not None:
-                    af = float(af)
-                    self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
+                    self.max_rate_filter.check = lambda _: not (frac >= max_ratio and af < 0.3)
                     self.max_rate_filter.apply(rec)
 
                 gmaf = rec.get_val('GMAF')

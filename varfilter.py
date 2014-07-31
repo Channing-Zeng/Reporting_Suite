@@ -216,8 +216,6 @@ def process_one(cnf):
     vcf_fpath = cnf['vcf']
     filt_cnf = cnf['variant_filtering']
 
-    vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
-
     filtering = Filtering(cnf, filt_cnf, [vcf_fpath])
     vcf_fpath = filtering.run_filtering()[0]
 
