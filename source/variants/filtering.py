@@ -17,6 +17,7 @@ from source.utils import mean
 
 class Filter:
     filt_cnf = None
+    main_sample = None
 
     def __init__(self, word, check=None, required=True):
         self.check = check
@@ -63,30 +64,20 @@ class InfoFilter(CnfFilter):
     def __init__(self, cnf_key, info_key, op=operator.gt, *args, **kwargs):
         # True if PASS
         def check(rec):
-            if info_key not in rec.INFO:
+            anno_val = rec.get_val(info_key)
+            if anno_val is None:
                 if self.required:
-                    critical('Error: no field ' + info_key + ' in variant at line ' +
+                    critical('Error: no field ' + info_key + ' in INFO or SAMPLE at line ' +
                              str(rec.line_num + 1) + ' (' + rec.CHROM + ':' + str(rec.POS) +
                              ') - required to test ' + cnf_key)
                 else:
                     return True  # PASS
-
             try:
-                v1 = float(Filter.filt_cnf[cnf_key])
+                cnf_val = float(Filter.filt_cnf[cnf_key])
             except ValueError:
-                v1 = int(Filter.filt_cnf[cnf_key])
+                cnf_val = int(Filter.filt_cnf[cnf_key])
 
-            try:
-                ann = rec.INFO[info_key][0]
-            except:
-                ann = rec.INFO[info_key]
-
-            try:
-                v2 = float(ann)
-            except ValueError:
-                v2 = int(ann)
-
-            return op(v2, v1)
+            return op(anno_val, cnf_val)
 
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
@@ -193,7 +184,7 @@ class Filtering:
     # counting samples, variants and AF_by_vark
     def get_proc_line_2nd_round(self):
         def __f(rec):
-            sample = rec.sample()
+            sample = rec.sample_field()
             try:
                 sample = sample[0]
             except:
@@ -210,7 +201,7 @@ class Filtering:
                 if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
                 # Undetermined won't count toward samples
                     self.samples.add(sample)
-                    self.af_by_varid[rec.var_id()].append(rec.INFO.get('AF', [.0])[0])
+                    self.af_by_varid[rec.var_id()].append(rec.get_val('AF', .0))
             return rec
         return __f
 
@@ -222,11 +213,11 @@ class Filtering:
         def __f(rec):
             self.impact_filter.apply(rec)
 
-            sample = rec.sample()
+            sample = rec.sample_field()
             if sample:
                 self.undet_sample_filter.apply(rec)
-                if rec.is_rejected():
-                    return rec
+                # if rec.is_rejected():
+                #     return rec
 
                 var_n = len(self.af_by_varid[rec.var_id()])
                 fraction = float(var_n) / len(self.samples)
@@ -238,21 +229,21 @@ class Filtering:
                     rec.ID is None)  # TODO: check if "." converted to None in the vcf lib
                 self.multi_filter.apply(rec)
 
-                pstd = rec.INFO.get('PSTD', [None])[0]
-                bias = rec.INFO.get('BIAS', [None])[0]
+                pstd = rec.get_val('PSTD')
+                bias = rec.get_val('BIAS')
                 # all variants from one position in reads
                 if pstd is not None and bias is not None:
                     self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
                     self.dup_filter.apply(rec)
 
                 max_ratio = self.filt_cnf.get('max_ratio')
-                af = rec.INFO.get('AF', [None])[0]
+                af = rec.get_val('AF')
                 if af is not None:
                     af = float(af)
                     self.max_rate_filter.check = lambda _: fraction < max_ratio or af < 0.3
                     self.max_rate_filter.apply(rec)
 
-                gmaf = rec.INFO.get('GMAF', [None])[0]
+                gmaf = rec.get_val('GMAF')
                 req_maf = self.filt_cnf['maf']
                 # if there's MAF with frequency, it'll be considered
                 # dbSNP regardless of COSMIC
@@ -263,7 +254,7 @@ class Filtering:
 
                     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
                     # but not in ClnSNP or COSMIC.
-                    for eff in map(Effect, rec.FILT.get('EFF', [])):
+                    for eff in map(Effect, rec.INFO.get('EFF', [])):
                         if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
                             if eff.pos / int(eff.aal) < 0.95:
                                 cls = 'dbSNP_del'

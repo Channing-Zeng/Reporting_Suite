@@ -20,9 +20,48 @@ from source.logger import step_greetings, info, critical, err
 
 class Record(_Record):
     # noinspection PyMissingConstructor
-    def __init__(self, _record, line_num):
+    def __init__(self, _record, input_fpath, line_num):
         self.__dict__.update(_record.__dict__)
         self.line_num = line_num
+        self.file_base_name = basename(input_fpath)
+
+    def main_sample(self):
+        if len(self._sample_indexes) == 0:
+            return None
+        sample_name_from_file = self.file_base_name.split('-')[0]
+        try:
+            sample_index = [sname.lower() for sname in self._sample_indexes].index(sample_name_from_file.lower())
+        except ValueError:
+            return self.samples[0]
+        else:
+            return self.samples[sample_index]
+
+    def get_val(self, key, default=None):
+        val = None
+
+        if key in self.INFO:
+            try:
+                val = self.INFO[key][0]
+            except:
+                val = self.INFO[key]
+        else:
+            main_sample = self.main_sample()
+            if main_sample:
+                sample_data = main_sample.data._asdict()
+                if key in sample_data:
+                    val = sample_data[key]
+                else:
+                    return default
+            else:
+                return default
+
+        if val is not None:
+            try:
+                return float(val)
+            except ValueError:
+                return int(val)
+        else:
+            return default
 
     def cls(self):
         cls = 'Novel'
@@ -50,7 +89,7 @@ class Record(_Record):
 
         return -1
 
-    def sample(self):
+    def sample_field(self):
         return self.INFO.get('SAMPLE')
 
     def var_id(self):
@@ -68,7 +107,7 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
         writer = vcf_parser.Writer(out_f, reader)
 
         for i, rec in enumerate(reader):
-            rec = proc_rec_fun(Record(rec, i))
+            rec = proc_rec_fun(Record(rec, input_fpath, i))
             if rec:
                 bunch.append(rec)
                 written_records += 1

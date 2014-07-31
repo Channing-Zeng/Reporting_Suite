@@ -218,8 +218,8 @@ def process_one(cnf):
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
-    filtering = Filtering(cnf, filt_cnf, vcf_fpath)
-    vcf_fpath = filtering.run_filtering()
+    filtering = Filtering(cnf, filt_cnf, [vcf_fpath])
+    vcf_fpath = filtering.run_filtering()[0]
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')
     vcf_basename = splitext(final_vcf_fname)[0]

@@ -358,8 +358,6 @@ class Reader(object):
         retdict = {}
 
         for entry in entries:
-            if 'MLEAF' in entry:
-                pass
             entry = entry.split('=')
             ID = entry[0]
             try:

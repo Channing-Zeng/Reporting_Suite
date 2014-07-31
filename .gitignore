@@ -62,3 +62,4 @@ test/bcbio/final/sample1/sample1-ready.bam.bai
 test/bcbio/final/2014-07-03_bcbio/varqc_summary
 test/bcbio/final/2014-07-03_bcbio/targetcov_summary
 test/results_qs_summary
+test/results_varfilter

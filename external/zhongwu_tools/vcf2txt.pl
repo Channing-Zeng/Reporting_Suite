@@ -42,6 +42,14 @@ while( <> ) {
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
         $d{ $1 } = $2;
     }
+    my @sample_keys = split(/:/, $a[8]);
+    my @sample_vals = split(/:/, $a[9]);
+    foreach $i (0 .. $#sample_keys) {
+       $key = $sample_keys[$i];
+       $val = $sample_vals[$i];
+       $d{ $key } = $val;
+    }
+
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
     my @effs = split(/,/, $d{ EFF });
@@ -84,7 +92,11 @@ foreach my $d (@data) {
     next unless( $var{ $vark } ); # Likely just in Undetermined.
     my ($pmean, $qmean) = @$d[23,25];
     my $varn = @{ $var{ $vark } } + 0;
-    my $ave_af = $stat->mean( $var{ $vark } );
+    my $n = 0 + $var{ $vark };
+    my $ave_af = 0;
+    if ( $n > 0 ) {
+        $ave_af = $stat->mean( $var{ $vark } );
+    }
     my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
     #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
     $pass = "DUP" if ( $d->[24] ==  0 && $d->[22] !~ /1$/ && $d->[22] !~ /0$/ ); # all variants from one position in reads
