@@ -34,14 +34,27 @@ my %sample;
 my %var;
 #my $stat = new Stat::Basic;
 my %CONTROL;
+my $sample_name;
 while( <> ) {
+    if ( /^#CHROM/ ) {
+        $sample_name = split(/\t/)[9];
+        print "$sample_name";
+    }
     next if ( /^#/ );
     chomp;
     my @a = split(/\t/);
     $a[7] .= ";";
     my %d;
+    %d{ SAMPLE } = $sample_name;
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
 	    $d{ $1 } = $2;
+    }
+    my @sample_keys = split(/:/, $a[8]);
+    my @sample_vals = split(/:/, $a[9]);
+    foreach $i (0 .. $#sample_keys) {
+       $key = $sample_keys[$i];
+       $val = $sample_vals[$i];
+       $d{ $key } = $val;
     }
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
