@@ -233,7 +233,7 @@ class Filtering:
                 bias = rec.get_val('BIAS')
                 # all variants from one position in reads
                 if pstd is not None and bias is not None:
-                    self.dup_filter.check = lambda: pstd != 0 or bias[-1] in ['0', '1']
+                    self.dup_filter.check = lambda _: pstd != 0 or bias[-1] in ['0', '1']
                     self.dup_filter.apply(rec)
 
                 max_ratio = self.filt_cnf.get('max_ratio')
