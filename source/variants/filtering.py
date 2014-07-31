@@ -231,6 +231,10 @@ class Filtering:
 
                 pstd = rec.get_val('PSTD')
                 bias = rec.get_val('BIAS')
+                if bias is not None:
+                    assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':'], 'BIAS: ' + str(bias)
+                    bias.replace(';', ':')
+
                 # all variants from one position in reads
                 if pstd is not None and bias is not None:
                     self.dup_filter.check = lambda _: pstd != 0 or bias[-1] in ['0', '1']
@@ -262,7 +266,7 @@ class Filtering:
                     self.bias_filter.check = lambda _: not (  # Filter novel variants with strand bias.
                         self.filt_cnf['bias'] is True and
                         cls in ['Novel', 'dbSNP'] and
-                        bias and bias in ['2:1', '2:0', '2;1', '2;0'] and af < 0.3)
+                        bias and bias in ['2:1', '2:0'] and af < 0.3)
                     self.bias_filter.apply(rec)
 
                     self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'

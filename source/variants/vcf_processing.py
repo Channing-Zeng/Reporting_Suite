@@ -42,11 +42,9 @@ class Record(_Record):
 
         if key in self.INFO:
             val = self.INFO[key]
-            if isinstance(val, basestring):
-                pass
-            else:
+            if not isinstance(val, basestring):
                 try:
-                    val = self.INFO[key][0]
+                    val = val[0]
                 except:
                     pass
         else:
@@ -55,6 +53,12 @@ class Record(_Record):
                 sample_data = main_sample.data._asdict()
                 if key in sample_data:
                     val = sample_data[key]
+
+                    if not isinstance(val, basestring):
+                        try:
+                            val = ':'.join(val)
+                        except:
+                            pass
                 else:
                     return default
             else:
