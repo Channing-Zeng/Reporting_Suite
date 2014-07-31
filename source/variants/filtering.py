@@ -258,8 +258,10 @@ class Filtering:
                 pstd = rec.get_val('PSTD')
                 bias = rec.get_val('BIAS')
                 if bias is not None:
-                    assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':'], 'BIAS: ' + str(bias)
-                    bias.replace(';', ':')
+                    assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':', '.'], 'BIAS: ' + str(bias)
+                    if bias[1] == '.':
+                        info('Warning: BIAS = ' + str(bias) + ' for ' + rec.CHROM + ':' + rec.POS)
+                    bias.replace(';', ':').replace('.', ':')
 
                 # all variants from one position in reads
                 if pstd is not None and bias is not None:

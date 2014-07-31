@@ -248,6 +248,10 @@ def filter_all(cnf, sample_names):
     filt_cnf = cnf['variant_filtering']
 
     for caller in callers:
+        info('*' * 70)
+        info('Running for ' + caller.name)
+        info('*' * 70)
+
         anno_vcf_fpaths, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
             cnf['bcbio_final_dir'], sample_names, varannotate_dir,
             '-' + caller.suf + '.anno.vcf')
