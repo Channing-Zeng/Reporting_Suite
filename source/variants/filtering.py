@@ -7,6 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 import operator
 from collections import defaultdict
+from joblib import Parallel, delayed
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
@@ -40,12 +41,14 @@ class Filter:
 
         if self.check(rec):
             self.num_passed += 1
+            return True
         else:
             self.num_rejected += 1
 
             if self.word not in rec.FILTER:
                 self.__remove_pass(rec)
                 rec.add_filter(self.word)
+            return False
 
 
 class CnfFilter(Filter):
@@ -117,18 +120,17 @@ class Filtering:
             self.round1_filters.append(InfoFilter('filt_q_mean', 'QUAL', required=False))
         if filt_cnf.get('filt_p_mean') is not None:
             self.round1_filters.append(InfoFilter('filt_p_mean', 'PMEAN', required=False))
-        # self.round1_filters.append(Filter('min_q_mean', lambda rec: rec.QUAL >= filt_cnf['filt_q_mean']))
 
         self.control = self.filt_cnf.get('control')
 
         self.impact_filter = EffectFilter('impact')
 
         self.round2_filters = [
-            InfoFilter('min_p_mean', 'PMEAN', required=False),
-            InfoFilter('min_q_mean', 'QUAL', required=False),
-            InfoFilter('min_freq', 'AF', required=False),
-            InfoFilter('mean_mq', 'MQ', required=False),
-            InfoFilter('signal_noise', 'SN', required=False),
+            InfoFilter('min_p_mean', 'PMEAN'),
+            InfoFilter('min_q_mean', 'QUAL'),
+            InfoFilter('min_freq', 'AF'),
+            InfoFilter('mean_mq', 'MQ'),
+            InfoFilter('signal_noise', 'SN'),
             InfoFilter('mean_vd', 'VD', required=False)]
 
         self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: rec.var_id() in self.af_by_varid)
@@ -143,28 +145,56 @@ class Filtering:
         step_greetings('Filtering')
 
         info('Removing previous FILTER values')
-        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
-                           for vcf_fpath in self.vcf_fpaths]
-        info('Saved: ' + ', '.join(self.vcf_fpaths))
+        n_jobs = 1 #len(self.vcf_fpaths)
+
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
+                (self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
+                 for vcf_fpath in self.vcf_fpaths)
         info()
 
         info('First round')
-        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
-                           for vcf_fpath in self.vcf_fpaths]
-        info('Saved: ' + ', '.join(self.vcf_fpaths))
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
+                (self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
+                 for vcf_fpath in self.vcf_fpaths)
         info()
 
         info('Second round')
-        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
-                           for vcf_fpath in self.vcf_fpaths]
-        info('Saved: ' + ', '.join(self.vcf_fpaths))
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
+                (self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
+                 for vcf_fpath in self.vcf_fpaths)
         info()
 
-        info('Third round')
-        self.vcf_fpaths = [iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_3rd_round(), suffix='r3')
-                           for vcf_fpath in self.vcf_fpaths]
-        info('Saved: ' + ', '.join(self.vcf_fpaths))
+        info('Filtering by impact')
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
+                (self.cnf, vcf_fpath, self.get_proc_line_impact(), suffix='impact')
+                 for vcf_fpath in self.vcf_fpaths)
         info()
+
+        # self.vcf_fpaths = [
+        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
+        #     for vcf_fpath in self.vcf_fpaths
+        # ]
+
+        # info('First round')
+        # self.vcf_fpaths = [
+        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
+        #     for vcf_fpath in self.vcf_fpaths
+        # ]
+        # info()
+        #
+        # info('Second round')
+        # self.vcf_fpaths = [
+        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
+        #     for vcf_fpath in self.vcf_fpaths
+        # ]
+        # info()
+        #
+        # info('Impact')
+        # self.vcf_fpaths = [
+        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_impact(), suffix='r3')
+        #     for vcf_fpath in self.vcf_fpaths
+        # ]
+        # info()
 
         return self.vcf_fpaths
 
@@ -174,16 +204,15 @@ class Filtering:
             return rec
         return __f
 
-    # DP, QUAL, PMEAN
+    # Counting samples, variants and AF_by_vark
     def get_proc_line_1st_round(self):
         def __f(rec):
+            # Strict filter of DP, QUAL, PMEAN
             [f.apply(rec) for f in self.round1_filters]
-            return rec
-        return __f
+            if rec.is_rejected():
+                return rec
 
-    # counting samples, variants and AF_by_vark
-    def get_proc_line_2nd_round(self):
-        def __f(rec):
+            # For those who passed, collect controls, samples and af_by_varid
             sample = rec.sample_field()
             try:
                 sample = sample[0]
@@ -194,7 +223,7 @@ class Filtering:
                 all_passed = all(f.apply(rec, only_check=True) for f in self.round2_filters)
 
                 if all_passed or rec.cls() == 'Novel':
-                # So that any novel variants showed up in control won't be filtered:
+                    # So that any novel variants showed up in control won't be filtered:
                     self.control_vars.add(rec.var_id())
 
             if sample:
@@ -205,19 +234,16 @@ class Filtering:
             return rec
         return __f
 
-    # based on counted samples, variants and AF_by_vark:
+    # Based on counted samples, variants and AF_by_vark:
     #   var_n    = number of variants for vark       must be >= [sample_cnt]
     #   fraction = var_n / number of total samples   must be > [fraction]
     #   avg_af   = avg AF for this vark              must be < [freq]
-    def get_proc_line_3rd_round(self):
+    def get_proc_line_2nd_round(self):
         def __f(rec):
-            self.impact_filter.apply(rec)
-
             sample = rec.sample_field()
             if sample:
-                self.undet_sample_filter.apply(rec)
-                # if rec.is_rejected():
-                #     return rec
+                if self.undet_sample_filter.apply(rec):
+                    return rec
 
                 var_n = len(self.af_by_varid[rec.var_id()])
                 fraction = float(var_n) / len(self.samples)
@@ -272,6 +298,12 @@ class Filtering:
                     self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'
                     self.nonclnsnp_filter.apply(rec)
 
+            return rec
+        return __f
+
+    def get_proc_line_impact(self):
+        def __f(rec):
+            self.impact_filter.apply(rec)
             return rec
         return __f
 

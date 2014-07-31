@@ -367,21 +367,20 @@ class Runner():
             if 'metadata' in sample_info:
                 phenotype = sample_info['metadata']['phenotype']
 
-                if self.vardict_steps:
-                    batch_names = sample_info['metadata']['batch']
-                    if isinstance(batch_names, basestring):
-                        batch_names = [batch_names]
+                batch_names = sample_info['metadata']['batch']
+                if isinstance(batch_names, basestring):
+                    batch_names = [batch_names]
 
-                    for batch_name in batch_names:
-                        batches[batch_name]['bed'] = bed_fpath
-                        if phenotype == 'normal':
-                            if batches[batch_name].get('normal'):
-                                critical('Multiple normal samples for batch ' + batch_name)
-                            batches[batch_name]['normal'] = sample, bam_fpath
-                        elif phenotype == 'tumor':
-                            if 'tumor' not in batches[batch_name]:
-                                batches[batch_name]['tumor'] = dict()
-                            batches[batch_name]['tumor'][sample] = bam_fpath
+                for batch_name in batch_names:
+                    batches[batch_name]['bed'] = bed_fpath
+                    if phenotype == 'normal':
+                        if batches[batch_name].get('normal'):
+                            critical('Multiple normal samples for batch ' + batch_name)
+                        batches[batch_name]['normal'] = sample, bam_fpath
+                    elif phenotype == 'tumor':
+                        if 'tumor' not in batches[batch_name]:
+                            batches[batch_name]['tumor'] = dict()
+                        batches[batch_name]['tumor'][sample] = bam_fpath
 
             for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
                 vcf_fpath = join(sample_dirpath, sample + '-' + variant_caller + '.vcf')
@@ -415,53 +414,54 @@ class Runner():
         if not self.cnf.verbose:
             info('', ending='')
 
-        for batch_name, batch in batches.items():
-            normal_name, normal_bam_fpath = batch['normal']
-            bed_fpath = batch['bed']
-            for tumor_name, tumor_bam_fpath in batch['tumor'].items():
-                output_dirpath, _ = self.step_output_dir_and_log_paths(self.vardict, tumor_name, dir_name=self.vardict.name)
-                vars_txt = join(output_dirpath, 'vardict.txt')
+        if self.vardict_steps:
+            for batch_name, batch in batches.items():
+                normal_name, normal_bam_fpath = batch['normal']
+                bed_fpath = batch['bed']
+                for tumor_name, tumor_bam_fpath in batch['tumor'].items():
+                    output_dirpath, _ = self.step_output_dir_and_log_paths(self.vardict, tumor_name, dir_name=self.vardict.name)
+                    vars_txt = join(output_dirpath, 'vardict.txt')
 
-                if not verify_bam(tumor_bam_fpath):
-                    sys.exit(1)
+                    if not verify_bam(tumor_bam_fpath):
+                        sys.exit(1)
 
-                if not file_exists(tumor_bam_fpath + '.bai'):
-                    samtools = get_tool_cmdline(self.cnf, 'samtools')
-                    cmdline = '{samtools} index {bam}'.format(samtools=samtools, bam=tumor_bam_fpath)
-                    call(self.cnf, cmdline)
+                    if not file_exists(tumor_bam_fpath + '.bai'):
+                        samtools = get_tool_cmdline(self.cnf, 'samtools')
+                        cmdline = '{samtools} index {bam}'.format(samtools=samtools, bam=tumor_bam_fpath)
+                        call(self.cnf, cmdline)
 
-                if self.vardict in self.vardict_steps:
-                    self.submit(
-                        self.vardict, tumor_name, suf='vardict',
-                        tumor_name=tumor_name,
-                        normal_name=normal_name,
-                        tumor_bam=tumor_bam_fpath,
-                        normal_bam=normal_bam_fpath,
-                        bed=bed_fpath,
-                        vars_txt=vars_txt)
+                    if self.vardict in self.vardict_steps:
+                        self.submit(
+                            self.vardict, tumor_name, suf='vardict',
+                            tumor_name=tumor_name,
+                            normal_name=normal_name,
+                            tumor_bam=tumor_bam_fpath,
+                            normal_bam=normal_bam_fpath,
+                            bed=bed_fpath,
+                            vars_txt=vars_txt)
 
-                somatic_vars_txt = join(output_dirpath, 'somatic_variants.txt')
-                if self.testsomatic in self.vardict_steps:
-                    self.submit(
-                        self.testsomatic, tumor_name, suf='testsomatic', dir_name=self.vardict.name,
-                        vars_txt=vars_txt,
-                        somatic_vars_txt=somatic_vars_txt,
-                        wait_for_steps=[self.vardict.job_name(tumor_name, 'vardict')])
+                    somatic_vars_txt = join(output_dirpath, 'somatic_variants.txt')
+                    if self.testsomatic in self.vardict_steps:
+                        self.submit(
+                            self.testsomatic, tumor_name, suf='testsomatic', dir_name=self.vardict.name,
+                            vars_txt=vars_txt,
+                            somatic_vars_txt=somatic_vars_txt,
+                            wait_for_steps=[self.vardict.job_name(tumor_name, 'vardict')])
 
-                vardict_vcf = join(output_dirpath, 'somatic_variants-vardict_standalone.vcf')
-                if self.var_to_vcf_somatic in self.vardict_steps:
-                    self.submit(
-                        self.var_to_vcf_somatic, tumor_name, suf='var2vcf', dir_name=self.vardict.name,
-                        tumor_name=tumor_name,
-                        normal_name=normal_name,
-                        somatic_vars_txt=somatic_vars_txt,
-                        vardict_vcf=vardict_vcf,
-                        wait_for_steps=[self.testsomatic.job_name(tumor_name, 'testsomatic')])
+                    vardict_vcf = join(output_dirpath, 'somatic_variants-vardict_standalone.vcf')
+                    if self.var_to_vcf_somatic in self.vardict_steps:
+                        self.submit(
+                            self.var_to_vcf_somatic, tumor_name, suf='var2vcf', dir_name=self.vardict.name,
+                            tumor_name=tumor_name,
+                            normal_name=normal_name,
+                            somatic_vars_txt=somatic_vars_txt,
+                            vardict_vcf=vardict_vcf,
+                            wait_for_steps=[self.testsomatic.job_name(tumor_name, 'testsomatic')])
 
-                self._process_vcf(
-                    tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone',
-                    dir_name=self.vardict.name, steps=self.vardict_steps,
-                    job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
+                    self._process_vcf(
+                        tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone',
+                        dir_name=self.vardict.name, steps=self.vardict_steps,
+                        job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
 
         all_variantcallers = set()
         for s_info in self.bcbio_cnf.details:
@@ -469,12 +469,10 @@ class Runner():
 
         samples_fpath = abspath(join(self.cnf.work_dir, 'samples.txt'))
         #if not isfile(samples_fpath):
-        samples_num = 0
         with open(samples_fpath, 'w') as f:
             for sample_info in self.bcbio_cnf.details:
                 sample = sample_info['description']
                 f.write(sample + '\n')
-                samples_num += 1
 
         if self.varqc_summary in self.steps:
             self.submit(
@@ -502,7 +500,8 @@ class Runner():
                     self.varqc.job_name(d['description'], v)
                     for d in self.bcbio_cnf.details
                     for v in all_variantcallers],
-                samples=samples_fpath)
+                samples=samples_fpath,
+                threads=len(batches))
 
         if not self.cnf.verbose:
             print ''
@@ -528,17 +527,11 @@ class Runner():
         anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample, suf=caller, dir_name=dir_name)
         annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
 
-        # if self.varfilter in steps:
-        #     self.submit(
-        #         self.varfilter, sample, suf=caller, dir_name=dir_name,
-        #         wait_for_steps=[self.varannotate.job_name(sample, caller)],
-        #         vcf=annotated_vcf_fpath, sample=sample + '-' + caller)
-        #
-        # filter_dirpath, _ = self.step_output_dir_and_log_paths(self.varfilter, sample)
-        # filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
-        #
-        # if self.varqc_after in steps:
-        #     self.submit(
-        #         self.varqc_after, sample, suf=caller, dir_name=dir_name,
-        #         wait_for_steps=[self.varfilter.job_name(sample, caller)] if self.varfilter.name in self.steps else [],
-        #         vcf=filtered_vcf_fpath, sample=sample + '-' + caller)
+        filter_dirpath = join(dirname(anno_dirpath), 'varfilter')
+        filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+
+        if self.varqc_after in steps:
+            self.submit(
+                self.varqc_after, sample, suf=caller, dir_name=dir_name,
+                wait_for_steps=[self.varfilter_all.job_name()] if self.varfilter_all in steps else [],
+                vcf=filtered_vcf_fpath, sample=sample + '-' + caller)

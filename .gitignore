@@ -55,10 +55,11 @@ test/bcbio/final/**/targetcov
 test/bcbio/final/**/varqc_after
 test/bcbio/final/**/varfilter
 test/bcbio/final/**/varfilter_2
+test/bcbio/final/**/varfilter_3
 test/bcbio/final/**/targetcov_summary
 test/bcbio/final/**/vaqc_summary
 test/bcbio/final/**/vardict
-test/bcbio/final/sample1/sample1-ready.bam.bai
+test/bcbio/final/**/**-ready.bam.bai
 test/bcbio/final/2014-07-03_bcbio/varqc_summary
 test/bcbio/final/2014-07-03_bcbio/targetcov_summary
 test/results_qs_summary

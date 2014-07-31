@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.variants.tsv import make_tsv
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -16,6 +15,7 @@ import shutil
 import os
 from os.path import basename, join, isfile, splitext
 
+from source.variants.tsv import make_tsv
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.config import Defaults
 from source.logger import info

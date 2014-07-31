@@ -7,11 +7,16 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, splitext, isfile, dirname
-from optparse import OptionParser
+from os.path import join, pardir, basename, splitext, isfile, dirname, abspath, realpath
+from site import addsitedir
+source_dir = abspath(dirname(realpath(__file__)))
+addsitedir(join(source_dir, 'ext_modules'))
 
+from optparse import OptionParser
+from joblib import Parallel, delayed
 import os
 import shutil
+
 from source.utils_from_bcbio import add_suffix, safe_mkdir
 from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
@@ -231,6 +236,9 @@ class VariantCaller:
         self.anno_filt_vcf_fpaths = []
 
 
+cnfs_for_samples = dict()
+
+
 def filter_all(cnf, sample_names):
     varannotate_dir = 'varannotate'
 
@@ -251,16 +259,23 @@ def filter_all(cnf, sample_names):
         filtering = Filtering(cnf, filt_cnf, opl_vcf_fpaths)
         filt_anno_vcf_fpaths = filtering.run_filtering()
 
-        results = []
-        for anno_vcf_fpath, work_filt_vcf_fpath in zip(anno_vcf_fpaths, filt_anno_vcf_fpaths):
-            results.append(postprocess(cnf, anno_vcf_fpath, work_filt_vcf_fpath))
+        global cnfs_for_samples
+        for sname in sample_names:
+            cnf_copy = cnf.copy()
+            cnf_copy['name'] = sname
+            cnfs_for_samples[sname] = cnf_copy
+
+        results = Parallel(n_jobs=len(anno_vcf_fpaths))(delayed(postprocess)(sname, anno_vcf_fpath, work_filt_vcf_fpath)
+            for sname, anno_vcf_fpath, work_filt_vcf_fpath in zip(sample_names, anno_vcf_fpaths, filt_anno_vcf_fpaths))
 
         for res in results:
             finalize_one(cnf, *res)
 
 
-def postprocess(cnf, anno_vcf_fpath, work_filt_vcf_fpath):
-    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varannotate', 'varfilter_2')
+def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
+    cnf = cnfs_for_samples[sname]
+
+    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varannotate', 'varfilter_3')
 
     safe_mkdir(dirname(final_vcf_fpath))
 
