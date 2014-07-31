@@ -37,23 +37,24 @@ my %CONTROL;
 my $sample_name;
 while( <> ) {
     if ( /^#CHROM/ ) {
-        $sample_name = split(/\t/)[9];
-        print "$sample_name";
+        my @headers = split(/\t/);
+        $sample_name = $headers[9];
+        print STDERR "$sample_name\n";
     }
     next if ( /^#/ );
     chomp;
     my @a = split(/\t/);
     $a[7] .= ";";
     my %d;
-    %d{ SAMPLE } = $sample_name;
+    $d{ SAMPLE } = $sample_name;
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
 	    $d{ $1 } = $2;
     }
     my @sample_keys = split(/:/, $a[8]);
     my @sample_vals = split(/:/, $a[9]);
-    foreach $i (0 .. $#sample_keys) {
-       $key = $sample_keys[$i];
-       $val = $sample_vals[$i];
+    foreach my $i (0 .. $#sample_keys) {
+       my $key = $sample_keys[$i];
+       my $val = $sample_vals[$i];
        $d{ $key } = $val;
     }
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
@@ -89,7 +90,6 @@ while( <> ) {
         my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
         push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
     }
-    #last;
 }
 
 sub mean {
