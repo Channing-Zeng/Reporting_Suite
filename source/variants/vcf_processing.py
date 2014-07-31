@@ -59,8 +59,11 @@ class Record(_Record):
         if val is not None:
             try:
                 return float(val)
-            except ValueError:
-                return int(val)
+            except:
+                try:
+                    return int(val)
+                except:
+                    return val
         else:
             return default
 
