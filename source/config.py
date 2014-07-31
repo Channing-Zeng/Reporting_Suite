@@ -55,9 +55,9 @@ class Defaults():
         impact='MODERATE|HIGH',
         vardict_mode=False,
 
-        filt_p_mean=0,
-        filt_q_mean=0,
-        filt_depth=0,
+        filt_p_mean=None,
+        filt_q_mean=None,
+        filt_depth=None,
 
         min_p_mean=5,
         min_q_mean=25,

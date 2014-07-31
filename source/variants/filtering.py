@@ -257,7 +257,8 @@ class Filtering:
                     frac > self.filt_cnf['fraction'] and
                     avg_af < self.filt_cnf['freq'] and
                     rec.ID is None)
-                self.multi_filter.apply(rec)
+                if not self.multi_filter.apply(rec):
+                    info('Multi filter: POS=' + rec.POS + ', var_n = ' + str(var_n) + ', n_sample = ' + len(self.samples) + ', avg_af = ' + str(avg_af))
 
                 pstd = rec.get_val('PSTD')
                 bias = rec.get_val('BIAS')
@@ -276,7 +277,8 @@ class Filtering:
                 af = rec.get_val('AF')
                 if af is not None:
                     self.max_rate_filter.check = lambda _: not (frac >= max_ratio and af < 0.3)
-                    self.max_rate_filter.apply(rec)
+                    if not self.max_rate_filter.apply(rec):
+                        info('Multi filter: POS=' + rec.POS + ', frac = ' + str(frac) + ', af = ' + str(af))
 
                 gmaf = rec.get_val('GMAF')
                 req_maf = self.filt_cnf['maf']

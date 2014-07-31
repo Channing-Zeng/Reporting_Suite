@@ -76,7 +76,7 @@ def main():
                 type='int',
                 help='The filtering total depth. The raw variant will be filtered '
                      'on first place if the total depth is less then [filt_depth]. '
-                     'Default %d' % defaults['filt_depth'],
+                     'Default %s' % str(defaults['filt_depth']),
             )),
 
             (['-V', '--mean-vd'], dict(
@@ -122,7 +122,7 @@ def main():
             (['-R', '--max-ratio'], dict(
                 dest='max_ratio',
                 type='float',
-                help='When a variant is present in more than [fraction] of samples, '
+                help='When a variant is present in more than [max_ratio] of samples, '
                      'and AF < 0.3, it\'s considered as likely false positive, '
                      'even if it\'s in COSMIC. Default %f.' % defaults['max_ratio'],
             )),
@@ -155,7 +155,7 @@ def main():
                 help='The filtering mean position in reads for variants. '
                      'The raw variant will be filtered on first place if the mean '
                      'posititon is less then [filt_p_mean]. '
-                     'Default %d bp' % defaults['filt_p_mean'],
+                     'Default %s bp' % str(defaults['filt_p_mean']),
             )),
 
             (['-Q'], dict(
@@ -164,7 +164,7 @@ def main():
                 help='The filtering mean base quality phred score for variants. '
                      'The raw variant will be filtered on first place  '
                      'if the mean quality is less then [filt_q_mean]. '
-                     'Default %f' % defaults['filt_q_mean'],
+                     'Default %s' % str(defaults['filt_q_mean']),
             )),
 
             (['--sn'], dict(
