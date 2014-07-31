@@ -41,10 +41,14 @@ class Record(_Record):
         val = None
 
         if key in self.INFO:
-            try:
-                val = self.INFO[key][0]
-            except:
-                val = self.INFO[key]
+            val = self.INFO[key]
+            if isinstance(val, basestring):
+                pass
+            else:
+                try:
+                    val = self.INFO[key][0]
+                except:
+                    pass
         else:
             main_sample = self.main_sample()
             if main_sample:

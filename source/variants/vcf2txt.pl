@@ -124,7 +124,7 @@ foreach my $d (@data) {
     }
 
     $pass = "CNTL" if ( $control && $CONTROL{ $vark } );
-    $pass = "BIAS" if ( $opt_b && ($class eq "Novel"||$class eq "dbSNP") && ($d->[22] eq "2;1" || $d->[22] eq "2;0") && $d->[21] < 0.3 ); # Filter novel variants with strand bias.
+    $pass = "BIAS" if ( $opt_b && ($class eq "Novel"||$class eq "dbSNP") && ($d->[22] eq "2;1" || $d->[22] eq "2;0" || $d->[22] eq "2:1" || $d->[22] eq "2:0") && $d->[21] < 0.3 ); # Filter novel variants with strand bias.
     $pass = "NonClnSNP" if ( checkCLNSIG($d->[30]) == -1 && $class ne "COSMIC" );
     print join("\t", @$d, $sam_n, $varn, sprintf("%.3f", $varn/$sam_n), $ave_af, $pass, $class), "\n";
 }

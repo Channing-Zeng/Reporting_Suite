@@ -262,7 +262,7 @@ class Filtering:
                     self.bias_filter.check = lambda _: not (  # Filter novel variants with strand bias.
                         self.filt_cnf['bias'] is True and
                         cls in ['Novel', 'dbSNP'] and
-                        bias and bias in ['2;1', '2;0'] and af < 0.3)
+                        bias and bias in ['2:1', '2:0', '2;1', '2;0'] and af < 0.3)
                     self.bias_filter.apply(rec)
 
                     self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'
