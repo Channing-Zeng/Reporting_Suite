@@ -23,14 +23,15 @@ class Record(_Record):
     def __init__(self, _record, input_fpath, line_num):
         self.__dict__.update(_record.__dict__)
         self.line_num = line_num
-        self.file_base_name = basename(input_fpath)
+        file_base_name = basename(input_fpath)
+        self.sample_name_from_file = file_base_name.split('-')[0]
 
     def main_sample(self):
         if len(self._sample_indexes) == 0:
             return None
-        sample_name_from_file = self.file_base_name.split('-')[0]
         try:
-            sample_index = [sname.lower() for sname in self._sample_indexes].index(sample_name_from_file.lower())
+            sample_index = [sname.lower() for sname in self._sample_indexes]\
+                .index(self.sample_name_from_file.lower())
         except ValueError:
             return self.samples[0]
         else:
@@ -90,7 +91,7 @@ class Record(_Record):
         return -1
 
     def sample_field(self):
-        return self.INFO.get('SAMPLE')
+        return self.sample_name_from_file
 
     def var_id(self):
         return ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
