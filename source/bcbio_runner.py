@@ -497,7 +497,7 @@ class Runner():
             self.submit(
                 self.varfilter_all,
                 wait_for_steps=[
-                    self.varqc.job_name(d['description'], v)
+                    self.varannotate.job_name(d['description'], v)
                     for d in self.bcbio_cnf.details
                     for v in all_variantcallers],
                 samples=samples_fpath,
