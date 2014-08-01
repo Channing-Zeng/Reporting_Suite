@@ -30,7 +30,7 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
 
-    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'targetcov_cnv')
+    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'C2SEQ')
 
     return cnv_report_fpath
 
