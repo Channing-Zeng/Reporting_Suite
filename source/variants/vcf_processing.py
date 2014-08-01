@@ -44,10 +44,10 @@ class Record(_Record):
         if self._bias is None:
             bias_ = self.get_val('BIAS')
             if bias_ is not None:
-                if not isinstance(bias_, basestring) and len(bias_) == 3 and bias_[1] in [';', ':']:
+                if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':']:
                     err('BIAS: ' + str(bias_) + ' for variant ' + self.var_id())
                 if bias_ == 0.0:
-                    info('Warning: BIAS is float, equals ' + str(bias_) + ' for variant ' + self.var_id())
+                    err('Warning: BIAS is float, equals ' + str(bias_) + ' for variant ' + self.var_id())
                 bias_ = '0:0'
                 bias_.replace(';', ':').replace('.', ':')
             self._bias = bias_
