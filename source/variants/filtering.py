@@ -1,3 +1,4 @@
+from os.path import basename
 import sys
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -6,7 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
 import operator
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from joblib import Parallel, delayed
 
 from source.variants.Effect import Effect
@@ -20,7 +21,7 @@ class Filter:
     filt_cnf = None
     main_sample = None
 
-    def __init__(self, word, check=None, required=True):
+    def __init__(self, word, check, required=True):
         self.check = check
         self.required = required
         self.word = word.upper()
@@ -33,13 +34,13 @@ class Filter:
         if rec.FILTER == ['PASS']:
             rec.FILTER = None
 
-    def apply(self, rec, only_check=False):
+    def apply(self, rec, only_check=False, *args, **kvargs):
         assert self.check, 'check function must be specified for filter before applying'
 
         if only_check:
-            return self.check(rec)
+            return self.check(rec, *args, **kvargs)
 
-        if self.check(rec):
+        if self.check(rec, *args, **kvargs):
             self.num_passed += 1
             return True
         else:
@@ -52,15 +53,15 @@ class Filter:
 
 
 class CnfFilter(Filter):
-    def __init__(self, key, *args, **kvargs):
+    def __init__(self, key, check, *args, **kvargs):
         self.key = key
-        Filter.__init__(self, key.upper(), *args, **kvargs)
+        Filter.__init__(self, key.upper(), check, *args, **kvargs)
 
-    def apply(self, rec, only_check=False):
+    def apply(self, rec, only_check=False, *args, **kvargs):
         if Filter.filt_cnf.get(self.key) is None:
             return True
 
-        return Filter.apply(self, rec, only_check)
+        return Filter.apply(self, rec, only_check, *args, **kvargs)
 
 
 class InfoFilter(CnfFilter):
@@ -70,9 +71,8 @@ class InfoFilter(CnfFilter):
             anno_val = rec.get_val(info_key)
             if anno_val is None:
                 if self.required:
-                    critical('Error: no field ' + info_key + ' in INFO or SAMPLE at line ' +
-                             str(rec.line_num + 1) + ' (' + rec.CHROM + ':' + str(rec.POS) +
-                             ') - required to test ' + cnf_key)
+                    critical('Error: no field ' + info_key + ' in INFO or SAMPLE for variant ' +
+                             rec.var_id() + ' - required to test ' + cnf_key)
                 else:
                     return True  # PASS
             try:
@@ -89,7 +89,7 @@ class EffectFilter(CnfFilter):
     def __init__(self, cnf_key, *args, **kwargs):
         def check(rec):
             if 'EFF' not in rec.INFO:
-                err('Warning: EFF field is missing for variant at line ' + str(rec.line_num))
+                err('Warning: EFF field is missing for variant ' + str(rec.var_id()))
                 return False
 
             impact_filter_line = Filter.filt_cnf[cnf_key]
@@ -102,6 +102,52 @@ class EffectFilter(CnfFilter):
         CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
 
 
+class VarkInfo:
+    def __init__(self, vark, sample_num):
+        self.vark = vark
+        self.afs = []
+        self.sample_num = sample_num
+        self._avg_af = None
+
+        def multi_filter_check(rec):
+            return not (  # novel and present in [max_ratio] samples
+                self.var_n() >= Filter.filt_cnf['sample_cnt'] and
+                self.frac() > Filter.filt_cnf['fraction'] and
+                self.avg_af() < Filter.filt_cnf['freq'] and
+                rec.ID is None)
+
+        def max_rate_filter_check(rec):
+            max_ratio = Filter.filt_cnf.get('max_ratio')
+            af = rec.get_val('AF')
+            return not (self.frac() >= max_ratio and af < 0.3)
+
+        self.multi_filter = Filter('MULTI', multi_filter_check)
+        self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
+
+
+    def var_n(self):
+        return len(self.afs)
+
+    def frac(self):
+        return float(self.var_n()) / self.sample_num
+
+    def avg_af(self):
+        if self._avg_af is None:
+            self._avg_af = mean(self.afs)
+        return self._avg_af
+
+
+cnf_for_samples = dict()
+
+def process_vcf(vcf_fpath, fun, suffix, self):
+    cnf = cnf_for_samples[basename(vcf_fpath).split('.')[0]]
+    return iterate_vcf(cnf, vcf_fpath, fun, suffix, self=self)
+
+def one_per_line(vcf_fpath):
+    cnf = cnf_for_samples[basename(vcf_fpath).split('.')[0]]
+    return vcf_one_per_line(cnf, vcf_fpath)
+
+
 class Filtering:
     def __init__(self, cnf, filt_cnf, vcf_fpaths):
         self.cnf = cnf
@@ -111,7 +157,7 @@ class Filtering:
 
         self.control_vars = set()
         self.samples = {''}
-        self.af_by_varid = defaultdict(list)
+        self.varks = dict()  # vark -> VarkInfo(vark, afs)
 
         self.round1_filters = []
         if filt_cnf.get('filt_depth') is not None:
@@ -133,186 +179,163 @@ class Filtering:
             InfoFilter('signal_noise', 'SN'),
             InfoFilter('mean_vd', 'VD', required=False)]
 
-        self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: rec.var_id() in self.af_by_varid)
-        self.multi_filter = Filter('MULTI')
-        self.dup_filter = Filter('DUP')
-        self.max_rate_filter = CnfFilter('max_ratio')
-        self.control_filter = CnfFilter('control', lambda rec: filt_cnf['control'] and rec.var_id() in self.control_vars)
-        self.bias_filter = CnfFilter('bias')
-        self.nonclnsnp_filter = Filter('NonClnSNP')
+        def dup_filter_check(rec):
+            pstd = rec.get_val('PSTD')
+            bias = rec.bias()
+
+            # all variants from one position in reads
+            if pstd is not None and bias is not None:
+                return pstd != 0 or bias[-1] in ['0', '1']
+            return True
+
+        def bias_filter_check(rec, cls):
+            return not (  # Filter novel variants with strand bias.
+                Filter.filt_cnf['bias'] is True and
+                cls in ['Novel', 'dbSNP'] and
+                rec.bias() and rec.bias() in ['2:1', '2:0'] and rec.af() < 0.3)
+
+        def nonclnsnp_filter_check(rec, cls):
+            return rec.check_clnsig() != -1 or cls == 'COSMIC'
+
+        self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: rec.var_id() in self.varks)
+        self.control_filter = CnfFilter('control', lambda rec: not (filt_cnf['control'] and rec.var_id() in self.control_vars))
+        self.dup_filter = Filter('DUP', dup_filter_check)
+        self.bias_filter = CnfFilter('bias', bias_filter_check)
+        self.nonclnsnp_filter = Filter('NonClnSNP', nonclnsnp_filter_check)
+
 
     def run_filtering(self):
         step_greetings('Filtering')
 
         info('Removing previous FILTER values')
-        n_jobs = 1 #len(self.vcf_fpaths)
 
-        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
-                (self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
+        try:
+            import dill as pickle
+            n_jobs = len(self.vcf_fpaths)
+            self_ = pickle.dumps(self)
+        except ImportError:
+            n_jobs = 1
+            self_ = self
+
+        global cnf_for_samples
+        for vcf_fpath in self.vcf_fpaths:
+            cnf_for_samples[basename(vcf_fpath).split('.')[0]] = self.cnf.copy()
+
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(process_vcf)
+                (vcf_fpath, proc_line_remove_prev_filter, suffix='rm_prev', self=self_)
                  for vcf_fpath in self.vcf_fpaths)
         info()
 
         info('First round')
-        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
-                (self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(process_vcf)
+                (vcf_fpath, proc_line_1st_round, suffix='r1', self=self_)
                  for vcf_fpath in self.vcf_fpaths)
         info()
 
         info('One effect per line')
-        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(vcf_one_per_line)
-                (self.cnf, vcf_fpath) for vcf_fpath in self.vcf_fpaths)
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)
+                (vcf_fpath) for vcf_fpath in self.vcf_fpaths)
+        info()
 
         info('Second round')
-        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
-                (self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(process_vcf)
+                (vcf_fpath, proc_line_2nd_round, suffix='r2', self=self_)
                  for vcf_fpath in self.vcf_fpaths)
         info()
 
         info('Filtering by impact')
-        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(iterate_vcf)
-                (self.cnf, vcf_fpath, self.get_proc_line_impact(), suffix='impact')
+        self.vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(process_vcf)
+                (vcf_fpath, proc_line_impact, suffix='impact', self=self_)
                  for vcf_fpath in self.vcf_fpaths)
         info()
 
-        # self.vcf_fpaths = [
-        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_remove_prev_filter(), suffix='rm_prev')
-        #     for vcf_fpath in self.vcf_fpaths
-        # ]
-
-        # info('First round')
-        # self.vcf_fpaths = [
-        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_1st_round(), suffix='r1')
-        #     for vcf_fpath in self.vcf_fpaths
-        # ]
-        # info()
-        #
-        # info('Second round')
-        # self.vcf_fpaths = [
-        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_2nd_round(), suffix='r2')
-        #     for vcf_fpath in self.vcf_fpaths
-        # ]
-        # info()
-        #
-        # info('Impact')
-        # self.vcf_fpaths = [
-        #     iterate_vcf(self.cnf, vcf_fpath, self.get_proc_line_impact(), suffix='r3')
-        #     for vcf_fpath in self.vcf_fpaths
-        # ]
-        # info()
-
         return self.vcf_fpaths
 
-    def get_proc_line_remove_prev_filter(self):
-        def __f(rec):
-            rec.FILTER = ['PASS']
+
+def proc_line_remove_prev_filter(rec, self):
+    rec.FILTER = ['PASS']
+    return rec
+
+
+# Counting samples, variants and AF_by_vark
+def proc_line_1st_round(rec, self):
+    # Strict filter of DP, QUAL, PMEAN
+    [f.apply(rec) for f in self.round1_filters]
+    if rec.is_rejected():
+        return rec
+
+    # For those who passed, collect controls, samples and af_by_varid
+    sample = rec.sample_field()
+    try:
+        sample = sample[0]
+    except:
+        pass
+
+    vark = rec.var_id()
+
+    if sample and self.control and sample == self.control:
+        all_passed = all(f.apply(rec, only_check=True) for f in self.round2_filters)
+
+        if all_passed or rec.cls() == 'Novel':
+            # So that any novel variants showed up in control won't be filtered:
+            self.control_vars.add(vark)
+
+    if sample:
+        if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
+        # Undetermined won't count toward samples
+            self.samples.add(sample)
+            if vark not in self.varks:
+                self.varks[vark] = VarkInfo(vark, len(self.samples))
+            self.varks[vark].afs.append(rec.get_val('AF', .0))
+    return rec
+
+# Based on counted samples, variants and AF_by_vark:
+#   var_n    = number of variants for vark       must be >= [sample_cnt]
+#   fraction = var_n / number of total samples   must be > [fraction]
+#   avg_af   = avg AF for this vark              must be < [freq]
+def proc_line_2nd_round(rec, self):
+    sample = rec.sample_field()
+    if sample:
+        if not self.undet_sample_filter.apply(rec):
             return rec
-        return __f
 
-    # Counting samples, variants and AF_by_vark
-    def get_proc_line_1st_round(self):
-        def __f(rec):
-            # Strict filter of DP, QUAL, PMEAN
-            [f.apply(rec) for f in self.round1_filters]
-            if rec.is_rejected():
-                return rec
+        vark_info = self.varks[rec.var_id()]
 
-            # For those who passed, collect controls, samples and af_by_varid
-            sample = rec.sample_field()
-            try:
-                sample = sample[0]
-            except:
-                pass
+        if not vark_info.multi_filter.apply(rec):
+            info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' + len(self.samples) + ', avg_af = ' + str(vark_info.avg_af()))
 
-            if sample and self.control and sample == self.control:
-                all_passed = all(f.apply(rec, only_check=True) for f in self.round2_filters)
+        if not self.dup_filter.apply(rec):
+            info('Dup filter: vark = ' + rec.var_id())
 
-                if all_passed or rec.cls() == 'Novel':
-                    # So that any novel variants showed up in control won't be filtered:
-                    self.control_vars.add(rec.var_id())
+        if rec.af() is not None:
+            if not vark_info.max_rate_filter.apply(rec):
+                info('Multi filter: vark = ' + rec.var_id() + ', frac = ' + str(rec.frac()) + ', af = ' + str(rec.af()))
 
-            if sample:
-                if 'undetermined' not in sample.lower() or self.filt_cnf['count_undetermined']:
-                # Undetermined won't count toward samples
-                    self.samples.add(sample)
-                    self.af_by_varid[rec.var_id()].append(rec.get_val('AF', .0))
-            return rec
-        return __f
+        self.control_filter.apply(rec)
 
-    # Based on counted samples, variants and AF_by_vark:
-    #   var_n    = number of variants for vark       must be >= [sample_cnt]
-    #   fraction = var_n / number of total samples   must be > [fraction]
-    #   avg_af   = avg AF for this vark              must be < [freq]
-    def get_proc_line_2nd_round(self):
-        def __f(rec):
-            sample = rec.sample_field()
-            if sample:
-                if self.undet_sample_filter.apply(rec):
-                    return rec
+        gmaf = rec.get_val('GMAF')
+        req_maf = self.filt_cnf['maf']
 
-                var_n = len(self.af_by_varid[rec.var_id()])
-                frac = float(var_n) / len(self.samples)
-                avg_af = mean(self.af_by_varid[rec.var_id()])
-                self.multi_filter.check = lambda _: not (  # novel and present in [max_ratio] samples
-                    var_n >= self.filt_cnf['sample_cnt'] and
-                    frac > self.filt_cnf['fraction'] and
-                    avg_af < self.filt_cnf['freq'] and
-                    rec.ID is None)
-                if not self.multi_filter.apply(rec):
-                    info('Multi filter: POS=' + rec.POS + ', var_n = ' + str(var_n) + ', n_sample = ' + len(self.samples) + ', avg_af = ' + str(avg_af))
+        # if there's MAF with frequency, it'll be considered
+        # dbSNP regardless of COSMIC
+        cls = 'dbSNP' if req_maf and gmaf and gmaf > req_maf else rec.cls()
 
-                pstd = rec.get_val('PSTD')
-                bias = rec.get_val('BIAS')
-                if bias is not None:
-                    assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':', '.'], 'BIAS: ' + str(bias)
-                    if bias[1] == '.':
-                        info('Warning: BIAS = ' + str(bias) + ' for ' + rec.CHROM + ':' + rec.POS)
-                    bias.replace(';', ':').replace('.', ':')
+        # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
+        # but not in ClnSNP or COSMIC.
+        for eff in map(Effect, rec.INFO.get('EFF', [])):
+            if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
+                if eff.pos / int(eff.aal) < 0.95:
+                    cls = 'dbSNP_del'
 
-                # all variants from one position in reads
-                if pstd is not None and bias is not None:
-                    self.dup_filter.check = lambda _: pstd != 0 or bias[-1] in ['0', '1']
-                    self.dup_filter.apply(rec)
+        self.bias_filter.apply(rec, cls=cls)
+        self.nonclnsnp_filter.apply(rec, cls=cls)
 
-                max_ratio = self.filt_cnf.get('max_ratio')
-                af = rec.get_val('AF')
-                if af is not None:
-                    self.max_rate_filter.check = lambda _: not (frac >= max_ratio and af < 0.3)
-                    if not self.max_rate_filter.apply(rec):
-                        info('Multi filter: POS=' + rec.POS + ', frac = ' + str(frac) + ', af = ' + str(af))
+    return rec
 
-                gmaf = rec.get_val('GMAF')
-                req_maf = self.filt_cnf['maf']
-                # if there's MAF with frequency, it'll be considered
-                # dbSNP regardless of COSMIC
-                if gmaf:
-                    cls = 'dbSNP' if req_maf and gmaf > req_maf else rec.cls()
 
-                    self.control_filter.apply(rec)
-
-                    # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
-                    # but not in ClnSNP or COSMIC.
-                    for eff in map(Effect, rec.INFO.get('EFF', [])):
-                        if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
-                            if eff.pos / int(eff.aal) < 0.95:
-                                cls = 'dbSNP_del'
-
-                    self.bias_filter.check = lambda _: not (  # Filter novel variants with strand bias.
-                        self.filt_cnf['bias'] is True and
-                        cls in ['Novel', 'dbSNP'] and
-                        bias and bias in ['2:1', '2:0'] and af < 0.3)
-                    self.bias_filter.apply(rec)
-
-                    self.nonclnsnp_filter.check = lambda _: rec.check_clnsig() != -1 or cls == 'COSMIC'
-                    self.nonclnsnp_filter.apply(rec)
-
-            return rec
-        return __f
-
-    def get_proc_line_impact(self):
-        def __f(rec):
-            self.impact_filter.apply(rec)
-            return rec
-        return __f
+def proc_line_impact(rec, self):
+    self.impact_filter.apply(rec)
+    return rec
 
 
 # def run_snpsift(cnf, vcf_cnf, vcf_fpath):

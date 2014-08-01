@@ -170,7 +170,7 @@ def main():
             (['--sn'], dict(
                 dest='signal_noise',
                 type='int',
-                help='Signal/noise value. Default %d' % defaults['signal_noise']
+                help='Minimal signal/noise value. Default %d' % defaults['signal_noise']
             )),
 
             (['-u'], dict(

@@ -20,7 +20,7 @@ import shutil
 from source.utils_from_bcbio import add_suffix, safe_mkdir
 from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf
+from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty
 from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir
 from source.variants.summarize_qc import make_summary_reports
 from source.config import Defaults, Config
@@ -180,7 +180,7 @@ def main():
         (['--sn'], dict(
             dest='signal_noise',
             type='int',
-            help='Signal/noise value. Default %d' % defaults['signal_noise']
+            help='Minimal signal/noise value. Default %d' % defaults['signal_noise']
         )),
 
         (['-u'], dict(
@@ -281,7 +281,9 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
 
     file_basepath = splitext(final_vcf_fpath)[0]
     final_vcf_fpath = file_basepath + '.vcf'
+    final_clean_vcf_fpath = file_basepath + '.passed.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
+    final_clean_tsv_fpath = file_basepath + '.passed.tsv'
     final_maf_fpath = file_basepath + '.maf'
 
     # Moving final VCF
@@ -289,6 +291,15 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
         os.remove(final_vcf_fpath)
     shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
+
+    # Cleaning rejected variants
+    clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
+    if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
+        info('All variants are rejected.')
+    if isfile(final_clean_vcf_fpath):
+        os.remove(final_clean_vcf_fpath)
+    shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
+    os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
@@ -300,28 +311,37 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
     else:
         final_tsv_fpath = None
 
+    # Converting clean VCF to TSV
+    if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
+        clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
+
+        if isfile(final_clean_tsv_fpath):
+            os.remove(final_clean_tsv_fpath)
+        shutil.move(clean_tsv_fpath, final_clean_tsv_fpath)
+    else:
+        final_clean_tsv_fpath = None
+
     # Converting to MAF
-    if cnf.make_maf:
-        clean_filtered_vcf_fpath = remove_rejected(cnf, final_vcf_fpath)
-        if clean_filtered_vcf_fpath is None:
-            info('All variants are rejected.')
-            final_maf_fpath = None
-        else:
-            maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
-            if isfile(final_maf_fpath):
-                os.remove(final_maf_fpath)
-            shutil.move(maf_fpath, final_maf_fpath)
+    if clean_filtered_vcf_fpath and cnf.make_maf:
+        maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+        if isfile(final_maf_fpath):
+            os.remove(final_maf_fpath)
+        shutil.move(maf_fpath, final_maf_fpath)
     else:
         final_maf_fpath = None
 
-    return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
+    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_maf_fpath]
 
 
-def finalize_one(cnf, filtered_vcf_fpath, tsv_fpath, maf_fpath):
-    if filtered_vcf_fpath:
-        info('Saved VCF to ' + filtered_vcf_fpath)
+def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, maf_fpath):
+    if vcf_fpath:
+        info('Saved VCF to ' + vcf_fpath)
+    if clean_vcf_fpath:
+        info('Saved VCF (only passed) to ' + clean_vcf_fpath)
     if tsv_fpath:
-        info('Saved TSV to ' + tsv_fpath)
+        info('Saved TSV to ' + clean_tsv_fpath)
+    if tsv_fpath:
+        info('Saved TSV (only passed) to ' + tsv_fpath)
     if maf_fpath:
         info('Saved MAF (only passed) to ' + maf_fpath)
 

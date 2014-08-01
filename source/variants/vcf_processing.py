@@ -25,6 +25,9 @@ class Record(_Record):
         self.line_num = line_num
         file_base_name = basename(input_fpath)
         self.sample_name_from_file = file_base_name.split('-')[0]
+        self._bias = None
+        self._vark = None
+        self._af = None
 
     def main_sample(self):
         if len(self._sample_indexes) == 0:
@@ -36,6 +39,22 @@ class Record(_Record):
             return self.samples[0]
         else:
             return self.samples[sample_index]
+
+    def bias(self):
+        if self._bias is None:
+            bias = self.get_val('BIAS')
+            if bias is not None:
+                assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':', '.'], 'BIAS: ' + str(bias)
+                if bias[1] == '.':
+                    info('Warning: BIAS = ' + str(bias) + ' for variant ' + self.var_id())
+                bias.replace(';', ':').replace('.', ':')
+            self._bias = bias
+        return self._bias
+
+    def af(self):
+        if self._af is None:
+            self._af = self.get_val('AF')
+        return self._af
 
     def get_val(self, key, default=None):
         val = None
@@ -77,7 +96,7 @@ class Record(_Record):
 
     def cls(self):
         cls = 'Novel'
-        if 'COSM' in self.ID:
+        if self.ID and 'COSM' in self.ID:
             cls = 'COSMIC'
         elif self.ID and self.ID.startswith('rs'):
             if self.check_clnsig:
@@ -105,11 +124,13 @@ class Record(_Record):
         return self.sample_name_from_file
 
     def var_id(self):
-        return ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
+        if self._vark is None:
+            self._vark = ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
+        return self._vark
 
 
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
-                overwrite=False, reuse_intermediate=True):
+                overwrite=False, reuse_intermediate=True, *args, **kwargs):
     def _convert_vcf(inp_f, out_f):
         max_bunch_size = 1000 * 1000
         written_records = 0
@@ -119,7 +140,7 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
         writer = vcf_parser.Writer(out_f, reader)
 
         for i, rec in enumerate(reader):
-            rec = proc_rec_fun(Record(rec, input_fpath, i))
+            rec = proc_rec_fun(Record(rec, input_fpath, i), *args, **kwargs)
             if rec:
                 bunch.append(rec)
                 written_records += 1
@@ -136,6 +157,14 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                         suffix, overwrite, reuse_intermediate)
 
 
+def vcf_is_empty(cnf, vcf_fpath):
+    with open(vcf_fpath) as vcf:
+        reader = vcf_parser.Reader(vcf)
+        for rec in reader:
+            return False
+    return True
+
+
 def remove_rejected(cnf, input_fpath):
     step_greetings('Removing rejeted records...')
 
@@ -150,15 +179,6 @@ def remove_rejected(cnf, input_fpath):
     if not verify_file(out_fpath):
         exit(1)
 
-    no_vcfs = True
-    with open(out_fpath) as vcf:
-        reader = vcf_parser.Reader(vcf)
-        for rec in reader:
-            no_vcfs = False
-            break
-
-    if no_vcfs:
-        return None
     return out_fpath
 
     #def __iter_file(l, i):
