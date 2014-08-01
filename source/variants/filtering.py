@@ -41,12 +41,10 @@ class Filter:
             rec.FILTER = None
 
     def apply(self, rec, only_check=False, *args, **kvargs):
-        assert self.check, 'check function must be specified for filter before applying'
-
         if only_check:
             return self.check(rec, *args, **kvargs)
 
-        if self.check(rec, *args, **kvargs):
+        if self.check(rec, *args, **kvargs):  # True if PASS, False otherwise
             self.num_passed += 1
             return True
         else:
@@ -143,7 +141,6 @@ def first_round(vcf_fpath):
     return res, varks, control_vars
 
 def second_round(vcf_fpath):
-    print filtering.varks.keys()
     return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2')
 
 def impact_round(vcf_fpath):
@@ -195,7 +192,7 @@ class Filtering:
 
             # all variants from one position in reads
             if pstd is not None and bias is not None:
-                return pstd != 0 or bias[-1] in ['0', '1']
+                return not (pstd == 0 and bias[-1] != '0' and bias[-1] != '1')
             return True
 
         def bias_filter_check(rec, cls):

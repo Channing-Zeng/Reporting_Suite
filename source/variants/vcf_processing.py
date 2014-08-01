@@ -42,13 +42,15 @@ class Record(_Record):
 
     def bias(self):
         if self._bias is None:
-            bias = self.get_val('BIAS')
-            if bias is not None:
-                assert isinstance(bias, basestring) and len(bias) == 3 and bias[1] in [';', ':', '.'], 'BIAS: ' + str(bias)
-                if bias[1] == '.':
-                    info('Warning: BIAS = ' + str(bias) + ' for variant ' + self.var_id())
-                bias.replace(';', ':').replace('.', ':')
-            self._bias = bias
+            bias_ = self.get_val('BIAS')
+            if bias_ is not None:
+                if not isinstance(bias_, basestring) and len(bias_) == 3 and bias_[1] in [';', ':']:
+                    err('BIAS: ' + str(bias_) + ' for variant ' + self.var_id())
+                if bias_ == 0.0:
+                    info('Warning: BIAS is float, equals ' + str(bias_) + ' for variant ' + self.var_id())
+                bias_ = '0:0'
+                bias_.replace(';', ':').replace('.', ':')
+            self._bias = bias_
         return self._bias
 
     def af(self):
