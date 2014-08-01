@@ -85,7 +85,6 @@ def process_one(cnf):
     info()
     info('Indexing ' + anno_vcf_fpath)
     igvtools_index(cnf, anno_vcf_fpath)
-    igvtools_index(cnf, anno_vcf_fpath)
 
     return anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath
 

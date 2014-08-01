@@ -53,7 +53,7 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    cnf.name = cnf['name'] or 'varqc_summary'
+    cnf.name = cnf['name'] or 'targetcov_summary'
     set_up_dirs(cnf)
 
     if not cnf.samples:

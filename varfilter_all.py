@@ -7,7 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, splitext, isfile, dirname, abspath, realpath
+from os.path import join, pardir, exists, basename, splitext, isfile, dirname, abspath, realpath
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -20,7 +20,8 @@ import shutil
 from source.utils_from_bcbio import add_suffix, safe_mkdir
 from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty
+from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty, \
+    igvtools_index
 from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir
 from source.variants.summarize_qc import make_summary_reports
 from source.config import Defaults, Config
@@ -50,6 +51,7 @@ def main():
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
+    parser.add_option('--make_soft_links', dest='make_soft_links', action='store_true', default=False)
 
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
@@ -194,7 +196,12 @@ def main():
             help='The control sample name. Any novel or COSMIC variants passing all '
                  'above filters but also detected in Control sample will be deemed '
                  'considered false positive. Use only when there\'s control sample.'
+        )),
+
+        (['--vcf-dir'], dict(
+            dest='vcf_dir',
         ))]
+
     for args, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
 
@@ -240,7 +247,7 @@ cnfs_for_samples = dict()
 
 
 def filter_all(cnf, sample_names):
-    varannotate_dir = 'varannotate'
+    varannotate_dir = cnf.vcf_dir
 
     vcf_sufs = cnf['vcf_suf'].split(',')
     callers = [VariantCaller(suf) for suf in vcf_sufs]
@@ -275,7 +282,7 @@ def filter_all(cnf, sample_names):
 def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
     cnf = cnfs_for_samples[sname]
 
-    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varannotate', 'varfilter_4')
+    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
 
     safe_mkdir(dirname(final_vcf_fpath))
 
@@ -284,13 +291,14 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
     final_clean_vcf_fpath = file_basepath + '.passed.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
     final_clean_tsv_fpath = file_basepath + '.passed.tsv'
-    final_maf_fpath = file_basepath + '.maf'
+    final_clean_maf_fpath = file_basepath + '.passed.maf'
 
     # Moving final VCF
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
     shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
+    igvtools_index(cnf, final_vcf_fpath)
 
     # Cleaning rejected variants
     clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
@@ -300,6 +308,7 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
         os.remove(final_clean_vcf_fpath)
     shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
     os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
+    igvtools_index(cnf, final_clean_vcf_fpath)
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
@@ -324,13 +333,13 @@ def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
     # Converting to MAF
     if clean_filtered_vcf_fpath and cnf.make_maf:
         maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
-        if isfile(final_maf_fpath):
-            os.remove(final_maf_fpath)
-        shutil.move(maf_fpath, final_maf_fpath)
+        if isfile(final_clean_maf_fpath):
+            os.remove(final_clean_maf_fpath)
+        shutil.move(maf_fpath, final_clean_maf_fpath)
     else:
-        final_maf_fpath = None
+        final_clean_maf_fpath = None
 
-    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_maf_fpath]
+    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_clean_maf_fpath]
 
 
 def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, maf_fpath):
@@ -345,6 +354,12 @@ def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, ma
     if maf_fpath:
         info('Saved MAF (only passed) to ' + maf_fpath)
 
+    if cnf.make_soft_links:
+        for fpath in [vcf_fpath, tsv_fpath, maf_fpath]:
+            sl_path = join(dirname(fpath), pardir, basename(fpath))
+            if exists(sl_path):
+                os.remove(sl_path)
+            os.symlink(fpath ,sl_path)
 
 if __name__ == '__main__':
     main()
