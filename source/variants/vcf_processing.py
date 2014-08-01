@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import sys
 import shutil
 
@@ -47,9 +48,10 @@ class Record(_Record):
                 if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':']:
                     err('BIAS: ' + str(bias_) + ' for variant ' + self.var_id())
                 if bias_ == 0.0:
-                    err('Warning: BIAS is float, equals ' + str(bias_) + ' for variant ' + self.var_id())
-                bias_ = '0:0'
-                bias_.replace(';', ':').replace('.', ':')
+                    bias_ = None
+                    err('Warning: BIAS is 0 ' + ' for variant ' + self.var_id())
+                else:
+                    bias_.replace(';', ':').replace('.', ':')
             self._bias = bias_
         return self._bias
 
@@ -455,6 +457,7 @@ def igvtools_index(cnf, vcf_fpath):
 
     cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
     call(cnf, cmdline)
+    os.remove('igv.log')
     return vcf_fpath + '.idx'
 
 

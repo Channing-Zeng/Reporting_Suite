@@ -35,7 +35,7 @@ get_meta_tag_contents = (meta) ->
 
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
     else
-        return ''
+        return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
 RED_HUE = 0
@@ -60,7 +60,11 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                 #{metric.short_name}
             </a>"
         else
-            metric_html = metric.short_name
+            if metric.short_name is undefined
+                metric_html = metric.name
+            else
+                metric_html = metric.short_name
+
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
              <span class='drag_handle'><span class='drag_image'></span></span>
              <span class='metric_name'>#{metric_html}</span>
