@@ -160,6 +160,8 @@ class Config(object):
             return lambda: [v for k, v in self.__d.items() if k != 'level']
         if key == 'items':
             return lambda: [(k, v) for k, v in self.__d.items() if k != 'level']
+        if key == '__dict__':
+            return dict([(k, v) for k, v in self.__d.items() if k != 'level'])
         else:
             return d.get(key)
 
