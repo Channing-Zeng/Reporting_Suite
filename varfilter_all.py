@@ -275,7 +275,7 @@ def filter_all(cnf, sample_names):
 def postprocess(sname, anno_vcf_fpath, work_filt_vcf_fpath):
     cnf = cnfs_for_samples[sname]
 
-    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varannotate', 'varfilter_3')
+    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varannotate', 'varfilter_4')
 
     safe_mkdir(dirname(final_vcf_fpath))
 
