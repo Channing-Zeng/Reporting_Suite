@@ -163,7 +163,6 @@ class Filtering:
 
         self.control_vars = set()
         self.sample_names = set(sample_names)
-        self.sample_names.add('')
         self.varks = dict()  # vark -> VarkInfo(vark, afs)
 
         self.round1_filters = []
@@ -205,13 +204,13 @@ class Filtering:
             return rec.check_clnsig() != -1 or cls == 'COSMIC'
 
         def multi_filter_check(rec, var_n, frac, avg_af):
-            return not (  # novel and present in [max_ratio] samples
-                var_n >= Filter.filt_cnf['sample_cnt'] and
+            return not (  # reject if novel and present in [fraction] samples
+                rec.ID is None and
                 frac > Filter.filt_cnf['fraction'] and
-                avg_af < Filter.filt_cnf['freq'] and
-                rec.ID is None)
+                var_n >= Filter.filt_cnf['sample_cnt'] and
+                avg_af < Filter.filt_cnf['freq'])
 
-        def max_rate_filter_check(rec, frac):
+        def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
             max_ratio = Filter.filt_cnf.get('max_ratio')
             af = rec.get_val('AF')
             return not (frac >= max_ratio and af < 0.3)
@@ -245,8 +244,16 @@ class Filtering:
         info('First round')
         results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath)
                                           for vcf_fpath in vcf_fpaths)
+
         for vcf_fpath, varks, control_vars in results:
-            self.varks.update(varks)
+            for vark, vark_info in varks.items():
+                if vark == 'chrM:150:T:[C]':
+                    pass
+                if vark not in self.varks:
+                    self.varks[vark] = vark_info
+                else:
+                    self.varks[vark].afs.extend(vark_info.afs)
+
             self.control_vars.update(control_vars)
         filtering = self
         info()
@@ -320,14 +327,15 @@ def proc_line_2nd_round(rec, self_):
         avg_af = vark_info.avg_af()
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
-            info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' + len(self_.samples) + ', avg_af = ' + str(vark_info.avg_af()))
+            info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' +
+                 len(self_.samples) + ', avg_af = ' + str(vark_info.avg_af()))
 
         if not self_.dup_filter.apply(rec):
             info('Dup filter: vark = ' + rec.var_id())
 
         if rec.af() is not None:
             if not self_.max_rate_filter.apply(rec, frac=frac):
-                info('Multi filter: vark = ' + rec.var_id() + ', frac = ' + str(rec.frac()) + ', af = ' + str(rec.af()))
+                info('Max rate filter: vark = ' + rec.var_id() + ', frac = ' + str(frac) + ', af = ' + str(rec.af()))
 
         self_.control_filter.apply(rec)
 

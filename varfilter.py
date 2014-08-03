@@ -216,7 +216,7 @@ def process_one(cnf):
     vcf_fpath = cnf['vcf']
     filt_cnf = cnf['variant_filtering']
 
-    filtering = Filtering(cnf, filt_cnf)
+    filtering = Filtering(cnf, filt_cnf, sample_names=cnf.name)
     vcf_fpath = filtering.run_filtering([vcf_fpath])[0]
 
     final_vcf_fname = add_suffix(basename(cnf['vcf']), 'filt')

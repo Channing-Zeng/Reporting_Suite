@@ -42,6 +42,8 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
     fixed_sample_names = []
     for sample_name in sample_names:
+        print map(str, [bcbio_final_dir, sample_name, varqc_dir,
+            sample_name + ending])
         single_report_fpath = join(
             bcbio_final_dir, sample_name, varqc_dir,
             sample_name + ending)
