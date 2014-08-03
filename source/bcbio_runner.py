@@ -394,7 +394,7 @@ class Runner():
                 safe_mkdir(var_dirpath)
 
                 for fname in os.listdir(sample_dirpath):
-                    print '  listdir: fname = ' + fname + ' vcf_fname = ' + vcf_fname
+                    print '  listdir: vcf_fname ' + vcf_fname + ' ' + ('in ' if vcf_fname in fname else ' not in') + ' fname ' + fname
                     if vcf_fname in fname:
                         src_fpath = join(sample_dirpath, fname)
                         dst_fpath = join(var_dirpath, fname)
