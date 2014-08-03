@@ -380,7 +380,7 @@ class Runner():
 
             for variant_caller in sample_info['algorithm'].get('variantcaller') or []:
                 vcf_fname = sample + '-' + variant_caller + '.vcf'
-                print 'vcf_fname = ' + vcf_fname
+                # print 'vcf_fname = ' + vcf_fname
                 vcf_fpath = join(sample_dirpath, vcf_fname)
                 if not file_exists(vcf_fpath) and file_exists(vcf_fpath + '.gz'):
                     gz_vcf_fpath = vcf_fpath + '.gz'
@@ -390,11 +390,11 @@ class Runner():
                     info()
 
                 var_dirpath = abspath(join(self.final_dir, sample, 'var'))
-                print 'creating var_dirpath = ' + var_dirpath
+                # print 'creating var_dirpath = ' + var_dirpath
                 safe_mkdir(var_dirpath)
 
                 for fname in os.listdir(sample_dirpath):
-                    print '  listdir: vcf_fname ' + vcf_fname + ' ' + ('in ' if vcf_fname in fname else ' not in') + ' fname ' + fname
+                    # print '  listdir: vcf_fname ' + vcf_fname + ' ' + ('in ' if vcf_fname in fname else ' not in') + ' fname ' + fname
                     if vcf_fname in fname:
                         src_fpath = join(sample_dirpath, fname)
                         dst_fpath = join(var_dirpath, fname)
