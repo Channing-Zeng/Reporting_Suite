@@ -397,6 +397,7 @@ class Runner():
                         dst_fpath = join(var_dirpath, fname)
                         if exists(dst_fpath):
                             os.remove(dst_fpath)
+                        info('Moving ' + src_fpath + ' to ' + dst_fpath)
                         os.rename(src_fpath, dst_fpath)
 
                 vcf_fpath = join(var_dirpath, vcf_fname)
