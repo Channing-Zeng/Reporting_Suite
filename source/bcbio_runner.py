@@ -168,10 +168,10 @@ class Runner():
                                   '--work-dir \'' + join(cnf.work_dir, 'varQC_postVarFilter') + '_{sample}\''
         )
         self.targetcov = Step(cnf, run_id,
+            name='TargetCov', short_name='tc',
             interpreter='python',
             script='targetcov',
             dir_name='targetSeq',
-            name='TargetCov', short_name='tc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetSeq') + '_{sample}\''
         )
@@ -391,7 +391,6 @@ class Runner():
 
                 var_dirpath = abspath(join(self.final_dir, sample, 'var'))
                 # print 'creating var_dirpath = ' + var_dirpath
-                safe_mkdir(var_dirpath)
 
                 for fname in os.listdir(sample_dirpath):
                     # print '  listdir: vcf_fname ' + vcf_fname + ' ' + ('in ' if vcf_fname in fname else ' not in') + ' fname ' + fname
@@ -400,6 +399,7 @@ class Runner():
                         dst_fpath = join(var_dirpath, fname)
                         if exists(dst_fpath):
                             os.remove(dst_fpath)
+                        safe_mkdir(var_dirpath)
                         info('Moving ' + src_fpath + ' to ' + dst_fpath)
                         os.rename(src_fpath, dst_fpath)
 

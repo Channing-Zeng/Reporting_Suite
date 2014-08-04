@@ -54,7 +54,8 @@ test/bcbio/final/**/qc
 test/bcbio/final/**/targetSeq
 test/bcbio/final/**/varFilter*
 test/bcbio/final/**/vardict
-test/bcbio/final/**/**-ready.bam.bai
+test/bcbio/final/**/*-ready.bam.bai
+test/bcbio/final/*/*-ready.bam.bai
 test/bcbio/final/**/varQC
 
 test/bcbio/final_old

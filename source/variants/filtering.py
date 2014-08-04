@@ -211,9 +211,9 @@ class Filtering:
                 avg_af < Filter.filt_cnf['freq'])
 
         def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
-            max_ratio = Filter.filt_cnf.get('max_ratio')
-            af = rec.get_val('AF')
-            return not (frac >= max_ratio and af < 0.3)
+            return not (
+                frac >= Filter.filt_cnf['max_ratio'] and
+                rec.get_val('AF') < 0.3)
 
         self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: rec.var_id() in self.varks)
         self.control_filter = CnfFilter('control', lambda rec: not (filt_cnf['control'] and rec.var_id() in self.control_vars))
