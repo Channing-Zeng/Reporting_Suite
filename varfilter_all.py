@@ -358,7 +358,7 @@ def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, ma
         for fpath in [vcf_fpath, tsv_fpath, maf_fpath]:
             sl_path = join(dirname(fpath), pardir, basename(fpath))
             if exists(sl_path):
-                os.remove(sl_path)
+                os.unlink(sl_path)
             os.symlink(fpath, sl_path)
 
 if __name__ == '__main__':
