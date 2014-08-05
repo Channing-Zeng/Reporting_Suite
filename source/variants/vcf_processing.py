@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from genericpath import exists
 import os
 import sys
 import shutil
@@ -457,7 +458,8 @@ def igvtools_index(cnf, vcf_fpath):
 
     cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
     call(cnf, cmdline)
-    os.remove('igv.log')
+    if exists('igv.log'):
+        os.remove('igv.log')
     return vcf_fpath + '.idx'
 
 

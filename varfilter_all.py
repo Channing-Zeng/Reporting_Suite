@@ -46,11 +46,11 @@ def main():
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
     parser.add_option('--vcf-suf', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
-    parser.add_option('-o', '--output_dir', dest='output_dir', metavar='DIR', help='output directory (or directory name in case of bcbio final dir)')
 
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
+    parser.add_option('--reuse', dest='overwrite', help='Reuse intermediate files from previous run', action='store_false')
     parser.add_option('--make_soft_links', dest='make_soft_links', action='store_true', default=False)
 
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
@@ -359,7 +359,7 @@ def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, ma
             sl_path = join(dirname(fpath), pardir, basename(fpath))
             if exists(sl_path):
                 os.remove(sl_path)
-            os.symlink(fpath ,sl_path)
+            os.symlink(fpath, sl_path)
 
 if __name__ == '__main__':
     main()

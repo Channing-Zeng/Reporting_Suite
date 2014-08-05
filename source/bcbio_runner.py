@@ -391,6 +391,7 @@ class Runner():
 
                 var_dirpath = abspath(join(self.final_dir, sample, 'var'))
                 # print 'creating var_dirpath = ' + var_dirpath
+                safe_mkdir(var_dirpath)
 
                 for fname in os.listdir(sample_dirpath):
                     # print '  listdir: vcf_fname ' + vcf_fname + ' ' + ('in ' if vcf_fname in fname else ' not in') + ' fname ' + fname

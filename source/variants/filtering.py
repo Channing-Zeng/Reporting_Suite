@@ -1,5 +1,7 @@
-from os.path import basename
+from os.path import basename, join
+import pickle
 import sys
+from source.file_utils import verify_file
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -133,11 +135,13 @@ def process_vcf(vcf_fpath, fun, suffix, *args, **kwargs):
 def rm_prev_round(vcf_fpath):
     return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev')
 
+
 def first_round(vcf_fpath):
     varks = dict()
     control_vars = set()
     res = process_vcf(vcf_fpath, proc_line_1st_round, 'r1',
                       varks=varks, control_vars=control_vars)
+
     return res, varks, control_vars
 
 def second_round(vcf_fpath):
@@ -250,23 +254,43 @@ class Filtering:
         results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath)
                                           for vcf_fpath in vcf_fpaths)
 
-        for vcf_fpath, varks, control_vars in results:
-            for vark, vark_info in varks.items():
-                if vark == 'chrM:150:T:[C]':
-                    pass
-                if vark not in self.varks:
-                    self.varks[vark] = vark_info
-                else:
-                    self.varks[vark].afs.extend(vark_info.afs)
+        control_vars_dump_fpath = join(self.cnf.work_dir, 'control_vars.txt')
+        varks_dump_fpath = join(self.cnf.work_dir, 'varks.txt')
 
-            self.control_vars.update(control_vars)
+        if not [all([varks, control_vars]) for (_, varks, control_vars) in results]:
+            info('Skipped first round, restoring varks and controls vars.')
+            if not verify_file(control_vars_dump_fpath) or not verify_file(varks_dump_fpath):
+                critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
+
+            with open(control_vars_dump_fpath) as f:
+                self.control_vars = pickle.load(f)
+            with open(varks_dump_fpath) as f:
+                self.varks = pickle.load(f)
+
+        else:
+            for vcf_fpath, varks, control_vars in results:
+                for vark, vark_info in varks.items():
+                    if vark == 'chrM:150:T:[C]':
+                        pass
+                    if vark not in self.varks:
+                        self.varks[vark] = vark_info
+                    else:
+                        self.varks[vark].afs.extend(vark_info.afs)
+
+                self.control_vars.update(control_vars)
+
+            with open(control_vars_dump_fpath, 'w') as f:
+                pickle.dump(self.control_vars, f)
+            with open(varks_dump_fpath, 'w') as f:
+                pickle.dump(self.varks, f)
+
+        vcf_fpaths = [vcf_fpath for vcf_fpath, varks, control_vars in results]
         filtering = self
         info()
 
         info('One effect per line')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath)
                                              for vcf_fpath in vcf_fpaths)
-        info()
 
         info('Second round')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath)
