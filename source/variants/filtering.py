@@ -164,6 +164,7 @@ class Filtering:
         self.control_vars = set()
         self.sample_names = set(sample_names)
         self.varks = dict()  # vark -> VarkInfo(vark, afs)
+        self.polymorphic_variants = None
 
         self.round1_filters = []
         if filt_cnf.get('filt_depth') is not None:
@@ -176,6 +177,10 @@ class Filtering:
         self.control = filt_cnf.get('control')
 
         self.impact_filter = EffectFilter('impact')
+
+        def polymorphic_filter_check(rec):
+            pass
+        self.polymorphic_filter = Filter('POLYMORPHIC', polymorphic_filter_check)
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN'),
@@ -273,6 +278,13 @@ class Filtering:
                                              for vcf_fpath in vcf_fpaths)
         info()
 
+        # if 'polymorphic_variants' in self.filt_cnf:
+        #     polymorphic_variants_path = self.filt_cnf['polymorphic_variants']
+        #     if verify_file(polymorphic_variants_path):
+        #         info('Filtering out polymorphic variants')
+        #         with open(polymorphic_variants_path) as f:
+        #
+
         return vcf_fpaths
 
 
@@ -328,7 +340,7 @@ def proc_line_2nd_round(rec, self_):
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
             info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' +
-                 len(self_.sample_names) + ', avg_af = ' + str(vark_info.avg_af()))
+                 str(len(self_.sample_names)) + ', avg_af = ' + str(vark_info.avg_af()))
 
         if not self_.dup_filter.apply(rec):
             info('Dup filter: vark = ' + rec.var_id())
@@ -361,6 +373,11 @@ def proc_line_2nd_round(rec, self_):
 
 def proc_line_impact(rec, self_):
     self_.impact_filter.apply(rec)
+    return rec
+
+
+def proc_line_polymorphic(rec, self_):
+    self_.polymorphic_filter.apply(rec)
     return rec
 
 
