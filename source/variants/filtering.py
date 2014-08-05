@@ -328,7 +328,7 @@ def proc_line_2nd_round(rec, self_):
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
             info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' +
-                 len(self_.samples) + ', avg_af = ' + str(vark_info.avg_af()))
+                 len(self_.sample_names) + ', avg_af = ' + str(vark_info.avg_af()))
 
         if not self_.dup_filter.apply(rec):
             info('Dup filter: vark = ' + rec.var_id())

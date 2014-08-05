@@ -156,6 +156,8 @@ print <<USAGE;
 
     -u Undeteremined won't be counted for the sample count.
 
+
+
     -r DOUBLE
         When a novel variant is present in more than [fraction] of samples and mean allele frequency is less than -f, it's 
 	considered as likely false positive. Default 0.4.
