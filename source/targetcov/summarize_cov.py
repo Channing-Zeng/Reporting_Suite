@@ -1,8 +1,8 @@
 from collections import OrderedDict
 from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
-    summarize, write_summary_reports, write_tsv, Metric
+    summarize, write_summary_reports, write_tsv, Metric, Record
 from source.targetcov.copy_number import run_copy_number
-from source.logger import critical, step_greetings, info
+from source.logger import critical, step_greetings, info, err
 from source.utils import OrderedDefaultDict
 
 
@@ -27,6 +27,10 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     sample_gene_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
 
+    if not sample_gene_reports:
+        err('No gene reports, cannot call copy numbers.')
+        return None
+
     info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
 
@@ -43,7 +47,7 @@ def _parse_targetseq_sample_report(report_fpath):
             dict(metricName=None, value=None,
             isMain=True, quality='More is better')
     """
-    metrics = OrderedDefaultDict(Metric)
+    metrics = OrderedDefaultDict(Record)
 
     with open(report_fpath) as f:
         rows = [l.strip().split('\t') for l in f]
@@ -51,8 +55,7 @@ def _parse_targetseq_sample_report(report_fpath):
     for row in rows:
         metric_name = row[0]
         value = row[1]
-        metrics[metric_name].name = metric_name
-        metrics[metric_name].quality = 'More is better'
+        metrics[metric_name].metric = Metric(name=metric_name, short_name=metric_name)
         metrics[metric_name].value = value
 
     return metrics

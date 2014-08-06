@@ -53,7 +53,7 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    cnf.name = cnf['name'] or 'targetcov_summary'
+    cnf.name = cnf['name'] or 'targetSeq'
     set_up_dirs(cnf)
 
     if not cnf.samples:
@@ -82,9 +82,12 @@ def main():
     info('*' * 70)
     info('Summary:')
     for fpath in sum_report_fpaths:
-        info('  ' + fpath)
-    info('Gene CNV:')
-    info('  ' + cnv_report_fpath)
+        if fpath:
+            info('  ' + fpath)
+
+    if cnv_report_fpath:
+        info('Gene CNV:')
+        info('  ' + cnv_report_fpath)
 
 
 if __name__ == '__main__':

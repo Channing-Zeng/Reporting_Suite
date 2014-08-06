@@ -72,7 +72,7 @@ reporting.buildReport = ->
   date = totalReportData.date
   order = totalReportData.order
 
-  columnNames = (metric.name for metric in report[0].metrics)
+  columnNames = (record.metric.name for record in report[0].records)
   columnOrder = recoverOrderFromCookies() or order or [0...columnNames.length]
 
   reporting.buildTotalReport(report, columnOrder, date)

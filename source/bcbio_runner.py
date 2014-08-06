@@ -329,6 +329,12 @@ class Runner():
         for sample_info in self.bcbio_cnf.details:
             sample = sample_info['description']
 
+            if (not any(step in self.steps for step in
+                        [self.targetcov, self.qualimap, self.ngscat,
+                         self.varqc, self.varqc_after, self.varannotate]) or
+                    not self.vardict_steps):
+                continue
+
             info('Processing "' + sample + '"')
             if not self.cnf.verbose:
                 info(ending='')

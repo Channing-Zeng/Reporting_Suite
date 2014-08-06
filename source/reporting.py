@@ -8,20 +8,53 @@ from source.logger import critical, info
 from source.utils_from_bcbio import file_exists
 
 
+class Record(object):
+    def __init__(self,
+                 metric=None,
+                 value=None,
+                 meta=dict()):
+        self.metric = metric
+        self.value = value
+        self.meta = meta
+
+
 class Metric(object):
-    def __init__(self):
-        self.name = None
-        self.quality = None
-        self.value = None
-        self.link = None
-        self.meta = dict()
+    def __init__(self,
+                 name=None,
+                 short_name=None,
+                 description=None,
+                 presision=0,  # number of decimal digits
+                 quality='More is better',  # More is better, Less is better
+                 unit=''):
+        self.name = name
+        self.short_name = short_name,
+        self.description = description,
+        self.presision = presision
+        self.quality = quality
+        self.unit = unit
+
+    def format(self, value):
+        if value is None:
+            return '-'
+
+        name = self.name
+        value = int(value)
+        unit = self.unit
+        presision = self.presision
+
+        if self.presision == 0:
+            return '{value:,}{unit}'.format(**locals())
+
+        else:
+            return '{value:.{presision}f}{unit}'.format(**locals())
+
 
 
 class SampleReport():
-    def __init__(self, name=None, fpath=None, metrics=list()):
+    def __init__(self, name=None, fpath=None, records=list()):
         self.name = name
         self.fpath = fpath
-        self.metrics = metrics
+        self.records = records
 
 
 def read_sample_names(sample_fpath):
@@ -42,8 +75,6 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
     fixed_sample_names = []
     for sample_name in sample_names:
-        print map(str, [bcbio_final_dir, sample_name, varqc_dir,
-            sample_name + ending])
         single_report_fpath = join(
             bcbio_final_dir, sample_name, varqc_dir,
             sample_name + ending)
@@ -71,59 +102,54 @@ def summarize(sample_names, report_fpaths, parse_report_fn):
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):
 
     return [fn(output_dirpath, work_dirpath, report, base_fname, caption)
-        for fn in [write_txt_report,
-                   write_tsv_report,
+        for fn in [
+                   # write_txt_report,
+                   # write_tsv_report,
                    write_html_report]]
 
 
 def _flatten_report(report):
     rows = [['Sample'] + [s.name for s in report]]
 
-    for metric in report[0].metrics:
-        row = [metric.name]
+    for record in report[0].records:
+        row = [record.metric.name]
         for sample in report:
-            row.append(next(m.value for m in sample.metrics if m.name == metric.name))
+            row.append(next(r for r in sample.records if r.metric.name == record.metric.name))
         rows.append(row)
 
     return rows
 
 
-def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-    rows = _flatten_report(report)
-    return write_txt(rows, output_dirpath, base_fname)
+# def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
+#     rows = _flatten_report(report)
+#     return write_txt(rows, output_dirpath, base_fname)
 
 
-def write_txt(rows, output_dirpath, base_fname):
-    output_fpath = join(output_dirpath, base_fname + '.txt')
-
-    col_widths = repeat(0)
-
-    for row in rows:
-        col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
-
-    with open(output_fpath, 'w') as out:
-        for row in rows:
-            for val, w in izip(row, col_widths):
-                try:
-                    val_int = int(val)
-                except ValueError:
-                    try:
-                        val_double = float(val)
-                    except ValueError:
-                        pass
-                    else:
-                        val = '{0:.2f}'.format(val_double)
-                else:
-                    pass
-                out.write(val + (' ' * (w - len(val) + 2)))
-            out.write('\n')
-
-    return output_fpath
+# def write_txt(rows, output_dirpath, base_fname):
+#     output_fpath = join(output_dirpath, base_fname + '.txt')
+#
+#     col_widths = [max(len(v), w) for v, w in izip(rows[0], repeat(0))]
+#
+#     for row in rows[1:]:
+#         col_widths = [max(len(rec.metric.format(rec.value)), w)
+#                       for rec, w in izip(row, col_widths)]
+#
+#     with open(output_fpath, 'w') as out:
+#         for row in rows:
+#             for rec, w in izip(row, col_widths):
+#                 if isinstance(rec, basestring):
+#                     val = rec
+#                 else:
+#                     val = rec.metric.format(rec.value)
+#                 out.write(val + (' ' * (w - len(val) + 2)))
+#             out.write('\n')
+#
+#     return output_fpath
 
 
-def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-    rows = _flatten_report(report)
-    return write_tsv(rows, output_dirpath, base_fname)
+# def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
+#     rows = _flatten_report(report)
+#     return write_tsv(rows, output_dirpath, base_fname)
 
 
 def write_tsv(rows, output_dirpath, base_fname):
@@ -131,7 +157,7 @@ def write_tsv(rows, output_dirpath, base_fname):
 
     with open(output_fpath, 'w') as out:
         for row in rows:
-            out.write('\t'.join(row) + '\n')
+            out.write('\t'.join([val for (val, m) in row]) + '\n')
 
     return output_fpath
 

@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from source.logger import info
-from source.reporting import summarize, write_summary_reports, get_sample_report_fpaths_for_bcbio_final_dir, Metric
+from source.reporting import summarize, write_summary_reports, get_sample_report_fpaths_for_bcbio_final_dir, Metric, \
+    Record
 from source.utils import OrderedDefaultDict
 
 main_novelty = 'all'
@@ -42,7 +43,7 @@ def _make_for_single_variant_caller(callers, cnf, sample_names):
     full_report = summarize(sample_names, callers[0].single_qc_rep_fpaths, get_parse_qc_sample_report(cnf))
 
     full_summary_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], full_report, 'varqc.summary', 'Variant QC')
+        cnf['output_dir'], cnf['work_dir'], full_report, 'varQC', 'Variant QC')
 
     info()
     info('*' * 70)
@@ -57,7 +58,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
 
         caller.summary_qc_rep_fpaths = write_summary_reports(
             cnf['output_dir'], cnf['work_dir'], caller.summary_qc_report,
-            caller.suf + '.varqc.summary', 'Variant QC for ' + caller.name)
+            caller.suf + '.varQC', 'Variant QC for ' + caller.name)
 
     all_single_reports = [r for c in callers for r in c.single_qc_rep_fpaths]
     all_sample_names = [sample_name + '-' + c.suf for sample_name in sample_names for c in callers]
@@ -65,7 +66,7 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
     full_summary_report = summarize(all_sample_names, all_single_reports, get_parse_qc_sample_report(cnf))
 
     full_summary_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], full_summary_report, 'varqc.summary', 'Variant QC')
+        cnf['output_dir'], cnf['work_dir'], full_summary_report, 'varQC', 'Variant QC')
 
     info()
     info('*' * 70)
@@ -81,20 +82,23 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
         info('  ' + fpath)
 
 
-METRICS = dict(
-    nEvalVariants   = ['total',     'Total variants evaluated'],
-    nSNPs           = ['SNP',       'SNPs'],
-    nInsertions     = ['ins',       'Insertions'],
-    nDeletions      = ['del',       'Deletions'],
-    nVariantsAtComp = ['at comp',   'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'],
-    compRate        = ['comp rate', 'Percentage of eval sites at comp sites'],
-    nConcordant     = ['concord',   'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'],
-    concordantRate  = ['conc rate', 'Concordance rate'],
-    variantRate     = ['var/loci',  'Variants per loci rate'],
-    basesPerVariant = ['bp/var',    'Bases per variant rate'],
-    hetHomRatio     = ['het/hom',   'Heterozygosity to homozygosity ratio'],
-    tiTvRatio       = ['ti/tv',     'Transition to transversion ratio'],
-)
+def __to_dict(metrics):
+    return {m.name: m for m in metrics}
+
+METRICS = __to_dict([
+    Metric('nEvalVariants',   'total',       'Total variants evaluated'),
+    Metric('nSNPs',           'SNP',         'SNPs'),
+    Metric('nInsertions',     'ins',         'Insertions'),
+    Metric('nDeletions',      'del',         'Deletions'),
+    Metric('nVariantsAtComp', 'at comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
+    Metric('compRate',        'comp rate',   'Percentage of eval sites at comp sites'),
+    Metric('nConcordant',     'concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
+    Metric('concordantRate',  'conc rate',   'Concordance rate'),
+    Metric('variantRate',     'var/loci',    'Variants per loci rate'),
+    Metric('basesPerVariant', 'bp/var',      'Bases per variant rate'),
+    Metric('hetHomRatio',     'het/hom',     'Heterozygosity to homozygosity ratio'),
+    Metric('tiTvRatio',       'ti/tv',       'Transition to transversion ratio'),
+])
 
 
 def get_parse_qc_sample_report(cnf):
@@ -104,9 +108,9 @@ def get_parse_qc_sample_report(cnf):
                 isMain=True, quality='More is better')
         """
 
-        metrics = OrderedDefaultDict(Metric)
+        records = OrderedDefaultDict(Record)
         rest_headers = []
-                # metrics[metric_name]['meta']
+        # metrics[metric_name]['meta']
         with open(report_fpath) as f:
             # parsing Sample name and Database columns
             main_value_col_id = None
@@ -129,15 +133,13 @@ def get_parse_qc_sample_report(cnf):
                     metric_name = line.split()[0]
                     novelty = line.split()[novelty_col_id]
 
-                    metrics[metric_name].name = metric_name
-                    metrics[metric_name].short_name = METRICS[metric_name][0]
-                    metrics[metric_name].description = METRICS[metric_name][1]
-                    metrics[metric_name].quality = 'More is better'
-                    metrics[metric_name].meta[novelty] = dict(zip(rest_headers, line.split()[2:]))
+                    ms = METRICS
+                    records[metric_name].metric = METRICS[metric_name]
+                    records[metric_name].meta[novelty] = dict(zip(rest_headers, line.split()[2:]))
                     if novelty == main_novelty:
-                        metrics[metric_name].value = line.split()[main_value_col_id]
+                        records[metric_name].value = line.split()[main_value_col_id]
 
-        return metrics
+        return records
 
     return _parse_qc_sample_report
 

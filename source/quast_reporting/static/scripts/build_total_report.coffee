@@ -4,14 +4,18 @@ String.prototype.trunc = (n) ->
 report =
     name: ''
     fpath: ''
-    metrics: []
+    records: []
+
+records =
+    metric: null
+    value: ''
 
 metric =
     name: ''
     short_name: ''
     description: ''
     quality: ''
-    value: ''
+    presision: 0
     meta: ''
 
 
@@ -52,9 +56,10 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                     <span>Sample</span>
                   </td>"
 
-    for metricNum in [0...report[0].metrics.length]
-        pos = columnOrder[metricNum]
-        metric = report[0].metrics[pos]
+    for recNum in [0...report[0].records.length]
+        pos = columnOrder[recNum]
+        rec = report[0].records[pos]
+        metric = rec.metric
         if metric.description
             metric_html = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{metric.description}\">
                 #{metric.short_name}
@@ -80,10 +85,11 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                 <a class=\"sample_name\" href=\"html_aux/#{sampleName}.html\">#{sampleName}</a>
             </td>"
 
-        for metricNum in [0...sampleReport.metrics.length]
-            pos = columnOrder[metricNum]
-            metric = sampleReport.metrics[pos]
-            value = metric.value
+        for recNum in [0...sampleReport.records.length]
+            pos = columnOrder[recNum]
+            rec = sampleReport.records[pos]
+            metric = rec.metric
+            value = rec.value
 
             table += "<td metric=\"#{metric.name}\" quality=\"#{metric.quality}\""
 
@@ -93,7 +99,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
             else
                 if typeof value == 'number'
                     num = value
-                    cell_contents = toPrettyString(value)
+                    cell_contents = toPrettyString(value, metric.presision)
                 else
                     result = /([0-9\.]+)(.*)/.exec value
                     num = parseFloat result[1]
@@ -102,7 +108,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                 if num?
                     table += ' number="' + value + '">'
 
-            table += "<a #{get_meta_tag_contents metric.meta}>#{cell_contents}</a></td>"
+            table += "<a #{get_meta_tag_contents rec.meta}>#{cell_contents}</a></td>"
         table += "</tr>"
     table += "</table>"
 
