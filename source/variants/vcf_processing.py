@@ -459,7 +459,10 @@ def igvtools_index(cnf, vcf_fpath):
     cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
     call(cnf, cmdline)
     if exists('igv.log'):
-        os.remove('igv.log')
+        try:
+            os.remove('igv.log')
+        except OSError:
+            pass
     return vcf_fpath + '.idx'
 
 
