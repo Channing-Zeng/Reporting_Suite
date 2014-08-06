@@ -1,3 +1,4 @@
+from genericpath import isfile
 from os.path import basename, join
 import pickle
 import sys
@@ -275,11 +276,14 @@ class Filtering:
 
                 self.control_vars.update(control_vars)
 
-            with open(varks_dump_fpath) as f:
-                varks_2 = pickle.load(f)
-
-            print 'Varks restored: len=', str(len(varks_2.keys()))
-            print 'Varks new     : len=', str(len(self.varks.keys()))
+            if isfile(varks_dump_fpath):
+                try:
+                    with open(varks_dump_fpath) as f:
+                        varks_2 = pickle.load(f)
+                    print 'Varks restored: len=', str(len(varks_2.keys()))
+                    print 'Varks new     : len=', str(len(self.varks.keys()))
+                except:
+                    pass
 
             with open(control_vars_dump_fpath, 'w') as f:
                 pickle.dump(self.control_vars, f)
