@@ -32,9 +32,9 @@ class OrderedDefaultDict(OrderedDict):
 
 
 def remove_quotes(s):
-    if s and s[0] == '"':
+    if s and s[0] in ['"', "'"]:
         s = s[1:]
-    if s and s[-1] == '"':
+    if s and s[-1] in ['"', "'"]:
         s = s[:-1]
     return s
 

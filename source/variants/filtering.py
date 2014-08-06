@@ -246,13 +246,11 @@ class Filtering:
         for vcf_fpath in vcf_fpaths:
             cnf_for_samples[basename(vcf_fpath).split('.')[0]] = Filtering.cnf.copy()
 
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath)
-                                             for vcf_fpath in vcf_fpaths)
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
         info()
 
         info('First round')
-        results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath)
-                                          for vcf_fpath in vcf_fpaths)
+        results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
 
         control_vars_dump_fpath = join(self.cnf.work_dir, 'control_vars.txt')
         varks_dump_fpath = join(self.cnf.work_dir, 'varks.txt')
@@ -270,8 +268,6 @@ class Filtering:
         else:
             for vcf_fpath, varks, control_vars in results:
                 for vark, vark_info in varks.items():
-                    if vark == 'chrM:150:T:[C]':
-                        pass
                     if vark not in self.varks:
                         self.varks[vark] = vark_info
                     else:
@@ -279,27 +275,30 @@ class Filtering:
 
                 self.control_vars.update(control_vars)
 
+            with open(varks_dump_fpath) as f:
+                varks_2 = pickle.load(f)
+
+            print 'Varks restored: len=', str(len(varks_2.keys()))
+            print 'Varks new     : len=', str(len(self.varks.keys()))
+
             with open(control_vars_dump_fpath, 'w') as f:
                 pickle.dump(self.control_vars, f)
             with open(varks_dump_fpath, 'w') as f:
                 pickle.dump(self.varks, f)
 
-        vcf_fpaths = [vcf_fpath for vcf_fpath, varks, control_vars in results]
+        vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
         filtering = self
         info()
 
         info('One effect per line')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath)
-                                             for vcf_fpath in vcf_fpaths)
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath) for vcf_fpath in vcf_fpaths)
 
         info('Second round')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath)
-                                             for vcf_fpath in vcf_fpaths)
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
         info()
 
         info('Filtering by impact')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath)
-                                             for vcf_fpath in vcf_fpaths)
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
         info()
 
         # if 'polymorphic_variants' in self.filt_cnf:
@@ -355,6 +354,7 @@ def proc_line_2nd_round(rec, self_):
     sample = rec.sample_field()
     if sample:
         if not self_.undet_sample_filter.apply(rec):
+            err('Undetermined sample for rec ' + rec.var_id() + ', sample ' + str(sample))
             return rec
 
         vark_info = self_.varks[rec.var_id()]

@@ -4,6 +4,7 @@ from os.path import abspath, expanduser, join, dirname, pardir
 from source.file_utils import verify_file, verify_module
 
 from source.logger import info, err, critical
+from source.utils import remove_quotes
 
 if verify_module('yaml'):
     from yaml import load as load_yaml
@@ -235,6 +236,9 @@ def fill_dict_from_defaults(cur_cnf, defaults_dict):
 
 def _check_paths(sys_cnf, run_cnf):
     to_exit = False
+
+    sys_cnf = remove_quotes(sys_cnf)
+    run_cnf = remove_quotes(run_cnf)
 
     info('Using ' + sys_cnf + ' as a system configuration file.')
     info('Using ' + run_cnf + ' as a run configuration file.')

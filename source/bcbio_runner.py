@@ -66,7 +66,7 @@ class Runner():
         self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])[:-1]
 
         self.threads = str(self.cnf.threads)
-        self.qsub_runner = expanduser(cnf.qsub_runner)
+        self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath):
@@ -209,7 +209,7 @@ class Runner():
             interpreter='python',
             script='varfilter_all',
             dir_name='varFilter',
-            paramln=cnfs_line + ' -d \'' +
+            paramln=spec_params + ' -d \'' +
                     self.final_dir + '\' -s \'{samples}\' --vcf-suf ' + ','.join(all_suffixes) + ' ' +
                     '--work-dir \'' + join(cnf.work_dir, 'varFilter') + '\' --make_soft_links ' +
                     '--vcf-dir ' + self.varannotate.dir_name
