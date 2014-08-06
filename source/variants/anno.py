@@ -4,11 +4,11 @@ import os
 from os.path import splitext, basename, join, dirname, realpath, isfile
 
 from source.calling_process import call_subprocess
-from source.file_utils import iterate_file, intermediate_fname, verify_file
+from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
 from source.logger import step_greetings, critical, info, err
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.utils import index_bam
-from source.utils_from_bcbio import add_suffix, file_exists
+from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation
 

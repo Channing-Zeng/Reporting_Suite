@@ -5,7 +5,7 @@ import os
 from os.path import join, isdir, isfile
 from source.file_utils import verify_file
 from source.logger import step_greetings, info
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 
 try:
     from yaml import CDumper as Dumper

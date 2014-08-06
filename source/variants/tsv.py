@@ -4,10 +4,10 @@ from os.path import dirname, realpath, join, basename, isfile, pardir
 from ext_modules import vcf_parser as vcf
 
 from source.calling_process import call
-from source.file_utils import intermediate_fname, verify_file
+from source.file_utils import intermediate_fname, verify_file, splitext_plus
 from source.tools_from_cnf import get_java_tool_cmdline
-from source.transaction import file_transaction
-from source.utils_from_bcbio import splitext_plus, file_exists
+from source.file_utils import file_transaction
+from source.file_utils import file_exists
 from source.logger import step_greetings, info, err, critical
 from source.variants.vcf_processing import read_sample_names_from_vcf, leave_first_sample, vcf_one_per_line
 

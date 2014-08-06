@@ -3,11 +3,9 @@ import subprocess
 import os
 import shutil
 from os.path import isfile, exists, join
-from source.file_utils import make_tmpfile
 
 from source.logger import info, err
-from source.transaction import file_transaction
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists, file_transaction
 
 
 def call_pipe(cnf, cmdline, *args, **kwargs):

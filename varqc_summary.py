@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 import sys
+from source.file_utils import verify_dir
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -54,13 +55,21 @@ def main():
     cnf.name = cnf['name'] or 'varqc_summary'
     set_up_dirs(cnf)
 
+    if not check_keys(cnf, ['bcbio_final_dir']):
+        parser.print_help()
+        sys.exit(1)
+
+    cnf.bcbio_final_dir = verify_dir(cnf.bcbio_final_dir)
+    if not cnf.bcbio_final_dir:
+        sys.exit(1)
+
     if not cnf.samples:
         cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
 
     info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
     info('Samples: ' + cnf.samples + ' (set with -s)')
 
-    if not check_keys(cnf, ['bcbio_final_dir', 'samples']):
+    if not check_keys(cnf, ['samples']):
         parser.print_help()
         sys.exit(1)
 

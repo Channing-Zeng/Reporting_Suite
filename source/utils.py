@@ -6,7 +6,7 @@ from os.path import join, basename
 from source.calling_process import call_subprocess
 from source.tools_from_cnf import get_tool_cmdline
 from source.logger import info
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 
 
 class OrderedDefaultDict(OrderedDict):
@@ -29,14 +29,6 @@ class OrderedDefaultDict(OrderedDict):
     def __reduce__(self):  # optional, for pickle support
         args = (self.default_factory,) if self.default_factory else ()
         return self.__class__, args, None, None, self.iteritems()
-
-
-def remove_quotes(s):
-    if s and s[0] in ['"', "'"]:
-        s = s[1:]
-    if s and s[-1] in ['"', "'"]:
-        s = s[:-1]
-    return s
 
 
 def _tryint(s):

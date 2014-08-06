@@ -5,7 +5,7 @@ from distutils.version import LooseVersion
 from source.file_utils import verify_file
 
 from source.logger import info, err
-from source.utils_from_bcbio import file_exists, which
+from source.file_utils import file_exists, which
 
 
 def tool_cmdline(*args, **kwargs):

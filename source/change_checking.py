@@ -2,7 +2,7 @@ import hashlib
 from os.path import basename
 
 from source.logger import info
-from source.utils_from_bcbio import file_exists, open_gzipsafe
+from source.file_utils import file_exists, open_gzipsafe
 
 
 def md5_for_file(f, block_size=2**20):

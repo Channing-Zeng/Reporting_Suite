@@ -6,10 +6,10 @@ import base64
 from collections import defaultdict
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file
+from source.file_utils import verify_dir, verify_file, add_suffix
 from source.tools_from_cnf import get_tool_cmdline
 
-from source.utils_from_bcbio import file_exists, safe_mkdir, add_suffix
+from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bam
 

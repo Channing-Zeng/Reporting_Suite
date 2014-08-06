@@ -1,10 +1,9 @@
 import sys
 from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
-from source.file_utils import verify_file, verify_module
+from source.file_utils import verify_file, verify_module, adjust_path
 
 from source.logger import info, err, critical
-from source.utils import remove_quotes
 
 if verify_module('yaml'):
     from yaml import load as load_yaml
@@ -237,9 +236,6 @@ def fill_dict_from_defaults(cur_cnf, defaults_dict):
 def _check_paths(sys_cnf, run_cnf):
     to_exit = False
 
-    sys_cnf = remove_quotes(sys_cnf)
-    run_cnf = remove_quotes(run_cnf)
-
     info('Using ' + sys_cnf + ' as a system configuration file.')
     info('Using ' + run_cnf + ' as a run configuration file.')
     info()
@@ -250,8 +246,8 @@ def _check_paths(sys_cnf, run_cnf):
     if to_exit:
         sys.exit(1)
 
-    sys_cnf_path = abspath(expanduser(sys_cnf))
-    run_cnf_path = abspath(expanduser(run_cnf))
+    sys_cnf_path = adjust_path(sys_cnf)
+    run_cnf_path = adjust_path(run_cnf)
 
     for fn in [sys_cnf_path, run_cnf_path]:
         if not fn.endswith('.yaml'):

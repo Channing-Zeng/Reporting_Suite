@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.file_utils import add_suffix
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -19,7 +20,6 @@ from source.variants.tsv import make_tsv
 from source.main import read_opts_and_cnfs, check_system_resources
 from source.config import Defaults
 from source.logger import info
-from source.utils_from_bcbio import add_suffix
 from source.runner import run_one
 from source.variants.filtering import Filtering
 from source.variants.vcf_processing import convert_to_maf, remove_rejected, vcf_one_per_line, tabix_vcf, igvtools_index

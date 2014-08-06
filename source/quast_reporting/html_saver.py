@@ -8,7 +8,7 @@ import sys
 from source.file_utils import verify_file
 
 from source.quast_reporting import json_saver
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 
 
 def get_real_path(path_in_html_saver):

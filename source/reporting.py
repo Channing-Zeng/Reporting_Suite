@@ -5,7 +5,7 @@ from source.file_utils import verify_file
 from source.quast_reporting.html_saver import write_html_report
 
 from source.logger import critical, info
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 
 
 class Record(object):

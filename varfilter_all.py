@@ -17,7 +17,7 @@ from joblib import Parallel, delayed
 import os
 import shutil
 
-from source.utils_from_bcbio import add_suffix, safe_mkdir
+from source.file_utils import safe_mkdir, add_suffix
 from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty, \

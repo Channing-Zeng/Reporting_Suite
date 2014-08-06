@@ -13,10 +13,10 @@ from ext_modules.vcf_parser.model import _Record
 from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
-from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file
+from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
-from source.transaction import file_transaction
-from source.utils_from_bcbio import open_gzipsafe, splitext_plus, which, file_exists
+from source.file_utils import file_transaction
+from source.file_utils import open_gzipsafe, which, file_exists
 from source.logger import step_greetings, info, critical, err
 
 
@@ -215,7 +215,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     details = None
     for key in inputs:
         if options.get(key):
-            common_cnf[key] = expanduser(options[key])
+            common_cnf[key] = adjust_path(options[key])
             info('Using ' + common_cnf[key])
             details = [common_cnf]
     if not details:
@@ -229,7 +229,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     for one_item_cnf in details:
         if 'vcf' not in one_item_cnf:
             critical('ERROR: A section in details does not contain field "var".')
-        one_item_cnf['vcf'] = expanduser(one_item_cnf['vcf'])
+        one_item_cnf['vcf'] = adjust_path(one_item_cnf['vcf'])
         if not verify_file(one_item_cnf['vcf'], 'Input file'):
             sys.exit(1)
 
@@ -268,7 +268,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
             cnf = one_item_cnf
 
             if 'bam' in cnf:
-                cnf['bam'] = expanduser(cnf['bam'])
+                cnf['bam'] = adjust_path(cnf['bam'])
                 if not verify_file(cnf['bam']):
                     sys.exit(1)
 
@@ -403,9 +403,9 @@ def _verify_sample_info(vcf_conf, vcf_header_samples):
             join_parent_conf(sample_conf, vcf_conf)
 
             bam = sample_conf.get('bam')
-            if bam and not verify_file(expanduser(bam), 'Bam file'):
+            if bam and not verify_file(bam, 'Bam file'):
                 exit()
-            sample_conf['bam'] = expanduser(bam)
+            sample_conf['bam'] = adjust_path(bam)
 
     sample_cnfs = vcf_conf.get('samples') or OrderedDict()
 

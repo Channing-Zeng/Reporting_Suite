@@ -13,7 +13,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 import shutil
 from source.file_utils import verify_module, verify_file
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 from source.logger import err, info
 from source.variants.qc_gatk import gatk_qc
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources

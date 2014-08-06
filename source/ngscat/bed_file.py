@@ -4,7 +4,7 @@ from os.path import expanduser
 from source.calling_process import call
 from source.file_utils import verify_file, intermediate_fname
 from source.tools_from_cnf import get_tool_cmdline
-from source.utils_from_bcbio import file_exists
+from source.file_utils import file_exists
 from source.logger import err
 from source.utils import get_chr_lengths
 
@@ -15,7 +15,7 @@ def verify_bam(fpath, description=''):
     if not verify_file(fpath, description):
         return None
 
-    fpath = expanduser(fpath)
+    fpath = adjust_path(fpath)
 
     if not fpath.endswith('.bam'):
         err('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
