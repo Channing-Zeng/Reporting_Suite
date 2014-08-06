@@ -43,22 +43,46 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
 
 
 def _parse_targetseq_sample_report(report_fpath):
-    """ returns row_per_sample =
-            dict(metricName=None, value=None,
-            isMain=True, quality='More is better')
-    """
-    metrics = OrderedDefaultDict(Record)
+    records = OrderedDefaultDict(Record)
 
     with open(report_fpath) as f:
         rows = [l.strip().split('\t') for l in f]
 
     for row in rows:
         metric_name = row[0]
-        value = row[1]
-        metrics[metric_name].metric = Metric(name=metric_name, short_name=metric_name)
-        metrics[metric_name].value = value
+        val = row[1]
 
-    return metrics
+        records[metric_name].metric = Metric(name=metric_name, short_name=metric_name)
+
+        val = val.replace(' ', '').replace(',', '')
+        num_chars = []
+        unit_chars = []
+
+        i = 0
+        while i < len(val) and (val[i].isdigit() or val[i] == '.'):
+            num_chars += val[i]
+            i += 1
+        while i < len(val):
+            unit_chars += val[i]
+            i += 1
+
+        val_num = ''.join(num_chars)
+        val_unit = ''.join(unit_chars)
+
+        if val_unit:
+            records[metric_name].metric.unit = val_unit
+
+        try:
+            val = int(val_num)
+        except ValueError:
+            try:
+                val = float(val_num)
+            except ValueError:
+                val = val_num
+
+        records[metric_name].value = val
+
+    return records
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):

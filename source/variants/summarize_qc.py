@@ -133,11 +133,38 @@ def get_parse_qc_sample_report(cnf):
                     metric_name = line.split()[0]
                     novelty = line.split()[novelty_col_id]
 
-                    ms = METRICS
                     records[metric_name].metric = METRICS[metric_name]
                     records[metric_name].meta[novelty] = dict(zip(rest_headers, line.split()[2:]))
+
                     if novelty == main_novelty:
-                        records[metric_name].value = line.split()[main_value_col_id]
+                        val = line.split()[main_value_col_id].replace(' ', '').replace(',', '')
+
+                        num_chars = []
+                        unit_chars = []
+
+                        i = 0
+                        while i < len(val) and (val[i].isdigit() or val[i] == '.'):
+                            num_chars += val[i]
+                            i += 1
+                        while i < len(val):
+                            unit_chars += val[i]
+                            i += 1
+
+                        val_num = ''.join(num_chars)
+                        val_unit = ''.join(unit_chars)
+
+                        if val_unit:
+                            records[metric_name].metric.unit = val_unit
+
+                        try:
+                            val = int(val_num)
+                        except ValueError:
+                            try:
+                                val = float(val_num)
+                            except ValueError:
+                                val = val_num
+
+                        records[metric_name].value = val
 
         return records
 

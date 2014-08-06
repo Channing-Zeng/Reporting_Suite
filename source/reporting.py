@@ -38,9 +38,16 @@ class Metric(object):
             return '-'
 
         name = self.name
-        value = int(value)
         unit = self.unit
         presision = self.presision
+
+        if isinstance(value, basestring):
+            return '{value}{unit}'.format(**locals())
+
+        try:
+            value = int(value)
+        except ValueError:
+            value = float(value)
 
         if self.presision == 0:
             return '{value:,}{unit}'.format(**locals())
@@ -102,9 +109,8 @@ def summarize(sample_names, report_fpaths, parse_report_fn):
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):
 
     return [fn(output_dirpath, work_dirpath, report, base_fname, caption)
-        for fn in [
-                   # write_txt_report,
-                   # write_tsv_report,
+        for fn in [write_txt_report,
+                   write_tsv_report,
                    write_html_report]]
 
 
@@ -114,42 +120,35 @@ def _flatten_report(report):
     for record in report[0].records:
         row = [record.metric.name]
         for sample in report:
-            row.append(next(r for r in sample.records if r.metric.name == record.metric.name))
+            row.append(next(r.metric.format(r.value) for r in sample.records if r.metric.name == record.metric.name))
         rows.append(row)
 
     return rows
 
 
-# def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-#     rows = _flatten_report(report)
-#     return write_txt(rows, output_dirpath, base_fname)
+def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
+    rows = _flatten_report(report)
+    return write_txt(rows, output_dirpath, base_fname)
 
 
-# def write_txt(rows, output_dirpath, base_fname):
-#     output_fpath = join(output_dirpath, base_fname + '.txt')
-#
-#     col_widths = [max(len(v), w) for v, w in izip(rows[0], repeat(0))]
-#
-#     for row in rows[1:]:
-#         col_widths = [max(len(rec.metric.format(rec.value)), w)
-#                       for rec, w in izip(row, col_widths)]
-#
-#     with open(output_fpath, 'w') as out:
-#         for row in rows:
-#             for rec, w in izip(row, col_widths):
-#                 if isinstance(rec, basestring):
-#                     val = rec
-#                 else:
-#                     val = rec.metric.format(rec.value)
-#                 out.write(val + (' ' * (w - len(val) + 2)))
-#             out.write('\n')
-#
-#     return output_fpath
+def write_txt(rows, output_dirpath, base_fname):
+    output_fpath = join(output_dirpath, base_fname + '.txt')
+
+    col_widths = repeat(0)
+    col_widths = [max(len(v), w) for v, w in izip(rows[0], col_widths)]
+
+    with open(output_fpath, 'w') as out:
+        for row in rows:
+            for val, w in izip(row, col_widths):
+                out.write(val + (' ' * (w - len(val) + 2)))
+            out.write('\n')
+
+    return output_fpath
 
 
-# def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-#     rows = _flatten_report(report)
-#     return write_tsv(rows, output_dirpath, base_fname)
+def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
+    rows = _flatten_report(report)
+    return write_tsv(rows, output_dirpath, base_fname)
 
 
 def write_tsv(rows, output_dirpath, base_fname):
@@ -157,7 +156,7 @@ def write_tsv(rows, output_dirpath, base_fname):
 
     with open(output_fpath, 'w') as out:
         for row in rows:
-            out.write('\t'.join([val for (val, m) in row]) + '\n')
+            out.write('\t'.join([val for val in row]) + '\n')
 
     return output_fpath
 
