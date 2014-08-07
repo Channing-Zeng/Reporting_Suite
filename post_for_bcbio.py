@@ -90,17 +90,21 @@ def load_bcbio_cnf(cnf):
     bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
     yaml_files = [join(bcbio_config_dirpath, fname)
                   for fname in listdir(bcbio_config_dirpath)
-                  if (fname.endswith('.yaml') and
-                      not any(n in fname for n in ['run_info', 'system_info']))]
+                  if fname.endswith('.yaml')]
 
     if len(yaml_files) == 0:
-        critical('No YAML file in config directory.')
+        critical('No YAML file in the config directory.')
+
+    yaml_files = [fpath for fpath in yaml_files
+                  if not any(n in fpath for n in ['run_info', 'system_info'])]
+    if not yaml_files:
+        critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
 
     yaml_file = yaml_files[0]
     if len(yaml_files) > 1:
         some_yaml_files = [f for f in yaml_files if splitext(basename(f))[0] in cnf.bcbio_final_dir]
         if len(some_yaml_files) == 0:
-            critical('More than one YAML file in config directory ' + ' '.join(yaml_files) +
+            critical('More than one YAML file in the config directory ' + ' '.join(yaml_files) +
                      ', and no YAML file named after the project.')
         yaml_file = some_yaml_files[0]
 
