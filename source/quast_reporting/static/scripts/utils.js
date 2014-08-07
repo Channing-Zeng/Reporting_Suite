@@ -40,20 +40,43 @@ function isFractional(num) {
     return !isIntegral(num);
 }
 
-function toPrettyString(num, unit, pres) {
+function toPrettyString(num, unit) {
     if (typeof num === 'number') {
         var str;
+
+        if (num < 0.00001) {
+            console.log(num)
+        }
+
+
         if (num <= 9999) {
             if (isFractional(num)) {
                 if (isIntegral(num * 10)) {
                     str = num.toFixed(1);
                 } else if (isIntegral(num * 100) || num >= 100) {
                     str = num.toFixed(2);
+
+                } else if (num < 0.00000000001) {
+                    str = num.toFixed(12);
+                } else if (num < 0.0000000001) {
+                    str = num.toFixed(11);
+                } else if (num < 0.000000001) {
+                    str = num.toFixed(10);
+                } else if (num < 0.00000001) {
+                    str = num.toFixed(9);
+                } else if (num < 0.0000001) {
+                    str = num.toFixed(8);
+                } else if (num < 0.000001) {
+                    str = num.toFixed(7);
+                } else if (num < 0.00001) {
+                    str = num.toFixed(6);
+                } else if (num < 0.0001) {
+                    str = num.toFixed(5);
+                } else if (num < 0.001) {
+                    str = num.toFixed(4);
+
                 } else {
-                    if (pres === undefined) {
-                        pres = 3
-                    }
-                    str = num.toFixed(pres);
+                    str = num.toPrecision(4);
                 }
             } else {
                 str = num.toFixed(0);

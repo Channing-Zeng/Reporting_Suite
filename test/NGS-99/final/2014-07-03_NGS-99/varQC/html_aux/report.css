@@ -67,8 +67,8 @@ table.moving_table {
 }
 
 table.draggable .drag_handle {
-    padding: 2px 1px 0 1px;
-    margin: 0 2px 0 1px;
+    padding: 2px 0px 0 0px;
+    margin: 0 0px 0 1px;
 
     cursor: grab;
     cursor: -moz-grab;

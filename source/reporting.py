@@ -12,10 +12,10 @@ class Record(object):
     def __init__(self,
                  metric=None,
                  value=None,
-                 meta=dict()):
+                 meta=None):
         self.metric = metric
         self.value = value
-        self.meta = meta
+        self.meta = meta or dict()
 
 
 class Metric(object):
@@ -120,7 +120,9 @@ def _flatten_report(report):
     for record in report[0].records:
         row = [record.metric.name]
         for sample in report:
-            row.append(next(r.metric.format(r.value) for r in sample.records if r.metric.name == record.metric.name))
+            row.append(next(r.metric.format(r.value)
+                            for r in sample.records
+                            if r.metric.name == record.metric.name))
         rows.append(row)
 
     return rows
@@ -135,7 +137,8 @@ def write_txt(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.txt')
 
     col_widths = repeat(0)
-    col_widths = [max(len(v), w) for v, w in izip(rows[0], col_widths)]
+    for row in rows:
+        col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
 
     with open(output_fpath, 'w') as out:
         for row in rows:
