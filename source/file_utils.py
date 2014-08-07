@@ -56,6 +56,9 @@ def map_wrap(f):
 
 
 def safe_mkdir(dirpath, descriptive_name=''):
+    if isdir(dirpath):
+        return dirpath
+
     if not dirpath:
         sys.exit(descriptive_name + ' path is empty.')
 
@@ -498,7 +501,7 @@ def verify_module(name):
 def adjust_path(path):
     if not path:
         return path
-    return expanduser(abspath(remove_quotes(path)))
+    return abspath(expanduser(remove_quotes(path)))
 
 
 def file_exists(fpath):
