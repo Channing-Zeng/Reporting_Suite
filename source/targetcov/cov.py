@@ -5,6 +5,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
+from source.reporting import Metric
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import format_integer, format_decimal, get_chr_len_fpath
@@ -81,6 +82,27 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
                 new_overl_f.write(line)
 
     return sort_bed(cnf, new_overlp_exons_bed)
+
+
+gatk_metrics = Metric.to_dict([
+    Metric('Reads',   'Total',       'Total variants evaluated'),
+    Metric('Mapped reads',           'SNP',         'SNPs'),
+    Metric('Unmapped reads',     'Ins',         'Insertions'),
+    Metric('Unmapped reads',      'Del',         'Deletions'),
+    Metric('Percentage of mapped reads', 'At comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
+    Metric('Bases in target',        'Comp rate',   'Percentage of eval sites at comp sites'),
+    Metric('Covered bases in target',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
+    Metric('Percentage of target covered by at least 1 read',  'Conc rate',   'Concordance rate'),
+    Metric('Reads mapped on target',     'Var/loci',    'Variants per loci rate'),
+    Metric('Percentage of reads mapped on target',  'Conc rate',   'Concordance rate'),
+    Metric('Reads mapped on padded target', 'Bp/var',      'Bases per variant rate'),
+    Metric('Percentage of reads mapped on padded target',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
+    Metric('Read bases mapped on target',       'Ti/Tv',       'Transition to transversion ratio'),
+    Metric('Average target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
+    Metric('Std. dev. of target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
+    Metric('Maximum target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
+    Metric('Percentage of target within 20% of mean depth',       'Ti/Tv',       'Transition to transversion ratio'),
+])
 
 
 def _run_header_report(cnf, result_fpath,

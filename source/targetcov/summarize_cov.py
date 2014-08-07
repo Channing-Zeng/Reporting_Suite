@@ -10,7 +10,7 @@ def summary_reports(cnf, sample_names):
     step_greetings('Coverage statistics for all samples')
 
     sample_sum_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.summary.txt')
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetSeq.json')
 
     sum_report = summarize(sample_names, sample_sum_reports, _parse_targetseq_sample_report)
 
@@ -39,47 +39,9 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     return cnv_report_fpath
 
 
-def _parse_targetseq_sample_report(report_fpath):
-    records = OrderedDefaultDict(Record)
-
-    with open(report_fpath) as f:
-        rows = [l.strip().split('\t') for l in f]
-
-    for row in rows:
-        metric_name = row[0]
-        val = row[1]
-
-        records[metric_name].metric = Metric(name=metric_name, short_name=metric_name)
-
-        val = val.replace(' ', '').replace(',', '')
-        num_chars = []
-        unit_chars = []
-
-        i = 0
-        while i < len(val) and (val[i].isdigit() or val[i] == '.'):
-            num_chars += val[i]
-            i += 1
-        while i < len(val):
-            unit_chars += val[i]
-            i += 1
-
-        val_num = ''.join(num_chars)
-        val_unit = ''.join(unit_chars)
-
-        if val_unit:
-            records[metric_name].metric.unit = val_unit
-
-        try:
-            val = int(val_num)
-        except ValueError:
-            try:
-                val = float(val_num)
-            except ValueError:
-                val = val_num
-
-        records[metric_name].value = val
-
-    return records
+def _parse_targetseq_sample_report(json_fpath):
+    with open(json_fpath) as f:
+        return Record.load_records(f)
 
 
 def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):

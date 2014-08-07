@@ -88,7 +88,10 @@ def main():
 
 def load_bcbio_cnf(cnf):
     bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
-    yaml_files = [join(bcbio_config_dirpath, fname) for fname in listdir(bcbio_config_dirpath) if fname.endswith('.yaml')]
+    yaml_files = [join(bcbio_config_dirpath, fname)
+                  for fname in listdir(bcbio_config_dirpath)
+                  if (fname.endswith('.yaml') and
+                      not any(n in fname for n in ['run_info', 'system_info']))]
 
     if len(yaml_files) == 0:
         critical('No YAML file in config directory.')
