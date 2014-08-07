@@ -263,7 +263,7 @@ def filter_all(cnf, sample_names):
             cnf['bcbio_final_dir'], sample_names, varannotate_dir,
             '-' + caller.suf + '.anno.vcf')
 
-        filtering = Filtering(cnf, filt_cnf, sample_names)
+        filtering = Filtering(cnf, filt_cnf, sample_names, caller)
         filt_anno_vcf_fpaths = filtering.run_filtering(anno_vcf_fpaths)
 
         global cnfs_for_samples

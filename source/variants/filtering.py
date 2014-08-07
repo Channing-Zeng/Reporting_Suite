@@ -160,12 +160,13 @@ class Filtering:
     cnf = None
     filt_cnf = None
 
-    def __init__(self, cnf, filt_cnf, sample_names):
+    def __init__(self, cnf, filt_cnf, sample_names, caller):
         Filtering.cnf = cnf
         filt_cnf = filt_cnf.__dict__
         Filter.filt_cnf = filt_cnf
         Filtering.filt_cnf = filt_cnf
 
+        self.caller = caller
         self.control_vars = set()
         self.sample_names = set(sample_names)
         self.varks = dict()  # vark -> VarkInfo(vark, afs)
@@ -253,8 +254,8 @@ class Filtering:
         info('First round')
         results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
 
-        control_vars_dump_fpath = join(self.cnf.work_dir, 'control_vars.txt')
-        varks_dump_fpath = join(self.cnf.work_dir, 'varks.txt')
+        control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
+        varks_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'varks.txt')
 
         if not [all([varks, control_vars]) for (_, varks, control_vars) in results]:
             info('Skipped first round, restoring varks and controls vars.')
