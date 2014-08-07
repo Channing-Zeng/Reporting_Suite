@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from itertools import repeat, izip
+import json
 from os.path import join
 from source.file_utils import verify_file
 from source.quast_reporting.html_saver import write_html_report
@@ -17,21 +18,45 @@ class Record(object):
         self.value = value
         self.meta = meta or dict()
 
+    @staticmethod
+    def dump_records(records, f):
+        objects = {name: rec.__dict__ for name, rec in records.items()}
+
+        json.dump(objects, f,
+                  default=lambda o: o.__dict__,
+                  sort_keys=True,
+                  indent=4)
+
+    @staticmethod
+    def load_records(f):
+        records = dict()
+        objects = json.load(f)
+        for rec_name, obj in objects.items():
+            rec = Record()
+            rec.__dict__ = obj
+            m = Metric()
+            m.__dict__ = rec.metric
+            rec.metric = m
+            records[rec_name] = rec
+        return records
+
 
 class Metric(object):
     def __init__(self,
                  name=None,
                  short_name=None,
                  description=None,
-                 presision=0,  # number of decimal digits
                  quality='More is better',  # More is better, Less is better
                  unit=''):
         self.name = name
         self.short_name = short_name,
         self.description = description,
-        self.presision = presision
         self.quality = quality
         self.unit = unit
+
+    @staticmethod
+    def to_dict(metrics):
+        return {m.name: m for m in metrics}
 
     def format(self, value):
         if value is None:
@@ -39,22 +64,26 @@ class Metric(object):
 
         name = self.name
         unit = self.unit
-        presision = self.presision
 
         if isinstance(value, basestring):
-            return '{value}{unit}'.format(**locals())
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    # assert False, 'Strange value ' + str(value)
+                    return '{value}{unit}'.format(**locals())
 
-        try:
-            value = int(value)
-        except ValueError:
-            value = float(value)
-
-        if self.presision == 0:
+        if isinstance(value, int):
             return '{value:,}{unit}'.format(**locals())
 
-        else:
+        if isinstance(value, float):
+            presision = 2
+            for i in range(10, 2, -1):
+                if value < 1/i:
+                    presision = i
             return '{value:.{presision}f}{unit}'.format(**locals())
-
 
 
 class SampleReport():
@@ -120,9 +149,10 @@ def _flatten_report(report):
     for record in report[0].records:
         row = [record.metric.name]
         for sample in report:
-            row.append(next(r.metric.format(r.value)
-                            for r in sample.records
-                            if r.metric.name == record.metric.name))
+            row.append(next(
+                r.metric.format(r.value)
+                for r in sample.records
+                if r.metric.name == record.metric.name))
         rows.append(row)
 
     return rows
@@ -177,3 +207,29 @@ def parse_tsv(tsv_fpath):
     return report
 
 
+def parse_value(string):
+    val = string.replace(' ', '').replace(',', '')
+
+    num_chars = []
+    unit_chars = []
+
+    i = 0
+    while i < len(val) and (val[i].isdigit() or val[i] == '.'):
+        num_chars += val[i]
+        i += 1
+    while i < len(val):
+        unit_chars += val[i]
+        i += 1
+
+    val_num = ''.join(num_chars)
+    val_unit = ''.join(unit_chars)
+
+    try:
+        val = int(val_num)
+    except ValueError:
+        try:
+            val = float(val_num)
+        except ValueError:
+            val = val_num
+
+    return val

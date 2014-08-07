@@ -56,9 +56,6 @@ quality_control:
   databases: ['dbsnp', 'cosmic', '1000genomes']
   novelty: ['all', 'known', 'novel']
   db_for_summary: cosmic
-  metrics: ['nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
   variant_distribution_scale: 1000  ## in kilobases
 
 coverage_reports:

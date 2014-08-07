@@ -39,9 +39,6 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     return cnv_report_fpath
 
 
-# /Users/vladsaveliev/vagrant/reporting_suite/external/zhongwu_tools/cov2cnv.pl
-
-
 def _parse_targetseq_sample_report(report_fpath):
     records = OrderedDefaultDict(Record)
 

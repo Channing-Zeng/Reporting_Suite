@@ -2,7 +2,7 @@ import string
 import region
 from os.path import expanduser
 from source.calling_process import call
-from source.file_utils import verify_file, intermediate_fname
+from source.file_utils import verify_file, intermediate_fname, adjust_path
 from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists
 from source.logger import err
