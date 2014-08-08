@@ -2,7 +2,7 @@ from collections import defaultdict, OrderedDict
 import math
 
 
-class Region():
+class Region:
     def __init__(self, sample=None, chrom=None, start=None, end=None, size=None,
                  gene_name=None, feature=None, extra_fields=list()):
         self.sample = sample

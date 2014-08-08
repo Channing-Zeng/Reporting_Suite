@@ -59,3 +59,7 @@ test/bcbio/final/*/*-ready.bam.bai
 test/bcbio/final/**/varQC
 
 test/bcbio/final_old
+
+test/NGS-99/final.bak
+test/NGS-99/final_old
+test/bcbio copy/

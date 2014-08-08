@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
-    summarize, write_summary_reports, write_tsv, Metric, Record
+    summarize, write_summary_reports, write_tsv_rows, Metric, Record
 from source.targetcov.copy_number import run_copy_number
 from source.logger import critical, step_greetings, info, err
 from source.utils import OrderedDefaultDict
@@ -34,7 +34,7 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
     info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
 
-    cnv_report_fpath = write_tsv(cnv_rows, cnf['output_dir'], 'Seq2C')
+    cnv_report_fpath = write_tsv_rows(cnv_rows, cnf['output_dir'], 'Seq2C')
 
     return cnv_report_fpath
 

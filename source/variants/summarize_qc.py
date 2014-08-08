@@ -37,10 +37,11 @@ def make_summary_reports(cnf, sample_names):
 
 
 def _make_for_single_variant_caller(callers, cnf, sample_names):
-    full_report = summarize(sample_names, callers[0].single_qc_rep_fpaths, _parse_qc_sample_report)
+    reports = summarize(sample_names, callers[0].single_qc_rep_fpaths, _parse_qc_sample_report)
+    # reports = [records=[], records=[], records=[]...]
 
     full_summary_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], full_report, 'varQC', 'Variant QC')
+        cnf['output_dir'], cnf['work_dir'], reports, 'varQC', 'Variant QC')
 
     info()
     info('*' * 70)

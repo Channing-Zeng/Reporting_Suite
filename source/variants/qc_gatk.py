@@ -3,7 +3,7 @@ from os.path import join
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
-from source.reporting import Metric, Record
+from source.reporting import Metric, Record, save_json
 from source.tools_from_cnf import get_gatk_cmdline
 from source.utils import OrderedDefaultDict
 
@@ -29,11 +29,11 @@ gatk_metrics = Metric.to_dict([
 
 
 def _dict_to_objects(report_dict, cnf_databases, cnf_novelty, main_db):
-    records = OrderedDefaultDict(Record)
+    records = []
 
     for m_name, cur_metric in gatk_metrics.items():
         rec = Record()
-        records[cur_metric.name] = rec
+        records.append(rec)
         rec.metric = cur_metric
 
         for cur_novelty in cnf_novelty:
@@ -86,9 +86,7 @@ def gatk_qc(cnf, vcf_fpath):
     report_dict = _parse_gatk_report(report_fpath, cnf_databases.keys(), cnf_novelty)
     records = _dict_to_objects(report_dict, cnf_databases.keys(), cnf_novelty, cnf.quality_control.db_for_summary)
 
-    json_fpath = join(cnf.output_dir, cnf.name + json_ending)
-    with open(json_fpath, 'w') as f:
-        Record.dump_records(records, f)
+    save_json(records, join(cnf.output_dir, cnf.name + json_ending))
 
     final_report_fpath = join(cnf.output_dir, cnf.name + final_report_ending)
     _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)
@@ -140,7 +138,7 @@ def _make_final_report(records, report_fpath, cnf_databases, cnf_novelties):
     header = ['Metric', 'Novelty'] + cnf_databases + ['Average']
     rows = [header]
 
-    for name, rec in records.items():
+    for rec in records:
         for novelty in cnf_novelties:
             row = [rec.metric.name, novelty]
             for db in cnf_databases + ['Average']:

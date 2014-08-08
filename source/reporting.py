@@ -20,7 +20,7 @@ class Record(object):
 
     @staticmethod
     def dump_records(records, f):
-        objects = {name: rec.__dict__ for name, rec in records.items()}
+        objects = [rec.__dict__ for rec in records]
 
         json.dump(objects, f,
                   default=lambda o: o.__dict__,
@@ -29,16 +29,19 @@ class Record(object):
 
     @staticmethod
     def load_records(f):
-        records = dict()
+        records = []
         objects = json.load(f)
-        for rec_name, obj in objects.items():
+        for obj in objects:
             rec = Record()
             rec.__dict__ = obj
             m = Metric()
             m.__dict__ = rec.metric
             rec.metric = m
-            records[rec_name] = rec
+            records.append(rec)
         return records
+
+    def format(self):
+        return self.metric.format(self.value)
 
 
 class Metric(object):
@@ -49,14 +52,14 @@ class Metric(object):
                  quality='More is better',  # More is better, Less is better
                  unit=''):
         self.name = name
-        self.short_name = short_name,
-        self.description = description,
+        self.short_name = short_name or self.name,
+        self.description = description or self.name,
         self.quality = quality
         self.unit = unit
 
     @staticmethod
     def to_dict(metrics):
-        return {m.name: m for m in metrics}
+        return OrderedDict((m.name, m) for m in metrics)
 
     def format(self, value):
         if value is None:
@@ -89,6 +92,7 @@ class Metric(object):
 class SampleReport():
     def __init__(self, name=None, fpath=None, records=list()):
         self.name = name
+        self.sample_name = name
         self.fpath = fpath
         self.records = records
 
@@ -131,24 +135,27 @@ def get_sample_report_fpaths_for_bcbio_final_dir(
 
 
 def summarize(sample_names, report_fpaths, parse_report_fn):
+    """ Returns list of SampleReport objects:
+        [SampleReport(name=, fpath=, records=[Record,...]),...]
+    """
     return [SampleReport(name, fpath, parse_report_fn(fpath).values())
             for name, fpath in zip(sample_names, report_fpaths)]
 
 
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):
-
     return [fn(output_dirpath, work_dirpath, report, base_fname, caption)
         for fn in [write_txt_report,
                    write_tsv_report,
                    write_html_report]]
 
 
-def _flatten_report(report):
-    rows = [['Sample'] + [s.name for s in report]]
+def _flatten_report(reports):
+    # report = [SampleReport(name=, fpath=, records=[Record,...]),...]
+    rows = [['Sample'] + [rep.sample_name for rep in reports]]
 
-    for record in report[0].records:
+    for record in reports[0].records:
         row = [record.metric.name]
-        for sample in report:
+        for sample in reports:
             row.append(next(
                 r.metric.format(r.value)
                 for r in sample.records
@@ -160,10 +167,10 @@ def _flatten_report(report):
 
 def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
     rows = _flatten_report(report)
-    return write_txt(rows, output_dirpath, base_fname)
+    return write_txt_rows(rows, output_dirpath, base_fname)
 
 
-def write_txt(rows, output_dirpath, base_fname):
+def write_txt_rows(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.txt')
 
     col_widths = repeat(0)
@@ -181,10 +188,10 @@ def write_txt(rows, output_dirpath, base_fname):
 
 def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
     rows = _flatten_report(report)
-    return write_tsv(rows, output_dirpath, base_fname)
+    return write_tsv_rows(rows, output_dirpath, base_fname)
 
 
-def write_tsv(rows, output_dirpath, base_fname):
+def write_tsv_rows(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.tsv')
 
     with open(output_fpath, 'w') as out:
@@ -205,6 +212,11 @@ def parse_tsv(tsv_fpath):
         critical('Data not found in ' + tsv_fpath)
 
     return report
+
+
+def save_json(records, fpath):
+    with open(fpath, 'w') as f:
+        Record.dump_records(records, f)
 
 
 def parse_value(string):
@@ -233,3 +245,5 @@ def parse_value(string):
             val = val_num
 
     return val
+
+    return fpath

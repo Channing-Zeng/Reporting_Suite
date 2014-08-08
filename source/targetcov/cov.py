@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
 from os.path import join, basename
@@ -5,7 +6,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric
+from source.reporting import Metric, Record, write_txt_report, save_json, SampleReport
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import format_integer, format_decimal, get_chr_len_fpath
@@ -25,12 +26,19 @@ def run_target_cov(cnf, bam, amplicons_bed):
 
     if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
-        summary_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.summary.txt')
-        _run_header_report(
-            cnf, summary_report_fpath,
-            amplicons_bed, bam, chr_len_fpath,
+
+        records = _run_header_report(
+            cnf, amplicons_bed, bam, chr_len_fpath,
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
+
+        save_json(records, join(cnf.output_dir, cnf.name + '.targetSeq.json'))
+        summary_report_fpath = write_txt_report(
+            cnf.output_dir, cnf.work_dir, [SampleReport(cnf.name, '', records)],
+            cnf.name + '.targetSeq')
+        info()
+        info('Saved to ' + summary_report_fpath)
+
 
     if 'genes' in cnf['coverage_reports']['report_types']:
         if not exons_bed:
@@ -85,108 +93,96 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
 
 
 gatk_metrics = Metric.to_dict([
-    Metric('Reads',   'Total',       'Total variants evaluated'),
-    Metric('Mapped reads',           'SNP',         'SNPs'),
-    Metric('Unmapped reads',     'Ins',         'Insertions'),
-    Metric('Unmapped reads',      'Del',         'Deletions'),
-    Metric('Percentage of mapped reads', 'At comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
-    Metric('Bases in target',        'Comp rate',   'Percentage of eval sites at comp sites'),
-    Metric('Covered bases in target',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
-    Metric('Percentage of target covered by at least 1 read',  'Conc rate',   'Concordance rate'),
-    Metric('Reads mapped on target',     'Var/loci',    'Variants per loci rate'),
-    Metric('Percentage of reads mapped on target',  'Conc rate',   'Concordance rate'),
-    Metric('Reads mapped on padded target', 'Bp/var',      'Bases per variant rate'),
-    Metric('Percentage of reads mapped on padded target',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
-    Metric('Read bases mapped on target',       'Ti/Tv',       'Transition to transversion ratio'),
-    Metric('Average target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
-    Metric('Std. dev. of target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
-    Metric('Maximum target coverage depth',       'Ti/Tv',       'Transition to transversion ratio'),
-    Metric('Percentage of target within 20% of mean depth',       'Ti/Tv',       'Transition to transversion ratio'),
+    Metric('Reads'),
+    Metric('Mapped reads'),
+    Metric('Unmapped reads'),
+    Metric('Percentage of mapped reads', short_name='Mapped reads', unit='%'),
+    Metric('Bases in target'),
+    Metric('Covered bases in target', short_name='Covered bp in targ'),
+    Metric('Percentage of target covered by at least 1 read', short_name='Targ covd >= 1 read', unit='%'),
+    Metric('Reads mapped on target', short_name='Reads on targ'),
+    Metric('Percentage of reads mapped on target', short_name='Reads on targ', unit='%'),
+    Metric('Reads mapped on padded target', 'Reads on padded targ'),
+    Metric('Percentage of reads mapped on padded target', short_name='Reads on padded targ', unit='%'),
+    Metric('Read bases mapped on target', short_name='Read BP on targ'),
+    Metric('Average target coverage depth', short_name='Avg targ depth'),
+    Metric('Std. dev. of target coverage depth', short_name='Std. dev.'),
+    Metric('Maximum target coverage depth', short_name='Max targ depth'),
+    Metric('Percentage of target within 20% of mean depth', short_name='Within 20% of mean', unit='%'),
 ])
 
 
-def _run_header_report(cnf, result_fpath,
-                       bed, bam, chr_len_fpath,
+def _run_header_report(cnf, bed, bam, chr_len_fpath,
                        depth_thresholds, padding,
                        combined_region, max_depth, total_bed_size):
-    stats = []
 
-    def append_stat(stat):
-        stats.append(stat)
-        info(stat)
+    for depth in depth_thresholds:
+        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        gatk_metrics[name] = Metric(name, short_name='1x', description=name, unit='%')
+
+    records = []
+
+    def append_stat(metric_name, value):
+        rec = Record(gatk_metrics[metric_name.strip()], value)
+        records.append(rec)
+        info(metric_name + ': ' + rec.format())
 
     info('* General coverage statistics *')
     info('Getting number of reads...')
     v_number_of_reads = number_of_reads(cnf, bam)
-    append_stat(format_integer('Reads', v_number_of_reads))
+    append_stat('Reads', v_number_of_reads)
 
     info('Getting number of mapped reads...')
     v_mapped_reads = number_of_mapped_reads(cnf, bam)
-    append_stat(format_integer('Mapped reads', v_mapped_reads))
-    append_stat(format_integer('Unmapped reads', v_number_of_reads - v_mapped_reads))
+    append_stat('Mapped reads', v_mapped_reads)
+    append_stat('Unmapped reads', v_number_of_reads - v_mapped_reads)
 
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-    append_stat(format_decimal('Percentage of mapped reads', v_percent_mapped, '%'))
+    append_stat('Percentage of mapped reads', v_percent_mapped)
     info('')
 
     info('* Target coverage statistics *')
-    append_stat(format_integer('Bases in target', total_bed_size))
+    append_stat('Bases in target', total_bed_size)
 
     bases_within_threshs, avg_depth, std_dev, percent_within_normal = combined_region.sum_up(depth_thresholds)
 
     v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
-    append_stat(format_integer('Covered bases in target', v_covered_bases_in_targ))
+    append_stat('Covered bases in target', v_covered_bases_in_targ)
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
-    append_stat(format_decimal('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ, '%'))
+    append_stat('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
     info('Getting number of mapped reads on target...')
 
     v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, bed, bam)
-    append_stat(format_integer('Reads mapped on target', v_mapped_reads_on_target))
+    append_stat('Reads mapped on target', v_mapped_reads_on_target)
 
     v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
-    append_stat(format_decimal('Percentage of reads mapped on target ', v_percent_mapped_on_target, '%'))
+    append_stat('Percentage of reads mapped on target ', v_percent_mapped_on_target)
 
     info('Making bed file for padded regions...')
     padded_bed = get_padded_bed_file(cnf, bed, chr_len_fpath, padding)
 
     info('Getting number of mapped reads on padded target...')
     v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam)
-    append_stat(format_integer('Reads mapped on padded target', v_reads_on_padded_targ))
+    append_stat('Reads mapped on padded target', v_reads_on_padded_targ)
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
-    append_stat(format_decimal('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target, '%'))
-
-
+    append_stat('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
     v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
-    append_stat(format_integer('Read bases mapped on target', v_read_bases_on_targ))
+    append_stat('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
-    append_stat(format_decimal('Average target coverage depth', avg_depth))
-    append_stat(format_decimal('Std. dev. of target coverage depth', std_dev))
-    append_stat(format_integer('Maximum target coverage depth', max_depth))
-    append_stat(format_decimal('Percentage of target within 20% of mean depth',
-                               percent_within_normal, '%'))
-
-
+    append_stat('Average target coverage depth', avg_depth)
+    append_stat('Std. dev. of target coverage depth', std_dev)
+    append_stat('Maximum target coverage depth', max_depth)
+    append_stat('Percentage of target within 20% of mean depth', percent_within_normal)
 
     for depth, bases in bases_within_threshs.items():
         percent = 100.0 * bases / total_bed_size if total_bed_size else 0
-        append_stat(format_decimal('Part of target covered at least by ' + str(depth) +
-                                   'x', percent, '%'))
+        append_stat('Part of target covered at least by ' + str(depth) + 'x', percent)
 
-    max_len = max(len(l.rsplit(':', 1)[0]) for l in stats)
-    with file_transaction(cnf, result_fpath) as tx, open(tx, 'w') as out:
-        for l in stats:
-            text, val = l.rsplit(':', 1)
-            # spaces = ' ' * (max_len - len(text) + 1)
-            spaces = '\t'
-            out.write(text + spaces + val + '\n')
-
-    info('')
-    info('Result: ' + result_fpath)
-    return result_fpath
+    return records
 
 
 def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
