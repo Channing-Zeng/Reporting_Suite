@@ -63,3 +63,8 @@ test/bcbio/final_old
 test/NGS-99/final.bak
 test/NGS-99/final_old
 test/bcbio copy/
+test/NGS-99/final/2014-07-03_NGS-99/log/
+
+test/NGS-99/final_old*
+test/NGS-99/final_bak*
+test/NGS-99/work

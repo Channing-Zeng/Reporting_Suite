@@ -22,6 +22,7 @@ steps:
 #- VarQC_after
 #- VarQC_Summary
 
+
 filter_reject: False  ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
@@ -61,6 +62,7 @@ quality_control:
 
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+
 
 gatk:
   options: ['-dt NONE']
