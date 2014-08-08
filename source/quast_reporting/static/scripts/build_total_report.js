@@ -105,10 +105,11 @@
     for (_j = 0, _len = report.length; _j < _len; _j++) {
       sampleReport = report[_j];
       sampleName = sampleReport.name;
+      sampleFpath = sampleReport.fpath;
       if (sampleReport.name.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
-      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"html_aux/" + sampleName + ".html\">" + sampleName + "</a> </td>";
+      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleFpath + "\">" + sampleName + "</a> </td>";
       for (recNum = _k = 0, _ref1 = sampleReport.records.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; recNum = 0 <= _ref1 ? ++_k : --_k) {
         pos = columnOrder[recNum];
         rec = sampleReport.records[pos];
@@ -120,11 +121,13 @@
         } else {
           if (typeof value === 'number') {
             num = value;
-            cell_contents = toPrettyString(value, metric.presision);
-          } else {
+            cell_contents = toPrettyString(value, metric.unit);
+          } else if (/^-?.?[0-9]/.test(value)) {
             result = /([0-9\.]+)(.*)/.exec(value);
             num = parseFloat(result[1]);
-            cell_contents = toPrettyString(num) + result[2];
+            cell_contents = toPrettyString(num, metric.unit) + result[2];
+          } else {
+            cell_contents = value
           }
           if (num != null) {
             table += ' number="' + value + '">';

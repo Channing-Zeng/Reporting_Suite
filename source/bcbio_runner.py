@@ -93,7 +93,8 @@ class Runner:
                 self.targetcov,
                 self.ngscat,
                 self.qualimap,
-                self.targetcov_summary]
+                self.targetcov_summary,
+                self.ngscat_summary]
              if contains(s.name, cnf.steps)])
 
         self.vardict_steps.extend(
@@ -150,7 +151,7 @@ class Runner:
             interpreter='python',
             script='ngscat',
             dir_name='qc/ngscat',
-            name='NGScat', short_name='nc',
+            name='ngsCAT', short_name='nc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                                   '--saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '_{sample}\''
         )
@@ -193,6 +194,15 @@ class Runner:
             paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
                     + self.final_dir + '\' -s \'{samples}\' -n "' + self.targetcov.dir_name + '" --work-dir \'' +
                     join(cnf.work_dir, 'targetSeq_summary') + '\''
+        )
+        self.ngscat_summary = Step(cnf, run_id,
+            name='ngsCAT_summary', short_name='ncs',
+            interpreter='python',
+            script='ngscat_summary',
+            dir_name='ngscat',
+            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
+                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.ngscat.dir_name + '" --work-dir \'' +
+                    join(cnf.work_dir, 'ngscat_summary') + '\''
         )
 
         af_thr = str(cnf.variant_filtering.min_freq)
@@ -506,6 +516,16 @@ class Runner:
                     self.targetcov.job_name(d['description'])
                     for d in self.bcbio_cnf.details
                     if self.targetcov in self.steps],
+                # threads=samples_num + 1,
+                samples=samples_fpath)
+
+        if self.ngscat_summary in self.steps:
+            self.submit(
+                self.ngscat_summary,
+                wait_for_steps=[
+                    self.ngscat.job_name(d['description'])
+                    for d in self.bcbio_cnf.details
+                    if self.ngscat in self.steps],
                 # threads=samples_num + 1,
                 samples=samples_fpath)
 

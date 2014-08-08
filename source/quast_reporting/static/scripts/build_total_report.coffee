@@ -77,12 +77,13 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
 
     for sampleReport in report
         sampleName = sampleReport.name
+        sampleFpath = sampleReport.fpath
         if sampleReport.name.length > 30
             sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
 
         table += "<tr>
             <td class=\"left_column_td\">
-                <a class=\"sample_name\" href=\"html_aux/#{sampleName}.html\">#{sampleName}</a>
+                <a class=\"sample_name\" href=\"#{sampleFpath}\">#{sampleName}</a>
             </td>"
 
         for recNum in [0...sampleReport.records.length]
@@ -99,11 +100,13 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
             else
                 if typeof value == 'number'
                     num = value
-                    cell_contents = toPrettyString(value, metric.presision)
-                else
+                    cell_contents = toPrettyString(value, metric.unit)
+                else if /^-?.?[0-9]/.test(value)
                     result = /([0-9\.]+)(.*)/.exec value
                     num = parseFloat result[1]
-                    cell_contents = toPrettyString(num) + result[2]
+                    cell_contents = toPrettyString(num, metric.unit) + result[2]
+                else
+                    cell_contents = value
 
                 if num?
                     table += ' number="' + value + '">'

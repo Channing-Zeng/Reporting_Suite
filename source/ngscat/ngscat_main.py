@@ -264,18 +264,18 @@ def generate_report(cnf, bamfilenames, sortedbams, bedfilename, outdir, coveredp
     summaryrows = ''
     for i, bam in enumerate(bamfilenames):
         summaryrows += '<tr>\n'
-        summaryrows += '<td class="table-cell"> ' + bam + '</td>'
-        summaryrows += '<td class="table-cell"> ' + str(bam_file.BamFile(sortedbams[i]).nreads()) + ' </td>'
-        summaryrows += '<td class="table-cell">%.1f' % (coveredbases[i]) + '% </td>'
+        summaryrows += '<td class="table-cell"> ' + bam + '</td>\n'
+        summaryrows += '<td class="table-cell"> ' + str(bam_file.BamFile(sortedbams[i]).nreads()) + ' </td>\n'
+        summaryrows += '<td class="table-cell">%.1f' % (coveredbases[i]) + '% </td>\n'
 
         if (coverage_saturation_status <> None):
             summaryrows += '<td class="table-cell">%.1e</td>\n' % saturationslopes[i]
 
         summaryrows += '<td class="table-cell">%.1f' % (percontarget[i]) + '% </td>\n'
-        summaryrows += ('<td class="table-cell">ON-%.1f%%' % onduplicates[i]) + \
-                       '; OFF: %.1f' % (offduplicates[i]) + '% </td>'
+        summaryrows += ('<td class="table-cell">ON: %.1f%%' % onduplicates[i]) + \
+                       '; OFF: %.1f' % (offduplicates[i]) + '% </td>\n'
         summaryrows += '<td class="table-cell">%.1fx' % meancoverage[i] + '</td>\n'
-        summaryrows += '<td class="table-cell">%d consecutive bases<br>with coverage <= <WARNCOVERAGETHRESHOLD></td>\n' % (
+        summaryrows += '<td class="table-cell">%d consecutive bases<br>with coverage <= <WARNCOVERAGETHRESHOLD>x</td>\n' % (
         lowcovbases[i])
 
         if (coveragecorr_status <> None):

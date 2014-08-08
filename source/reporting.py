@@ -84,8 +84,8 @@ class Metric(object):
         if isinstance(value, float):
             presision = 2
             for i in range(10, 2, -1):
-                if value < 1/i:
-                    presision = i
+                if value < 1./(10**i):
+                    presision = i + 1
             return '{value:.{presision}f}{unit}'.format(**locals())
 
 
@@ -109,15 +109,16 @@ def read_sample_names(sample_fpath):
 
 
 def get_sample_report_fpaths_for_bcbio_final_dir(
-        bcbio_final_dir, sample_names, varqc_dir, ending):
+        bcbio_final_dir, sample_names, base_dir, ending, raw_ending=False):
 
     single_report_fpaths = []
 
     fixed_sample_names = []
     for sample_name in sample_names:
+        report_name = ending if raw_ending else sample_name + ending
         single_report_fpath = join(
-            bcbio_final_dir, sample_name, varqc_dir,
-            sample_name + ending)
+            bcbio_final_dir, sample_name, base_dir,
+            report_name)
 
         info(single_report_fpath)
 
@@ -245,5 +246,3 @@ def parse_value(string):
             val = val_num
 
     return val
-
-    return fpath
