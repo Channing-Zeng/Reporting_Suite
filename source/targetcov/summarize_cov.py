@@ -1,38 +1,39 @@
 from collections import OrderedDict
-from source.reporting import parse_tsv, get_sample_report_fpaths_for_bcbio_final_dir, \
+from source.reporting import parse_tsv, get_per_sample_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, write_tsv_rows, Metric, Record
 from source.targetcov.copy_number import run_copy_number
 from source.logger import critical, step_greetings, info, err
+from source.targetcov.cov import detail_gene_report_ending, cov_json_ending
 from source.utils import OrderedDefaultDict
 
 
 def summary_reports(cnf, sample_names):
     step_greetings('Coverage statistics for all samples')
 
-    sample_sum_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetSeq.json')
+    sample_json_fpaths, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], cov_json_ending)
 
-    sum_report = summarize(sample_names, sample_sum_reports, _parse_targetseq_sample_report)
+    sum_report = summarize(sample_names, sample_json_fpaths, _parse_targetseq_sample_report)
 
-    sum_report_fpaths = write_summary_reports(
+    final_summary_report_fpaths = write_summary_reports(
         cnf['output_dir'], cnf['work_dir'], sum_report, 'targetSeq', 'Target coverage statistics')
 
-    return sample_sum_reports, sum_report_fpaths
+    return sample_json_fpaths, final_summary_report_fpaths
 
 
-def cnv_reports(cnf, sample_names, sample_sum_reports):
+def cnv_reports(cnf, sample_names, sample_json_reports):
     step_greetings('Coverage statistics for each gene for all samples')
 
     info('Collecting sample reports...')
-    sample_gene_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], '.targetseq.details.gene.txt')
+    sample_gene_reports, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
+        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], detail_gene_report_ending)
 
     if not sample_gene_reports:
         err('No gene reports, cannot call copy numbers.')
         return None
 
     info('Calculating normalized coverages for CNV...')
-    cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_sum_reports)
+    cnv_rows = _summarize_copy_number(sample_names, sample_gene_reports, sample_json_reports)
 
     cnv_report_fpath = write_tsv_rows(cnv_rows, cnf['output_dir'], 'Seq2C')
 
@@ -40,22 +41,21 @@ def cnv_reports(cnf, sample_names, sample_sum_reports):
 
 
 def _parse_targetseq_sample_report(json_fpath):
-    with open(json_fpath) as f:
-        return Record.load_records(f)
+    return Record.load_records(json_fpath)
 
 
-def _summarize_copy_number(sample_names, report_details_fpaths, report_summary_fpaths):
+def _summarize_copy_number(sample_names, report_details_fpaths, sample_json_fpaths):
     gene_summary_lines = []
     cov_by_sample = dict()
 
-    for sample_name, report_details_fpath, report_summary_fpath in \
-            zip(sample_names, report_details_fpaths, report_summary_fpaths):
+    for sample_name, report_details_fpath, report_json_fpath in \
+            zip(sample_names, report_details_fpaths, sample_json_fpaths):
 
         gene_summary_lines += _get_lines_by_region_type(report_details_fpath, 'Gene-Amplicon')
 
-        report_lines = OrderedDict(parse_tsv(report_summary_fpath))
+        records = Record.load_records(report_json_fpath)
 
-        cov_by_sample[sample_name] = int(report_lines.get('Mapped reads').replace(',', ''))
+        cov_by_sample[sample_name] = int(next(rec.value for rec in records if rec.metric.name == 'Mapped reads'))
 
     return run_copy_number(cov_by_sample, gene_summary_lines)
 

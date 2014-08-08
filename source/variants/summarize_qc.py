@@ -1,10 +1,10 @@
 from collections import OrderedDict
 import json
 from source.logger import info
-from source.reporting import summarize, write_summary_reports, get_sample_report_fpaths_for_bcbio_final_dir, Metric, \
+from source.reporting import summarize, write_summary_reports, get_per_sample_fpaths_for_bcbio_final_dir, Metric, \
     Record, parse_value
 from source.utils import OrderedDefaultDict
-from source.variants.qc_gatk import gatk_metrics
+from source.variants.qc_gatk import gatk_metrics, varqc_json_ending
 
 
 class VariantCaller:
@@ -23,9 +23,9 @@ def make_summary_reports(cnf, sample_names):
     callers = [VariantCaller(suf) for suf in vcf_sufs]
 
     for caller in callers:
-        fpaths, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
+        fpaths, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
             cnf['bcbio_final_dir'], sample_names, varqc_dir,
-            '-' + caller.suf + '.varQC.json')
+            '-' + caller.suf + varqc_json_ending)
         if fpaths:
             caller.single_qc_rep_fpaths = fpaths
 
@@ -81,6 +81,5 @@ def _make_for_multiple_variant_callers(callers, cnf, sample_names):
 
 
 def _parse_qc_sample_report(json_fpath):
-    with open(json_fpath) as f:
-        return Record.load_records(f)
+    return Record.load_records(json_fpath)
 

@@ -22,7 +22,7 @@ from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty, \
     igvtools_index
-from source.reporting import read_sample_names, get_sample_report_fpaths_for_bcbio_final_dir
+from source.reporting import read_sample_names, get_per_sample_fpaths_for_bcbio_final_dir
 from source.variants.summarize_qc import make_summary_reports
 from source.config import Defaults, Config
 from source.main import check_keys, check_inputs, set_up_dirs
@@ -259,7 +259,7 @@ def filter_all(cnf, sample_names):
         info('Running for ' + caller.name)
         info('*' * 70)
 
-        anno_vcf_fpaths, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
+        anno_vcf_fpaths, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
             cnf['bcbio_final_dir'], sample_names, varannotate_dir,
             '-' + caller.suf + '.anno.vcf')
 

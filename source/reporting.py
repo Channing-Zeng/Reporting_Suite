@@ -28,17 +28,18 @@ class Record(object):
                   indent=4)
 
     @staticmethod
-    def load_records(f):
-        records = []
-        objects = json.load(f)
-        for obj in objects:
-            rec = Record()
-            rec.__dict__ = obj
-            m = Metric()
-            m.__dict__ = rec.metric
-            rec.metric = m
-            records.append(rec)
-        return records
+    def load_records(fpath):
+        with open(fpath) as f:
+            records = []
+            objects = json.load(f)
+            for obj in objects:
+                rec = Record()
+                rec.__dict__ = obj
+                m = Metric()
+                m.__dict__ = rec.metric
+                rec.metric = m
+                records.append(rec)
+            return records
 
     def format(self):
         return self.metric.format(self.value)
@@ -108,7 +109,7 @@ def read_sample_names(sample_fpath):
     return sample_names
 
 
-def get_sample_report_fpaths_for_bcbio_final_dir(
+def get_per_sample_fpaths_for_bcbio_final_dir(
         bcbio_final_dir, sample_names, base_dir, ending, raw_ending=False):
 
     single_report_fpaths = []
@@ -139,7 +140,7 @@ def summarize(sample_names, report_fpaths, parse_report_fn):
     """ Returns list of SampleReport objects:
         [SampleReport(name=, fpath=, records=[Record,...]),...]
     """
-    return [SampleReport(name, fpath, parse_report_fn(fpath).values())
+    return [SampleReport(name, fpath, parse_report_fn(fpath))
             for name, fpath in zip(sample_names, report_fpaths)]
 
 

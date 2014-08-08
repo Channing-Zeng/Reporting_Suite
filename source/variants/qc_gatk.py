@@ -8,8 +8,8 @@ from source.tools_from_cnf import get_gatk_cmdline
 from source.utils import OrderedDefaultDict
 
 
+varqc_json_ending = '.varQC.json'
 final_report_ending = '.varQC.txt'
-json_ending = '.varQC.json'
 
 
 gatk_metrics = Metric.to_dict([
@@ -41,7 +41,6 @@ def _dict_to_objects(report_dict, cnf_databases, cnf_novelty, main_db):
 
             sum_for_all_novelties = 0.0
             for cur_database in cnf_databases:
-                print m_name, cur_database, cur_novelty
                 value = report_dict[m_name][cur_database][cur_novelty]
                 try:
                     value = int(value)
@@ -86,7 +85,7 @@ def gatk_qc(cnf, vcf_fpath):
     report_dict = _parse_gatk_report(report_fpath, cnf_databases.keys(), cnf_novelty)
     records = _dict_to_objects(report_dict, cnf_databases.keys(), cnf_novelty, cnf.quality_control.db_for_summary)
 
-    save_json(records, join(cnf.output_dir, cnf.name + json_ending))
+    save_json(records, join(cnf.output_dir, cnf.name + varqc_json_ending))
 
     final_report_fpath = join(cnf.output_dir, cnf.name + final_report_ending)
     _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)

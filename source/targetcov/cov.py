@@ -13,6 +13,10 @@ from source.utils import format_integer, format_decimal, get_chr_len_fpath
 from source.file_utils import file_transaction
 
 
+detail_gene_report_ending = '.targetSeq.details.gene.txt'
+cov_json_ending = '.targetSeq.json'
+
+
 def run_target_cov(cnf, bam, amplicons_bed):
     summary_report_fpath = None
     gene_report_fpath = None
@@ -32,7 +36,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
 
-        save_json(records, join(cnf.output_dir, cnf.name + '.targetSeq.json'))
+        save_json(records, join(cnf.output_dir, cnf.name + cov_json_ending))
         summary_report_fpath = write_txt_report(
             cnf.output_dir, cnf.work_dir, [SampleReport(cnf.name, '', records)],
             cnf.name + '.targetSeq')
@@ -64,7 +68,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
-            gene_report_fpath = join(cnf['output_dir'], cnf['name'] + '.targetseq.details.gene.txt')
+            gene_report_fpath = join(cnf['output_dir'], cnf['name'] + detail_gene_report_ending)
             info('Region cov report...')
             _run_region_cov_report(cnf, gene_report_fpath, cnf['name'], cnf['coverage_reports']['depth_thresholds'],
                                    amplicons, exons)

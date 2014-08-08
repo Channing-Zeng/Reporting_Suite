@@ -83,7 +83,7 @@
   GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)';
 
   reporting.buildTotalReport = function(report, columnOrder, date) {
-    var cell_contents, hue, legend, lightness, metric_html, num, pos, rec, recNum, result, sampleName, sampleReport, step, table, value, _i, _j, _k, _l, _len, _ref, _ref1;
+    var cell_contents, hue, legend, lightness, metric_html, num, pos, rec, recNum, result, sampleFpath, sampleName, sampleReport, step, table, value, _i, _j, _k, _l, _len, _ref, _ref1;
     $('#report_date').html('<p>' + date + '</p>');
     table = "<table cellspacing=\"0\" class=\"report_table draggable\" id=\"main_report_table\">";
     table += "<tr class=\"top_row_tr\"> <td id=\"top_left_td\" class=\"left_column_td\"> <span>Sample</span> </td>";
@@ -127,7 +127,7 @@
             num = parseFloat(result[1]);
             cell_contents = toPrettyString(num, metric.unit) + result[2];
           } else {
-            cell_contents = value
+            cell_contents = value;
           }
           if (num != null) {
             table += ' number="' + value + '">';
