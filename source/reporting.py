@@ -95,6 +95,7 @@ class SampleReport():
         self.name = name
         self.sample_name = name
         self.fpath = fpath
+        self.link = fpath
         self.records = records
 
 

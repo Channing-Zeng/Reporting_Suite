@@ -105,11 +105,11 @@
     for (_j = 0, _len = report.length; _j < _len; _j++) {
       sampleReport = report[_j];
       sampleName = sampleReport.name;
-      sampleFpath = sampleReport.fpath;
+      sampleLink = sampleReport.link;
       if (sampleReport.name.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
-      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleFpath + "\">" + sampleName + "</a> </td>";
+      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";
       for (recNum = _k = 0, _ref1 = sampleReport.records.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; recNum = 0 <= _ref1 ? ++_k : --_k) {
         pos = columnOrder[recNum];
         rec = sampleReport.records[pos];
