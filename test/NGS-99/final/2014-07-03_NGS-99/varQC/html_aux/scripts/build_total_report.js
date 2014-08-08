@@ -83,7 +83,7 @@
   GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)';
 
   reporting.buildTotalReport = function(report, columnOrder, date) {
-    var cell_contents, hue, legend, lightness, metric_html, num, pos, rec, recNum, result, sampleLink, sampleName, sampleReport, step, table, value, _i, _j, _k, _l, _len, _ref, _ref1;
+    var cell_contents, hue, legend, lightness, metric_html, num, pos, rec, recNum, result, sampleFpath, sampleName, sampleReport, step, table, value, _i, _j, _k, _l, _len, _ref, _ref1;
     $('#report_date').html('<p>' + date + '</p>');
     table = "<table cellspacing=\"0\" class=\"report_table draggable\" id=\"main_report_table\">";
     table += "<tr class=\"top_row_tr\"> <td id=\"top_left_td\" class=\"left_column_td\"> <span>Sample</span> </td>";
@@ -105,11 +105,11 @@
     for (_j = 0, _len = report.length; _j < _len; _j++) {
       sampleReport = report[_j];
       sampleName = sampleReport.name;
-      sampleLink = sampleReport.link;
+      sampleFpath = sampleReport.fpath;
       if (sampleReport.name.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
-      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";
+      table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleFpath + "\">" + sampleName + "</a> </td>";
       for (recNum = _k = 0, _ref1 = sampleReport.records.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; recNum = 0 <= _ref1 ? ++_k : --_k) {
         pos = columnOrder[recNum];
         rec = sampleReport.records[pos];
