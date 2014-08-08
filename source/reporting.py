@@ -31,12 +31,12 @@ class Record(object):
     def load_records(fpath):
         with open(fpath) as f:
             records = []
-            objects = json.load(f)
+            objects = json.load(f, object_pairs_hook=OrderedDict)
             for obj in objects:
                 rec = Record()
-                rec.__dict__ = obj
+                rec.__dict__ = dict(obj.items())
                 m = Metric()
-                m.__dict__ = rec.metric
+                m.__dict__ = dict(rec.metric.items())
                 rec.metric = m
                 records.append(rec)
             return records

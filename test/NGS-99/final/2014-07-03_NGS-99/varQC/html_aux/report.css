@@ -3,9 +3,14 @@
 #report {    
     margin: 0 100px 50px 0;
     min-width: 532px;
-    float: left;
+    /*float: left;*/
 
     font-size: 1em;
+}
+
+.report_table {
+    /*background-color: black;*/
+    padding-right: 50px !important;
 }
 
 #report td {

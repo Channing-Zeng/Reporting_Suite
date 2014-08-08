@@ -2,15 +2,15 @@
     {
         "meta": {
             "all": {
-                "Average": 12.0, 
+                "average": 12.0, 
                 "dbsnp": 12
             }, 
             "known": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "novel": {
-                "Average": 11.0, 
+                "average": 11.0, 
                 "dbsnp": 11
             }
         }, 
@@ -30,15 +30,15 @@
     {
         "meta": {
             "all": {
-                "Average": 10.0, 
+                "average": 10.0, 
                 "dbsnp": 10
             }, 
             "known": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "novel": {
-                "Average": 9.0, 
+                "average": 9.0, 
                 "dbsnp": 9
             }
         }, 
@@ -58,15 +58,15 @@
     {
         "meta": {
             "all": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "known": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }, 
             "novel": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }
         }, 
@@ -86,15 +86,15 @@
     {
         "meta": {
             "all": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }, 
             "known": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }, 
             "novel": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }
         }, 
@@ -114,15 +114,15 @@
     {
         "meta": {
             "all": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "known": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "novel": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }
         }, 
@@ -142,15 +142,15 @@
     {
         "meta": {
             "all": {
-                "Average": 8.33, 
+                "average": 8.33, 
                 "dbsnp": 8.33
             }, 
             "known": {
-                "Average": 100.0, 
+                "average": 100.0, 
                 "dbsnp": 100.0
             }, 
             "novel": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0.0
             }
         }, 
@@ -170,15 +170,15 @@
     {
         "meta": {
             "all": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "known": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1
             }, 
             "novel": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0
             }
         }, 
@@ -198,15 +198,15 @@
     {
         "meta": {
             "all": {
-                "Average": 100.0, 
+                "average": 100.0, 
                 "dbsnp": 100.0
             }, 
             "known": {
-                "Average": 100.0, 
+                "average": 100.0, 
                 "dbsnp": 100.0
             }, 
             "novel": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0.0
             }
         }, 
@@ -226,15 +226,15 @@
     {
         "meta": {
             "all": {
-                "Average": 0.00032812, 
+                "average": 0.00032812, 
                 "dbsnp": 0.00032812
             }, 
             "known": {
-                "Average": 2.734e-05, 
+                "average": 2.734e-05, 
                 "dbsnp": 2.734e-05
             }, 
             "novel": {
-                "Average": 0.00030078, 
+                "average": 0.00030078, 
                 "dbsnp": 0.00030078
             }
         }, 
@@ -254,15 +254,15 @@
     {
         "meta": {
             "all": {
-                "Average": 3047.0, 
+                "average": 3047.0, 
                 "dbsnp": 3047.0
             }, 
             "known": {
-                "Average": 36572.0, 
+                "average": 36572.0, 
                 "dbsnp": 36572.0
             }, 
             "novel": {
-                "Average": 3324.0, 
+                "average": 3324.0, 
                 "dbsnp": 3324.0
             }
         }, 
@@ -282,15 +282,15 @@
     {
         "meta": {
             "all": {
-                "Average": 0.09, 
+                "average": 0.09, 
                 "dbsnp": 0.09
             }, 
             "known": {
-                "Average": 0.0, 
+                "average": 0.0, 
                 "dbsnp": 0.0
             }, 
             "novel": {
-                "Average": 0.1, 
+                "average": 0.1, 
                 "dbsnp": 0.1
             }
         }, 
@@ -310,15 +310,15 @@
     {
         "meta": {
             "all": {
-                "Average": 4.0, 
+                "average": 4.0, 
                 "dbsnp": 4.0
             }, 
             "known": {
-                "Average": 1.0, 
+                "average": 1.0, 
                 "dbsnp": 1.0
             }, 
             "novel": {
-                "Average": 3.5, 
+                "average": 3.5, 
                 "dbsnp": 3.5
             }
         }, 

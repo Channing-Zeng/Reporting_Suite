@@ -122,7 +122,7 @@ def _run_header_report(cnf, bed, bam, chr_len_fpath,
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
-        gatk_metrics[name] = Metric(name, short_name='1x', description=name, unit='%')
+        gatk_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
 
     records = []
 

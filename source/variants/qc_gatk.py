@@ -50,9 +50,9 @@ def _dict_to_objects(report_dict, cnf_databases, cnf_novelty, main_db):
                 sum_for_all_novelties += value
 
             average = sum_for_all_novelties / len(cnf_databases)
-            rec.meta[cur_novelty]['Average'] = average
+            rec.meta[cur_novelty]['average'] = average
 
-            rec.value = rec.meta['all'][main_db]
+        rec.value = rec.meta['all'][main_db]
 
     return records
 
@@ -140,7 +140,7 @@ def _make_final_report(records, report_fpath, cnf_databases, cnf_novelties):
     for rec in records:
         for novelty in cnf_novelties:
             row = [rec.metric.name, novelty]
-            for db in cnf_databases + ['Average']:
+            for db in cnf_databases + ['average']:
                 row.append(rec.metric.format(rec.meta[novelty][db]))
 
             rows.append(row)

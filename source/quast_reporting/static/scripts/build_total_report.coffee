@@ -19,21 +19,30 @@ metric =
     meta: ''
 
 
-get_meta_tag_contents = (meta) ->
+get_qc_meta_tag_contents = (rec) ->
+    metric = rec.metric
+    meta = rec.meta
+
     if meta? and (k for own k of meta).length isnt 0
         meta_table = '<table class=\'qc_meta_table\'>\n<tr><td></td>'
-        for novelty, values of meta
+        for novelty, values of meta when novelty isnt 'all'
             meta_table += "<td>#{novelty}</td>"
+#        for novelty, values of meta when novelty is 'all'
+#            meta_table += "<td>#{novelty}</td>"
         meta_table += '</tr>\n'
 
         for novelty, values of meta
-            dbs = (db for db, val of values)
+            dbs = (db for db, val of values when db isnt 'average')
+            dbs.push 'average'
             break
 
         for db in dbs
             meta_table += "<tr><td>#{db}</td>"
-            for novelty, values of meta
-                meta_table += "<td>#{values[db]}</td>"
+            for novelty, values of meta when novelty isnt 'all'
+                meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
+#            for novelty, values of meta when novelty is 'all'
+#                meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
+
             meta_table += '</tr>\n'
         meta_table += '</table>\n'
 
@@ -53,7 +62,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
     table = "<table cellspacing=\"0\" class=\"report_table draggable\" id=\"main_report_table\">"
     table += "<tr class=\"top_row_tr\">
                   <td id=\"top_left_td\" class=\"left_column_td\">
-                    <span>Sample</span>
+                      <span>Sample</span>
                   </td>"
 
     for recNum in [0...report[0].records.length]
@@ -111,7 +120,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                 if num?
                     table += ' number="' + value + '">'
 
-            table += "<a #{get_meta_tag_contents rec.meta}>#{cell_contents}</a></td>"
+            table += "<a #{get_qc_meta_tag_contents(rec)}>#{cell_contents}</a></td>"
         table += "</tr>"
     table += "</table>"
 
@@ -140,6 +149,16 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
     legend += "</span>"
 
 
+css_property_to_color = 'background-color'  # color
+
+
+get_color = (hue) ->
+#    lightness = Math.round (Math.pow hue - 75, 2) / 350 + 75
+#    lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
+    lightness = 85
+    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
+
+
 add_heatmap = ->
     $(".report_table td[number]").each ->
         metric = $(this).attr 'metric'
@@ -158,16 +177,13 @@ add_heatmap = ->
             minHue = GREEN_HUE
 
         if max == min
-            $(other_cells).css 'color', GREEN_HSL
+            $(other_cells).css css_property_to_color, get_color GREEN_HUE
+
         else
             k = (maxHue - minHue) / (max - min)
-            hue = 0
-            lightness = 0
             other_cells.each (i) ->
                 number = orther_numbers[i]
                 hue = Math.round minHue + (number - min) * k
-                lightness = Math.round (Math.pow(hue - 75, 2)) / 350 + 35
-                # $(this).css('color', 'hsl(' + hue + ', 80%, 35%)');
-                $(this).css('color', 'hsl(' + hue + ', 80%, ' + lightness + '%)')
+                $(this).css css_property_to_color, get_color hue
 
-                $('#report_legend').show('fast') if orther_numbers.length > 1
+                $('#report_legend').show 'fast' if orther_numbers.length > 1

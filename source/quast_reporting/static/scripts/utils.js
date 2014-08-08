@@ -82,9 +82,9 @@ function toPrettyString(num, unit) {
                 str = num.toFixed(0);
             }
         } else {
-            str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g,'$1<span class="hs"></span>');
+            str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g,'$1<span class=\'hs\'></span>');
         }
-        str += (unit ? '<span class="rhs">&nbsp;</span>' + unit : '');
+        str += (unit ? '<span class=\'rhs\'>&nbsp;</span>' + unit : '');
         return str;
     } else {
         return num;
