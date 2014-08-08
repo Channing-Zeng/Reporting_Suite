@@ -1,0 +1,174 @@
+Thu Aug  7 16:35:12 EDT 2014
+
+/opt/az/local/psf/python/64_2.7.3/python  /gpfs/group/ngs/src/ngs_reporting/varqc.py  --sys-cnf '/gpfs/group/ngs/src/ngs_reporting/system_info_Waltham.yaml' --run-cnf '/gpfs/ngs/scratch/vlad/NGS-99/config/run_info.yaml'  -t 4 -w  --vcf '/gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf' -o '/gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC' -s 'Tissue-Sensitive-2-mutect' --work-dir '/gpfs/ngs/scratch/vlad/NGS-99/final/../work/post_processing/varQC_Tissue-Sensitive-2-mutect'
+
+
+sh: R: command not found
+2014-08-07 16:35:13  Using /gpfs/group/ngs/src/ngs_reporting/system_info_Waltham.yaml as a system configuration file.
+2014-08-07 16:35:13  Using /gpfs/ngs/scratch/vlad/NGS-99/config/run_info.yaml as a run configuration file.
+2014-08-07 16:35:13  
+2014-08-07 16:35:13  Loaded system config /gpfs/group/ngs/src/ngs_reporting/system_info_Waltham.yaml
+2014-08-07 16:35:13  Loaded run config /gpfs/ngs/scratch/vlad/NGS-99/config/run_info.yaml
+2014-08-07 16:35:13  
+2014-08-07 16:35:13  Saving into /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC
+2014-08-07 16:35:13  /gpfs/group/ngs/src/ngs_reporting/varqc.py --sys-cnf /gpfs/group/ngs/src/ngs_reporting/system_info_Waltham.yaml --run-cnf /gpfs/ngs/scratch/vlad/NGS-99/config/run_info.yaml -t 4 -w --vcf /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf -o /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC -s Tissue-Sensitive-2-mutect --work-dir /gpfs/ngs/scratch/vlad/NGS-99/final/../work/post_processing/varQC_Tissue-Sensitive-2-mutect
+2014-08-07 16:35:13  
+2014-08-07 16:35:13  Loaded resources for hg19
+2014-08-07 16:35:13  Using variants /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf
+2014-08-07 16:35:13  
+2014-08-07 16:35:13  ----------------------------------------------------------------------
+2014-08-07 16:35:13  Quality control reports
+2014-08-07 16:35:13  ----------------------------------------------------------------------
+2014-08-07 16:35:13  /usr/bin/java -Xms750m -Xmx3g -Djava.io.tmpdir=/scratch/tmp -jar /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar -dt NONE -nt 4 -R /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa -T VariantEval --eval:tmp /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf -o /gpfs/ngs/scratch/vlad/NGS-99/work/post_processing/varQC_Tissue-Sensitive-2-mutect/Tissue-Sensitive-2-mutect_gatk.tx.report -D /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf -comp:1000genomes /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf -comp:cosmic /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+2014-08-07 16:35:16     INFO  16:35:16,011 HelpFormatter - -----------------------------------------------------------------------------------------
+2014-08-07 16:35:16     INFO  16:35:16,013 HelpFormatter - The Genome Analysis Toolkit (GATK) v2014.2-3.1.7-7-gb0ce0a5, Compiled 2014/03/18 12:48:12
+2014-08-07 16:35:16     INFO  16:35:16,013 HelpFormatter - Copyright (c) 2010 The Broad Institute
+2014-08-07 16:35:16     INFO  16:35:16,013 HelpFormatter - For support and documentation go to http://gatkdocs.appistry.com/
+2014-08-07 16:35:16     INFO  16:35:16,017 HelpFormatter - Program Args: -dt NONE -nt 4 -R /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa -T VariantEval --eval:tmp /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf -o /gpfs/ngs/scratch/vlad/NGS-99/work/post_processing/varQC_Tissue-Sensitive-2-mutect/Tissue-Sensitive-2-mutect_gatk.tx.report -D /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf -comp:1000genomes /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf -comp:cosmic /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+2014-08-07 16:35:16     INFO  16:35:16,024 HelpFormatter - Executing as klpf990@bn0103 on Linux 2.6.32-431.el6.x86_64 amd64; OpenJDK 64-Bit Server VM 1.7.0_45-mockbuild_2013_10_22_03_37-b00.
+2014-08-07 16:35:16     INFO  16:35:16,024 HelpFormatter - Date/Time: 2014/08/07 16:35:16
+2014-08-07 16:35:16     INFO  16:35:16,025 HelpFormatter - -----------------------------------------------------------------------------------------
+2014-08-07 16:35:16     INFO  16:35:16,025 HelpFormatter - -----------------------------------------------------------------------------------------
+2014-08-07 16:35:16     INFO  16:35:16,147 GenomeAnalysisEngine - Strictness is SILENT
+2014-08-07 16:35:16     INFO  16:35:16,244 GenomeAnalysisEngine - Downsampling Settings: No downsampling
+2014-08-07 16:35:17     INFO  16:35:17,610 RMDTrackBuilder - Writing Tribble index to disk for file /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/var/Tissue-Sensitive-2-mutect.vcf.idx
+2014-08-07 16:35:25     INFO  16:35:25,447 MicroScheduler - Running the GATK in parallel mode with 4 total threads, 1 CPU thread(s) for each of 4 data thread(s), of 12 processors available on this machine
+2014-08-07 16:35:25     INFO  16:35:25,502 GenomeAnalysisEngine - Preparing for traversal
+2014-08-07 16:35:25     INFO  16:35:25,521 GenomeAnalysisEngine - Done preparing for traversal
+2014-08-07 16:35:25     INFO  16:35:25,522 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING]
+2014-08-07 16:35:25     INFO  16:35:25,522 ProgressMeter -        Location processed.sites  runtime per.1M.sites completed total.runtime remaining
+2014-08-07 16:35:25     INFO  16:35:25,543 VariantEval - Creating 9 combinatorial stratification states
+2014-08-07 16:35:55     INFO  16:35:55,526 ProgressMeter -  chr1:187952127        3.81e+06   30.0 s        7.0 s      6.0%         8.3 m     7.8 m
+2014-08-07 16:36:25     INFO  16:36:25,527 ProgressMeter -  chr2:207605527        1.00e+07   60.0 s        5.0 s     14.6%         6.9 m     5.9 m
+2014-08-07 16:36:55     INFO  16:36:55,528 ProgressMeter -   chr4:70997965        1.74e+07   90.0 s        5.0 s     24.3%         6.2 m     4.7 m
+2014-08-07 16:37:25     INFO  16:37:25,529 ProgressMeter -  chr5:178353721        2.43e+07  120.0 s        4.0 s     33.8%         5.9 m     3.9 m
+2014-08-07 16:37:55     INFO  16:37:55,531 ProgressMeter -   chr7:79070539        3.07e+07    2.5 m        4.0 s     41.8%         6.0 m     3.5 m
+2014-08-07 16:38:25     INFO  16:38:25,532 ProgressMeter -   chr9:19868674        3.67e+07    3.0 m        4.0 s     49.7%         6.0 m     3.0 m
+2014-08-07 16:38:55     INFO  16:38:55,533 ProgressMeter -   chr11:5862442        4.28e+07    3.5 m        4.0 s     58.1%         6.0 m     2.5 m
+2014-08-07 16:39:25     INFO  16:39:25,534 ProgressMeter - chr12:104128788        4.83e+07    4.0 m        4.0 s     65.5%         6.1 m     2.1 m
+2014-08-07 16:39:55     INFO  16:39:55,535 ProgressMeter -  chr15:51391611        5.45e+07    4.5 m        4.0 s     75.2%         6.0 m    89.0 s
+2014-08-07 16:40:25     INFO  16:40:25,536 ProgressMeter -  chr18:30201868        6.07e+07    5.0 m        4.0 s     83.2%         6.0 m    60.0 s
+2014-08-07 16:40:55     INFO  16:40:55,537 ProgressMeter -  chr22:48089521        6.69e+07    5.5 m        4.0 s     91.7%         6.0 m    29.0 s
+2014-08-07 16:41:13     INFO  16:41:13,148 VariantEval - Finalizing variant report
+2014-08-07 16:41:13     INFO  16:41:13,455 ProgressMeter -            done        7.02e+07    5.8 m        4.0 s     98.7%         5.9 m     4.0 s
+2014-08-07 16:41:13     INFO  16:41:13,455 ProgressMeter - Total runtime 347.93 secs, 5.80 min, 0.10 hours
+2014-08-07 16:41:13  Saved to /gpfs/ngs/scratch/vlad/NGS-99/work/post_processing/varQC_Tissue-Sensitive-2-mutect/Tissue-Sensitive-2-mutect_gatk.report
+nSNPs 1000genomes all
+nSNPs dbsnp all
+nSNPs cosmic all
+nSNPs 1000genomes known
+nSNPs dbsnp known
+nSNPs cosmic known
+nSNPs 1000genomes novel
+nSNPs dbsnp novel
+nSNPs cosmic novel
+nDeletions 1000genomes all
+nDeletions dbsnp all
+nDeletions cosmic all
+nDeletions 1000genomes known
+nDeletions dbsnp known
+nDeletions cosmic known
+nDeletions 1000genomes novel
+nDeletions dbsnp novel
+nDeletions cosmic novel
+compRate 1000genomes all
+compRate dbsnp all
+compRate cosmic all
+compRate 1000genomes known
+compRate dbsnp known
+compRate cosmic known
+compRate 1000genomes novel
+compRate dbsnp novel
+compRate cosmic novel
+basesPerVariant 1000genomes all
+basesPerVariant dbsnp all
+basesPerVariant cosmic all
+basesPerVariant 1000genomes known
+basesPerVariant dbsnp known
+basesPerVariant cosmic known
+basesPerVariant 1000genomes novel
+basesPerVariant dbsnp novel
+basesPerVariant cosmic novel
+nEvalVariants 1000genomes all
+nEvalVariants dbsnp all
+nEvalVariants cosmic all
+nEvalVariants 1000genomes known
+nEvalVariants dbsnp known
+nEvalVariants cosmic known
+nEvalVariants 1000genomes novel
+nEvalVariants dbsnp novel
+nEvalVariants cosmic novel
+nConcordant 1000genomes all
+nConcordant dbsnp all
+nConcordant cosmic all
+nConcordant 1000genomes known
+nConcordant dbsnp known
+nConcordant cosmic known
+nConcordant 1000genomes novel
+nConcordant dbsnp novel
+nConcordant cosmic novel
+hetHomRatio 1000genomes all
+hetHomRatio dbsnp all
+hetHomRatio cosmic all
+hetHomRatio 1000genomes known
+hetHomRatio dbsnp known
+hetHomRatio cosmic known
+hetHomRatio 1000genomes novel
+hetHomRatio dbsnp novel
+hetHomRatio cosmic novel
+concordantRate 1000genomes all
+concordantRate dbsnp all
+concordantRate cosmic all
+concordantRate 1000genomes known
+concordantRate dbsnp known
+concordantRate cosmic known
+concordantRate 1000genomes novel
+concordantRate dbsnp novel
+concordantRate cosmic novel
+nVariantsAtComp 1000genomes all
+nVariantsAtComp dbsnp all
+nVariantsAtComp cosmic all
+nVariantsAtComp 1000genomes known
+nVariantsAtComp dbsnp known
+nVariantsAtComp cosmic known
+nVariantsAtComp 1000genomes novel
+nVariantsAtComp dbsnp novel
+nVariantsAtComp cosmic novel
+variantRate 1000genomes all
+variantRate dbsnp all
+variantRate cosmic all
+variantRate 1000genomes known
+variantRate dbsnp known
+variantRate cosmic known
+variantRate 1000genomes novel
+variantRate dbsnp novel
+variantRate cosmic novel
+tiTvRatio 1000genomes all
+tiTvRatio dbsnp all
+tiTvRatio cosmic all
+tiTvRatio 1000genomes known
+tiTvRatio dbsnp known
+tiTvRatio cosmic known
+tiTvRatio 1000genomes novel
+tiTvRatio dbsnp novel
+tiTvRatio cosmic novel
+nInsertions 1000genomes all
+nInsertions dbsnp all
+nInsertions cosmic all
+nInsertions 1000genomes known
+nInsertions dbsnp known
+nInsertions cosmic known
+nInsertions 1000genomes novel
+nInsertions dbsnp novel
+nInsertions cosmic novel
+2014-08-07 16:41:13  
+2014-08-07 16:41:13  ----------------------------------------------------------------------
+2014-08-07 16:41:13  Quality control plots
+2014-08-07 16:41:13  ----------------------------------------------------------------------
+2014-08-07 16:41:20  Chromosomes without variants: chr1_gl000191_random, chr1_gl000192_random, chr4_ctg9_hap1, chr4_gl000193_random, chr4_gl000194_random, chr6_apd_hap1, chr6_cox_hap2, chr6_dbb_hap3, chr6_mann_hap4, chr6_mcf_hap5, chr6_qbl_hap6, chr6_ssto_hap7, chr7_gl000195_random, chr8_gl000196_random, chr8_gl000197_random, chr9_gl000198_random, chr9_gl000199_random, chr9_gl000200_random, chr9_gl000201_random, chr11_gl000202_random, chr17_ctg5_hap1, chr17_gl000203_random, chr17_gl000204_random, chr17_gl000205_random, chr17_gl000206_random, chr18_gl000207_random, chr19_gl000208_random, chr19_gl000209_random, chr21_gl000210_random, chrM, chrUn_gl000211, chrUn_gl000212, chrUn_gl000213, chrUn_gl000214, chrUn_gl000215, chrUn_gl000216, chrUn_gl000217, chrUn_gl000218, chrUn_gl000219, chrUn_gl000220, chrUn_gl000221, chrUn_gl000222, chrUn_gl000223, chrUn_gl000224, chrUn_gl000225, chrUn_gl000226, chrUn_gl000227, chrUn_gl000228, chrUn_gl000229, chrUn_gl000230, chrUn_gl000231, chrUn_gl000232, chrUn_gl000233, chrUn_gl000234, chrUn_gl000235, chrUn_gl000236, chrUn_gl000237, chrUn_gl000238, chrUn_gl000239, chrUn_gl000240, chrUn_gl000241, chrUn_gl000242, chrUn_gl000243, chrUn_gl000244, chrUn_gl000245, chrUn_gl000246, chrUn_gl000247, chrUn_gl000248, chrUn_gl000249
+2014-08-07 16:41:25  
+2014-08-07 16:41:25  **********************************************************************
+2014-08-07 16:41:25  Saved QC report to /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.varQC.txt
+2014-08-07 16:41:25  Saved QC plots are in: /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.variant_distribution.png, /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.substitutions.png, /gpfs/ngs/scratch/vlad/NGS-99/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.indels.png
+
+Thu Aug  7 16:41:25 EDT 2014
