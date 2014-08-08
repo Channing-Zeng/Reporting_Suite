@@ -1,4 +1,4 @@
-from source.reporting import get_sample_report_fpaths_for_bcbio_final_dir, \
+from source.reporting import get_per_sample_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, Metric, Record
 from source.logger import step_greetings, info
 from source.utils import OrderedDefaultDict
@@ -6,15 +6,15 @@ from source.utils import OrderedDefaultDict
 def summary_reports(cnf, sample_names):
     step_greetings('ngsCAT statistics for all samples')
 
-    sample_sum_reports, sample_names = get_sample_report_fpaths_for_bcbio_final_dir(
+    sample_html_reports, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
         cnf['bcbio_final_dir'], sample_names, cnf['base_name'], 'captureQC.html', raw_ending=True)
 
-    sum_report = summarize(sample_names, sample_sum_reports, _parse_ngscat_sample_report)
+    sum_report = summarize(sample_names, sample_html_reports, _parse_ngscat_sample_report)
 
-    sum_report_fpaths = write_summary_reports(
+    final_summary_report_fpaths = write_summary_reports(
         cnf['output_dir'], cnf['work_dir'], sum_report, 'ngscat', 'ngsCAT statistics')
 
-    return sum_report_fpaths
+    return final_summary_report_fpaths
 
 
 def __to_dict(metrics):
@@ -35,14 +35,14 @@ ALLOWED_UNITS = ['%']
 
 
 def _parse_ngscat_sample_report(report_fpath):
-    records = OrderedDefaultDict(Record)
+    records = []
 
     def __parse_cell(metric_name, line):
-        records[metric_name].metric = METRICS[metric_name]
+        record = Record(METRICS[metric_name])
 
         crop_left = line.split('>')
         if len(crop_left) < 2:
-            records[metric_name].value = None
+            record.value = None
             return
         crop_right = crop_left[1].split('<')
         val = crop_right[0].strip()
@@ -61,7 +61,7 @@ def _parse_ngscat_sample_report(report_fpath):
         val_unit = ''.join(unit_chars)
 
         if val_unit and val_unit in ALLOWED_UNITS:
-            records[metric_name].metric.unit = val_unit
+            record.metric.unit = val_unit
         try:
             val = int(val_num)
         except ValueError:
@@ -69,7 +69,8 @@ def _parse_ngscat_sample_report(report_fpath):
                 val = float(val_num)
             except ValueError: # it is a string
                 val = val_num + val_unit
-        records[metric_name].value = val
+        record.value = val
+        return record
 
     with open(report_fpath) as f:
         parsing_summary_table = False
@@ -100,7 +101,7 @@ def _parse_ngscat_sample_report(report_fpath):
                     cell_id += 1
                     if cell_id in column_id_to_metric_name.keys():
                         metric_name = column_id_to_metric_name[cell_id]
-                        __parse_cell(metric_name, subline)
+                        records.append(__parse_cell(metric_name, subline))
 
     info("report_fpath is " + report_fpath)
     return records
