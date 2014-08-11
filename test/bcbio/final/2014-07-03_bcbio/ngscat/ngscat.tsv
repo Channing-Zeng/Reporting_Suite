@@ -1,0 +1,9 @@
+Sample	sample2	sample1
+Number reads	80,244	80,244
+% target bases with coverage >= 1x	51.50%	51.50%
+Coverage saturation	0.0000	0.0000
+% reads on target	47.70%	47.70%
+Duplicated reads on/off target	ON:47.1%/OFF:51.2%	ON:47.1%/OFF:51.2%
+mean coverage	515.60	515.60
+Coverage per position	1	1
+Standard deviation of coverage	0.83	0.83

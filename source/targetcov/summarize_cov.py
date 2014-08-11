@@ -1,10 +1,8 @@
-from collections import OrderedDict
 from source.reporting import parse_tsv, get_per_sample_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, write_tsv_rows, Metric, Record
 from source.targetcov.copy_number import run_copy_number
 from source.logger import critical, step_greetings, info, err
 from source.targetcov.cov import detail_gene_report_ending, cov_json_ending
-from source.utils import OrderedDefaultDict
 
 
 def summary_reports(cnf, sample_names):
@@ -44,6 +42,22 @@ def _parse_targetseq_sample_report(json_fpath):
     return Record.load_records(json_fpath)
 
 
+# def save_results_separate_for_samples(results):
+#     header = results[0]
+#
+#     results_per_sample = OrderedDict()
+#
+#     for fields in results[1:]:
+#         sample_name = fields[0]
+#         if sample_name not in results_per_sample:
+#             results_per_sample[sample_name] = [header]
+#
+#         results_per_sample[sample_name].append(fields)
+#
+#     for sample_name, fields in results_per_sample.items():
+#
+
+
 def _summarize_copy_number(sample_names, report_details_fpaths, sample_json_fpaths):
     gene_summary_lines = []
     cov_by_sample = dict()
@@ -57,7 +71,11 @@ def _summarize_copy_number(sample_names, report_details_fpaths, sample_json_fpat
 
         cov_by_sample[sample_name] = int(next(rec.value for rec in records if rec.metric.name == 'Mapped reads'))
 
-    return run_copy_number(cov_by_sample, gene_summary_lines)
+    results = run_copy_number(cov_by_sample, gene_summary_lines)
+
+    # save_results_separate_for_samples(results)
+
+    return results
 
 
 def _get_lines_by_region_type(report_fpath, region_type):

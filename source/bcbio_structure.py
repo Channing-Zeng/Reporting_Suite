@@ -1,0 +1,233 @@
+from dircache import listdir
+from genericpath import isdir
+import os
+import sys
+from collections import defaultdict
+from os.path import join, abspath, exists, pardir, splitext, basename, islink
+from source.calling_process import call
+from source.config import load_yaml_config
+from source.file_utils import verify_dir, verify_file, adjust_path
+from source.ngscat.bed_file import verify_bed, verify_bam
+from source.tools_from_cnf import get_tool_cmdline
+
+from source.file_utils import file_exists, safe_mkdir
+from source.logger import info, err, critical
+from source.variants.qc_gatk import varqc_json_ending
+
+
+def _normalize(name):
+    return name.lower().replace('_', '').replace('-', '')
+
+
+def load_bcbio_cnf(cnf):
+    bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
+    yaml_files = [join(bcbio_config_dirpath, fname)
+                  for fname in listdir(bcbio_config_dirpath)
+                  if fname.endswith('.yaml')]
+
+    if len(yaml_files) == 0:
+        critical('No YAML file in the config directory.')
+
+    config_fpaths = [fpath for fpath in yaml_files
+                  if not any(n in fpath for n in ['run_info', 'system_info'])]
+    if not config_fpaths:
+        critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
+
+    yaml_fpath = config_fpaths[0]
+    if len(config_fpaths) > 1:
+        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in cnf.bcbio_final_dir]
+        if len(some_yaml_files) == 0:
+            critical('More than one YAML file in the config directory ' + ' '.join(config_fpaths) +
+                     ', and no YAML file named after the project.')
+        yaml_fpath = some_yaml_files[0]
+
+    yaml_file = abspath(yaml_fpath)
+
+    info('Using bcbio YAML config ' + yaml_file)
+
+    cnf.bcbio_cnf = load_yaml_config(yaml_file)
+
+
+class Sample:
+    def __init__(self, name, bam=None, bed=None, vcf=None):
+        self.name = name
+        self.bam = bam
+        self.bed = bed
+        self.vcf_by_caller = dict()  # VariantCaller -> vcf_fpath
+        self.phenotype = None
+
+
+class VariantCaller:
+    def __init__(self, bcbio_structure, name):
+        self.bcbio_structure = bcbio_structure
+        self.name = self.suf = name
+        self.samples = []
+        self.summary_qc_report = None
+        self.summary_qc_rep_fpaths = []
+
+    def get_qc_reports_by_samples(self):
+        report_by_sample = dict()
+
+        for s in self.samples:
+            single_report_fpath = join(
+                self.bcbio_structure.final_dirpath,
+                s.name,
+                BCBioStructure.varqc_dirname,
+                s.name + '-' + self.suf + varqc_json_ending)
+            report_by_sample[s.name] = single_report_fpath
+
+            if not verify_file(single_report_fpath):
+                critical(single_report_fpath + ' does not exist.')
+
+        return report_by_sample
+
+class Batch:
+    def __init__(self, name=None):
+        self.name = name
+        self.normal = None
+        self.tumor = []
+
+
+class BCBioStructure:
+    varfilter_dirname = 'varFilter'
+    varannotate_dirname = 'varAnnotate'
+    targetseq_dirname = 'targetSeq'
+    varqc_dirname = join('qc', 'varQC')
+    varqc_after_dirname = join('qc', 'varQC_postVarFilter')
+    ngscat_dirname = join('qc', 'ngscat')
+    qualimap_dirname = join('qc', 'qualimap')
+
+    def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf):
+        self.final_dirpath = bcbio_final_dirpath
+        self.bcbio_cnf = bcbio_cnf
+        self.cnf = cnf
+        self.batches = defaultdict(Batch)
+        self.samples = []
+        self.variant_callers = dict()
+
+        self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
+        if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
+        safe_mkdir(self.date_dirpath)
+
+        self.log_dirpath = join(self.date_dirpath, 'log')
+        safe_mkdir(self.log_dirpath)
+
+        self.work_dir = cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
+        if not isdir(self.work_dir):
+            safe_mkdir(self.work_dir)
+        info(' '.join(sys.argv))
+
+        self.samples = [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]
+        if any(s is None for s in self.samples):
+            sys.exit(1)
+
+        if not self.cnf.verbose:
+            info('', ending='')
+
+        # all_variantcallers = set()
+        # for s_info in self.bcbio_cnf.details:
+        #     all_variantcallers |= set(s_info['algorithm'].get('variantcaller')) or set()
+
+        # samples_fpath = abspath(join(self.cnf.work_dir, 'samples.txt'))
+        # with open(samples_fpath, 'w') as f:
+        #     for sample_info in self.bcbio_cnf.details:
+        #         sample = sample_info['description']
+        #         f.write(sample + '\n')
+
+        if not self.cnf.verbose:
+            print ''
+        else:
+            info('Done.')
+
+    @staticmethod
+    def _ungzip_if_needed(cnf, fpath):
+        if not file_exists(fpath) and file_exists(fpath + '.gz'):
+            gz_fpath = fpath + '.gz'
+            gunzip = get_tool_cmdline(self.cnf, 'gunzip')
+            cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
+            call(cnf, cmdline, output_fpath=fpath)
+            info()
+
+    @staticmethod
+    def _move_vcfs_to_var(sample):
+        var_dirpath = adjust_path(join(sample.dirpath, 'var'))
+        info('Creating "var" directory ' + var_dirpath)
+        safe_mkdir(var_dirpath)
+
+        for fname in os.listdir(sample.dirpath):
+            if 'vcf' in fname.split('.') and \
+                    not (islink(fname) and fname.endswith('.anno.filt.vcf')):
+                src_fpath = join(sample.dirpath, fname)
+                dst_fpath = join(var_dirpath, fname)
+                if exists(dst_fpath):
+                    os.remove(dst_fpath)
+                safe_mkdir(var_dirpath)
+                info('Moving ' + src_fpath + ' to ' + dst_fpath)
+                os.rename(src_fpath, dst_fpath)
+        return var_dirpath
+
+    def _read_sample_details(self, sample_info):
+        sample = Sample(name=sample_info['description'])
+        info('Sample "' + sample.name + '"')
+        if not self.cnf.verbose: info(ending='')
+
+        sample.dirpath = adjust_path(join(self.final_dirpath, sample.name))
+        if not verify_dir(sample.dirpath): sys.exit(1)
+
+        bed_fpath = sample_info['algorithm'].get('variant_regions')
+        if bed_fpath:
+            bed_fpath = adjust_path(bed_fpath)
+            if not verify_bed(bed_fpath): sys.exit(1)
+
+        sample.bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
+        if not verify_bam(sample.bam): sys.exit(1)
+
+        safe_mkdir(join(sample.dirpath, 'qc'))
+
+        sample.phenotype = None
+
+        if 'metadata' in sample_info:
+            sample.phenotype = sample_info['metadata']['phenotype']
+            batch_names = sample_info['metadata']['batch']
+            if isinstance(batch_names, basestring):
+                batch_names = [batch_names]
+
+            for batch_name in batch_names:
+                if sample.phenotype == 'normal':
+                    if self.batches[batch_name].normal:
+                        critical('Multiple normal samples for batch ' + batch_name)
+                    self.batches[batch_name].normal = sample
+
+                elif sample.phenotype == 'tumor':
+                    self.batches[batch_name].tumor.append(sample)
+
+        var_dirpath = self._move_vcfs_to_var(sample)
+
+        to_exit = False
+        for caller_name in sample_info['algorithm'].get('variantcaller') or []:
+            vcf_fname = sample.name + '-' + caller_name + '.vcf'
+            vcf_fpath = adjust_path(join(var_dirpath, vcf_fname))
+            self._ungzip_if_needed(self.cnf, vcf_fpath)
+
+            if not file_exists(vcf_fpath):
+                if sample.phenotype != 'normal':
+                    err('No VCF file ' + vcf_fpath + ', and the phenotype is not normal.')
+                    to_exit = True
+            if not verify_file(vcf_fpath):
+                to_exit = True
+
+            if caller_name not in self.variant_callers:
+                self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+
+            self.variant_callers[caller_name].samples.append(sample)
+            sample.vcf_by_caller[self.variant_callers[caller_name]] = vcf_fpath
+
+        if self.cnf.verbose:
+            info('-' * 70)
+        else:
+            print ''
+            info()
+
+        if to_exit:
+            return None
+        return sample

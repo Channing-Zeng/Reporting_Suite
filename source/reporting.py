@@ -90,10 +90,9 @@ class Metric(object):
             return '{value:.{presision}f}{unit}'.format(**locals())
 
 
-class SampleReport():
+class SampleReport:
     def __init__(self, name=None, fpath=None, records=list()):
-        self.name = name
-        self.sample_name = name
+        self.name = self.sample_name = name
         self.fpath = fpath
         self.link = fpath
         self.records = records
@@ -137,12 +136,12 @@ def get_per_sample_fpaths_for_bcbio_final_dir(
     return single_report_fpaths, fixed_sample_names
 
 
-def summarize(sample_names, report_fpaths, parse_report_fn):
+def summarize(report_fpath_by_sample_name, parse_report_fn):
     """ Returns list of SampleReport objects:
         [SampleReport(name=, fpath=, records=[Record,...]),...]
     """
     return [SampleReport(name, fpath, parse_report_fn(fpath))
-            for name, fpath in zip(sample_names, report_fpaths)]
+            for name, fpath in report_fpath_by_sample_name.items()]
 
 
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):

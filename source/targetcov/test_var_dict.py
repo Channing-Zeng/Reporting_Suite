@@ -7,8 +7,7 @@ from source.targetcov.copy_number import run_copy_number
 
 _BCBIO_DIR = "/home/alla/worksplace/Reporting_Suite/test/bcbio_test_dir/"
 _FILE_MAPPED_READS_PATH = _BCBIO_DIR + "reads_mapped.txt"
-_FILE_COV = _BCBIO_DIR +"cov.txt"
-
+_FILE_COV = _BCBIO_DIR + "cov.txt"
 
 
 
