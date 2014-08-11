@@ -227,7 +227,7 @@ tsv_fields:
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
 - COMMON                        : CommonVariant
-#- CLNSIG                        : ClinicalSignificance
+- CLNSIG                        : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
 #- MAF                           : GlobalMinorAlleleFrequency
 #- CDA                           : InClinicalDiagnosticAssay
