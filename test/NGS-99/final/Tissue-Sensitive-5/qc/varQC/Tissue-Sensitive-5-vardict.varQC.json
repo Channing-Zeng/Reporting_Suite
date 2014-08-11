@@ -3,19 +3,19 @@
         "meta": {
             "all": {
                 "1000genomes": 240, 
-                "Average": 240.0, 
+                "average": 240.0, 
                 "cosmic": 240, 
                 "dbsnp": 240
             }, 
             "known": {
                 "1000genomes": 61, 
-                "Average": 61.0, 
+                "average": 61.0, 
                 "cosmic": 61, 
                 "dbsnp": 61
             }, 
             "novel": {
                 "1000genomes": 179, 
-                "Average": 179.0, 
+                "average": 179.0, 
                 "cosmic": 179, 
                 "dbsnp": 179
             }
@@ -37,19 +37,19 @@
         "meta": {
             "all": {
                 "1000genomes": 212, 
-                "Average": 212.0, 
+                "average": 212.0, 
                 "cosmic": 212, 
                 "dbsnp": 212
             }, 
             "known": {
                 "1000genomes": 49, 
-                "Average": 49.0, 
+                "average": 49.0, 
                 "cosmic": 49, 
                 "dbsnp": 49
             }, 
             "novel": {
                 "1000genomes": 163, 
-                "Average": 163.0, 
+                "average": 163.0, 
                 "cosmic": 163, 
                 "dbsnp": 163
             }
@@ -71,19 +71,19 @@
         "meta": {
             "all": {
                 "1000genomes": 9, 
-                "Average": 9.0, 
+                "average": 9.0, 
                 "cosmic": 9, 
                 "dbsnp": 9
             }, 
             "known": {
                 "1000genomes": 6, 
-                "Average": 6.0, 
+                "average": 6.0, 
                 "cosmic": 6, 
                 "dbsnp": 6
             }, 
             "novel": {
                 "1000genomes": 3, 
-                "Average": 3.0, 
+                "average": 3.0, 
                 "cosmic": 3, 
                 "dbsnp": 3
             }
@@ -105,19 +105,19 @@
         "meta": {
             "all": {
                 "1000genomes": 14, 
-                "Average": 14.0, 
+                "average": 14.0, 
                 "cosmic": 14, 
                 "dbsnp": 14
             }, 
             "known": {
                 "1000genomes": 6, 
-                "Average": 6.0, 
+                "average": 6.0, 
                 "cosmic": 6, 
                 "dbsnp": 6
             }, 
             "novel": {
                 "1000genomes": 8, 
-                "Average": 8.0, 
+                "average": 8.0, 
                 "cosmic": 8, 
                 "dbsnp": 8
             }
@@ -139,19 +139,19 @@
         "meta": {
             "all": {
                 "1000genomes": 7, 
-                "Average": 27.666666666666668, 
+                "average": 27.666666666666668, 
                 "cosmic": 15, 
                 "dbsnp": 61
             }, 
             "known": {
                 "1000genomes": 7, 
-                "Average": 25.333333333333332, 
+                "average": 25.333333333333332, 
                 "cosmic": 8, 
                 "dbsnp": 61
             }, 
             "novel": {
                 "1000genomes": 0, 
-                "Average": 2.3333333333333335, 
+                "average": 2.3333333333333335, 
                 "cosmic": 7, 
                 "dbsnp": 0
             }
@@ -173,19 +173,19 @@
         "meta": {
             "all": {
                 "1000genomes": 2.92, 
-                "Average": 11.530000000000001, 
+                "average": 11.530000000000001, 
                 "cosmic": 6.25, 
                 "dbsnp": 25.42
             }, 
             "known": {
                 "1000genomes": 11.48, 
-                "Average": 41.53, 
+                "average": 41.53, 
                 "cosmic": 13.11, 
                 "dbsnp": 100.0
             }, 
             "novel": {
                 "1000genomes": 0.0, 
-                "Average": 1.3033333333333335, 
+                "average": 1.3033333333333335, 
                 "cosmic": 3.91, 
                 "dbsnp": 0.0
             }
@@ -207,19 +207,19 @@
         "meta": {
             "all": {
                 "1000genomes": 7, 
-                "Average": 23.333333333333332, 
+                "average": 23.333333333333332, 
                 "cosmic": 10, 
                 "dbsnp": 53
             }, 
             "known": {
                 "1000genomes": 7, 
-                "Average": 22.333333333333332, 
+                "average": 22.333333333333332, 
                 "cosmic": 7, 
                 "dbsnp": 53
             }, 
             "novel": {
                 "1000genomes": 0, 
-                "Average": 1.0, 
+                "average": 1.0, 
                 "cosmic": 3, 
                 "dbsnp": 0
             }
@@ -241,19 +241,19 @@
         "meta": {
             "all": {
                 "1000genomes": 100.0, 
-                "Average": 84.52, 
+                "average": 84.52, 
                 "cosmic": 66.67, 
                 "dbsnp": 86.89
             }, 
             "known": {
                 "1000genomes": 100.0, 
-                "Average": 91.46333333333332, 
+                "average": 91.46333333333332, 
                 "cosmic": 87.5, 
                 "dbsnp": 86.89
             }, 
             "novel": {
                 "1000genomes": 0.0, 
-                "Average": 14.286666666666667, 
+                "average": 14.286666666666667, 
                 "cosmic": 42.86, 
                 "dbsnp": 0.0
             }
@@ -275,19 +275,19 @@
         "meta": {
             "all": {
                 "1000genomes": 8e-08, 
-                "Average": 8.000000000000001e-08, 
+                "average": 8.000000000000001e-08, 
                 "cosmic": 8e-08, 
                 "dbsnp": 8e-08
             }, 
             "known": {
                 "1000genomes": 2e-08, 
-                "Average": 2.0000000000000004e-08, 
+                "average": 2.0000000000000004e-08, 
                 "cosmic": 2e-08, 
                 "dbsnp": 2e-08
             }, 
             "novel": {
                 "1000genomes": 6e-08, 
-                "Average": 6e-08, 
+                "average": 6e-08, 
                 "cosmic": 6e-08, 
                 "dbsnp": 6e-08
             }
@@ -309,19 +309,19 @@
         "meta": {
             "all": {
                 "1000genomes": 13071505.0, 
-                "Average": 13071505.0, 
+                "average": 13071505.0, 
                 "cosmic": 13071505.0, 
                 "dbsnp": 13071505.0
             }, 
             "known": {
                 "1000genomes": 51428873.0, 
-                "Average": 51428873.0, 
+                "average": 51428873.0, 
                 "cosmic": 51428873.0, 
                 "dbsnp": 51428873.0
             }, 
             "novel": {
                 "1000genomes": 17526040.0, 
-                "Average": 17526040.0, 
+                "average": 17526040.0, 
                 "cosmic": 17526040.0, 
                 "dbsnp": 17526040.0
             }
@@ -343,19 +343,19 @@
         "meta": {
             "all": {
                 "1000genomes": 29.2, 
-                "Average": 29.2, 
+                "average": 29.2, 
                 "cosmic": 29.2, 
                 "dbsnp": 29.2
             }, 
             "known": {
                 "1000genomes": 9.71, 
-                "Average": 9.71, 
+                "average": 9.71, 
                 "cosmic": 9.71, 
                 "dbsnp": 9.71
             }, 
             "novel": {
                 "1000genomes": 74.67, 
-                "Average": 74.67, 
+                "average": 74.67, 
                 "cosmic": 74.67, 
                 "dbsnp": 74.67
             }
@@ -377,19 +377,19 @@
         "meta": {
             "all": {
                 "1000genomes": 0.7, 
-                "Average": 0.6999999999999998, 
+                "average": 0.6999999999999998, 
                 "cosmic": 0.7, 
                 "dbsnp": 0.7
             }, 
             "known": {
                 "1000genomes": 1.33, 
-                "Average": 1.33, 
+                "average": 1.33, 
                 "cosmic": 1.33, 
                 "dbsnp": 1.33
             }, 
             "novel": {
                 "1000genomes": 0.57, 
-                "Average": 0.57, 
+                "average": 0.57, 
                 "cosmic": 0.57, 
                 "dbsnp": 0.57
             }
