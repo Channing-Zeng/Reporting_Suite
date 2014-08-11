@@ -1,7 +1,7 @@
 from source.reporting import get_per_sample_fpaths_for_bcbio_final_dir, \
     summarize, write_summary_reports, Metric, Record
 from source.logger import step_greetings, info
-from source.utils import OrderedDefaultDict
+
 
 def summary_reports(cnf, sample_names):
     step_greetings('ngsCAT statistics for all samples')
@@ -21,14 +21,16 @@ def __to_dict(metrics):
     return {m.name: m for m in metrics}
 
 METRICS = __to_dict([
-    Metric('Number reads',                       'reads',              'Number of mapped reads'),
-    Metric('% target bases with coverage >= 1x', 'target covered',     '% target bases with coverage >= 1x'),
-    Metric('Coverage saturation',                'saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
+    Metric('Number reads',                       'Reads',              'Number of mapped reads'),
+    Metric('% target bases with coverage >= 1x', 'Target covered',     '% target bases with coverage >= 1x'),
+    Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
     Metric('% reads on target',                  '% reads on target',  '% reads on target'),
-    Metric('Duplicated reads on/off target',     'duplicated reads',   '% duplicated reads on/off target'),
-    Metric('mean coverage',                      'mean cov.',          'Coverage distribution (mean target coverage)'),
-    Metric('Coverage per position',              'cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
-    Metric('Standard deviation of coverage',     'cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
+    Metric('Duplicated reads on/off target',     'Duplicated reads',   '% duplicated reads on/off target. '
+                                                                       'Percentage of duplicated on-target reads normally should be greater '
+                                                                       'than the percentage of duplicated off-target reads',           quality='Equal'),
+    Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
+    Metric('Coverage per position',              'Cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
+    Metric('Standard deviation of coverage',     'Cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
 ])
 
 ALLOWED_UNITS = ['%']
@@ -67,7 +69,7 @@ def _parse_ngscat_sample_report(report_fpath):
         except ValueError:
             try:
                 val = float(val_num)
-            except ValueError: # it is a string
+            except ValueError:  # it is a string
                 val = val_num + val_unit
         record.value = val
         return record
@@ -102,6 +104,4 @@ def _parse_ngscat_sample_report(report_fpath):
                     if cell_id in column_id_to_metric_name.keys():
                         metric_name = column_id_to_metric_name[cell_id]
                         records.append(__parse_cell(metric_name, subline))
-
-    info("report_fpath is " + report_fpath)
     return records

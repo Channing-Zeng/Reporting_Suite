@@ -94,7 +94,8 @@ class Runner:
                 self.ngscat,
                 self.qualimap,
                 self.targetcov_summary,
-                self.ngscat_summary]
+                self.ngscat_summary,
+                self.qualimap_summary]
              if contains(s.name, cnf.steps)])
 
         self.vardict_steps.extend(
@@ -203,6 +204,15 @@ class Runner:
             paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
                     + self.final_dir + '\' -s \'{samples}\' -n "' + self.ngscat.dir_name + '" --work-dir \'' +
                     join(cnf.work_dir, 'ngscat_summary') + '\''
+        )
+        self.qualimap_summary = Step(cnf, run_id,
+            name='QualiMap_summary', short_name='qms',
+            interpreter='python',
+            script='qualimap_summary',
+            dir_name='qualimap',
+            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
+                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.qualimap.dir_name + '" --work-dir \'' +
+                    join(cnf.work_dir, 'qualimap_summary') + '\''
         )
 
         af_thr = str(cnf.variant_filtering.min_freq)
@@ -526,6 +536,16 @@ class Runner:
                     self.ngscat.job_name(d['description'])
                     for d in self.bcbio_cnf.details
                     if self.ngscat in self.steps],
+                # threads=samples_num + 1,
+                samples=samples_fpath)
+
+        if self.qualimap_summary in self.steps:
+            self.submit(
+                self.qualimap_summary,
+                wait_for_steps=[
+                    self.qualimap.job_name(d['description'])
+                    for d in self.bcbio_cnf.details
+                    if self.qualimap in self.steps],
                 # threads=samples_num + 1,
                 samples=samples_fpath)
 

@@ -50,7 +50,7 @@ class Metric(object):
                  name=None,
                  short_name=None,
                  description=None,
-                 quality='More is better',  # More is better, Less is better
+                 quality='More is better',  # More is better, Less is better, Equal
                  unit=''):
         self.name = name
         self.short_name = short_name or self.name,

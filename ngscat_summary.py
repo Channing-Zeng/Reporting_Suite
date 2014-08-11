@@ -54,7 +54,7 @@ def main():
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    cnf.name = cnf['name'] or 'NGSCat'
+    cnf.name = cnf['name'] or 'ngsCAT'
     set_up_dirs(cnf)
 
     if not check_keys(cnf, ['bcbio_final_dir']):
