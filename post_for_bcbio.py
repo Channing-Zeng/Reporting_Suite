@@ -29,7 +29,6 @@ def main():
     parser = OptionParser(description=description)
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
-
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose output')
     # parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')

@@ -2,12 +2,14 @@
 
 from __future__ import print_function
 import sys
+from source.bcbio_structure import BCBioStructure, load_bcbio_cnf, VariantCaller
+from source.summary import _check_args
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, exists, basename, splitext, isfile, dirname, abspath, realpath, islink
+from os.path import join, pardir, basename, splitext, isfile, dirname, abspath, realpath, islink
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -20,13 +22,11 @@ import shutil
 from source.file_utils import safe_mkdir, add_suffix
 from source.variants.filtering import Filtering
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import vcf_one_per_line, remove_rejected, convert_to_maf, vcf_is_empty, \
+from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_is_empty, \
     igvtools_index
-from source.reporting import read_sample_names, get_per_sample_fpaths_for_bcbio_final_dir
-from source.variants.summarize_qc import make_summary_reports
 from source.config import Defaults, Config
-from source.main import check_keys, check_inputs, set_up_dirs
-from source.logger import info
+from source.main import set_up_dirs
+from source.logger import info, critical
 
 
 def main():
@@ -44,21 +44,14 @@ def main():
         '''
     parser = OptionParser(description=description)
     parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
-    parser.add_option('-s', dest='samples', help='List of samples (default is samples.txt in bcbio final directory)')
-    parser.add_option('--vcf-suf', dest='vcf_suf', help='Suffix to choose VCF files (mutect, ensembl, freebayes, etc). Multiple comma-separated values allowed.')
-
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='overwrite', help='Reuse intermediate files from previous run', action='store_false')
-    parser.add_option('--make_soft_links', dest='make_soft_links', action='store_true', default=False)
 
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
-    parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf,
-                      help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf,
-                      help='Run configuration yaml (see default one %s)' % Defaults.run_cnf
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf
     )
 
     defaults = Defaults.variant_filtering
@@ -207,50 +200,34 @@ def main():
 
     (opts, args) = parser.parse_args()
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+    if not opts.bcbio_final_dir and len(args) > 0:
+        cnf.bcbio_final_dir = args[0]
+    else:
+        critical('Usage: ./post_for_bcbio.py <final_dir>')
 
-    cnf.name = cnf['name'] or 'varfilter_all'
+    _check_args(parser, cnf)
+
+    load_bcbio_cnf(cnf)
+
+    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
+    cnf.work_dir = bcbio_structure.work_dir
+    cnf.name = BCBioStructure.varfilter_name
     set_up_dirs(cnf)
-
-    if not cnf.samples:
-        cnf.samples = join(cnf.bcbio_final_dir, 'samples.txt')
-
-    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
-    info('Samples: ' + cnf.samples + ' (set with -s)')
-
-    if not check_keys(cnf, ['bcbio_final_dir', 'samples']):
-        parser.print_help()
-        sys.exit(1)
-
-    if 'qsub_runner' in cnf:
-        cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
-
-    if not check_inputs(cnf, file_keys=['samples', 'qsub_runner'], dir_keys=['bcbio_final_dir']):
-        sys.exit(1)
 
     info()
     info('*' * 70)
 
-    sample_names = read_sample_names(cnf['samples'])
-
-    filter_all(cnf, sample_names)
-
-
-class VariantCaller:
-    def __init__(self, suf):
-        self.name = suf
-        self.suf = suf
-        self.anno_vcf_fpaths = []
-        self.anno_filt_vcf_fpaths = []
+    filter_all(cnf, bcbio_structure)
 
 
 cnfs_for_samples = dict()
 
 
-def filter_all(cnf, sample_names):
+def filter_all(cnf, bcbio_structure):
     varannotate_dir = cnf.vcf_dir
 
     vcf_sufs = cnf['vcf_suf'].split(',')
-    callers = [VariantCaller(suf) for suf in vcf_sufs]
+    callers = [VariantCaller(bcbio_structure, suf) for suf in vcf_sufs]
 
     filt_cnf = cnf['variant_filtering']
 
@@ -259,11 +236,10 @@ def filter_all(cnf, sample_names):
         info('Running for ' + caller.name)
         info('*' * 70)
 
-        anno_vcf_fpaths, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
-            cnf['bcbio_final_dir'], sample_names, varannotate_dir,
-            '-' + caller.suf + '.anno.vcf')
+        anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
+        anno_vcf_fpaths = sorted(v for k, v in anno_vcf_by_sample.items())
 
-        filtering = Filtering(cnf, filt_cnf, sample_names, caller)
+        filtering = Filtering(cnf, filt_cnf, bcbio_structure, caller)
         filt_anno_vcf_fpaths = filtering.run_filtering(anno_vcf_fpaths)
 
         global cnfs_for_samples
@@ -273,7 +249,8 @@ def filter_all(cnf, sample_names):
             cnfs_for_samples[sname] = cnf_copy
 
         results = Parallel(n_jobs=len(anno_vcf_fpaths))(delayed(postprocess)(sname, anno_vcf_fpath, work_filt_vcf_fpath)
-            for sname, anno_vcf_fpath, work_filt_vcf_fpath in zip(sample_names, anno_vcf_fpaths, filt_anno_vcf_fpaths))
+            for sname, anno_vcf_fpath, work_filt_vcf_fpath in
+            zip(caller.samples, filt_anno_vcf_fpaths))
 
         for res in results:
             finalize_one(cnf, *res)

@@ -160,7 +160,7 @@ class Filtering:
     cnf = None
     filt_cnf = None
 
-    def __init__(self, cnf, filt_cnf, sample_names, caller):
+    def __init__(self, cnf, filt_cnf, bcbio_structure, caller):
         Filtering.cnf = cnf
         filt_cnf = filt_cnf.__dict__
         Filter.filt_cnf = filt_cnf
@@ -168,7 +168,7 @@ class Filtering:
 
         self.caller = caller
         self.control_vars = set()
-        self.sample_names = set(sample_names)
+        self.sample_names = set([s.name for s in caller.samples])
         self.varks = dict()  # vark -> VarkInfo(vark, afs)
         self.polymorphic_variants = None
 
@@ -235,17 +235,17 @@ class Filtering:
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
 
 
-    def run_filtering(self, vcf_fpaths):
+    def run_filtering(self, vcf_fpath_by_sample):
         step_greetings('Filtering')
 
         info('Removing previous FILTER values')
 
-        n_jobs = len(vcf_fpaths)
+        n_jobs = len(vcf_fpath_by_sample)
         # n_jobs = 1
 
         global cnf_for_samples, filtering
         filtering = self
-        for vcf_fpath in vcf_fpaths:
+        for sample, vcf_fpath in vcf_fpath_by_sample.items():
             cnf_for_samples[basename(vcf_fpath).split('.')[0]] = Filtering.cnf.copy()
 
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)

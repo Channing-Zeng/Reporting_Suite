@@ -23,6 +23,6 @@ Part of target covered at least by 50x           51.42%
 Part of target covered at least by 100x          51.30%      
 Part of target covered at least by 500x          42.24%      
 Part of target covered at least by 1000x         26.16%      
-Part of target covered at least by 5000x         0.00%       
-Part of target covered at least by 10000x        0.00%       
-Part of target covered at least by 50000x        0.00%       
+Part of target covered at least by 5000x         0.0000%     
+Part of target covered at least by 10000x        0.0000%     
+Part of target covered at least by 50000x        0.0000%     

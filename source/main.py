@@ -30,6 +30,11 @@ def read_opts_and_cnfs(extra_opts,
              metavar='NAME',
              help='sample name (default is part of name of the first parameter prior to the first - or .')
          ),
+        (['-c', '--caller'], dict(
+             dest='caller',
+             metavar='CELLR',
+             help='variant caller name (default is part of name of the first parameter between the first - and following .')
+         ),
         (['-t', '--nt', '--threads'], dict(
              dest='threads',
              type='int',
@@ -90,7 +95,11 @@ def read_opts_and_cnfs(extra_opts,
                  'in options or in ' + cnf.run_cnf + '.')
 
     key_fname = basename(cnf[key_for_sample_name])
-    cnf.name = cnf['name'] or key_fname.split('.')[0]
+    cnf.name = cnf.name or key_fname.split('.')[0]
+    try:
+        cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
+    except:
+        cnf.caller = None
 
     set_up_dirs(cnf)
     info(' '.join(sys.argv))

@@ -91,8 +91,8 @@ class Metric(object):
 
 
 class SampleReport:
-    def __init__(self, name=None, fpath=None, records=list()):
-        self.name = self.sample_name = name
+    def __init__(self, sample=None, fpath=None, records=list()):
+        self.sample = sample
         self.fpath = fpath
         self.link = fpath
         self.records = records
@@ -109,39 +109,39 @@ def read_sample_names(sample_fpath):
     return sample_names
 
 
-def get_per_sample_fpaths_for_bcbio_final_dir(
-        bcbio_final_dir, sample_names, base_dir, ending, raw_ending=False):
+# def get_per_sample_fpaths_for_bcbio_final_dir(
+#         bcbio_final_dir, sample_names, base_dir, ending, raw_ending=False):
+#
+#     single_report_fpaths = []
+#
+#     fixed_sample_names = []
+#     for sample_name in sample_names:
+#         report_name = ending if raw_ending else sample_name + ending
+#         single_report_fpath = join(
+#             bcbio_final_dir, sample_name, base_dir,
+#             report_name)
+#
+#         info(single_report_fpath)
+#
+#         if not file_exists(single_report_fpath):
+#             info('No ' + single_report_fpath + ', skipping.')
+#             continue
+#
+#         if not verify_file(single_report_fpath):
+#             critical(single_report_fpath + ' does not exist.')
+#
+#         single_report_fpaths.append(single_report_fpath)
+#         fixed_sample_names.append(sample_name)
+#
+#     return single_report_fpaths, fixed_sample_names
 
-    single_report_fpaths = []
 
-    fixed_sample_names = []
-    for sample_name in sample_names:
-        report_name = ending if raw_ending else sample_name + ending
-        single_report_fpath = join(
-            bcbio_final_dir, sample_name, base_dir,
-            report_name)
-
-        info(single_report_fpath)
-
-        if not file_exists(single_report_fpath):
-            info('No ' + single_report_fpath + ', skipping.')
-            continue
-
-        if not verify_file(single_report_fpath):
-            critical(single_report_fpath + ' does not exist.')
-
-        single_report_fpaths.append(single_report_fpath)
-        fixed_sample_names.append(sample_name)
-
-    return single_report_fpaths, fixed_sample_names
-
-
-def summarize(report_fpath_by_sample_name, parse_report_fn):
+def summarize(report_fpath_by_sample, parse_report_fn):
     """ Returns list of SampleReport objects:
-        [SampleReport(name=, fpath=, records=[Record,...]),...]
+        [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
     """
-    return [SampleReport(name, fpath, parse_report_fn(fpath))
-            for name, fpath in report_fpath_by_sample_name.items()]
+    return [SampleReport(sample, fpath, parse_report_fn(fpath))
+            for sample, fpath in report_fpath_by_sample.items()]
 
 
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):
@@ -153,7 +153,7 @@ def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, capt
 
 def _flatten_report(reports):
     # report = [SampleReport(name=, fpath=, records=[Record,...]),...]
-    rows = [['Sample'] + [rep.sample_name for rep in reports]]
+    rows = [['Sample'] + [rep.sample.name for rep in reports]]
 
     for record in reports[0].records:
         row = [record.metric.name]

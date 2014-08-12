@@ -2,7 +2,6 @@ from collections import defaultdict
 from source.bcbio_structure import BCBioStructure, VariantCaller
 from source.logger import info
 from source.reporting import summarize, write_summary_reports, get_per_sample_fpaths_for_bcbio_final_dir, Record
-from source.variants.qc_gatk import varqc_json_ending
 
 
 def make_summary_reports(cnf, bcbio_structure):
@@ -39,7 +38,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
             cnf.output_dir,
             cnf.work_dir,
             caller.summary_qc_report,  # TODO outputdir - read from structure too?
-            caller.suf + '.varQC',
+            caller.suf + '.' + BCBioStructure.varqc_name,
             'Variant QC for ' + caller.name)
 
     all_single_reports = dict((sname + '-' + c.suf, rep)

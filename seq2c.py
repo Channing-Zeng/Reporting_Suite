@@ -14,9 +14,9 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 from source.logger import info
-from source.targetcov.summarize_cov import summary_reports
 from source.bcbio_structure import BCBioStructure
 from source.summary import process_cnf
+from source.targetcov.copy_number import cnv_reports
 
 
 def main():
@@ -25,14 +25,14 @@ def main():
 
     cnf, bcbio_structure = process_cnf(BCBioStructure.targetseq_summary_dir)
 
-    sample_sum_reports, sum_report_fpaths = summary_reports(cnf, bcbio_structure)
+    cnv_report_fpath = cnv_reports(cnf, bcbio_structure)
 
     info()
     info('*' * 70)
-    info('Summary:')
-    for fpath in sum_report_fpaths:
-        if fpath:
-            info('  ' + fpath)
+
+    if cnv_report_fpath:
+        info('Gene CNV:')
+        info('  ' + cnv_report_fpath)
 
 
 if __name__ == '__main__':

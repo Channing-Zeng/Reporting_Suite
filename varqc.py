@@ -105,7 +105,7 @@ def process_one(cnf):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)
 
     if cnf.get('extract_sample'):
-        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
+        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
     qc_report_fpath = gatk_qc(cnf, vcf_fpath)
 

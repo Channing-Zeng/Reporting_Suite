@@ -2,10 +2,15 @@ import datetime
 from json import dump, JSONEncoder
 import os
 from os.path import join
+from source.bcbio_structure import VariantCaller, Sample
 
 
 class Encoder(JSONEncoder):
     def default(self, o):
+        if isinstance(o, VariantCaller):
+            return o.for_json()
+        if isinstance(o, Sample):
+            return o.for_json()
         return o.__dict__
 
 

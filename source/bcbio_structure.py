@@ -12,40 +12,6 @@ from source.tools_from_cnf import get_tool_cmdline
 
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical
-from source.variants.qc_gatk import varqc_json_ending
-
-
-def _normalize(name):
-    return name.lower().replace('_', '').replace('-', '')
-
-
-def load_bcbio_cnf(cnf):
-    bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
-    yaml_files = [join(bcbio_config_dirpath, fname)
-                  for fname in listdir(bcbio_config_dirpath)
-                  if fname.endswith('.yaml')]
-
-    if len(yaml_files) == 0:
-        critical('No YAML file in the config directory.')
-
-    config_fpaths = [fpath for fpath in yaml_files
-                  if not any(n in fpath for n in ['run_info', 'system_info'])]
-    if not config_fpaths:
-        critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
-
-    yaml_fpath = config_fpaths[0]
-    if len(config_fpaths) > 1:
-        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in cnf.bcbio_final_dir]
-        if len(some_yaml_files) == 0:
-            critical('More than one YAML file in the config directory ' + ' '.join(config_fpaths) +
-                     ', and no YAML file named after the project.')
-        yaml_fpath = some_yaml_files[0]
-
-    yaml_file = abspath(yaml_fpath)
-
-    info('Using bcbio YAML config ' + yaml_file)
-
-    cnf.bcbio_cnf = load_yaml_config(yaml_file)
 
 
 class Sample:
@@ -56,6 +22,11 @@ class Sample:
         self.vcf_by_caller = dict()  # VariantCaller -> vcf_fpath
         self.phenotype = None
 
+    def for_json(self):
+        return dict(
+            (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
+            for k, v in self.__dict__.items())
+
 
 class VariantCaller:
     def __init__(self, bcbio_structure, name):
@@ -64,6 +35,12 @@ class VariantCaller:
         self.samples = []
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
+        self.anno_vcf_fpaths = []
+        self.anno_filt_vcf_fpaths = []
+
+    def for_json(self):
+        return {k: v for k, v in self.__dict__
+                if k not in ['bcbio_structure', 'samples']}
 
     def get_qc_reports_by_samples(self):
         report_by_sample = dict()
@@ -72,14 +49,35 @@ class VariantCaller:
             single_report_fpath = join(
                 self.bcbio_structure.final_dirpath,
                 s.name,
-                BCBioStructure.varqc_dirname,
-                s.name + '-' + self.suf + varqc_json_ending)
-            report_by_sample[s.name] = single_report_fpath
+                BCBioStructure.varqc_dir,
+                s.name + '-' + self.suf + '.' + BCBioStructure.varqc_name + '.json')
 
-            if not verify_file(single_report_fpath):
-                critical(single_report_fpath + ' does not exist.')
+            if verify_file(single_report_fpath):
+                report_by_sample[s] = single_report_fpath
+
+        if len(report_by_sample) != len(self.samples):
+            sys.exit(1)
 
         return report_by_sample
+
+    def get_anno_vcf_by_samples(self):
+        vcf_by_sample = dict()
+
+        for s in self.samples:
+            vcf_fpath = join(
+                self.bcbio_structure.final_dirpath,
+                s.name,
+                BCBioStructure.varannotate_dir,
+                s.name + '-' + self.suf + BCBioStructure.anno_vcf_ending)
+
+            if verify_file(vcf_fpath):
+                vcf_by_sample[s] = vcf_fpath
+
+        if len(vcf_by_sample) != len(self.samples):
+            sys.exit(1)
+
+        return vcf_by_sample
+
 
 class Batch:
     def __init__(self, name=None):
@@ -89,13 +87,23 @@ class Batch:
 
 
 class BCBioStructure:
-    varfilter_dirname = 'varFilter'
-    varannotate_dirname = 'varAnnotate'
-    targetseq_dirname = 'targetSeq'
-    varqc_dirname = join('qc', 'varQC')
-    varqc_after_dirname = join('qc', 'varQC_postVarFilter')
-    ngscat_dirname = join('qc', 'ngscat')
-    qualimap_dirname = join('qc', 'qualimap')
+    varfilter_name      = varfilter_dir                           = 'varFilter'
+    varannotate_name    = varannotate_dir                         = 'varAnnotate'
+    targetseq_name      = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
+    varqc_name                          = varqc_summary_dir       = 'varQC'
+    varqc_after_name                    = varqc_after_summary_dir = 'varQC_postVarFilter'
+    ngscat_name                         = ngscat_summary_dir      = 'ngscat'
+    qualimap_name                       = qualimap_summary_dir    = 'qualimap'
+    varqc_dir           = join('qc', varqc_name)
+    varqc_after_dir     = join('qc', varqc_after_name)
+    ngscat_dir          = join('qc', ngscat_name)
+    qualimap_dir        = join('qc', qualimap_name)
+    cnv_dir             = 'cnv'
+    seq2c_name          = 'Seq2C'
+    detail_gene_report_ending = '.details.gene.txt'
+    anno_vcf_ending = '.anno.vcf'
+    filt_vcf_ending = '.anno.filt.vcf'
+
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf):
         self.final_dirpath = bcbio_final_dirpath
@@ -112,7 +120,7 @@ class BCBioStructure:
         self.log_dirpath = join(self.date_dirpath, 'log')
         safe_mkdir(self.log_dirpath)
 
-        self.work_dir = cnf.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
+        self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         if not isdir(self.work_dir):
             safe_mkdir(self.work_dir)
         info(' '.join(sys.argv))
@@ -231,3 +239,63 @@ class BCBioStructure:
         if to_exit:
             return None
         return sample
+
+    def get_gene_reports_by_sample(self):
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.targetseq_dir,
+            lambda sample: sample.name + '.' +
+                           BCBioStructure.targetseq_dir +
+                           BCBioStructure.detail_gene_report_ending)
+
+    def get_targetcov_json_by_sample(self):
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.targetseq_dir,
+            lambda sample: sample.name + '.' + BCBioStructure.targetseq_dir + '.json')
+
+    def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
+        fpaths = dict()
+
+        for sample in self.samples:
+            report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
+            info(report_fpath)
+
+            if verify_file(report_fpath):
+                fpaths[sample] = report_fpath
+
+        if len(fpaths) < len(self.samples):
+            sys.exit(1)
+
+        return fpaths
+
+
+def load_bcbio_cnf(cnf):
+    bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
+    yaml_files = [join(bcbio_config_dirpath, fname)
+                  for fname in listdir(bcbio_config_dirpath)
+                  if fname.endswith('.yaml')]
+
+    if len(yaml_files) == 0:
+        critical('No YAML file in the config directory.')
+
+    config_fpaths = [fpath for fpath in yaml_files
+                  if not any(n in fpath for n in ['run_info', 'system_info'])]
+    if not config_fpaths:
+        critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
+
+    yaml_fpath = config_fpaths[0]
+    if len(config_fpaths) > 1:
+        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in cnf.bcbio_final_dir]
+        if len(some_yaml_files) == 0:
+            critical('More than one YAML file in the config directory ' + ' '.join(config_fpaths) +
+                     ', and no YAML file named after the project.')
+        yaml_fpath = some_yaml_files[0]
+
+    yaml_file = abspath(yaml_fpath)
+
+    info('Using bcbio YAML config ' + yaml_file)
+
+    cnf.bcbio_cnf = load_yaml_config(yaml_file)
+
+
+def _normalize(name):
+    return name.lower().replace('_', '').replace('-', '')

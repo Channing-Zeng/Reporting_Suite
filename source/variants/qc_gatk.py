@@ -1,5 +1,6 @@
 import json
 from os.path import join
+from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
@@ -8,8 +9,7 @@ from source.tools_from_cnf import get_gatk_cmdline
 from source.utils import OrderedDefaultDict
 
 
-varqc_json_ending = '.varQC.json'
-final_report_ending = '.varQC.txt'
+final_report_ext = '.txt'
 
 
 gatk_metrics = Metric.to_dict([
@@ -71,7 +71,8 @@ def gatk_qc(cnf, vcf_fpath):
     report_fpath = join(cnf.work_dir, cnf.name + '_gatk.report')
 
     cmdline = ('{gatk} -R {ref_fpath} -T VariantEval '
-               '--eval:tmp {vcf_fpath} -o {report_fpath}').format(**locals())
+               '--eval:tmp {vcf_fpath} -o {report_fpath}'
+    ).format(**locals())
 
     if 'dbsnp' in cnf_databases:
         cmdline += ' -D ' + cnf_databases['dbsnp']
@@ -85,9 +86,10 @@ def gatk_qc(cnf, vcf_fpath):
     report_dict = _parse_gatk_report(report_fpath, cnf_databases.keys(), cnf_novelty)
     records = _dict_to_objects(report_dict, cnf_databases.keys(), cnf_novelty, cnf.quality_control.db_for_summary)
 
-    save_json(records, join(cnf.output_dir, cnf.name + varqc_json_ending))
+    f_basename = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + BCBioStructure.varqc_name)
+    save_json(records, f_basename + '.json')
+    final_report_fpath = f_basename + final_report_ext
 
-    final_report_fpath = join(cnf.output_dir, cnf.name + final_report_ending)
     _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)
     return final_report_fpath
 

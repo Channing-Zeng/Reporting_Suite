@@ -263,7 +263,7 @@
             "name": "Part of target covered at least by 5x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "5x"
             ], 
             "unit": "%"
         }, 
@@ -278,7 +278,7 @@
             "name": "Part of target covered at least by 10x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "10x"
             ], 
             "unit": "%"
         }, 
@@ -293,7 +293,7 @@
             "name": "Part of target covered at least by 25x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "25x"
             ], 
             "unit": "%"
         }, 
@@ -308,7 +308,7 @@
             "name": "Part of target covered at least by 50x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "50x"
             ], 
             "unit": "%"
         }, 
@@ -323,7 +323,7 @@
             "name": "Part of target covered at least by 100x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "100x"
             ], 
             "unit": "%"
         }, 
@@ -338,7 +338,7 @@
             "name": "Part of target covered at least by 500x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "500x"
             ], 
             "unit": "%"
         }, 
@@ -353,7 +353,7 @@
             "name": "Part of target covered at least by 1000x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "1000x"
             ], 
             "unit": "%"
         }, 
@@ -368,7 +368,7 @@
             "name": "Part of target covered at least by 5000x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "5000x"
             ], 
             "unit": "%"
         }, 
@@ -383,7 +383,7 @@
             "name": "Part of target covered at least by 10000x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "10000x"
             ], 
             "unit": "%"
         }, 
@@ -398,7 +398,7 @@
             "name": "Part of target covered at least by 50000x", 
             "quality": "More is better", 
             "short_name": [
-                "1x"
+                "50000x"
             ], 
             "unit": "%"
         }, 

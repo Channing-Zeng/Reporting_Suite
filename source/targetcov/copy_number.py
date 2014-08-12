@@ -2,8 +2,11 @@
 
 import math
 from collections import defaultdict, OrderedDict
+from os.path import join
+from source.bcbio_structure import BCBioStructure
 from source.config import fill_dict_from_defaults
-from source.logger import info, err
+from source.logger import info, err, step_greetings, critical
+from source.reporting import write_tsv_rows, Record
 
 from source.utils import OrderedDefaultDict
 # from numpy import median, mean
@@ -12,6 +15,80 @@ from joblib import Parallel, delayed
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
+
+
+def cnv_reports(cnf, bcbio_structure):
+    step_greetings('Coverage statistics for each gene for all samples')
+
+    info('Collecting sample reports...')
+    sample_gene_reports_by_sample = bcbio_structure.get_gene_reports_by_sample()
+    json_by_sample = bcbio_structure.get_targetcov_json_by_sample()
+
+    if not sample_gene_reports_by_sample:
+        err('No gene reports, cannot call copy numbers.')
+        return None
+
+    info('Calculating normalized coverages for CNV...')
+    cnv_rows = _summarize_copy_number(sample_gene_reports_by_sample, json_by_sample)
+
+    cnv_report_fpath = write_tsv_rows(cnv_rows,
+                                      join(bcbio_structure.date_dirpath,
+                                           BCBioStructure.targetseq_summary_dir),
+                                      BCBioStructure.seq2c_name)
+
+    return cnv_report_fpath
+
+
+def _get_lines_by_region_type(report_fpath, region_type):
+    gene_summary_lines = []
+
+    with open(report_fpath, 'r') as f:
+        for line in f:
+            if region_type in line:
+                gene_summary_lines.append(line.split()[:8])
+
+    if not gene_summary_lines:
+        critical('Regions of type ' + region_type +
+                 ' not found in ' + gene_summary_lines)
+
+    return gene_summary_lines
+
+
+def _summarize_copy_number(gene_reports_by_sample, json_by_sample):
+    gene_summary_lines = []
+    cov_by_sample = dict()
+
+    for sample, gene_report_fpath in gene_reports_by_sample.items():
+        json_fpath = json_by_sample[sample]
+
+        gene_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
+
+        records = Record.load_records(json_fpath)
+
+        cov_by_sample[sample.name] = int(next(
+            rec.value for rec in records
+            if rec.metric.name == 'Mapped reads'))
+
+    results = run_copy_number(cov_by_sample, gene_summary_lines)
+
+    # save_results_separate_for_samples(results)
+
+    return results
+
+
+# def save_results_separate_for_samples(results):
+#     header = results[0]
+#
+#     results_per_sample = OrderedDict()
+#
+#     for fields in results[1:]:
+#         sample_name = fields[0]
+#         if sample_name not in results_per_sample:
+#             results_per_sample[sample_name] = [header]
+#
+#         results_per_sample[sample_name].append(fields)
+#
+#     for sample_name, fields in results_per_sample.items():
 
 
 def __proc_sample(sample, norm_depths_by_sample, factors_by_gene, med_depth, median_depth_by_sample):
@@ -202,7 +279,7 @@ def _report_row_to_objects(gene_depth):
     #         inputs[gene_name][sample_name] = None
 
     for read in gene_depth:
-        rec = Record(*read)
+        rec = CovRec(*read)
         if 'Undetermined' not in rec.sample_name:
             inputs[rec.gene_name][rec.sample_name] = rec
 
@@ -214,7 +291,7 @@ def _report_row_to_objects(gene_depth):
     return details_list
 
 
-class Record():
+class CovRec:
     def __init__(self, sample_name=None, chrom=None, start_position=None, end_position=None, gene_name=None,
                  type="Gene-Amplicon", size=None, mean_depth=None):
         self.sample_name = sample_name

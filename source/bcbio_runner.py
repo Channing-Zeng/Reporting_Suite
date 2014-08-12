@@ -4,6 +4,7 @@ import sys
 import base64
 from collections import defaultdict
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists
+from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix
 from source.tools_from_cnf import get_tool_cmdline
@@ -120,7 +121,7 @@ class Runner:
             name='VarAnnotate', short_name='va',
             interpreter='python',
             script='varannotate',
-            dir_name='varAnnotate',
+            dir_name=BCBioStructure.varannotate_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} -o \'{output_dir}\' -s \'{sample}\' '
                                   '--work-dir \'' + join(cnf.work_dir, 'varAnnotate') + '_{sample}\''
         )
@@ -128,7 +129,7 @@ class Runner:
             name='VarQC', short_name='vq',
             interpreter='python',
             script='varqc',
-            dir_name='qc/varQC',
+            dir_name=BCBioStructure.varqc_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\''
                     ' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varQC') + '_{sample}\''
         )
@@ -136,7 +137,7 @@ class Runner:
             name='VarQC_postVarFilter', short_name='vqa',
             interpreter='python',
             script='varqc',
-            dir_name='qc/varQC_postVarFilter',
+            dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' '
                                   '--work-dir \'' + join(cnf.work_dir, 'varQC_postVarFilter') + '_{sample}\''
         )
@@ -144,21 +145,21 @@ class Runner:
             name='TargetCov', short_name='tc',
             interpreter='python',
             script='targetcov',
-            dir_name='targetSeq',
+            dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetSeq') + '_{sample}\''
         )
         self.ngscat = Step(cnf, run_id,
             interpreter='python',
             script='ngscat',
-            dir_name='qc/ngscat',
+            dir_name=BCBioStructure.ngscat_dir,
             name='ngsCAT', short_name='nc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                                   '--saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '_{sample}\''
         )
         self.qualimap = Step(cnf, run_id,
             script='qualimap',
-            dir_name='qc/qualimap',
+            dir_name=BCBioStructure.qualimap_dir,
             name='QualiMap', short_name='qm',
             paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' -gff \'{bed}\' -c -gd HUMAN'
@@ -172,35 +173,36 @@ class Runner:
             name='VarQC_summary', short_name='vqs',
             interpreter='python',
             script='varqc_summary',
-            dir_name='varQC',
-            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
-                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.varqc.dir_name + '" --vcf-suf ' + ','.join(all_suffixes) +
-                    ' --work-dir \'' + join(cnf.work_dir, 'varQC_summary') + '\''
+            dir_name=BCBioStructure.varqc_summary_dir,
+            paramln=cnfs_line + ' ' + self.final_dir
         )
+
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
             script='varfilter_all',
-            dir_name='varFilter',
-            paramln=spec_params + ' -d \'' +
-                    self.final_dir + '\' -s \'{samples}\' --vcf-suf ' + ','.join(all_suffixes) + ' ' +
-                    '--work-dir \'' + join(cnf.work_dir, 'varFilter') + '\' --make_soft_links ' +
-                    '--vcf-dir ' + self.varannotate.dir_name
+            dir_name=BCBioStructure.varfilter_dir,
+            paramln=spec_params + ' ' + self.final_dir
         )
         self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',
             interpreter='python',
             script='targetcov_summary',
-            dir_name='targetSeq',
-            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
-                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.targetcov.dir_name + '" --work-dir \'' +
-                    join(cnf.work_dir, 'targetSeq_summary') + '\''
+            dir_name=BCBioStructure.targetseq_summary_dir,
+            paramln=cnfs_line + ' ' + self.final_dir
+        )
+        self.seq2c = Step(cnf, run_id,
+            name='Seq2C', short_name='seq2c',
+            interpreter='python',
+            script='seq2c',
+            dir_name=BCBioStructure.targetseq_summary_dir,
+            paramln=cnfs_line + ' ' + self.final_dir
         )
         self.ngscat_summary = Step(cnf, run_id,
             name='ngsCAT_summary', short_name='ncs',
             interpreter='python',
             script='ngscat_summary',
-            dir_name='ngscat',
+            dir_name=BCBioStructure.ngscat_summary_dir,
             paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
                     + self.final_dir + '\' -s \'{samples}\' -n "' + self.ngscat.dir_name + '" --work-dir \'' +
                     join(cnf.work_dir, 'ngscat_summary') + '\''
@@ -209,7 +211,7 @@ class Runner:
             name='QualiMap_summary', short_name='qms',
             interpreter='python',
             script='qualimap_summary',
-            dir_name='qualimap',
+            dir_name=BCBioStructure.qualimap_summary_dir,
             paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
                     + self.final_dir + '\' -s \'{samples}\' -n "' + self.qualimap.dir_name + '" --work-dir \'' +
                     join(cnf.work_dir, 'qualimap_summary') + '\''
@@ -522,6 +524,16 @@ class Runner:
         if self.targetcov_summary in self.steps:
             self.submit(
                 self.targetcov_summary,
+                wait_for_steps=[
+                    self.targetcov.job_name(d['description'])
+                    for d in self.bcbio_cnf.details
+                    if self.targetcov in self.steps],
+                # threads=samples_num + 1,
+                samples=samples_fpath)
+
+        if self.seq2c in self.steps:
+            self.submit(
+                self.seq2c,
                 wait_for_steps=[
                     self.targetcov.job_name(d['description'])
                     for d in self.bcbio_cnf.details
