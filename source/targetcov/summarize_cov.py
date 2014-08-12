@@ -1,3 +1,4 @@
+from os.path import join
 from source.bcbio_structure import BCBioStructure
 from source.reporting import summarize, write_summary_reports, write_tsv_rows, Record
 from source.targetcov.copy_number import run_copy_number
@@ -14,7 +15,7 @@ def summary_reports(cnf, bcbio_structure):
         cnf.output_dir,
         cnf.work_dir,
         sum_report,
-        BCBioStructure.targetseq_summary_dir,
+        join(bcbio_structure.date_dirpath, BCBioStructure.targetseq_summary_dir),
         'Target coverage statistics')
 
     return json_by_sample.values(), final_summary_report_fpaths

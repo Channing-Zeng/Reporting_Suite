@@ -2,7 +2,7 @@ from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
 from os.path import join, basename
-from source.bcbio_structure import BCBioStructure
+from source.bcbio_structure import BCBioStructure, Sample
 from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
@@ -34,7 +34,8 @@ def run_target_cov(cnf, bam, amplicons_bed):
 
         save_json(records, join(cnf.output_dir, cnf.name + '.json'))
         summary_report_fpath = write_txt_report(
-            cnf.output_dir, cnf.work_dir, [SampleReport(cnf.name, '', records)],
+            cnf.output_dir, cnf.work_dir,
+            [SampleReport(Sample(cnf.name, bam, amplicons_bed), '', records)],
             cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ' + summary_report_fpath)
@@ -65,7 +66,8 @@ def run_target_cov(cnf, bam, amplicons_bed):
                 exon.gene_name = exon.extra_fields[0]
 
             gene_report_fpath = join(cnf.output_dir,
-                                     cnf.name + '.' + BCBioStructure.targetseq_dir + detail_gene_report_ending)
+                                     cnf.name + '.' + BCBioStructure.targetseq_dir +
+                                     BCBioStructure.detail_gene_report_ending)
             info('Region cov report...')
             _run_region_cov_report(cnf, gene_report_fpath, cnf.name, cnf.coverage_reports.depth_thresholds,
                                    amplicons, exons)

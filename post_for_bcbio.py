@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 from source.bcbio_runner import BCBioRunner
-from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -15,12 +14,12 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 from optparse import OptionParser
 from os.path import join, pardir, isdir, basename, splitext, abspath
-from os import listdir
 
 from source.file_utils import safe_mkdir, adjust_path, remove_quotes
 from source.config import Defaults, Config, load_yaml_config
 from source.logger import info, critical
 from source.main import check_system_resources, check_inputs, check_keys, load_genome_resources
+from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 
 
 def main():
@@ -75,7 +74,7 @@ def main():
     info('*' * 70)
 
     bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
-    bcbio_runner = BCBioRunner(cnf, bcbio_structure)
+    bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
     bcbio_runner.post_jobs()
 
 

@@ -56,19 +56,20 @@ class Steps(list):
 
 
 # noinspection PyAttributeOutsideInit
-class Runner:
-    def __init__(self, cnf, bcbio_final_dir, bcbio_cnf):
-        self.final_dir = bcbio_final_dir
+class BCBioRunner:
+    def __init__(self, cnf, bcbio_structure, bcbio_cnf):
+        self.final_dir = bcbio_structure.final_dirpath
         self.cnf = cnf
         self.bcbio_cnf = bcbio_cnf
+        cnf.work_dir = bcbio_structure.work_dir
 
-        hasher = hashlib.sha1(bcbio_final_dir)
+        hasher = hashlib.sha1(self.final_dir)
         self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])[:-1]
 
         self.threads = str(self.cnf.threads)
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
-        self.date_dirpath = join(bcbio_final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
+        self.date_dirpath = join(self.final_dir, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath):
             err('No project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
@@ -123,7 +124,7 @@ class Runner:
             script='varannotate',
             dir_name=BCBioStructure.varannotate_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} -o \'{output_dir}\' -s \'{sample}\' '
-                                  '--work-dir \'' + join(cnf.work_dir, 'varAnnotate') + '_{sample}\''
+                                  '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\''
         )
         self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
@@ -131,7 +132,7 @@ class Runner:
             script='varqc',
             dir_name=BCBioStructure.varqc_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\''
-                    ' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'varQC') + '_{sample}\''
+                    ' -s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\''
         )
         self.varqc_after = Step(cnf, run_id,
             name='VarQC_postVarFilter', short_name='vqa',
@@ -139,7 +140,7 @@ class Runner:
             script='varqc',
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' '
-                                  '--work-dir \'' + join(cnf.work_dir, 'varQC_postVarFilter') + '_{sample}\''
+                                  '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\''
         )
         self.targetcov = Step(cnf, run_id,
             name='TargetCov', short_name='tc',
@@ -147,7 +148,7 @@ class Runner:
             script='targetcov',
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, 'targetSeq') + '_{sample}\''
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\''
         )
         self.ngscat = Step(cnf, run_id,
             interpreter='python',
@@ -155,7 +156,7 @@ class Runner:
             dir_name=BCBioStructure.ngscat_dir,
             name='ngsCAT', short_name='nc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
-                                  '--saturation y --work-dir \'' + join(cnf.work_dir, 'ngscat') + '_{sample}\''
+                                  '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
         self.qualimap = Step(cnf, run_id,
             script='qualimap',
@@ -384,7 +385,7 @@ class Runner:
                     tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone', steps=self.vardict_steps,
                     job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
 
-    def run(self):
+    def post_jobs(self):
         batches = defaultdict(dict)
 
         for sample_info in self.bcbio_cnf.details:

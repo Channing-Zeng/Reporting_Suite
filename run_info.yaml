@@ -10,7 +10,7 @@ steps:
 #- QualiMap
 - VarQC_Summary
 - TargetCov_Summary
-- ngsCAT_summary
+#- ngsCAT_summary
 #- QualiMap_summary
 
 #vardict_steps:
