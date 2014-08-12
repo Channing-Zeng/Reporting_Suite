@@ -224,33 +224,32 @@ cnfs_for_samples = dict()
 
 
 def filter_all(cnf, bcbio_structure):
-    varannotate_dir = cnf.vcf_dir
-
-    vcf_sufs = cnf['vcf_suf'].split(',')
-    callers = [VariantCaller(bcbio_structure, suf) for suf in vcf_sufs]
+    callers = bcbio_structure.variant_callers
 
     filt_cnf = cnf['variant_filtering']
 
-    for caller in callers:
+    for caller_name, caller in callers.items():
         info('*' * 70)
         info('Running for ' + caller.name)
         info('*' * 70)
 
         anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
-        anno_vcf_fpaths = sorted(v for k, v in anno_vcf_by_sample.items())
 
         filtering = Filtering(cnf, filt_cnf, bcbio_structure, caller)
-        filt_anno_vcf_fpaths = filtering.run_filtering(anno_vcf_fpaths)
+        filt_anno_vcf_fpaths = filtering.run_filtering(anno_vcf_by_sample.values())
 
         global cnfs_for_samples
-        for sname in sample_names:
+        for sample in anno_vcf_by_sample.keys():
             cnf_copy = cnf.copy()
-            cnf_copy['name'] = sname
-            cnfs_for_samples[sname] = cnf_copy
+            cnf_copy['name'] = sample.name
+            cnfs_for_samples[sample.name] = cnf_copy
 
-        results = Parallel(n_jobs=len(anno_vcf_fpaths))(delayed(postprocess)(sname, anno_vcf_fpath, work_filt_vcf_fpath)
-            for sname, anno_vcf_fpath, work_filt_vcf_fpath in
-            zip(caller.samples, filt_anno_vcf_fpaths))
+        results = Parallel(n_jobs=len(caller.samples)) \
+            (delayed(postprocess)
+             (sample.name, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
+              for sample, work_filt_vcf_fpath in
+              zip(caller.samples, filt_anno_vcf_fpaths
+            ))
 
         for res in results:
             finalize_one(cnf, *res)

@@ -235,17 +235,17 @@ class Filtering:
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
 
 
-    def run_filtering(self, vcf_fpath_by_sample):
+    def run_filtering(self, vcf_fpaths):
         step_greetings('Filtering')
 
         info('Removing previous FILTER values')
 
-        n_jobs = len(vcf_fpath_by_sample)
+        n_jobs = len(vcf_fpaths)
         # n_jobs = 1
 
         global cnf_for_samples, filtering
         filtering = self
-        for sample, vcf_fpath in vcf_fpath_by_sample.items():
+        for vcf_fpath in vcf_fpaths:
             cnf_for_samples[basename(vcf_fpath).split('.')[0]] = Filtering.cnf.copy()
 
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)

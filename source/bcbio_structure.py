@@ -2,7 +2,7 @@ from dircache import listdir
 from genericpath import isdir
 import os
 import sys
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink
 from source.calling_process import call
 from source.config import load_yaml_config
@@ -42,41 +42,31 @@ class VariantCaller:
         return {k: v for k, v in self.__dict__
                 if k not in ['bcbio_structure', 'samples']}
 
-    def get_qc_reports_by_samples(self):
-        report_by_sample = dict()
+    def _get_files_by_sample(self, dirname, ending):
+        files_by_sample = OrderedDict()
 
         for s in self.samples:
-            single_report_fpath = join(
+            fpath = join(
                 self.bcbio_structure.final_dirpath,
                 s.name,
-                BCBioStructure.varqc_dir,
-                s.name + '-' + self.suf + '.' + BCBioStructure.varqc_name + '.json')
+                dirname,
+                s.name + '-' + self.suf + ending)
 
-            if verify_file(single_report_fpath):
-                report_by_sample[s] = single_report_fpath
+            if verify_file(fpath):
+                files_by_sample[s] = fpath
 
-        if len(report_by_sample) != len(self.samples):
+        if len(files_by_sample) != len(self.samples):
             sys.exit(1)
 
-        return report_by_sample
+        return files_by_sample
+
+    def get_qc_reports_by_samples(self):
+        return self._get_files_by_sample(
+            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.json')
 
     def get_anno_vcf_by_samples(self):
-        vcf_by_sample = dict()
-
-        for s in self.samples:
-            vcf_fpath = join(
-                self.bcbio_structure.final_dirpath,
-                s.name,
-                BCBioStructure.varannotate_dir,
-                s.name + '-' + self.suf + BCBioStructure.anno_vcf_ending)
-
-            if verify_file(vcf_fpath):
-                vcf_by_sample[s] = vcf_fpath
-
-        if len(vcf_by_sample) != len(self.samples):
-            sys.exit(1)
-
-        return vcf_by_sample
+        return self._get_files_by_sample(
+            BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
 
 class Batch:
