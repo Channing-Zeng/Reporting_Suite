@@ -13,12 +13,14 @@
   report = {
     name: '',
     fpath: '',
+    link: '',
     records: []
   };
 
   records = {
     metric: null,
-    value: ''
+    value: '',
+    meta: ''
   };
 
   metric = {
@@ -26,15 +28,16 @@
     short_name: '',
     description: '',
     quality: '',
-    presision: 0,
-    meta: ''
+    presision: 0
   };
 
   get_qc_meta_tag_contents = function(rec) {
     var db, dbs, k, meta, meta_table, novelty, val, values, _i, _len;
     metric = rec.metric;
     meta = rec.meta;
-    if ((meta != null) && ((function() {
+    if ((meta != null) && typeof meta === 'string') {
+      return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"" + meta + "\"";
+    } else if ((meta != null) && ((function() {
       var _results;
       _results = [];
       for (k in meta) {

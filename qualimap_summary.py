@@ -192,6 +192,8 @@ def _parse_qualimap_sample_report(report_fpath):
             except ValueError:  # it is a string
                 val = val_num + val_unit
         record.value = val
+        if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
+            record.meta = val_unit[1:]
         records.append(record)
 
     sections = {'start':            'Summary',

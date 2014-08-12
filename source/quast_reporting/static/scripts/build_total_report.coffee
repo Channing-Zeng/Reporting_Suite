@@ -4,11 +4,13 @@ String.prototype.trunc = (n) ->
 report =
     name: ''
     fpath: ''
+    link: ''
     records: []
 
 records =
     metric: null
     value: ''
+    meta: ''
 
 metric =
     name: ''
@@ -16,14 +18,15 @@ metric =
     description: ''
     quality: ''
     presision: 0
-    meta: ''
 
 
 get_qc_meta_tag_contents = (rec) ->
     metric = rec.metric
     meta = rec.meta
 
-    if meta? and (k for own k of meta).length isnt 0
+    if meta? and typeof meta == 'string'
+        return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta}\""
+    else if meta? and (k for own k of meta).length isnt 0
         meta_table = '<table class=\'qc_meta_table\'>\n<tr><td></td>'
         for novelty, values of meta when novelty isnt 'all'
             meta_table += "<td>#{novelty}</td>"
