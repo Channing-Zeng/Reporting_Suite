@@ -1,6 +1,6 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from os.path import join
-from source.bcbio_structure import BCBioStructure, VariantCaller
+from source.bcbio_structure import BCBioStructure, VariantCaller, Sample
 from source.logger import info
 from source.reporting import summarize, write_summary_reports, Record
 
@@ -42,9 +42,13 @@ def _make_for_multiple_variant_callers(cnf, callers):
             join(cnf.output_dir, caller.suf + '.' + BCBioStructure.varqc_name),
             'Variant QC for ' + caller.name)
 
-    all_single_reports = dict((sname + '-' + c.suf, rep)
-                              for c in callers
-                              for sname, rep in c.get_qc_reports_by_samples().items())
+    all_single_reports = OrderedDict(
+        ((Sample(s + '-' + c), rep)
+         for (s, c, rep) in sorted(
+            (s.name, c.name, rep)
+            for c in callers
+            for s, rep in c.get_qc_reports_by_samples().items()
+        )))
 
     full_summary_report = summarize(
         all_single_reports,

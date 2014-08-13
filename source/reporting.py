@@ -140,8 +140,8 @@ def summarize(report_fpath_by_sample, parse_report_fn):
     """ Returns list of SampleReport objects:
         [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
     """
-    return [SampleReport(sample, fpath, parse_report_fn(fpath))
-            for sample, fpath in report_fpath_by_sample.items()]
+    return [SampleReport(sample_name, fpath, parse_report_fn(fpath))
+            for sample_name, fpath in report_fpath_by_sample.items()]
 
 
 def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):

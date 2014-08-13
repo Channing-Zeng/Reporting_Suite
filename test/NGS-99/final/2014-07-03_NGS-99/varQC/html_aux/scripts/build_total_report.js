@@ -11,14 +11,27 @@
   };
 
   report = {
-    name: '',
+    sample: {
+      name: '',
+      phenotype: '',
+      bam: '',
+      bed: '',
+      vcf_by_caller: {
+        name: '',
+        summary_qc_rep_fpaths: [],
+        anno_vcf_fpaths: {},
+        anno_filt_vcf_fpaths: {}
+      }
+    },
     fpath: '',
+    link: '',
     records: []
   };
 
   records = {
     metric: null,
-    value: ''
+    value: '',
+    meta: ''
   };
 
   metric = {
@@ -26,15 +39,16 @@
     short_name: '',
     description: '',
     quality: '',
-    presision: 0,
-    meta: ''
+    presision: 0
   };
 
   get_qc_meta_tag_contents = function(rec) {
     var db, dbs, k, meta, meta_table, novelty, val, values, _i, _len;
     metric = rec.metric;
     meta = rec.meta;
-    if ((meta != null) && ((function() {
+    if ((meta != null) && typeof meta === 'string') {
+      return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"" + meta + "\"";
+    } else if ((meta != null) && ((function() {
       var _results;
       _results = [];
       for (k in meta) {
@@ -113,9 +127,9 @@
     }
     for (_j = 0, _len = report.length; _j < _len; _j++) {
       sampleReport = report[_j];
-      sampleName = sampleReport.name;
+      sampleName = sampleReport.sample.name;
       sampleLink = sampleReport.link;
-      if (sampleReport.name.length > 30) {
+      if (sampleName.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
       table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";

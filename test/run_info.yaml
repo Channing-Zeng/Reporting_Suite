@@ -1,11 +1,11 @@
 genome: hg19
 
 steps:
-- VarAnnotate
-- VarQC
-- VarFilter
-- VarQC_after
-- TargetCov
+# - VarAnnotate
+# - VarQC
+# - VarFilter
+# - VarQC_after
+# - TargetCov
 #- NGScat
 # - QualiMap
 - VarQC_Summary
@@ -29,7 +29,6 @@ filter_reject: False   ## Before annotation and QC, drop variants
 
 variant_filtering:
   impact:             'MODERATE|HIGH'
-
 
   # filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
   # filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].

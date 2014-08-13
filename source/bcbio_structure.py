@@ -22,6 +22,9 @@ class Sample:
         self.vcf_by_caller = dict()  # VariantCaller -> vcf_fpath
         self.phenotype = None
 
+    def __str__(self):
+        return self.name
+
     def for_json(self):
         return dict(
             (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
@@ -39,24 +42,24 @@ class VariantCaller:
         self.bcbio_structure = bcbio_structure
         self.samples = []
 
-    def for_json(self):
-        return {k: v for k, v in self.__dict__
-                if k not in ['bcbio_structure', 'samples']}
-
     def _get_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
 
+        to_exit = False
         for s in self.samples:
-            fpath = join(
-                self.bcbio_structure.final_dirpath,
-                s.name,
-                dirname,
-                s.name + '-' + self.suf + ending)
+            if self in s.vcf_by_caller:
+                fpath = join(
+                    self.bcbio_structure.final_dirpath,
+                    s.name,
+                    dirname,
+                    s.name + '-' + self.suf + ending)
 
-            if verify_file(fpath):
-                files_by_sample[s] = fpath
+                if verify_file(fpath):
+                    files_by_sample[s] = fpath
+                else:
+                    to_exit = True
 
-        if len(files_by_sample) != len(self.samples):
+        if to_exit:
             sys.exit(1)
 
         return files_by_sample
@@ -69,12 +72,22 @@ class VariantCaller:
         return self._get_files_by_sample(
             BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
+    def __str__(self):
+        return self.name
+
+    def for_json(self):
+        return {k: v for k, v in self.__dict__
+                if k not in ['bcbio_structure', 'samples']}
+
 
 class Batch:
     def __init__(self, name=None):
         self.name = name
         self.normal = None
         self.tumor = []
+
+    def __str__(self):
+        return self.name
 
 
 class BCBioStructure:
@@ -171,19 +184,16 @@ class BCBioStructure:
 
     def _read_sample_details(self, sample_info):
         sample = Sample(name=sample_info['description'])
+        self.samples.append(sample)
+
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
 
         sample.dirpath = adjust_path(join(self.final_dirpath, sample.name))
         if not verify_dir(sample.dirpath): sys.exit(1)
 
-        bed_fpath = sample_info['algorithm'].get('variant_regions')
-        if bed_fpath:
-            bed_fpath = adjust_path(bed_fpath)
-            if not verify_bed(bed_fpath): sys.exit(1)
-
+        sample.bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
         sample.bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
-        if not verify_bam(sample.bam): sys.exit(1)
 
         safe_mkdir(join(sample.dirpath, 'qc'))
 
@@ -206,18 +216,22 @@ class BCBioStructure:
 
         var_dirpath = self._move_vcfs_to_var(sample)
 
-        to_exit = False
+        # to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
             vcf_fpath = adjust_path(join(var_dirpath, vcf_fname))
             self._ungzip_if_needed(self.cnf, vcf_fpath)
 
+            if file_exists(vcf_fpath):
+                if not verify_file(vcf_fpath):
+                    continue
+
             if not file_exists(vcf_fpath):
-                if sample.phenotype != 'normal':
-                    err('No VCF file ' + vcf_fpath + ', and the phenotype is not normal.')
-                    to_exit = True
-            if not verify_file(vcf_fpath):
-                to_exit = True
+                if sample.phenotype == 'tumor':
+                    vcf_fpath = None
+                else:
+                    err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
+                    continue
 
             if caller_name not in self.variant_callers:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
@@ -231,8 +245,6 @@ class BCBioStructure:
             print ''
             info()
 
-        if to_exit:
-            return None
         return sample
 
     def get_gene_reports_by_sample(self):
