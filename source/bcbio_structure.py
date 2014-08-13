@@ -30,13 +30,14 @@ class Sample:
 
 class VariantCaller:
     def __init__(self, bcbio_structure, name):
-        self.bcbio_structure = bcbio_structure
         self.name = self.suf = name
-        self.samples = []
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
-        self.anno_vcf_fpaths = []
-        self.anno_filt_vcf_fpaths = []
+        self.anno_vcf_fpaths = OrderedDict()
+        self.anno_filt_vcf_fpaths = OrderedDict()
+
+        self.bcbio_structure = bcbio_structure
+        self.samples = []
 
     def for_json(self):
         return {k: v for k, v in self.__dict__

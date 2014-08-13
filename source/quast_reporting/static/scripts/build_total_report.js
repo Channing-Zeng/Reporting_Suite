@@ -11,7 +11,18 @@
   };
 
   report = {
-    name: '',
+    sample: {
+      name: '',
+      phenotype: '',
+      bam: '',
+      bed: '',
+      vcf_by_caller: {
+        name: '',
+        summary_qc_rep_fpaths: [],
+        anno_vcf_fpaths: {},
+        anno_filt_vcf_fpaths: {}
+      }
+    },
     fpath: '',
     link: '',
     records: []
@@ -116,9 +127,9 @@
     }
     for (_j = 0, _len = report.length; _j < _len; _j++) {
       sampleReport = report[_j];
-      sampleName = sampleReport.name;
+      sampleName = sampleReport.sample.name;
       sampleLink = sampleReport.link;
-      if (sampleReport.name.length > 30) {
+      if (sampleName.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
       table += "<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";

@@ -2,7 +2,16 @@ String.prototype.trunc = (n) ->
     this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')
 
 report =
-    name: ''
+    sample:
+        name: ''
+        phenotype: ''
+        bam: ''
+        bed: ''
+        vcf_by_caller:
+            name: ''
+            summary_qc_rep_fpaths: []
+            anno_vcf_fpaths: {}
+            anno_filt_vcf_fpaths: {}
     fpath: ''
     link: ''
     records: []
@@ -88,9 +97,9 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
         </td>"
 
     for sampleReport in report
-        sampleName = sampleReport.name
+        sampleName = sampleReport.sample.name
         sampleLink = sampleReport.link
-        if sampleReport.name.length > 30
+        if sampleName.length > 30
             sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
 
         table += "<tr>
