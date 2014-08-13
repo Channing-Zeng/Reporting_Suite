@@ -14,12 +14,13 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 from source.variants.summarize_qc import make_summary_reports
-from source.summary import process_cnf
+from source.summary import summary_script_proc_params
 from source.bcbio_structure import BCBioStructure
 
 
 def main():
-    cnf, bcbio_structure = process_cnf(BCBioStructure.varqc_name)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.varqc_name)
+    cnf.output_dir = join(bcbio_structure.date_dirpath, BCBioStructure.varqc_summary_dir)
     make_summary_reports(cnf, bcbio_structure)
 
 

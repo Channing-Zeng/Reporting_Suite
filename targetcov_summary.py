@@ -13,26 +13,15 @@ from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
-from source.logger import info
 from source.targetcov.summarize_cov import summary_reports
 from source.bcbio_structure import BCBioStructure
-from source.summary import process_cnf
+from source.summary import summary_script_proc_params
 
 
 def main():
-    info(' '.join(sys.argv))
-    info()
-
-    cnf, bcbio_structure = process_cnf(BCBioStructure.targetseq_summary_dir)
-
-    sample_sum_reports, sum_report_fpaths = summary_reports(cnf, bcbio_structure)
-
-    info()
-    info('*' * 70)
-    info('Summary:')
-    for fpath in sum_report_fpaths:
-        if fpath:
-            info('  ' + fpath)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.targetseq_name)
+    cnf.output_dir = join(bcbio_structure.date_dirpath, BCBioStructure.targetseq_summary_dir)
+    summary_reports(cnf, bcbio_structure)
 
 
 if __name__ == '__main__':

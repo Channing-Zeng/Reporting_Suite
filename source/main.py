@@ -247,9 +247,14 @@ def set_up_dirs(cnf):
     """ Creates output_dir, work_dir; sets up log
     """
     cnf.output_dir = adjust_path(cnf.output_dir)
-
     safe_mkdir(cnf.output_dir, 'output_dir')
+    info('Saving into ' + cnf.output_dir)
 
+    set_up_work_dir(cnf)
+    set_up_log(cnf)
+
+
+def set_up_work_dir(cnf):
     if not cnf.work_dir:
         work_dir_name = 'work_' + cnf.name
         cnf.work_dir = join(cnf.output_dir, work_dir_name)
@@ -260,7 +265,7 @@ def set_up_dirs(cnf):
 
     safe_mkdir(cnf.work_dir, 'working directory')
 
+
+def set_up_log(cnf):
     cnf.log = join(cnf.work_dir, cnf.name + '_log.txt')
     logger.log_fpath = cnf.log
-
-    info('Saving into ' + cnf.output_dir)

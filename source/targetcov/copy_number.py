@@ -2,16 +2,12 @@
 
 import math
 from collections import defaultdict, OrderedDict
-from os.path import join
 from source.bcbio_structure import BCBioStructure
-from source.config import fill_dict_from_defaults
 from source.logger import info, err, step_greetings, critical
 from source.reporting import write_tsv_rows, Record
 
 from source.utils import OrderedDefaultDict
-# from numpy import median, mean
 from source.utils import median, mean
-from joblib import Parallel, delayed
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
@@ -32,9 +28,13 @@ def cnv_reports(cnf, bcbio_structure):
     cnv_rows = _summarize_copy_number(sample_gene_reports_by_sample, json_by_sample)
 
     cnv_report_fpath = write_tsv_rows(cnv_rows,
-                                      join(bcbio_structure.date_dirpath,
-                                           BCBioStructure.targetseq_summary_dir),
+                                      cnf.output_dir,
                                       BCBioStructure.seq2c_name)
+    info()
+    info('*' * 70)
+    if cnv_report_fpath:
+        info('Gene CNV:')
+        info('  ' + cnv_report_fpath)
 
     return cnv_report_fpath
 

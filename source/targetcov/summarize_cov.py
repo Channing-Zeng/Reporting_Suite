@@ -15,8 +15,15 @@ def summary_reports(cnf, bcbio_structure):
         cnf.output_dir,
         cnf.work_dir,
         sum_report,
-        join(bcbio_structure.date_dirpath, BCBioStructure.targetseq_summary_dir),
+        join(cnf.output_dir, BCBioStructure.targetseq_name),
         'Target coverage statistics')
+
+    info()
+    info('*' * 70)
+    info('Summary:')
+    for fpath in final_summary_report_fpaths:
+        if fpath:
+            info('  ' + fpath)
 
     return json_by_sample.values(), final_summary_report_fpaths
 

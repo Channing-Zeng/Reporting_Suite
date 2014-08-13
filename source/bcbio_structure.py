@@ -89,7 +89,7 @@ class BCBioStructure:
     ngscat_dir          = join('qc', ngscat_name)
     qualimap_dir        = join('qc', qualimap_name)
     cnv_dir             = 'cnv'
-    seq2c_name          = 'Seq2C'
+    seq2c_name          = seq2c_dir = 'Seq2C'
     detail_gene_report_ending = '.details.gene.txt'
     anno_vcf_ending = '.anno.vcf'
     filt_vcf_ending = '.anno.filt.vcf'
@@ -113,7 +113,10 @@ class BCBioStructure:
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         if not isdir(self.work_dir):
             safe_mkdir(self.work_dir)
+
         info(' '.join(sys.argv))
+        info()
+        info('-' * 70)
 
         self.samples = [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]
         if any(s is None for s in self.samples):
@@ -149,8 +152,9 @@ class BCBioStructure:
     @staticmethod
     def _move_vcfs_to_var(sample):
         var_dirpath = adjust_path(join(sample.dirpath, 'var'))
-        info('Creating "var" directory ' + var_dirpath)
-        safe_mkdir(var_dirpath)
+        if not exists(var_dirpath):
+            info('Creating "var" directory ' + var_dirpath)
+            safe_mkdir(var_dirpath)
 
         for fname in os.listdir(sample.dirpath):
             if 'vcf' in fname.split('.') and \

@@ -1,29 +1,19 @@
-from genericpath import isfile
-from os.path import basename, join
+import os
+import shutil
 import pickle
-import sys
-from source.file_utils import verify_file
-
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
 import operator
-from collections import defaultdict, namedtuple
-from joblib import Parallel, delayed
 
-# try:
-#     import dill as pickle
-#     dill_loaded = True
-# except ImportError:
-#     import pickle
-#     dill_loaded = False
+from os.path import basename, join, isfile, dirname, splitext
+from joblib import Parallel, delayed
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line
 from source.utils import mean
+from source.file_utils import safe_mkdir, add_suffix, verify_file
+from source.variants.tsv import make_tsv
+from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_is_empty, igvtools_index
+from source.logger import info
 
 
 class Filter:
@@ -160,11 +150,9 @@ class Filtering:
     cnf = None
     filt_cnf = None
 
-    def __init__(self, cnf, filt_cnf, bcbio_structure, caller):
+    def __init__(self, cnf, bcbio_structure, caller):
         Filtering.cnf = cnf
-        filt_cnf = filt_cnf.__dict__
-        Filter.filt_cnf = filt_cnf
-        Filtering.filt_cnf = filt_cnf
+        Filtering.filt_cnf = Filter.filt_cnf = filt_cnf = cnf.variant_filtering.__dict__
 
         self.caller = caller
         self.control_vars = set()
@@ -426,3 +414,93 @@ def proc_line_polymorphic(rec, self_):
 #     info('Done.')
 #
 #     return filtered_fpath
+
+
+cnfs_for_samples = dict()
+
+
+def filter_for_variant_caller(caller, cnf, bcbio_structure):
+    info('*' * 70)
+    info('Running for ' + caller.name)
+    info('*' * 70)
+
+    anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
+
+    f = Filtering(cnf, bcbio_structure, caller)
+    filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_by_sample.values())
+
+    global cnfs_for_samples
+    for sample in anno_vcf_by_sample.keys():
+        cnf_copy = cnf.copy()
+        cnf_copy['name'] = sample.name
+        cnfs_for_samples[sample.name] = cnf_copy
+
+    return Parallel(n_jobs=len(caller.samples)) \
+        (delayed(postprocess_vcf)
+         (sample.name, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
+          for sample, work_filt_vcf_fpath in
+          zip(caller.samples, filt_anno_vcf_fpaths
+        ))
+
+
+def postprocess_vcf(sname, anno_vcf_fpath, work_filt_vcf_fpath):
+    cnf = cnfs_for_samples[sname]
+
+    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
+
+    safe_mkdir(dirname(final_vcf_fpath))
+
+    file_basepath = splitext(final_vcf_fpath)[0]
+    final_vcf_fpath = file_basepath + '.vcf'
+    final_clean_vcf_fpath = file_basepath + '.passed.vcf'
+    final_tsv_fpath = file_basepath + '.tsv'
+    final_clean_tsv_fpath = file_basepath + '.passed.tsv'
+    final_clean_maf_fpath = file_basepath + '.passed.maf'
+
+    # Moving final VCF
+    if isfile(final_vcf_fpath):
+        os.remove(final_vcf_fpath)
+    shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
+    os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
+    igvtools_index(cnf, final_vcf_fpath)
+
+    # Cleaning rejected variants
+    clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
+    if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
+        info('All variants are rejected.')
+    if isfile(final_clean_vcf_fpath):
+        os.remove(final_clean_vcf_fpath)
+    shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
+    os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
+    igvtools_index(cnf, final_clean_vcf_fpath)
+
+    # Converting to TSV
+    if work_filt_vcf_fpath and 'tsv_fields' in cnf:
+        tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath)
+
+        if isfile(final_tsv_fpath):
+            os.remove(final_tsv_fpath)
+        shutil.move(tsv_fpath, final_tsv_fpath)
+    else:
+        final_tsv_fpath = None
+
+    # Converting clean VCF to TSV
+    if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
+        clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
+
+        if isfile(final_clean_tsv_fpath):
+            os.remove(final_clean_tsv_fpath)
+        shutil.move(clean_tsv_fpath, final_clean_tsv_fpath)
+    else:
+        final_clean_tsv_fpath = None
+
+    # Converting to MAF
+    if clean_filtered_vcf_fpath and cnf.make_maf:
+        maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+        if isfile(final_clean_maf_fpath):
+            os.remove(final_clean_maf_fpath)
+        shutil.move(maf_fpath, final_clean_maf_fpath)
+    else:
+        final_clean_maf_fpath = None
+
+    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_clean_maf_fpath]

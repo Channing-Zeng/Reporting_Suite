@@ -13,26 +13,15 @@ from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
-from source.logger import info
 from source.bcbio_structure import BCBioStructure
-from source.summary import process_cnf
+from source.summary import summary_script_proc_params
 from source.targetcov.copy_number import cnv_reports
 
 
 def main():
-    info(' '.join(sys.argv))
-    info()
-
-    cnf, bcbio_structure = process_cnf(BCBioStructure.targetseq_summary_dir)
-
-    cnv_report_fpath = cnv_reports(cnf, bcbio_structure)
-
-    info()
-    info('*' * 70)
-
-    if cnv_report_fpath:
-        info('Gene CNV:')
-        info('  ' + cnv_report_fpath)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.seq2c_name)
+    cnf.output_dir = join(bcbio_structure.date_dirpath, BCBioStructure.seq2c_dir)
+    cnv_reports(cnf, bcbio_structure)
 
 
 if __name__ == '__main__':
