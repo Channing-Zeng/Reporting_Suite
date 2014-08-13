@@ -1,8 +1,9 @@
+from dircache import listdir
 import hashlib
 import os
 import sys
 import base64
-from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists
+from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix
@@ -80,6 +81,7 @@ class BCBioRunner:
                 self.varqc_after,
                 self.varqc_summary,
                 self.targetcov,
+                self.seq2c,
                 self.ngscat,
                 self.qualimap,
                 self.targetcov_summary,
@@ -98,6 +100,8 @@ class BCBioRunner:
                 self.varqc_after,
                 self.varqc_summary]
              if contains(s.name, cnf.vardict_steps)])
+
+        self._symlink_cnv()
 
 
     def set_up_steps(self, cnf, run_id):
@@ -368,6 +372,7 @@ class BCBioRunner:
         for sample in self.bcbio_structure.samples:
             if not (any(step in self.steps for step in
                         [self.targetcov,
+                         self.seq2c,
                          self.qualimap,
                          self.ngscat,
                          self.varqc,
@@ -383,6 +388,7 @@ class BCBioRunner:
             # BAMS
             if any(step in self.steps for step in [
                    self.targetcov,
+                   self.seq2c,
                    self.qualimap,
                    self.ngscat]) \
                     or self.vardict in self.vardict_steps:
@@ -474,7 +480,7 @@ class BCBioRunner:
                 self.varfilter_all,
                 wait_for_steps=[
                     self.varannotate.job_name(s.name, v.name)
-                    for v in self.bcbio_structure.variant_callers
+                    for v in self.bcbio_structure.variant_callers.values()
                     for s in v.samples
                     if self.varannotate in self.steps],
                 create_dir=False,
@@ -515,3 +521,28 @@ class BCBioRunner:
                 wait_for_steps=([self.varfilter_all.job_name()]
                                  if self.varfilter_all in steps else []) + job_names_to_wait,
                 vcf=filtered_vcf_fpath, sample=sample_name, caller=caller_name)
+
+    def _symlink_cnv(self):
+        cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir)
+
+        for sample in self.bcbio_structure.samples:
+            sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
+            cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
+            if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
+
+            for fname in listdir(sample_dirpath):
+                if any(fname.endswith(s) for s in ['-cn_mops.bed', '-ensemble.bed']):
+                    os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
+
+            for fname in listdir(cnv_dirpath):
+                if not fname.startswith('.'):
+                    src_fpath = join(cnv_dirpath, fname)
+
+                    dst_fname = fname
+                    if sample.name not in fname:
+                        dst_fname = sample.name + '.' + dst_fname
+
+                    dst_fpath = join(cnv_summary_dirpath, dst_fname)
+                    if islink(dst_fpath):
+                        os.unlink(dst_fpath)
+                    os.symlink(src_fpath, dst_fpath)

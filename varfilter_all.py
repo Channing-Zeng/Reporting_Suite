@@ -211,12 +211,11 @@ def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, ma
     if maf_fpath:
         info('Saved MAF (only passed) to ' + maf_fpath)
 
-    if cnf.make_soft_links:
-        for fpath in [vcf_fpath, tsv_fpath, maf_fpath]:
-            sl_path = join(dirname(fpath), pardir, basename(fpath))
-            if islink(sl_path):
-                os.unlink(sl_path)
-            os.symlink(fpath, sl_path)
+    for fpath in [vcf_fpath, tsv_fpath, maf_fpath]:
+        sl_path = join(dirname(fpath), pardir, basename(fpath))
+        if islink(sl_path):
+            os.unlink(sl_path)
+        os.symlink(fpath, sl_path)
 
 if __name__ == '__main__':
     main()

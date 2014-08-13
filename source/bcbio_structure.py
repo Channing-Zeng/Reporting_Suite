@@ -7,9 +7,7 @@ from os.path import join, abspath, exists, pardir, splitext, basename, islink
 from source.calling_process import call
 from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path
-from source.ngscat.bed_file import verify_bed, verify_bam
 from source.tools_from_cnf import get_tool_cmdline
-
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical
 
@@ -94,6 +92,7 @@ class BCBioStructure:
     varfilter_name      = varfilter_dir                           = 'varFilter'
     varannotate_name    = varannotate_dir                         = 'varAnnotate'
     targetseq_name      = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
+    cnv_dir             = cnv_summary_dir                         = 'cnv'
     varqc_name                          = varqc_summary_dir       = 'varQC'
     varqc_after_name                    = varqc_after_summary_dir = 'varQC_postVarFilter'
     ngscat_name                         = ngscat_summary_dir      = 'ngscat'
@@ -102,8 +101,7 @@ class BCBioStructure:
     varqc_after_dir     = join('qc', varqc_after_name)
     ngscat_dir          = join('qc', ngscat_name)
     qualimap_dir        = join('qc', qualimap_name)
-    cnv_dir             = 'cnv'
-    seq2c_name          = seq2c_dir = 'Seq2C'
+    seq2c_name = 'Seq2C'
     detail_gene_report_ending = '.details.gene.txt'
     anno_vcf_ending = '.anno.vcf'
     filt_vcf_ending = '.anno.filt.vcf'

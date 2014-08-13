@@ -1,8 +1,7 @@
 from os.path import join
 from source.bcbio_structure import BCBioStructure
-from source.reporting import summarize, write_summary_reports, write_tsv_rows, Record
-from source.targetcov.copy_number import run_copy_number
-from source.logger import critical, step_greetings, info, err
+from source.reporting import summarize, write_summary_reports, Record
+from source.logger import step_greetings, info
 
 
 def summary_reports(cnf, bcbio_structure):
@@ -24,8 +23,6 @@ def summary_reports(cnf, bcbio_structure):
     for fpath in final_summary_report_fpaths:
         if fpath:
             info('  ' + fpath)
-
-    return json_by_sample.values(), final_summary_report_fpaths
 
 
 def _parse_targetseq_sample_report(json_fpath):

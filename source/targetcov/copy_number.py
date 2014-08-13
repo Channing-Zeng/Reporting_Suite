@@ -27,9 +27,11 @@ def cnv_reports(cnf, bcbio_structure):
     info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_gene_reports_by_sample, json_by_sample)
 
-    cnv_report_fpath = write_tsv_rows(cnv_rows,
-                                      cnf.output_dir,
-                                      BCBioStructure.seq2c_name)
+    cnv_report_fpath = write_tsv_rows(
+        cnv_rows,
+        cnf.output_dir,
+        BCBioStructure.seq2c_name)
+
     info()
     info('*' * 70)
     if cnv_report_fpath:

@@ -57,12 +57,12 @@ test/bcbio/final/**/vardict
 test/bcbio/final/**/*-ready.bam.bai
 test/bcbio/final/*/*-ready.bam.bai
 test/bcbio/final/**/varQC
-
+test/bcbio/final/2014-07-03_bcbio
 test/bcbio/final_old
+test/bcbio.bak
 
 test/NGS-99/final.bak
 test/NGS-99/final_old
-test/bcbio copy/
 test/NGS-99/final/2014-07-03_NGS-99/log/
 
 test/NGS-99/final_old*

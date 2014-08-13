@@ -8,6 +8,7 @@ steps:
 # - TargetCov
 #- NGScat
 # - QualiMap
+# - Seq2C
 - VarQC_Summary
 - TargetCov_Summary
 #- ngsCAT_summary
