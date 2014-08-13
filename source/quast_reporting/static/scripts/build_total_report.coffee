@@ -19,7 +19,7 @@ report =
 records =
     metric: null
     value: ''
-    meta: ''
+    meta: null
 
 metric =
     name: ''
@@ -27,40 +27,44 @@ metric =
     description: ''
     quality: ''
     presision: 0
+    type: null
 
 
-get_qc_meta_tag_contents = (rec) ->
+get_meta_tag_contents = (rec) ->
     metric = rec.metric
     meta = rec.meta
 
-    if meta? and typeof meta == 'string'
-        return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta}\""
-    else if meta? and (k for own k of meta).length isnt 0
-        meta_table = '<table class=\'qc_meta_table\'>\n<tr><td></td>'
-        for novelty, values of meta when novelty isnt 'all'
-            meta_table += "<td>#{novelty}</td>"
-#        for novelty, values of meta when novelty is 'all'
-#            meta_table += "<td>#{novelty}</td>"
-        meta_table += '</tr>\n'
-
-        for novelty, values of meta
-            dbs = (db for db, val of values when db isnt 'average')
-            dbs.push 'average'
-            break
-
-        for db in dbs
-            meta_table += "<tr><td>#{db}</td>"
-            for novelty, values of meta when novelty isnt 'all'
-                meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
-#            for novelty, values of meta when novelty is 'all'
-#                meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
-
-            meta_table += '</tr>\n'
-        meta_table += '</table>\n'
-
-        return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
-    else
+    if meta? and meta.length isnt 0
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
+
+        if typeof meta is 'string'
+            return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta}\""
+
+        else  # qc
+            (k for own k of meta).length isnt 0
+            meta_table = '<table class=\'qc_meta_table\'>\n<tr><td></td>'
+            for novelty, values of meta when novelty isnt 'all'
+                meta_table += "<td>#{novelty}</td>"
+    #        for novelty, values of meta when novelty is 'all'
+    #            meta_table += "<td>#{novelty}</td>"
+            meta_table += '</tr>\n'
+
+            for novelty, values of meta
+                dbs = (db for db, val of values when db isnt 'average')
+                dbs.push 'average'
+                break
+
+            for db in dbs
+                meta_table += "<tr><td>#{db}</td>"
+                for novelty, values of meta when novelty isnt 'all'
+                    meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
+    #            for novelty, values of meta when novelty is 'all'
+    #                meta_table += "<td>#{toPrettyString(values[db], metric.unit)}</td>"
+
+                meta_table += '</tr>\n'
+            meta_table += '</table>\n'
+
+            return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
 
 
 RED_HUE = 0
@@ -71,11 +75,11 @@ GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
 reporting.buildTotalReport = (report, columnOrder, date) ->
     $('#report_date').html('<p>' + date + '</p>');
 
-    table = "<table cellspacing=\"0\" class=\"report_table draggable\" id=\"main_report_table\">"
-    table += "<tr class=\"top_row_tr\">
-                  <td id=\"top_left_td\" class=\"left_column_td\">
-                      <span>Sample</span>
-                  </td>"
+    table = "<table cellspacing=\"0\" class=\"report_table draggable fix-align-char\" id=\"main_report_table\">"
+    table += "\n<tr class=\"top_row_tr\">"
+    table += "<td id=\"top_left_td\" class=\"left_column_td\">
+                <span>Sample</span>
+              </td>"
 
     for recNum in [0...report[0].records.length]
         pos = columnOrder[recNum]
@@ -102,7 +106,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
         if sampleName.length > 30
             sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
 
-        table += "<tr>
+        table += "\n<tr>
             <td class=\"left_column_td\">
                 <a class=\"sample_name\" href=\"#{sampleLink}\">#{sampleName}</a>
             </td>"
@@ -113,35 +117,38 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
             metric = rec.metric
             value = rec.value
 
-            table += "<td metric=\"#{metric.name}\" quality=\"#{metric.quality}\""
-
             if not value? or value == ''
-                cell_contents = '-'
+                rec.cell_contents = '-'
 
             else
                 if typeof value == 'number'
-                    num = value
-                    cell_contents = toPrettyString(value, metric.unit)
+                    rec.num = value
+                    rec.cell_contents = toPrettyString(value, metric.unit)
+
                 else if /^-?.?[0-9]/.test(value)
                     result = /([0-9\.]+)(.*)/.exec value
-                    num = parseFloat result[1]
-                    cell_contents = toPrettyString(num, metric.unit) + result[2]
+                    rec.num = parseFloat result[1]
+                    rec.cell_contents = toPrettyString(rec.num, metric.unit) + result[2]
+
                 else
-                    cell_contents = value
+                    rec.cell_contents = value
 
-                if num?
-                    table += ' number="' + value + '">'
+            table += "<td metric=\"#{metric.name}\" quality=\"#{metric.quality}\""
 
-            table += "<a #{get_qc_meta_tag_contents(rec)}>#{cell_contents}</a></td>"
+            if rec.num?
+                table += ' number="' + rec.value + '">'
+
+            table += "<a #{get_meta_tag_contents(rec)}>#{rec.cell_contents}</a></td>"
         table += "</tr>"
-    table += "</table>"
+    table += "\n</table>\n"
 
     $('#report').append table
     $('#report_legend').append legend
+#    $('#report_table').alignColumn [1...report[0].records.length]
     add_heatmap()
 
-    legend = '<span>';
-    step = 6;
+    legend = '<span>'
+    step = 6
     for hue in [RED_HUE..GREEN_HUE] by step
         lightness = (Math.pow(hue - 75, 2)) / 350 + 35
         legend += "<span style=\"color: hsl(#{hue}, 80%, #{lightness}%);\">"
@@ -172,30 +179,70 @@ get_color = (hue) ->
 
 
 add_heatmap = ->
+    processes_metrics = []
+
     $(".report_table td[number]").each ->
         metric = $(this).attr 'metric'
-        quality = $(this).attr 'quality'
-        other_cells = $('.report_table').find "td[metric=\"#{metric}\"][number]"
-        orther_numbers = ($(cell).attr 'number' for cell in other_cells)
+        if !(metric in processes_metrics)
+            quality = $(this).attr 'quality'
+            other_cells = $('.report_table').find "td[metric=\"#{metric}\"][number]"
+            orther_numbers = ($(cell).attr 'number' for cell in other_cells)
 
-        min = Math.min.apply null, orther_numbers
-        max = Math.max.apply null, orther_numbers
+            min = Math.min.apply null, orther_numbers
+            max = Math.max.apply null, orther_numbers
 
-        maxHue = GREEN_HUE
-        minHue = RED_HUE
+            maxHue = GREEN_HUE
+            minHue = RED_HUE
 
-        if quality == 'Less is better'
-            maxHue = RED_HUE
-            minHue = GREEN_HUE
+            if quality == 'Less is better'
+                maxHue = RED_HUE
+                minHue = GREEN_HUE
 
-        if max == min
-            $(other_cells).css css_property_to_color, get_color GREEN_HUE
+    #        if (num for num in orther_numbers when num < 10).length > 0
+    #            $(other_cells).addClass 'float'
+    #        else
+    #            $(other_cells).addClass 'integer'
 
-        else
-            k = (maxHue - minHue) / (max - min)
-            other_cells.each (i) ->
-                number = orther_numbers[i]
-                hue = Math.round minHue + (number - min) * k
-                $(this).css css_property_to_color, get_color hue
+            if max == min
+                $(other_cells).css css_property_to_color, get_color GREEN_HUE
+            else
+                k = (maxHue - minHue) / (max - min)
+                other_cells.each (i) ->
+                    number = orther_numbers[i]
+                    hue = Math.round minHue + (number - min) * k
+                    $(this).css css_property_to_color, get_color hue
 
-                $('#report_legend').show 'fast' if orther_numbers.length > 1
+                    $('#report_legend').show 'fast' if orther_numbers.length > 1
+
+            # Decimal point alignment
+            left_part_width = 0
+            for cell in $(other_cells)
+                parts = $(cell).text().split '.'
+                if (parts.length > 1)
+                    left_part =  '.' + parts[-1]
+                else
+                    left_part = ''
+                width = $.fn.textWidth(left_part)
+
+                left_part_width = width if width > left_part_width
+
+            if left_part_width > 0
+                Console.log left_part_width
+
+            for cell in other_cells
+                offset = $(cell).offset()
+                offset.left += left_part_width
+                $(cell).offset(offset)
+
+            processes_metrics.push metric
+
+
+$.fn.textWidth = (text) ->
+    if (!$.fn.textWidth.fakeEl)
+        $.fn.textWidth.fakeEl = $('<span>').hide().appendTo(document.body)
+
+    $.fn.textWidth.fakeEl.text(text)
+
+    $.fn.textWidth.fakeEl.css('font', this.css('font'))
+
+    return $.fn.textWidth.fakeEl.width()

@@ -4,12 +4,14 @@ import os
 import sys
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink
+import re
 from source.calling_process import call
 from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path
 from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical
+from source.utils import OrderedDefaultDict
 
 
 class Sample:
@@ -17,7 +19,7 @@ class Sample:
         self.name = name
         self.bam = bam
         self.bed = bed
-        self.vcf_by_caller = dict()  # VariantCaller -> vcf_fpath
+        self.vcf_by_caller = OrderedDict()  # VariantCaller -> vcf_fpath
         self.phenotype = None
 
     def __str__(self):
@@ -111,9 +113,9 @@ class BCBioStructure:
         self.final_dirpath = bcbio_final_dirpath
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
-        self.batches = defaultdict(Batch)
+        self.batches = OrderedDefaultDict(Batch)
         self.samples = []
-        self.variant_callers = dict()
+        self.variant_callers = OrderedDict()
 
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
@@ -133,6 +135,9 @@ class BCBioStructure:
         self.samples = [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]
         if any(s is None for s in self.samples):
             sys.exit(1)
+
+        if all(get_trailing_number(s.name) for s in self.samples):
+            self.samples.sort(key=lambda s: split_name_and_number(s.name))
 
         if not self.cnf.verbose:
             info('', ending='')
@@ -268,7 +273,7 @@ class BCBioStructure:
             lambda sample: 'qualimapReport.html')
 
     def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
-        fpaths = dict()
+        fpaths = OrderedDict()
 
         for sample in self.samples:
             report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
@@ -314,3 +319,17 @@ def load_bcbio_cnf(cnf):
 
 def _normalize(name):
     return name.lower().replace('_', '').replace('-', '')
+
+
+def split_name_and_number(string):
+    m = re.search(r'\d+$', string)
+    if m:
+        num = m.group()
+        return string.split(num)[0], int(num)
+    else:
+        return string, None
+
+
+def get_trailing_number(string):
+    m = re.search(r'\d+$', string)
+    return int(m.group()) if m else None

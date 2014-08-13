@@ -21,6 +21,14 @@
     white-space: nowrap;
 }
 
+/*#report td.integer {*/
+    /*text-align: right;*/
+/*}*/
+
+/*#report td.float {*/
+    /*text-align: left;*/
+/*}*/
+
 #report tr.top_row_tr td,
 #report tr.group_header td {
     font-weight: bold;
@@ -247,3 +255,12 @@ table.draggable td.right_to_cell_of_empty_space {
     width:100%;
     display: inline-block;
 }
+
+/* http://krijnhoetmer.nl/stuff/javascript/table-align-char/ */
+table { border-collapse: collapse; width: 600px; }
+th { text-align: left; background: #eee; padding: 0 2em 0 0; }
+td { padding: 0 2em 0 0; }
+#only-css td.char-align { width: 7em; }
+#only-css span.left { float: left; text-align: right; width: 4em; }
+#only-css span.currency { float: left; text-align: left; width: 2em; }
+#only-css span.right { float: right; width: 3em; text-align: left; }

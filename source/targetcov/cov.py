@@ -1,3 +1,4 @@
+# coding=utf-8
 from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
@@ -95,38 +96,40 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
     return sort_bed(cnf, new_overlp_exons_bed)
 
 
-gatk_metrics = Metric.to_dict([
+_cov_metrics = Metric.to_dict([
     Metric('Reads'),
-    Metric('Mapped reads'),
-    Metric('Unmapped reads'),
-    Metric('Percentage of mapped reads', short_name='Mapped reads', unit='%'),
-    Metric('Bases in target'),
-    Metric('Covered bases in target', short_name='Covered bp in targ'),
-    Metric('Percentage of target covered by at least 1 read', short_name='Targ covd >= 1 read', unit='%'),
+    Metric('Mapped reads', short_name='Mapped'),
+    Metric('Unmapped reads', short_name='Unmapped'),
+    Metric('Percentage of mapped reads', short_name='Mapped %', unit='%'),
+    Metric('Bases in target', short_name='Targ bp'),
+    Metric('Covered bases in target', short_name='Covd targ bp'),
+    Metric('Percentage of target covered by at least 1 read', short_name='Targ covd %', unit='%'),
     Metric('Reads mapped on target', short_name='Reads on targ'),
-    Metric('Percentage of reads mapped on target', short_name='Reads on targ', unit='%'),
-    Metric('Reads mapped on padded target', 'Reads on padded targ'),
-    Metric('Percentage of reads mapped on padded target', short_name='Reads on padded targ', unit='%'),
-    Metric('Read bases mapped on target', short_name='Read BP on targ'),
-    Metric('Average target coverage depth', short_name='Avg targ depth'),
-    Metric('Std. dev. of target coverage depth', short_name='Std. dev.'),
-    Metric('Maximum target coverage depth', short_name='Max targ depth'),
-    Metric('Percentage of target within 20% of mean depth', short_name='Within 20% of mean', unit='%'),
+    Metric('Percentage of reads mapped on target', short_name='R. on t. %', unit='%'),
+    Metric('Reads mapped on padded target', 'R. on padded t.'),
+    Metric('Percentage of reads mapped on padded target', short_name='R. on p. t. %', unit='%'),
+    Metric('Read bases mapped on target', short_name='Read bases on t.'),
+    Metric('Average target coverage depth', short_name='Avg t. depth'),
+    Metric('Std. dev. of target coverage depth', short_name='Std dev'),
+    Metric('Maximum target coverage depth', short_name='Max'),
+    Metric('Percentage of target within 20% of mean depth', short_name='W/I 20% of mean', unit='%'),
 ])
+
+def get_cov_metrics(depth_thresholds):
+    for depth in depth_thresholds:
+        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        _cov_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
+    return _cov_metrics
 
 
 def _run_header_report(cnf, bed, bam, chr_len_fpath,
                        depth_thresholds, padding,
                        combined_region, max_depth, total_bed_size):
-
-    for depth in depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
-        gatk_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
-
     records = []
+    cov_metrics = get_cov_metrics(depth_thresholds)
 
     def append_stat(metric_name, value):
-        rec = Record(gatk_metrics[metric_name.strip()], value)
+        rec = Record(cov_metrics[metric_name.strip()], value)
         records.append(rec)
         info(metric_name + ': ' + rec.format())
 

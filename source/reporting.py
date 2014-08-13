@@ -136,11 +136,11 @@ def read_sample_names(sample_fpath):
 #     return single_report_fpaths, fixed_sample_names
 
 
-def summarize(report_fpath_by_sample, parse_report_fn):
+def summarize(cnf, report_fpath_by_sample, parse_report_fn):
     """ Returns list of SampleReport objects:
         [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
     """
-    return [SampleReport(sample_name, fpath, parse_report_fn(fpath))
+    return [SampleReport(sample_name, fpath, parse_report_fn(cnf, fpath))
             for sample_name, fpath in report_fpath_by_sample.items()]
 
 

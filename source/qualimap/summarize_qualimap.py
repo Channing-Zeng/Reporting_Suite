@@ -8,7 +8,7 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('QualiMap statistics for all samples')
 
     html_by_sample = bcbio_structure.get_qualimap_html_by_sample()
-    sum_report = summarize(html_by_sample, _parse_qualimap_sample_report)
+    sum_report = summarize(cnf, html_by_sample, _parse_qualimap_sample_report)
 
     final_summary_report_fpaths = write_summary_reports(
         cnf.output_dir,
@@ -62,7 +62,7 @@ METRICS = Metric.to_dict([
 ALLOWED_UNITS = ['%']
 
 
-def _parse_qualimap_sample_report(report_fpath):
+def _parse_qualimap_sample_report(cnf, report_fpath):
     records = []
 
     def __get_value(line):

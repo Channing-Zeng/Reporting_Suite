@@ -18,7 +18,7 @@ cur_dirpath = dirname(abspath(__file__))
 
 
 # noinspection PyClassHasNoInit
-class Defaults():
+class Defaults:
     genome = 'hg19'
 
     output_dir = getcwd()

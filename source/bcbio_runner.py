@@ -455,7 +455,7 @@ class BCBioRunner:
             self.submit(
                 self.seq2c,
                 wait_for_steps=[
-                    self.seq2c.job_name(s.name)
+                    self.targetcov.job_name(s.name)
                     for s in self.bcbio_structure.samples
                     if self.targetcov in self.steps])
 

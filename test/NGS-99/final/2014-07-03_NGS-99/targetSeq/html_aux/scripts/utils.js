@@ -43,41 +43,37 @@ function isFractional(num) {
 function toPrettyString(num, unit) {
     if (typeof num === 'number') {
         var str;
+//        var precision = 13;
 
-        if (num < 0.00001) {
-            console.log(num)
-        }
-
-
-        if (num <= 9999) {
+        if (num <= 999) {
             if (isFractional(num)) {
                 if (isIntegral(num * 10)) {
                     str = num.toFixed(1);
-                } else if (isIntegral(num * 100) || num >= 100) {
+
+                } else if (isIntegral(num * 100) || num > 100) {
                     str = num.toFixed(2);
 
-                } else if (num < 0.00000000001) {
-                    str = num.toFixed(12);
-                } else if (num < 0.0000000001) {
-                    str = num.toFixed(11);
-                } else if (num < 0.000000001) {
-                    str = num.toFixed(10);
-                } else if (num < 0.00000001) {
-                    str = num.toFixed(9);
-                } else if (num < 0.0000001) {
-                    str = num.toFixed(8);
-                } else if (num < 0.000001) {
-                    str = num.toFixed(7);
-                } else if (num < 0.00001) {
-                    str = num.toFixed(6);
-                } else if (num < 0.0001) {
-                    str = num.toFixed(5);
-                } else if (num < 0.001) {
-                    str = num.toFixed(4);
-
                 } else {
-                    str = num.toPrecision(4);
+                    if (unit == '%') {
+                        var a = 1;
+                    }
+
+                    var lessthen = 0.00000000001;
+                    var frac_digits = 12;
+
+                    while (num > lessthen && frac_digits > 0) {
+                        frac_digits--;
+                        lessthen *= 10;
+                    }
+                    if (!isIntegral(num * Math.pow(10, frac_digits))) {
+                        frac_digits++;
+                        if (!isIntegral(num * Math.pow(10, frac_digits))) {
+                            frac_digits++;
+                        }
+                    }
+                    str = num.toFixed(frac_digits);
                 }
+
             } else {
                 str = num.toFixed(0);
             }
@@ -434,12 +430,55 @@ jQuery.fn.exists = function(){
 };
 
 
-
-
-
-
-
-
+// http://krijnhoetmer.nl/stuff/javascript/table-align-char/
+//function make_table_align_char() {
+//     var currencies = /(\$|€|&euro;)/;
+//     var leftWidth = 0, rightWidth = 0, currencyWidth;
+//     for (var tableCounter = 0, tables = document.getElementsByTagName('table'); tableCounter < tables.length; tableCounter++) {
+//      if (tables[tableCounter].className.indexOf('fix-align-char') != -1) {
+//       var fCols = [];
+//       for (var i = 0, cols = tables[tableCounter].getElementsByTagName('col'); i < cols.length; i++) {
+//        if (cols[i].getAttribute('char')) {
+//         fCols[i] = cols[i].getAttribute('char');
+//        };
+//       };
+//       var leftPart, rightPart, parts;
+//       for (var i = 0, trs = tables[tableCounter].rows; i < trs.length; i++) {
+//        for (var j = 0, tds = trs[i].getElementsByTagName('td'); j < tds.length; j++) {
+//         if (fCols[j]) {
+//          if (tds[j].innerHTML.indexOf(fCols[j]) != -1) {
+//           parts = tds[j].innerHTML.split(fCols[j]);
+//           leftPart = parts.slice(0, parts.length -1).join(fCols[j]);
+//           leftPart = leftPart.replace(currencies, '<span class="currency">$1</span>');
+//           rightPart = fCols[j] + parts.pop();
+//           tds[j].innerHTML = '<span class="left">' + leftPart + '</span><span class="right">' + rightPart + '</span>';
+//          } else {
+//           tds[j].innerHTML = tds[j].innerHTML.replace(currencies, '<span class="currency">$1</span>');
+//           tds[j].innerHTML = '<span class="left">' + tds[j].innerHTML + '</span>';
+//          };
+//          tds[j].className = 'char-align';
+//          var txt = document.createTextNode(tds[j].firstChild.offsetWidth);
+//          if (leftWidth < tds[j].firstChild.offsetWidth) {
+//           leftWidth = tds[j].firstChild.offsetWidth;
+//          };
+//          if (tds[j].childNodes[1]) {
+//           var txt = document.createTextNode(tds[j].childNodes[1].offsetWidth);
+//           if (rightWidth < tds[j].childNodes[1].offsetWidth) {
+//            rightWidth = tds[j].childNodes[1].offsetWidth;
+//           };
+//          };
+//         };
+//        };
+//       };
+//      };
+//     };
+//     // This is ugly and should be improved (amongst other parts of the code ;)
+//     var styleText = '<style type="text/css">.fix-align-char td.char-align { width: ' + (leftWidth + rightWidth) + 'px; }\n.fix-align-char span.left { float: left; text-align: right; width: ' + (leftWidth) + 'px; }\n.fix-align-char span.currency { text-align: left; float: left; }\n.fix-align-char span.right { float: right; text-align: left; width: ' + rightWidth + 'px; }</style>';
+//     document.body.innerHTML += styleText;
+//}
+//
+//
+//
 
 
 

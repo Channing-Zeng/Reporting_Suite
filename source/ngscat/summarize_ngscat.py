@@ -8,7 +8,7 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('ngsCAT statistics for all samples')
 
     html_by_sample = bcbio_structure.get_ngscat_html_by_sample()
-    sum_report = summarize(html_by_sample, _parse_ngscat_sample_report)
+    sum_report = summarize(cnf, html_by_sample, _parse_ngscat_sample_report)
 
     final_summary_report_fpaths = write_summary_reports(
         cnf.output_dir,
@@ -34,7 +34,7 @@ METRICS = Metric.to_dict([
     Metric('% reads on target',                  '% reads on target',  '% reads on target'),
     Metric('Duplicated reads on/off target',     'Duplicated reads',   '% duplicated reads on/off target. '
                                                                        'Percentage of duplicated on-target reads normally should be greater '
-                                                                       'than the percentage of duplicated off-target reads',           quality='Equal'),
+                                                                       'than the percentage of duplicated off-target reads',            quality='Equal'),
     Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
     Metric('Coverage per position',              'Cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
     Metric('Standard deviation of coverage',     'Cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
@@ -43,7 +43,7 @@ METRICS = Metric.to_dict([
 ALLOWED_UNITS = ['%']
 
 
-def _parse_ngscat_sample_report(report_fpath):
+def _parse_ngscat_sample_report(cnf, report_fpath):
     records = []
 
     def __parse_cell(metric_name, line):

@@ -21,6 +21,14 @@
     white-space: nowrap;
 }
 
+#report td.integer {
+    text-align: right;
+}
+
+#report td.float {
+    text-align: left;
+}
+
 #report tr.top_row_tr td,
 #report tr.group_header td {
     font-weight: bold;

@@ -14,7 +14,7 @@ def make_summary_reports(cnf, bcbio_structure):
 
 
 def _make_for_single_variant_caller(cnf, caller):
-    reports = summarize(caller.get_qc_reports_by_samples(), _parse_qc_sample_report)
+    reports = summarize(cnf, caller.get_qc_reports_by_samples(), _parse_qc_sample_report)
 
     full_summary_fpaths = write_summary_reports(
         cnf.output_dir,
@@ -32,6 +32,7 @@ def _make_for_single_variant_caller(cnf, caller):
 def _make_for_multiple_variant_callers(cnf, callers):
     for caller in callers:
         caller.summary_qc_report = summarize(
+            cnf,
             caller.get_qc_reports_by_samples(),
             _parse_qc_sample_report)
 
@@ -51,6 +52,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
         )))
 
     full_summary_report = summarize(
+        cnf,
         all_single_reports,
         _parse_qc_sample_report)
 
@@ -75,6 +77,6 @@ def _make_for_multiple_variant_callers(cnf, callers):
         info('  ' + fpath)
 
 
-def _parse_qc_sample_report(json_fpath):
+def _parse_qc_sample_report(cnf, json_fpath):
     return Record.load_records(json_fpath)
 
