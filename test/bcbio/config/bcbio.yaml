@@ -9,7 +9,7 @@ details:
     quality_format: standard
     realign: gatk
     recalibrate: false
-    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variant_regions: ~/vagrant/reporting_suite/test/data/test_exons.bed
     variantcaller:
     - mutect
   analysis: variant2
@@ -32,7 +32,7 @@ details:
     quality_format: standard
     realign: gatk
     recalibrate: false
-    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variant_regions: ~/vagrant/reporting_suite/test/data/test_exons.bed
     variantcaller:
     - mutect
   analysis: variant2

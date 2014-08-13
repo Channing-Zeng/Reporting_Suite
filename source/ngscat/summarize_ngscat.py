@@ -1,26 +1,33 @@
-from source.reporting import get_per_sample_fpaths_for_bcbio_final_dir, \
-    summarize, write_summary_reports, Metric, Record
+from os.path import join
+from source.reporting import summarize, write_summary_reports, Metric, Record
 from source.logger import step_greetings, info
+from source.bcbio_structure import BCBioStructure
 
 
-def summary_reports(cnf, sample_names):
+def summary_reports(cnf, bcbio_structure):
     step_greetings('ngsCAT statistics for all samples')
 
-    sample_html_reports, sample_names = get_per_sample_fpaths_for_bcbio_final_dir(
-        cnf['bcbio_final_dir'], sample_names, cnf['base_name'], 'captureQC.html', raw_ending=True)
-
-    sum_report = summarize(sample_names, sample_html_reports, _parse_ngscat_sample_report)
+    html_by_sample = bcbio_structure.get_ngscat_html_by_sample()
+    sum_report = summarize(html_by_sample, _parse_ngscat_sample_report)
 
     final_summary_report_fpaths = write_summary_reports(
-        cnf['output_dir'], cnf['work_dir'], sum_report, 'ngscat', 'ngsCAT statistics')
+        cnf.output_dir,
+        cnf.work_dir,
+        sum_report,
+        join(cnf.output_dir, BCBioStructure.ngscat_name),
+        'ngsCAT statistics')
+
+    info()
+    info('*' * 70)
+    info('Summary:')
+    for fpath in final_summary_report_fpaths:
+        if fpath:
+            info('  ' + fpath)
 
     return final_summary_report_fpaths
 
 
-def __to_dict(metrics):
-    return {m.name: m for m in metrics}
-
-METRICS = __to_dict([
+METRICS = Metric.to_dict([
     Metric('Number reads',                       'Reads',              'Number of mapped reads'),
     Metric('% target bases with coverage >= 1x', 'Target covered',     '% target bases with coverage >= 1x'),
     Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
@@ -91,7 +98,6 @@ def _parse_ngscat_sample_report(report_fpath):
 
             # parsing header
             if line.find('class="table-header"') != -1:
-                test = METRICS.keys()
                 header_id += 1
                 for metric_name in METRICS.keys():
                     if all(word in line for word in metric_name.split()):

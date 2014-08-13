@@ -32,7 +32,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
             cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
             combined_region, max_depth, total_bed_size)
 
-        save_json(records, join(cnf.output_dir, cnf.name + '.json'))
+        save_json(records, join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
         summary_report_fpath = write_txt_report(
             cnf.output_dir, cnf.work_dir,
             [SampleReport(Sample(cnf.name, bam, amplicons_bed), '', records)],

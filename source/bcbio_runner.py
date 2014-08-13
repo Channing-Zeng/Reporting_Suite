@@ -204,18 +204,14 @@ class BCBioRunner:
             interpreter='python',
             script='ngscat_summary',
             dir_name=BCBioStructure.ngscat_summary_dir,
-            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
-                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.ngscat.dir_name + '" --work-dir \'' +
-                    join(cnf.work_dir, 'ngscat_summary') + '\''
+            paramln=cnfs_line + ' ' + self.final_dir
         )
         self.qualimap_summary = Step(cnf, run_id,
             name='QualiMap_summary', short_name='qms',
             interpreter='python',
             script='qualimap_summary',
             dir_name=BCBioStructure.qualimap_summary_dir,
-            paramln=cnfs_line + ' -o \'{output_dir}\' -d \''
-                    + self.final_dir + '\' -s \'{samples}\' -n "' + self.qualimap.dir_name + '" --work-dir \'' +
-                    join(cnf.work_dir, 'qualimap_summary') + '\''
+            paramln=cnfs_line + ' ' + self.final_dir
         )
 
         af_thr = str(cnf.variant_filtering.min_freq)

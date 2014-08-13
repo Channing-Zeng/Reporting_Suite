@@ -247,6 +247,16 @@ class BCBioStructure:
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' + BCBioStructure.targetseq_dir + '.json')
 
+    def get_ngscat_html_by_sample(self):
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.ngscat_dir,
+            lambda sample: 'captureQC.html')
+
+    def get_qualimap_html_by_sample(self):
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.qualimap_dir,
+            lambda sample: 'qualimapReport.html')
+
     def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
         fpaths = dict()
 
