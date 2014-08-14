@@ -34,7 +34,8 @@ class Defaults:
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    qualimap = False  # 'True' adds 'QualiMap' to steps
+    qualimap = False    # 'True' adds 'QualiMap' to steps
+    load_mongo = False  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh'
 
     coverage_reports = dict(

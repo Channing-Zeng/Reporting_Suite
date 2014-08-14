@@ -199,6 +199,11 @@ class BCBioRunner:
             dir_name=BCBioStructure.qualimap_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
+        # self.load_mongo = Step(cnf, run_id,
+
+# /group/ngs/share/mongo-loader
+# give it a try
+# java -jar VCFLoader.jar                               )
 
         af_thr = str(cnf.variant_filtering.min_freq)
         self.vardict = Step(cnf, run_id,

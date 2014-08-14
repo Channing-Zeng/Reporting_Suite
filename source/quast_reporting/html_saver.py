@@ -3,7 +3,7 @@ from __future__ import with_statement
 import os
 import shutil
 import re
-from os.path import join, abspath, dirname, isdir
+from os.path import join, abspath, dirname, isdir, splitext
 import sys
 from source.file_utils import verify_file
 
@@ -65,15 +65,28 @@ def init_html(results_dirpath, report_fname, caption=''):
         shutil.rmtree(aux_dirpath)
     os.mkdir(aux_dirpath)
 
-    for aux_f_relpath in aux_files:
-        src_fpath = join(static_dirpath, aux_f_relpath)
-        dst_fpath = join(aux_dirpath, aux_f_relpath)
+    def copy_aux_file(fname):
+        src_fpath = join(static_dirpath, fname)
 
-        if not file_exists(dirname(dst_fpath)):
-            os.makedirs(dirname(dst_fpath))
+        if file_exists(src_fpath):
+            dst_fpath = join(aux_dirpath, fname)
 
-        if not file_exists(dst_fpath):
+            if not file_exists(dirname(dst_fpath)):
+                os.makedirs(dirname(dst_fpath))
+
             shutil.copyfile(src_fpath, dst_fpath)
+
+    for aux_f_relpath in aux_files:
+        if aux_f_relpath.endswith('.js'):
+            for ext in ['.js', '.coffee', '.map']:
+                copy_aux_file(splitext(aux_f_relpath)[0] + ext)
+
+        elif aux_f_relpath.endswith('.css'):
+            for ext in ['.css', '.sass']:
+                copy_aux_file(splitext(aux_f_relpath)[0] + ext)
+
+        else:
+            copy_aux_file(aux_f_relpath)
 
     with open(template_fpath) as template_file:
         html = template_file.read()

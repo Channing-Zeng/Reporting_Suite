@@ -13,6 +13,7 @@ steps:
 - TargetCov_Summary
 #- ngsCAT_summary
 #- QualiMap_summary
+#- LoadMongo
 
 #vardict_steps:
 #- VarDict

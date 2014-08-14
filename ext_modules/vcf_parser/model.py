@@ -233,7 +233,7 @@ class _Record(object):
     def nucl_diversity(self):
         """
         pi_hat (estimation of nucleotide diversity) for the site.
-        This metric can be summed across multiple sites to compute regional
+        This metric_name can be summed across multiple sites to compute regional
         nucleotide diversity estimates.  For example, pi_hat for all variants
         in a given gene.
 

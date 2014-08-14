@@ -236,6 +236,7 @@ postprocess_cells = ->
 
         $.fn.textWidth.fakeEl.text text
         $.fn.textWidth.fakeEl.css 'font', font
+
         return $.fn.textWidth.fakeEl.width()
 
     processes_metrics = []
