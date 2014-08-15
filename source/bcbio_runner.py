@@ -78,7 +78,7 @@ class BCBioRunner:
                 self.varqc,
                 self.varannotate,
                 self.varfilter_all,
-                self.load_mongo,
+                self.mongo_loader,
                 self.varqc_after,
                 self.varqc_summary,
                 self.targetcov,
@@ -172,7 +172,7 @@ class BCBioRunner:
             dir_name=BCBioStructure.varfilter_dir,
             paramln=spec_params + ' ' + self.final_dir
         )
-        self.load_mongo = Step(cnf, run_id,
+        self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',
             interpreter='java',
             script='vcf_loader',
@@ -387,7 +387,8 @@ class BCBioRunner:
                          self.ngscat,
                          self.varqc,
                          self.varqc_after,
-                         self.varannotate])
+                         self.varannotate,
+                         self.mongo_loader])
                     or self.vardict_steps):
                 continue
 
@@ -532,9 +533,9 @@ class BCBioRunner:
                                  if self.varfilter_all in steps else []) + job_names_to_wait,
                 vcf=filtered_vcf_fpath, sample=sample_name, caller=caller_name)
 
-        if self.load_mongo in steps:
+        if self.mongo_loader in steps:
             self.submit(
-                self.load_mongo, sample_name, suf=caller_name, create_dir=False,
+                self.mongo_loader, sample_name, suf=caller_name, create_dir=False,
                 wait_for_steps=([self.varfilter_all.job_name()]
                                  if self.varfilter_all in steps else []) + job_names_to_wait,
                 path=filtered_vcf_fpath, sample=sample_name, variantCaller=caller_name,

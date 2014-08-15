@@ -64,8 +64,8 @@ def main():
 
     if opts.qualimap and 'QualiMap' not in cnf.steps:
         cnf.steps.append('QualiMap')
-    if opts.load_mongo and 'LoadMongo' not in cnf.steps:
-        cnf.steps.append('LoadMongo')
+    if opts.load_mongo and 'MongoLoader' not in cnf.steps:
+        cnf.steps.append('MongoLoader')
 
     check_system_resources(cnf, required=['qsub'])
 
