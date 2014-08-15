@@ -16,7 +16,7 @@ from source.ngscat.bed_file import verify_bam
 
 class Step:
     def __init__(self, cnf, run_id, name, script, dir_name=None,
-                 interpreter=None, short_name=None, paramln=None):
+                 interpreter=None, short_name=None, paramln=''):
         self.name = name
         self.dir_name = dir_name
         self.cnf = cnf
@@ -176,7 +176,8 @@ class BCBioRunner:
             name='MongoLoader', short_name='ml',
             interpreter='java',
             script='vcf_loader',
-            dir_name='mongo_loader'
+            dir_name='mongo_loader',
+            paramln=' -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
         self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',
