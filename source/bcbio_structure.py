@@ -220,7 +220,7 @@ class BCBioStructure:
 
         var_dirpath = self._move_vcfs_to_var(sample)
 
-        # to_exit = False
+        to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
             vcf_fpath = adjust_path(join(var_dirpath, vcf_fname))
@@ -228,14 +228,13 @@ class BCBioStructure:
 
             if file_exists(vcf_fpath):
                 if not verify_file(vcf_fpath):
-                    continue
+                    to_exit = True
 
             if not file_exists(vcf_fpath):
-                if sample.phenotype == 'tumor':
-                    vcf_fpath = None
-                else:
+                if sample.phenotype != 'normal':
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
-                    continue
+                vcf_fpath = None
+                continue
 
             if caller_name not in self.variant_callers:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
@@ -243,6 +242,9 @@ class BCBioStructure:
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_caller[self.variant_callers[caller_name]] = vcf_fpath
 
+        if to_exit:
+            sys.exit(1)
+            
         if self.cnf.verbose:
             info('-' * 70)
         else:
