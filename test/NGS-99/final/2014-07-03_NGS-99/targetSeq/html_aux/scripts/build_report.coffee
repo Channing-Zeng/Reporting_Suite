@@ -72,11 +72,6 @@ reporting.buildReport = ->
 
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
 
-    reports = totalReportData.reports
-    for report in reports
-        report.cornerCell = report.name
-    reports[0].cornerCell = 'Sample'
-
     for report in totalReportData.reports
         sample_reports = report.sample_reports
         columnNames = (record.metric.name for record in sample_reports[0].records)

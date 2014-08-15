@@ -147,6 +147,8 @@ calc_cell_contents = (report, font) ->
 
 
 reporting.buildTotalReport = (report, columnOrder) ->
+    if report.name?
+        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{report.name}</h3>"
 
     calc_cell_contents report, $('#report').css 'font'
 
@@ -155,7 +157,7 @@ reporting.buildTotalReport = (report, columnOrder) ->
                     id=\"report_table_#{report.name}\">"
     table += "\n<tr class=\"top_row_tr\">"
     table += "<td class=\"top_left_td left_column_td\">
-                    <span>#{report.cornerCell}</span>
+                    <span>Sample</span>
               </td>"
 
     for recNum in [0...report.sample_reports[0].records.length]

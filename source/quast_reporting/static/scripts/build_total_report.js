@@ -211,10 +211,13 @@
 
   reporting.buildTotalReport = function(report, columnOrder) {
     var metricHtml, padding, pos, rec, recNum, sampleLink, sampleName, sampleReport, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
+    if (report.name != null) {
+      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + report.name + "</h3>");
+    }
     calc_cell_contents(report, $('#report').css('font'));
     table = "<table cellspacing=\"0\" class=\"report_table " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
     table += "\n<tr class=\"top_row_tr\">";
-    table += "<td class=\"top_left_td left_column_td\"> <span>" + report.cornerCell + "</span> </td>";
+    table += "<td class=\"top_left_td left_column_td\"> <span>Sample</span> </td>";
     for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[recNum];
       rec = report.sample_reports[0].records[pos];
