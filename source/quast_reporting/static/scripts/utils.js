@@ -41,25 +41,21 @@ function isFractional(num) {
 }
 
 function toPrettyString(num, unit) {
-    if (typeof num === 'number') {
-        var str;
-//        var precision = 13;
+    var str,
+        frac_digits = 0;
 
+    if (typeof num === 'number') {
         if (num <= 999) {
             if (isFractional(num)) {
                 if (isIntegral(num * 10)) {
-                    str = num.toFixed(1);
+                    frac_digits = 1;
 
                 } else if (isIntegral(num * 100) || num > 100) {
-                    str = num.toFixed(2);
+                    frac_digits = 2;
 
                 } else {
-                    if (unit == '%') {
-                        var a = 1;
-                    }
-
                     var lessthen = 0.00000000001;
-                    var frac_digits = 12;
+                    frac_digits = 12;
 
                     while (num > lessthen && frac_digits > 0) {
                         frac_digits--;
@@ -71,20 +67,17 @@ function toPrettyString(num, unit) {
                             frac_digits++;
                         }
                     }
-                    str = num.toFixed(frac_digits);
                 }
-
-            } else {
-                str = num.toFixed(0);
             }
+            str = num.toFixed(frac_digits);
         } else {
             str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g,'$1<span class=\'hs\'></span>');
         }
         str += (unit ? '<span class=\'rhs\'>&nbsp;</span>' + unit : '');
-        return str;
     } else {
-        return num;
+        str = num;
     }
+    return str;
 }
 
 function ordinalNumberToPrettyString(num, unit) {
