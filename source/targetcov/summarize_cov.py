@@ -1,20 +1,25 @@
 from os.path import join
 from source.bcbio_structure import BCBioStructure
-from source.reporting import summarize, write_summary_reports, Record
+from source.reporting import summarize, write_summary_reports, Record, SampleReport
 from source.logger import step_greetings, info
-from source.targetcov.cov import get_cov_metrics
+from source.targetcov.cov import get_cov_metrics, get_basic_metrics, get_depth_metrics
 
 
 def summary_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for all samples')
 
     json_by_sample = bcbio_structure.get_targetcov_json_by_sample()
-    sum_report = summarize(cnf, json_by_sample, _parse_targetseq_sample_report)
+
+    basic_metrics = get_basic_metrics()
+    depth_metrics = get_depth_metrics(cnf.coverage_reports.depth_thresholds)
+
+    basic_report = summarize(cnf, json_by_sample, _get_parse_reports(basic_metrics), 'Coverage')
+    depth_report = summarize(cnf, json_by_sample, _get_parse_reports(depth_metrics), 'Coverage: depth')
 
     final_summary_report_fpaths = write_summary_reports(
         cnf.output_dir,
         cnf.work_dir,
-        sum_report,
+        [basic_report, depth_report],
         join(cnf.output_dir, BCBioStructure.targetseq_name),
         'Target coverage statistics')
 
@@ -26,12 +31,14 @@ def summary_reports(cnf, bcbio_structure):
             info('  ' + fpath)
 
 
-def _parse_targetseq_sample_report(cnf, json_fpath):
-    records = Record.load_records(json_fpath)
-    cov_metrics = get_cov_metrics(cnf.coverage_reports.depth_thresholds)
-    for rec in records:
-        if rec.metric.name in cov_metrics:
-            rec.metric = cov_metrics[rec.metric.name]
+def _get_parse_reports(metrics):
+    def _parse_targetseq_report(cnf, json_fpath):
+        _records = Record.load_records(json_fpath)
+        records = []
+        for rec in _records:
+            if rec.metric.name in metrics:
+                rec.metric = metrics[rec.metric.name]
+                records.append(rec)
+        return records
 
-    return records
-
+    return _parse_targetseq_report

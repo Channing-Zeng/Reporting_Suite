@@ -34,7 +34,6 @@ GREEN_HUE = 120
 GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
 CSS_PROP_TO_COLOR = 'background-color'  # color
 get_color = (hue) ->
-    # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 75
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
     lightness = 92
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
@@ -77,7 +76,7 @@ calc_cell_contents = (report, font) ->
     min_val_by_metric = {}
     max_val_by_metric = {}
 
-    for sampleReport in report
+    for sampleReport in report.sample_reports
         for rec in sampleReport.records
             value = rec.value
             num_html = ''
@@ -119,7 +118,7 @@ calc_cell_contents = (report, font) ->
                 else if max_val_by_metric[rec.metric.name] < rec.num
                     max_val_by_metric[rec.metric.name] = rec.num
 
-    for sampleReport in report
+    for sampleReport in report.sample_reports
         for rec in sampleReport.records
             # Padding based on frac width
             if rec.frac_width?
@@ -147,20 +146,21 @@ calc_cell_contents = (report, font) ->
                     rec.color = get_color hue
 
 
-reporting.buildTotalReport = (report, columnOrder, date) ->
-    $('#report_date').html('<p>' + date + '</p>');
+reporting.buildTotalReport = (report, columnOrder) ->
 
     calc_cell_contents report, $('#report').css 'font'
 
-    table = "<table cellspacing=\"0\" class=\"report_table #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\" id=\"main_report_table\">"
+    table = "<table cellspacing=\"0\"
+                    class=\"report_table #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
+                    id=\"report_table_#{report.name}\">"
     table += "\n<tr class=\"top_row_tr\">"
-    table += "<td id=\"top_left_td\" class=\"left_column_td\">
-                <span>Sample</span>
+    table += "<td class=\"top_left_td left_column_td\">
+                    <span>Sample</span>
               </td>"
 
-    for recNum in [0...report[0].records.length]
+    for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
-        rec = report[0].records[pos]
+        rec = report.sample_reports[0].records[pos]
         if metricName.description
             metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
                 #{rec.metric.short_name}
@@ -176,7 +176,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
              <span class='metricName'>#{metricHtml}</span>
         </td>"
 
-    for sampleReport in report
+    for sampleReport in report.sample_reports
         sampleName = sampleReport.sample.name
         sampleLink = sampleReport.link
         if sampleName.length > 30
@@ -197,7 +197,7 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
                           quality=\"#{rec.metric.quality}\""
             if rec.num? then table += ' number="' + rec.value + '">'
             if rec.right_shift?
-                padding = "margin-right: #{rec.right_shift}px; margin-left: -#{rec.right_shift}px;"
+                padding = "margin-right: -#{rec.right_shift}px; margin-left: +#{rec.right_shift}px;"
             else
                 padding = ""
             table += "<a style=\"#{padding}\"
@@ -210,40 +210,6 @@ reporting.buildTotalReport = (report, columnOrder, date) ->
     $('#report').append table
 
 
-#set_offset = (all_cells, all_numbers, metricName) ->
-#    if (num for num in all_numbers when isFractional num).length == 0
-#        console.log 'Integer: ' + metricName
-#    else
-#        console.log 'Decimal: ' + metricName
-#
-#        # Floating point: decimal point alignment
-#        left_part_widths = []
-#        max_left_part_width = 0
-#        for cell in $(all_cells)
-#            text = $(cell).text()
-#            parts = text.split '.'
-#            left = parts[parts.length - 1]
-#
-#            left_part = if left? and left != 'undefined' then '.' + left else left_part = ''
-#
-#            width = $.fn.textWidth left_part, $(cell).css 'font'
-#            left_part_widths.push width
-#            max_left_part_width = width if width > max_left_part_width
-#
-#            # if (w for w in left_part_widths when w != max_left_part_width).length > 0
-#            #    console.log 'max_left_part_width: ' + max_left_part_width
-#
-#        for i in [0...left_part_widths.length]
-#            left_part_width = left_part_widths[i]
-#            if max_left_part_width != left_part_width
-#                cell = $(all_cells[i])
-#                a = cell.children('a')
-#                padding = a.css 'margin-right'
-#                padding += (max_left_part_width + left_part_width) + 'px'
-#                a.css 'margin-right', padding
-#                padding = a.css 'margin-right'
-
-
 set_legend = ->
     legend = '<span>'
     step = 6
@@ -253,13 +219,13 @@ set_legend = ->
 
         switch hue
             when RED_HUE              then legend += 'w'
-            when RED_HUE   + step     then legend += 'o'
+            when RED_HUE   +     step then legend += 'o'
             when RED_HUE   + 2 * step then legend += 'r'
             when RED_HUE   + 3 * step then legend += 's'
             when RED_HUE   + 4 * step then legend += 't'
             when GREEN_HUE - 3 * step then legend += 'b'
             when GREEN_HUE - 2 * step then legend += 'e'
-            when GREEN_HUE - step     then legend += 's'
+            when GREEN_HUE -     step then legend += 's'
             when GREEN_HUE            then legend += 't'
             else                           legend += '.'
         legend += "</span>"
@@ -281,15 +247,18 @@ $.fn.fracPartTextWidth = (html, font) ->
         return 0
 
 
-
 $.fn.textWidth = (text, font) ->
     if (!$.fn.textWidth.fakeEl)
         $.fn.textWidth.fakeEl = $('<span>').hide().appendTo document.body
 
     $.fn.textWidth.fakeEl.html text
     $.fn.textWidth.fakeEl.css 'font', font
-#    $.fn.textWidth.fakeEl.text($.fn.fracPartTextWidth.fakeEl.text())
     return $.fn.textWidth.fakeEl.width()
+
+
+String.prototype.trunc = (n) ->
+    this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')
+
 
 
 #postprocess_cells = ->
@@ -309,7 +278,3 @@ $.fn.textWidth = (text, font) ->
 #            set_heatmap all_cells, all_numbers, quality
 #
 #            set_offset all_cells, all_numbers, metricName
-
-
-String.prototype.trunc = (n) ->
-    this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')

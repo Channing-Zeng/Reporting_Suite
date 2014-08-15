@@ -4,36 +4,42 @@
     margin: 0 100px 50px 0
     min-width: 532px
     //float: left
-
     font-size: 1em
 
     .report_table
         padding-right: 50px !important
+        margin-bottom: 30px
 
-    td
-        margin: 0
-        padding: 2px 0.6em 0 5px
-        //min-width: 100px
-        //max-width: 200px
-        white-space: nowrap
-    td.number
-        text-align: right
+        td
+            margin: 0
+            padding: 2px 0.6em 0 5px
+            //min-width: 100px
+            //max-width: 200px
+            white-space: nowrap
+        td.number
+            text-align: left
 
-    tr.top_row_tr td,
-    tr.group_header td
-        font-weight: bold
-        border-bottom: 1px solid #bbb
+        tr.top_row_tr td,
+        tr.group_header td
+            font-weight: bold
+            border-bottom: 1px solid #bbb
 
-    tr.group_header td
-        height: 20px
-        vertical-align: bottom
+        tr.group_header td
+            height: 20px
+            vertical-align: bottom
 
-    tr
-        td:first-child
-            padding-left: 0
+        tr
+            td:first-child
+                padding-left: 0
 
-    tr.row_hidden, tr.group_empty
-        display: none
+        tr.row_hidden, tr.group_empty
+            display: none
+
+        //.report-table-header
+        //    font-weight: bold
+
+        //thead td
+        //    border-bottom: 1px solid #bbb
 
 //#report_legend
 //    padding-left: 15px  // compensate drag handles
@@ -41,12 +47,6 @@
 #contigs_are_ordered
     z-index: 0
     position: relative
-
-//#report .report-table-header
-//    font-weight: bold
-
-//#report thead td
-//    border-bottom: 1px solid #bbb
 
 ///////////////
 // Draggable //

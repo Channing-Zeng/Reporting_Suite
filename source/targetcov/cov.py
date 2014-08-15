@@ -8,7 +8,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, Record, write_txt_report, save_json, SampleReport
+from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
@@ -34,7 +34,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
             combined_region, max_depth, total_bed_size)
 
         save_json(records, join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
-        summary_report_fpath = write_txt_report(
+        summary_report_fpath = write_txt_reports(
             cnf.output_dir, cnf.work_dir,
             [SampleReport(Sample(cnf.name, bam, amplicons_bed), '', records)],
             cnf.name + '.' + BCBioStructure.targetseq_name)
@@ -96,7 +96,7 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
     return sort_bed(cnf, new_overlp_exons_bed)
 
 
-_cov_metrics = Metric.to_dict([
+_basic_metrics = Metric.to_dict([
     Metric('Reads'),
     Metric('Mapped reads', short_name='Mapped'),
     Metric('Unmapped reads', short_name='Unmapped'),
@@ -108,18 +108,29 @@ _cov_metrics = Metric.to_dict([
     Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
     Metric('Reads mapped on padded target', 'On padded trg'),
     Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
-    Metric('Read bases mapped on target', short_name='Read bp on trg'),
+    Metric('Read bases mapped on target', short_name='Read bp on trg')])
+
+_depth_metrics = Metric.to_dict([
     Metric('Average target coverage depth', short_name='Avg trg depth'),
     Metric('Std. dev. of target coverage depth', short_name='Std dev'),
     Metric('Maximum target coverage depth', short_name='Max'),
-    Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%'),
-])
+    Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')])
 
-def get_cov_metrics(depth_thresholds):
+def _add_depth_metrics(depth_thresholds):
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
-        _cov_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
-    return _cov_metrics
+        _depth_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
+
+def get_basic_metrics():
+    return _basic_metrics
+
+def get_depth_metrics(depth_thresholds):
+    _add_depth_metrics(depth_thresholds)
+    return _depth_metrics
+
+def get_cov_metrics(depth_thresholds):
+    _add_depth_metrics(depth_thresholds)
+    return OrderedDict(_basic_metrics.items() + _depth_metrics.items())
 
 
 def _run_header_report(cnf, bed, bam, chr_len_fpath,

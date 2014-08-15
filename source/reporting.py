@@ -1,15 +1,15 @@
 from collections import OrderedDict
-from itertools import repeat, izip
+from itertools import repeat, izip, chain
 import json
 from os.path import join
 from source.file_utils import verify_file
-from source.quast_reporting.html_saver import write_html_report
+from source.quast_reporting.html_saver import write_html_reports
 
 from source.logger import critical, info
 from source.file_utils import file_exists
 
 
-class Record(object):
+class Record:
     def __init__(self,
                  metric=None,
                  value=None,
@@ -45,7 +45,7 @@ class Record(object):
         return self.metric.format(self.value)
 
 
-class Metric(object):
+class Metric:
     def __init__(self,
                  name=None,
                  short_name=None,
@@ -90,12 +90,24 @@ class Metric(object):
             return '{value:.{presision}f}{unit}'.format(**locals())
 
 
+class FullReport:
+    def __init__(self, name='', sample_reports=list()):
+        self.name = name
+        self.sample_reports = sample_reports
+
+    def copy(self):
+        return FullReport(
+            name=self.name,
+            sample_reports=self.sample_reports[:])
+
+
 class SampleReport:
-    def __init__(self, sample=None, fpath=None, records=list()):
+    def __init__(self, sample=None, fpath=None, records=list(), name=''):
         self.sample = sample
         self.fpath = fpath
         self.link = fpath
         self.records = records
+        self.name = name
 
 
 def read_sample_names(sample_fpath):
@@ -136,39 +148,55 @@ def read_sample_names(sample_fpath):
 #     return single_report_fpaths, fixed_sample_names
 
 
-def summarize(cnf, report_fpath_by_sample, parse_report_fn):
+def summarize(cnf, report_fpath_by_sample, parse_report_fn, report_name):
     """ Returns list of SampleReport objects:
         [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
     """
-    return [SampleReport(sample_name, fpath, parse_report_fn(cnf, fpath))
-            for sample_name, fpath in report_fpath_by_sample.items()]
+    return FullReport(
+        name=report_name,
+        sample_reports=[
+            SampleReport(sample_name, fpath, parse_report_fn(cnf, fpath))
+            for sample_name, fpath in report_fpath_by_sample.items()])
 
 
-def write_summary_reports(output_dirpath, work_dirpath, report, base_fname, caption):
-    return [fn(output_dirpath, work_dirpath, report, base_fname, caption)
-        for fn in [write_txt_report,
-                   write_tsv_report,
-                   write_html_report]]
+def write_summary_reports(output_dirpath, work_dirpath, full_reports, base_fname, caption):
+    if not isinstance(full_reports, list):
+        full_reports = [full_reports]
+
+    return [fn(output_dirpath, work_dirpath, full_reports, base_fname, caption)
+        for fn in [write_txt_reports,
+                   write_tsv_reports,
+                   write_html_reports]]
 
 
-def _flatten_report(reports):
-    # report = [SampleReport(name=, fpath=, records=[Record,...]),...]
-    rows = [['Sample'] + [rep.sample.name for rep in reports]]
+def _flatten_report(full_reports):
+    # new_full_report = full_reports[0].copy()
+    #
+    # for full_report in full_reports[1:]:
+    #     for new_sample_rep, sample_report in \
+    #         zip(new_full_report.sample_reports,
+    #             full_report.sample_reports):
+    #
+    #         new_sample_rep.extend(records)
+    #
+    #     new_full_report.sample_reports.extend(full_report.sample_reports)
 
-    for record in reports[0].records:
-        row = [record.metric.name]
-        for sample in reports:
-            row.append(next(
-                r.metric.format(r.value)
-                for r in sample.records
-                if r.metric.name == record.metric.name))
-        rows.append(row)
+    rows = [['Sample'] + [rep.sample.name for rep in full_reports[0].sample_reports]]
 
+    for full_report in full_reports:
+        for metric in (r.metric for r in full_report.sample_reports[0].records):
+            row = [metric.name]
+            for sample_report in full_report.sample_reports:
+                row.append(next(
+                    r.metric.format(r.value)
+                    for r in sample_report.records
+                    if r.metric.name == metric.name))
+            rows.append(row)
     return rows
 
 
-def write_txt_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-    rows = _flatten_report(report)
+def write_txt_reports(output_dirpath, work_dirpath, full_reports, base_fname, caption=None):
+    rows = _flatten_report(full_reports)
     return write_txt_rows(rows, output_dirpath, base_fname)
 
 
@@ -188,8 +216,8 @@ def write_txt_rows(rows, output_dirpath, base_fname):
     return output_fpath
 
 
-def write_tsv_report(output_dirpath, work_dirpath, report, base_fname, caption=None):
-    rows = _flatten_report(report)
+def write_tsv_reports(output_dirpath, work_dirpath, full_reports, base_fname, caption=None):
+    rows = _flatten_report(full_reports)
     return write_tsv_rows(rows, output_dirpath, base_fname)
 
 

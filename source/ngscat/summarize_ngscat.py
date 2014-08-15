@@ -8,7 +8,7 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('ngsCAT statistics for all samples')
 
     html_by_sample = bcbio_structure.get_ngscat_html_by_sample()
-    sum_report = summarize(cnf, html_by_sample, _parse_ngscat_sample_report)
+    sum_report = summarize(cnf, html_by_sample, _parse_ngscat_sample_report, 'ngsCAT')
 
     final_summary_report_fpaths = write_summary_reports(
         cnf.output_dir,

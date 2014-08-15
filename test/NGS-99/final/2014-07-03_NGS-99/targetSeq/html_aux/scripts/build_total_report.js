@@ -119,15 +119,16 @@
   };
 
   calc_cell_contents = function(report, font) {
-    var a, hue, k, max, maxHue, max_frac_widths_by_metric, max_val_by_metric, min, minHue, min_val_by_metric, num_html, rec, result, sampleReport, value, _i, _j, _k, _len, _len1, _len2, _ref, _results;
+    var a, hue, k, max, maxHue, max_frac_widths_by_metric, max_val_by_metric, min, minHue, min_val_by_metric, num_html, rec, result, sampleReport, value, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     max_frac_widths_by_metric = {};
     min_val_by_metric = {};
     max_val_by_metric = {};
-    for (_i = 0, _len = report.length; _i < _len; _i++) {
-      sampleReport = report[_i];
-      _ref = sampleReport.records;
-      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
-        rec = _ref[_j];
+    _ref = report.sample_reports;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      sampleReport = _ref[_i];
+      _ref1 = sampleReport.records;
+      for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+        rec = _ref1[_j];
         value = rec.value;
         num_html = '';
         if ((value == null) || value === '') {
@@ -166,15 +167,16 @@
         }
       }
     }
+    _ref2 = report.sample_reports;
     _results = [];
-    for (_k = 0, _len2 = report.length; _k < _len2; _k++) {
-      sampleReport = report[_k];
+    for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+      sampleReport = _ref2[_k];
       _results.push((function() {
-        var _l, _len3, _ref1, _results1;
-        _ref1 = sampleReport.records;
+        var _l, _len3, _ref3, _results1;
+        _ref3 = sampleReport.records;
         _results1 = [];
-        for (_l = 0, _len3 = _ref1.length; _l < _len3; _l++) {
-          rec = _ref1[_l];
+        for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+          rec = _ref3[_l];
           if (rec.frac_width != null) {
             rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width;
             if (rec.right_shift !== 0) {
@@ -207,16 +209,15 @@
     return _results;
   };
 
-  reporting.buildTotalReport = function(report, columnOrder, date) {
-    var metricHtml, padding, pos, rec, recNum, sampleLink, sampleName, sampleReport, table, _i, _j, _k, _len, _ref, _ref1;
-    $('#report_date').html('<p>' + date + '</p>');
+  reporting.buildTotalReport = function(report, columnOrder) {
+    var metricHtml, padding, pos, rec, recNum, sampleLink, sampleName, sampleReport, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
     calc_cell_contents(report, $('#report').css('font'));
-    table = "<table cellspacing=\"0\" class=\"report_table " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"main_report_table\">";
+    table = "<table cellspacing=\"0\" class=\"report_table " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
     table += "\n<tr class=\"top_row_tr\">";
-    table += "<td id=\"top_left_td\" class=\"left_column_td\"> <span>Sample</span> </td>";
-    for (recNum = _i = 0, _ref = report[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
+    table += "<td class=\"top_left_td left_column_td\"> <span>Sample</span> </td>";
+    for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[recNum];
-      rec = report[0].records[pos];
+      rec = report.sample_reports[0].records[pos];
       if (metricName.description) {
         metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"" + rec.metric.description + "\"> " + rec.metric.short_name + " </a>";
       } else {
@@ -228,15 +229,16 @@
       }
       table += "<td class='second_through_last_col_headers_td' position='" + pos + "'> " + (DRAGGABLE_COLUMNS ? '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' : '') + " <span class='metricName'>" + metricHtml + "</span> </td>";
     }
-    for (_j = 0, _len = report.length; _j < _len; _j++) {
-      sampleReport = report[_j];
+    _ref1 = report.sample_reports;
+    for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
+      sampleReport = _ref1[_j];
       sampleName = sampleReport.sample.name;
       sampleLink = sampleReport.link;
       if (sampleName.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
       table += "\n<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";
-      for (recNum = _k = 0, _ref1 = sampleReport.records.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; recNum = 0 <= _ref1 ? ++_k : --_k) {
+      for (recNum = _k = 0, _ref2 = sampleReport.records.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; recNum = 0 <= _ref2 ? ++_k : --_k) {
         pos = columnOrder[recNum];
         rec = sampleReport.records[pos];
         table += "<td metric=\"" + rec.metric.name + "\" style=\"" + CSS_PROP_TO_COLOR + ": " + rec.color + "\" class='number' quality=\"" + rec.metric.quality + "\"";
@@ -244,7 +246,7 @@
           table += ' number="' + rec.value + '">';
         }
         if (rec.right_shift != null) {
-          padding = "margin-right: " + rec.right_shift + "px; margin-left: -" + rec.right_shift + "px;";
+          padding = "margin-right: -" + rec.right_shift + "px; margin-left: +" + rec.right_shift + "px;";
         } else {
           padding = "";
         }
