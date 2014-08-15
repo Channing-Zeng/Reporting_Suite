@@ -33,6 +33,8 @@ resources:
     path: /gpfs/group/ngs/src/vardict/var2vcf_somatic.pl
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
+  vcf_loader:
+    path: /group/ngs/share/mongo-loader/VCFLoader.jar
 
 genomes:
   hg19:

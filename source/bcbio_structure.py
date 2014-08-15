@@ -91,14 +91,14 @@ class Batch:
 
 
 class BCBioStructure:
-    varfilter_name      = varfilter_dir                           = 'varFilter'
-    varannotate_name    = varannotate_dir                         = 'varAnnotate'
-    targetseq_name      = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
-    cnv_dir             = cnv_summary_dir                         = 'cnv'
-    varqc_name                          = varqc_summary_dir       = 'varQC'
-    varqc_after_name                    = varqc_after_summary_dir = 'varQC_postVarFilter'
-    ngscat_name                         = ngscat_summary_dir      = 'ngscat'
-    qualimap_name                       = qualimap_summary_dir    = 'qualimap'
+    varfilter_name      = varfilter_dir                         = 'varFilter'
+    varannotate_name    = varannotate_dir                       = 'varAnnotate'
+    targetseq_name      = targetseq_dir = targetseq_summary_dir = 'targetSeq'
+    cnv_dir             = cnv_summary_dir                       = 'cnv'
+    varqc_name                        = varqc_summary_dir       = 'varQC'
+    varqc_after_name                  = varqc_after_summary_dir = 'varQC_postVarFilter'
+    ngscat_name                       = ngscat_summary_dir      = 'ngscat'
+    qualimap_name                     = qualimap_summary_dir    = 'qualimap'
     varqc_dir           = join('qc', varqc_name)
     varqc_after_dir     = join('qc', varqc_after_name)
     ngscat_dir          = join('qc', ngscat_name)
@@ -116,6 +116,7 @@ class BCBioStructure:
         self.batches = OrderedDefaultDict(Batch)
         self.samples = []
         self.variant_callers = OrderedDict()
+        self.project_name = bcbio_cnf.fc_name
 
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)

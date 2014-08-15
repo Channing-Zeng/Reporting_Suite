@@ -15,7 +15,7 @@ from source.ngscat.bed_file import verify_bam
 
 
 class Step:
-    def __init__(self, cnf, run_id, name, script, dir_name,
+    def __init__(self, cnf, run_id, name, script, dir_name=None,
                  interpreter=None, short_name=None, paramln=None):
         self.name = name
         self.dir_name = dir_name
@@ -78,6 +78,7 @@ class BCBioRunner:
                 self.varqc,
                 self.varannotate,
                 self.varfilter_all,
+                self.load_mongo,
                 self.varqc_after,
                 self.varqc_summary,
                 self.targetcov,
@@ -171,6 +172,12 @@ class BCBioRunner:
             dir_name=BCBioStructure.varfilter_dir,
             paramln=spec_params + ' ' + self.final_dir
         )
+        self.load_mongo = Step(cnf, run_id,
+            name='MongoLoader', short_name='ml',
+            interpreter='java',
+            script='vcf_loader',
+            dir_name='mongo_loader'
+        )
         self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',
             interpreter='python',
@@ -199,11 +206,9 @@ class BCBioRunner:
             dir_name=BCBioStructure.qualimap_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
-        # self.load_mongo = Step(cnf, run_id,
-
 # /group/ngs/share/mongo-loader
 # give it a try
-# java -jar VCFLoader.jar                               )
+# java -jar                           )
 
         af_thr = str(cnf.variant_filtering.min_freq)
         self.vardict = Step(cnf, run_id,
@@ -235,7 +240,7 @@ class BCBioRunner:
         else:
             base_output_dirpath = abspath(self.bcbio_structure.date_dirpath)
 
-        output_dirpath = join(base_output_dirpath, step.dir_name)
+        output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
 
         log_fpath = join(self.bcbio_structure.log_dirpath,
              (step.dir_name + ('_' + sample_name if sample_name else '') +
@@ -248,7 +253,7 @@ class BCBioRunner:
                out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
 
         output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
-        if not isdir(output_dirpath) and create_dir:
+        if output_dirpath and not isdir(output_dirpath) and create_dir:
             safe_mkdir(output_dirpath)
 
         out_fpath = out_fpath or log_fpath
@@ -526,6 +531,15 @@ class BCBioRunner:
                 wait_for_steps=([self.varfilter_all.job_name()]
                                  if self.varfilter_all in steps else []) + job_names_to_wait,
                 vcf=filtered_vcf_fpath, sample=sample_name, caller=caller_name)
+
+        if self.load_mongo in steps:
+            self.submit(
+                self.load_mongo, sample_name, suf=caller_name, create_dir=False,
+                wait_for_steps=([self.varfilter_all.job_name()]
+                                 if self.varfilter_all in steps else []) + job_names_to_wait,
+                path=filtered_vcf_fpath, sample=sample_name, variantCaller=caller_name,
+                project=self.bcbio_structure.project_name)
+
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir)

@@ -181,6 +181,15 @@ def _flatten_report(full_reports):
     #
     #     new_full_report.sample_reports.extend(full_report.sample_reports)
 
+    if isinstance(full_reports, FullReport):
+        full_reports = [full_reports]
+    else:
+        if isinstance(full_reports, SampleReport):
+            full_reports = [full_reports]
+
+        if isinstance(full_reports, list) and isinstance(full_reports[0], SampleReport):
+            full_reports = [FullReport(sample_reports=full_reports)]
+
     rows = [['Sample'] + [rep.sample.name for rep in full_reports[0].sample_reports]]
 
     for full_report in full_reports:

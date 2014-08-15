@@ -22,6 +22,9 @@ def get_tool_cmdline(cnf, interpreter, tool_name=None,
         interpreter = None
 
     if interpreter:
+        if interpreter == 'java':
+            return get_java_tool_cmdline(cnf, tool_name, extra_warning, suppress_warn)
+
         return get_script_cmdline(
             cnf, interpreter, tool_name,
             extra_warning, suppress_warn)

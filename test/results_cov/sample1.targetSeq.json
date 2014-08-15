@@ -23,7 +23,7 @@
             "name": "Mapped reads", 
             "quality": "More is better", 
             "short_name": [
-                "Mapped reads"
+                "Mapped"
             ], 
             "unit": ""
         }, 
@@ -38,7 +38,7 @@
             "name": "Unmapped reads", 
             "quality": "More is better", 
             "short_name": [
-                "Unmapped reads"
+                "Unmapped"
             ], 
             "unit": ""
         }, 
@@ -53,7 +53,7 @@
             "name": "Percentage of mapped reads", 
             "quality": "More is better", 
             "short_name": [
-                "Mapped reads"
+                "Mapped %"
             ], 
             "unit": "%"
         }, 
@@ -68,7 +68,7 @@
             "name": "Bases in target", 
             "quality": "More is better", 
             "short_name": [
-                "Bases in target"
+                "Target bp"
             ], 
             "unit": ""
         }, 
@@ -83,7 +83,7 @@
             "name": "Covered bases in target", 
             "quality": "More is better", 
             "short_name": [
-                "Covered bp in targ"
+                "Covered"
             ], 
             "unit": ""
         }, 
@@ -98,7 +98,7 @@
             "name": "Percentage of target covered by at least 1 read", 
             "quality": "More is better", 
             "short_name": [
-                "Targ covd >= 1 read"
+                "Trg covd %"
             ], 
             "unit": "%"
         }, 
@@ -113,7 +113,7 @@
             "name": "Reads mapped on target", 
             "quality": "More is better", 
             "short_name": [
-                "Reads on targ"
+                "Reads on trg"
             ], 
             "unit": ""
         }, 
@@ -128,7 +128,7 @@
             "name": "Percentage of reads mapped on target", 
             "quality": "More is better", 
             "short_name": [
-                "Reads on targ"
+                "%"
             ], 
             "unit": "%"
         }, 
@@ -143,7 +143,7 @@
             "name": "Reads mapped on padded target", 
             "quality": "More is better", 
             "short_name": [
-                "Reads on padded targ"
+                "On padded trg"
             ], 
             "unit": ""
         }, 
@@ -158,7 +158,7 @@
             "name": "Percentage of reads mapped on padded target", 
             "quality": "More is better", 
             "short_name": [
-                "Reads on padded targ"
+                "%"
             ], 
             "unit": "%"
         }, 
@@ -173,7 +173,7 @@
             "name": "Read bases mapped on target", 
             "quality": "More is better", 
             "short_name": [
-                "Read BP on targ"
+                "Read bp on trg"
             ], 
             "unit": ""
         }, 
@@ -188,7 +188,7 @@
             "name": "Average target coverage depth", 
             "quality": "More is better", 
             "short_name": [
-                "Avg targ depth"
+                "Avg"
             ], 
             "unit": ""
         }, 
@@ -203,7 +203,7 @@
             "name": "Std. dev. of target coverage depth", 
             "quality": "More is better", 
             "short_name": [
-                "Std. dev."
+                "Std dev"
             ], 
             "unit": ""
         }, 
@@ -218,7 +218,7 @@
             "name": "Maximum target coverage depth", 
             "quality": "More is better", 
             "short_name": [
-                "Max targ depth"
+                "Max"
             ], 
             "unit": ""
         }, 
@@ -233,7 +233,7 @@
             "name": "Percentage of target within 20% of mean depth", 
             "quality": "More is better", 
             "short_name": [
-                "Within 20% of mean"
+                "&#177;20% avg"
             ], 
             "unit": "%"
         }, 
