@@ -14,7 +14,7 @@ def summary_reports(cnf, bcbio_structure):
     depth_metrics = get_depth_metrics(cnf.coverage_reports.depth_thresholds)
 
     basic_report = summarize(cnf, json_by_sample, _get_parse_reports(basic_metrics), 'Coverage')
-    depth_report = summarize(cnf, json_by_sample, _get_parse_reports(depth_metrics), 'Coverage: depth')
+    depth_report = summarize(cnf, json_by_sample, _get_parse_reports(depth_metrics), 'Target Cov Depth')
 
     final_summary_report_fpaths = write_summary_reports(
         cnf.output_dir,

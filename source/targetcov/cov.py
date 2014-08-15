@@ -111,7 +111,7 @@ _basic_metrics = Metric.to_dict([
     Metric('Read bases mapped on target', short_name='Read bp on trg')])
 
 _depth_metrics = Metric.to_dict([
-    Metric('Average target coverage depth', short_name='Avg trg depth'),
+    Metric('Average target coverage depth', short_name='Avg'),
     Metric('Std. dev. of target coverage depth', short_name='Std dev'),
     Metric('Maximum target coverage depth', short_name='Max'),
     Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')])

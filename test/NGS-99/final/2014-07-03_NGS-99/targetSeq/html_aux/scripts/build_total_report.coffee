@@ -99,7 +99,7 @@ calc_cell_contents = (report, font) ->
                     rec.cell_contents = value
 
             # Max frac width of column
-            rec.frac_width = $.fn.fracPartTextWidth num_html, font
+            rec.frac_width = $.fn.intPartTextWidth num_html, font
 
             if not (rec.metric.name of max_frac_widths_by_metric)
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
@@ -155,13 +155,13 @@ reporting.buildTotalReport = (report, columnOrder) ->
                     id=\"report_table_#{report.name}\">"
     table += "\n<tr class=\"top_row_tr\">"
     table += "<td class=\"top_left_td left_column_td\">
-                    <span>Sample</span>
+                    <span>#{report.cornerCell}</span>
               </td>"
 
     for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
-        if metricName.description
+        if metricName.description?
             metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
                 #{rec.metric.short_name}
             </a>"
@@ -197,7 +197,7 @@ reporting.buildTotalReport = (report, columnOrder) ->
                           quality=\"#{rec.metric.quality}\""
             if rec.num? then table += ' number="' + rec.value + '">'
             if rec.right_shift?
-                padding = "margin-right: -#{rec.right_shift}px; margin-left: +#{rec.right_shift}px;"
+                padding = "margin-left: #{rec.right_shift}px; margin-right: -#{rec.right_shift}px;"
             else
                 padding = ""
             table += "<a style=\"#{padding}\"
@@ -233,18 +233,32 @@ set_legend = ->
     $('#report_legend').append legend
 
 
-$.fn.fracPartTextWidth = (html, font) ->
+$.fn._splitDot_partTextWidth = (html, font, part_type) ->  # part_type = 'int'|'frac'
     parts = html.split '.'
-    if parts.length > 1
-        frac_part = '.' + parts[parts.length - 1]
-        if (!$.fn.fracPartTextWidth.fakeEl)
-            $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo document.body
 
-        $.fn.fracPartTextWidth.fakeEl.html frac_part
-        $.fn.fracPartTextWidth.fakeEl.css 'font', font
-        return $.fn.fracPartTextWidth.fakeEl.width()
-    else
-        return 0
+    if part_type == 'frac'
+        if parts.length < 2
+            return 0
+        else
+            frac_part = '.' + parts[1]
+
+    else if part_type == 'int'
+        frac_part = parts[0]
+
+    if (!$.fn.fracPartTextWidth.fakeEl)
+        $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo document.body
+
+    $.fn.fracPartTextWidth.fakeEl.html frac_part
+    $.fn.fracPartTextWidth.fakeEl.css 'font', font
+    return $.fn.fracPartTextWidth.fakeEl.width()
+
+
+$.fn.fracPartTextWidth = (html, font) ->
+    $.fn._splitDot_partTextWidth html, font, 'frac'
+
+
+$.fn.intPartTextWidth = (html, font) ->
+    $.fn._splitDot_partTextWidth html, font, 'int'
 
 
 $.fn.textWidth = (text, font) ->

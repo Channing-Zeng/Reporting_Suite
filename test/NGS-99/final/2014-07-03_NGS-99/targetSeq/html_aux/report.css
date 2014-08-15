@@ -9,6 +9,10 @@
       margin: 0;
       padding: 2px 0.6em 0 5px;
       white-space: nowrap; }
+      #report .report_table td a {
+        display: block;
+        height: 100%;
+        width: 100%; }
     #report .report_table td.number {
       text-align: left; }
     #report .report_table tr.top_row_tr td,

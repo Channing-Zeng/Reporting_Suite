@@ -147,7 +147,7 @@
             rec.cell_contents = value;
           }
         }
-        rec.frac_width = $.fn.fracPartTextWidth(num_html, font);
+        rec.frac_width = $.fn.intPartTextWidth(num_html, font);
         if (!(rec.metric.name in max_frac_widths_by_metric)) {
           max_frac_widths_by_metric[rec.metric.name] = rec.frac_width;
         } else if (rec.frac_width > max_frac_widths_by_metric[rec.metric.name]) {
@@ -214,11 +214,11 @@
     calc_cell_contents(report, $('#report').css('font'));
     table = "<table cellspacing=\"0\" class=\"report_table " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
     table += "\n<tr class=\"top_row_tr\">";
-    table += "<td class=\"top_left_td left_column_td\"> <span>Sample</span> </td>";
+    table += "<td class=\"top_left_td left_column_td\"> <span>" + report.cornerCell + "</span> </td>";
     for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[recNum];
       rec = report.sample_reports[0].records[pos];
-      if (metricName.description) {
+      if (metricName.description != null) {
         metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"" + rec.metric.description + "\"> " + rec.metric.short_name + " </a>";
       } else {
         if (metricName.short_name === void 0) {
@@ -246,7 +246,7 @@
           table += ' number="' + rec.value + '">';
         }
         if (rec.right_shift != null) {
-          padding = "margin-right: " + rec.right_shift + "px; margin-left: -" + rec.right_shift + "px;";
+          padding = "margin-left: " + rec.right_shift + "px; margin-right: -" + rec.right_shift + "px;";
         } else {
           padding = "";
         }
@@ -301,20 +301,32 @@
     return $('#report_legend').append(legend);
   };
 
-  $.fn.fracPartTextWidth = function(html, font) {
+  $.fn._splitDot_partTextWidth = function(html, font, part_type) {
     var frac_part, parts;
     parts = html.split('.');
-    if (parts.length > 1) {
-      frac_part = '.' + parts[parts.length - 1];
-      if (!$.fn.fracPartTextWidth.fakeEl) {
-        $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo(document.body);
+    if (part_type === 'frac') {
+      if (parts.length < 2) {
+        return 0;
+      } else {
+        frac_part = '.' + parts[1];
       }
-      $.fn.fracPartTextWidth.fakeEl.html(frac_part);
-      $.fn.fracPartTextWidth.fakeEl.css('font', font);
-      return $.fn.fracPartTextWidth.fakeEl.width();
-    } else {
-      return 0;
+    } else if (part_type === 'int') {
+      frac_part = parts[0];
     }
+    if (!$.fn.fracPartTextWidth.fakeEl) {
+      $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo(document.body);
+    }
+    $.fn.fracPartTextWidth.fakeEl.html(frac_part);
+    $.fn.fracPartTextWidth.fakeEl.css('font', font);
+    return $.fn.fracPartTextWidth.fakeEl.width();
+  };
+
+  $.fn.fracPartTextWidth = function(html, font) {
+    return $.fn._splitDot_partTextWidth(html, font, 'frac');
+  };
+
+  $.fn.intPartTextWidth = function(html, font) {
+    return $.fn._splitDot_partTextWidth(html, font, 'int');
   };
 
   $.fn.textWidth = function(text, font) {

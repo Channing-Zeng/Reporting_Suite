@@ -84,29 +84,35 @@
   };
 
   reporting.buildReport = function() {
-    var columnNames, columnOrder, record, sample_reports, _i, _j, _len, _ref, _ref1, _results;
+    var columnNames, columnOrder, record, reports, sample_reports, _i, _j, _k, _len, _len1, _ref, _ref1, _results;
     if (!(totalReportData = readJson('total-report'))) {
       console.log("Error: cannot read #total-report-json");
       return 1;
     }
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
+    reports = totalReportData.reports;
+    for (_i = 0, _len = reports.length; _i < _len; _i++) {
+      report = reports[_i];
+      report.cornerCell = report.name;
+    }
+    reports[0].cornerCell = 'Sample';
     _ref = totalReportData.reports;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      report = _ref[_i];
+    for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+      report = _ref[_j];
       sample_reports = report.sample_reports;
       columnNames = (function() {
-        var _j, _len1, _ref1, _results;
+        var _k, _len2, _ref1, _results;
         _ref1 = sample_reports[0].records;
         _results = [];
-        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          record = _ref1[_j];
+        for (_k = 0, _len2 = _ref1.length; _k < _len2; _k++) {
+          record = _ref1[_k];
           _results.push(record.metric.name);
         }
         return _results;
       })();
       columnOrder = (recoverOrderFromCookies(report.name)) || report.order || (function() {
         _results = [];
-        for (var _j = 0, _ref1 = columnNames.length; 0 <= _ref1 ? _j < _ref1 : _j > _ref1; 0 <= _ref1 ? _j++ : _j--){ _results.push(_j); }
+        for (var _k = 0, _ref1 = columnNames.length; 0 <= _ref1 ? _k < _ref1 : _k > _ref1; 0 <= _ref1 ? _k++ : _k--){ _results.push(_k); }
         return _results;
       }).apply(this);
       reporting.buildTotalReport(report, columnOrder);
