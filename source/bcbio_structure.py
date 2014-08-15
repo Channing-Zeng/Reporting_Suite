@@ -1,5 +1,5 @@
 from dircache import listdir
-from genericpath import isdir
+from genericpath import isdir, isfile
 import os
 import sys
 from collections import defaultdict, OrderedDict
@@ -226,15 +226,14 @@ class BCBioStructure:
             vcf_fpath = adjust_path(join(var_dirpath, vcf_fname))
             self._ungzip_if_needed(self.cnf, vcf_fpath)
 
-            if file_exists(vcf_fpath):
-                if not verify_file(vcf_fpath):
-                    to_exit = True
+            if isfile(vcf_fpath) and not verify_file(vcf_fpath):
+                to_exit = True
+                continue
 
             if not file_exists(vcf_fpath):
                 if sample.phenotype != 'normal':
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
-                continue
 
             if caller_name not in self.variant_callers:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
@@ -244,7 +243,7 @@ class BCBioStructure:
 
         if to_exit:
             sys.exit(1)
-            
+
         if self.cnf.verbose:
             info('-' * 70)
         else:

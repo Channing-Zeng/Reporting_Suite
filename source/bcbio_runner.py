@@ -428,10 +428,10 @@ class BCBioRunner:
 
             for variant_caller in self.bcbio_structure.variant_callers.values():
                 vcf_fpath = sample.vcf_by_caller.get(variant_caller)
-                if not vcf_fpath and not verify_file(vcf_fpath) and sample.phenotype != 'normal':
-                    critical('No ' + vcf_fpath + ', skipping')
-
-                self._process_vcf(sample.name, sample.bam, vcf_fpath, variant_caller.name)
+                if not vcf_fpath:
+                    err('VCF for ' + sample.name + ', ' + variant_caller.name + ' does not exist.')
+                else:
+                    self._process_vcf(sample.name, sample.bam, vcf_fpath, variant_caller.name)
 
             if self.cnf.verbose:
                 info('-' * 70)
