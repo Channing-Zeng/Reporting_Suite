@@ -1,6 +1,7 @@
 from dircache import listdir
 import hashlib
 import os
+import shutil
 import sys
 import base64
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink
@@ -207,9 +208,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.qualimap_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
-# /group/ngs/share/mongo-loader
-# give it a try
-# java -jar                           )
 
         af_thr = str(cnf.variant_filtering.min_freq)
         self.vardict = Step(cnf, run_id,
@@ -545,25 +543,28 @@ class BCBioRunner:
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir)
+        safe_mkdir(cnv_summary_dirpath)
 
         for sample in self.bcbio_structure.samples:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
-            if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
 
             for fname in listdir(sample_dirpath):
                 if any(fname.endswith(s) for s in ['-cn_mops.bed', '-ensemble.bed']):
+                    if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
                     os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
 
-            for fname in listdir(cnv_dirpath):
-                if not fname.startswith('.'):
-                    src_fpath = join(cnv_dirpath, fname)
+            if isdir(cnv_dirpath):
+                for fname in listdir(cnv_dirpath):
+                    if not fname.startswith('.'):
+                        src_fpath = join(cnv_dirpath, fname)
 
-                    dst_fname = fname
-                    if sample.name not in fname:
-                        dst_fname = sample.name + '.' + dst_fname
+                        dst_fname = fname
+                        if sample.name not in fname:
+                            dst_fname = sample.name + '.' + dst_fname
 
-                    dst_fpath = join(cnv_summary_dirpath, dst_fname)
-                    if islink(dst_fpath):
-                        os.unlink(dst_fpath)
-                    os.symlink(src_fpath, dst_fpath)
+                        dst_fpath = join(cnv_summary_dirpath, dst_fname)
+                        if islink(dst_fpath):
+                            os.unlink(dst_fpath)
+                        os.symlink(src_fpath, dst_fpath)
+

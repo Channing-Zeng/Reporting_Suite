@@ -109,7 +109,7 @@ class BCBioStructure:
     filt_vcf_ending = '.anno.filt.vcf'
 
 
-    def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf):
+    def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
         self.final_dirpath = bcbio_final_dirpath
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
@@ -117,13 +117,13 @@ class BCBioStructure:
         self.samples = []
         self.variant_callers = OrderedDict()
         self.project_name = bcbio_cnf.fc_name
+        self.cnf.name = proc_name or self.project_name or critical('No fc_name in bcbio YAML file.')
 
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.log_dirpath = join(self.date_dirpath, 'log')
-        safe_mkdir(self.log_dirpath)
+        self.set_up_log()
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         if not isdir(self.work_dir):
@@ -157,6 +157,22 @@ class BCBioStructure:
             print ''
         else:
             info('Done.')
+
+
+    def set_up_log(self):
+        self.log_dirpath = join(self.date_dirpath, 'log')
+        safe_mkdir(self.log_dirpath)
+
+        self.cnf.log = join(self.log_dirpath, self.cnf.name)
+        if isfile(self.cnf.log):
+            if file_exists(self.cnf.log):
+                os.rename(self.cnf.log, self.cnf.log + '.bak')
+            else:
+                try:
+                    os.remove(self.cnf.log)
+                except OSError:
+                    pass
+
 
     @staticmethod
     def _ungzip_if_needed(cnf, fpath):
@@ -235,11 +251,13 @@ class BCBioStructure:
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
 
-            if caller_name not in self.variant_callers:
-                self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+            if vcf_fpath:
+                if caller_name not in self.variant_callers:
+                    self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+                self.variant_callers[caller_name].samples.append(sample)
+                info(vcf_fpath)
 
-            self.variant_callers[caller_name].samples.append(sample)
-            sample.vcf_by_caller[self.variant_callers[caller_name]] = vcf_fpath
+            sample.vcf_by_caller[self.variant_callers[caller_name]] = vcf_fpath  # could be None, that's OK
 
         if to_exit:
             sys.exit(1)
