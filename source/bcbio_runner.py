@@ -398,7 +398,6 @@ class BCBioRunner:
             # BAMS
             if any(step in self.steps for step in [
                    self.targetcov,
-                   self.seq2c,
                    self.qualimap,
                    self.ngscat]) \
                     or self.vardict in self.vardict_steps:
@@ -406,12 +405,12 @@ class BCBioRunner:
                     sys.exit('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
 
             # BEDS
-            if self.targetcov and (not sample.bed or not verify_file(sample.bed)):
+            if (self.targetcov in self.steps) and (not sample.bed or not verify_file(sample.bed)):
                 critical('Cannot make targetseq reports without BED file.')
-            if self.ngscat and (not sample.bed or not verify_file(sample.bed)):
+            if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
                 critical('Cannot run ngsCAT without BED file.')
             qualimap_gff = ''
-            if self.qualimap:
+            if self.qualimap in self.steps:
                 if sample.bed:
                     sample.bed = self._qualimap_bed(sample.bed)
                     qualimap_gff = ' -gff ' + sample.bed + ' '
@@ -423,12 +422,13 @@ class BCBioRunner:
             for step in [self.targetcov, self.qualimap, self.ngscat]:
                 if step in self.steps:
                     self.submit(step, sample.name, bam=sample.bam,
-                                bed=sample.bed, sample=sample, qualimap_gff=qualimap_gff)
+                                bed=sample.bed, sample=sample,
+                                qualimap_gff=qualimap_gff)
 
             for variant_caller in self.bcbio_structure.variant_callers.values():
-                vcf_fpath = sample.vcf_by_caller.get(variant_caller)
+                vcf_fpath = sample.vcf_by_callername.get(variant_caller.name)
                 if not vcf_fpath:
-                    err('VCF for ' + sample.name + ', ' + variant_caller.name + ' does not exist.')
+                    err('VCF does not exist: sample ' + sample.name + ', caller ' + variant_caller.name + ' .')
                 else:
                     self._process_vcf(sample.name, sample.bam, vcf_fpath, variant_caller.name)
 

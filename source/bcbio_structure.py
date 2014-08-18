@@ -19,16 +19,17 @@ class Sample:
         self.name = name
         self.bam = bam
         self.bed = bed
-        self.vcf_by_caller = OrderedDict()  # VariantCaller -> vcf_fpath
+        self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.phenotype = None
 
     def __str__(self):
         return self.name
 
     def for_json(self):
-        return dict(
-            (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
-            for k, v in self.__dict__.items())
+        return self.__dict__
+    #     return dict(
+    #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
+    #         for k, v in self.__dict__.items())
 
 
 class VariantCaller:
@@ -47,7 +48,7 @@ class VariantCaller:
 
         to_exit = False
         for s in self.samples:
-            if self in s.vcf_by_caller:
+            if self.name in s.vcf_by_callername:
                 fpath = join(
                     self.bcbio_structure.final_dirpath,
                     s.name,
@@ -212,8 +213,10 @@ class BCBioStructure:
         sample.dirpath = adjust_path(join(self.final_dirpath, sample.name))
         if not verify_dir(sample.dirpath): sys.exit(1)
 
-        sample.bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
-        sample.bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
+        bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
+        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
+        if not verify_file(bed): sample.bed = None
+        if not verify_file(bam): sample.bam = None
 
         safe_mkdir(join(sample.dirpath, 'qc'))
 
@@ -251,14 +254,13 @@ class BCBioStructure:
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
 
-            var_caller = VariantCaller(self, caller_name)
             if vcf_fpath:
                 if caller_name not in self.variant_callers:
-                    self.variant_callers[caller_name] = var_caller
+                    self.variant_callers[caller_name] = VariantCaller(self, caller_name)
                 self.variant_callers[caller_name].samples.append(sample)
                 info(vcf_fpath)
 
-            sample.vcf_by_caller[var_caller] = vcf_fpath  # could be None, that's OK
+            sample.vcf_by_callername[caller_name] = vcf_fpath  # could be None, that's OK
 
         if to_exit:
             sys.exit(1)
