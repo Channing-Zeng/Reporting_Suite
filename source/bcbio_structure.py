@@ -251,13 +251,14 @@ class BCBioStructure:
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
 
+            var_caller = VariantCaller(self, caller_name)
             if vcf_fpath:
                 if caller_name not in self.variant_callers:
-                    self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+                    self.variant_callers[caller_name] = var_caller
                 self.variant_callers[caller_name].samples.append(sample)
                 info(vcf_fpath)
 
-            sample.vcf_by_caller[self.variant_callers[caller_name]] = vcf_fpath  # could be None, that's OK
+            sample.vcf_by_caller[var_caller] = vcf_fpath  # could be None, that's OK
 
         if to_exit:
             sys.exit(1)
