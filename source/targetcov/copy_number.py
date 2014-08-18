@@ -42,7 +42,6 @@ def cnv_reports(cnf, bcbio_structure):
 
 
 # def _summarize_copy_number__zhongwu():
-    
 
 
 def _get_lines_by_region_type(report_fpath, region_type):

@@ -22,6 +22,7 @@ class Sample:
         self.bam = bam
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
+        self.filtered_vcf_by_callername = OrderedDict()
         self.phenotype = None
 
     def __str__(self):
