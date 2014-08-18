@@ -22,7 +22,8 @@ resources:
     path: /Users/vladsaveliev/vagrant/VarDict/testsomatic.R
   var2vcf_somatic_pl:
     path: /Users/vladsaveliev/vagrant/VarDict/var2vcf_somatic.pl
-
+  cov2cnv2:
+    path: ../../external/cov2cnv2.pl
 
 genomes:
   hg19:

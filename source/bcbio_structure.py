@@ -112,7 +112,6 @@ class BCBioStructure:
     anno_vcf_ending = '.anno.vcf'
     filt_vcf_ending = '.anno.filt.vcf'
 
-
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
         self.final_dirpath = bcbio_final_dirpath
         self.bcbio_cnf = bcbio_cnf
@@ -162,7 +161,6 @@ class BCBioStructure:
         else:
             info('Done.')
 
-
     def set_up_log(self, proc_name):
         self.log_dirpath = join(self.date_dirpath, 'log')
         safe_mkdir(self.log_dirpath)
@@ -181,7 +179,6 @@ class BCBioStructure:
                     pass
 
             logger.log_fpath = self.cnf.log
-
 
     @staticmethod
     def _ungzip_if_needed(cnf, fpath):

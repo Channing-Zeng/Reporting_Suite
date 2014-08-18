@@ -2,9 +2,13 @@
 
 import math
 from collections import defaultdict, OrderedDict
+from os.path import join
+import sys
 from source.bcbio_structure import BCBioStructure
+from source.calling_process import call_subprocess, call_pipe
 from source.logger import info, err, step_greetings, critical
 from source.reporting import write_tsv_rows, Record
+from source.tools_from_cnf import get_script_cmdline
 
 from source.utils import OrderedDefaultDict
 from source.utils import median, mean
@@ -25,7 +29,7 @@ def cnv_reports(cnf, bcbio_structure):
         return None
 
     info('Calculating normalized coverages for CNV...')
-    cnv_rows = _summarize_copy_number(sample_gene_reports_by_sample, json_by_sample)
+    cnv_rows = _summarize_copy_number(cnf, sample_gene_reports_by_sample, json_by_sample)
     cnv_report_fpath = write_tsv_rows(cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name)
 
     info()
@@ -52,9 +56,9 @@ def _get_lines_by_region_type(report_fpath, region_type):
     return gene_summary_lines
 
 
-def _summarize_copy_number(gene_reports_by_sample, json_by_sample):
+def _summarize_copy_number(cnf, gene_reports_by_sample, json_by_sample):
     gene_summary_lines = []
-    cov_by_sample = dict()
+    mapped_reads_by_sample = OrderedDict()
 
     for sample, gene_report_fpath in gene_reports_by_sample.items():
         json_fpath = json_by_sample[sample]
@@ -63,14 +67,38 @@ def _summarize_copy_number(gene_reports_by_sample, json_by_sample):
 
         records = Record.load_records(json_fpath)
 
-        cov_by_sample[sample.name] = int(next(
+        mapped_reads_by_sample[sample.name] = int(next(
             rec.value for rec in records
             if rec.metric.name == 'Mapped reads'))
 
-    results = run_copy_number(cov_by_sample, gene_summary_lines)
+    # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)
+
+    results = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines)
 
     # save_results_separate_for_samples(results)
 
+    return results
+
+
+def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
+    mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
+    with open(mapped_read_fpath, 'w') as f:
+        for sample_name, mapped_reads in mapped_reads_by_sample.items():
+            f.write(sample_name + '\t' + str(mapped_reads))
+
+    gene_depths_fpaths = join(cnf.work_dir, 'gene_depths.txt')
+    with open(gene_depths_fpaths, 'w') as f:
+        for tokens in gene_summary_lines:
+            sample, chrom, s, e, gene, tag, size, cov = tokens
+            reordered = sample, gene, chrom, s, e, 'Whole-Gene', size, cov
+            f.write('\t'.join(reordered))
+
+    cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
+    if not cov2cnv2: sys.exit(1)
+    cmdline = '{cov2cnv2} {mapped_read_fpath}'.format(**locals())
+
+    proc = call_pipe(cnf, cmdline, stdin_fpath=gene_depths_fpaths)
+    results = list(proc.stdout)
     return results
 
 
@@ -116,6 +144,7 @@ def __proc_sample(sample, norm_depths_by_sample, factors_by_gene, med_depth, med
     info('  ' + sample + ': Done. Processed {0:,} genes.'.format(i))
 
     return norm_depths_by_gene, norm2, norm3
+
 
 def run_copy_number(mapped_reads_by_sample, gene_depth):
     mapped_reads_by_sample = {k: v for k, v in mapped_reads_by_sample.items() if 'Undetermined' not in k}
