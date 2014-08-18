@@ -26,11 +26,7 @@ def cnv_reports(cnf, bcbio_structure):
 
     info('Calculating normalized coverages for CNV...')
     cnv_rows = _summarize_copy_number(sample_gene_reports_by_sample, json_by_sample)
-
-    cnv_report_fpath = write_tsv_rows(
-        cnv_rows,
-        cnf.output_dir,
-        BCBioStructure.seq2c_name)
+    cnv_report_fpath = write_tsv_rows(cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name)
 
     info()
     info('*' * 70)
@@ -39,9 +35,6 @@ def cnv_reports(cnf, bcbio_structure):
         info('  ' + cnv_report_fpath)
 
     return cnv_report_fpath
-
-
-# def _summarize_copy_number__zhongwu():
 
 
 def _get_lines_by_region_type(report_fpath, region_type):
@@ -146,7 +139,6 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
 
     samples = set(rec.sample_name for rec in records)
 
-    # Single-threaded
     norm_depths_by_gene = OrderedDefaultDict(dict)
     norm2 = OrderedDefaultDict(dict)
     norm3 = OrderedDefaultDict(dict)
@@ -162,25 +154,12 @@ def run_copy_number(mapped_reads_by_sample, gene_depth):
                 continue
 
             gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1  # norm1b
-
             norm_depths_by_gene[gene][sample] = gene_norm_depth
 
             norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
-
-            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
-                median_depth_by_sample[sample] else 0
+            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if median_depth_by_sample[sample] else 0
 
         info('  ' + sample + ': Done. Processed {0:,} genes.'.format(i))
-
-    # results = Parallel(n_jobs=len(samples))(delayed(__proc_sample)(
-    #     sample, norm_depths_by_sample, factors_by_gene, med_depth, median_depth_by_sample)
-    #                               for sample in samples)
-    #
-    # norm_depths_by_gene, norm2, norm3 = dict(), dict(), dict()
-    # for norm_depths_by_gene__sample, norm2__sample, norm3__sample in results:
-    #     fill_dict_from_defaults(norm_depths_by_gene, norm_depths_by_gene__sample)
-    #     fill_dict_from_defaults(norm2, norm2__sample)
-    #     fill_dict_from_defaults(norm3, norm3__sample)
 
     return _make_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
 

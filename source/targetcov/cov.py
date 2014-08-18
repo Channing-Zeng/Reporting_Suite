@@ -14,6 +14,7 @@ from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
 from source.file_utils import file_transaction
 
+
 def run_target_cov(cnf, bam, amplicons_bed):
     summary_report_fpath = None
     gene_report_fpath = None
@@ -99,22 +100,31 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
 _basic_metrics = Metric.to_dict([
     Metric('Reads'),
     Metric('Mapped reads', short_name='Mapped'),
+    Metric('Percentage of mapped reads', short_name='%', unit='%'),
+
     Metric('Unmapped reads', short_name='Unmapped'),
-    Metric('Percentage of mapped reads', short_name='Mapped %', unit='%'),
+    Metric('Percentage of unmapped reads', short_name='%'),
+
     Metric('Bases in target', short_name='Target bp'),
+
     Metric('Covered bases in target', short_name='Covered'),
-    Metric('Percentage of target covered by at least 1 read', short_name='Trg covd %', unit='%'),
+    Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
+
     Metric('Reads mapped on target', short_name='Reads on trg'),
     Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+
     Metric('Reads mapped on padded target', 'On padded trg'),
     Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+
     Metric('Read bases mapped on target', short_name='Read bp on trg')])
+
 
 _depth_metrics = Metric.to_dict([
     Metric('Average target coverage depth', short_name='Avg'),
     Metric('Std. dev. of target coverage depth', short_name='Std dev'),
     Metric('Maximum target coverage depth', short_name='Max'),
     Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')])
+
 
 def _add_depth_metrics(depth_thresholds):
     for depth in depth_thresholds:
@@ -151,11 +161,12 @@ def _run_header_report(cnf, bed, bam, chr_len_fpath,
 
     info('Getting number of mapped reads...')
     v_mapped_reads = number_of_mapped_reads(cnf, bam)
-    append_stat('Mapped reads', v_mapped_reads)
-    append_stat('Unmapped reads', v_number_of_reads - v_mapped_reads)
-
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
+    v_percent_unmapped = 100.0 * (v_number_of_reads - v_mapped_reads) / v_number_of_reads if v_number_of_reads else None
+    append_stat('Mapped reads', v_mapped_reads)
     append_stat('Percentage of mapped reads', v_percent_mapped)
+    append_stat('Unmapped reads', v_number_of_reads - v_mapped_reads)
+    append_stat('Percentage of unmapped reads', v_percent_unmapped)
     info('')
 
     info('* Target coverage statistics *')

@@ -39,6 +39,7 @@ nosetests.xml
 .DS_Store
 */.DS_Store
 
+test/run_info.yaml
 test/**/*work*
 test/**/*tmp*
 test/data/big
