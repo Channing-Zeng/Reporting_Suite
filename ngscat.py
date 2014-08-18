@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import sys
+from source.bcbio_structure import BCBioStructure
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -70,7 +71,8 @@ def main():
         ],
         required_keys=['bam', 'bed'],
         file_keys=['bam', 'bed', 'extra_bam'],
-        key_for_sample_name='bam')
+        key_for_sample_name='bam',
+        proc_name=BCBioStructure.ngscat_name)
 
     check_system_resources(cnf,
         required=['samtools', 'bedtools'],

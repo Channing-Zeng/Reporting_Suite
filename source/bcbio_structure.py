@@ -5,12 +5,14 @@ import sys
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink
 import re
+from source import logger
+from source.logger import info, err, critical
 from source.calling_process import call
 from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path
+from source.ngscat.bed_file import verify_bed, verify_bam
 from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists, safe_mkdir
-from source.logger import info, err, critical
 from source.utils import OrderedDefaultDict
 
 
@@ -124,7 +126,7 @@ class BCBioStructure:
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.set_up_log()
+        self.set_up_log(proc_name)
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         if not isdir(self.work_dir):
@@ -160,19 +162,24 @@ class BCBioStructure:
             info('Done.')
 
 
-    def set_up_log(self):
+    def set_up_log(self, proc_name):
         self.log_dirpath = join(self.date_dirpath, 'log')
         safe_mkdir(self.log_dirpath)
 
-        self.cnf.log = join(self.log_dirpath, self.cnf.name)
-        if isfile(self.cnf.log):
+        if not proc_name:
+            self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
             if file_exists(self.cnf.log):
-                os.rename(self.cnf.log, self.cnf.log + '.bak')
-            else:
+                bak_fpath = self.cnf.log + '.bak'
+                if isfile(bak_fpath):
+                    os.remove(bak_fpath)
+                os.rename(self.cnf.log, bak_fpath)
+            elif isfile(self.cnf.log):
                 try:
                     os.remove(self.cnf.log)
                 except OSError:
                     pass
+
+            logger.log_fpath = self.cnf.log
 
 
     @staticmethod
@@ -215,8 +222,8 @@ class BCBioStructure:
 
         bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
-        if not verify_file(bed): sample.bed = None
-        if not verify_file(bam): sample.bam = None
+        sample.bed = bed if verify_bed(bed) else None
+        sample.bam = bam if verify_bam(bam) else None
 
         safe_mkdir(join(sample.dirpath, 'qc'))
 

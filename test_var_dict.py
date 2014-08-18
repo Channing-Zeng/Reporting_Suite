@@ -9,7 +9,6 @@ _FILE_MAPPED_READS_PATH = _BCBIO_DIR + "reads_mapped.txt"
 _FILE_COV = _BCBIO_DIR + "cov.txt"
 
 
-
 def summarize_copy_number(report_summary_fpath, fpath_cov):
 
     gene_summary_lines = _get_lines_by_region_type(report_summary_fpath, 'Whole-Gene')

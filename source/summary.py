@@ -27,6 +27,7 @@ def summary_script_proc_params(name, description=None, extra_opts=list()):
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
+    parser.add_option('--log-dir', dest='log_dir')
 
     for args, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
@@ -42,12 +43,11 @@ def summary_script_proc_params(name, description=None, extra_opts=list()):
 
     load_bcbio_cnf(cnf)
 
-    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
+    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf, name)
     cnf.work_dir = bcbio_structure.work_dir
     cnf.name = name
 
     set_up_work_dir(cnf)
-    set_up_log(cnf)
 
     info()
     info('*' * 70)

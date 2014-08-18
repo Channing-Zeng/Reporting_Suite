@@ -177,10 +177,6 @@ def main():
             help='The control sample name. Any novel or COSMIC variants passing all '
                  'above filters but also detected in Control sample will be deemed '
                  'considered false positive. Use only when there\'s control sample.'
-        )),
-
-        (['--vcf-dir'], dict(
-            dest='vcf_dir',
         ))]
 
     cnf, bcbio_structure = summary_script_proc_params(

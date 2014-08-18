@@ -4,7 +4,7 @@ from os.path import isdir, join, realpath, expanduser, basename, abspath, dirnam
 from optparse import OptionParser
 from shutil import rmtree
 
-from source.file_utils import verify_file, verify_dir, adjust_path
+from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes
 from source import logger
 from source.config import Config, Defaults
 from source.logger import info, err, critical
@@ -18,7 +18,8 @@ def read_opts_and_cnfs(extra_opts,
                        file_keys=list(),
                        dir_keys=list(),
                        description=None,
-                       extra_msg=None):
+                       extra_msg=None,
+                       proc_name=None):
     options = extra_opts + [
         (['-o', '--output_dir'], dict(
              dest='output_dir',
@@ -73,6 +74,13 @@ def read_opts_and_cnfs(extra_opts,
             dest='work_dir',
             metavar='DIR')
          ),
+        (['--log-dir'], dict(
+            dest='log_dir',
+            metavar='DIR')
+         ),
+        (['--proc-name'], dict(
+            dest='proc_name',
+        )),
     ]
 
     parser = OptionParser(description=description)
@@ -95,13 +103,13 @@ def read_opts_and_cnfs(extra_opts,
                  'in options or in ' + cnf.run_cnf + '.')
 
     key_fname = basename(cnf[key_for_sample_name])
-    cnf.name = cnf.name or key_fname.split('.')[0]
+    cnf.name = remove_quotes(cnf.name) or key_fname.split('.')[0]
     try:
         cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
     except:
         cnf.caller = None
 
-    set_up_dirs(cnf)
+    set_up_dirs(cnf, cnf.proc_name or proc_name)
     info(' '.join(sys.argv))
     info()
 
@@ -243,7 +251,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     info('Loaded resources for ' + genome_cnf['name'])
 
 
-def set_up_dirs(cnf):
+def set_up_dirs(cnf, proc_name=None):
     """ Creates output_dir, work_dir; sets up log
     """
     cnf.output_dir = adjust_path(cnf.output_dir)
@@ -251,7 +259,7 @@ def set_up_dirs(cnf):
     info('Saving into ' + cnf.output_dir)
 
     set_up_work_dir(cnf)
-    set_up_log(cnf)
+    set_up_log(cnf, proc_name)
 
 
 def set_up_work_dir(cnf):
@@ -266,6 +274,9 @@ def set_up_work_dir(cnf):
     safe_mkdir(cnf.work_dir, 'working directory')
 
 
-def set_up_log(cnf):
-    cnf.log = join(cnf.work_dir, cnf.name + '_log.txt')
+def set_up_log(cnf, proc_name=None):
+    log_fname = proc_name + '_' if proc_name else ''
+    log_fname += cnf.name + '_log.txt'
+
+    cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log

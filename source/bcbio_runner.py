@@ -109,7 +109,8 @@ class BCBioRunner:
     def set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
-        spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' '
+        spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line +\
+                      ' --log-dir ' + self.bcbio_structure.log_dirpath + ' '
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
@@ -133,7 +134,8 @@ class BCBioRunner:
             script='varqc',
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\''
+                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\' ' +
+                    '--proc-name ' + BCBioStructure.varqc_after_name
         )
         self.targetcov = Step(cnf, run_id,
             name='TargetCov', short_name='tc',
