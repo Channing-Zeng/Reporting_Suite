@@ -551,7 +551,10 @@ class BCBioRunner:
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)
-        safe_mkdir(cnv_summary_dirpath)
+        try:
+            safe_mkdir(cnv_summary_dirpath)
+        except OSError:
+            pass
 
         for sample in self.bcbio_structure.samples:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
@@ -560,7 +563,10 @@ class BCBioRunner:
             for fname in listdir(sample_dirpath):
                 if any(fname.endswith(s) for s in ['-cn_mops.bed', '-ensemble.bed']):
                     if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
-                    os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
+                    try:
+                        os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
+                    except OSError:
+                        pass
 
             if isdir(cnv_dirpath):
                 for fname in listdir(cnv_dirpath):
@@ -572,7 +578,10 @@ class BCBioRunner:
                             dst_fname = sample.name + '.' + dst_fname
 
                         dst_fpath = join(cnv_summary_dirpath, dst_fname)
-                        if islink(dst_fpath):
-                            os.unlink(dst_fpath)
-                        os.symlink(src_fpath, dst_fpath)
+                        try:
+                            if islink(dst_fpath):
+                                os.unlink(dst_fpath)
+                            os.symlink(src_fpath, dst_fpath)
+                        except OSError:
+                            pass
 
