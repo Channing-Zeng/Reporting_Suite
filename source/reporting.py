@@ -54,8 +54,8 @@ class Metric:
                  unit='',
                  common=False):
         self.name = name
-        self.short_name = short_name or self.name
-        self.description = description or self.name
+        self.short_name = short_name
+        self.description = description
         self.quality = quality
         self.common = common
         self.unit = unit

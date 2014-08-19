@@ -98,6 +98,9 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
 
 
 _basic_metrics = Metric.to_dict([
+    # Common
+    Metric('Bases in target', short_name='Target bp', common=True),
+
     Metric('Reads'),
     Metric('Mapped reads', short_name='Mapped'),
     Metric('Percentage of mapped reads', short_name='%', unit='%'),
@@ -105,7 +108,6 @@ _basic_metrics = Metric.to_dict([
     Metric('Unmapped reads', short_name='Unmapped'),
     Metric('Percentage of unmapped reads', short_name='%', unit='%'),
 
-    Metric('Bases in target', short_name='Target bp', common=True),
     Metric('Covered bases in target', short_name='Covered'),
     Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
