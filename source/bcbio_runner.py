@@ -193,7 +193,7 @@ class BCBioRunner:
             name='Seq2C', short_name='seq2c',
             interpreter='python',
             script='seq2c',
-            dir_name=BCBioStructure.targetseq_summary_dir,
+            dir_name=BCBioStructure.cnv_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir
         )
         self.ngscat_summary = Step(cnf, run_id,
@@ -244,8 +244,8 @@ class BCBioRunner:
         output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
 
         log_fpath = join(self.bcbio_structure.log_dirpath,
-             (step.dir_name + ('_' + sample_name if sample_name else '') +
-                              ('_' + caller if caller else '')) + '.log')
+             (step.name + ('_' + sample_name if sample_name else '') +
+                          ('_' + caller if caller else '')) + '.log')
 
         return output_dirpath, log_fpath
 
@@ -550,7 +550,7 @@ class BCBioRunner:
 
 
     def _symlink_cnv(self):
-        cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir)
+        cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)
         safe_mkdir(cnv_summary_dirpath)
 
         for sample in self.bcbio_structure.samples:

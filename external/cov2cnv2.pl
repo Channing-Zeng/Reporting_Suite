@@ -3,13 +3,27 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Stat::Basic;
+use Statistics::Basic;
 use Getopt::Std;
 use strict;
 
 our ($opt_c, $opt_a, $opt_i);
 
 getopts( 'aic:' );
+
+sub median {
+    my @sorted = sort @_;
+    @sorted[($#sorted / 2)];
+}
+
+sub mean {
+    my @arr = @_;
+    my $sum = 0;
+    for ( @arr ) {
+        $sum += $_;
+    }
+    $sum / $#arr;
+}
 
 my $CNT = shift;
 my %cnt;
@@ -24,8 +38,7 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $stat = new Stat::Basic;
-my $meanreads = $stat->mean(\@cnt);
+my $meanreads = mean(@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
     $factor{ $k } = $meanreads/$v;
@@ -42,7 +55,6 @@ my %loc;
 while( <> ) {
     next if ( /Whole-/ );
     next if ( /_CONTROL_/ );
-    next if ( /^Sample/ );
     my ($sample, $gene, $chr, $s, $e, $t, $len, $depth) = split(/\t/);
     next if ( $sample eq "Undetermined" );
     my $k = $opt_a ? join("\t", $gene, $chr, $s, $e, $len) : $gene;
@@ -62,11 +74,12 @@ while(my($k, $v) = each %data) {
         #print join("\t", $sample, $k, $depth*$factor{ $sample }), "\n";
     }
 }
-my $meddepth = $stat->median(\@depth);
+
+my $meddepth = median(\@depth);
 my %factor2;  # Gene factor
 while( my ($k, $v) = each %norm1) {
     my @t = values %$v;
-    $factor2{ $k } = $stat->median(\@t) ? $meddepth/$stat->median(\@t) : 0;
+    $factor2{ $k } = median(\@t) ? $meddepth/median(\@t) : 0;
 }
 my %samplemedian;
 my @samples = keys %samples;
@@ -75,7 +88,7 @@ foreach my $s (@samples) {
     while( my ($k, $v) = each %norm1 ) {
         push( @tmp, $v->{ $s } );
     }
-    $samplemedian{ $s } = $stat->median( \@tmp );
+    $samplemedian{ $s } = median( \@tmp );
 }
 
 while( my ($k, $v) = each %norm1) {
@@ -97,7 +110,7 @@ while( my ($k, $v) = each %norm2) {
         if ( $opt_c ) {
             my @controls = split(/:/, $opt_c);
             my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-            my $cntl_ave = $stat->mean( \@tcntl );
+            my $cntl_ave = mean( \@tcntl );
             print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
             #print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$norm1b{ $k }->{ $opt_c })/log(2));
         }

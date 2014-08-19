@@ -24,7 +24,7 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $stat = new Stat::Basic;
+my $stat = new Statistics::Basic;
 my $meanreads = $stat->mean(\@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {

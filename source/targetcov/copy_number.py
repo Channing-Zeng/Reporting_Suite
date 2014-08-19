@@ -29,16 +29,24 @@ def cnv_reports(cnf, bcbio_structure):
         return None
 
     info('Calculating normalized coverages for CNV...')
-    cnv_rows = _summarize_copy_number(cnf, sample_gene_reports_by_sample, json_by_sample)
-    cnv_report_fpath = write_tsv_rows(cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name)
+    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, sample_gene_reports_by_sample, json_by_sample)
+
+    cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
+    if amplicon_cnv_rows:
+        cnv_ampl_report_fpath = write_tsv_rows(amplicon_cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons')
+    if gene_cnv_rows:
+        cnv_gene_ampl_report_fpath = write_tsv_rows(gene_cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name)
 
     info()
     info('*' * 70)
-    if cnv_report_fpath:
-        info('Gene CNV:')
-        info('  ' + cnv_report_fpath)
+    if cnv_ampl_report_fpath or cnv_gene_ampl_report_fpath:
+        info('Seq2C:')
+        if cnv_ampl_report_fpath:
+            info('  Amplicon level:      ' + cnv_ampl_report_fpath)
+        if cnv_gene_ampl_report_fpath:
+            info('  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
 
-    return cnv_report_fpath
+    return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
 
 
 def _get_lines_by_region_type(report_fpath, region_type):
@@ -57,13 +65,15 @@ def _get_lines_by_region_type(report_fpath, region_type):
 
 
 def _summarize_copy_number(cnf, gene_reports_by_sample, json_by_sample):
-    gene_summary_lines = []
+    amplicon_summary_lines = []
+    gene_amplicon_summary_lines = []
     mapped_reads_by_sample = OrderedDict()
 
     for sample, gene_report_fpath in gene_reports_by_sample.items():
         json_fpath = json_by_sample[sample]
 
-        gene_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
+        # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
+        gene_amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
 
         records = Record.load_records(json_fpath)
 
@@ -73,32 +83,34 @@ def _summarize_copy_number(cnf, gene_reports_by_sample, json_by_sample):
 
     # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)
 
-    results = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines)
+    results_amplicon = None
+    # results_amplicon = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines)
+    results_gene_amplicon = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_amplicon_summary_lines)
 
     # save_results_separate_for_samples(results)
 
-    return results
+    return [results_amplicon, results_gene_amplicon]
 
 
 def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
     mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
     with open(mapped_read_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
-            f.write(sample_name + '\t' + str(mapped_reads))
+            f.write(sample_name + '\t' + str(mapped_reads) + '\n')
 
     gene_depths_fpaths = join(cnf.work_dir, 'gene_depths.txt')
     with open(gene_depths_fpaths, 'w') as f:
         for tokens in gene_summary_lines:
             sample, chrom, s, e, gene, tag, size, cov = tokens
-            reordered = sample, gene, chrom, s, e, 'Whole-Gene', size, cov
-            f.write('\t'.join(reordered))
+            reordered = sample, gene, chrom, s, e, tag, size, cov
+            f.write('\t'.join(reordered) + '\n')
 
     cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
     if not cov2cnv2: sys.exit(1)
-    cmdline = '{cov2cnv2} {mapped_read_fpath}'.format(**locals())
+    cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
 
-    proc = call_pipe(cnf, cmdline, stdin_fpath=gene_depths_fpaths)
-    results = list(proc.stdout)
+    proc = call_pipe(cnf, cmdline)
+    results = [l.split() for l in proc.stdout]
     return results
 
 

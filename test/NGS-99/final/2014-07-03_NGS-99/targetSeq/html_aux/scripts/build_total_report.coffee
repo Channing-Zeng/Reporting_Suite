@@ -13,12 +13,12 @@ report =
     link: ''
     records: []
 
-records =
+record =
     metric: null
     value: ''
     meta: null
 
-metricName =
+metric =
     name: ''
     short_name: ''
     description: ''
@@ -71,36 +71,53 @@ get_meta_tag_contents = (rec) ->
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
+get_metric_name_html = (rec) ->
+    if rec.metric.short_name
+        metricName = rec.metric.short_name
+    else
+        metricName = rec.metric.name
+    if rec.metric.description
+        return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
+            #{metricName}
+        </a>"
+    else
+        return metricName
+
+
+calc_records_cell_contents = (records, font) ->
+    for rec in records
+        value = rec.value
+        num_html = ''
+
+        if not value? or value == ''
+            rec.cell_contents = '-'
+
+        else
+            if typeof value == 'number'
+                rec.num = value
+                rec.cell_contents = toPrettyString value, rec.metric.unit
+                num_html = toPrettyString value
+
+            else if /^-?.?[0-9]/.test(value)
+                result = /([0-9\.]+)(.*)/.exec value
+                rec.num = parseFloat result[1]
+                rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
+                num_html = toPrettyString(rec.num)
+            else
+                rec.cell_contents = value
+
+        # Max frac width of column
+        rec.frac_width = $.fn.intPartTextWidth num_html, font
+
+
 calc_cell_contents = (report, font) ->
     max_frac_widths_by_metric = {}
     min_val_by_metric = {}
     max_val_by_metric = {}
 
     for sampleReport in report.sample_reports
+        calc_records_cell_contents sampleReport.records, font
         for rec in sampleReport.records
-            value = rec.value
-            num_html = ''
-
-            if not value? or value == ''
-                rec.cell_contents = '-'
-
-            else
-                if typeof value == 'number'
-                    rec.num = value
-                    rec.cell_contents = toPrettyString value, rec.metric.unit
-                    num_html = toPrettyString value
-
-                else if /^-?.?[0-9]/.test(value)
-                    result = /([0-9\.]+)(.*)/.exec value
-                    rec.num = parseFloat result[1]
-                    rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
-                    num_html = toPrettyString(rec.num)
-                else
-                    rec.cell_contents = value
-
-            # Max frac width of column
-            rec.frac_width = $.fn.intPartTextWidth num_html, font
-
             if not (rec.metric.name of max_frac_widths_by_metric)
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
@@ -146,6 +163,21 @@ calc_cell_contents = (report, font) ->
                     rec.color = get_color hue
 
 
+reporting.buildCommonRecords = (common_records) ->
+    if common_records
+        calc_records_cell_contents common_records, $('#report').css 'font'
+
+        table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
+        for rec in common_records
+            table += "\n<tr><td>
+                    <span class='metric_name'>#{get_metric_name_html(rec)}:</span>
+                    #{rec.cell_contents}
+                  </td></tr>"
+        table += "\n</table>\n"
+
+        $('#report').append table
+
+
 reporting.buildTotalReport = (report, columnOrder) ->
     if report.name?
         $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{report.name}</h3>"
@@ -163,19 +195,9 @@ reporting.buildTotalReport = (report, columnOrder) ->
     for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
-        if metricName.description?
-            metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
-                #{rec.metric.short_name}
-            </a>"
-        else
-            if metricName.short_name is undefined
-                metricHtml = rec.metric.name
-            else
-                metricHtml = rec.metric.short_name
-
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
              #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
-             <span class='metricName'>#{metricHtml}</span>
+             <span class='metricName'>#{get_metric_name_html(rec)}</span>
         </td>"
 
     for sampleReport in report.sample_reports

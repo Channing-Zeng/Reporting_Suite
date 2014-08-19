@@ -2,6 +2,11 @@
   margin: 0 100px 50px 0;
   min-width: 532px;
   font-size: 1em; }
+  #report .common_table {
+    padding-right: 50px !important;
+    margin-bottom: 30px; }
+    #report .common_table span.metric_name {
+      font-weight: bold; }
   #report .report_table {
     padding-right: 50px !important;
     margin-bottom: 30px; }
@@ -18,7 +23,7 @@
     #report .report_table tr.top_row_tr td,
     #report .report_table tr.group_header td {
       font-weight: bold;
-      border-bottom: 1px solid #bbbbbb; }
+      border-bottom: 1px solid #bbb; }
     #report .report_table tr.group_header td {
       height: 20px;
       vertical-align: bottom; }
@@ -116,7 +121,7 @@ table.draggable td.top_cell_of_empty_space {
 
 #plot_tip_vertical_rule, #plot_tip_horizontal_rule {
   position: absolute;
-  border: 1px solid #bbbbbb;
+  border: 1px solid #BBB;
   z-index: -2; }
 
 #plot_tip_vertical_rule {
@@ -137,3 +142,5 @@ table.draggable td.top_cell_of_empty_space {
   height: 100%;
   width: 100%;
   display: inline-block; }
+
+/*# sourceMappingURL=report.css.map */

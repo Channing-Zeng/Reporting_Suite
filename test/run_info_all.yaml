@@ -12,7 +12,7 @@ steps:
 - VarQC_Summary
 - TargetCov_Summary
 - ngsCAT_summary
-#- QualiMap_summary
+# - QualiMap_summary
 # - MongoLoader
 
 #vardict_steps:

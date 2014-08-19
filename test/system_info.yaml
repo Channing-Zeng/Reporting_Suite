@@ -17,13 +17,13 @@ resources:
   qsub:
     path: ../tools/qsub.sh
   vardict_pl:
-    path: /Users/vladsaveliev/vagrant/VarDict/vardict.pl
+    path: ~/vagrant/VarDict/vardict.pl
   testsomatic_r:
-    path: /Users/vladsaveliev/vagrant/VarDict/testsomatic.R
+    path: ~/vagrant/VarDict/testsomatic.R
   var2vcf_somatic_pl:
-    path: /Users/vladsaveliev/vagrant/VarDict/var2vcf_somatic.pl
+    path: ~/vagrant/VarDict/var2vcf_somatic.pl
   cov2cnv2:
-    path: ../../external/cov2cnv2.pl
+    path: ~/vagrant/reporting_suite/external/cov2cnv2.pl
 
 genomes:
   hg19:

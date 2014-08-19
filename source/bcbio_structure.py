@@ -1,6 +1,7 @@
 from dircache import listdir
 from genericpath import isdir, isfile
 import os
+import shutil
 import sys
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink
@@ -23,7 +24,11 @@ class Sample:
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.filtered_vcf_by_callername = OrderedDict()
+        self.filtered_tsv_by_callername = OrderedDict()
+        self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
+        self.dirpath = None
+        self.var_dirpath = None
 
     def __str__(self):
         return self.name
@@ -95,22 +100,26 @@ class Batch:
 
 
 class BCBioStructure:
-    varfilter_name      = varfilter_dir                         = 'varFilter'
-    varannotate_name    = varannotate_dir                       = 'varAnnotate'
-    targetseq_name      = targetseq_dir = targetseq_summary_dir = 'targetSeq'
-    cnv_dir             = cnv_summary_dir                       = 'cnv'
-    varqc_name                        = varqc_summary_dir       = 'varQC'
-    varqc_after_name                  = varqc_after_summary_dir = 'varQC_postVarFilter'
-    ngscat_name                       = ngscat_summary_dir      = 'ngscat'
-    qualimap_name                     = qualimap_summary_dir    = 'qualimap'
+    varfilter_name      = varfilter_dir                           = 'varFilter'
+    varannotate_name    = varannotate_dir                         = 'varAnnotate'
+    targetseq_name      = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
+    cnv_dir                             = cnv_summary_dir         = 'cnv'
+    varqc_name                          = varqc_summary_dir       = 'varQC'
+    varqc_after_name                    = varqc_after_summary_dir = 'varQC_postVarFilter'
+    ngscat_name                         = ngscat_summary_dir      = 'ngscat'
+    qualimap_name                       = qualimap_summary_dir    = 'qualimap'
     varqc_dir           = join('qc', varqc_name)
     varqc_after_dir     = join('qc', varqc_after_name)
     ngscat_dir          = join('qc', ngscat_name)
     qualimap_dir        = join('qc', qualimap_name)
-    seq2c_name = 'Seq2C'
+    seq2c_name          = 'Seq2C'
     detail_gene_report_ending = '.details.gene.txt'
-    anno_vcf_ending = '.anno.vcf'
-    filt_vcf_ending = '.anno.filt.vcf'
+    anno_vcf_ending     = '.anno.vcf'
+    filt_vcf_ending     = '.anno.filt.vcf'
+    filt_tsv_ending     = '.anno.filt.tsv'
+    filt_maf_ending     = '.anno.filt.passed.maf'
+    var_dir             = 'var'
+
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
         self.final_dirpath = bcbio_final_dirpath
@@ -191,22 +200,26 @@ class BCBioStructure:
 
     @staticmethod
     def _move_vcfs_to_var(sample):
-        var_dirpath = adjust_path(join(sample.dirpath, 'var'))
-        if not exists(var_dirpath):
-            info('Creating "var" directory ' + var_dirpath)
-            safe_mkdir(var_dirpath)
+        if not exists(sample.var_dirpath):
+            info('Creating "var" directory ' + sample.var_dirpath)
+            safe_mkdir(sample.var_dirpath)
 
         for fname in os.listdir(sample.dirpath):
+            if any(fname.endswith(ending) for ending in
+                   [BCBioStructure.filt_maf_ending,
+                    BCBioStructure.filt_vcf_ending,
+                    BCBioStructure.filt_tsv_ending]):
+                continue
+
             if 'vcf' in fname.split('.') and \
                     not (islink(fname) and fname.endswith('.anno.filt.vcf')):
                 src_fpath = join(sample.dirpath, fname)
-                dst_fpath = join(var_dirpath, fname)
+                dst_fpath = join(sample.var_dirpath, fname)
                 if exists(dst_fpath):
                     os.remove(dst_fpath)
-                safe_mkdir(var_dirpath)
+                safe_mkdir(sample.var_dirpath)
                 info('Moving ' + src_fpath + ' to ' + dst_fpath)
                 os.rename(src_fpath, dst_fpath)
-        return var_dirpath
 
     def _read_sample_details(self, sample_info):
         sample = Sample(name=sample_info['description'])
@@ -242,12 +255,13 @@ class BCBioStructure:
                 elif sample.phenotype == 'tumor':
                     self.batches[batch_name].tumor.append(sample)
 
-        var_dirpath = self._move_vcfs_to_var(sample)
+        sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
+        self._move_vcfs_to_var(sample)
 
         to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
-            vcf_fpath = adjust_path(join(var_dirpath, vcf_fname))
+            vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))
             self._ungzip_if_needed(self.cnf, vcf_fpath)
 
             if isfile(vcf_fpath) and not verify_file(vcf_fpath):
@@ -267,14 +281,22 @@ class BCBioStructure:
 
             sample.vcf_by_callername[caller_name] = vcf_fpath  # could be None, that's OK
 
+            # And filtered symlinks
+            for ending, dic in zip([BCBioStructure.filt_vcf_ending,
+                                    BCBioStructure.filt_tsv_ending,
+                                    BCBioStructure.filt_maf_ending],
+                                   [sample.filtered_vcf_by_callername,
+                                    sample.filtered_tsv_by_callername,
+                                    sample.filtered_maf_by_callername]):
+
+                fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
+                if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
+                    dic[caller_name] = fpath
+
         if to_exit:
             sys.exit(1)
 
-        if self.cnf.verbose:
-            info('-' * 70)
-        else:
-            print ''
-            info()
+        info()
 
         return sample
 
@@ -315,6 +337,50 @@ class BCBioStructure:
 
         return fpaths
 
+    def clean(self):
+        for sample in self.samples:
+            info('Sample ' + sample.name)
+
+            for dic in [sample.filtered_vcf_by_callername,
+                        sample.filtered_tsv_by_callername,
+                        sample.filtered_maf_by_callername]:
+                for c, fpath in dic.items():
+                    try:
+                        os.unlink(fpath)
+                        info('Removed symlink ' + fpath)
+                    except OSError:
+                        pass
+
+            for fname in listdir(sample.var_dirpath):
+                if not fname.startswith('.'):
+                    fpath = join(sample.var_dirpath, fname)
+                    os.rename(fpath, join(sample.dirpath, fname))
+
+            for dirname in [BCBioStructure.varannotate_dir,
+                            BCBioStructure.varfilter_dir,
+                            BCBioStructure.varqc_dir,
+                            BCBioStructure.varqc_after_dir,
+                            BCBioStructure.ngscat_dir,
+                            BCBioStructure.qualimap_dir,
+                            BCBioStructure.targetseq_dir,
+                            BCBioStructure.var_dir]:
+                dirpath = join(sample.dirpath, dirname)
+                if isdir(dirpath):
+                    info('  removing ' + dirpath)
+                    shutil.rmtree(dirpath)
+            info()
+
+        for dirname in [BCBioStructure.targetseq_summary_dir,
+                        BCBioStructure.cnv_summary_dir,
+                        BCBioStructure.varqc_summary_dir,
+                        BCBioStructure.varqc_after_summary_dir,
+                        BCBioStructure.ngscat_summary_dir,
+                        BCBioStructure.qualimap_summary_dir]:
+            dirpath = join(self.date_dirpath, dirname)
+            if isdir(dirpath):
+                info('  removing ' + dirpath)
+                shutil.rmtree(dirpath)
+
 
 def load_bcbio_cnf(cnf):
     bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
@@ -325,8 +391,7 @@ def load_bcbio_cnf(cnf):
     if len(yaml_files) == 0:
         critical('No YAML file in the config directory.')
 
-    config_fpaths = [fpath for fpath in yaml_files
-                  if not any(n in fpath for n in ['run_info', 'system_info'])]
+    config_fpaths = [fpath for fpath in yaml_files if not any(n in fpath for n in ['run_info', 'system_info'])]
     if not config_fpaths:
         critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
 
