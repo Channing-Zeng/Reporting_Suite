@@ -288,7 +288,8 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     return all_samples
 
 
-def convert_to_maf(cnf, vcf_fpath):
+def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, bam_fpath=None,
+                   normal_sample_name=None):
     step_greetings('Converting to MAF')
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
@@ -298,7 +299,13 @@ def convert_to_maf(cnf, vcf_fpath):
 
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
-    cmdline = '{perl} {vcf2maf} --input-snpeff {vcf_fpath} --output-maf {maf_fpath}'.format(**locals())
+    cmdline = '{perl} {vcf2maf} ' \
+              '--output-maf {maf_fpath} ' \
+              '--input-snpeff {vcf_fpath} ' \
+              '--tumor-id {tumor_sample_name} '.format(**locals())
+    if bam_fpath: cmdline += ' --bam-file ' + bam_fpath
+    if normal_sample_name: cmdline += ' --normal-id ' + normal_sample_name
+
     call(cnf, cmdline, None, stdout_to_outputfile=False)
 
     if verify_file(maf_fpath, 'MAF'):

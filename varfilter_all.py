@@ -1,27 +1,17 @@
 #!/usr/bin/env python
-
-from __future__ import print_function
 import sys
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, splitext, isfile, dirname, abspath, realpath, islink
+from os.path import join, pardir, basename, dirname, abspath, realpath, islink
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
-from joblib import Parallel, delayed
 import os
-import shutil
-
-from source.file_utils import safe_mkdir, add_suffix
-from source.variants.filtering import Filtering, postprocess_vcf, filter_for_variant_caller
-from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_is_empty, \
-    igvtools_index
+from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
 from source.logger import info
 from source.bcbio_structure import BCBioStructure

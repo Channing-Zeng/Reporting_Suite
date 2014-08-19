@@ -31,6 +31,9 @@ def main(args):
                 dest='bam',
                 help='used to generate some annotations by GATK')
              ),
+            (['--match-normal-sample-name'], dict(
+                dest='match_normal_normal_name')
+             ),
             (['--clinical_reporting'], dict(
                 dest='clinical_reporting',
                 help='used to generate some annotations by GATK',

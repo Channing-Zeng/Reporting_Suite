@@ -106,7 +106,11 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         # Converting to MAF
         if cnf.make_maf:
-            maf_fpath = convert_to_maf(cnf, vcf_fpath)
+            maf_fpath = convert_to_maf(
+                cnf, vcf_fpath,
+                tumor_sample_name=cnf.name,
+                normal_sample_name=cnf.match_normal_normal_name,
+                bam_fpath=cnf.bam)
 
             if isfile(final_maf_fpath):
                 os.remove(final_maf_fpath)

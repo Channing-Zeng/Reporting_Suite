@@ -109,16 +109,17 @@ class BCBioRunner:
     def set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
-        spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line +\
-                      ' --log-dir ' + self.bcbio_structure.log_dirpath + ' '
+        spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
+                      '--log-dir ' + self.bcbio_structure.log_dirpath + ' '
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
             interpreter='python',
             script='varannotate',
             dir_name=BCBioStructure.varannotate_dir,
-            paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\''
+            paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} '
+                                  '-o \'{output_dir}\' -s \'{sample}\' -c {caller} '
+                                  '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\''
         )
         self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
@@ -160,7 +161,8 @@ class BCBioRunner:
             paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
         )
-
+        #############
+        # Summaries #
         self.varqc_summary = Step(cnf, run_id,
             name='VarQC_summary', short_name='vqs',
             interpreter='python',
@@ -525,11 +527,15 @@ class BCBioRunner:
                 sample=sample_name, caller=caller_name, wait_for_steps=job_names_to_wait)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
+        normal_match_cmdline = ''
+        if sample.normal_match:
+            normal_match_cmdline = ' --match-normal-sample-name ' + sample.normal_match.name + ' '
 
         if self.varannotate in steps:
             self.submit(
                 self.varannotate, sample_name, suf=caller_name, vcf=vcf_fpath,
                 bam_cmdline=bam_cmdline, sample=sample_name, caller=caller_name,
+                normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
         anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)

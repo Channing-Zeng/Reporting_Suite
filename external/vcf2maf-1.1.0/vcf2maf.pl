@@ -16,11 +16,12 @@ my ( $ncbi_build, $maf_center ) = ( 37, "." );
 # Check for missing or crappy arguments
 unless( @ARGV and $ARGV[0]=~m/^-/ ) {
     pod2usage( -verbose => 0, -message => "$0: Missing or invalid arguments!\n", -exitval => 2 );
+
 }
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
 my ( $man, $help, $use_snpeff ) = ( 0, 0, 0 );
-my ( $input_vcf, $vep_anno, $snpeff_anno, $output_maf );
+my ( $input_vcf, $vep_anno, $snpeff_anno, $output_maf, $bam_file );
 GetOptions(
     'help!' => \$help,
     'man!' => \$man,
@@ -34,7 +35,8 @@ GetOptions(
     'vep-path=s' => \$vep_path,
     'vep-data=s' => \$vep_data,
     'snpeff-path=s' => \$snpeff_path,
-    'snpeff-data=s' => \$snpeff_data
+    'snpeff-data=s' => \$snpeff_data,
+    'bam-file=s' => \$bam_file,
 ) or pod2usage( -verbose => 1, -input => \*DATA, -exitval => 2 );
 pod2usage( -verbose => 1, -input => \*DATA, -exitval => 0 ) if( $help );
 pod2usage( -verbose => 2, -input => \*DATA, -exitval => 0 ) if( $man );
@@ -94,7 +96,7 @@ my @maf_header = qw(
     Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2 Tumor_Validation_Allele1 Tumor_Validation_Allele2
     Match_Norm_Validation_Allele1 Match_Norm_Validation_Allele2 Verification_Status Validation_Status
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
-    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
+    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number BAM_File
 );
 
 # Add extra columns to the MAF depending on whether we used VEP or snpEff
@@ -109,6 +111,8 @@ my $vcf_fh = IO::File->new( $vcf_file ) or die "Couldn't open annotated VCF: $vc
 my $maf_fh = *STDOUT; # Use STDOUT if an output MAF file was not defined
 $maf_fh = IO::File->new( $output_maf, ">" ) or die "Couldn't open output file: $output_maf! $!" if( $output_maf );
 $maf_fh->print( "#version 2.4\n" . join( "\t", @maf_header ), "\n" ); # Print MAF header
+
+
 while( my $line = $vcf_fh->getline ) {
 
     # Skip all comment lines and the header cuz we know what we're doing!
@@ -288,6 +292,9 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
     $maf_line{Transcript_ID} = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
     $maf_line{Exon_Number} = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
+    $maf_line{Validation_Status} = ($filter eq 'PASS' || $filter eq '.') ? 'Valid' : 'Invalid';
+    $maf_line{Validation_Method} = ($filter eq 'PASS' || $filter eq '.') ? '' : $filter;
+    $maf_line{BAM_File} = $bam_file;
 
     foreach my $col ( @maf_header ) {
         $maf_fh->print( "\t" ) if ( $col ne $maf_header[0] );

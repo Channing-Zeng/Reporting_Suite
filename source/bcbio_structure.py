@@ -29,6 +29,7 @@ class Sample:
         self.phenotype = None
         self.dirpath = None
         self.var_dirpath = None
+        self.normal_match = None
 
     def __str__(self):
         return self.name
@@ -148,6 +149,10 @@ class BCBioStructure:
         self.samples = [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]
         if any(s is None for s in self.samples):
             sys.exit(1)
+
+        for b in self.batches.values():
+            for t_sample in b.tumor:
+                t_sample.normal_match = b.normal
 
         if all(get_trailing_number(s.name) for s in self.samples):
             self.samples.sort(key=lambda s: split_name_and_number(s.name))

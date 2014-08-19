@@ -437,14 +437,14 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     return Parallel(n_jobs=len(caller.samples)) \
         (delayed(postprocess_vcf)
-         (sample.name, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
-          for sample, work_filt_vcf_fpath in
-          zip(caller.samples, filt_anno_vcf_fpaths
+         (sample, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
+            for sample, work_filt_vcf_fpath in
+            zip(caller.samples, filt_anno_vcf_fpaths
         ))
 
 
-def postprocess_vcf(sname, anno_vcf_fpath, work_filt_vcf_fpath):
-    cnf = cnfs_for_samples[sname]
+def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
+    cnf = cnfs_for_samples[sample.name]
 
     final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
 
@@ -496,7 +496,10 @@ def postprocess_vcf(sname, anno_vcf_fpath, work_filt_vcf_fpath):
 
     # Converting to MAF
     if clean_filtered_vcf_fpath and cnf.make_maf:
-        maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath)
+        maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath,
+                                   tumor_sample_name=sample.name,
+                                   bam_fpath=sample.bam,
+                                   normal_sample_name=sample.normal_match.name if sample.normal_match else None)
         if isfile(final_clean_maf_fpath):
             os.remove(final_clean_maf_fpath)
         shutil.move(maf_fpath, final_clean_maf_fpath)
