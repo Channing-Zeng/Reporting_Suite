@@ -158,7 +158,7 @@ class BCBioRunner:
             dir_name=BCBioStructure.qualimap_dir,
             name='QualiMap', short_name='qm',
             paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
-                    '-bam \'{bam}\' -outdir \'{output_dir}\' {gff_param} -c -gd HUMAN'
+                    '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
         )
 
         self.varqc_summary = Step(cnf, run_id,
