@@ -71,3 +71,8 @@ test/bcbio/final/*
 test/NGS-99/final_old*
 test/NGS-99/final_bak*
 test/NGS-99/work
+
+source/quast_reporting/static/scripts/build_report.js
+source/quast_reporting/static/scripts/build_report.map
+source/quast_reporting/static/scripts/build_total_report.js
+source/quast_reporting/static/scripts/build_total_report.map
