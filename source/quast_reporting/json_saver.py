@@ -14,11 +14,12 @@ class Encoder(JSONEncoder):
         return o.__dict__
 
 
-def save_total_report(work_dir, report_base_name, full_reports):
+def save_total_report(work_dir, report_base_name, full_reports, common_records=None):
     t = datetime.datetime.now()
 
     return save(join(work_dir, report_base_name + '.json'), dict(
         date=t.strftime('%d %B %Y, %A, %H:%M:%S'),
+        common_records=common_records,
         reports=full_reports,
     ))
 

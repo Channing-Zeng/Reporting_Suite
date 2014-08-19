@@ -74,6 +74,7 @@
 
   totalReportData = {
     date: null,
+    common_records: [],
     reports: []
   };
 
@@ -90,6 +91,7 @@
       return 1;
     }
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
+    reporting.buildCommonRecords(totalReportData.common_records);
     _ref = totalReportData.reports;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       report = _ref[_i];

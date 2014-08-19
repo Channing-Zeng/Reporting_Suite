@@ -105,8 +105,7 @@ _basic_metrics = Metric.to_dict([
     Metric('Unmapped reads', short_name='Unmapped'),
     Metric('Percentage of unmapped reads', short_name='%'),
 
-    Metric('Bases in target', short_name='Target bp'),
-
+    Metric('Bases in target', short_name='Target bp', common=True),
     Metric('Covered bases in target', short_name='Covered'),
     Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
@@ -131,12 +130,15 @@ def _add_depth_metrics(depth_thresholds):
         name = 'Part of target covered at least by ' + str(depth) + 'x'
         _depth_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
 
+
 def get_basic_metrics():
     return _basic_metrics
+
 
 def get_depth_metrics(depth_thresholds):
     _add_depth_metrics(depth_thresholds)
     return _depth_metrics
+
 
 def get_cov_metrics(depth_thresholds):
     _add_depth_metrics(depth_thresholds)

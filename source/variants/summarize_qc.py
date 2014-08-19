@@ -14,7 +14,7 @@ def make_summary_reports(cnf, bcbio_structure):
 
 
 def _make_for_single_variant_caller(cnf, caller):
-    reports = summarize(cnf, caller.get_qc_reports_by_samples(), _parse_qc_sample_report, 'Variant QC')
+    reports = summarize(cnf, caller.get_qc_reports_by_samples(), _parse_qc_sample_report, '')
 
     full_summary_fpaths = write_summary_reports(
         cnf.output_dir,

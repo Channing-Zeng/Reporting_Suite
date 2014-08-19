@@ -57,6 +57,7 @@ readJson = (what) ->
 
 totalReportData =
     date: null
+    common_records: []
     reports: []
 
 report =
@@ -71,6 +72,8 @@ reporting.buildReport = ->
         return 1
 
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
+
+    reporting.buildCommonRecords totalReportData.common_records
 
     for report in totalReportData.reports
         sample_reports = report.sample_reports

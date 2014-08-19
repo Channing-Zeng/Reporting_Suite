@@ -48,7 +48,8 @@ aux_files = [
 
 
 def write_html_reports(output_dirpath, work_dirpath, full_reports, report_base_name, caption):
-    json_fpath = json_saver.save_total_report(work_dirpath, report_base_name, full_reports)
+    common_records = get_common_records(full_reports)
+    json_fpath = json_saver.save_total_report(work_dirpath, report_base_name, full_reports, common_records)
 
     if not verify_file(json_fpath):
         sys.exit(1)
@@ -56,6 +57,22 @@ def write_html_reports(output_dirpath, work_dirpath, full_reports, report_base_n
     html_fpath = init_html(output_dirpath, report_base_name + '.html', caption)
     append(html_fpath, json_fpath, 'totalReport')
     return html_fpath
+
+
+def get_common_records(full_reports):
+    if not isinstance(full_reports, list):
+        full_reports = [full_reports]
+
+    common_records = list()
+    for full_report in full_reports:
+        if full_report.sample_reports:
+            sample_report = full_report.sample_reports[0]
+            for record in sample_report.records:
+                if record.metric.common:
+                    common_records.append(record)
+            for sample_report in full_report.sample_reports:
+                sample_report.records = [record for record in sample_report.records if not record.metric.common]
+    return common_records
 
 
 def init_html(results_dirpath, report_fname, caption=''):

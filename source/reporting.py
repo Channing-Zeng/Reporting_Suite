@@ -36,7 +36,7 @@ class Record:
                 rec = Record()
                 rec.__dict__ = dict(obj.items())
                 m = Metric()
-                m.__dict__ = dict(rec.metric.items())
+                m.__dict__.update(dict(rec.metric.items()))
                 rec.metric = m
                 records.append(rec)
             return records
@@ -51,11 +51,13 @@ class Metric:
                  short_name=None,
                  description=None,
                  quality='More is better',  # More is better, Less is better, Equal
-                 unit=''):
+                 unit='',
+                 common=False):
         self.name = name
-        self.short_name = short_name or self.name,
-        self.description = description or self.name,
+        self.short_name = short_name or self.name
+        self.description = description or self.name
         self.quality = quality
+        self.common = common
         self.unit = unit
 
     @staticmethod
