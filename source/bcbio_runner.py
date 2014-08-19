@@ -302,7 +302,7 @@ class BCBioRunner:
         return output_dirpath
 
     def _qualimap_bed(self, bed_fpath):
-        if 'QualiMap' in self.steps and bed_fpath:
+        if self.qualimap in self.steps and bed_fpath:
             qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
 
             with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
