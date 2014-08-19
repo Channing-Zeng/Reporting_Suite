@@ -71,15 +71,13 @@ get_meta_tag_contents = (rec) ->
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
-get_metric_name_html = (rec) ->
-    if rec.metric.short_name
+get_metric_name_html = (rec, use_full_name = false) ->
+    if rec.metric.short_name and not use_full_name
         metricName = rec.metric.short_name
     else
         metricName = rec.metric.name
     if rec.metric.description
-        return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
-            #{metricName}
-        </a>"
+        return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">#{metricName}</a>"
     else
         return metricName
 
@@ -170,7 +168,7 @@ reporting.buildCommonRecords = (common_records) ->
         table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
         for rec in common_records
             table += "\n<tr><td>
-                    <span class='metric_name'>#{get_metric_name_html(rec)}:</span>
+                    <span class='metric_name'>#{get_metric_name_html(rec, use_full_name = true)}:</span>
                     #{rec.cell_contents}
                   </td></tr>"
         table += "\n</table>\n"

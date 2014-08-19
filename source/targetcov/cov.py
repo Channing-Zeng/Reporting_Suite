@@ -103,7 +103,7 @@ _basic_metrics = Metric.to_dict([
     Metric('Percentage of mapped reads', short_name='%', unit='%'),
 
     Metric('Unmapped reads', short_name='Unmapped'),
-    Metric('Percentage of unmapped reads', short_name='%'),
+    Metric('Percentage of unmapped reads', short_name='%', unit='%'),
 
     Metric('Bases in target', short_name='Target bp', common=True),
     Metric('Covered bases in target', short_name='Covered'),
