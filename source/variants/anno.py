@@ -1,7 +1,7 @@
 import shutil
 import os
 
-from os.path import splitext, basename, join, dirname, realpath, isfile
+from os.path import splitext, basename, join, dirname, realpath, isfile, islink
 
 from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
@@ -87,8 +87,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
         final_maf_fpath = join(cnf['output_dir'], vcf_basename + '.maf')
 
         # Moving final VCF
-        if isfile(final_vcf_fpath):
-            os.remove(final_vcf_fpath)
+        if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
+        if not islink(vcf_fpath): os.unlink(vcf_fpath)
         shutil.move(vcf_fpath, final_vcf_fpath)
         os.symlink(final_vcf_fpath, vcf_fpath)
 

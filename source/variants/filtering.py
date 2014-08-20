@@ -3,7 +3,7 @@ import shutil
 import pickle
 import operator
 
-from os.path import basename, join, isfile, dirname, splitext
+from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
 
 from source.variants.Effect import Effect
@@ -458,8 +458,8 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     final_clean_maf_fpath = file_basepath + '.passed.maf'
 
     # Moving final VCF
-    if isfile(final_vcf_fpath):
-        os.remove(final_vcf_fpath)
+    if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
+    if not islink(work_filt_vcf_fpath): os.unlink(work_filt_vcf_fpath)
     shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
     igvtools_index(cnf, final_vcf_fpath)
@@ -468,8 +468,8 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
     if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
         info('All variants are rejected.')
-    if isfile(final_clean_vcf_fpath):
-        os.remove(final_clean_vcf_fpath)
+    if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
+    if not islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
     shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
     os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
     igvtools_index(cnf, final_clean_vcf_fpath)
