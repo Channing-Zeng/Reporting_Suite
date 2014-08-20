@@ -72,10 +72,5 @@ test/NGS-99/final_old*
 test/NGS-99/final_bak*
 test/NGS-99/work
 
-**/build_report.js
-**/build_report.map
-**/build_total_report.js
-**/build_total_report.map
-
 test/run_info.yaml
 test/run_info_all.yaml
