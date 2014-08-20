@@ -20,6 +20,8 @@ from source.variants.qc_gatk import gatk_qc
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample
+from source.reporting import Metric, Record, SampleReport, FullReport, write_html_reports
+from source.bcbio_structure import BCBioStructure, Sample
 
 
 def main(args):
@@ -109,17 +111,28 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
-    qc_report_fpath = gatk_qc(cnf, vcf_fpath)
+    qc_report_fpath, records = gatk_qc(cnf, vcf_fpath)
 
     if verify_module('matplotlib'):
         try:
             qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
         except:
-            return qc_report_fpath, None
-        else:
-            return qc_report_fpath, qc_plots_fpaths
+            qc_plots_fpaths = []
     else:
-        return qc_report_fpath, None
+        qc_plots_fpaths = []
+
+    qc_plots_for_html_report_fpaths = qc_plots_fpaths
+    # removing variants distribution plot
+    if len(qc_plots_for_html_report_fpaths) == 3:  # TODO: fix this
+        qc_plots_for_html_report_fpaths = qc_plots_for_html_report_fpaths[1:]
+    summary_report_html_fpath = write_html_reports(
+        cnf.output_dir, cnf.work_dir,
+        [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name), '', records,
+                                                          plots=qc_plots_for_html_report_fpaths)])],
+        cnf.name + '.' + BCBioStructure.varqc_name, caption='Variant QC for ' + cnf.name)
+    info('\t' + summary_report_html_fpath)
+
+    return summary_report_html_fpath, qc_plots_fpaths
 
 
 def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):

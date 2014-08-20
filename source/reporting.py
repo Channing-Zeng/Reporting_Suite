@@ -104,12 +104,13 @@ class FullReport:
 
 
 class SampleReport:
-    def __init__(self, sample=None, fpath=None, records=list(), name=''):
+    def __init__(self, sample=None, fpath=None, records=list(), name='', plots=list()):
         self.sample = sample
         self.fpath = fpath
         self.link = fpath
         self.records = records
         self.name = name
+        self.plots = plots  # TODO: make real JS plots, not just included PNG
 
 
 def read_sample_names(sample_fpath):

@@ -81,6 +81,11 @@ reporting.buildReport = ->
         columnOrder = (recoverOrderFromCookies report.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, columnOrder
+        plots_html = ""
+        for sample_report in sample_reports
+            for plot in sample_report.plots
+                plots_html += "<img src=\"#{plot}\"/>"
+        $('#plot').html(plots_html);
 
     return 0
 

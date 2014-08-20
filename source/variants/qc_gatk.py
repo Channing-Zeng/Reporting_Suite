@@ -91,7 +91,7 @@ def gatk_qc(cnf, vcf_fpath):
     final_report_fpath = f_basename + final_report_ext
 
     _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)
-    return final_report_fpath
+    return final_report_fpath, records
 
 
 def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):

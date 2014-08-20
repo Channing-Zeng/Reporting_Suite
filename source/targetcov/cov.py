@@ -8,7 +8,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport
+from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport, FullReport, write_html_reports
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
@@ -16,7 +16,7 @@ from source.file_utils import file_transaction
 
 
 def run_target_cov(cnf, bam, amplicons_bed):
-    summary_report_fpath = None
+    summary_report_html_fpath = None
     gene_report_fpath = None
 
     info()
@@ -40,8 +40,20 @@ def run_target_cov(cnf, bam, amplicons_bed):
             [SampleReport(Sample(cnf.name, bam, amplicons_bed), '', records)],
             cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
-        info('Saved to ' + summary_report_fpath)
+        info('Saved to ')
+        info('\t' + summary_report_fpath)
 
+        basic_metrics = get_basic_metrics()
+        depth_metrics = get_depth_metrics(cnf.coverage_reports.depth_thresholds)
+        basic_records = get_records_by_metrics(records, basic_metrics)
+        depth_records = get_records_by_metrics(records, depth_metrics)
+
+        summary_report_html_fpath = write_html_reports(
+            cnf.output_dir, cnf.work_dir,
+            [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name, bam, amplicons_bed), '', basic_records)]),
+             FullReport(name='Target coverage depth', sample_reports=[SampleReport(Sample(cnf.name, bam, amplicons_bed), '', depth_records)]),],
+            cnf.name + '.' + BCBioStructure.targetseq_name, caption='Target coverage statistics for ' + cnf.name)
+        info('\t' + summary_report_html_fpath)
 
     if 'genes' in cnf['coverage_reports']['report_types']:
         if not exons_bed:
@@ -74,7 +86,7 @@ def run_target_cov(cnf, bam, amplicons_bed):
             _run_region_cov_report(cnf, gene_report_fpath, cnf.name, cnf.coverage_reports.depth_thresholds,
                                    amplicons, exons)
 
-    return summary_report_fpath, gene_report_fpath
+    return summary_report_html_fpath, gene_report_fpath
 
 
 def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
@@ -140,6 +152,15 @@ def get_basic_metrics():
 def get_depth_metrics(depth_thresholds):
     _add_depth_metrics(depth_thresholds)
     return _depth_metrics
+
+
+def get_records_by_metrics(records, metrics):
+    _records = []
+    for rec in records:
+        if rec.metric.name in metrics:
+            rec.metric = metrics[rec.metric.name]
+            _records.append(rec)
+    return _records
 
 
 def get_cov_metrics(depth_thresholds):
