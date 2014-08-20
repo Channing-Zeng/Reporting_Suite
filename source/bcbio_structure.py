@@ -139,6 +139,7 @@ class BCBioStructure:
         self.set_up_log(proc_name)
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
+        self.cnf.work_dir = self.work_dir
         if not isdir(self.work_dir):
             safe_mkdir(self.work_dir)
 
