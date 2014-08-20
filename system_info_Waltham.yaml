@@ -18,7 +18,7 @@ resources:
   bedtools:
     path: /group/ngs/src/bedtools/bin/bedtools
   vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/0.7.9/rhel5-x64/bin/vcfannotate
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   perl:
     path: /usr/bin/perl
   java:
