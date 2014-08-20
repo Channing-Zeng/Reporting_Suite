@@ -124,6 +124,9 @@ def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):
                         report[metric] = dict()
         elif cur_metrics_ids:  # process lines only if there are metrics in current section
             values = line.split()
+            if len(values) <= max(cur_metrics_ids + [novelty_col_id, database_col_id]):
+                continue
+
             cur_database = values[database_col_id]
             cur_novelty = values[novelty_col_id]
             if (cur_database not in cnf_databases) or (cur_novelty not in cnf_novelty):
