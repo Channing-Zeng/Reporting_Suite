@@ -1,0 +1,777 @@
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/post_for_bcbio.py --sys-cnf system_info.yaml --run-cnf TS_0023_TGEN_DLBCL/config/run_info.yaml TS_0023_TGEN_DLBCL
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  ----------------------------------------------------------------------
+2014-08-20 18:19:16  Sample "Patient-E7801003-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-normal/Patient-E7801003-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801004-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-normal/Patient-E7801004-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801006-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-normal/Patient-E7801006-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801007-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-normal/Patient-E7801007-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801008-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-normal/Patient-E7801008-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801009-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-normal/Patient-E7801009-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7802001-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-normal/Patient-E7802001-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7802002-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-normal/Patient-E7802002-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7805002-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-normal/Patient-E7805002-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7808001-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-normal/Patient-E7808001-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7810002-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-normal/Patient-E7810002-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7814001-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-normal/Patient-E7814001-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7815001-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-normal/Patient-E7815001-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7802001-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-ffpe/Patient-E7802001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801004-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ffpe/Patient-E7801004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7802002-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ffpe/Patient-E7802002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7812001-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-ffpe/Patient-E7812001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7814001-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ffpe/Patient-E7814001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7815001-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ffpe/Patient-E7815001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801004-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ff/Patient-E7801004-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801007-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-ff/Patient-E7801007-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7802002-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ff/Patient-E7802002-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7805002-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ff/Patient-E7805002-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7806007-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7806007-ff/Patient-E7806007-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7808001-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-ff/Patient-E7808001-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7815001-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ff/Patient-E7815001-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7810002-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ff/Patient-E7810002-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801008-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ff/Patient-E7801008-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801006-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-ff/Patient-E7801006-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801003-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-ff/Patient-E7801003-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801008-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ffpe/Patient-E7801008-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7805002-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ffpe/Patient-E7805002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7810002-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ffpe/Patient-E7810002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7812001-normal"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-normal/Patient-E7812001-normal-ready.bam does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7801009-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-ff/Patient-E7801009-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7815004-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ff/Patient-E7815004-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7814001-ff"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ff/Patient-E7814001-ff-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Sample "Patient-E7815004-ffpe"
+2014-08-20 18:19:16  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ffpe/Patient-E7815004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:16  
+2014-08-20 18:19:16  Done.
+2014-08-20 18:19:16  VarQC_summary
+2014-08-20 18:19:16  /Users/vladsaveliev/vagrant/reporting_suite/tools/qsub.sh -pe smp 4 -S /bin/bash -q ngs.q -j n -o /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/log/VarQC_summary.log -e /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/log/VarQC_summary.log -hold_jid _ -N VQS_qnhU5_Xc99c /Users/vladsaveliev/vagrant/reporting_suite/test/qsub_runner_local.sh "/usr/local/share/bcbio-nextgen/anaconda/bin/python  /Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py  --sys-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml'  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final"
+2014-08-20 18:19:16     /usr/local/share/bcbio-nextgen/anaconda/bin/python  /Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py  --sys-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml'  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:16     среда, 20 августа 2014 г. 18:19:16 (MSK)
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py --sys-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml as a system configuration file.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml as a run configuration file.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Loaded system config /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17  Loaded run config /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  BCBio "final" dir: /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final (set with -d)
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using bcbio YAML config /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/exomes.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py --sys-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  ----------------------------------------------------------------------
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801003-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-normal/Patient-E7801003-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-normal/Patient-E7801004-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801006-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-normal/Patient-E7801006-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801007-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-normal/Patient-E7801007-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-normal/Patient-E7801008-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801009-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-normal/Patient-E7801009-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-normal/Patient-E7802001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-normal/Patient-E7802002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-normal/Patient-E7805002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7808001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-normal/Patient-E7808001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-normal/Patient-E7810002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-normal/Patient-E7814001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-normal/Patient-E7815001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-ffpe/Patient-E7802001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ffpe/Patient-E7801004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ffpe/Patient-E7802002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7812001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-ffpe/Patient-E7812001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ffpe/Patient-E7814001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ffpe/Patient-E7815001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ff/Patient-E7801004-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801007-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-ff/Patient-E7801007-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ff/Patient-E7802002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ff/Patient-E7805002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7806007-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7806007-ff/Patient-E7806007-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7808001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-ff/Patient-E7808001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ff/Patient-E7815001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ff/Patient-E7810002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ff/Patient-E7801008-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801006-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-ff/Patient-E7801006-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801003-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-ff/Patient-E7801003-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ffpe/Patient-E7801008-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ffpe/Patient-E7805002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ffpe/Patient-E7810002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7812001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-normal/Patient-E7812001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801009-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-ff/Patient-E7801009-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815004-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ff/Patient-E7815004-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ff/Patient-E7814001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815004-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ffpe/Patient-E7815004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Done.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  **********************************************************************
+2014-08-20 18:19:17     Traceback (most recent call last):
+2014-08-20 18:19:17     File "/Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py", line 28, in <module>
+2014-08-20 18:19:17     main()
+2014-08-20 18:19:17     File "/Users/vladsaveliev/vagrant/reporting_suite/varqc_summary.py", line 24, in main
+2014-08-20 18:19:17     make_summary_reports(cnf, bcbio_structure)
+2014-08-20 18:19:17     File "/Users/vladsaveliev/vagrant/reporting_suite/source/variants/summarize_qc.py", line 13, in make_summary_reports
+2014-08-20 18:19:17     _make_for_single_variant_caller(cnf, bcbio_structure.variant_callers.values()[0])
+2014-08-20 18:19:17     IndexError: list index out of range
+2014-08-20 18:19:17     среда, 20 августа 2014 г. 18:19:17 (MSK)
+2014-08-20 18:19:17  
+2014-08-20 18:19:17  TargetCov_summary
+2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/tools/qsub.sh -pe smp 4 -S /bin/bash -q ngs.q -j n -o /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/log/TargetCov_summary.log -e /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/log/TargetCov_summary.log -hold_jid _ -N TCS_qnhU5_Xc99c /Users/vladsaveliev/vagrant/reporting_suite/test/qsub_runner_local.sh "/usr/local/share/bcbio-nextgen/anaconda/bin/python  /Users/vladsaveliev/vagrant/reporting_suite/targetcov_summary.py  --sys-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml'  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final"
+2014-08-20 18:19:17     /usr/local/share/bcbio-nextgen/anaconda/bin/python  /Users/vladsaveliev/vagrant/reporting_suite/targetcov_summary.py  --sys-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml'  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:17     среда, 20 августа 2014 г. 18:19:17 (MSK)
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/targetcov_summary.py --sys-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml as a system configuration file.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml as a run configuration file.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Loaded system config /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17  Loaded run config /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  BCBio "final" dir: /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final (set with -d)
+2014-08-20 18:19:17     2014-08-20 18:19:17  Using bcbio YAML config /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/exomes.yaml
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/targetcov_summary.py --sys-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/config/run_info.yaml /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  ----------------------------------------------------------------------
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801003-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-normal/Patient-E7801003-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-normal/Patient-E7801004-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801006-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-normal/Patient-E7801006-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801007-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-normal/Patient-E7801007-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-normal/Patient-E7801008-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801009-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-normal/Patient-E7801009-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-normal/Patient-E7802001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-normal/Patient-E7802002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-normal/Patient-E7805002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7808001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-normal/Patient-E7808001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-normal/Patient-E7810002-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-normal/Patient-E7814001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-normal/Patient-E7815001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-ffpe/Patient-E7802001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ffpe/Patient-E7801004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ffpe/Patient-E7802002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7812001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-ffpe/Patient-E7812001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ffpe/Patient-E7814001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ffpe/Patient-E7815001-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801004-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ff/Patient-E7801004-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801007-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-ff/Patient-E7801007-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7802002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ff/Patient-E7802002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ff/Patient-E7805002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7806007-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7806007-ff/Patient-E7806007-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7808001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-ff/Patient-E7808001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ff/Patient-E7815001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ff/Patient-E7810002-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ff/Patient-E7801008-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801006-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-ff/Patient-E7801006-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801003-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-ff/Patient-E7801003-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801008-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ffpe/Patient-E7801008-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7805002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ffpe/Patient-E7805002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7810002-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ffpe/Patient-E7810002-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7812001-normal"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-normal/Patient-E7812001-normal-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7801009-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-ff/Patient-E7801009-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815004-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ff/Patient-E7815004-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7814001-ff"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ff/Patient-E7814001-ff-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Sample "Patient-E7815004-ffpe"
+2014-08-20 18:19:17     2014-08-20 18:19:17  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ffpe/Patient-E7815004-ffpe-ready.bam does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17  Phenotype is tumor, and VCF does not exist.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  Done.
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  **********************************************************************
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  ----------------------------------------------------------------------
+2014-08-20 18:19:17     2014-08-20 18:19:17  Coverage statistics for all samples
+2014-08-20 18:19:17     2014-08-20 18:19:17  ----------------------------------------------------------------------
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-normal/targetSeq/Patient-E7801003-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-normal/targetSeq/Patient-E7801004-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-normal/targetSeq/Patient-E7801006-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-normal/targetSeq/Patient-E7801007-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-normal/targetSeq/Patient-E7801008-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-normal/targetSeq/Patient-E7801009-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-normal/targetSeq/Patient-E7802001-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-normal/targetSeq/Patient-E7802002-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-normal/targetSeq/Patient-E7805002-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-normal/targetSeq/Patient-E7808001-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-normal/targetSeq/Patient-E7810002-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-normal/targetSeq/Patient-E7814001-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-normal/targetSeq/Patient-E7815001-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802001-ffpe/targetSeq/Patient-E7802001-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ffpe/targetSeq/Patient-E7801004-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ffpe/targetSeq/Patient-E7802002-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-ffpe/targetSeq/Patient-E7812001-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ffpe/targetSeq/Patient-E7814001-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ffpe/targetSeq/Patient-E7815001-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801004-ff/targetSeq/Patient-E7801004-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801007-ff/targetSeq/Patient-E7801007-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7802002-ff/targetSeq/Patient-E7802002-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ff/targetSeq/Patient-E7805002-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7806007-ff/targetSeq/Patient-E7806007-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7808001-ff/targetSeq/Patient-E7808001-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815001-ff/targetSeq/Patient-E7815001-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ff/targetSeq/Patient-E7810002-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ff/targetSeq/Patient-E7801008-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801006-ff/targetSeq/Patient-E7801006-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801003-ff/targetSeq/Patient-E7801003-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801008-ffpe/targetSeq/Patient-E7801008-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7805002-ffpe/targetSeq/Patient-E7805002-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7810002-ffpe/targetSeq/Patient-E7810002-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7812001-normal/targetSeq/Patient-E7812001-normal.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7801009-ff/targetSeq/Patient-E7801009-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ff/targetSeq/Patient-E7815004-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7814001-ff/targetSeq/Patient-E7814001-ff.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17  /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/Patient-E7815004-ffpe/targetSeq/Patient-E7815004-ffpe.targetSeq.json
+2014-08-20 18:19:17     2014-08-20 18:19:17
+2014-08-20 18:19:17     2014-08-20 18:19:17  **********************************************************************
+2014-08-20 18:19:17     2014-08-20 18:19:17  Summary:
+2014-08-20 18:19:17     2014-08-20 18:19:17    /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/targetSeq/targetSeq.txt
+2014-08-20 18:19:17     2014-08-20 18:19:17    /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/targetSeq/targetSeq.tsv
+2014-08-20 18:19:17     2014-08-20 18:19:17    /Users/vladsaveliev/vagrant/reporting_suite/test/TS_0023_TGEN_DLBCL/final/2014-07-16_exomes/targetSeq/targetSeq.html
+2014-08-20 18:19:17     среда, 20 августа 2014 г. 18:19:17 (MSK)
+2014-08-20 18:19:17  
+2014-08-20 18:19:17  Done.

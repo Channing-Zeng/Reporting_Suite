@@ -1,0 +1,1118 @@
+details:
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801003-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03936_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03936_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801003-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801004-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03964_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03964_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7801004-1
+    - E7801004-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801006-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03965_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03965_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801006-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801007-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03966_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03966_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801007-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801008-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03967_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03967_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7801008-1
+    - E7801008-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801009-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03968_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03968_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801009-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7802001-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03970_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03970_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7802001-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7802002-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03971_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03971_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7802002-1
+    - E7802002-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7805002-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03972_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03972_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7805002-1
+    - E7805002-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7808001-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03973_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03973_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7808001-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7810002-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03975_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03975_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7810002-1
+    - E7810002-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7814001-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03977_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03977_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7814001-1
+    - E7814001-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7815001-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03978_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03978_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch:
+    - E7815001-1
+    - E7815001-2
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7802001-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03979_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03979_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7802001-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801004-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03980_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03980_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801004-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7802002-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03981_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03981_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7802002-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7812001-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03982_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03982_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7812001-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7814001-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03983_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03983_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7814001-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7815001-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03984_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03984_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7815001-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801004-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03986_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03986_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801004-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801007-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03987_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03987_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801007-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7802002-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03990_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03990_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7802002-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7805002-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03992_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03992_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7805002-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7806007-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03993_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03993_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7806007-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7808001-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03994_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03994_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7808001-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7815001-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03996_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L03996_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7815001-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7810002-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04016_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04016_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7810002-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801008-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04017_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04017_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801008-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801006-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04018_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04018_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801006-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801003-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04019_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04019_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801003-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801008-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04020_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04020_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801008-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7805002-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04021_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04021_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7805002-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7810002-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04022_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04022_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7810002-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7812001-normal
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04497_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04497_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7812001-1
+    phenotype: normal
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7801009-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04498_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04498_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7801009-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7815004-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04499_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04499_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7815004-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - cn.mops
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7814001-ff
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04964_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04964_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7814001-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    remove_lcr: true
+    svcaller:
+    - lumpy
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Illumina_TruSeq_Exome.bed
+    variantcaller:
+    - mutect
+    - freebayes
+    - vardict
+  analysis: variant2
+  description: Patient-E7815004-ffpe
+  files:
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04965_R1.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0023_TGEN_DLBCL/Exomes/L04965_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: E7815004-2
+    phenotype: tumor
+fc_date: '2014-07-16'
+fc_name: exomes
+upload:
+  dir: ../final

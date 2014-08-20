@@ -435,12 +435,14 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         cnf_copy['name'] = sample.name
         cnfs_for_samples[sample.name] = cnf_copy
 
-    return Parallel(n_jobs=len(caller.samples)) \
+    results = Parallel(n_jobs=len(caller.samples)) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
             for sample, work_filt_vcf_fpath in
             zip(caller.samples, filt_anno_vcf_fpaths
         ))
+
+    return results
 
 
 def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
@@ -455,11 +457,12 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     final_clean_vcf_fpath = file_basepath + '.passed.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
     final_clean_tsv_fpath = file_basepath + '.passed.tsv'
-    final_clean_maf_fpath = file_basepath + '.passed.maf'
+    final_maf_fpath = file_basepath + '.passed.maf'
 
     # Moving final VCF
     if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
-    if not islink(work_filt_vcf_fpath): os.unlink(work_filt_vcf_fpath)
+    if islink(work_filt_vcf_fpath):
+        os.unlink(work_filt_vcf_fpath)
     shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
     igvtools_index(cnf, final_vcf_fpath)
@@ -469,7 +472,7 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
         info('All variants are rejected.')
     if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
-    if not islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
+    if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
     shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
     os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
     igvtools_index(cnf, final_clean_vcf_fpath)
@@ -495,15 +498,15 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
         final_clean_tsv_fpath = None
 
     # Converting to MAF
-    if clean_filtered_vcf_fpath and cnf.make_maf:
-        maf_fpath = convert_to_maf(cnf, clean_filtered_vcf_fpath,
+    if work_filt_vcf_fpath and cnf.make_maf:
+        maf_fpath = convert_to_maf(cnf, work_filt_vcf_fpath,
                                    tumor_sample_name=sample.name,
                                    bam_fpath=sample.bam,
                                    normal_sample_name=sample.normal_match.name if sample.normal_match else None)
-        if isfile(final_clean_maf_fpath):
-            os.remove(final_clean_maf_fpath)
-        shutil.move(maf_fpath, final_clean_maf_fpath)
+        if isfile(final_maf_fpath):
+            os.remove(final_maf_fpath)
+        shutil.move(maf_fpath, final_maf_fpath)
     else:
-        final_clean_maf_fpath = None
+        final_maf_fpath = None
 
-    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_clean_maf_fpath]
+    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_maf_fpath]
