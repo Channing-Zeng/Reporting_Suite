@@ -2,6 +2,7 @@
 
 import math
 from collections import defaultdict, OrderedDict
+import os
 from os.path import join
 import sys
 from source.bcbio_structure import BCBioStructure
@@ -105,6 +106,7 @@ def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
             reordered = sample, gene, chrom, s, e, tag, size, cov
             f.write('\t'.join(reordered) + '\n')
 
+    os.environ['PERL5LIB'] = '/group/cancer_informatics/tools_resources/NGS/lib/perl5:' + os.environ['PERL5LIB']
     cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
     if not cov2cnv2: sys.exit(1)
     cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
