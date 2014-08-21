@@ -549,16 +549,16 @@ class BCBioRunner:
 
         filter_dirpath = join(dirname(anno_dirpath), self.varfilter_all.dir_name)
         safe_mkdir(filter_dirpath)
-        filtered_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt')))
+        filtered_clean_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt.passed')))
 
-        sample.filtered_vcf_by_callername[caller_name] = filtered_vcf_fpath
+        sample.filtered_clean_vcf_by_callername[caller_name] = filtered_clean_vcf_fpath
 
         if self.varqc_after in steps:
             self.submit(
                 self.varqc_after, sample_name, suf=caller_name,
                 wait_for_steps=([self.varfilter_all.job_name()]
                                  if self.varfilter_all in steps else []) + job_names_to_wait,
-                vcf=filtered_vcf_fpath, sample=sample_name, caller=caller_name)
+                vcf=filtered_clean_vcf_fpath, sample=sample_name, caller=caller_name)
 
 
     def _symlink_cnv(self):

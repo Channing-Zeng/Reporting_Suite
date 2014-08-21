@@ -479,6 +479,7 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     final_vcf_fpath = file_basepath + '.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
     final_maf_fpath = file_basepath + '.maf'
+    final_clean_vcf_fpath = file_basepath + '.passed.vcf'
 
     # Moving final VCF
     if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
@@ -489,14 +490,14 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     igvtools_index(cnf, final_vcf_fpath)
 
     # Cleaning rejected variants
-    # clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
-    # if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
-    #     info('All variants are rejected.')
-    # if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
-    # if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
-    # shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
+    clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
+    if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
+        info('All variants are rejected.')
+    if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
+    if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
+    shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
     # os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
-    # igvtools_index(cnf, final_clean_vcf_fpath)
+    igvtools_index(cnf, final_clean_vcf_fpath)
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
