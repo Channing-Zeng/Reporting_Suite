@@ -382,6 +382,15 @@ class BCBioRunner:
     #                 job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
 
     def post_jobs(self):
+        if self.qualimap in self.steps:
+            bed_by_sample = dict((s, s.bed) for s in self.bcbio_structure.samples if s.bed)
+            beds = set(bed_by_sample.values())
+            samples_by_bed = dict((b, (s for s in self.bcbio_structure.samples if s.bed and s.bed == b)) for b in beds)
+            for bed, samples in samples_by_bed.items():
+                bed = self._qualimap_bed(bed)
+                for s in samples:
+                    s.bed = bed
+
         for sample in self.bcbio_structure.samples:
             if not (any(step in self.steps for step in
                         [self.targetcov,
@@ -416,18 +425,15 @@ class BCBioRunner:
             qualimap_gff = ''
             if self.qualimap in self.steps:
                 if sample.bed:
-                    sample.bed = self._qualimap_bed(sample.bed)
-                    qualimap_gff = ' -gff ' + sample.bed + ' '
-                else:
-                    if not verify_file(sample.bed):
-                        sys.exit(1)
+                    self.submit(self.qualimap, sample.name, bam=sample.bam,
+                                bed=sample.bed, sample=sample,
+                                qualimap_gff=' -gff ' + sample.bed + ' ')
 
             # SUBMITTING
-            for step in [self.targetcov, self.qualimap, self.ngscat]:
+            for step in [self.targetcov, self.ngscat]:
                 if step in self.steps:
                     self.submit(step, sample.name, bam=sample.bam,
-                                bed=sample.bed, sample=sample,
-                                qualimap_gff=qualimap_gff)
+                                bed=sample.bed, sample=sample)
 
             for variant_caller in self.bcbio_structure.variant_callers.values():
                 vcf_fpath = sample.vcf_by_callername.get(variant_caller.name)
