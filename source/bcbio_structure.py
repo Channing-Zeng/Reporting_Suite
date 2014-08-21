@@ -79,17 +79,16 @@ class VariantCaller:
 
         to_exit = False
         for s in self.samples:
-            if self.name in s.vcf_by_callername:
-                fpath = join(
-                    self.bcbio_structure.final_dirpath,
-                    s.name,
-                    dirname,
-                    s.name + '-' + self.suf + ending)
+            fpath = join(
+                self.bcbio_structure.final_dirpath,
+                s.name,
+                dirname,
+                s.name + '-' + self.suf + ending)
 
-                if verify_file(fpath):
-                    files_by_sample[s] = fpath
-                else:
-                    to_exit = True
+            if verify_file(fpath):
+                files_by_sample[s] = fpath
+            else:
+                info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
         if to_exit:
             sys.exit(1)
@@ -125,25 +124,25 @@ class ReportFpaths:
 
 
 class BCBioStructure:
-    varfilter_name      = varfilter_dir                           = 'varFilter'
-    varannotate_name    = varannotate_dir                         = 'varAnnotate'
-    targetseq_name      = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
-    cnv_dir                             = cnv_summary_dir         = 'cnv'
-    varqc_name                          = varqc_summary_dir       = 'varQC'
-    varqc_after_name                    = varqc_after_summary_dir = 'varQC_postVarFilter'
-    ngscat_name                         = ngscat_summary_dir      = 'ngscat'
-    qualimap_name                       = qualimap_summary_dir    = 'qualimap'
-    varqc_dir           = join('qc', varqc_name)
-    varqc_after_dir     = join('qc', varqc_after_name)
-    ngscat_dir          = join('qc', ngscat_name)
-    qualimap_dir        = join('qc', qualimap_name)
-    seq2c_name          = 'Seq2C'
+    varfilter_name   = varfilter_dir                           = 'varFilter'
+    varannotate_name = varannotate_dir                         = 'varAnnotate'
+    targetseq_name   = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
+    cnv_dir                          = cnv_summary_dir         = 'cnv'
+    varqc_name                       = varqc_summary_dir       = 'varQC'
+    varqc_after_name                 = varqc_after_summary_dir = 'varQC_postVarFilter'
+    ngscat_name                      = ngscat_summary_dir      = 'ngscat'
+    qualimap_name                    = qualimap_summary_dir    = 'qualimap'
+    varqc_dir        = join('qc', varqc_name)
+    varqc_after_dir  = join('qc', varqc_after_name)
+    ngscat_dir       = join('qc', ngscat_name)
+    qualimap_dir     = join('qc', qualimap_name)
+    seq2c_name       = 'Seq2C'
     detail_gene_report_ending = '.details.gene.txt'
-    anno_vcf_ending     = '.anno.vcf'
-    filt_vcf_ending     = '.anno.filt.vcf'
-    filt_tsv_ending     = '.anno.filt.tsv'
-    filt_maf_ending     = '.anno.filt.passed.maf'
-    var_dir             = 'var'
+    anno_vcf_ending  = '.anno.vcf'
+    filt_vcf_ending  = '.anno.filt.vcf'
+    filt_tsv_ending  = '.anno.filt.tsv'
+    filt_maf_ending  = '.anno.filt.passed.maf'
+    var_dir          = 'var'
 
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
@@ -230,10 +229,7 @@ class BCBioStructure:
 
     @staticmethod
     def _move_vcfs_to_var(sample):
-        if not exists(sample.var_dirpath):
-            info('Creating "var" directory ' + sample.var_dirpath)
-            safe_mkdir(sample.var_dirpath)
-
+        fpaths = []
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
                    [BCBioStructure.filt_maf_ending,
@@ -243,13 +239,21 @@ class BCBioStructure:
 
             if 'vcf' in fname.split('.') and \
                     not (islink(fname) and fname.endswith('.anno.filt.vcf')):
-                src_fpath = join(sample.dirpath, fname)
-                dst_fpath = join(sample.var_dirpath, fname)
-                if exists(dst_fpath):
-                    os.remove(dst_fpath)
+                fpaths.append([sample, fname])
+
+        if fpaths:
+            if not exists(sample.var_dirpath):
+                info('Creating "var" directory ' + sample.var_dirpath)
                 safe_mkdir(sample.var_dirpath)
-                info('Moving ' + src_fpath + ' to ' + dst_fpath)
-                os.rename(src_fpath, dst_fpath)
+
+        for sample, fname in fpaths:
+            src_fpath = join(sample.dirpath, fname)
+            dst_fpath = join(sample.var_dirpath, fname)
+            if exists(dst_fpath):
+                os.remove(dst_fpath)
+            safe_mkdir(sample.var_dirpath)
+            info('Moving ' + src_fpath + ' to ' + dst_fpath)
+            os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
         sample = Sample(name=sample_info['description'])
@@ -290,6 +294,10 @@ class BCBioStructure:
 
         to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
+            caller = self.variant_callers.get(caller_name)
+            if not caller:
+                self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
             vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))
             self._ungzip_if_needed(self.cnf, vcf_fpath)
@@ -303,13 +311,10 @@ class BCBioStructure:
                     err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
 
+            self.variant_callers[caller_name].samples.append(sample)
             if vcf_fpath:
-                if caller_name not in self.variant_callers:
-                    self.variant_callers[caller_name] = VariantCaller(self, caller_name)
-                self.variant_callers[caller_name].samples.append(sample)
                 info(vcf_fpath)
-
-            sample.vcf_by_callername[caller_name] = vcf_fpath  # could be None, that's OK
+                sample.vcf_by_callername[caller_name] = vcf_fpath  # could be None, that's OK
 
             # And filtered symlinks
             for ending, dic in zip([BCBioStructure.filt_vcf_ending,

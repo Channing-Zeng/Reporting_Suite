@@ -39,6 +39,17 @@ get_color = (hue) ->
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 
+all_values_equal = (vals) ->
+    first_val = null
+    for val in vals
+        if first_val?
+            if val != first_val
+                return false
+        else
+            first_val = val
+    return true
+
+
 get_meta_tag_contents = (rec) ->
     meta = rec.meta
 
@@ -53,17 +64,28 @@ get_meta_tag_contents = (rec) ->
                 meta_table += "<td>#{novelty}</td>"
             meta_table += '</tr>\n'
 
-            for novelty, values of meta
-                dbs = (db for db, val of values when db isnt 'average')
+            for novelty, val_by_db of meta
+                dbs = (db for db, val of val_by_db when db isnt 'average')
                 dbs.push 'average'
                 break
 
-            for db in dbs
-                meta_table += "<tr><td>#{db}</td>"
-                for novelty, values of meta when novelty isnt 'all'
-                    meta_table += "<td>#{toPrettyString(values[db], rec.metric.unit)}</td>"
+            short_table = true
+            for novelty, val_by_db of meta
+                if not all_values_equal(val for db, val of val_by_db when db isnt 'average')
+                    short_table = false
 
+            if short_table  # Values are the same for each database
+                meta_table += '<tr><td></td>'
+                for novelty, val_by_db of meta when novelty isnt 'all'
+                    meta_table += "<td>#{toPrettyString(val_by_db[dbs[0]], rec.metric.unit)}</td>"
                 meta_table += '</tr>\n'
+            else
+                for db in dbs
+                    meta_table += "<tr><td>#{db}</td>"
+                    for novelty, val_by_db of meta when novelty isnt 'all'
+                        meta_table += "<td>#{toPrettyString(val_by_db[db], rec.metric.unit)}</td>"
+                    meta_table += '</tr>\n'
+
             meta_table += '</table>\n'
 
             return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
@@ -192,9 +214,9 @@ reporting.buildTotalReport = (report, columnOrder) ->
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
-             #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
-             <span class='metricName'>#{get_metric_name_html(rec)}</span>
+             <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
         </td>"
+#{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
     for sampleReport in report.sample_reports
         sampleName = sampleReport.sample.name

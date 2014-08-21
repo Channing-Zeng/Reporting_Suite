@@ -27,7 +27,7 @@ metric =
     type: null
 
 
-DRAGGABLE_COLUMNS = false
+DRAGGABLE_COLUMNS = true
 
 RED_HUE = 0
 GREEN_HUE = 120
@@ -192,8 +192,8 @@ reporting.buildTotalReport = (report, columnOrder) ->
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
-             #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
-             <span class='metricName'>#{get_metric_name_html(rec)}</span>
+             {if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
+             <span class=\"metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\">#{get_metric_name_html(rec)}</span>
         </td>"
 
     for sampleReport in report.sample_reports

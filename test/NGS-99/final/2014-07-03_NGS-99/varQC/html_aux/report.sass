@@ -6,8 +6,16 @@
     //float: left
     font-size: 1em
 
+    .common_table
+        padding-right: 50px !important
+        margin-bottom: 30px
+
+        span.metric_name
+            font-weight: bold
+
     .report_table
         padding-right: 50px !important
+        margin-bottom: 30px
 
         td
             margin: 0
@@ -15,8 +23,13 @@
             //min-width: 100px
             //max-width: 200px
             white-space: nowrap
+            a
+                display: block
+                height: 100%
+                width: 100%
+
         td.number
-            text-align: right
+            text-align: left
 
         tr.top_row_tr td,
         tr.group_header td
@@ -194,3 +207,7 @@ table.draggable
     height: 100%
     width: 100%
     display: inline-block
+
+.qc_meta_table
+    td
+        padding-right: 5px

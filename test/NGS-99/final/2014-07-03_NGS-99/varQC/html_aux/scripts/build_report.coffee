@@ -57,6 +57,7 @@ readJson = (what) ->
 
 totalReportData =
     date: null
+    common_records: []
     reports: []
 
 report =
@@ -71,12 +72,20 @@ reporting.buildReport = ->
         return 1
 
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
+
+    reporting.buildCommonRecords totalReportData.common_records
+
     for report in totalReportData.reports
         sample_reports = report.sample_reports
         columnNames = (record.metric.name for record in sample_reports[0].records)
         columnOrder = (recoverOrderFromCookies report.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, columnOrder
+        plots_html = ""
+        for sample_report in sample_reports
+            for plot in sample_report.plots
+                plots_html += "<img src=\"#{plot}\"/>"
+        $('#plot').html(plots_html);
 
     return 0
 

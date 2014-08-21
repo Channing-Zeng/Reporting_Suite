@@ -13,12 +13,12 @@ report =
     link: ''
     records: []
 
-records =
+record =
     metric: null
     value: ''
     meta: null
 
-metricName =
+metric =
     name: ''
     short_name: ''
     description: ''
@@ -39,6 +39,17 @@ get_color = (hue) ->
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 
+all_values_equal = (vals) ->
+    first_val = null
+    for val in vals
+        if first_val?
+            if val != first_val
+                return false
+        else
+            first_val = val
+    return true
+
+
 get_meta_tag_contents = (rec) ->
     meta = rec.meta
 
@@ -53,22 +64,68 @@ get_meta_tag_contents = (rec) ->
                 meta_table += "<td>#{novelty}</td>"
             meta_table += '</tr>\n'
 
-            for novelty, values of meta
-                dbs = (db for db, val of values when db isnt 'average')
+            for novelty, val_by_db of meta
+                dbs = (db for db, val of val_by_db when db isnt 'average')
                 dbs.push 'average'
                 break
 
-            for db in dbs
-                meta_table += "<tr><td>#{db}</td>"
-                for novelty, values of meta when novelty isnt 'all'
-                    meta_table += "<td>#{toPrettyString(values[db], rec.metric.unit)}</td>"
+            short_table = true
+            for novelty, val_by_db of meta
+                if not all_values_equal(val for db, val of val_by_db when db isnt 'average')
+                    short_table = false
 
+            if short_table  # Values are the same for each database
+                meta_table += '<tr><td></td>'
+                for novelty, val_by_db of meta when novelty isnt 'all'
+                    meta_table += "<td>#{toPrettyString(val_by_db[dbs[0]], rec.metric.unit)}</td>"
                 meta_table += '</tr>\n'
+            else
+                for db in dbs
+                    meta_table += "<tr><td>#{db}</td>"
+                    for novelty, val_by_db of meta when novelty isnt 'all'
+                        meta_table += "<td>#{toPrettyString(val_by_db[db], rec.metric.unit)}</td>"
+                    meta_table += '</tr>\n'
+
             meta_table += '</table>\n'
 
             return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
     else
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
+
+
+get_metric_name_html = (rec, use_full_name=false) ->
+    if rec.metric.short_name and not use_full_name
+        metricName = rec.metric.short_name
+        description = rec.metric.description or rec.metric.name
+        return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{description}\">#{metricName}</a>"
+    else
+        return rec.metric.name
+
+
+calc_records_cell_contents = (records, font) ->
+    for rec in records
+        value = rec.value
+        num_html = ''
+
+        if not value? or value == ''
+            rec.cell_contents = '-'
+
+        else
+            if typeof value == 'number'
+                rec.num = value
+                rec.cell_contents = toPrettyString value, rec.metric.unit
+                num_html = toPrettyString value
+
+            else if /^-?.?[0-9]/.test(value)
+                result = /([0-9\.]+)(.*)/.exec value
+                rec.num = parseFloat result[1]
+                rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
+                num_html = toPrettyString(rec.num)
+            else
+                rec.cell_contents = value
+
+        # Max frac width of column
+        rec.frac_width = $.fn.intPartTextWidth num_html, font
 
 
 calc_cell_contents = (report, font) ->
@@ -77,30 +134,8 @@ calc_cell_contents = (report, font) ->
     max_val_by_metric = {}
 
     for sampleReport in report.sample_reports
+        calc_records_cell_contents sampleReport.records, font
         for rec in sampleReport.records
-            value = rec.value
-            num_html = ''
-
-            if not value? or value == ''
-                rec.cell_contents = '-'
-
-            else
-                if typeof value == 'number'
-                    rec.num = value
-                    rec.cell_contents = toPrettyString value, rec.metric.unit
-                    num_html = toPrettyString value
-
-                else if /^-?.?[0-9]/.test(value)
-                    result = /([0-9\.]+)(.*)/.exec value
-                    rec.num = parseFloat result[1]
-                    rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
-                    num_html = toPrettyString(rec.num)
-                else
-                    rec.cell_contents = value
-
-            # Max frac width of column
-            rec.frac_width = $.fn.fracPartTextWidth num_html, font
-
             if not (rec.metric.name of max_frac_widths_by_metric)
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
@@ -146,7 +181,24 @@ calc_cell_contents = (report, font) ->
                     rec.color = get_color hue
 
 
+reporting.buildCommonRecords = (common_records) ->
+    if common_records
+        calc_records_cell_contents common_records, $('#report').css 'font'
+
+        table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
+        for rec in common_records
+            table += "\n<tr><td>
+                    <span class='metric_name'>#{get_metric_name_html(rec, use_full_name=true)}:</span>
+                    #{rec.cell_contents}
+                  </td></tr>"
+        table += "\n</table>\n"
+
+        $('#report').append table
+
+
 reporting.buildTotalReport = (report, columnOrder) ->
+    if report.name?
+        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{report.name}</h3>"
 
     calc_cell_contents report, $('#report').css 'font'
 
@@ -161,20 +213,10 @@ reporting.buildTotalReport = (report, columnOrder) ->
     for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
-        if metricName.description
-            metricHtml = "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{rec.metric.description}\">
-                #{rec.metric.short_name}
-            </a>"
-        else
-            if metricName.short_name is undefined
-                metricHtml = rec.metric.name
-            else
-                metricHtml = rec.metric.short_name
-
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
-             #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
-             <span class='metricName'>#{metricHtml}</span>
+             <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
         </td>"
+#{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
     for sampleReport in report.sample_reports
         sampleName = sampleReport.sample.name
@@ -197,7 +239,7 @@ reporting.buildTotalReport = (report, columnOrder) ->
                           quality=\"#{rec.metric.quality}\""
             if rec.num? then table += ' number="' + rec.value + '">'
             if rec.right_shift?
-                padding = "margin-right: #{rec.right_shift}px; margin-left: -#{rec.right_shift}px;"
+                padding = "margin-left: #{rec.right_shift}px; margin-right: -#{rec.right_shift}px;"
             else
                 padding = ""
             table += "<a style=\"#{padding}\"
@@ -233,18 +275,32 @@ set_legend = ->
     $('#report_legend').append legend
 
 
-$.fn.fracPartTextWidth = (html, font) ->
+$.fn._splitDot_partTextWidth = (html, font, part_type) ->  # part_type = 'int'|'frac'
     parts = html.split '.'
-    if parts.length > 1
-        frac_part = '.' + parts[parts.length - 1]
-        if (!$.fn.fracPartTextWidth.fakeEl)
-            $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo document.body
 
-        $.fn.fracPartTextWidth.fakeEl.html frac_part
-        $.fn.fracPartTextWidth.fakeEl.css 'font', font
-        return $.fn.fracPartTextWidth.fakeEl.width()
-    else
-        return 0
+    if part_type == 'frac'
+        if parts.length < 2
+            return 0
+        else
+            frac_part = '.' + parts[1]
+
+    else if part_type == 'int'
+        frac_part = parts[0]
+
+    if (!$.fn.fracPartTextWidth.fakeEl)
+        $.fn.fracPartTextWidth.fakeEl = $('<span>').hide().appendTo document.body
+
+    $.fn.fracPartTextWidth.fakeEl.html frac_part
+    $.fn.fracPartTextWidth.fakeEl.css 'font', font
+    return $.fn.fracPartTextWidth.fakeEl.width()
+
+
+$.fn.fracPartTextWidth = (html, font) ->
+    $.fn._splitDot_partTextWidth html, font, 'frac'
+
+
+$.fn.intPartTextWidth = (html, font) ->
+    $.fn._splitDot_partTextWidth html, font, 'int'
 
 
 $.fn.textWidth = (text, font) ->

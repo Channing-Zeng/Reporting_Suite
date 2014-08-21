@@ -23,7 +23,7 @@
     #report .report_table tr.top_row_tr td,
     #report .report_table tr.group_header td {
       font-weight: bold;
-      border-bottom: 1px solid #bbb; }
+      border-bottom: 1px solid #bbbbbb; }
     #report .report_table tr.group_header td {
       height: 20px;
       vertical-align: bottom; }
@@ -121,7 +121,7 @@ table.draggable td.top_cell_of_empty_space {
 
 #plot_tip_vertical_rule, #plot_tip_horizontal_rule {
   position: absolute;
-  border: 1px solid #BBB;
+  border: 1px solid #bbbbbb;
   z-index: -2; }
 
 #plot_tip_vertical_rule {
@@ -143,4 +143,5 @@ table.draggable td.top_cell_of_empty_space {
   width: 100%;
   display: inline-block; }
 
-/*# sourceMappingURL=report.css.map */
+.qc_meta_table td {
+  padding-right: 5px; }
