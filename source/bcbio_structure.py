@@ -59,9 +59,16 @@ class VariantCaller:
     #     self.filt_tsv_fpaths = OrderedDict()
     #     self.filt_maf_fpaths = OrderedDict()
 
-    def get_qc_reports_by_samples(self):
-        return self._get_files_by_sample(
+    def get_report_fpaths_by_sample(self):
+        """
+        Returns dict: sample_name -> ReportFpaths(html_fpath, json_fpath)
+        """
+        html_by_samples = self._get_files_by_sample(
+            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.html')
+        json_by_samples = self._get_files_by_sample(
             BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.json')
+        return _combine_report_fpath_by_sample(html_by_samples, json_by_samples)
+
 
     def get_anno_vcf_by_samples(self):
         return self._get_files_by_sample(
@@ -105,6 +112,16 @@ class Batch:
 
     def __str__(self):
         return self.name
+
+
+class ReportFpaths:
+    '''
+    Handles all individual report fpaths for constructing summary.
+    Stores fpath to individual report itself (HTML) and fpath to report content data (usually JSON)
+    '''
+    def __init__(self, html_fpath, content_fpath=None):
+        self.html_fpath = html_fpath
+        self.content_fpath = content_fpath or html_fpath  # usually fpath to JSON
 
 
 class BCBioStructure:
@@ -320,20 +337,35 @@ class BCBioStructure:
                            BCBioStructure.targetseq_dir +
                            BCBioStructure.detail_gene_report_ending)
 
-    def get_targetcov_json_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+    def get_targetcov_report_fpaths_by_sample(self):
+        """
+        Returns dict: sample_name -> ReportFpaths(html_fpath, json_fpath)
+        """
+        html_by_samples = self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.targetseq_dir,
+            lambda sample: sample.name + '.' + BCBioStructure.targetseq_dir + '.html')
+        json_by_samples = self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' + BCBioStructure.targetseq_dir + '.json')
+        return _combine_report_fpath_by_sample(html_by_samples, json_by_samples)
 
-    def get_ngscat_html_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+    def get_ngscat_report_fpaths_by_sample(self):
+        """
+        Returns dict: sample_name -> ReportFpaths(html_fpath, html_fpath)
+        """
+        return _combine_report_fpath_by_sample(
+            self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.ngscat_dir,
-            lambda sample: 'captureQC.html')
+            lambda sample: 'captureQC.html'))
 
-    def get_qualimap_html_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+    def get_qualimap_report_fpaths_by_sample(self):
+        """
+        Returns dict: sample_name -> ReportFpaths(html_fpath, html_fpath)
+        """
+        return _combine_report_fpath_by_sample(
+            self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.qualimap_dir,
-            lambda sample: 'qualimapReport.html')
+            lambda sample: 'qualimapReport.html'))
 
     def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
         fpaths = OrderedDict()
@@ -439,3 +471,9 @@ def split_name_and_number(string):
 def get_trailing_number(string):
     m = re.search(r'\d+$', string)
     return int(m.group()) if m else None
+
+
+def _combine_report_fpath_by_sample(report_fpath_by_sample, content_fpath_by_sample=None):
+    return {s: ReportFpaths(report_fpath_by_sample[s],
+                            content_fpath_by_sample[s] if content_fpath_by_sample else None)
+            for s in report_fpath_by_sample.keys()}

@@ -7,7 +7,7 @@ from source.bcbio_structure import BCBioStructure
 def summary_reports(cnf, bcbio_structure):
     step_greetings('QualiMap statistics for all samples')
 
-    html_by_sample = bcbio_structure.get_qualimap_html_by_sample()
+    html_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
     sum_report = summarize(cnf, html_by_sample, _parse_qualimap_sample_report, '')
 
     final_summary_report_fpaths = write_summary_reports(

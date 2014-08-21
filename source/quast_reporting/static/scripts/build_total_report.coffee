@@ -198,13 +198,13 @@ reporting.buildTotalReport = (report, columnOrder) ->
 
     for sampleReport in report.sample_reports
         sampleName = sampleReport.sample.name
-        sampleLink = sampleReport.link
+        sampleFpath = sampleReport.fpath
         if sampleName.length > 30
             sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
 
         table += "\n<tr>
             <td class=\"left_column_td\">
-                <a class=\"sample_name\" href=\"#{sampleLink}\">#{sampleName}</a>
+                <a class=\"sample_name\" href=\"#{sampleFpath}\">#{sampleName}</a>
             </td>"
 
         for recNum in [0...sampleReport.records.length]

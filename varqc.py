@@ -129,7 +129,8 @@ def process_one(cnf):
         cnf.output_dir, cnf.work_dir,
         [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name), '', records,
                                                           plots=qc_plots_for_html_report_fpaths)])],
-        cnf.name + '.' + BCBioStructure.varqc_name, caption='Variant QC for ' + cnf.name)
+        cnf.name + '-' + cnf.caller + '.' + BCBioStructure.varqc_name,
+        caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
     info('\t' + summary_report_html_fpath)
 
     return summary_report_html_fpath, qc_plots_fpaths

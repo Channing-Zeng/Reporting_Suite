@@ -107,7 +107,6 @@ class SampleReport:
     def __init__(self, sample=None, fpath=None, records=list(), name='', plots=list()):
         self.sample = sample
         self.fpath = fpath
-        self.link = fpath
         self.records = records
         self.name = name
         self.plots = plots  # TODO: make real JS plots, not just included PNG
@@ -158,8 +157,8 @@ def summarize(cnf, report_fpath_by_sample, parse_report_fn, report_name):
     return FullReport(
         name=report_name,
         sample_reports=[
-            SampleReport(sample_name, fpath, parse_report_fn(cnf, fpath))
-            for sample_name, fpath in report_fpath_by_sample.items()])
+            SampleReport(sample_name, fpaths.html_fpath, parse_report_fn(cnf, fpaths.content_fpath))
+            for sample_name, fpaths in report_fpath_by_sample.items()])
 
 
 def write_summary_reports(output_dirpath, work_dirpath, full_reports, base_fname, caption):
