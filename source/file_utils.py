@@ -3,7 +3,7 @@
 
 import shutil
 import os
-from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath, splitext
+from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath, splitext, islink
 import gzip
 import tempfile
 import contextlib
@@ -619,6 +619,9 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
                  overwrite=False, reuse_intermediate=True):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
+
+    if islink(output_fpath):
+        os.unlink(output_fpath)
 
     if suffix and cnf.reuse_intermediate and reuse_intermediate and not overwrite and file_exists(output_fpath):
         info(output_fpath + ' exists, reusing')

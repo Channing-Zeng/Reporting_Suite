@@ -88,7 +88,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         # Moving final VCF
         if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
-        if islink(vcf_fpath): os.unlink(vcf_fpath)
         shutil.move(vcf_fpath, final_vcf_fpath)
         os.symlink(final_vcf_fpath, vcf_fpath)
 

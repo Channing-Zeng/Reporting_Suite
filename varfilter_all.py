@@ -178,30 +178,35 @@ def main():
 
 
 def filter_all(cnf, bcbio_structure):
-    callers = bcbio_structure.variant_callers
+    for _, caller in bcbio_structure.variant_callers.items():
+        filter_for_variant_caller(caller, cnf, bcbio_structure)
 
-    for _, caller in callers.items():
-        for res in filter_for_variant_caller(caller, cnf, bcbio_structure):
-            finalize_one(cnf, *res)
+    for sample in bcbio_structure.samples:
+        finalize_one(cnf, sample)
+
+    info()
+    info('Combined MAF files:')
+    for caller in bcbio_structure.variant_callers.values():
+        if caller.combined_filt_maf_fpath:
+            info(caller.name + ': ' + caller.combined_filt_maf_fpath)
 
 
-def finalize_one(cnf, vcf_fpath, clean_vcf_fpath, tsv_fpath, clean_tsv_fpath, maf_fpath):
-    if vcf_fpath:
-        info('Saved VCF to ' + vcf_fpath)
-    if clean_vcf_fpath:
-        info('Saved VCF (only passed) to ' + clean_vcf_fpath)
-    if tsv_fpath:
-        info('Saved TSV to ' + clean_tsv_fpath)
-    if tsv_fpath:
-        info('Saved TSV (only passed) to ' + tsv_fpath)
-    if maf_fpath:
-        info('Saved MAF (only passed) to ' + maf_fpath)
-
-    for fpath in [vcf_fpath, tsv_fpath, maf_fpath]:
+def finalize_one(cnf, sample):
+    def symlink(fpath):
         sl_path = join(dirname(fpath), pardir, basename(fpath))
         if islink(sl_path):
             os.unlink(sl_path)
         os.symlink(fpath, sl_path)
+
+    info(sample.name + ':')
+
+    for dic in [sample.filtered_vcf_by_callername,
+                sample.filtered_tsv_by_callername,
+                sample.filtered_maf_by_callername]:
+        for caller_name, fpath in dic.items():
+            info(caller_name + ': ' + fpath)
+            symlink(fpath)
+
 
 if __name__ == '__main__':
     main()

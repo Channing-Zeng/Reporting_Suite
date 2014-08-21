@@ -438,11 +438,34 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     results = Parallel(n_jobs=len(caller.samples)) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
-            for sample, work_filt_vcf_fpath in
-            zip(caller.samples, filt_anno_vcf_fpaths
-        ))
+             for sample, work_filt_vcf_fpath in
+             zip(caller.samples, filt_anno_vcf_fpaths)
+         )
+    info('*' * 70)
 
-    return results
+    for sample, [vcf, tsv, maf] in zip(caller.samples, results):
+        sample.filtered_vcf_by_callername[caller.name] = vcf
+        sample.filtered_tsv_by_callername[caller.name] = tsv
+        sample.filtered_maf_by_callername[caller.name] = maf
+
+    comb_maf_fpath = join(bcbio_structure.date_dirpath, caller.name + '.maf')
+    caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.get_filtered_mafs(), comb_maf_fpath)
+
+    return caller
+
+
+def combine_mafs(cnf, maf_fpaths, output_fpath):
+    if isfile(output_fpath):
+        os.remove(output_fpath)
+
+    with open(output_fpath, 'w') as out:
+        for i, fpath in enumerate(maf_fpaths):
+            with open(fpath) as inp:
+                for j, line in enumerate(inp):
+                    if i > 0 and j in [0, 1]:
+                        continue
+                    out.write(line)
+    return output_fpath
 
 
 def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
@@ -454,28 +477,25 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
 
     file_basepath = splitext(final_vcf_fpath)[0]
     final_vcf_fpath = file_basepath + '.vcf'
-    final_clean_vcf_fpath = file_basepath + '.passed.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
-    final_clean_tsv_fpath = file_basepath + '.passed.tsv'
-    final_maf_fpath = file_basepath + '.passed.maf'
+    final_maf_fpath = file_basepath + '.maf'
 
     # Moving final VCF
     if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
-    if islink(work_filt_vcf_fpath):
-        os.unlink(work_filt_vcf_fpath)
     shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
+
     igvtools_index(cnf, final_vcf_fpath)
 
     # Cleaning rejected variants
-    clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
-    if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
-        info('All variants are rejected.')
-    if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
-    if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
-    shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
-    os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
-    igvtools_index(cnf, final_clean_vcf_fpath)
+    # clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
+    # if vcf_is_empty(cnf, clean_filtered_vcf_fpath):
+    #     info('All variants are rejected.')
+    # if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
+    # if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
+    # shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
+    # os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
+    # igvtools_index(cnf, final_clean_vcf_fpath)
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
@@ -488,14 +508,14 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
         final_tsv_fpath = None
 
     # Converting clean VCF to TSV
-    if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
-        clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
-
-        if isfile(final_clean_tsv_fpath):
-            os.remove(final_clean_tsv_fpath)
-        shutil.move(clean_tsv_fpath, final_clean_tsv_fpath)
-    else:
-        final_clean_tsv_fpath = None
+    # if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
+    #     clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
+    #
+    #     if isfile(final_clean_tsv_fpath):
+    #         os.remove(final_clean_tsv_fpath)
+    #     shutil.move(clean_tsv_fpath, final_clean_tsv_fpath)
+    # else:
+    #     final_clean_tsv_fpath = None
 
     # Converting to MAF
     if work_filt_vcf_fpath and cnf.make_maf:
@@ -506,7 +526,10 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
         if isfile(final_maf_fpath):
             os.remove(final_maf_fpath)
         shutil.move(maf_fpath, final_maf_fpath)
+        info('-' * 70)
+        info()
     else:
         final_maf_fpath = None
 
-    return [final_vcf_fpath, final_clean_vcf_fpath, final_tsv_fpath, final_clean_tsv_fpath, final_maf_fpath]
+
+    return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]

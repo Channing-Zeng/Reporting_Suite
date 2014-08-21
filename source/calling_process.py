@@ -2,7 +2,7 @@ import sys
 import subprocess
 import os
 import shutil
-from os.path import isfile, exists, join
+from os.path import isfile, exists, join, islink
 
 from source.logger import info, err
 from source.file_utils import file_exists, file_transaction
@@ -55,6 +55,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     if output_fpath is None:
         stdout_to_outputfile = False
+    elif islink(output_fpath):
+        os.unlink(output_fpath)
 
     # NEEDED TO REUSE?
     if output_fpath and cnf.reuse_intermediate and not overwrite:

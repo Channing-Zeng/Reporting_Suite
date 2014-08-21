@@ -44,13 +44,28 @@ class Sample:
 class VariantCaller:
     def __init__(self, bcbio_structure, name):
         self.name = self.suf = name
-        self.summary_qc_report = None
-        self.summary_qc_rep_fpaths = []
-        self.anno_vcf_fpaths = OrderedDict()
-        self.anno_filt_vcf_fpaths = OrderedDict()
-
         self.bcbio_structure = bcbio_structure
         self.samples = []
+
+        self.summary_qc_report = None
+        self.summary_qc_rep_fpaths = []
+
+        self.combined_filt_maf_fpath = None
+
+    def get_filtered_mafs(self):
+        return [sample.filtered_maf_by_callername[self.name] for sample in self.samples]
+    #     self.anno_vcf_fpaths = OrderedDict()
+    #     self.filt_vcf_fpaths = OrderedDict()
+    #     self.filt_tsv_fpaths = OrderedDict()
+    #     self.filt_maf_fpaths = OrderedDict()
+
+    def get_qc_reports_by_samples(self):
+        return self._get_files_by_sample(
+            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.json')
+
+    def get_anno_vcf_by_samples(self):
+        return self._get_files_by_sample(
+            BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
     def _get_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
@@ -73,14 +88,6 @@ class VariantCaller:
             sys.exit(1)
 
         return files_by_sample
-
-    def get_qc_reports_by_samples(self):
-        return self._get_files_by_sample(
-            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.json')
-
-    def get_anno_vcf_by_samples(self):
-        return self._get_files_by_sample(
-            BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
     def __str__(self):
         return self.name

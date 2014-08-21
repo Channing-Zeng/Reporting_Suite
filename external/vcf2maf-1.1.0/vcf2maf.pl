@@ -10,7 +10,7 @@ use Pod::Usage qw( pod2usage );
 # Set any default paths and constants
 my ( $vep_path, $snpeff_path ) = ( "~/vep", "~/snpEff" );
 my ( $vep_data, $snpeff_data ) = ( "~/.vep", "~/snpEff/data" );
-my ( $tumor_id, $normal_id ) = ( "TUMOR", "NORMAL" );
+my ( $tumor_id, $normal_id ) = ( ".", "." );
 my ( $ncbi_build, $maf_center ) = ( 37, "." );
 
 # Check for missing or crappy arguments
