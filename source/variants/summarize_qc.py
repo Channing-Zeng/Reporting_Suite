@@ -1,6 +1,6 @@
 from collections import defaultdict, OrderedDict
 from os.path import join
-from source.bcbio_structure import BCBioStructure, VariantCaller, Sample
+from source.bcbio_structure import Sample
 from source.logger import info
 from source.reporting import summarize, write_summary_reports, Record
 
@@ -14,14 +14,14 @@ def make_summary_reports(cnf, bcbio_structure):
 
 
 def _make_for_single_variant_caller(cnf, caller):
-    reports = summarize(cnf, caller.get_report_fpaths_by_sample(), _parse_qc_sample_report, '')
+    reports = summarize(cnf, caller.get_report_fpaths_by_sample(cnf), _parse_qc_sample_report, '')
 
     full_summary_fpaths = write_summary_reports(
         cnf.output_dir,
         cnf.work_dir,
         reports,
-        join(cnf.output_dir, BCBioStructure.varqc_name),
-        'Variant QC')
+        base_fname=join(cnf.output_dir, cnf.name),
+        caption='Variant QC')
 
     info()
     info('*' * 70)
@@ -33,7 +33,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
     for caller in callers:
         caller.summary_qc_report = summarize(
             cnf,
-            caller.get_report_fpaths_by_sample(),
+            caller.get_report_fpaths_by_sample(cnf),
             _parse_qc_sample_report,
             'Variant QC')
 
@@ -41,7 +41,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
             cnf.output_dir,
             cnf.work_dir,
             caller.summary_qc_report,  # TODO outputdir - read from structure too?
-            join(cnf.output_dir, caller.suf + '.' + BCBioStructure.varqc_name),
+            join(cnf.output_dir, caller.suf + '.' + cnf.name),
             'Variant QC for ' + caller.name)
 
     all_single_reports = OrderedDict(
@@ -49,7 +49,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
          for (s, c, rep) in sorted(
             (s.name, c.name, rep)
             for c in callers
-            for s, rep in c.get_report_fpaths_by_sample().items()
+            for s, rep in c.get_report_fpaths_by_sample(cnf).items()
         )))
 
     full_summary_report = summarize(
@@ -62,7 +62,7 @@ def _make_for_multiple_variant_callers(cnf, callers):
         cnf.output_dir,
         cnf.work_dir,
         full_summary_report,
-        join(cnf.output_dir, BCBioStructure.varqc_name),
+        join(cnf.output_dir, cnf.name),
         'Variant QC')
 
     info()

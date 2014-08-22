@@ -1,3 +1,4 @@
+from genericpath import isdir
 import os
 import shutil
 import pickle
@@ -448,7 +449,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         sample.filtered_tsv_by_callername[caller.name] = tsv
         sample.filtered_maf_by_callername[caller.name] = maf
 
-    comb_maf_fpath = join(bcbio_structure.date_dirpath, caller.name + '.maf')
+    comb_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.maf')
     caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.get_filtered_mafs(), comb_maf_fpath)
 
     return caller
@@ -457,6 +458,9 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 def combine_mafs(cnf, maf_fpaths, output_fpath):
     if isfile(output_fpath):
         os.remove(output_fpath)
+
+    if not isdir(dirname(output_fpath)):
+        safe_mkdir(dirname(output_fpath))
 
     with open(output_fpath, 'w') as out:
         for i, fpath in enumerate(maf_fpaths):

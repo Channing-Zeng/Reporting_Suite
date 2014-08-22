@@ -2,17 +2,19 @@ genome: hg19
 
 steps:
 # - VarAnnotate
-# - VarQC
-- VarFilter
-# - VarQC_after
+- VarQC
+- VarQC_postVarFilter
+- VarQC_summary
+- VarQC_summary_after
+# - VarFilter
 # - TargetCov
-# - NGScat
-# - QualiMap
 # - Seq2C
-# - VarQC_Summary
 # - TargetCov_Summary
+# - ngsCAT
 # - ngsCAT_summary
+#- QualiMap
 #- QualiMap_summary
+#- MongoLoader
 
 #vardict_steps:
 #- VarDict

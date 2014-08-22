@@ -1,17 +1,18 @@
 #!/usr/bin/env python
+from genericpath import isdir
 
 import sys
 from os.path import join, pardir
 from optparse import OptionParser
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
-from source.file_utils import verify_dir
+from source.file_utils import verify_dir, safe_mkdir
 from source.config import Defaults, Config
 from source.main import check_keys, check_inputs, set_up_work_dir, set_up_log
 from source.logger import info, critical
 
 
-def summary_script_proc_params(name, description=None, extra_opts=list()):
+def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
     info(' '.join(sys.argv))
     info()
 
@@ -29,6 +30,9 @@ def summary_script_proc_params(name, description=None, extra_opts=list()):
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
     parser.add_option('--log-dir', dest='log_dir')
 
+    parser.add_option('--dir', dest='dir', default=dir)
+    parser.add_option('--name', dest='name', default=name)
+
     for args, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
 
@@ -43,11 +47,16 @@ def summary_script_proc_params(name, description=None, extra_opts=list()):
 
     load_bcbio_cnf(cnf)
 
-    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf, name)
+    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf, cnf.name)
     cnf.work_dir = bcbio_structure.work_dir
-    cnf.name = name
 
     set_up_work_dir(cnf)
+    if cnf.dir:
+        cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir)
+        if not isdir(join(cnf.output_dir, pardir)):
+            safe_mkdir(join(cnf.output_dir, pardir))
+        if not isdir(cnf.output_dir):
+            safe_mkdir(cnf.output_dir)
 
     info()
     info('*' * 70)

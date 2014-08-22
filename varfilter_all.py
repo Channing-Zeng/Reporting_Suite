@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from genericpath import isdir
 import sys
 from source.file_utils import safe_mkdir
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
@@ -7,7 +6,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, dirname, abspath, realpath, islink
+from os.path import join, pardir, basename, dirname, abspath, realpath, islink, isdir
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -173,8 +172,9 @@ def main():
 
     cnf, bcbio_structure = summary_script_proc_params(
         BCBioStructure.varfilter_name,
-        description,
-        extra_opts)
+        dir=None,
+        description=description,
+        extra_opts=extra_opts)
 
     filter_all(cnf, bcbio_structure)
 
@@ -198,7 +198,6 @@ def symlink_to_dir(fpath, dirpath):
         safe_mkdir(dirpath)
 
     dst_path = join(dirpath, basename(fpath))
-    print dst_path
     if islink(dst_path):
         os.unlink(dst_path)
     os.symlink(fpath, dst_path)

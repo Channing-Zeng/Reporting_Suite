@@ -60,16 +60,15 @@ class VariantCaller:
     #     self.filt_tsv_fpaths = OrderedDict()
     #     self.filt_maf_fpaths = OrderedDict()
 
-    def get_report_fpaths_by_sample(self):
+    def get_report_fpaths_by_sample(self, cnf):
         """
         Returns dict: sample_name -> ReportFpaths(html_fpath, json_fpath)
         """
         html_by_samples = self._get_files_by_sample(
-            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.html')
+            cnf.dir, '.' + cnf.name + '.html')
         json_by_samples = self._get_files_by_sample(
-            BCBioStructure.varqc_dir, '.' + BCBioStructure.varqc_name + '.json')
+            cnf.dir, '.' + cnf.name + '.json')
         return _combine_report_fpath_by_sample(html_by_samples, json_by_samples)
-
 
     def get_anno_vcf_by_samples(self):
         return self._get_files_by_sample(
@@ -129,14 +128,16 @@ class BCBioStructure:
     varannotate_name = varannotate_dir                         = 'varAnnotate'
     targetseq_name   = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
     cnv_dir                          = cnv_summary_dir         = 'cnv'
-    varqc_name                       = varqc_summary_dir       = 'varQC'
-    varqc_after_name                 = varqc_after_summary_dir = 'varQC_postVarFilter'
-    ngscat_name                      = ngscat_summary_dir      = 'ngscat'
-    qualimap_name                    = qualimap_summary_dir    = 'qualimap'
-    varqc_dir        = join('qc', varqc_name)
-    varqc_after_dir  = join('qc', varqc_after_name)
-    ngscat_dir       = join('qc', ngscat_name)
-    qualimap_dir     = join('qc', qualimap_name)
+    varqc_name               = 'varQC'
+    varqc_summary_name       = 'varQC_summary'
+    varqc_after_name         = 'varQC_postVarFilter'
+    varqc_after_summary_name = 'varQC_postVarFilter_summary'
+    ngscat_name              = 'ngscat'
+    qualimap_name            = 'qualimap'
+    varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
+    varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
+    ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
+    qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
     seq2c_name       = 'Seq2C'
     detail_gene_report_ending = '.details.gene.txt'
     anno_vcf_ending  = '.anno.vcf'
@@ -144,7 +145,6 @@ class BCBioStructure:
     filt_tsv_ending  = '.anno.filt.tsv'
     filt_maf_ending  = '.anno.filt.passed.maf'
     var_dir          = 'var'
-
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
         self.final_dirpath = bcbio_final_dirpath
@@ -166,6 +166,8 @@ class BCBioStructure:
         self.cnf.work_dir = self.work_dir
         if not isdir(self.work_dir):
             safe_mkdir(self.work_dir)
+
+        self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
 
         info(' '.join(sys.argv))
         info()

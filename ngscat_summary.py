@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
-from source.file_utils import verify_dir
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -20,8 +17,8 @@ from source.summary import summary_script_proc_params
 
 
 def main():
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.ngscat_name)
-    cnf.output_dir = join(bcbio_structure.date_dirpath, BCBioStructure.ngscat_summary_dir)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.ngscat_name, BCBioStructure.ngscat_dir)
+
     summary_reports(cnf, bcbio_structure)
 
 

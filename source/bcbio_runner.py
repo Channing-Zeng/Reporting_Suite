@@ -82,6 +82,7 @@ class BCBioRunner:
                 self.mongo_loader,
                 self.varqc_after,
                 self.varqc_summary,
+                self.varqc_after_summary,
                 self.targetcov,
                 self.seq2c,
                 self.ngscat,
@@ -100,7 +101,8 @@ class BCBioRunner:
                 self.varannotate,
                 self.varfilter_all,
                 self.varqc_after,
-                self.varqc_summary]
+                self.varqc_summary,
+                self.varqc_after_summary]
              if contains(s.name, cnf.vardict_steps)])
 
         self._symlink_cnv()
@@ -135,7 +137,7 @@ class BCBioRunner:
             script='varqc',
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\' ' +
+                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
         self.targetcov = Step(cnf, run_id,
@@ -147,17 +149,17 @@ class BCBioRunner:
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\''
         )
         self.ngscat = Step(cnf, run_id,
+            name='ngsCAT', short_name='nc',
             interpreter='python',
             script='ngscat',
             dir_name=BCBioStructure.ngscat_dir,
-            name='ngsCAT', short_name='nc',
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
         self.qualimap = Step(cnf, run_id,
+            name='QualiMap', short_name='qm',
             script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
-            name='QualiMap', short_name='qm',
             paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
         )
@@ -169,6 +171,15 @@ class BCBioRunner:
             script='varqc_summary',
             dir_name=BCBioStructure.varqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir
+        )
+        self.varqc_after_summary = Step(cnf, run_id,
+            name='VarQC_summary_after', short_name='vqas',
+            interpreter='python',
+            script='varqc_summary',
+            dir_name=BCBioStructure.varqc_after_summary_dir,
+            paramln=cnfs_line + ' ' + self.final_dir +
+                    ' --name ' + BCBioStructure.varqc_after_name +
+                    ' --dir ' + BCBioStructure.varqc_after_dir
         )
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
@@ -192,7 +203,7 @@ class BCBioRunner:
             paramln=cnfs_line + ' ' + self.final_dir
         )
         self.seq2c = Step(cnf, run_id,
-            name='Seq2C', short_name='seq2c',
+            name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
             script='seq2c',
             dir_name=BCBioStructure.cnv_summary_dir,
@@ -462,6 +473,15 @@ class BCBioRunner:
                     for v in self.bcbio_structure.variant_callers.values()
                     for s in v.samples
                     if self.varqc in self.steps])
+
+        if self.varqc_after_summary in self.steps:
+            self.submit(
+                self.varqc_after_summary,
+                wait_for_steps=[
+                    self.varqc_after.job_name(s.name, v.name)
+                    for v in self.bcbio_structure.variant_callers.values()
+                    for s in v.samples
+                    if self.varqc_after in self.steps])
 
         if self.targetcov_summary in self.steps:
             self.submit(

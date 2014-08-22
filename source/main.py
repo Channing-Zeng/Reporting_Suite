@@ -79,7 +79,7 @@ def read_opts_and_cnfs(extra_opts,
             metavar='DIR')
          ),
         (['--proc-name'], dict(
-            dest='proc_name',
+            dest='proc_name'
         )),
     ]
 
@@ -109,7 +109,8 @@ def read_opts_and_cnfs(extra_opts,
     except:
         cnf.caller = None
 
-    set_up_dirs(cnf, cnf.proc_name or proc_name)
+    cnf.proc_name = cnf.proc_name or proc_name
+    set_up_dirs(cnf, cnf.proc_name)
     info(' '.join(sys.argv))
     info()
 

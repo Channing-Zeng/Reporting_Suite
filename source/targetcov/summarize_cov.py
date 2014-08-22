@@ -1,8 +1,8 @@
 from os.path import join
 from source.bcbio_structure import BCBioStructure
-from source.reporting import summarize, write_summary_reports, Record, SampleReport
+from source.reporting import summarize, write_summary_reports, Record
 from source.logger import step_greetings, info
-from source.targetcov.cov import get_cov_metrics, get_basic_metrics, get_depth_metrics
+from source.targetcov.cov import get_basic_metrics, get_depth_metrics
 
 
 def summary_reports(cnf, bcbio_structure):
@@ -20,7 +20,7 @@ def summary_reports(cnf, bcbio_structure):
         cnf.output_dir,
         cnf.work_dir,
         [basic_report, depth_report],
-        join(cnf.output_dir, BCBioStructure.targetseq_name),
+        join(cnf.output_dir, cnf.name),
         'Target coverage statistics')
 
     info()

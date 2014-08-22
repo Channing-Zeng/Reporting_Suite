@@ -1,6 +1,5 @@
 import json
 from os.path import join
-from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
@@ -86,7 +85,7 @@ def gatk_qc(cnf, vcf_fpath):
     report_dict = _parse_gatk_report(report_fpath, cnf_databases.keys(), cnf_novelty)
     records = _dict_to_objects(report_dict, cnf_databases.keys(), cnf_novelty, cnf.quality_control.db_for_summary)
 
-    f_basename = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + BCBioStructure.varqc_name)
+    f_basename = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name)
     save_json(records, f_basename + '.json')
     final_report_fpath = f_basename + final_report_ext
 

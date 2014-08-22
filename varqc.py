@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.bcbio_structure import BCBioStructure
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -35,7 +33,8 @@ def main(args):
         required_keys=['vcf'],
         file_keys=['vcf'],
         key_for_sample_name='vcf',
-        proc_name=BCBioStructure.varqc_name)
+        proc_name=BCBioStructure.varqc_name,
+    )
 
     check_system_resources(cnf,
         required=['java', 'gatk', 'snpeff'],
@@ -129,7 +128,7 @@ def process_one(cnf):
         cnf.output_dir, cnf.work_dir,
         [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name), '', records,
                                                           plots=qc_plots_for_html_report_fpaths)])],
-        cnf.name + '-' + cnf.caller + '.' + BCBioStructure.varqc_name,
+        cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
         caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
     info('\t' + summary_report_html_fpath)
 

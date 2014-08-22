@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 import sys
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -19,8 +17,8 @@ from source.summary import summary_script_proc_params
 
 
 def main():
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.targetseq_name)
-    cnf.output_dir = join(bcbio_structure.date_dirpath, BCBioStructure.targetseq_summary_dir)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.targetseq_name, BCBioStructure.targetseq_dir)
+
     summary_reports(cnf, bcbio_structure)
 
 

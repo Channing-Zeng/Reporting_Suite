@@ -165,6 +165,9 @@ def write_summary_reports(output_dirpath, work_dirpath, full_reports, base_fname
     if not isinstance(full_reports, list):
         full_reports = [full_reports]
 
+    if any(len(fr.sample_reports) == 0 for fr in full_reports):
+        critical('No sample reports found: summary will not be produced.')
+
     return [fn(output_dirpath, work_dirpath, full_reports, base_fname, caption)
         for fn in [write_txt_reports,
                    write_tsv_reports,
@@ -195,6 +198,9 @@ def _flatten_report(full_reports):
     rows = [['Sample'] + [rep.sample.name for rep in full_reports[0].sample_reports]]
 
     for full_report in full_reports:
+        if len(full_report.sample_reports) == 0:
+            critical('No sample reports found: summary will not be produced.')
+
         for metric in (r.metric for r in full_report.sample_reports[0].records):
             row = [metric.name]
             for sample_report in full_report.sample_reports:
