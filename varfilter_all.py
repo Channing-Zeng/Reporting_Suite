@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+from genericpath import isdir
 import sys
+from source.file_utils import safe_mkdir
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -182,7 +184,7 @@ def filter_all(cnf, bcbio_structure):
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     for sample in bcbio_structure.samples:
-        finalize_one(cnf, sample)
+        finalize_one(cnf, bcbio_structure, sample)
 
     info()
     info('Combined MAF files:')
@@ -191,13 +193,18 @@ def filter_all(cnf, bcbio_structure):
             info(caller.name + ': ' + caller.combined_filt_maf_fpath)
 
 
-def finalize_one(cnf, sample):
-    def symlink(fpath):
-        sl_path = join(dirname(fpath), pardir, basename(fpath))
-        if islink(sl_path):
-            os.unlink(sl_path)
-        os.symlink(fpath, sl_path)
+def symlink_to_dir(fpath, dirpath):
+    if not isdir(dirpath):
+        safe_mkdir(dirpath)
 
+    dst_path = join(dirpath, basename(fpath))
+    print dst_path
+    if islink(dst_path):
+        os.unlink(dst_path)
+    os.symlink(fpath, dst_path)
+
+
+def finalize_one(cnf, bcbio_structure, sample):
     info(sample.name + ':')
 
     for dic in [sample.filtered_vcf_by_callername,
@@ -205,7 +212,8 @@ def finalize_one(cnf, sample):
                 sample.filtered_maf_by_callername]:
         for caller_name, fpath in dic.items():
             info(caller_name + ': ' + fpath)
-            symlink(fpath)
+            symlink_to_dir(fpath, join(dirname(fpath), pardir))
+            symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
 
 
 if __name__ == '__main__':
