@@ -1,12 +1,12 @@
 genome: hg19
 
 steps:
-# - VarAnnotate
+- VarAnnotate
 - VarQC
-- VarQC_postVarFilter
 - VarQC_summary
-- VarQC_summary_after
-# - VarFilter
+- VarFilter
+- VarQC_postVarFilter
+- VarQC_summary_postVarFilter
 # - TargetCov
 # - Seq2C
 # - TargetCov_Summary
