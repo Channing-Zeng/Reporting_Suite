@@ -1,0 +1,476 @@
+<html>
+	<head>
+		<title>Capture QC</title>
+		<link media="screen" type="text/css" rel="stylesheet" href="styles.css">
+	</head>
+
+<body id="content-section">
+
+	<h1>Capture Quality Control</h1>
+
+	<div class="clearfix result">
+		<fieldset>
+			<legend>Input parameters</legend>
+			<ul class="inputParameters">
+				<li>
+					<label for="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam">BAM files</label>
+					<input id="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam" value="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam" readonly="readonly" />
+				</li>
+				<li>
+					<label for="/ngs//ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed">Target regions file</label>
+					<input id="/ngs//ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed" value="/ngs//ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed" readonly="readonly" />
+				</li>
+				<li>
+					<label for="Tue Jul 15 21:35:12 2014">Date</label>
+					<input id="Tue Jul 15 21:35:12 2014" value="Tue Jul 15 21:35:12 2014" readonly="readonly" />
+				</li>
+				<li>
+					<label for="/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa">Reference genome</label>
+					<input id="/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa" value="/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa" readonly="readonly" />
+				</li>
+				<li>
+					<label for="Yes">Saturation curve</label>
+					<input id="Yes" value="Yes" readonly="readonly" />
+				</li>
+				<li>
+					<label for=" 12.4532616  24.9065232  37.3597848  49.8130464  62.266308 ">Depth list (x10<sup>6</sup>)</label>
+					<input id=" 12.4532616  24.9065232  37.3597848  49.8130464  62.266308 " value=" 12.4532616  24.9065232  37.3597848  49.8130464  62.266308 " readonly="readonly" />
+				</li>
+				<li>
+					<label for=" 12.4532616  24.9065232  37.3597848  49.8130464  62.266308 ">Coverage thresholds</label>
+					<input id="1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000" value="1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000" readonly="readonly" />
+				</li>
+				<li>
+					<label for="4">Number threads</label>
+					<input id="4" value="4" readonly="readonly" />
+				</li>
+				<li>
+					<label for="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat">Temporary directory</label>
+					<input id="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat" value="/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat" readonly="readonly" />
+				</li>
+
+			</ul>
+		</fieldset>
+		
+	</div>
+
+	<div class="result">
+		<fieldset>
+			<legend>Summary</legend>
+			<ul>
+				<li class="header">
+					Target size: 50390601 bases
+				</li>
+			</ul>
+
+			<table id='summary_table'' class="table" style="margin-left:auto; margin-right:auto;">
+				<tr>
+					<td class="table-header">File</td>
+					<td class="table-header">Number reads</td>
+					<td class="table-header"><a href="#targetbases">% target bases with<br>coverage >= 1x</a></td>
+					<td class="table-header"><a href="#coveragesaturation">Coverage saturation<br>(slope at the end of the curve)</a></td>
+					<td class="table-header"><a href="#onoff">% reads on target</a></td>
+					<td class="table-header"><a href="#dup">Duplicated reads<br>on/off target</a></td>
+					<td class="table-header"><a href="#distribution">Coverage distribution<br>(mean coverage)</a></td>
+					<td class="table-header"><a href="#coveragethroughtarget">Coverage per position</a></td>
+					
+					<td class="table-header"><a href="#coveragestd">Standard deviation of<br>coverage within regions</a></td>
+				</tr>
+					<tr>
+<td class="table-cell"> /gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam</td><td class="table-cell"> 62266308 </td><td class="table-cell">99.8% </td><td class="table-cell">0.0e+00</td>
+<td class="table-cell">67.9% </td>
+<td class="table-cell">ON-37.9%; OFF: 3.8% </td><td class="table-cell">69.6x</td>
+<td class="table-cell">23732 consecutive bases<br>with coverage <= 6</td>
+<td class="table-cell">0.23</td>
+</tr>
+
+				<tr>
+					<td class="table-header">Overall status</td>
+<td class="table-header"></td>
+<td class="table-header"><a href="#targetbases"><img src="img/ok.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#coveragesaturation"><img src="img/warning.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#onoff"><img src="img/warning.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#dup"><img src="img/ok.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#distribution"><img src="img/ok.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#coveragethroughtarget"><img src="img/warning.jpg" height=23px /></a></td>
+<td class="table-header"><a href="#coveragestd"><img src="img/ok.jpg" height=23px /></a></td>
+
+				</tr>
+<!--					<td class="table-cell">MGP21 + Controls</td>
+					<td class="table-cell">12141388</td>
+					<td class="table-cell">12141388</td>
+					<td class="table-cell">12141388</td>
+					<td class="table-cell">12141388</td>
+					<td class="table-cell">5096709 / 11845835</td>
+					<td class="table-cell">31 <span class="warning"> + 0</span></td>		
+					<td class="table-cell">31 <span class="warning"> + 0</span></td> -->
+		</table><br>
+
+<!--			<ul>
+				<li class="header">
+					<div class="title">
+						<span>Number of reads found:</span>
+					</div>
+					<ul>
+					<SUMMARYNUMBERREADS>
+					</ul>
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Target size:</span>
+					</div>
+					50390601 bases
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Percentage of target bases covered</span>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					<ul><li> Target bases with coverage >= 1x: 
+						<ul>
+							<SUMMARYTARGETBASESCOVERED> 
+						</ul>
+					</li></ul>
+				</li>
+				<SUMMARYSATURATIONCONTENT>
+				<li class="header">
+					<div class="title">
+						<span>Percentage of reads on target</span>
+						<img src="img/warning.jpg" height=35px />
+					</div>
+					
+<ul><li>/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam: 67.9%</li>
+</ul>
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Duplicated reads on/off target</span>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					<ul>
+						<SUMMARYDUPLICATES>
+					</ul>
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Coverage distribution</span>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					<ul>
+						<SUMMARYMEANCOVERAGE>
+					</ul>
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Coverage per position</span>
+						<img src="img/warning.jpg" height=35px />
+					</div>
+				</li>
+				<li class="header">
+					<div class="title">
+						<span>Standard deviation of the coverage within regions</span>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+				</li>
+				<SUMMARYGCBIASCONTENT>				
+			</ul> -->
+
+			<fieldset class="description">
+				<legend class="description">Note</legend>
+				<p>
+					Please, note that the criteria to decide whether a particular experiment was successful, or not, are dependent on the capture design, sequencing platform and data analysis pipeline. The default warning thresholds are based on general whole exome enrichment experiments. If these default thresholds are not appropriated for your experiment, they can be modified by editing the configuration file config.py. As a general guideline, sensitivity parameters are more relevant than specifity parameters and the latter more than uniformity ones according to their impact in the performance of target enrichment experiments
+				</p>
+			</fieldset>
+
+
+		</fieldset>
+	</div>
+
+
+	<div class="result">
+		<fieldset>
+			<legend>Sensitivity</legend>
+			
+			<span>A set of graphs and data tables that allow to assess how well those bases in the target regions were sequenced.</span>
+			 
+			<ul>
+				<a name="targetbases">
+				<li class="header">
+					<div class="title">
+						<span>Percentage of target bases covered</span>
+						<a href="data/coverage_summary.xls" style="text-decoration: none">
+							<img src="img/xls_icon.png" />
+						</a>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<img src="data/covered_positions.png" />
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Percentage of target bases covered as a function of a coverage threshold. Y axis represents the % of target bases covered.
+							X axis represents different coverage thresholds. Each bar represents the percentage of target bases covered at the given
+							coverage threshold.
+						</p>
+						<p>
+							A typical target-enrichment NGS experiment results in ~90% of target-bases covered at coverage >=1x. This value tends to
+							decrease as the coverage threshold increases. How fast this percentage decreases with the coverage increment depends on
+							the specific experimental design/results. A warning is issued if the percentage of bases with coverage >= 1x is less than a 							90%
+							for any of the samples.
+						</p>
+					</fieldset>
+				</li>
+			</a>
+				<a name="coveragesaturation">
+				<li>
+					<div class="title">
+						<span>Coverage saturation</span> 
+						<a href="data/values.xls"  style="text-decoration: none">
+							<img class="icon" src="img/xls_icon.png" />
+						</a>
+						<img src="img/warning.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<img src="data/coverage_saturation_10x.png" />
+					</div>
+			
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Percentage of target-bases covered at coverage >=10x as a function of the number of mapped reads. Sequencing depth simulations
+							were carried out by randomly selecting 12.4532616x10<sup>6</sup>, 24.9065232x10<sup>6</sup>, 37.3597848x10<sup>6</sup>, 49.8130464x10<sup>6</sup> and 62.266308x10<sup>6</sup> reads from the bam file. For each of these sets of reads, the percentage of target-covered
+							positions was calculated. This graph aims to give an idea on how much one can improve the percentage of target-bases covered by
+							resequencing. 
+						</p>
+						<p>
+							A flat curve on the right part indicates that resequencing will not improve the number of target-bases covered at 10x. A
+							warning is issued if the curve does not tend to saturation on the right side (slope between the two last points > 1e-05). If the maximum depth provided as input is greater
+							than the number of reads in the bam file, the last x-value corresponds to the number of reads in the bam file.
+						</p>
+					</fieldset>
+				</li>
+				</a>
+
+			</ul>
+		</fieldset>
+	</div>
+
+	<div class="result">
+		<fieldset>
+			<legend>Specificity</legend>
+			
+			<span>A set of graphs and data tables that allow to assess how much of the sequencing effort is being wasted in sequencing off-target regions.</span>
+			 
+			<ul>
+				<a name="onoff">
+				<li class="header">
+					<div class="title">
+						<span>Number of reads on target</span>
+						<a href="data/reads_on_target.xls" style="text-decoration: none">
+<!-						<a href="data/target.txt">
+							<img src="img/xls_icon.png" />
+						</a>
+						<img src="img/warning.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<img src="data/reads_on_target.png" />
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Stats</legend>
+						<p>
+							Overall percentage of reads on target: 
+<ul><li>/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam: 67.9%</li>
+</ul>
+						</p>
+						<p>
+							Overall enrichment: 
+<ul><li>/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final.15_Jul_17-56/work/post_processing/ngscat/PBMC-Sensitive-5-ready.mapped.bam: 129.3</li>
+</ul>
+						</p>
+					</fieldset>
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Bars represent the percentage of reads on-target per chr. Percentages for each bar were calculated relative to the total number of reads mapped in the
+	 						corresponding chromosome. Enrichment was calculated as: (on-target reads per Kb)/(off-target reads per Kb).
+						</p>
+						<p>
+							In a typical experiment one may expect ~80% of reads mapping on-target. A warning is issued if the % of reads on-target is lower
+							than 80% for any of the samples.
+						</p>
+					</fieldset>
+				</li>
+				</a>
+				<a name="dup">
+				<li class="header">
+					<div class="title">
+						<span>Duplicated reads on/off target</span>
+						<a href="data/duplicates.xls" style="text-decoration: none">
+							<img src="img/xls_icon.png" />
+						</a>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<img style="width: 50%; float: left;" src="data/duplicates0.png" /></a>
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Percentages of duplicated on/off-target reads. Reads mapping at exactly the same starting and ending position were considered to 
+							be duplicated. X axis indicates de number of times the reads are duplicated (1 indicates unique reads). Green and red bars indicate
+							the percentage of on- and off-target reads with respect to the total number of on-/off-target reads respectively.
+						</p>
+						<p>
+							One may expect a greater proportion of duplicated reads on-target due to the enrichment process. Duplicated off-target 
+							reads should be due to some other experimental artifacts (e.g. PCR). Thus, a warning is issued if the percentage of duplicated on-target
+							reads is lower thant the percentage of duplicated off-target reads for any of the samples
+						</p>
+					</fieldset>
+				</li>
+				</a>
+				
+			</ul>
+		</fieldset>
+	</div>
+	
+	<div class="result">
+		<fieldset>
+			<legend>Uniformity</legend>
+			
+			<span>Set of graphs and data tables that allow to assess whether coverage is uniformly distributed among target regions.</span>
+			 
+			<ul>
+				<a name="distribution">
+				<li class="header">
+					<div class="title">
+						<span>Coverage distribution</span>
+						<a href="data/percentile.xls" style="text-decoration: none">
+<!-						<a href="data/percentile.txt">
+							<img src="img/xls_icon.png" />
+						</a>
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<img style="width: 60%; float: left;" src="data/Coverage_histo.png" />
+						<img style="width: 40%; float: left;" src="data/Coverage_boxp.png" />
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Distribution of coverage per target base (only bases with coverage >= 1x are shown on the left graph). The star symbol in the boxplot graph indicates the mean coverage.
+						</p>
+						<p>
+							Low-medium coverage experiments may present a mean coverage of ~40x. A warning is issued if mean coverage is below 40x for any of the samples.
+						</p>
+					</fieldset>
+				</li>
+				</a>
+				<a name="coveragethroughtarget">
+				<li class="header">
+					<div class="title">
+						<span>Coverage per position</span>
+						<a href="data/NoCoverage.txt" style="text-decoration: none">
+							<img src="img/txt_icon.png" />
+						</a>
+						<img src="img/warning.jpg" height=35px />
+					</div>
+					
+					<div class="image">
+						<a href="data/chr1_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr1_Ontarget_Coverage.png" /></a><a href="data/chr2_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr2_Ontarget_Coverage.png" /></a><a href="data/chr3_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr3_Ontarget_Coverage.png" /></a><a href="data/chr4_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr4_Ontarget_Coverage.png" /></a><a href="data/chr5_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr5_Ontarget_Coverage.png" /></a><a href="data/chr6_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr6_Ontarget_Coverage.png" /></a><a href="data/chr7_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr7_Ontarget_Coverage.png" /></a><a href="data/chr8_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr8_Ontarget_Coverage.png" /></a><a href="data/chr9_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr9_Ontarget_Coverage.png" /></a><a href="data/chr10_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr10_Ontarget_Coverage.png" /></a><a href="data/chr11_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr11_Ontarget_Coverage.png" /></a><a href="data/chr12_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr12_Ontarget_Coverage.png" /></a><a href="data/chr13_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr13_Ontarget_Coverage.png" /></a><a href="data/chr14_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr14_Ontarget_Coverage.png" /></a><a href="data/chr15_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr15_Ontarget_Coverage.png" /></a><a href="data/chr16_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr16_Ontarget_Coverage.png" /></a><a href="data/chr17_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr17_Ontarget_Coverage.png" /></a><a href="data/chr18_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr18_Ontarget_Coverage.png" /></a><a href="data/chr19_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr19_Ontarget_Coverage.png" /></a><a href="data/chr20_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr20_Ontarget_Coverage.png" /></a><a href="data/chr21_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr21_Ontarget_Coverage.png" /></a><a href="data/chr22_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chr22_Ontarget_Coverage.png" /></a><a href="data/chrX_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chrX_Ontarget_Coverage.png" /></a><a href="data/chrY_Ontarget_Coverage.png"><img style="width: 33%; float: left;" src="data/chrY_Ontarget_Coverage.png" /></a>
+					</div>
+					
+
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Coverage found at each target base. One graph is provided for each chromosome (contig) in the target bed. X axis 
+							represents target positions. <strong>Only target bases</strong> are represented in the X axis: target regions appear 
+							concatenated. Y axis represents coverage. The .txt file lists all those target intervals with 0 coverage.
+						</p>
+						<p>
+							Wide gaps or peaks may indicate capture biases. A warning is issued if more than 100 consecutive bases lie below <6x for any of the samples.
+						</p>
+					</fieldset>
+				</li>
+				</a>
+
+
+
+
+				<a name="coveragestd">
+				<li class="header">
+					<div class="title">
+						<span>Standard deviation of the coverage within regions</span>
+						<a href="data/std_wexons.xls" style="text-decoration: none">
+							<img src="img/xls_icon.png" />
+						</a>					
+						<img src="img/ok.jpg" height=35px />
+					</div>
+					<div class="image">
+						<img style="width: 60%; float: left;" src="data/std_distribution.png" />
+						<img style="width: 40%; float: left;" src="data/std_boxplot.png" />
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							Distribution of the standard deviation of the coverage within target regions. In other words, for each target
+							region the standard deviation of the coverage per base is calculated. All of these "standard deviations"
+							are sampled to draw the histogram/boxplot above (y axis of the boxplot appears in log-scale).
+						</p>
+						<p>
+							Given a target region, it is usual to observe the below shown coverage profiles:
+							<img style="display: block; margin: 0 auto; width: 70%; " src="img/coverage_histogram_example.png" />
+						</p>
+						<p>
+							Bases near the 5'/3' ends of target regions tend to be worse covered than bases located in the middle of
+							target regions. Graphs in this section are informative of the coverage variations within target regions, and
+							are mainly useful to compare different target-enrichment NGS experiments. The lower the mean of this
+							distribution is, the more uniform the coverage is within target regions.
+						</p>
+						<p>
+							A warning is issued if normalized std is greater than 0.3 for any of the samples.
+						</p>
+					</fieldset>
+				</li>
+				</a>
+				<li class="header">
+					<div class="title">
+						<span>GC bias</span>
+<!--						<img src="img/<GCBIASSTATUS>.jpg" height=35px /> -->
+					</div>
+					
+					<div class="image">
+						<img style="width:40%" src="data/gcbias0.png" />
+					</div>
+					
+					<fieldset class="description">
+						<legend class="description">Description</legend>
+						<p>
+							For each target region, the mean coverage of its bases is calculated as well as the percentaje of Gs and Cs
+							it contains. For each target region, a point (GCcontent,Meancoverage) is painted in the graph. This drawing
+							allows to observe sequencing biases which depend on the GC content of target regions. For example, lower
+							coverage in sequencing regions with high GC or high AT content has long been observed. GC bias in sequencing
+							studies is in large part due to early PCR steps during library generation where high and low GC content cause
+							reduced amplification and therefore lower sequencing coverage.
+						</p>
+					</fieldset>
+				</li> 
+
+				
+			</ul>
+		</fieldset>
+	</div>
+</body>
+</html>
+

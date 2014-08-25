@@ -292,7 +292,7 @@
   };
 
   reporting.buildTotalReport = function(report, columnOrder) {
-    var padding, pos, rec, recNum, sampleLink, sampleName, sampleReport, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
+    var padding, pos, rec, recNum, sampleFpath, sampleName, sampleReport, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
     if (report.name != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + report.name + "</h3>");
     }
@@ -309,11 +309,11 @@
     for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
       sampleReport = _ref1[_j];
       sampleName = sampleReport.sample.name;
-      sampleLink = sampleReport.link;
+      sampleFpath = sampleReport.fpath;
       if (sampleName.length > 30) {
         sampleName = "<span title=\"" + sampleName + "\">" + (sampleName.trunc(80)) + "</span>";
       }
-      table += "\n<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleLink + "\">" + sampleName + "</a> </td>";
+      table += "\n<tr> <td class=\"left_column_td\"> <a class=\"sample_name\" href=\"" + sampleFpath + "\">" + sampleName + "</a> </td>";
       for (recNum = _k = 0, _ref2 = sampleReport.records.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; recNum = 0 <= _ref2 ? ++_k : --_k) {
         pos = columnOrder[recNum];
         rec = sampleReport.records[pos];

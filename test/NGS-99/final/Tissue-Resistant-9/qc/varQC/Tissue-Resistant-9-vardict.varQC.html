@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style type="text/css">
+        body {
+            padding-bottom: 30px;
+        }
+        .content {
+            margin-left: 120px;
+            padding-top: 50px;
+            clear: both;
+        }
+        #header {
+            display: block;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        /*#report_date { *//* not used in Quast html report */
+            /*margin-top: -13px;*/
+            /*margin-bottom: 20px;*/
+        /*}*/
+    </style>
+
+    <link rel="stylesheet" type="text/css" href="html_aux/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="html_aux/common.css" />
+    <link rel="stylesheet" type="text/css" href="html_aux/report.css" />
+
+    <script type="text/javascript">
+        window.reporting = {};
+    </script>
+
+    <script type="text/javascript" src="html_aux/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="html_aux/flot/jquery.flot.min.js"></script>
+    <script type="text/javascript" src="html_aux/flot/jquery.flot.dashes.js"></script>
+    <script type="text/javascript" src="html_aux/bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="html_aux/bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="html_aux/jquery.align-column.js"></script>
+
+    <script type="text/javascript" src="html_aux/scripts/hsvToRgb.js"></script>
+    <script type="text/javascript" src="html_aux/scripts/utils.js"></script>
+    <script type="text/javascript" src="html_aux/scripts/build_total_report.js"></script>
+    <script type="text/javascript" src="html_aux/scripts/build_report.js"></script>
+    <script type="text/javascript" src="html_aux/dragtable.js"></script>
+
+    <script type="text/javascript">
+
+        $(function() {
+            reporting.buildReport();
+
+            dragTable.init();
+
+            $("[rel=tooltip]").tooltip({ animation: false, });
+        });
+    </script>
+</head>
+
+<body>
+<div class="content">
+    <div id='header'>
+        <h1 style='font-size: 1.5em;'>Variant QC for Tissue-Resistant-9 (caller: vardict)</h1>
+        <p id='report_date'></p>
+
+        <!--<p id="data_set_p">-->
+            <!--<span style="display: none;" id="reference_length">Genome:-->
+                <!--<span class='val'></span><span class='rhs'>&nbsp;</span>bp</span><span style='display: none;'>-->
+
+                <!--</span><span style="display: none;" id="reference_gc">,-->
+                    <!--G+C content: <span class='val'></span><span class='rhs'>&nbsp;</span>%-->
+                <!--</span>-->
+
+                <!--<span style="display: none;" id="reference_genes"><br>-->
+                    <!--<span class='val'></span> genes</span><span style='display: none;'>-->
+
+                <!--</span><span style="display: none;" id="reference_operons">, <span class='val'></span> operons-->
+            <!--</span>-->
+        <!--</p>-->
+    </div>
+
+    <noscript>
+        <div style="margin-left: 0px;">
+            Unfortunately, <span style="font-weight: bold">JavaScript</span> in your
+            browser <span style="font-weight: bold">is disabled</span> or is not supported.</br>
+            We need JavaScript to build report and plots.
+        </div>
+    </noscript>
+
+    <div class='report-and-plots'>
+        <div id='report'>
+        </div>
+
+        <div id='plot'>
+        </div>
+
+
+        <!--<div class='plots'>-->
+            <!--<table style='margin: -3px;'>-->
+                <!--<tr id='all-switches'>-->
+                    <!--<td>-->
+                        <!--<div id='plots-switches'></div>-->
+                    <!--</td>-->
+                    <!--<td style='text-align: right; padding-right: 22px;'>-->
+                        <!--<span id='scale-placeholder'></span>-->
+                    <!--</td>-->
+                <!--</tr>-->
+                <!--<tr>-->
+                    <!--<td colspan="2">-->
+                        <!--<div id='plot-placeholder' style=''></div>-->
+                    <!--</td>-->
+                    <!--<td>-->
+                        <!--<div id='legend-placeholder'></div>-->
+                    <!--</td>-->
+                <!--</tr>-->
+            <!--</table>-->
+        <!--</div>-->
+
+        <div style="clear: left"></div>
+        <div style="clear: right"></div>
+
+        <div class='json-code'>
+            <div id='total-report-json'>
+                {"date":"22 August 2014, Friday, 08:36:48","common_records":[],"reports":[{"sample_reports":[{"sample":{"bam":null,"filtered_vcf_by_callername":{},"name":"Tissue-Resistant-9","filtered_maf_by_callername":{},"bed":null,"normal_match":null,"phenotype":null,"filtered_tsv_by_callername":{},"dirpath":null,"vcf_by_callername":{},"filtered_clean_vcf_by_callername":{},"var_dirpath":null},"records":[{"metric":{"name":"nEvalVariants","short_name":"Total","common":false,"quality":"More is better","unit":"","description":"Total variants evaluated"},"meta":{"known":{"1000genomes":591,"dbsnp":591,"cosmic":591,"average":591.0},"all":{"1000genomes":9527,"dbsnp":9527,"cosmic":9527,"average":9527.0},"novel":{"1000genomes":8936,"dbsnp":8936,"cosmic":8936,"average":8936.0}},"value":9527},{"metric":{"name":"nSNPs","short_name":"SNP","common":false,"quality":"More is better","unit":"","description":"SNPs"},"meta":{"known":{"1000genomes":584,"dbsnp":584,"cosmic":584,"average":584.0},"all":{"1000genomes":9487,"dbsnp":9487,"cosmic":9487,"average":9487.0},"novel":{"1000genomes":8903,"dbsnp":8903,"cosmic":8903,"average":8903.0}},"value":9487},{"metric":{"name":"nInsertions","short_name":"Ins","common":false,"quality":"More is better","unit":"","description":"Insertions"},"meta":{"known":{"1000genomes":2,"dbsnp":2,"cosmic":2,"average":2.0},"all":{"1000genomes":10,"dbsnp":10,"cosmic":10,"average":10.0},"novel":{"1000genomes":8,"dbsnp":8,"cosmic":8,"average":8.0}},"value":10},{"metric":{"name":"nDeletions","short_name":"Del","common":false,"quality":"More is better","unit":"","description":"Deletions"},"meta":{"known":{"1000genomes":4,"dbsnp":4,"cosmic":4,"average":4.0},"all":{"1000genomes":23,"dbsnp":23,"cosmic":23,"average":23.0},"novel":{"1000genomes":19,"dbsnp":19,"cosmic":19,"average":19.0}},"value":23},{"metric":{"name":"nVariantsAtComp","short_name":"At comp","common":false,"quality":"More is better","unit":"","description":"Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"},"meta":{"known":{"1000genomes":16,"dbsnp":591,"cosmic":46,"average":217.66666666666666},"all":{"1000genomes":16,"dbsnp":591,"cosmic":380,"average":329.0},"novel":{"1000genomes":0,"dbsnp":0,"cosmic":334,"average":111.33333333333333}},"value":380},{"metric":{"name":"compRate","short_name":"Comp rate","common":false,"quality":"More is better","unit":"","description":"Percentage of eval sites at comp sites"},"meta":{"known":{"1000genomes":2.71,"dbsnp":100.0,"cosmic":7.78,"average":36.83},"all":{"1000genomes":0.17,"dbsnp":6.2,"cosmic":3.99,"average":3.453333333333333},"novel":{"1000genomes":0.0,"dbsnp":0.0,"cosmic":3.74,"average":1.2466666666666668}},"value":3.99},{"metric":{"name":"nConcordant","short_name":"Concord","common":false,"quality":"More is better","unit":"","description":"Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"},"meta":{"known":{"1000genomes":3,"dbsnp":128,"cosmic":16,"average":49.0},"all":{"1000genomes":3,"dbsnp":128,"cosmic":140,"average":90.33333333333333},"novel":{"1000genomes":0,"dbsnp":0,"cosmic":124,"average":41.333333333333336}},"value":140},{"metric":{"name":"concordantRate","short_name":"Conc rate","common":false,"quality":"More is better","unit":"","description":"Concordance rate"},"meta":{"known":{"1000genomes":18.75,"dbsnp":21.66,"cosmic":34.78,"average":25.063333333333333},"all":{"1000genomes":18.75,"dbsnp":21.66,"cosmic":36.84,"average":25.75},"novel":{"1000genomes":0.0,"dbsnp":0.0,"cosmic":37.13,"average":12.376666666666667}},"value":36.84},{"metric":{"name":"variantRate","short_name":"Var/loci","common":false,"quality":"More is better","unit":"","description":"Variants per loci rate"},"meta":{"known":{"1000genomes":1.9e-07,"dbsnp":1.9e-07,"cosmic":1.9e-07,"average":1.9e-07},"all":{"1000genomes":3.04e-06,"dbsnp":3.04e-06,"cosmic":3.04e-06,"average":3.04e-06},"novel":{"1000genomes":2.85e-06,"dbsnp":2.85e-06,"cosmic":2.85e-06,"average":2.85e-06}},"value":3.04e-06},{"metric":{"name":"basesPerVariant","short_name":"Bp/var","common":false,"quality":"More is better","unit":"","description":"Bases per variant rate"},"meta":{"known":{"1000genomes":5308225.0,"dbsnp":5308225.0,"cosmic":5308225.0,"average":5308225.0},"all":{"1000genomes":329291.0,"dbsnp":329291.0,"cosmic":329291.0,"average":329291.0},"novel":{"1000genomes":351069.0,"dbsnp":351069.0,"cosmic":351069.0,"average":351069.0}},"value":329291.0},{"metric":{"name":"hetHomRatio","short_name":"Het/hom","common":false,"quality":"More is better","unit":"","description":"Heterozygosity to homozygosity ratio"},"meta":{"known":{"1000genomes":148.0,"dbsnp":148.0,"cosmic":148.0,"average":148.0},"all":{"1000genomes":2384.5,"dbsnp":2384.5,"cosmic":2384.5,"average":2384.5},"novel":{"1000genomes":8946.0,"dbsnp":8946.0,"cosmic":8946.0,"average":8946.0}},"value":2384.5},{"metric":{"name":"tiTvRatio","short_name":"Ti/Tv","common":false,"quality":"More is better","unit":"","description":"Transition to transversion ratio"},"meta":{"known":{"1000genomes":0.07,"dbsnp":0.07,"cosmic":0.07,"average":0.07},"all":{"1000genomes":0.02,"dbsnp":0.02,"cosmic":0.02,"average":0.02},"novel":{"1000genomes":0.02,"dbsnp":0.02,"cosmic":0.02,"average":0.02}},"value":0.02}],"name":"","fpath":"","plots":["/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9.substitutions.png","/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9.indels.png"]}],"name":""}]}
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

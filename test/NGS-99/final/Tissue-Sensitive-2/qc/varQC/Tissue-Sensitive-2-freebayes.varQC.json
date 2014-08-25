@@ -21,14 +21,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Total variants evaluated"
-            ], 
+            "common": false, 
+            "description": "Total variants evaluated", 
             "name": "nEvalVariants", 
             "quality": "More is better", 
-            "short_name": [
-                "Total"
-            ], 
+            "short_name": "Total", 
             "unit": ""
         }, 
         "value": 2422
@@ -55,14 +52,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "SNPs"
-            ], 
+            "common": false, 
+            "description": "SNPs", 
             "name": "nSNPs", 
             "quality": "More is better", 
-            "short_name": [
-                "SNP"
-            ], 
+            "short_name": "SNP", 
             "unit": ""
         }, 
         "value": 1659
@@ -89,14 +83,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Insertions"
-            ], 
+            "common": false, 
+            "description": "Insertions", 
             "name": "nInsertions", 
             "quality": "More is better", 
-            "short_name": [
-                "Ins"
-            ], 
+            "short_name": "Ins", 
             "unit": ""
         }, 
         "value": 0
@@ -123,14 +114,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Deletions"
-            ], 
+            "common": false, 
+            "description": "Deletions", 
             "name": "nDeletions", 
             "quality": "More is better", 
-            "short_name": [
-                "Del"
-            ], 
+            "short_name": "Del", 
             "unit": ""
         }, 
         "value": 0
@@ -157,14 +145,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
-            ], 
+            "common": false, 
+            "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)", 
             "name": "nVariantsAtComp", 
             "quality": "More is better", 
-            "short_name": [
-                "At comp"
-            ], 
+            "short_name": "At comp", 
             "unit": ""
         }, 
         "value": 172
@@ -191,14 +176,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Percentage of eval sites at comp sites"
-            ], 
+            "common": false, 
+            "description": "Percentage of eval sites at comp sites", 
             "name": "compRate", 
             "quality": "More is better", 
-            "short_name": [
-                "Comp rate"
-            ], 
+            "short_name": "Comp rate", 
             "unit": ""
         }, 
         "value": 7.1
@@ -225,14 +207,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
-            ], 
+            "common": false, 
+            "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)", 
             "name": "nConcordant", 
             "quality": "More is better", 
-            "short_name": [
-                "Concord"
-            ], 
+            "short_name": "Concord", 
             "unit": ""
         }, 
         "value": 143
@@ -259,14 +238,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Concordance rate"
-            ], 
+            "common": false, 
+            "description": "Concordance rate", 
             "name": "concordantRate", 
             "quality": "More is better", 
-            "short_name": [
-                "Conc rate"
-            ], 
+            "short_name": "Conc rate", 
             "unit": ""
         }, 
         "value": 83.14
@@ -293,14 +269,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Variants per loci rate"
-            ], 
+            "common": false, 
+            "description": "Variants per loci rate", 
             "name": "variantRate", 
             "quality": "More is better", 
-            "short_name": [
-                "Var/loci"
-            ], 
+            "short_name": "Var/loci", 
             "unit": ""
         }, 
         "value": 7.7e-07
@@ -327,14 +300,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Bases per variant rate"
-            ], 
+            "common": false, 
+            "description": "Bases per variant rate", 
             "name": "basesPerVariant", 
             "quality": "More is better", 
-            "short_name": [
-                "Bp/var"
-            ], 
+            "short_name": "Bp/var", 
             "unit": ""
         }, 
         "value": 1295277.0
@@ -361,14 +331,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Heterozygosity to homozygosity ratio"
-            ], 
+            "common": false, 
+            "description": "Heterozygosity to homozygosity ratio", 
             "name": "hetHomRatio", 
             "quality": "More is better", 
-            "short_name": [
-                "Het/hom"
-            ], 
+            "short_name": "Het/hom", 
             "unit": ""
         }, 
         "value": 1.56
@@ -395,14 +362,11 @@
             }
         }, 
         "metric": {
-            "description": [
-                "Transition to transversion ratio"
-            ], 
+            "common": false, 
+            "description": "Transition to transversion ratio", 
             "name": "tiTvRatio", 
             "quality": "More is better", 
-            "short_name": [
-                "Ti/Tv"
-            ], 
+            "short_name": "Ti/Tv", 
             "unit": ""
         }, 
         "value": 1.97
