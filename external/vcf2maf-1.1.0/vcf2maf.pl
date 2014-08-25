@@ -16,7 +16,6 @@ my ( $ncbi_build, $maf_center ) = ( 37, "." );
 # Check for missing or crappy arguments
 unless( @ARGV and $ARGV[0]=~m/^-/ ) {
     pod2usage( -verbose => 0, -message => "$0: Missing or invalid arguments!\n", -exitval => 2 );
-
 }
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
@@ -96,7 +95,7 @@ my @maf_header = qw(
     Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2 Tumor_Validation_Allele1 Tumor_Validation_Allele2
     Match_Norm_Validation_Allele1 Match_Norm_Validation_Allele2 Verification_Status Validation_Status
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
-    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number BAM_File
+    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
 );
 
 # Add extra columns to the MAF depending on whether we used VEP or snpEff
@@ -238,8 +237,16 @@ while( my $line = $vcf_fh->getline ) {
                     $effect{Effect} = '' unless( $effect{Effect} );
                     $effect{Gene_Name} = '' unless( $effect{Gene_Name} );
 
+#                    print STDERR "\n";
+#                    print STDERR $effect{Amino_Acid_Change};
+#                    print STDERR "\n";
+
                     # HGVS formatted codon/protein changes need to be parsed out of Amino_Acid_Change
                     ( $effect{HGVSp}, $effect{HGVSc} ) = $effect{Amino_Acid_Change} =~ m/^(.*)\/(.*)$/;
+
+#                    print STDERR "\n";
+#                    print STDERR $effect{Amino_Acid_Change};
+#                    print STDERR "\n";
 
                     # Transcript length isn't reported, so we have to use AA length, where available
                     $effect{Amino_Acid_Length} = 0 unless( $effect{Amino_Acid_Length} );
@@ -288,6 +295,8 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{dbSNP_RS} = GetrsIDs( $ids );
     $maf_line{Tumor_Sample_Barcode} = $tumor_id;
     $maf_line{Matched_Norm_Sample_Barcode} = $normal_id;
+    $maf_line{Match_Norm_Seq_Allele1} = '.'; #$normal_a1;
+    $maf_line{Match_Norm_Seq_Allele2} = '.'; #$normal_a2;
     $maf_line{HGVSc} = ( $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
     $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
     $maf_line{Transcript_ID} = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
@@ -306,7 +315,7 @@ while( my $line = $vcf_fh->getline ) {
 $maf_fh->close if( $output_maf );
 $vcf_fh->close;
 
-# Prioritize Sequence Ontology terms from VEP/snpEff in order of severity, as estimated by Ensembl:
+# Prioritize Sequence Ontology terms from VEP/snpEffsnpEff in order of severity, as estimated by Ensembl:
 # http://useast.ensembl.org/info/genome/variation/predicted_data.html#consequences
 # ::NOTE:: snpEff conversion to SO terms has caveats, so handle exceptions as necessary
 sub GetEffectPriority {

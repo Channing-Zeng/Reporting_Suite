@@ -524,10 +524,11 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
 
     # Converting to MAF
     if work_filt_vcf_fpath and cnf.make_maf:
-        maf_fpath = convert_to_maf(cnf, work_filt_vcf_fpath,
-                                   tumor_sample_name=sample.name,
-                                   bam_fpath=sample.bam,
-                                   normal_sample_name=sample.normal_match.name if sample.normal_match else None)
+        maf_fpath = convert_to_maf(
+            cnf, work_filt_vcf_fpath,
+            tumor_sample_name=sample.name,
+            bam_fpath=sample.bam,
+            normal_sample_name=sample.normal_match.name if sample.normal_match else None)
         if isfile(final_maf_fpath): os.remove(final_maf_fpath)
         shutil.move(maf_fpath, final_maf_fpath)
         info('-' * 70)

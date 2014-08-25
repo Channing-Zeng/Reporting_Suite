@@ -311,7 +311,7 @@ class BCBioStructure:
 
             if not file_exists(vcf_fpath):
                 if sample.phenotype != 'normal':
-                    err('Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
+                    err('Warning: Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
                 vcf_fpath = None
 
             self.variant_callers[caller_name].samples.append(sample)
