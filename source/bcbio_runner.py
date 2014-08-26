@@ -451,7 +451,8 @@ class BCBioRunner:
                 if not vcf_fpath:
                     err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + ' .')
                 else:
-                    sample.filtered_vcf_by_callername[caller.name] = self._process_vcf(sample, sample.bam, vcf_fpath, caller.name)
+                    sample.filtered_vcf_by_callername[caller.name] = \
+                        self._process_vcf(sample, sample.bam, vcf_fpath, caller.name)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -493,8 +494,7 @@ class BCBioRunner:
                 if self.varqc_after in self.steps:
                     self.submit(
                         self.varqc_after, sample.name, suf=caller.name,
-                        wait_for_steps=([self.varfilter_all.job_name()]
-                                        if self.varfilter_all in self.steps else []),
+                        wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                         vcf=sample.filtered_vcf_by_callername[caller.name], sample=sample.name, caller=caller.name)
 
         if self.varqc_after_summary in self.steps:

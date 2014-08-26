@@ -39,7 +39,7 @@ class Record:
                 m.__dict__.update(dict(rec.metric.items()))
                 rec.metric = m
                 records.append(rec)
-            return records
+        return records
 
     def format(self):
         return self.metric.format(self.value)
@@ -104,12 +104,19 @@ class FullReport:
 
 
 class SampleReport:
-    def __init__(self, sample=None, fpath=None, records=list(), name='', plots=list()):
+    def __init__(self, sample=None, html_fpath=None, records=list(),
+                 report_name='', plots=list(),  json_fpath=None, ):
         self.sample = sample
-        self.fpath = fpath
+        self.html_fpath = html_fpath
         self.records = records
-        self.name = name
+        self.report_name = report_name
         self.plots = plots  # TODO: make real JS plots, not just included PNG
+        self.json_fpath = json_fpath
+        self.display_name = sample.name
+
+    def set_display_name(self, name):
+        self.display_name = name
+        return self
 
 
 def read_sample_names(sample_fpath):
@@ -150,15 +157,15 @@ def read_sample_names(sample_fpath):
 #     return single_report_fpaths, fixed_sample_names
 
 
-def summarize(cnf, report_fpath_by_sample, parse_report_fn, report_name):
-    """ Returns list of SampleReport objects:
-        [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
-    """
-    return FullReport(
-        name=report_name,
-        sample_reports=[
-            SampleReport(sample_name, fpaths.html_fpath, parse_report_fn(cnf, fpaths.content_fpath))
-            for sample_name, fpaths in report_fpath_by_sample.items()])
+# def summarize(cnf, get_sample_repot_fn, parse_report_fn, report_name):
+#     """ Returns list of SampleReport objects:
+#         [SampleReport(sample=Sample(name=), fpath=, records=[Record,...]),...]
+#     """
+#     return FullReport(
+#         name=report_name,
+#         sample_reports=[get_sample_repot_fn
+#             SampleReport(sample_name, fpaths.html_fpath, parse_report_fn(cnf, fpaths.content_fpath))
+#             for sample_name, fpaths in report_fpath_by_sample.items()])
 
 
 def write_summary_reports(output_dirpath, work_dirpath, full_reports, base_fname, caption):
@@ -195,7 +202,7 @@ def _flatten_report(full_reports):
         if isinstance(full_reports, list) and isinstance(full_reports[0], SampleReport):
             full_reports = [FullReport(sample_reports=full_reports)]
 
-    rows = [['Sample'] + [rep.sample.name for rep in full_reports[0].sample_reports]]
+    rows = [['Sample'] + [rep.display_name for rep in full_reports[0].sample_reports]]
 
     for full_report in full_reports:
         if len(full_report.sample_reports) == 0:

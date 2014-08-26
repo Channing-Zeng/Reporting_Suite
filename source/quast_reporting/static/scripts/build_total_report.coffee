@@ -1,6 +1,7 @@
-report =
+sampleReport =
     sample:
         name: ''
+        display_name: ''
         phenotype: ''
         bam: ''
         bed: ''
@@ -9,7 +10,7 @@ report =
             summary_qc_rep_fpaths: []
             anno_vcf_fpaths: {}
             anno_filt_vcf_fpaths: {}
-    fpath: ''
+    html_fpath: ''
     link: ''
     records: []
 
@@ -133,6 +134,7 @@ calc_cell_contents = (report, font) ->
     min_val_by_metric = {}
     max_val_by_metric = {}
 
+    # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     for sampleReport in report.sample_reports
         calc_records_cell_contents sampleReport.records, font
         for rec in sampleReport.records
@@ -153,6 +155,7 @@ calc_cell_contents = (report, font) ->
                 else if max_val_by_metric[rec.metric.name] < rec.num
                     max_val_by_metric[rec.metric.name] = rec.num
 
+    # Second round: setting shift and color properties based on max/min widths and vals
     for sampleReport in report.sample_reports
         for rec in sampleReport.records
             # Padding based on frac width
@@ -216,18 +219,20 @@ reporting.buildTotalReport = (report, columnOrder) ->
         table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
         </td>"
-#{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
+        #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
     for sampleReport in report.sample_reports
-        sampleName = sampleReport.sample.name
-        sampleFpath = sampleReport.fpath
-        if sampleName.length > 30
-            sampleName = "<span title=\"#{sampleName}\">#{sampleName.trunc(80)}</span>"
+        line_caption = sampleReport.display_name  # sample name
+        if line_caption.length > 30
+            line_caption = "<span title=\"#{line_caption}\">#{line_caption.trunc(80)}</span>"
 
         table += "\n<tr>
-            <td class=\"left_column_td\">
-                <a class=\"sample_name\" href=\"#{sampleFpath}\">#{sampleName}</a>
-            </td>"
+            <td class=\"left_column_td\">"
+        if report.sample_reports.length == 1
+            table += "<span class=\"sample_name\">#{line_caption}</span>"
+        else
+            table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+        table += "</td>"
 
         for recNum in [0...sampleReport.records.length]
             pos = columnOrder[recNum]

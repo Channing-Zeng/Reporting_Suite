@@ -2,83 +2,71 @@ from collections import defaultdict, OrderedDict
 from os.path import join
 from source.bcbio_structure import Sample
 from source.logger import info
-from source.reporting import summarize, write_summary_reports, Record
+from source.reporting import write_summary_reports, Record, FullReport, SampleReport
 
 
 def make_summary_reports(cnf, bcbio_structure):
-    if len(bcbio_structure.variant_callers) > 1:
-        _make_for_multiple_variant_callers(cnf, bcbio_structure.variant_callers.values())
+    callers = bcbio_structure.variant_callers.values()
+
+    if len(callers) == 1:
+        report = _full_report_for_caller(cnf, callers[0])
+
+        full_summary_fpaths = write_summary_reports(
+            cnf.output_dir, cnf.work_dir, [report],
+            base_fname=cnf.name, caption='Variant QC')
+
+        info()
+        info('*' * 70)
+        for fpath in full_summary_fpaths:
+            info(fpath)
 
     else:
-        _make_for_single_variant_caller(cnf, bcbio_structure.variant_callers.values()[0])
+        for caller in callers:
+            caller.summary_qc_report = _full_report_for_caller(cnf, caller)
 
+            caller.summary_qc_report_fpaths = write_summary_reports(
+                cnf.output_dir, cnf.work_dir, caller.summary_qc_report,
+                base_fname=caller.suf + '.' + cnf.name, caption='Variant QC for ' + caller.name)
 
-def _make_for_single_variant_caller(cnf, caller):
-    reports = summarize(cnf, caller.get_report_fpaths_by_sample(cnf), _parse_qc_sample_report, '')
+        # Combining
+        combined_full_report = FullReport(cnf.name, [
+            s_report.set_display_name(s_report.sample.name + ' ' + c_name)
+            for (_, c_name, s_report) in sorted(
+                (s_report.sample.key_to_sort(), c.name, s_report)
+                 for c in callers
+                 for s_report in c.summary_qc_report.sample_reports)
+        ])
 
-    full_summary_fpaths = write_summary_reports(
-        cnf.output_dir,
-        cnf.work_dir,
-        reports,
-        base_fname=join(cnf.output_dir, cnf.name),
-        caption='Variant QC')
+        full_summary_fpaths = write_summary_reports(
+            cnf.output_dir, cnf.work_dir, combined_full_report,
+            base_fname=cnf.name, caption='Variant QC')
 
-    info()
-    info('*' * 70)
-    for fpath in full_summary_fpaths:
-        info(fpath)
-
-
-def _make_for_multiple_variant_callers(cnf, callers):
-    for caller in callers:
-        caller.summary_qc_report = summarize(
-            cnf,
-            caller.get_report_fpaths_by_sample(cnf),
-            _parse_qc_sample_report,
-            'Variant QC')
-
-        caller.summary_qc_rep_fpaths = write_summary_reports(
-            cnf.output_dir,
-            cnf.work_dir,
-            caller.summary_qc_report,  # TODO outputdir - read from structure too?
-            join(cnf.output_dir, caller.suf + '.' + cnf.name),
-            'Variant QC for ' + caller.name)
-
-    all_single_reports = OrderedDict(
-        ((Sample(s + '-' + c), rep)
-         for (s, c, rep) in sorted(
-            (s.name, c.name, rep)
-            for c in callers
-            for s, rep in c.get_report_fpaths_by_sample(cnf).items()
-        )))
-
-    full_summary_report = summarize(
-        cnf,
-        all_single_reports,
-        _parse_qc_sample_report,
-        'Variant QC')
-
-    full_summary_fpaths = write_summary_reports(
-        cnf.output_dir,
-        cnf.work_dir,
-        full_summary_report,
-        join(cnf.output_dir, cnf.name),
-        'Variant QC')
-
-    info()
-    info('*' * 70)
-
-    for caller in callers:
-        info(caller.name)
-        for fpath in caller.summary_qc_rep_fpaths:
-            info('  ' + fpath)
         info()
+        info('*' * 70)
 
-    info('Total')
-    for fpath in full_summary_fpaths:
-        info('  ' + fpath)
+        for caller in callers:
+            info(caller.name)
+            for fpath in caller.summary_qc_report_fpaths:
+                info('  ' + fpath)
+            info()
+
+        info('Total')
+        for fpath in full_summary_fpaths:
+            info('  ' + fpath)
 
 
-def _parse_qc_sample_report(cnf, json_fpath):
+def _full_report_for_caller(cnf, caller):
+    jsons_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'json')
+    htmls_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'html')
+
+    return FullReport(cnf.name + '_' + caller.name, [
+        SampleReport(sample,
+                     records=_parse_qc_sample_report(jsons_by_sample[sample]),
+                     html_fpath=htmls_by_sample[sample])
+            for sample in caller.samples
+            if sample in jsons_by_sample and sample in htmls_by_sample])
+
+
+def _parse_qc_sample_report(json_fpath):
     return Record.load_records(json_fpath)
 
