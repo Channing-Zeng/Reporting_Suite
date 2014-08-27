@@ -46,6 +46,8 @@ aux_files = [
     'common.css',
     'table_sorter/tsort.js',
     'table_sorter/style.css',
+    'table_sorter/arrow_asc.png',
+    'table_sorter/arrow_desc.png',
 ]
 
 

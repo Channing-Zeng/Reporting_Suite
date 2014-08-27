@@ -135,12 +135,12 @@ Array - Specifc table
 			$(table).css('position', 'relative');
 
 			// Add divs for directional arrows
-//			$(table).find('tr:first-child th').each(function(index) {
-//				if ( sorting_criteria[index] != 'nosort' ) {
-//					$('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
-//				}
-//			});
-			
+			$(table).find('tr:first-child th').each(function(index) {
+				if ( sorting_criteria[index] != 'nosort' ) {
+					$('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
+				}
+			});
+
 			// Set each td's width
 			$(table).find('tr:first-child th').each(function() {
 				column_widths.push($(this).outerWidth(true));
@@ -151,7 +151,7 @@ Array - Specifc table
 					minWidth: column_widths[$(this).index()]
 				} );
 			});
-			
+
 			// Set each row's height and width
 			$(table).find('tr').each(function() {
 				$(this).width($(this).outerWidth(true));
@@ -235,25 +235,15 @@ Array - Specifc table
 
 				// Call the display_table function with the data array and direction requested
 				display_table(sorted_table_data[th_index_selected], 'descending');
-//				display_arrow(th_index_selected, 'ascending');
+				display_arrow(th_index_selected);
 			});
-			
-//			// Display arrow direction
-//			function display_arrow(column, direction) {
-//				$(table).find('tr:first-child th div.sortArrow div').stop(true,true).fadeOut(settings['speed'], 'swing');
-//				switch (direction) {
-//					case 'ascending': {
-//						$(table).find('tr:first-child th div.sortArrow div.sortArrowAscending').eq(column).fadeIn(settings['speed'], 'swing');
-//
-//						break;
-//					}
-//					case 'descending': {
-//						$(table).find('tr:first-child th div.sortArrow div.sortArrowDescending').eq(column).fadeIn(settings['speed'], 'swing');
-//
-//						break;
-//					}
-//				}
-//			}
+
+			// Display arrow direction
+			function display_arrow(column) {
+				$(table).find('tr:first-child th div.sortArrow div').fadeOut(settings['speed'], 'swing');
+                $(table).find('tr:first-child th div.sortArrow div.sortArrowDescending').eq(column).fadeIn(settings['speed'], 'swing');
+			}
+            display_arrow(0)
 
 			// This function receives the new sorted table data array and displays it
 			function display_table(data, direction) {

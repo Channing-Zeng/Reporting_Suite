@@ -17,6 +17,8 @@
       text-align: left; }
     #report .report_table td.number {
       text-align: left; }
+    #report .report_table td.number > span {
+      padding-right: 4px; }
     #report .report_table tr.top_row_tr td, #report .report_table tr.top_row_tr th, #report .report_table tr.group_header td, #report .report_table tr.group_header th {
       font-weight: bold;
       border-bottom: 1px solid #bbbbbb; }
