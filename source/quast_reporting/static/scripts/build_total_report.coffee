@@ -177,6 +177,7 @@ calc_cell_contents = (report, font) ->
                     minHue = GREEN_HUE
 
                 if max == min
+                    rec.all_values_equal = true
 #                    rec.color = get_color GREEN_HUE
                 else
                     k = (maxHue - minHue) / (max - min)
@@ -216,7 +217,8 @@ reporting.buildTotalReport = (report, columnOrder) ->
     for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
-        table += "<th class='second_through_last_col_headers_td' data-sortBy='numeric' position='#{pos}'>
+        sort_by = if 'all_values_equal' of rec then 'nosort' else 'numeric'
+        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}

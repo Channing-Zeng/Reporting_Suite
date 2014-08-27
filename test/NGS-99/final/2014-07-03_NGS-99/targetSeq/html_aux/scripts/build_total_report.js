@@ -262,7 +262,7 @@
               minHue = GREEN_HUE;
             }
             if (max === min) {
-
+              _results1.push(rec.all_values_equal = true);
             } else {
               k = (maxHue - minHue) / (max - min);
               hue = Math.round(minHue + (rec.num - min) * k);
@@ -293,7 +293,7 @@
   };
 
   reporting.buildTotalReport = function(report, columnOrder) {
-    var i, line_caption, padding, pos, rec, recNum, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
+    var i, line_caption, padding, pos, rec, recNum, sort_by, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
     if (report.name != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + report.name + "</h3>");
     }
@@ -304,7 +304,8 @@
     for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[recNum];
       rec = report.sample_reports[0].records[pos];
-      table += "<th class='second_through_last_col_headers_td' data-sortBy='numeric' position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(rec)) + "</span> </th>";
+      sort_by = 'all_values_equal' in rec ? 'nosort' : 'numeric';
+      table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(rec)) + "</span> </th>";
     }
     i = 0;
     _ref1 = report.sample_reports;
