@@ -71,7 +71,7 @@ reporting.buildReport = ->
         console.log "Error: cannot read #total-report-json"
         return 1
 
-    $('#report_date').html('<p>' + totalReportData.date + '</p>');
+    $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
     reporting.buildCommonRecords totalReportData.common_records
 
@@ -85,7 +85,7 @@ reporting.buildReport = ->
         for sample_report in sample_reports
             for plot in sample_report.plots
                 plots_html += "<img src=\"#{plot}\"/>"
-        $('#plot').html(plots_html);
+        $('#plot').html plots_html
 
     return 0
 

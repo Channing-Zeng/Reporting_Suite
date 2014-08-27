@@ -293,19 +293,20 @@
   };
 
   reporting.buildTotalReport = function(report, columnOrder) {
-    var line_caption, padding, pos, rec, recNum, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
+    var i, line_caption, padding, pos, rec, recNum, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
     if (report.name != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + report.name + "</h3>");
     }
     calc_cell_contents(report, $('#report').css('font'));
-    table = "<table cellspacing=\"0\" class=\"report_table " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
+    table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
     table += "\n<tr class=\"top_row_tr\">";
-    table += "<td class=\"top_left_td left_column_td\"> <span>Sample</span> </td>";
+    table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'> <span>Sample</span> </th>";
     for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[recNum];
       rec = report.sample_reports[0].records[pos];
-      table += "<td class='second_through_last_col_headers_td' position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(rec)) + "</span> </td>";
+      table += "<th class='second_through_last_col_headers_td' data-sortBy='numeric' position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(rec)) + "</span> </th>";
     }
+    i = 0;
     _ref1 = report.sample_reports;
     for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
       sampleReport = _ref1[_j];
@@ -313,7 +314,7 @@
       if (line_caption.length > 30) {
         line_caption = "<span title=\"" + line_caption + "\">" + (line_caption.trunc(80)) + "</span>";
       }
-      table += "\n<tr> <td class=\"left_column_td\">";
+      table += "\n<tr> <td class=\"left_column_td\" data-sortAs=" + (report.sample_reports.length - i) + ">";
       if (report.sample_reports.length === 1) {
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {
@@ -325,7 +326,9 @@
         rec = sampleReport.records[pos];
         table += "<td metric=\"" + rec.metric.name + "\" style=\"" + CSS_PROP_TO_COLOR + ": " + rec.color + "\" class='number' quality=\"" + rec.metric.quality + "\"";
         if (rec.num != null) {
-          table += ' number="' + rec.value + '">';
+          table += " number=\"" + rec.value + "\" data-sortAs=" + rec.value + ">";
+        } else {
+          table += ">";
         }
         if (rec.right_shift != null) {
           padding = "margin-left: " + rec.right_shift + "px; margin-right: -" + rec.right_shift + "px;";
@@ -335,6 +338,7 @@
         table += "<a style=\"" + padding + "\" " + (get_meta_tag_contents(rec)) + ">" + rec.cell_contents + " </a> </td>";
       }
       table += "</tr>";
+      i += 1;
     }
     table += "\n</table>\n";
     return $('#report').append(table);

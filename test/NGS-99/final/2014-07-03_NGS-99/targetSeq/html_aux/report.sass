@@ -17,31 +17,33 @@
         padding-right: 50px !important
         margin-bottom: 30px
 
-        td
+        td, th
             margin: 0
-            padding: 2px 0.6em 0 5px
+            padding: 2px 2px 0 4px
             //min-width: 100px
             //max-width: 200px
             white-space: nowrap
-            a
-                display: block
-                height: 100%
-                width: 100%
+            text-align: left
+            //a
+                //display: inline-block
+                //height: 100%
+                //width: 100%
 
         td.number
             text-align: left
 
-        tr.top_row_tr td,
-        tr.group_header td
-            font-weight: bold
-            border-bottom: 1px solid #bbb
+        tr.top_row_tr, tr.group_header
+            td, th
+                font-weight: bold
+                border-bottom: 1px solid #bbb
 
-        tr.group_header td
-            height: 20px
-            vertical-align: bottom
+        tr.group_header
+            td, th
+                height: 20px
+                vertical-align: bottom
 
         tr
-            td:first-child
+            td:first-child, th:first-child
                 padding-left: 0
 
         tr.row_hidden, tr.group_empty

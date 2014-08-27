@@ -10,24 +10,20 @@
   #report .report_table {
     padding-right: 50px !important;
     margin-bottom: 30px; }
-    #report .report_table td {
+    #report .report_table td, #report .report_table th {
       margin: 0;
-      padding: 2px 0.6em 0 5px;
-      white-space: nowrap; }
-      #report .report_table td a {
-        display: block;
-        height: 100%;
-        width: 100%; }
+      padding: 2px 2px 0 4px;
+      white-space: nowrap;
+      text-align: left; }
     #report .report_table td.number {
       text-align: left; }
-    #report .report_table tr.top_row_tr td,
-    #report .report_table tr.group_header td {
+    #report .report_table tr.top_row_tr td, #report .report_table tr.top_row_tr th, #report .report_table tr.group_header td, #report .report_table tr.group_header th {
       font-weight: bold;
       border-bottom: 1px solid #bbbbbb; }
-    #report .report_table tr.group_header td {
+    #report .report_table tr.group_header td, #report .report_table tr.group_header th {
       height: 20px;
       vertical-align: bottom; }
-    #report .report_table tr td:first-child {
+    #report .report_table tr td:first-child, #report .report_table tr th:first-child {
       padding-left: 0; }
     #report .report_table tr.row_hidden, #report .report_table tr.group_empty {
       display: none; }

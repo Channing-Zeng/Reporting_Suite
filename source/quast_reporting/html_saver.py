@@ -44,6 +44,8 @@ aux_files = [
     'bootstrap/bootstrap-tooltip-vlad.js',
     'report.css',
     'common.css',
+    'table_sorter/tsort.js',
+    'table_sorter/style.css',
 ]
 
 

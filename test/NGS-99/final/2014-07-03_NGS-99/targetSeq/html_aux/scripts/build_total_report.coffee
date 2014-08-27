@@ -206,28 +206,29 @@ reporting.buildTotalReport = (report, columnOrder) ->
     calc_cell_contents report, $('#report').css 'font'
 
     table = "<table cellspacing=\"0\"
-                    class=\"report_table #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
+                    class=\"report_table tableSorter #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
                     id=\"report_table_#{report.name}\">"
     table += "\n<tr class=\"top_row_tr\">"
-    table += "<td class=\"top_left_td left_column_td\">
+    table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'>
                     <span>Sample</span>
-              </td>"
+              </th>"
 
     for recNum in [0...report.sample_reports[0].records.length]
         pos = columnOrder[recNum]
         rec = report.sample_reports[0].records[pos]
-        table += "<td class='second_through_last_col_headers_td' position='#{pos}'>
+        table += "<th class='second_through_last_col_headers_td' data-sortBy='numeric' position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
-        </td>"
+        </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
+    i = 0
     for sampleReport in report.sample_reports
         line_caption = sampleReport.display_name  # sample name
         if line_caption.length > 30
             line_caption = "<span title=\"#{line_caption}\">#{line_caption.trunc(80)}</span>"
 
         table += "\n<tr>
-            <td class=\"left_column_td\">"
+            <td class=\"left_column_td\" data-sortAs=#{report.sample_reports.length - i}>"
         if report.sample_reports.length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
@@ -242,16 +243,22 @@ reporting.buildTotalReport = (report, columnOrder) ->
                           style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"
                           class='number'
                           quality=\"#{rec.metric.quality}\""
-            if rec.num? then table += ' number="' + rec.value + '">'
+            if rec.num?
+                table += " number=\"#{rec.value}\" data-sortAs=#{rec.value}>"
+            else
+                table += ">"
+
             if rec.right_shift?
                 padding = "margin-left: #{rec.right_shift}px; margin-right: -#{rec.right_shift}px;"
             else
                 padding = ""
+
             table += "<a style=\"#{padding}\"
                           #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
                       </a>
-                      </td>"
+                    </td>"
         table += "</tr>"
+        i += 1
     table += "\n</table>\n"
 
     $('#report').append table

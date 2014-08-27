@@ -29,7 +29,7 @@ def make_summary_reports(cnf, bcbio_structure):
                 base_fname=caller.suf + '.' + cnf.name, caption='Variant QC for ' + caller.name)
 
         # Combining
-        combined_full_report = FullReport(cnf.name, [
+        combined_full_report = FullReport('', [
             s_report.set_display_name(s_report.sample.name + ' ' + c_name)
             for (_, c_name, s_report) in sorted(
                 (s_report.sample.key_to_sort(), c.name, s_report)
@@ -59,7 +59,7 @@ def _full_report_for_caller(cnf, caller):
     jsons_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'json')
     htmls_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'html')
 
-    return FullReport(cnf.name + '_' + caller.name, [
+    return FullReport('', [
         SampleReport(sample,
                      records=_parse_qc_sample_report(jsons_by_sample[sample]),
                      html_fpath=htmls_by_sample[sample])

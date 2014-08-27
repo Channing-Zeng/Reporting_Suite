@@ -21,7 +21,7 @@ def summary_reports(cnf, bcbio_structure):
                      html_fpath=htmls_by_sample[sample])
             for sample in bcbio_structure.samples
             if sample in jsons_by_sample and sample in htmls_by_sample])
-        for metrics, report_name in [(basic_metrics, cnf.name),
+        for metrics, report_name in [(basic_metrics, ''),
                                      (depth_metrics, 'Target coverage depth')]]
 
     final_summary_report_fpaths = write_summary_reports(

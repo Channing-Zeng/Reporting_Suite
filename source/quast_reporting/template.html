@@ -24,6 +24,7 @@
     <link rel="stylesheet" type="text/css" href="/static/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/common.css" />
     <link rel="stylesheet" type="text/css" href="/static/report.css" />
+    <link rel="stylesheet" type="text/css" href="/static/table_sorter/style.css" />
 
     <script type="text/javascript">
         window.reporting = {};
@@ -40,7 +41,9 @@
     <script type="text/javascript" src="/static/scripts/utils.js"></script>
     <script type="text/javascript" src="/static/scripts/build_total_report.js"></script>
     <script type="text/javascript" src="/static/scripts/build_report.js"></script>
+
     <script type="text/javascript" src="/static/dragtable.js"></script>
+    <script type="text/javascript" src="/static/table_sorter/tsort.js"></script>
 
     <script type="text/javascript">
 
@@ -50,6 +53,8 @@
             dragTable.init();
 
             $("[rel=tooltip]").tooltip({ animation: false, });
+
+            $('table.tableSorter').tableSort();
         });
     </script>
 </head>
