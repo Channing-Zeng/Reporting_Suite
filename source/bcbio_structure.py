@@ -332,25 +332,21 @@ class BCBioStructure:
                            BCBioStructure.targetseq_dir +
                            BCBioStructure.detail_gene_report_ending)
 
-    def get_targetcov_report_fpaths_by_sample(self, ext):
+    def get_targetcov_report_fpaths_by_sample(self, ext='json'):
         return self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.targetseq_dir,
-            lambda sample: sample.name + '.' + BCBioStructure.targetseq_dir + '.' + ext)
+            lambda sample: sample.name + '.' +
+                           BCBioStructure.targetseq_dir + '.' + ext)
 
     def get_ngscat_report_fpaths_by_sample(self):
-        return _combine_report_fpath_by_sample(
-            self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.ngscat_dir,
-            lambda sample: 'captureQC.html'))
+            lambda sample: 'captureQC.html')
 
     def get_qualimap_report_fpaths_by_sample(self):
-        """
-        Returns dict: sample_name -> ReportFpaths(html_fpath, html_fpath)
-        """
-        return _combine_report_fpath_by_sample(
-            self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
             BCBioStructure.qualimap_dir,
-            lambda sample: 'qualimapReport.html'))
+            lambda sample: 'qualimapReport.html')
 
     def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
         fpaths = OrderedDict()

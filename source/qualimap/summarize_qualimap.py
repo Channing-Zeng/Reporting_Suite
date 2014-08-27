@@ -1,5 +1,5 @@
 from os.path import join
-from source.reporting import summarize, write_summary_reports, Metric, Record
+from source.reporting import write_summary_reports, Metric, Record, FullReport, SampleReport
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 
@@ -7,22 +7,23 @@ from source.bcbio_structure import BCBioStructure
 def summary_reports(cnf, bcbio_structure):
     step_greetings('QualiMap statistics for all samples')
 
-    html_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
-    sum_report = summarize(cnf, html_by_sample, _parse_qualimap_sample_report, '')
+    htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
+    sum_report = FullReport(cnf.name, [
+        SampleReport(sample,
+                     records=_parse_qualimap_sample_report(htmls_by_sample[sample]),
+                     html_fpath=htmls_by_sample[sample])
+            for sample in bcbio_structure.samples
+            if sample in htmls_by_sample])
 
     final_summary_report_fpaths = write_summary_reports(
-        cnf.output_dir,
-        cnf.work_dir,
-        sum_report,
-        join(cnf.output_dir, BCBioStructure.qualimap_name),
-        'QualiMap statistics')
+        cnf.output_dir, cnf.work_dir, sum_report,
+        BCBioStructure.qualimap_name, 'QualiMap statistics')
 
     info()
     info('*' * 70)
     info('Summary:')
     for fpath in final_summary_report_fpaths:
-        if fpath:
-            info('  ' + fpath)
+        if fpath: info('  ' + fpath)
 
     return final_summary_report_fpaths
 
@@ -62,7 +63,7 @@ METRICS = Metric.to_dict([
 ALLOWED_UNITS = ['%']
 
 
-def _parse_qualimap_sample_report(cnf, report_fpath):
+def _parse_qualimap_sample_report(report_fpath):
     records = []
 
     def __get_value(line):

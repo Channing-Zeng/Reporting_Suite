@@ -1,5 +1,5 @@
 from os.path import join
-from source.reporting import summarize, write_summary_reports, Metric, Record
+from source.reporting import write_summary_reports, Metric, Record, FullReport, SampleReport
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 
@@ -7,15 +7,17 @@ from source.bcbio_structure import BCBioStructure
 def summary_reports(cnf, bcbio_structure):
     step_greetings('ngsCAT statistics for all samples')
 
-    html_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
-    sum_report = summarize(cnf, html_by_sample, _parse_ngscat_sample_report, '')
+    htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
+    sum_report = FullReport(cnf.name, [
+        SampleReport(sample,
+                     records=_parse_ngscat_sample_report(htmls_by_sample[sample]),
+                     html_fpath=htmls_by_sample[sample])
+            for sample in bcbio_structure.samples
+            if sample in htmls_by_sample])
 
     final_summary_report_fpaths = write_summary_reports(
-        cnf.output_dir,
-        cnf.work_dir,
-        sum_report,
-        join(cnf.output_dir, BCBioStructure.ngscat_name),
-        'ngsCAT statistics')
+        cnf.output_dir, cnf.work_dir, sum_report,
+        BCBioStructure.ngscat_name, 'ngsCAT statistics')
 
     info()
     info('*' * 70)
@@ -43,7 +45,7 @@ METRICS = Metric.to_dict([
 ALLOWED_UNITS = ['%']
 
 
-def _parse_ngscat_sample_report(cnf, report_fpath):
+def _parse_ngscat_sample_report(report_fpath):
     records = []
 
     def __parse_cell(metric_name, line):
