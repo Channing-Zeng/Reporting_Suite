@@ -74,8 +74,7 @@
 
   totalReportData = {
     date: null,
-    common_records: [],
-    reports: []
+    report: []
   };
 
   report = {

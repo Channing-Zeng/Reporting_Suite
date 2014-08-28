@@ -103,6 +103,7 @@ def check_quality_control_config(cnf):
 
 def process_one(cnf):
     vcf_fpath = cnf['vcf']
+    sample = Sample(cnf.name, vcf=vcf_fpath)
 
     if cnf.get('filter_reject'):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)
@@ -111,6 +112,7 @@ def process_one(cnf):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
     qc_report_fpath, records = gatk_qc(cnf, vcf_fpath)
+    report = SampleReport(sample, records=records)
 
     if verify_module('matplotlib'):
         try:
@@ -124,12 +126,14 @@ def process_one(cnf):
     # removing variants distribution plot
     if len(qc_plots_for_html_report_fpaths) == 3:  # TODO: fix this
         qc_plots_for_html_report_fpaths = qc_plots_for_html_report_fpaths[1:]
+        report.plots = qc_plots_for_html_report_fpaths
+
     summary_report_html_fpath = write_html_reports(
         cnf.output_dir, cnf.work_dir,
-        [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name), '', records,
-                                                          plots=qc_plots_for_html_report_fpaths)])],
+        FullReport(name='', sample_reports=[report]),
         cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
         caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
+
     info('\t' + summary_report_html_fpath)
 
     return summary_report_html_fpath, qc_plots_fpaths
@@ -158,7 +162,6 @@ def finalize_all(cnf, samples, results):
         # summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
         info('Variant QC summary:')
         info('  ' + qc_output_fpath)
-
 
 if __name__ == '__main__':
     main(sys.argv[1:])

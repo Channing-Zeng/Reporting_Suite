@@ -3,7 +3,7 @@ from os.path import join
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
-from source.reporting import Metric, Record, save_json
+from source.reporting import Metric, Record, save_json, MetricStorage, ReportSection
 from source.tools_from_cnf import get_gatk_cmdline
 from source.utils import OrderedDefaultDict
 
@@ -11,26 +11,30 @@ from source.utils import OrderedDefaultDict
 final_report_ext = '.txt'
 
 
-gatk_metrics = Metric.to_dict([
-    Metric('nEvalVariants',   'Total',       'Total variants evaluated'),
-    Metric('nSNPs',           'SNP',         'SNPs'),
-    Metric('nInsertions',     'Ins',         'Insertions'),
-    Metric('nDeletions',      'Del',         'Deletions'),
-    Metric('nVariantsAtComp', 'At comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
-    Metric('compRate',        'Comp rate',   'Percentage of eval sites at comp sites'),
-    Metric('nConcordant',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
-    Metric('concordantRate',  'Conc rate',   'Concordance rate'),
-    Metric('variantRate',     'Var/loci',    'Variants per loci rate'),
-    Metric('basesPerVariant', 'Bp/var',      'Bases per variant rate'),
-    Metric('hetHomRatio',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
-    Metric('tiTvRatio',       'Ti/Tv',       'Transition to transversion ratio'),
-])
+metric_storage = MetricStorage(
+    sections=[
+        ReportSection('', [
+            Metric('nEvalVariants',   'Total',       'Total variants evaluated'),
+            Metric('nSNPs',           'SNP',         'SNPs'),
+            Metric('nInsertions',     'Ins',         'Insertions'),
+            Metric('nDeletions',      'Del',         'Deletions'),
+            Metric('nVariantsAtComp', 'At comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
+            Metric('compRate',        'Comp rate',   'Percentage of eval sites at comp sites'),
+            Metric('nConcordant',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
+            Metric('concordantRate',  'Conc rate',   'Concordance rate'),
+            Metric('variantRate',     'Var/loci',    'Variants per loci rate'),
+            Metric('basesPerVariant', 'Bp/var',      'Bases per variant rate'),
+            Metric('hetHomRatio',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
+            Metric('tiTvRatio',       'Ti/Tv',       'Transition to transversion ratio'),
+        ])
+    ]
+)
 
 
 def _dict_to_objects(report_dict, cnf_databases, cnf_novelty, main_db):
     records = []
 
-    for m_name, cur_metric in gatk_metrics.items():
+    for cur_metric in metric_storage.get_metrics():
         rec = Record()
         records.append(rec)
         rec.metric = cur_metric
@@ -40,7 +44,7 @@ def _dict_to_objects(report_dict, cnf_databases, cnf_novelty, main_db):
 
             sum_for_all_novelties = 0.0
             for cur_database in cnf_databases:
-                value = report_dict[m_name][cur_database][cur_novelty]
+                value = report_dict[cur_metric.name][cur_database][cur_novelty]
                 try:
                     value = int(value)
                 except ValueError:
@@ -116,11 +120,11 @@ def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):
             cur_metrics_ids = []
             database_col_id = cur_header.index(database_col_name)
             novelty_col_id = cur_header.index(novelty_col_name)
-            for metric in gatk_metrics.keys():
-                if metric in cur_header:
-                    cur_metrics_ids.append(cur_header.index(metric))
+            for metric in metric_storage.get_metrics():
+                if metric.name in cur_header:
+                    cur_metrics_ids.append(cur_header.index(metric.name))
                     if metric not in report:
-                        report[metric] = dict()
+                        report[metric.name] = dict()
         elif cur_metrics_ids:  # process lines only if there are metrics in current section
             values = line.split()
             if len(values) <= max(cur_metrics_ids + [novelty_col_id, database_col_id]):

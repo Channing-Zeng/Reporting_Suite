@@ -94,13 +94,13 @@ get_meta_tag_contents = (rec) ->
         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
-get_metric_name_html = (rec, use_full_name=false) ->
-    if rec.metric.short_name and not use_full_name
-        metricName = rec.metric.short_name
-        description = rec.metric.description or rec.metric.name
+get_metric_name_html = (metric, use_full_name=false) ->
+    if metric.short_name and not use_full_name
+        metricName = metric.short_name
+        description = metric.description or metric.name
         return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{description}\">#{metricName}</a>"
     else
-        return rec.metric.name
+        return metric.name
 
 
 calc_records_cell_contents = (records, font) ->
@@ -129,7 +129,7 @@ calc_records_cell_contents = (records, font) ->
         rec.frac_width = $.fn.intPartTextWidth num_html, font
 
 
-calc_cell_contents = (report, font) ->
+calc_cell_contents = (report, metrics, font) ->
     max_frac_widths_by_metric = {}
     min_val_by_metric = {}
     max_val_by_metric = {}
@@ -137,7 +137,7 @@ calc_cell_contents = (report, font) ->
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     for sampleReport in report.sample_reports
         calc_records_cell_contents sampleReport.records, font
-        for rec in sampleReport.records
+        for rec in sampleReport.records when rec.metric.name in (m.name for m in metrics)
             if not (rec.metric.name of max_frac_widths_by_metric)
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
@@ -200,26 +200,26 @@ reporting.buildCommonRecords = (common_records) ->
         $('#report').append table
 
 
-reporting.buildTotalReport = (report, columnOrder) ->
-    if report.name?
-        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{report.name}</h3>"
+reporting.buildTotalReport = (report, section, columnOrder) ->
+    if section.name?
+        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.name}</h3>"
 
-    calc_cell_contents report, $('#report').css 'font'
+    calc_cell_contents report, section.metrics, $('#report').css 'font'
 
     table = "<table cellspacing=\"0\"
                     class=\"report_table tableSorter #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
-                    id=\"report_table_#{report.name}\">"
+                    id=\"report_table_#{section.name}\">"
     table += "\n<tr class=\"top_row_tr\">"
     table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'>
                     <span>Sample</span>
               </th>"
 
-    for recNum in [0...report.sample_reports[0].records.length]
-        pos = columnOrder[recNum]
-        rec = report.sample_reports[0].records[pos]
+    for colNum in [0...section.metrics.length]
+        pos = columnOrder[colNum]
+        metric = section.metrics[pos]
         sort_by = if 'all_values_equal' of rec then 'nosort' else 'numeric'
         table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
-             <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(rec)}</span>
+             <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
@@ -237,14 +237,16 @@ reporting.buildTotalReport = (report, columnOrder) ->
             table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
         table += "</td>"
 
-        for recNum in [0...sampleReport.records.length]
-            pos = columnOrder[recNum]
-            rec = sampleReport.records[pos]
+        records = (rec for rec in sampleReport.records when rec.metric.name in (m.name for m in section.metrics))
+        for colNum in [0...section.metrics.length]
+            pos = columnOrder[colNum]
+            metric = section.metrics[pos]
+            rec = records[pos]
 
-            table += "<td metric=\"#{rec.metric.name}\"
+            table += "<td metric=\"#{metric.name}\"
                           style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"
                           class='number'
-                          quality=\"#{rec.metric.quality}\""
+                          quality=\"#{metric.quality}\""
             if rec.num?
                 table += " number=\"#{rec.value}\" data-sortAs=#{rec.value}>"
             else

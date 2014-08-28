@@ -2,7 +2,7 @@ from collections import defaultdict, OrderedDict
 from os.path import join
 from source.bcbio_structure import Sample
 from source.logger import info
-from source.reporting import write_summary_reports, Record, FullReport, SampleReport
+from source.reporting import write_summary_report, Record, FullReport, SampleReport
 
 
 def make_summary_reports(cnf, bcbio_structure):
@@ -11,8 +11,8 @@ def make_summary_reports(cnf, bcbio_structure):
     if len(callers) == 1:
         report = _full_report_for_caller(cnf, callers[0])
 
-        full_summary_fpaths = write_summary_reports(
-            cnf.output_dir, cnf.work_dir, [report],
+        full_summary_fpaths = write_summary_report(
+            cnf.output_dir, cnf.work_dir, report,
             base_fname=cnf.name, caption='Variant QC')
 
         info()
@@ -24,7 +24,7 @@ def make_summary_reports(cnf, bcbio_structure):
         for caller in callers:
             caller.summary_qc_report = _full_report_for_caller(cnf, caller)
 
-            caller.summary_qc_report_fpaths = write_summary_reports(
+            caller.summary_qc_report_fpaths = write_summary_report(
                 cnf.output_dir, cnf.work_dir, caller.summary_qc_report,
                 base_fname=caller.suf + '.' + cnf.name, caption='Variant QC for ' + caller.name)
 
@@ -37,7 +37,7 @@ def make_summary_reports(cnf, bcbio_structure):
                  for s_report in c.summary_qc_report.sample_reports)
         ])
 
-        full_summary_fpaths = write_summary_reports(
+        full_summary_fpaths = write_summary_report(
             cnf.output_dir, cnf.work_dir, combined_full_report,
             base_fname=cnf.name, caption='Variant QC')
 

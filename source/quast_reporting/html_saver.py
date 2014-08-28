@@ -1,12 +1,13 @@
-from __future__ import with_statement
-
 import os
 import shutil
 import re
-from os.path import join, abspath, dirname, isdir, splitext
 import sys
-from source.file_utils import verify_file
+import datetime
+from os.path import join, abspath, dirname, isdir, splitext
+from json import dumps, JSONEncoder
 
+from source.bcbio_structure import VariantCaller, Sample
+from source.file_utils import verify_file
 from source.quast_reporting import json_saver
 from source.file_utils import file_exists
 
@@ -51,36 +52,28 @@ aux_files = [
 ]
 
 
-def write_html_reports(output_dirpath, work_dirpath, full_reports, report_base_name, caption):
-    common_records = get_common_records(full_reports)
-    json_fpath = json_saver.save_total_report(work_dirpath, report_base_name, full_reports, common_records)
+def write_html_reports(output_dirpath, work_dirpath, full_report, report_base_name, caption):
+    class Encoder(JSONEncoder):
+        def default(self, o):
+            if isinstance(o, VariantCaller):
+                return o.for_json()
+            if isinstance(o, Sample):
+                return o.for_json()
+            return o.__dict__
 
-    if not verify_file(json_fpath):
-        sys.exit(1)
+    json = dumps(dict(
+        date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
+        data_outside_reports={},
+        report=full_report,
+    ), separators=(',', ':'), cls=Encoder)
 
-    html_fpath = init_html(output_dirpath, report_base_name + '.html', caption)
-    append(html_fpath, json_fpath, 'totalReport')
+    html_fpath = _init_html(output_dirpath, report_base_name + '.html', caption)
+    _append(html_fpath, json, 'totalReport')
     return html_fpath
 
 
-def get_common_records(full_reports):
-    if not isinstance(full_reports, list):
-        full_reports = [full_reports]
-
-    common_records = list()
-    for full_report in full_reports:
-        if full_report.sample_reports:
-            sample_report = full_report.sample_reports[0]
-            for record in sample_report.records:
-                if record.metric.common:
-                    common_records.append(record)
-            for sample_report in full_report.sample_reports:
-                sample_report.records = [record for record in sample_report.records if not record.metric.common]
-    return common_records
-
-
-def init_html(results_dirpath, report_fname, caption=''):
-#    shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
+def _init_html(results_dirpath, report_fname, caption=''):
+    # shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
     aux_dirpath = join(results_dirpath, aux_dirname)
     if isdir(aux_dirpath):
         shutil.rmtree(aux_dirpath)
@@ -123,18 +116,13 @@ def init_html(results_dirpath, report_fname, caption=''):
     return html_fpath
 
 
-def append(html_fpath, json_fpath, keyword):
-    # reading JSON file
-    with open(json_fpath) as f_json:
-        json_text = f_json.read()
-    os.remove(json_fpath)
-
+def _append(html_fpath, json, keyword):
     # reading html template file
     with open(html_fpath) as f_html:
         html_text = f_html.read()
 
     # substituting template text with json
-    html_text = re.sub('{{ ' + keyword + ' }}', json_text, html_text)
+    html_text = re.sub('{{ ' + keyword + ' }}', json, html_text)
 
     # writing substituted html to final file
     with open(html_fpath, 'w') as f_html:

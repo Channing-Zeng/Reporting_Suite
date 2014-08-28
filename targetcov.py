@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.bcbio_structure import Sample
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -75,10 +76,8 @@ def main(args):
 
 
 def process_one(cnf):
-    bed_fpath = cnf['bed']
-    bam_fpath = cnf['bam']
-
-    return run_target_cov(cnf, bam_fpath, bed_fpath)
+    sample = Sample(cnf.name, cnf.bam, cnf.bed)
+    return run_target_cov(cnf, sample)
 
 
 def finalize_one(cnf, summary_report_fpath, gene_report_fpath):

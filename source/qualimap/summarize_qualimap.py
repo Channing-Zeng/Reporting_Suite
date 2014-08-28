@@ -1,5 +1,5 @@
 from os.path import join
-from source.reporting import write_summary_reports, Metric, Record, FullReport, SampleReport
+from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 
@@ -15,7 +15,7 @@ def summary_reports(cnf, bcbio_structure):
             for sample in bcbio_structure.samples
             if sample in htmls_by_sample])
 
-    final_summary_report_fpaths = write_summary_reports(
+    final_summary_report_fpaths = write_summary_report(
         cnf.output_dir, cnf.work_dir, sum_report,
         BCBioStructure.qualimap_name, 'QualiMap statistics')
 

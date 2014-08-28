@@ -8,20 +8,20 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport, FullReport, write_html_reports
+from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport, FullReport, write_html_reports, to_dict_by_name, MetricStorage, ReportSection
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
 from source.file_utils import file_transaction
 
 
-def run_target_cov(cnf, bam, amplicons_bed):
+def run_target_cov(cnf, sample):
     summary_report_html_fpath = None
     gene_report_fpath = None
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, bam, amplicons_bed)
+    amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, sample.bam, sample.bed)
 
     chr_len_fpath = get_chr_len_fpath(cnf)
     exons_bed = cnf['genome']['exons']
@@ -29,30 +29,26 @@ def run_target_cov(cnf, bam, amplicons_bed):
     if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
 
-        records = _run_header_report(
-            cnf, amplicons_bed, bam, chr_len_fpath,
-            cnf['coverage_reports']['depth_thresholds'], cnf['padding'],
+        report = _run_header_report(
+            cnf, sample, chr_len_fpath,
+            cnf.coverage_reports.depth_thresholds, cnf.padding,
             combined_region, max_depth, total_bed_size)
 
-        save_json(records, join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
+        save_json(report, join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
         summary_report_fpath = write_txt_reports(
             cnf.output_dir, cnf.work_dir,
-            [SampleReport(Sample(cnf.name, bam, amplicons_bed), '', records)],
+            [report],
             cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ')
         info('\t' + summary_report_fpath)
 
-        basic_metrics = get_basic_metrics()
-        depth_metrics = get_depth_metrics(cnf.coverage_reports.depth_thresholds)
-        basic_records = get_records_by_metrics(records, basic_metrics)
-        depth_records = get_records_by_metrics(records, depth_metrics)
-
         summary_report_html_fpath = write_html_reports(
             cnf.output_dir, cnf.work_dir,
-            [FullReport(name='', sample_reports=[SampleReport(Sample(cnf.name, bam, amplicons_bed), '', basic_records)]),
-             FullReport(name='Target coverage depth', sample_reports=[SampleReport(Sample(cnf.name, bam, amplicons_bed), '', depth_records)]),],
-            cnf.name + '.' + BCBioStructure.targetseq_name, caption='Target coverage statistics for ' + cnf.name)
+            FullReport(name='Target coverage depth',
+                       sample_reports=[report]),
+            cnf.name + '.' + BCBioStructure.targetseq_name,
+            caption='Target coverage statistics for ' + cnf.name)
         info('\t' + summary_report_html_fpath)
 
     if 'genes' in cnf['coverage_reports']['report_types']:
@@ -70,12 +66,12 @@ def run_target_cov(cnf, bam, amplicons_bed):
             info('Sorting exons BED file.')
             exons_bed = sort_bed(cnf, exons_bed)
             info('Getting the exons that overlap amplicons.')
-            overlapped_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
+            overlapped_exons_bed = intersect_bed(cnf, exons_bed, sample.bed)
             info('Adding other exons for the genes of overlapped exons.')
             target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
 
             info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-            exons, _, _, _ = _bedcoverage_hist_stats(cnf, bam, target_exons_bed)
+            exons, _, _, _ = _bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
@@ -109,51 +105,6 @@ def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
     return sort_bed(cnf, new_overlp_exons_bed)
 
 
-_basic_metrics = Metric.to_dict([
-    # Common
-    Metric('Bases in target', short_name='Target bp', common=True),
-
-    Metric('Reads'),
-    Metric('Mapped reads', short_name='Mapped'),
-    Metric('Percentage of mapped reads', short_name='%', unit='%'),
-
-    Metric('Unmapped reads', short_name='Unmapped'),
-    Metric('Percentage of unmapped reads', short_name='%', unit='%'),
-
-    Metric('Covered bases in target', short_name='Covered'),
-    Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-
-    Metric('Reads mapped on target', short_name='Reads on trg'),
-    Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
-
-    Metric('Reads mapped on padded target', 'On padded trg'),
-    Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
-
-    Metric('Read bases mapped on target', short_name='Read bp on trg')])
-
-
-_depth_metrics = Metric.to_dict([
-    Metric('Average target coverage depth', short_name='Avg'),
-    Metric('Std. dev. of target coverage depth', short_name='Std dev'),
-    Metric('Maximum target coverage depth', short_name='Max'),
-    Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')])
-
-
-def _add_depth_metrics(depth_thresholds):
-    for depth in depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
-        _depth_metrics[name] = Metric(name, short_name=str(depth) + 'x', description=name, unit='%')
-
-
-def get_basic_metrics():
-    return _basic_metrics
-
-
-def get_depth_metrics(depth_thresholds):
-    _add_depth_metrics(depth_thresholds)
-    return _depth_metrics
-
-
 def get_records_by_metrics(records, metrics):
     _records = []
     for rec in records:
@@ -163,79 +114,106 @@ def get_records_by_metrics(records, metrics):
     return _records
 
 
-def get_cov_metrics(depth_thresholds):
-    _add_depth_metrics(depth_thresholds)
-    return OrderedDict(_basic_metrics.items() + _depth_metrics.items())
+metric_storage = MetricStorage(
+    common_for_all_samples_section=ReportSection('', [
+        Metric('Bases in target', short_name='Target bp', common=True)
+    ]),
+    sections_by_name=OrderedDict(
+        basic_metrics = ReportSection('', [
+            Metric('Reads'),
+            Metric('Mapped reads', short_name='Mapped'),
+            Metric('Percentage of mapped reads', short_name='%', unit='%'),
 
+            Metric('Unmapped reads', short_name='Unmapped'),
+            Metric('Percentage of unmapped reads', short_name='%', unit='%'),
 
-def _run_header_report(cnf, bed, bam, chr_len_fpath,
+            Metric('Covered bases in target', short_name='Covered'),
+            Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
+
+            Metric('Reads mapped on target', short_name='Reads on trg'),
+            Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+
+            Metric('Reads mapped on padded target', 'On padded trg'),
+            Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+
+            Metric('Read bases mapped on target', short_name='Read bp on trg')
+        ]),
+        depth_metrics = ReportSection('Target coverage depth', [
+            Metric('Average target coverage depth', short_name='Avg'),
+            Metric('Std. dev. of target coverage depth', short_name='Std dev'),
+            Metric('Maximum target coverage depth', short_name='Max'),
+            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
+        ])))
+
+def _run_header_report(cnf, sample, chr_len_fpath,
                        depth_thresholds, padding,
                        combined_region, max_depth, total_bed_size):
-    records = []
-    cov_metrics = get_cov_metrics(depth_thresholds)
+    for depth in depth_thresholds:
+        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        metric_storage.add_metric(
+            Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
+            'depth_metrics'
+        )
 
-    def append_stat(metric_name, value):
-        rec = Record(cov_metrics[metric_name.strip()], value)
-        records.append(rec)
-        info(metric_name + ': ' + rec.format())
+    report = SampleReport(sample, metric_storage=metric_storage)
 
     info('* General coverage statistics *')
     info('Getting number of reads...')
-    v_number_of_reads = number_of_reads(cnf, bam)
-    append_stat('Reads', v_number_of_reads)
+    v_number_of_reads = number_of_reads(cnf, sample.bam)
+    report.add_record('Reads', v_number_of_reads)
 
     info('Getting number of mapped reads...')
-    v_mapped_reads = number_of_mapped_reads(cnf, bam)
+    v_mapped_reads = number_of_mapped_reads(cnf, sample.bam)
     v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
     v_percent_unmapped = 100.0 * (v_number_of_reads - v_mapped_reads) / v_number_of_reads if v_number_of_reads else None
-    append_stat('Mapped reads', v_mapped_reads)
-    append_stat('Percentage of mapped reads', v_percent_mapped)
-    append_stat('Unmapped reads', v_number_of_reads - v_mapped_reads)
-    append_stat('Percentage of unmapped reads', v_percent_unmapped)
+    report.add_record('Mapped reads', v_mapped_reads)
+    report.add_record('Percentage of mapped reads', v_percent_mapped)
+    report.add_record('Unmapped reads', v_number_of_reads - v_mapped_reads)
+    report.add_record('Percentage of unmapped reads', v_percent_unmapped)
     info('')
 
     info('* Target coverage statistics *')
-    append_stat('Bases in target', total_bed_size)
+    report.add_record('Bases in target', total_bed_size)
 
     bases_within_threshs, avg_depth, std_dev, percent_within_normal = combined_region.sum_up(depth_thresholds)
 
     v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
-    append_stat('Covered bases in target', v_covered_bases_in_targ)
+    report.add_record('Covered bases in target', v_covered_bases_in_targ)
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
-    append_stat('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
+    report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
     info('Getting number of mapped reads on target...')
 
-    v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, bed, bam)
-    append_stat('Reads mapped on target', v_mapped_reads_on_target)
+    v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, sample.bam)
+    report.add_record('Reads mapped on target', v_mapped_reads_on_target)
 
     v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
-    append_stat('Percentage of reads mapped on target ', v_percent_mapped_on_target)
+    report.add_record('Percentage of reads mapped on target ', v_percent_mapped_on_target)
 
     info('Making bed file for padded regions...')
-    padded_bed = get_padded_bed_file(cnf, bed, chr_len_fpath, padding)
+    padded_bed = get_padded_bed_file(cnf, sample.bed, chr_len_fpath, padding)
 
     info('Getting number of mapped reads on padded target...')
-    v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam)
-    append_stat('Reads mapped on padded target', v_reads_on_padded_targ)
+    v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, sample.bam)
+    report.add_record('Reads mapped on padded target', v_reads_on_padded_targ)
 
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
-    append_stat('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
+    report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
     v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
-    append_stat('Read bases mapped on target', v_read_bases_on_targ)
+    report.add_record('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
-    append_stat('Average target coverage depth', avg_depth)
-    append_stat('Std. dev. of target coverage depth', std_dev)
-    append_stat('Maximum target coverage depth', max_depth)
-    append_stat('Percentage of target within 20% of mean depth', percent_within_normal)
+    report.add_record('Average target coverage depth', avg_depth)
+    report.add_record('Std. dev. of target coverage depth', std_dev)
+    report.add_record('Maximum target coverage depth', max_depth)
+    report.add_record('Percentage of target within 20% of mean depth', percent_within_normal)
 
     for depth, bases in bases_within_threshs.items():
         percent = 100.0 * bases / total_bed_size if total_bed_size else 0
-        append_stat('Part of target covered at least by ' + str(depth) + 'x', percent)
+        report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent)
 
-    return records
+    return report
 
 
 def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,

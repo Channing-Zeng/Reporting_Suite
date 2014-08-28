@@ -57,13 +57,29 @@ readJson = (what) ->
 
 totalReportData =
     date: null
-    common_records: []
-    reports: []
+    report: []
 
 report =
     name: ''
     order: null
     sample_reports: []
+    metric_storage:
+        common_for_all_samples_section:
+            name:
+            metrics: []
+
+        sections_by_name:
+            name:
+                name: ''
+                metrics: []
+
+metric = 
+    name: ''
+    short_name: ''
+    description: ''
+    quality: ''
+    common: true
+    unit: ''
 
 
 reporting.buildReport = ->
@@ -73,14 +89,21 @@ reporting.buildReport = ->
 
     $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
-    reporting.buildCommonRecords totalReportData.common_records
+    report = totalReportData.report
+    metric_storage = report.metric_storage
+    reporting.buildCommonRecords (rec for rec in report.records
+                                  when rec.metric.name of metric_storage.common_for_all_samples_section.metrics)
 
-    for report in totalReportData.reports
+    for section_name, section of metric_storage.sections_by_name
         sample_reports = report.sample_reports
-        columnNames = (record.metric.name for record in sample_reports[0].records)
-        columnOrder = (recoverOrderFromCookies report.name) or report.order or [0...columnNames.length]
+        for rec in sample_reports[0].records when rec.metric.name in (m.name for m in section.metrics)
+            console.log rec.metric.name
 
-        reporting.buildTotalReport report, columnOrder
+        columnNames = (rec.metric.name for rec in sample_reports[0].records when rec.metric.name in (m.name for m in section.metrics))
+        console.log(columnNames)
+        columnOrder = (recoverOrderFromCookies section_name) or report.order or [0...columnNames.length]
+
+        reporting.buildTotalReport report, section, columnOrder
         plots_html = ""
         for sample_report in sample_reports
             for plot in sample_report.plots
