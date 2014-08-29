@@ -1,5 +1,6 @@
 from os.path import join
-from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport
+from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport, MetricStorage, \
+    ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 
@@ -8,9 +9,11 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('QualiMap statistics for all samples')
 
     htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
+
     sum_report = FullReport(cnf.name, [
         SampleReport(sample,
                      records=_parse_qualimap_sample_report(htmls_by_sample[sample]),
+                     metric_storage=metric_storage,
                      html_fpath=htmls_by_sample[sample])
             for sample in bcbio_structure.samples
             if sample in htmls_by_sample])
@@ -28,37 +31,42 @@ def summary_reports(cnf, bcbio_structure):
     return final_summary_report_fpaths
 
 
-METRICS = Metric.to_dict([
-    Metric('Number of reads',                               'Reads',                            'Total number of reads'),
-    Metric('Mapped reads',                                  'Mapped',                           'Number of mapped reads'),
-    Metric('Unmapped reads',                                'Unmapped',                         'Number of unmapped reads',               quality='Less is better'),
-    Metric('Paired reads',                                  'Paired',                           'Total number of paired reads'),
-    Metric('Mapped reads, only first in pair',              'Mapped, only first',               'Number of mapped reads, only first in pair'),
-    Metric('Mapped reads, only second in pair',             'Mapped, only second',              'Number of mapped reads, only second in pair'),
-    Metric('Mapped reads, both in pair',                    'Mapped, both',                     'Number of mapped reads, both in pair'),
-    Metric('Mapped reads, singletons',                      'Mapped, singletons',               'Number of mapped reads, singletons'),
+metric_storage = MetricStorage(
+    sections=[
+        ReportSection('basic', '', [
+            Metric('Number of reads',                               'Reads',                            'Total number of reads'),
+            Metric('Mapped reads',                                  'Mapped',                           'Number of mapped reads'),
+            Metric('Unmapped reads',                                'Unmapped',                         'Number of unmapped reads',               quality='Less is better'),
+            Metric('Paired reads',                                  'Paired',                           'Total number of paired reads'),
+            Metric('Mapped reads, only first in pair',              'Mapped, only first',               'Number of mapped reads, only first in pair'),
+            Metric('Mapped reads, only second in pair',             'Mapped, only second',              'Number of mapped reads, only second in pair'),
+            Metric('Mapped reads, both in pair',                    'Mapped, both',                     'Number of mapped reads, both in pair'),
+            Metric('Mapped reads, singletons',                      'Mapped, singletons',               'Number of mapped reads, singletons'),
 
-    Metric('Read min/max/mean length',                      'Read min/max/mean length',         'PLACEHOLDER for three separate metrics'),
-    Metric('Read min length',                               'Read min length',                  'Read min length'),
-    Metric('Read max length',                               'Read max length',                  'Read max length'),
-    Metric('Read mean length',                              'Read mean length',                 'Read mean length'),
+            Metric('Read min/max/mean length',                      'Read min/max/mean length',         'PLACEHOLDER for three separate metrics'),
+            Metric('Read min length',                               'Read min length',                  'Read min length'),
+            Metric('Read max length',                               'Read max length',                  'Read max length'),
+            Metric('Read mean length',                              'Read mean length',                 'Read mean length'),
 
-    Metric('Clipped reads',                                 'Clipped reads',                    'Number of clipped reads',                quality='Less is better'),
-    Metric('Duplication rate',                              'Duplication',                      'Duplication rate'),
-    Metric('Mapped reads (on target)',                      'Mapped (on target)',               'Number of mapped reads inside of regions'),
-    Metric('Mapped reads, only first in pair (on target)',  'Mapped, only first (on target)',   'Number of mapped reads inside of regions, only first in pair'),
-    Metric('Mapped reads, only second in pair (on target)', 'Mapped, only second (on target)',  'Number of mapped reads inside of regions, only second in pair'),
-    Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on target)',         'Number of mapped reads inside of regions, both in pair'),
-    Metric('Mapped reads, singletons (on target)',          'Mapped, singletons (on target)',   'Number of mapped reads inside of regions, singletons'),
+            Metric('Clipped reads',                                 'Clipped reads',                    'Number of clipped reads',                quality='Less is better'),
+            Metric('Duplication rate',                              'Duplication',                      'Duplication rate'),
+            Metric('Mapped reads (on target)',                      'Mapped (on target)',               'Number of mapped reads inside of regions'),
+            Metric('Mapped reads, only first in pair (on target)',  'Mapped, only first (on target)',   'Number of mapped reads inside of regions, only first in pair'),
+            Metric('Mapped reads, only second in pair (on target)', 'Mapped, only second (on target)',  'Number of mapped reads inside of regions, only second in pair'),
+            Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on target)',         'Number of mapped reads inside of regions, both in pair'),
+            Metric('Mapped reads, singletons (on target)',          'Mapped, singletons (on target)',   'Number of mapped reads inside of regions, singletons'),
 
-    Metric('Coverage Mean',                                 'Cov. mean',                        'Coverage mean, inside of regions'),
-    Metric('Coverage Standard Deviation',                   'Cov. std. dev.',                   'Coverage std. dev., inside of regions',  quality='Less is better'),
-    Metric('Mean Mapping Quality',                          'Mean mapping quality',             'Mean mapping quality, inside of regions'),
-    Metric('Total reads with indels',                       'Indels',                           'Total reads with indels, inside of regions'),
-    Metric('Insertions',                                    'Insertions',                       'Insertions, inside of regions'),
-    Metric('Deletions',                                     'Deletions',                        'Deletions, inside of regions'),
-    Metric('Homopolymer indels',                            'Homopolymer indels',               'Percentage of homopolymer indels, inside of regions')
-])
+            Metric('Coverage Mean',                                 'Cov. mean',                        'Coverage mean, inside of regions'),
+            Metric('Coverage Standard Deviation',                   'Cov. std. dev.',                   'Coverage std. dev., inside of regions',  quality='Less is better'),
+            Metric('Mean Mapping Quality',                          'Mean mapping quality',             'Mean mapping quality, inside of regions'),
+            Metric('Total reads with indels',                       'Indels',                           'Total reads with indels, inside of regions'),
+            Metric('Insertions',                                    'Insertions',                       'Insertions, inside of regions'),
+            Metric('Deletions',                                     'Deletions',                        'Deletions, inside of regions'),
+            Metric('Homopolymer indels',                            'Homopolymer indels',               'Percentage of homopolymer indels, inside of regions')
+        ])
+    ]
+)
+
 
 ALLOWED_UNITS = ['%']
 
@@ -82,12 +90,11 @@ def _parse_qualimap_sample_report(report_fpath):
 
         if metric_name == 'Read min/max/mean length':  # special case
             for metric_infix, value in zip(['min', 'max', 'mean'], val.split('/')):
-                record = Record(METRICS['Read ' + metric_infix + ' length'])
-                record.value = value
-                records.append(record)
+                rec = Record(metric_storage.get_metric('Read ' + metric_infix + ' length'), value)
+                records.append(rec)
             return
 
-        record = Record(METRICS[metric_name])
+        metric = metric_storage.get_metric(metric_name)
         num_chars = []
         unit_chars = []
         i = 0
@@ -101,7 +108,7 @@ def _parse_qualimap_sample_report(report_fpath):
         val_unit = ''.join(unit_chars)
 
         if val_unit and val_unit in ALLOWED_UNITS:
-            record.metric.unit = val_unit
+            metric.unit = val_unit
         try:
             val = int(val_num)
         except ValueError:
@@ -109,10 +116,12 @@ def _parse_qualimap_sample_report(report_fpath):
                 val = float(val_num)
             except ValueError:  # it is a string
                 val = val_num + val_unit
-        record.value = val
+
+        rec = Record(metric_storage.get_metric(metric_name), val)
         if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
-            record.meta = val_unit[1:]
-        records.append(record)
+            rec.meta = val_unit[1:]
+        records.append(rec)
+
 
     sections = {'start':            'Summary',
                 'on target':        'Globals (inside of regions)',
@@ -140,7 +149,7 @@ def _parse_qualimap_sample_report(report_fpath):
                     value += on_target_stats_suffix
                 elif cur_section == 'coverage':
                     value = coverage_stats_prefix + value
-                if value in METRICS.keys():
+                if value in metric_storage.get_metrics().keys():
                     cur_metric_name = value
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)

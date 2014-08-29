@@ -3,6 +3,7 @@ from os.path import join
 from source.bcbio_structure import Sample
 from source.logger import info
 from source.reporting import write_summary_report, Record, FullReport, SampleReport
+from source.variants import qc_gatk
 
 
 def make_summary_reports(cnf, bcbio_structure):
@@ -62,7 +63,8 @@ def _full_report_for_caller(cnf, caller):
     return FullReport('', [
         SampleReport(sample,
                      records=_parse_qc_sample_report(jsons_by_sample[sample]),
-                     html_fpath=htmls_by_sample[sample])
+                     html_fpath=htmls_by_sample[sample],
+                     metric_storage=qc_gatk.metric_storage)
             for sample in caller.samples
             if sample in jsons_by_sample and sample in htmls_by_sample])
 

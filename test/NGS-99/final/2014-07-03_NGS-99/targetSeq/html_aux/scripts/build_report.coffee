@@ -50,14 +50,14 @@ readJson = (what) ->
     try
         result = JSON.parse $('#' + what + '-json').html()
     catch e
-        result = null;
+        result = null
 
-    return result;
+    return result
 
 
 totalReportData =
     date: null
-    report: []
+    report: null
 
 report =
     name: ''
@@ -65,15 +65,16 @@ report =
     sample_reports: []
     metric_storage:
         common_for_all_samples_section:
-            name:
+            name: ''
             metrics: []
+        sections: []
 
-        sections_by_name:
-            name:
-                name: ''
-                metrics: []
+section =
+    name: ''
+    metrics: []
+    metrics_by_name: {}
 
-metric = 
+metric =
     name: ''
     short_name: ''
     description: ''
@@ -82,26 +83,47 @@ metric =
     unit: ''
 
 
+extend = (object, properties) ->
+    for key, val of properties
+        object[key] = val
+    object
+
+
+merge = (options, overrides) ->
+    extend (extend {}, options), overrides
+
+
+preprocessReport = (report) ->
+    all_metrics_by_name = {}
+    extend all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name
+    for s in report.metric_storage.sections
+        extend all_metrics_by_name, s.metrics_by_name
+
+    for sample_report in report.sample_reports
+        sample_report.metric_storage = report.metric_storage
+        for rec in sample_report.records
+            rec.metric = all_metrics_by_name[rec.metric.name]
+
+    return report
+
+
 reporting.buildReport = ->
     unless (totalReportData = readJson 'total-report')
         console.log "Error: cannot read #total-report-json"
         return 1
 
+    report = preprocessReport totalReportData.report
+
     $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
-    report = totalReportData.report
-    metric_storage = report.metric_storage
-    reporting.buildCommonRecords (rec for rec in report.records
-                                  when rec.metric.name of metric_storage.common_for_all_samples_section.metrics)
+    common_metrics_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name
+    general_records = (rec for rec in report.sample_reports[0].records when rec.metric.name of common_metrics_by_name)
+    reporting.buildCommonRecords general_records
 
-    for section_name, section of metric_storage.sections_by_name
-        sample_reports = report.sample_reports
-        for rec in sample_reports[0].records when rec.metric.name in (m.name for m in section.metrics)
-            console.log rec.metric.name
-
-        columnNames = (rec.metric.name for rec in sample_reports[0].records when rec.metric.name in (m.name for m in section.metrics))
-        console.log(columnNames)
-        columnOrder = (recoverOrderFromCookies section_name) or report.order or [0...columnNames.length]
+    sample_reports = report.sample_reports
+    for section in report.metric_storage.sections
+        columnNames = (r.metric.name for r in sample_reports[0].records when r.metric.name of section.metrics_by_name)
+        columnOrder = (recoverOrderFromCookies section.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, section, columnOrder
         plots_html = ""
@@ -111,4 +133,3 @@ reporting.buildReport = ->
         $('#plot').html plots_html
 
     return 0
-

@@ -129,7 +129,7 @@ calc_records_cell_contents = (records, font) ->
         rec.frac_width = $.fn.intPartTextWidth num_html, font
 
 
-calc_cell_contents = (report, metrics, font) ->
+calc_cell_contents = (report, section, font) ->
     max_frac_widths_by_metric = {}
     min_val_by_metric = {}
     max_val_by_metric = {}
@@ -137,7 +137,7 @@ calc_cell_contents = (report, metrics, font) ->
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     for sampleReport in report.sample_reports
         calc_records_cell_contents sampleReport.records, font
-        for rec in sampleReport.records when rec.metric.name in (m.name for m in metrics)
+        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
             if not (rec.metric.name of max_frac_widths_by_metric)
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
@@ -157,7 +157,7 @@ calc_cell_contents = (report, metrics, font) ->
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for sampleReport in report.sample_reports
-        for rec in sampleReport.records
+        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
             # Padding based on frac width
             if rec.frac_width?
                 rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
@@ -177,7 +177,7 @@ calc_cell_contents = (report, metrics, font) ->
                     minHue = GREEN_HUE
 
                 if max == min
-                    rec.all_values_equal = true
+                    rec.metric.all_values_equal = true
 #                    rec.color = get_color GREEN_HUE
                 else
                     k = (maxHue - minHue) / (max - min)
@@ -185,26 +185,11 @@ calc_cell_contents = (report, metrics, font) ->
                     rec.color = get_color hue
 
 
-reporting.buildCommonRecords = (common_records) ->
-    if common_records
-        calc_records_cell_contents common_records, $('#report').css 'font'
-
-        table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
-        for rec in common_records
-            table += "\n<tr><td>
-                    <span class='metric_name'>#{get_metric_name_html(rec, use_full_name=true)}:</span>
-                    #{rec.cell_contents}
-                  </td></tr>"
-        table += "\n</table>\n"
-
-        $('#report').append table
-
-
 reporting.buildTotalReport = (report, section, columnOrder) ->
     if section.name?
         $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.name}</h3>"
 
-    calc_cell_contents report, section.metrics, $('#report').css 'font'
+    calc_cell_contents report, section, $('#report').css 'font'
 
     table = "<table cellspacing=\"0\"
                     class=\"report_table tableSorter #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
@@ -217,7 +202,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     for colNum in [0...section.metrics.length]
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
-        sort_by = if 'all_values_equal' of rec then 'nosort' else 'numeric'
+        sort_by = if 'all_values_equal' of metric then 'nosort' else 'numeric'
         table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
@@ -237,7 +222,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
             table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
         table += "</td>"
 
-        records = (rec for rec in sampleReport.records when rec.metric.name in (m.name for m in section.metrics))
+        records = (r for r in sampleReport.records when r.metric.name of section.metrics_by_name)
         for colNum in [0...section.metrics.length]
             pos = columnOrder[colNum]
             metric = section.metrics[pos]
@@ -263,6 +248,23 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                     </td>"
         table += "</tr>"
         i += 1
+    table += "\n</table>\n"
+
+    $('#report').append table
+
+
+reporting.buildCommonRecords = (common_records) ->
+    if common_records.length == 0
+        return
+
+    calc_records_cell_contents common_records, $('#report').css 'font'
+
+    table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
+    for rec in common_records
+        table += "\n<tr><td>
+                <span class='metric_name'>#{get_metric_name_html(rec, use_full_name=true)}:</span>
+                #{rec.cell_contents}
+              </td></tr>"
     table += "\n</table>\n"
 
     $('#report').append table

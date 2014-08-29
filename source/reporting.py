@@ -94,19 +94,16 @@ class Metric:
                     presision = i + 1
             return '{value:.{presision}f}{unit}'.format(**locals())
 
+    def __repr__(self):
+        return self.name
+
 
 class FullReport:
     def __init__(self, name='', sample_reports=list()):
         self.name = name
         self.sample_reports = sample_reports
         assert len(sample_reports) > 0
-        sample_report = sample_reports[0]
-        self.metric_storage = sample_report.metric_storage
-
-    def copy(self):
-        return FullReport(
-            name=self.name,
-            sample_reports=self.sample_reports[:])
+        self.metric_storage = sample_reports[0].metric_storage
 
     def get_common_records(self):
         common_records = list()
@@ -117,12 +114,39 @@ class FullReport:
                     common_records.append(record)
         return common_records
 
+    def flatten(self):
+        rows = [['Sample'] + [rep.display_name for rep in self.sample_reports]]
+
+        if len(self.sample_reports) == 0:
+            critical('No sample reports found: summary will not be produced.')
+
+        for metric in self.metric_storage.get_metrics():
+            row = [metric.name]
+            for sample_report in self.sample_reports:
+                row.append(next(
+                    r.metric.format(r.value)
+                    for r in sample_report.records
+                    if r.metric.name == metric.name))
+            rows.append(row)
+        return rows
+
+    def __repr__(self):
+        return self.name
+
 
 class ReportSection:
-    def __init__(self, name, metrics):
+    def __init__(self, name, title, metrics):
         self.name = name
+        self.title = title
         self.metrics = metrics
         self.metrics_by_name = dict((m.name, m) for m in metrics)
+
+    def add_metric(self, metric):
+        self.metrics.append(metric)
+        self.metrics_by_name[metric.name] = metric
+
+    def __repr__(self):
+        return self.name + ', ' + self.title
 
 
 class MetricStorage:
@@ -132,9 +156,9 @@ class MetricStorage:
                  sections=list(),
                  sections_by_name=None):
         self.sections = sections
-        self.common_for_all_samples_section = common_for_all_samples_section or ReportSection('', [])
         self.sections_by_name = OrderedDict()
-
+        self.common_for_all_samples_section = common_for_all_samples_section or \
+                                              ReportSection('common_for_all_samples_section', '', [])
         if sections:
             for section in sections:
                 self.sections_by_name[section.name] = section
@@ -145,12 +169,12 @@ class MetricStorage:
                 self.sections.append(section)
 
         if metrics_list:
-            sec = ReportSection('', metrics_list)
+            sec = ReportSection('metrics_list', '', metrics_list)
             self.sections_by_name[''] = sec
             self.sections.append(sec)
 
     def add_metric(self, metric, section_name=''):
-        self.sections_by_name[section_name].metrics.append(metric)
+        self.sections_by_name[section_name].add_metric(metric)
 
     def get_metric(self, metric_name):
         return next((m for m in self.get_metrics() if m.name == metric_name), None)
@@ -161,6 +185,9 @@ class MetricStorage:
             for m in section.metrics:
                 metrics.append(m)
         return metrics
+
+    def __repr__(self, *args, **kwargs):
+        return self.sections_by_name.__repr__(*args, **kwargs)
 
 
 class SampleReport:
@@ -180,10 +207,17 @@ class SampleReport:
         self.display_name = name
         return self
 
-    def add_record(self, metric_name, value):
-        rec = Record(self.metric_storage.get_metric(metric_name.strip()), value)
+    def add_record(self, metric_name, value, meta=None):
+        rec = Record(self.metric_storage.get_metric(metric_name.strip()), value, meta)
         self.records.append(rec)
         info(metric_name + ': ' + rec.format())
+        return rec
+
+    def flatten(self):
+        return FullReport(sample_reports=[self]).flatten()
+
+    def __repr__(self):
+        return self.display_name + (', ' + self.report_name if self.report_name else '')
 
 
 def read_sample_names(sample_fpath):
@@ -245,40 +279,9 @@ def write_summary_report(output_dirpath, work_dirpath, full_report, base_fname, 
                    write_html_reports]]
 
 
-def _flatten_report(full_report):
-    # new_full_report = full_reports[0].copy()
-    #
-    # for full_report in full_reports[1:]:
-    #     for new_sample_rep, sample_report in \
-    #         zip(new_full_report.sample_reports,
-    #             full_report.sample_reports):
-    #
-    #         new_sample_rep.extend(records)
-    #
-    #     new_full_report.sample_reports.extend(full_report.sample_reports)
-
-    if isinstance(full_report, SampleReport):
-        full_report = FullReport(sample_reports=[full_report])
-
-    rows = [['Sample'] + [rep.display_name for rep in full_report.sample_reports]]
-
-    if len(full_report.sample_reports) == 0:
-        critical('No sample reports found: summary will not be produced.')
-
-    for metric in (r.metric for r in full_report.sample_reports[0].records):
-        row = [metric.name]
-        for sample_report in full_report.sample_reports:
-            row.append(next(
-                r.metric.format(r.value)
-                for r in sample_report.records
-                if r.metric.name == metric.name))
-        rows.append(row)
-
-    return rows
-
 
 def write_txt_reports(output_dirpath, work_dirpath, full_report, base_fname, caption=None):
-    rows = _flatten_report(full_report)
+    rows = full_report.flatten()
     return write_txt_rows(rows, output_dirpath, base_fname)
 
 
@@ -299,7 +302,7 @@ def write_txt_rows(rows, output_dirpath, base_fname):
 
 
 def write_tsv_reports(output_dirpath, work_dirpath, full_report, base_fname, caption=None):
-    rows = _flatten_report(full_report)
+    rows = full_report.flatten()
     return write_tsv_rows(rows, output_dirpath, base_fname)
 
 

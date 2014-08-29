@@ -163,17 +163,17 @@
     }
   };
 
-  get_metric_name_html = function(rec, use_full_name) {
+  get_metric_name_html = function(metric, use_full_name) {
     var description, metricName;
     if (use_full_name == null) {
       use_full_name = false;
     }
-    if (rec.metric.short_name && !use_full_name) {
-      metricName = rec.metric.short_name;
-      description = rec.metric.description || rec.metric.name;
+    if (metric.short_name && !use_full_name) {
+      metricName = metric.short_name;
+      description = metric.description || metric.name;
       return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"" + description + "\">" + metricName + "</a>";
     } else {
-      return rec.metric.name;
+      return metric.name;
     }
   };
 
@@ -205,7 +205,7 @@
     return _results;
   };
 
-  calc_cell_contents = function(report, font) {
+  calc_cell_contents = function(report, section, font) {
     var a, hue, k, max, maxHue, max_frac_widths_by_metric, max_val_by_metric, min, minHue, min_val_by_metric, rec, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     max_frac_widths_by_metric = {};
     min_val_by_metric = {};
@@ -217,6 +217,9 @@
       _ref1 = sampleReport.records;
       for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
         rec = _ref1[_j];
+        if (!(rec.metric.name in section.metrics_by_name)) {
+          continue;
+        }
         if (!(rec.metric.name in max_frac_widths_by_metric)) {
           max_frac_widths_by_metric[rec.metric.name] = rec.frac_width;
         } else if (rec.frac_width > max_frac_widths_by_metric[rec.metric.name]) {
@@ -246,6 +249,9 @@
         _results1 = [];
         for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
           rec = _ref3[_l];
+          if (!(rec.metric.name in section.metrics_by_name)) {
+            continue;
+          }
           if (rec.frac_width != null) {
             rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width;
             if (rec.right_shift !== 0) {
@@ -262,7 +268,7 @@
               minHue = GREEN_HUE;
             }
             if (max === min) {
-
+              _results1.push(rec.metric.all_values_equal = true);
             } else {
               k = (maxHue - minHue) / (max - min);
               hue = Math.round(minHue + (rec.num - min) * k);
@@ -278,33 +284,20 @@
     return _results;
   };
 
-  reporting.buildCommonRecords = function(common_records) {
-    var rec, table, use_full_name, _i, _len;
-    if (common_records) {
-      calc_records_cell_contents(common_records, $('#report').css('font'));
-      table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">";
-      for (_i = 0, _len = common_records.length; _i < _len; _i++) {
-        rec = common_records[_i];
-        table += "\n<tr><td> <span class='metric_name'>" + (get_metric_name_html(rec, use_full_name = true)) + ":</span> " + rec.cell_contents + " </td></tr>";
-      }
-      table += "\n</table>\n";
-      return $('#report').append(table);
+  reporting.buildTotalReport = function(report, section, columnOrder) {
+    var colNum, i, line_caption, padding, pos, r, rec, records, sort_by, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
+    if (section.name != null) {
+      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.name + "</h3>");
     }
-  };
-
-  reporting.buildTotalReport = function(report, columnOrder) {
-    var i, line_caption, padding, pos, rec, recNum, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
-    if (report.name != null) {
-      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + report.name + "</h3>");
-    }
-    calc_cell_contents(report, $('#report').css('font'));
-    table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + report.name + "\">";
+    calc_cell_contents(report, section, $('#report').css('font'));
+    table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + section.name + "\">";
     table += "\n<tr class=\"top_row_tr\">";
     table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'> <span>Sample</span> </th>";
-    for (recNum = _i = 0, _ref = report.sample_reports[0].records.length; 0 <= _ref ? _i < _ref : _i > _ref; recNum = 0 <= _ref ? ++_i : --_i) {
-      pos = columnOrder[recNum];
-      rec = report.sample_reports[0].records[pos];
-      table += "<th class='second_through_last_col_headers_td' data-sortBy='numeric' position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(rec)) + "</span> </th>";
+    for (colNum = _i = 0, _ref = section.metrics.length; 0 <= _ref ? _i < _ref : _i > _ref; colNum = 0 <= _ref ? ++_i : --_i) {
+      pos = columnOrder[colNum];
+      metric = section.metrics[pos];
+      sort_by = 'all_values_equal' in metric ? 'nosort' : 'numeric';
+      table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(metric)) + "</span> </th>";
     }
     i = 0;
     _ref1 = report.sample_reports;
@@ -321,10 +314,23 @@
         table += "<a class=\"sample_name\" href=\"" + sampleReport.html_fpath + "\">" + line_caption + "</a>";
       }
       table += "</td>";
-      for (recNum = _k = 0, _ref2 = sampleReport.records.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; recNum = 0 <= _ref2 ? ++_k : --_k) {
-        pos = columnOrder[recNum];
-        rec = sampleReport.records[pos];
-        table += "<td metric=\"" + rec.metric.name + "\" style=\"" + CSS_PROP_TO_COLOR + ": " + rec.color + "\" class='number' quality=\"" + rec.metric.quality + "\"";
+      records = (function() {
+        var _k, _len1, _ref2, _results;
+        _ref2 = sampleReport.records;
+        _results = [];
+        for (_k = 0, _len1 = _ref2.length; _k < _len1; _k++) {
+          r = _ref2[_k];
+          if (r.metric.name in section.metrics_by_name) {
+            _results.push(r);
+          }
+        }
+        return _results;
+      })();
+      for (colNum = _k = 0, _ref2 = section.metrics.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; colNum = 0 <= _ref2 ? ++_k : --_k) {
+        pos = columnOrder[colNum];
+        metric = section.metrics[pos];
+        rec = records[pos];
+        table += "<td metric=\"" + metric.name + "\" style=\"" + CSS_PROP_TO_COLOR + ": " + rec.color + "\" class='number' quality=\"" + metric.quality + "\"";
         if (rec.num != null) {
           table += " number=\"" + rec.value + "\" data-sortAs=" + rec.value + ">";
         } else {
@@ -339,6 +345,21 @@
       }
       table += "</tr>";
       i += 1;
+    }
+    table += "\n</table>\n";
+    return $('#report').append(table);
+  };
+
+  reporting.buildCommonRecords = function(common_records) {
+    var rec, table, use_full_name, _i, _len;
+    if (common_records.length === 0) {
+      return;
+    }
+    calc_records_cell_contents(common_records, $('#report').css('font'));
+    table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">";
+    for (_i = 0, _len = common_records.length; _i < _len; _i++) {
+      rec = common_records[_i];
+      table += "\n<tr><td> <span class='metric_name'>" + (get_metric_name_html(rec.metric, use_full_name = true)) + ":</span> " + rec.cell_contents + " </td></tr>";
     }
     table += "\n</table>\n";
     return $('#report').append(table);

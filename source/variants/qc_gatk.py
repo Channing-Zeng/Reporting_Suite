@@ -1,11 +1,9 @@
-import json
 from os.path import join
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
 from source.reporting import Metric, Record, save_json, MetricStorage, ReportSection
 from source.tools_from_cnf import get_gatk_cmdline
-from source.utils import OrderedDefaultDict
 
 
 final_report_ext = '.txt'
@@ -13,7 +11,7 @@ final_report_ext = '.txt'
 
 metric_storage = MetricStorage(
     sections=[
-        ReportSection('', [
+        ReportSection('basic', '', [
             Metric('nEvalVariants',   'Total',       'Total variants evaluated'),
             Metric('nSNPs',           'SNP',         'SNPs'),
             Metric('nInsertions',     'Ins',         'Insertions'),
@@ -94,7 +92,7 @@ def gatk_qc(cnf, vcf_fpath):
     final_report_fpath = f_basename + final_report_ext
 
     _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)
-    return final_report_fpath, records
+    return final_report_fpath, records, metric_storage
 
 
 def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):

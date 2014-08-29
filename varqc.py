@@ -5,7 +5,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import abspath, dirname, realpath, pardir, join, basename
+from os.path import abspath, dirname, realpath, join, basename
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -111,8 +111,8 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
-    qc_report_fpath, records = gatk_qc(cnf, vcf_fpath)
-    report = SampleReport(sample, records=records)
+    qc_report_fpath, records, metric_storage = gatk_qc(cnf, vcf_fpath)
+    report = SampleReport(sample, records=records, metric_storage=metric_storage)
 
     if verify_module('matplotlib'):
         try:
@@ -162,6 +162,7 @@ def finalize_all(cnf, samples, results):
         # summarize_qc([rep for _, _, _, rep, _ in results], qc_output_fpath)
         info('Variant QC summary:')
         info('  ' + qc_output_fpath)
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

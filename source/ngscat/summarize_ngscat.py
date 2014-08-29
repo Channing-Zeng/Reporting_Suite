@@ -1,5 +1,6 @@
 from os.path import join
-from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport
+from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport, MetricStorage, \
+    ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 
@@ -11,7 +12,8 @@ def summary_reports(cnf, bcbio_structure):
     sum_report = FullReport(cnf.name, [
         SampleReport(sample,
                      records=_parse_ngscat_sample_report(htmls_by_sample[sample]),
-                     html_fpath=htmls_by_sample[sample])
+                     html_fpath=htmls_by_sample[sample],
+                     metric_storage=metric_storage)
             for sample in bcbio_structure.samples
             if sample in htmls_by_sample])
 
@@ -29,18 +31,22 @@ def summary_reports(cnf, bcbio_structure):
     return final_summary_report_fpaths
 
 
-METRICS = Metric.to_dict([
-    Metric('Number reads',                       'Reads',              'Number of mapped reads'),
-    Metric('% target bases with coverage >= 1x', 'Target covered',     '% target bases with coverage >= 1x'),
-    Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
-    Metric('% reads on target',                  '% reads on target',  '% reads on target'),
-    Metric('Duplicated reads on/off target',     'Duplicated reads',   '% duplicated reads on/off target. '
-                                                                       'Percentage of duplicated on-target reads normally should be greater '
-                                                                       'than the percentage of duplicated off-target reads',            quality='Equal'),
-    Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
-    Metric('Coverage per position',              'Cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
-    Metric('Standard deviation of coverage',     'Cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
-])
+metric_storage = MetricStorage(
+    sections=[
+        ReportSection('basic', '', [
+            Metric('Number reads',                       'Reads',              'Number of mapped reads'),
+            Metric('% target bases with coverage >= 1x', 'Target covered',     '% target bases with coverage >= 1x'),
+            Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
+            Metric('% reads on target',                  '% reads on target',  '% reads on target'),
+            Metric('Duplicated reads on/off target',     'Duplicated reads',   '% duplicated reads on/off target. '
+                                                                               'Percentage of duplicated on-target reads normally should be greater '
+                                                                               'than the percentage of duplicated off-target reads',            quality='Equal'),
+            Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
+            Metric('Coverage per position',              'Cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
+            Metric('Standard deviation of coverage',     'Cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
+        ])
+    ]
+)
 
 ALLOWED_UNITS = ['%']
 
@@ -49,12 +55,14 @@ def _parse_ngscat_sample_report(report_fpath):
     records = []
 
     def __parse_cell(metric_name, line):
-        record = Record(METRICS[metric_name])
+        metric = metric_storage.get_metric(metric_name)
+        record = Record(metric=metric)
 
         crop_left = line.split('>')
         if len(crop_left) < 2:
             record.value = None
-            return
+            return record
+
         crop_right = crop_left[1].split('<')
         val = crop_right[0].strip()
         val = val.replace(' ', '').replace(';', '/')
@@ -72,7 +80,7 @@ def _parse_ngscat_sample_report(report_fpath):
         val_unit = ''.join(unit_chars)
 
         if val_unit and val_unit in ALLOWED_UNITS:
-            record.metric.unit = val_unit
+            metric.unit = val_unit
         try:
             val = int(val_num)
         except ValueError:
@@ -80,6 +88,7 @@ def _parse_ngscat_sample_report(report_fpath):
                 val = float(val_num)
             except ValueError:  # it is a string
                 val = val_num + val_unit
+
         record.value = val
         return record
 
@@ -101,9 +110,9 @@ def _parse_ngscat_sample_report(report_fpath):
             # parsing header
             if line.find('class="table-header"') != -1:
                 header_id += 1
-                for metric_name in METRICS.keys():
-                    if all(word in line for word in metric_name.split()):
-                        column_id_to_metric_name[header_id] = metric_name
+                for metric in metric_storage.get_metrics():
+                    if all(word in line for word in metric.name.split()):
+                        column_id_to_metric_name[header_id] = metric.name
                         break
             # parsing content
             if line.find('class="table-cell"') != -1:

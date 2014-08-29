@@ -115,11 +115,11 @@ def get_records_by_metrics(records, metrics):
 
 
 metric_storage = MetricStorage(
-    common_for_all_samples_section=ReportSection('', [
+    common_for_all_samples_section=ReportSection('common_for_all_samples_section', '', [
         Metric('Bases in target', short_name='Target bp', common=True)
     ]),
     sections_by_name=OrderedDict(
-        basic_metrics = ReportSection('', [
+        basic_metrics=ReportSection('basic_metrics', '', [
             Metric('Reads'),
             Metric('Mapped reads', short_name='Mapped'),
             Metric('Percentage of mapped reads', short_name='%', unit='%'),
@@ -138,7 +138,7 @@ metric_storage = MetricStorage(
 
             Metric('Read bases mapped on target', short_name='Read bp on trg')
         ]),
-        depth_metrics = ReportSection('Target coverage depth', [
+        depth_metrics=ReportSection('depth_metrics', 'Target coverage depth', [
             Metric('Average target coverage depth', short_name='Avg'),
             Metric('Std. dev. of target coverage depth', short_name='Std dev'),
             Metric('Maximum target coverage depth', short_name='Max'),
