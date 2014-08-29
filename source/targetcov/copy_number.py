@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import json
 
 import math
 from collections import defaultdict, OrderedDict
@@ -8,7 +9,7 @@ import sys
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe
 from source.logger import info, err, step_greetings, critical
-from source.reporting import write_tsv_rows, Record
+from source.reporting import write_tsv_rows, Record, SampleReport
 from source.tools_from_cnf import get_script_cmdline
 
 from source.utils import OrderedDefaultDict
@@ -76,10 +77,11 @@ def _summarize_copy_number(cnf, gene_reports_by_sample, report_fpath_by_sample):
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
         gene_amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
 
-        records = Record.load_records(json_fpath)
+        with open(json_fpath) as f:
+            cov_report = SampleReport.load(json.load(f.read(), object_pairs_hook=OrderedDict), sample)
 
         mapped_reads_by_sample[sample.name] = int(next(
-            rec.value for rec in records
+            rec.value for rec in cov_report.records
             if rec.metric.name == 'Mapped reads'))
 
     # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)

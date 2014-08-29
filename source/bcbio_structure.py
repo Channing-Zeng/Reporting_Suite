@@ -49,6 +49,12 @@ class Sample:
         else:
             return self.name, 0
 
+    @staticmethod
+    def load(data):
+        sample = Sample(**data)
+        sample.__dict__ = data
+        return sample
+
 
 class VariantCaller:
     def __init__(self, bcbio_structure, name):

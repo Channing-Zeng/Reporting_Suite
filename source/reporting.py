@@ -21,31 +21,36 @@ class Record:
         self.value = value
         self.meta = meta or dict()
 
-    @staticmethod
-    def dump_records(records, f):
-        objects = [rec.__dict__ for rec in records]
+    # @staticmethod
+    # def dump_records(records, f):
+    #     objects = [rec.__dict__ for rec in records]
+    #
+    #     json.dump(objects, f,
+    #               default=lambda o: o.__dict__,
+    #               sort_keys=True,
+    #               indent=4)
 
-        json.dump(objects, f,
-                  default=lambda o: o.__dict__,
-                  sort_keys=True,
-                  indent=4)
-
-    @staticmethod
-    def load_records(fpath):
-        with open(fpath) as f:
-            records = []
-            objects = json.load(f, object_pairs_hook=OrderedDict)
-            for obj in objects:
-                rec = Record()
-                rec.__dict__ = dict(obj.items())
-                m = Metric()
-                m.__dict__.update(dict(rec.metric.items()))
-                rec.metric = m
-                records.append(rec)
-        return records
+    # @staticmethod
+    # def load_records(fpath):
+    #     with open(fpath) as f:
+    #         records = []
+    #         objects = json.load(f, object_pairs_hook=OrderedDict)
+    #         for obj in objects:
+    #             rec = Record()
+    #             rec.__dict__ = dict(obj.items())
+    #             m = Metric()
+    #             m.__dict__.update(dict(rec.metric.items()))
+    #             rec.metric = m
+    #             records.append(rec)
+    #     return records
 
     def format(self):
         return self.metric.format(self.value)
+
+    @staticmethod
+    def load(data):
+        data['metric'] = Metric.load(data['metric'])
+        return Record(**data)
 
 
 def to_dict_by_name(objects):
@@ -97,6 +102,10 @@ class Metric:
     def __repr__(self):
         return self.name
 
+    @staticmethod
+    def load(data):
+        return Metric(**data)
+
 
 class FullReport:
     def __init__(self, name='', sample_reports=list()):
@@ -135,7 +144,7 @@ class FullReport:
 
 
 class ReportSection:
-    def __init__(self, name, title, metrics):
+    def __init__(self, name, title, metrics, **kwargs):
         self.name = name
         self.title = title
         self.metrics = metrics
@@ -148,30 +157,37 @@ class ReportSection:
     def __repr__(self):
         return self.name + ', ' + self.title
 
+    @staticmethod
+    def load(data):
+        data['metrics'] = [Metric(**m) for m in data['metrics']]
+        return ReportSection(**data)
+
 
 class MetricStorage:
     def __init__(self,
                  metrics_list=list(),
                  common_for_all_samples_section=None,
                  sections=list(),
-                 sections_by_name=None):
-        self.sections = sections
+                 sections_by_name=None,
+                 **kwargs):
         self.sections_by_name = OrderedDict()
+        self.sections = []
         self.common_for_all_samples_section = common_for_all_samples_section or \
                                               ReportSection('common_for_all_samples_section', '', [])
         if sections:
+            self.sections = sections
             for section in sections:
                 self.sections_by_name[section.name] = section
 
-        if sections_by_name:
+        elif sections_by_name:
             for name, section in sections_by_name.items():
                 self.sections_by_name[name] = section
                 self.sections.append(section)
 
-        if metrics_list:
-            sec = ReportSection('metrics_list', '', metrics_list)
-            self.sections_by_name[''] = sec
-            self.sections.append(sec)
+        elif metrics_list:
+            section = ReportSection('metrics_list', '', metrics_list)
+            self.sections_by_name[''] = section
+            self.sections.append(section)
 
     def add_metric(self, metric, section_name=''):
         self.sections_by_name[section_name].add_metric(metric)
@@ -188,6 +204,12 @@ class MetricStorage:
 
     def __repr__(self, *args, **kwargs):
         return self.sections_by_name.__repr__(*args, **kwargs)
+
+    @staticmethod
+    def load(data):
+        return MetricStorage(
+            sections=[ReportSection.load(d) for d in data['sections']],
+            common_for_all_samples_section=ReportSection.load(data['common_for_all_samples_section']))
 
 
 class SampleReport:
@@ -218,6 +240,24 @@ class SampleReport:
 
     def __repr__(self):
         return self.display_name + (', ' + self.report_name if self.report_name else '')
+
+    def dump(self, fpath):
+        with open(fpath, 'w') as f:
+            json.dump(self, f,
+                      default=lambda o: o.__dict__,
+                      sort_keys=True,
+                      indent=4)
+
+    @staticmethod
+    def load(data, sample=None):
+        # with open(fpath) as f:
+        #     data = json.load(f, object_pairs_hook=OrderedDict)
+
+        data['sample'] = sample or Sample.load(data['sample'])
+        data['records'] = [Record.load(d) for d in data['records']]
+        data['metric_storage'] = MetricStorage.load(data['metric_storage'])
+
+        return SampleReport(**data)
 
 
 def read_sample_names(sample_fpath):
@@ -327,11 +367,6 @@ def parse_tsv(tsv_fpath):
         critical('Data not found in ' + tsv_fpath)
 
     return report
-
-
-def save_json(records, fpath):
-    with open(fpath, 'w') as f:
-        Record.dump_records(records, f)
 
 
 def parse_value(string):

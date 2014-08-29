@@ -1,5 +1,6 @@
 from collections import defaultdict, OrderedDict
 from os.path import join
+from ext_modules.simplejson import load
 from source.bcbio_structure import Sample
 from source.logger import info
 from source.reporting import write_summary_report, Record, FullReport, SampleReport
@@ -62,13 +63,15 @@ def _full_report_for_caller(cnf, caller):
 
     return FullReport('', [
         SampleReport(sample,
-                     records=_parse_qc_sample_report(jsons_by_sample[sample]),
+                     records=_parse_qc_sample_report(jsons_by_sample[sample], sample),
                      html_fpath=htmls_by_sample[sample],
                      metric_storage=qc_gatk.metric_storage)
             for sample in caller.samples
             if sample in jsons_by_sample and sample in htmls_by_sample])
 
 
-def _parse_qc_sample_report(json_fpath):
-    return Record.load_records(json_fpath)
+def _parse_qc_sample_report(json_fpath, sample):
+    with open(json_fpath) as f:
+        json = load(f)
+    return SampleReport.load(json, sample)
 

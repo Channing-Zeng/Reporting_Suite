@@ -2,11 +2,8 @@ from os.path import join
 from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
-from source.reporting import Metric, Record, save_json, MetricStorage, ReportSection
+from source.reporting import Metric, Record, MetricStorage, ReportSection
 from source.tools_from_cnf import get_gatk_cmdline
-
-
-final_report_ext = '.txt'
 
 
 metric_storage = MetricStorage(
@@ -87,12 +84,17 @@ def gatk_qc(cnf, vcf_fpath):
     report_dict = _parse_gatk_report(report_fpath, cnf_databases.keys(), cnf_novelty)
     records = _dict_to_objects(report_dict, cnf_databases.keys(), cnf_novelty, cnf.quality_control.db_for_summary)
 
-    f_basename = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name)
-    save_json(records, f_basename + '.json')
-    final_report_fpath = f_basename + final_report_ext
+    return records
 
-    _make_final_report(records, final_report_fpath, cnf_databases.keys(), cnf_novelty)
-    return final_report_fpath, records, metric_storage
+
+def save_report(cnf, report):
+    f_basepath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name)
+
+    final_report_fpath = f_basepath + '.txt'
+    qc_cnf = cnf.quality_control
+    write_final_report(report, final_report_fpath, qc_cnf.database_vcfs.keys(), qc_cnf.novelty)
+
+    report.dump(f_basepath + '.json')
 
 
 def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):
@@ -139,11 +141,11 @@ def _parse_gatk_report(report_filename, cnf_databases, cnf_novelty):
     return report
 
 
-def _make_final_report(records, report_fpath, cnf_databases, cnf_novelties):
+def write_final_report(report, report_fpath, cnf_databases, cnf_novelties):
     header = ['Metric', 'Novelty'] + cnf_databases + ['Average']
     rows = [header]
 
-    for rec in records:
+    for rec in report.records:
         for novelty in cnf_novelties:
             row = [rec.metric.name, novelty]
             for db in cnf_databases + ['average']:

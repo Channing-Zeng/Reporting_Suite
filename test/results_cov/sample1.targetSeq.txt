@@ -1,9 +1,9 @@
 Sample                                           sample1     
 Reads                                            80,332      
 Mapped reads                                     80,244      
-Unmapped reads                                   88          
 Percentage of mapped reads                       99.89%      
-Bases in target                                  5,000       
+Unmapped reads                                   88          
+Percentage of unmapped reads                     0.11%       
 Covered bases in target                          2,576       
 Percentage of target covered by at least 1 read  51.52%      
 Reads mapped on target                           38,273      
@@ -26,3 +26,4 @@ Part of target covered at least by 1000x         26.16%
 Part of target covered at least by 5000x         0.0000%     
 Part of target covered at least by 10000x        0.0000%     
 Part of target covered at least by 50000x        0.0000%     
+Bases in target                                  5,000       

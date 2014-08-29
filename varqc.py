@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants import qc_gatk
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -14,7 +15,7 @@ import shutil
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info
-from source.variants.qc_gatk import gatk_qc
+from source.variants.qc_gatk import gatk_qc, write_final_report
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample
@@ -111,8 +112,9 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
-    qc_report_fpath, records, metric_storage = gatk_qc(cnf, vcf_fpath)
-    report = SampleReport(sample, records=records, metric_storage=metric_storage)
+    records = qc_gatk.gatk_qc(cnf, vcf_fpath)
+    report = SampleReport(sample, records=records, metric_storage=qc_gatk.metric_storage)
+    qc_gatk.save_report(cnf, report)
 
     if verify_module('matplotlib'):
         try:

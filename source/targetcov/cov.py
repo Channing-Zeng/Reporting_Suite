@@ -8,7 +8,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, Record, write_txt_reports, save_json, SampleReport, FullReport, write_html_reports, to_dict_by_name, MetricStorage, ReportSection
+from source.reporting import Metric, Record, write_txt_reports, SampleReport, FullReport, write_html_reports, to_dict_by_name, MetricStorage, ReportSection
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
@@ -34,11 +34,11 @@ def run_target_cov(cnf, sample):
             cnf.coverage_reports.depth_thresholds, cnf.padding,
             combined_region, max_depth, total_bed_size)
 
-        save_json(report, join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
+        report.dump(join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
+
         summary_report_fpath = write_txt_reports(
             cnf.output_dir, cnf.work_dir,
-            [report],
-            cnf.name + '.' + BCBioStructure.targetseq_name)
+            report, cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ')
         info('\t' + summary_report_fpath)
