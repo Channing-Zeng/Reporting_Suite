@@ -8,7 +8,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, Record, write_txt_reports, SampleReport, FullReport, write_html_reports, to_dict_by_name, MetricStorage, ReportSection
+from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
@@ -36,19 +36,15 @@ def run_target_cov(cnf, sample):
 
         report.dump(join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
 
-        summary_report_fpath = write_txt_reports(
-            cnf.output_dir, cnf.work_dir,
-            report, cnf.name + '.' + BCBioStructure.targetseq_name)
+        summary_report_fpath = report.save_txt(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ')
         info('\t' + summary_report_fpath)
 
-        summary_report_html_fpath = write_html_reports(
-            cnf.output_dir, cnf.work_dir,
-            FullReport(name='Target coverage depth',
-                       sample_reports=[report]),
+        summary_report_html_fpath = report.save_html(cnf.output_dir, cnf.work_dir,
             cnf.name + '.' + BCBioStructure.targetseq_name,
             caption='Target coverage statistics for ' + cnf.name)
+
         info('\t' + summary_report_html_fpath)
 
     if 'genes' in cnf['coverage_reports']['report_types']:

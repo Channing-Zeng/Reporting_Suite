@@ -1,15 +1,12 @@
 from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
 from os.path import join
-from json import dumps, JSONEncoder
-import json
+from ext_modules.simplejson import load, dump, JSONEncoder, dumps
 import datetime
 
 from source.bcbio_structure import VariantCaller, Sample
-from source.file_utils import verify_file
-from source.quast_reporting.html_saver import write_html_reports
 from source.logger import critical, info
-from source.file_utils import file_exists
+from source.quast_reporting.html_saver import write_html_report
 
 
 class Record:
@@ -107,12 +104,97 @@ class Metric:
         return Metric(**data)
 
 
-class FullReport:
-    def __init__(self, name='', sample_reports=list()):
+class Report:
+    def flatten(self):
+        raise NotImplementedError()
+
+    def save_txt(self, output_dirpath, base_fname):
+        return write_txt_rows(self.flatten(), output_dirpath, base_fname)
+
+    def save_tsv(self, output_dirpath, base_fname):
+        return write_tsv_rows(self.flatten(), output_dirpath, base_fname)
+
+    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+        raise NotImplementedError()
+
+
+def _append_row(sample_report, row, metric):
+    row.append(next(
+        r.metric.format(r.value)
+        for r in sample_report.records
+        if r.metric.name == metric.name))
+
+
+class SampleReport(Report):
+    def __init__(self, sample=None, html_fpath=None,
+                 records=list(), metric_storage=None,
+                 report_name='', plots=list(), json_fpath=None,
+                 **kwargs):
+        self.sample = sample
+        self.html_fpath = html_fpath
+        self.records = records
+        self.metric_storage = metric_storage
+        self.report_name = report_name
+        self.plots = plots  # TODO: make real JS plots, not just included PNG
+        self.json_fpath = json_fpath
+        self.display_name = sample.name
+
+    def set_display_name(self, name):
+        self.display_name = name
+        return self
+
+    def add_record(self, metric_name, value, meta=None):
+        rec = Record(self.metric_storage.get_metric(metric_name.strip()), value, meta)
+        self.records.append(rec)
+        info(metric_name + ': ' + rec.format())
+        return rec
+
+    def flatten(self):
+        rows = ['Sample', self.display_name]
+        for metric in self.metric_storage.get_metrics():
+            row = [metric.name, next(
+                r.metric.format(r.value)
+                for r in self.records
+                if r.metric.name == metric.name)]
+            rows.append(row)
+        return rows
+
+    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+        return FullReport(name=self.display_name, sample_reports=[self]).save_html(
+            output_dirpath, work_dirpath, base_fname, caption)
+
+    def __repr__(self):
+        return self.display_name + (', ' + self.report_name if self.report_name else '')
+
+    def dump(self, fpath):
+        with open(fpath, 'w') as f:
+            dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+    @staticmethod
+    def load(data, sample=None):
+        # with open(fpath) as f:
+        #     data = json.load(f, object_pairs_hook=OrderedDict)
+
+        data['sample'] = sample or Sample.load(data['sample'])
+        data['records'] = [Record.load(d) for d in data['records']]
+        data['metric_storage'] = MetricStorage.load(data['metric_storage'])
+
+        return SampleReport(**data)
+
+
+class FullReport(Report):
+    def __init__(self, name='', sample_reports=list(), metric_storage=None):
         self.name = name
         self.sample_reports = sample_reports
-        assert len(sample_reports) > 0
-        self.metric_storage = sample_reports[0].metric_storage
+        self.metric_storage = metric_storage
+        if metric_storage:
+            for sample_report in sample_reports:
+                sample_report.metric_storage = metric_storage
+
+        elif sample_reports and sample_reports[0].metric_storage:
+            self.metric_storage = sample_reports[0].metric_storage
+            for sample_report in sample_reports:
+                sample_report.metric_storage = metric_storage
 
     def get_common_records(self):
         common_records = list()
@@ -131,13 +213,49 @@ class FullReport:
 
         for metric in self.metric_storage.get_metrics():
             row = [metric.name]
-            for sample_report in self.sample_reports:
-                row.append(next(
-                    r.metric.format(r.value)
-                    for r in sample_report.records
-                    if r.metric.name == metric.name))
+            for sr in self.sample_reports:
+                _append_row(sr, row, metric)
             rows.append(row)
         return rows
+
+    @staticmethod
+    def construct_from_sample_report_jsons(samples, jsons_by_sample, htmls_by_sample):
+        full_report = FullReport()
+        metric_storage = None
+        for sample in samples:
+            if sample in jsons_by_sample and sample in htmls_by_sample:
+                with open(jsons_by_sample[sample]) as f:
+                    sample_report = SampleReport.load(load(f), sample)
+                    sample_report.html_fpath = htmls_by_sample[sample]
+                    full_report.sample_reports.append(sample_report)
+                    metric_storage = metric_storage or sample_report.metric_storage
+
+        for sample_report in full_report.sample_reports:
+            sample_report.metric_storage = metric_storage
+
+        full_report.metric_storage = metric_storage
+
+        return full_report
+
+    def save_into_files(self, output_dirpath, work_dirpath, base_fname, caption):
+        return \
+            self.save_txt(output_dirpath, base_fname), \
+            self.save_tsv(output_dirpath, base_fname), \
+            self.save_html(output_dirpath, work_dirpath, base_fname, caption)
+
+    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+        class Encoder(JSONEncoder):
+            def default(self, o):
+                if isinstance(o, (VariantCaller, Sample)):
+                    return o.for_json()
+                return o.__dict__
+
+        json = dumps(dict(
+            date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
+            data_outside_reports={},
+            report=self,
+        ), separators=(',', ':'), cls=Encoder)
+        return write_html_report(json, output_dirpath, base_fname, caption)
 
     def __repr__(self):
         return self.name
@@ -212,54 +330,6 @@ class MetricStorage:
             common_for_all_samples_section=ReportSection.load(data['common_for_all_samples_section']))
 
 
-class SampleReport:
-    def __init__(self, sample=None, html_fpath=None,
-                 records=list(), metric_storage=None,
-                 report_name='', plots=list(), json_fpath=None):
-        self.sample = sample
-        self.html_fpath = html_fpath
-        self.records = records
-        self.metric_storage = metric_storage
-        self.report_name = report_name
-        self.plots = plots  # TODO: make real JS plots, not just included PNG
-        self.json_fpath = json_fpath
-        self.display_name = sample.name
-
-    def set_display_name(self, name):
-        self.display_name = name
-        return self
-
-    def add_record(self, metric_name, value, meta=None):
-        rec = Record(self.metric_storage.get_metric(metric_name.strip()), value, meta)
-        self.records.append(rec)
-        info(metric_name + ': ' + rec.format())
-        return rec
-
-    def flatten(self):
-        return FullReport(sample_reports=[self]).flatten()
-
-    def __repr__(self):
-        return self.display_name + (', ' + self.report_name if self.report_name else '')
-
-    def dump(self, fpath):
-        with open(fpath, 'w') as f:
-            json.dump(self, f,
-                      default=lambda o: o.__dict__,
-                      sort_keys=True,
-                      indent=4)
-
-    @staticmethod
-    def load(data, sample=None):
-        # with open(fpath) as f:
-        #     data = json.load(f, object_pairs_hook=OrderedDict)
-
-        data['sample'] = sample or Sample.load(data['sample'])
-        data['records'] = [Record.load(d) for d in data['records']]
-        data['metric_storage'] = MetricStorage.load(data['metric_storage'])
-
-        return SampleReport(**data)
-
-
 def read_sample_names(sample_fpath):
     sample_names = []
 
@@ -309,22 +379,6 @@ def read_sample_names(sample_fpath):
 #             for sample_name, fpaths in report_fpath_by_sample.items()])
 
 
-def write_summary_report(output_dirpath, work_dirpath, full_report, base_fname, caption):
-    # if any(len(fr.sample_reports) == 0 for fr in full_report):
-    #     critical('No sample reports found: summary will not be produced.')
-
-    return [fn(output_dirpath, work_dirpath, full_report, base_fname, caption)
-        for fn in [write_txt_reports,
-                   write_tsv_reports,
-                   write_html_reports]]
-
-
-
-def write_txt_reports(output_dirpath, work_dirpath, full_report, base_fname, caption=None):
-    rows = full_report.flatten()
-    return write_txt_rows(rows, output_dirpath, base_fname)
-
-
 def write_txt_rows(rows, output_dirpath, base_fname):
     output_fpath = join(output_dirpath, base_fname + '.txt')
 
@@ -339,11 +393,6 @@ def write_txt_rows(rows, output_dirpath, base_fname):
             out.write('\n')
 
     return output_fpath
-
-
-def write_tsv_reports(output_dirpath, work_dirpath, full_report, base_fname, caption=None):
-    rows = full_report.flatten()
-    return write_tsv_rows(rows, output_dirpath, base_fname)
 
 
 def write_tsv_rows(rows, output_dirpath, base_fname):

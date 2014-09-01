@@ -1,10 +1,6 @@
-from collections import defaultdict, OrderedDict
-from os.path import join
 from ext_modules.simplejson import load
-from source.bcbio_structure import Sample
 from source.logger import info
-from source.reporting import write_summary_report, Record, FullReport, SampleReport
-from source.variants import qc_gatk
+from source.reporting import FullReport, SampleReport
 
 
 def make_summary_reports(cnf, bcbio_structure):
@@ -13,9 +9,8 @@ def make_summary_reports(cnf, bcbio_structure):
     if len(callers) == 1:
         report = _full_report_for_caller(cnf, callers[0])
 
-        full_summary_fpaths = write_summary_report(
-            cnf.output_dir, cnf.work_dir, report,
-            base_fname=cnf.name, caption='Variant QC')
+        full_summary_fpaths = report.save_into_files(
+            cnf.output_dir, cnf.work_dir, base_fname=cnf.name, caption='Variant QC')
 
         info()
         info('*' * 70)
@@ -26,9 +21,9 @@ def make_summary_reports(cnf, bcbio_structure):
         for caller in callers:
             caller.summary_qc_report = _full_report_for_caller(cnf, caller)
 
-            caller.summary_qc_report_fpaths = write_summary_report(
-                cnf.output_dir, cnf.work_dir, caller.summary_qc_report,
-                base_fname=caller.suf + '.' + cnf.name, caption='Variant QC for ' + caller.name)
+            caller.summary_qc_report_fpaths = caller.summary_qc_report.save_into_files(
+                cnf.output_dir, cnf.work_dir, base_fname=caller.suf + '.' + cnf.name,
+                caption='Variant QC for ' + caller.name)
 
         # Combining
         combined_full_report = FullReport('', [
@@ -39,8 +34,8 @@ def make_summary_reports(cnf, bcbio_structure):
                  for s_report in c.summary_qc_report.sample_reports)
         ])
 
-        full_summary_fpaths = write_summary_report(
-            cnf.output_dir, cnf.work_dir, combined_full_report,
+        full_summary_fpaths = combined_full_report.save_into_files(
+            cnf.output_dir, cnf.work_dir,
             base_fname=cnf.name, caption='Variant QC')
 
         info()
@@ -61,16 +56,11 @@ def _full_report_for_caller(cnf, caller):
     jsons_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'json')
     htmls_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'html')
 
-    return FullReport('', [
-        SampleReport(sample,
-                     records=_parse_qc_sample_report(jsons_by_sample[sample], sample),
-                     html_fpath=htmls_by_sample[sample],
-                     metric_storage=qc_gatk.metric_storage)
-            for sample in caller.samples
-            if sample in jsons_by_sample and sample in htmls_by_sample])
+    return FullReport.construct_from_sample_report_jsons(
+        caller.samples, jsons_by_sample, htmls_by_sample)
 
 
-def _parse_qc_sample_report(json_fpath, sample):
+def _load_sample_report(json_fpath, sample):
     with open(json_fpath) as f:
         json = load(f)
     return SampleReport.load(json, sample)

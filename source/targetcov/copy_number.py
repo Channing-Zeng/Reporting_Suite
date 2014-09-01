@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import json
-
 import math
 from collections import defaultdict, OrderedDict
 import os
 from os.path import join
 import sys
+from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe
 from source.logger import info, err, step_greetings, critical
@@ -78,7 +77,8 @@ def _summarize_copy_number(cnf, gene_reports_by_sample, report_fpath_by_sample):
         gene_amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
 
         with open(json_fpath) as f:
-            cov_report = SampleReport.load(json.load(f.read(), object_pairs_hook=OrderedDict), sample)
+            data = load(f, object_pairs_hook=OrderedDict)
+            cov_report = SampleReport.load(data, sample)
 
         mapped_reads_by_sample[sample.name] = int(next(
             rec.value for rec in cov_report.records

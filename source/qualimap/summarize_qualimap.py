@@ -1,5 +1,5 @@
 from os.path import join
-from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport, MetricStorage, \
+from source.reporting import Metric, Record, FullReport, SampleReport, MetricStorage, \
     ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
@@ -10,17 +10,16 @@ def summary_reports(cnf, bcbio_structure):
 
     htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
 
-    sum_report = FullReport(cnf.name, [
+    full_report = FullReport(cnf.name, [
         SampleReport(sample,
                      records=_parse_qualimap_sample_report(htmls_by_sample[sample]),
-                     metric_storage=metric_storage,
                      html_fpath=htmls_by_sample[sample])
             for sample in bcbio_structure.samples
-            if sample in htmls_by_sample])
+            if sample in htmls_by_sample],
+        metric_storage=metric_storage)
 
-    final_summary_report_fpaths = write_summary_report(
-        cnf.output_dir, cnf.work_dir, sum_report,
-        BCBioStructure.qualimap_name, 'QualiMap statistics')
+    final_summary_report_fpaths = full_report.save_into_files(
+        cnf.output_dir, cnf.work_dir, BCBioStructure.qualimap_name, 'QualiMap statistics')
 
     info()
     info('*' * 70)

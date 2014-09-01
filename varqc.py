@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.variants import qc_gatk
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -15,11 +14,11 @@ import shutil
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info
-from source.variants.qc_gatk import gatk_qc, write_final_report
+from source.variants import qc_gatk
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample
-from source.reporting import Metric, Record, SampleReport, FullReport, write_html_reports
+from source.reporting import SampleReport
 from source.bcbio_structure import BCBioStructure, Sample
 
 
@@ -130,10 +129,8 @@ def process_one(cnf):
         qc_plots_for_html_report_fpaths = qc_plots_for_html_report_fpaths[1:]
         report.plots = qc_plots_for_html_report_fpaths
 
-    summary_report_html_fpath = write_html_reports(
-        cnf.output_dir, cnf.work_dir,
-        FullReport(name='', sample_reports=[report]),
-        cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
+    summary_report_html_fpath = report.save_html(
+        cnf.output_dir, cnf.work_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
         caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
 
     info('\t' + summary_report_html_fpath)

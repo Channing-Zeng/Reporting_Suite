@@ -52,21 +52,7 @@ aux_files = [
 ]
 
 
-def write_html_reports(output_dirpath, work_dirpath, full_report, report_base_name, caption):
-    class Encoder(JSONEncoder):
-        def default(self, o):
-            if isinstance(o, VariantCaller):
-                return o.for_json()
-            if isinstance(o, Sample):
-                return o.for_json()
-            return o.__dict__
-
-    json = dumps(dict(
-        date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
-        data_outside_reports={},
-        report=full_report,
-    ), separators=(',', ':'), cls=Encoder)
-
+def write_html_report(json, output_dirpath, report_base_name, caption):
     html_fpath = _init_html(output_dirpath, report_base_name + '.html', caption)
     _append(html_fpath, json, 'totalReport')
     return html_fpath

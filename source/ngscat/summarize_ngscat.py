@@ -1,5 +1,5 @@
 from os.path import join
-from source.reporting import write_summary_report, Metric, Record, FullReport, SampleReport, MetricStorage, \
+from source.reporting import Metric, Record, FullReport, SampleReport, MetricStorage, \
     ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
@@ -9,17 +9,17 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('ngsCAT statistics for all samples')
 
     htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
-    sum_report = FullReport(cnf.name, [
+    full_report = FullReport(cnf.name, [
         SampleReport(sample,
                      records=_parse_ngscat_sample_report(htmls_by_sample[sample]),
                      html_fpath=htmls_by_sample[sample],
                      metric_storage=metric_storage)
             for sample in bcbio_structure.samples
-            if sample in htmls_by_sample])
+            if sample in htmls_by_sample],
+        metric_storage=metric_storage)
 
-    final_summary_report_fpaths = write_summary_report(
-        cnf.output_dir, cnf.work_dir, sum_report,
-        BCBioStructure.ngscat_name, 'ngsCAT statistics')
+    final_summary_report_fpaths = full_report.save_into_files(
+        cnf.output_dir, cnf.work_dir, BCBioStructure.ngscat_name, 'ngsCAT statistics')
 
     info()
     info('*' * 70)
@@ -54,7 +54,7 @@ ALLOWED_UNITS = ['%']
 def _parse_ngscat_sample_report(report_fpath):
     records = []
 
-    def __parse_cell(metric_name, line):
+    def __parse_record(metric_name, line):
         metric = metric_storage.get_metric(metric_name)
         record = Record(metric=metric)
 
@@ -120,5 +120,5 @@ def _parse_ngscat_sample_report(report_fpath):
                     cell_id += 1
                     if cell_id in column_id_to_metric_name.keys():
                         metric_name = column_id_to_metric_name[cell_id]
-                        records.append(__parse_cell(metric_name, subline))
+                        records.append(__parse_record(metric_name, subline))
     return records
