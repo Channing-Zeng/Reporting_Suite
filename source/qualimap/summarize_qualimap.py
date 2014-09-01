@@ -1,6 +1,4 @@
-from os.path import join
-from source.reporting import Metric, Record, FullReport, SampleReport, MetricStorage, \
-    ReportSection
+from source.reporting import Metric, Record, FullReport, SampleReport, MetricStorage, ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
 

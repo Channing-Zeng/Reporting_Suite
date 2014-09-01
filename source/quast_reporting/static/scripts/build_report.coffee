@@ -71,6 +71,7 @@ report =
 
 section =
     name: ''
+    title: ''
     metrics: []
     metrics_by_name: {}
 

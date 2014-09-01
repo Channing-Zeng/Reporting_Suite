@@ -286,8 +286,8 @@
 
   reporting.buildTotalReport = function(report, section, columnOrder) {
     var colNum, i, line_caption, padding, pos, r, rec, records, sort_by, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
-    if (section.name != null) {
-      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.name + "</h3>");
+    if (section.title != null) {
+      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
     calc_cell_contents(report, section, $('#report').css('font'));
     table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + section.name + "\">";

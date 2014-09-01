@@ -186,8 +186,8 @@ calc_cell_contents = (report, section, font) ->
 
 
 reporting.buildTotalReport = (report, section, columnOrder) ->
-    if section.name?
-        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.name}</h3>"
+    if section.title?
+        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.title}</h3>"
 
     calc_cell_contents report, section, $('#report').css 'font'
 
