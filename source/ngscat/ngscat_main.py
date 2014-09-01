@@ -2,7 +2,6 @@
 
 import glob
 import time
-import sys
 import os
 import string
 import multiprocessing

@@ -40,7 +40,6 @@ metric_storage = MetricStorage(
             Metric('Mapped reads, both in pair',                    'Mapped, both',                     'Number of mapped reads, both in pair'),
             Metric('Mapped reads, singletons',                      'Mapped, singletons',               'Number of mapped reads, singletons'),
 
-            Metric('Read min/max/mean length',                      'Read min/max/mean length',         'PLACEHOLDER for three separate metrics'),
             Metric('Read min length',                               'Read min length',                  'Read min length'),
             Metric('Read max length',                               'Read max length',                  'Read max length'),
             Metric('Read mean length',                              'Read mean length',                 'Read mean length'),
@@ -87,37 +86,43 @@ def _parse_qualimap_sample_report(report_fpath):
 
         if metric_name == 'Read min/max/mean length':  # special case
             for metric_infix, value in zip(['min', 'max', 'mean'], val.split('/')):
-                rec = Record(metric_storage.get_metric('Read ' + metric_infix + ' length'), value)
+                metric = metric_storage.get_metric('Read ' + metric_infix + ' length')
+                rec = Record(metric, value)
                 records.append(rec)
-            return
 
-        metric = metric_storage.get_metric(metric_name)
-        num_chars = []
-        unit_chars = []
-        i = 0
-        while i < len(val) and (val[i].isdigit() or val[i] in ['.']):
-            num_chars += val[i]
-            i += 1
-        while i < len(val):
-            unit_chars += val[i]
-            i += 1
-        val_num = ''.join(num_chars)
-        val_unit = ''.join(unit_chars)
+        else:
+            metric = metric_storage.get_metric(metric_name)
+            if not metric:
+                return
+            num_chars = []
+            unit_chars = []
+            i = 0
+            while i < len(val) and (val[i].isdigit() or val[i] in ['.']):
+                num_chars += val[i]
+                i += 1
+            while i < len(val):
+                unit_chars += val[i]
+                i += 1
+            val_num = ''.join(num_chars)
+            val_unit = ''.join(unit_chars)
 
-        if val_unit and val_unit in ALLOWED_UNITS:
-            metric.unit = val_unit
-        try:
-            val = int(val_num)
-        except ValueError:
+            if val_unit and val_unit in ALLOWED_UNITS:
+                metric.unit = val_unit
             try:
-                val = float(val_num)
-            except ValueError:  # it is a string
-                val = val_num + val_unit
+                val = int(val_num)
+            except ValueError:
+                try:
+                    val = float(val_num)
+                except ValueError:  # it is a string
+                    val = val_num + val_unit
 
-        rec = Record(metric_storage.get_metric(metric_name), val)
-        if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
-            rec.meta = val_unit[1:]
-        records.append(rec)
+            if not metric_storage.get_metric(metric_name):
+                return None
+
+            rec = Record(metric_storage.get_metric(metric_name), val)
+            if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
+                rec.meta = val_unit[1:]
+            records.append(rec)
 
 
     sections = {'start':            'Summary',
@@ -146,8 +151,9 @@ def _parse_qualimap_sample_report(report_fpath):
                     value += on_target_stats_suffix
                 elif cur_section == 'coverage':
                     value = coverage_stats_prefix + value
-                if value in [m.name for m in metric_storage.get_metrics()]:
-                    cur_metric_name = value
+                # if value in [m.name for m in metric_storage.get_metrics()]:
+                cur_metric_name = value
+
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)
                 cur_metric_name = None

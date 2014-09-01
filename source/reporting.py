@@ -290,8 +290,8 @@ class MetricStorage:
                  **kwargs):
         self.sections_by_name = OrderedDict()
         self.sections = []
-        self.common_for_all_samples_section = common_for_all_samples_section or \
-                                              ReportSection('common_for_all_samples_section', '', [])
+        self.common_for_all_samples_section = \
+            common_for_all_samples_section or ReportSection('common_for_all_samples_section', '', [])
         if sections:
             self.sections = sections
             for section in sections:
