@@ -146,7 +146,7 @@ def _parse_qualimap_sample_report(report_fpath):
                     value += on_target_stats_suffix
                 elif cur_section == 'coverage':
                     value = coverage_stats_prefix + value
-                if value in metric_storage.get_metrics().keys():
+                if value in [m.name for m in metric_storage.get_metrics()]:
                     cur_metric_name = value
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)
