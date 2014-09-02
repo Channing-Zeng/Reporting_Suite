@@ -119,10 +119,14 @@ class Report:
 
 
 def _append_row(sample_report, row, metric):
-    row.append(next(
-        r.metric.format(r.value)
-        for r in sample_report.records
-        if r.metric.name == metric.name))
+    try:
+        row.append(next(
+            r.metric.format(r.value)
+            for r in sample_report.records
+            if r.metric.name == metric.name))
+    except StopIteration:
+        print 'metric: "' + metric.name + '",      row: ' + ' '.join(row) + ',      sample: ' + sample_report.sample.name + ',      records: ' \
+                + ',   '.join(rec.metric.name for rec in sample_report.records)
 
 
 class SampleReport(Report):

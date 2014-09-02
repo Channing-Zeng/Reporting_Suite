@@ -12,7 +12,7 @@ steps:
 # - TargetCov_Summary
 # - ngsCAT
 # - ngsCAT_summary
-- QualiMap
+# - QualiMap
 - QualiMap_summary
 #- MongoLoader
 
