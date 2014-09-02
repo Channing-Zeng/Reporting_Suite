@@ -126,6 +126,7 @@ def _append_value_to_row(sample_report, row, metric):
             if r.metric.name == metric.name))
     except StopIteration:
         row.append('-')  # if no record for the metric
+    return row
 
 
 class SampleReport(Report):
@@ -155,10 +156,8 @@ class SampleReport(Report):
     def flatten(self):
         rows = ['Sample', self.display_name]
         for metric in self.metric_storage.get_metrics():
-            row = [metric.name, next(
-                r.metric.format(r.value)
-                for r in self.records
-                if r.metric.name == metric.name)]
+            row = [metric.name]
+            _append_value_to_row(self, row, metric)
             rows.append(row)
         return rows
 
