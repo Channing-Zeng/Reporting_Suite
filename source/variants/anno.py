@@ -88,8 +88,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         # Moving final VCF
         if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
-        shutil.move(vcf_fpath, final_vcf_fpath)
-        os.symlink(final_vcf_fpath, vcf_fpath)
+        shutil.copy(vcf_fpath, final_vcf_fpath)
 
         # Converting to TSV
         if 'tsv_fields' in cnf:
@@ -214,9 +213,9 @@ def _snpeff(cnf, input_fpath):
     extra_opts = cnf['snpeff'].get('opts', '')
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
-        critical('Please, provide a path to SnpEff data in '
-                 'the "genomes" section in the system config.')
-
+        err('Please, provide a path to SnpEff data in '
+            'the "genomes" section in the system config.')
+        return None, None, None
     opts = ''
     if cnf['snpeff'].get('cancer'):
         opts += ' -cancer '

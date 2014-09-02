@@ -70,7 +70,7 @@ ALLOWED_UNITS = ['%']
 def _parse_qualimap_sample_report(report_fpath):
     records = []
 
-    def __get_value(line):
+    def __get_td_tag_contents(line):
         ## examples:
         # <td class=column1>Paired reads</td>
         # <td class=column2>80,244 / 99.89%</td>
@@ -81,7 +81,7 @@ def _parse_qualimap_sample_report(report_fpath):
         return crop_right[0].strip()
 
     def __fill_record(metric_name, line):
-        val = __get_value(line)
+        val = __get_td_tag_contents(line)
         val = val.replace(' ', '').replace(',', '')
 
         if metric_name == 'Read min/max/mean length':  # special case
@@ -94,6 +94,7 @@ def _parse_qualimap_sample_report(report_fpath):
             metric = metric_storage.get_metric(metric_name)
             if not metric:
                 return
+
             num_chars = []
             unit_chars = []
             i = 0
@@ -146,13 +147,11 @@ def _parse_qualimap_sample_report(report_fpath):
                 break
 
             if line.find('class=column1') != -1:
-                value = __get_value(line)
+                cur_metric_name = __get_td_tag_contents(line)
                 if cur_section == 'on target':
-                    value += on_target_stats_suffix
+                    cur_metric_name += on_target_stats_suffix
                 elif cur_section == 'coverage':
-                    value = coverage_stats_prefix + value
-                # if value in [m.name for m in metric_storage.get_metrics()]:
-                cur_metric_name = value
+                    cur_metric_name = coverage_stats_prefix + cur_metric_name
 
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)

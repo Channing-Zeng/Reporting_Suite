@@ -118,15 +118,14 @@ class Report:
         raise NotImplementedError()
 
 
-def _append_row(sample_report, row, metric):
+def _append_value_to_row(sample_report, row, metric):
     try:
         row.append(next(
             r.metric.format(r.value)
             for r in sample_report.records
             if r.metric.name == metric.name))
     except StopIteration:
-        print 'metric: "' + metric.name + '",      row: ' + ' '.join(row) + ',      sample: ' + sample_report.sample.name + ',      records: ' \
-                + ',   '.join(rec.metric.name for rec in sample_report.records)
+        row.append('-')  # if no record for the metric
 
 
 class SampleReport(Report):
@@ -218,7 +217,7 @@ class FullReport(Report):
         for metric in self.metric_storage.get_metrics():
             row = [metric.name]
             for sr in self.sample_reports:
-                _append_row(sr, row, metric)
+                _append_value_to_row(sr, row, metric)
             rows.append(row)
         return rows
 

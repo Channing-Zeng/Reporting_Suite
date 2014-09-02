@@ -20,7 +20,7 @@ unless( @ARGV and $ARGV[0]=~m/^-/ ) {
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
 my ( $man, $help, $use_snpeff ) = ( 0, 0, 0 );
-my ( $input_vcf, $vep_anno, $snpeff_anno, $output_maf, $bam_file );
+my ( $input_vcf, $vep_anno, $snpeff_anno, $output_maf, $bam_file, $transcripts_file );
 GetOptions(
     'help!' => \$help,
     'man!' => \$man,
@@ -36,6 +36,7 @@ GetOptions(
     'snpeff-path=s' => \$snpeff_path,
     'snpeff-data=s' => \$snpeff_data,
     'bam-file=s' => \$bam_file,
+    'transcripts=s' => \$transcripts_file,
 ) or pod2usage( -verbose => 1, -input => \*DATA, -exitval => 2 );
 pod2usage( -verbose => 1, -input => \*DATA, -exitval => 0 ) if( $help );
 pod2usage( -verbose => 2, -input => \*DATA, -exitval => 0 ) if( $man );
@@ -46,6 +47,21 @@ if(( $input_vcf and $vep_anno ) or ( $input_vcf and $snpeff_anno ) or ( $vep_ann
 }
 elsif( $use_snpeff and ( $vep_anno or $snpeff_anno )) {
     die "The use-snpeff option can only be used with input-vcf\n";
+}
+
+my %trStrandById;
+my %trPosById;
+my %trExonById;
+if( $transcripts_file ) {
+    open (FILE, $transcripts_file);
+    while (<FILE>) {
+        chomp;
+        my ($chr, $start, $end, $strand, $type, $id, $geneName, $geneId, $numberOfTranscripts, $canonicalTranscriptLength, $transcriptId, $cdsLength, $numerOfExons, $exonRank, $exonSpliceType) = split("\t");
+        push $hash{key} = $strand;  @{ $trStrandById{$transcriptId} }, $strand;
+        push @{ $trPosById{$transcriptId} }, $start;
+        push @{ $trExonById{$transcriptId} }, $exonRank;
+    }
+    close (FILE);
 }
 
 # Annotate variants in given VCF to all possible transcripts, unless an annotated VCF was provided
@@ -97,6 +113,10 @@ my @maf_header = qw(
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
     Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
 
+    Annotation_Transcript Transcript_Strand Transcript_Exon Transcript_Position
+    cDNA_Change Codon_Change Protein_Change
+    Refseq_mRNA_Id Refseq_prot_Id
+    t_ref_count t_alt_count
     Filter
 );
 
@@ -278,6 +298,9 @@ while( my $line = $vcf_fh->getline ) {
         }
     }
 
+    my $tr_strand;
+
+
     # Construct the MAF columns from the $maf_effect hash, and print to output
     my %maf_line = map{ ( $_, ( $maf_effect->{$_} ? $maf_effect->{$_} : '' )) } @maf_header;
     $maf_line{Hugo_Symbol} = ( $maf_effect->{SYMBOL} ? $maf_effect->{SYMBOL} : ( $maf_effect->{Gene_Name} ? $maf_effect->{Gene_Name} : 'Unknown' ));
@@ -301,12 +324,25 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Match_Norm_Seq_Allele2} = '.'; #$normal_a2;
     $maf_line{HGVSc} = ( $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
     $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
-    $maf_line{Transcript_ID} = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
+    my $transcriptId = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
+    $maf_line{Transcript_ID} = $transcriptId;
     $maf_line{Exon_Number} = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
     $maf_line{Validation_Status} = ($filter eq 'PASS' || $filter eq '.') ? 'Valid' : 'Invalid';
     $maf_line{Validation_Method} = ($filter eq 'PASS' || $filter eq '.') ? '' : $filter;
     $maf_line{BAM_File} = $bam_file;
     $maf_line{Filter} = $filter;
+
+    $maf_line{Transcript_Strand} = $trStrandById{ $transcriptId } ? $trStrandById{ $transcriptId } : '';
+    $maf_line{Transcript_Exon} = $trPosById{ $transcriptId } ? $trPosById{ $transcriptId } : '';
+    $maf_line{Transcript_Position} = $trExonById{ $transcriptId } ? $trExonById{ $transcriptId } : '';
+
+    $maf_line{cDNA_Change} = '';
+    $maf_line{Codon_Change} = '';
+    $maf_line{Protein_Change} = '';
+    $maf_line{Refseq_mRNA_Id} = '';
+    $maf_line{Refseq_prot_Id} = '';
+    $maf_line{t_ref_count} = '';
+    $maf_line{t_alt_count} = '';
 
     foreach my $col ( @maf_header ) {
         $maf_fh->print( "\t" ) if ( $col ne $maf_header[0] );

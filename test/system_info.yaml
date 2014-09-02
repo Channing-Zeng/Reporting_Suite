@@ -5,11 +5,11 @@ resources:
     # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /usr/local/share/java/snpEff/snpEff.jar
-    # config: /usr/local/share/java/snpeff/snpEff.config
+    path: /usr/local/Cellar/snpeff/3.6c/libexec/snpEff.jar
+    # config: /usr/local/Cellar/snpeff/3.6c/share/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /usr/local/share/java/snpEff/SnpSift.jar
+    path: /usr/local/Cellar/snpeff/3.6c/libexec/SnpSift.jar
   bcftools:
     path: ~/bin/bcftools/bcftools
   plot_vcfstats:
@@ -32,7 +32,7 @@ genomes:
     dbsnp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbsnp_132.vcf
   # cosmic: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf
     dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
-    snpeff: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/snpeff  # data dir path
+    snpeff: /usr/local/Cellar/snpeff/3.6c/share/data  # data dir path
 
     chr_lengths: data/chr_lengths_hg19.txt
     exons: data/test_exons.bed
