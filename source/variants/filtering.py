@@ -9,7 +9,7 @@ from joblib import Parallel, delayed
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_first_sample
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -472,10 +472,11 @@ def combine_mafs(cnf, maf_fpaths, output_fpath):
     return output_fpath
 
 
-def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
+def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     cnf = cnfs_for_samples[sample.name]
+    work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
-    final_vcf_fpath = add_suffix(anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
+    final_vcf_fpath = add_suffix(original_anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
 
     safe_mkdir(dirname(final_vcf_fpath))
 
@@ -483,7 +484,7 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
     final_vcf_fpath = file_basepath + '.vcf'
     final_tsv_fpath = file_basepath + '.tsv'
     final_maf_fpath = file_basepath + '.maf'
-    final_clean_vcf_fpath = file_basepath + '.passed.vcf'
+    final_clean_vcf_fpath = file_basepath + '.passed.vcf'  # for futrher processing
 
     # Moving final VCF
     if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
@@ -535,6 +536,5 @@ def postprocess_vcf(sample, anno_vcf_fpath, work_filt_vcf_fpath):
         info()
     else:
         final_maf_fpath = None
-
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]

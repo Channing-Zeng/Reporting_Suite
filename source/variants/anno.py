@@ -1,6 +1,5 @@
 import shutil
 import os
-
 from os.path import splitext, basename, join, dirname, realpath, isfile, islink
 
 from source.calling_process import call_subprocess
@@ -10,7 +9,7 @@ from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_g
 from source.utils import index_bam
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation
+from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_first_sample
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath=None):
@@ -77,6 +76,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
                 vcf_fpath = res
 
     if annotated:
+        vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+
         if not cnf.get('no_correct_vcf'):
             vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
@@ -118,8 +119,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
 
         return final_vcf_fpath, final_tsv_fpath, final_maf_fpath
     else:
-        info('No annotations were applied to ' + original_vcf + '..')
-        return None, None
+        err('Warning: No annotations were applied to ' + original_vcf + '..')
+        return None, None, None
 
 
 def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):

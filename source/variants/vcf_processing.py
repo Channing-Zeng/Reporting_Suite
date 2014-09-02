@@ -31,7 +31,7 @@ class Record(_Record):
         self._vark = None
         self._af = None
 
-    def main_sample(self):
+    def get_main_sample(self):
         if len(self._sample_indexes) == 0:
             return None
         try:
@@ -62,8 +62,6 @@ class Record(_Record):
         return self._af
 
     def get_val(self, key, default=None):
-        val = None
-
         if key in self.INFO:
             val = self.INFO[key]
             if not isinstance(val, basestring):
@@ -72,7 +70,7 @@ class Record(_Record):
                 except:
                     pass
         else:
-            main_sample = self.main_sample()
+            main_sample = self.get_main_sample()
             if main_sample:
                 sample_data = main_sample.data._asdict()
                 if key in sample_data:
