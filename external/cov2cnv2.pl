@@ -3,7 +3,6 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Statistics::Basic;
 use Getopt::Std;
 use strict;
 

@@ -9,6 +9,10 @@ from source.logger import critical, info
 from source.quast_reporting.html_saver import write_html_report
 
 
+def to_dict_by_name(objects):
+    return OrderedDict((o.name, o) for o in objects)
+
+
 class Record:
     def __init__(self,
                  metric=None,
@@ -17,29 +21,6 @@ class Record:
         self.metric = metric
         self.value = value
         self.meta = meta or dict()
-
-    # @staticmethod
-    # def dump_records(records, f):
-    #     objects = [rec.__dict__ for rec in records]
-    #
-    #     json.dump(objects, f,
-    #               default=lambda o: o.__dict__,
-    #               sort_keys=True,
-    #               indent=4)
-
-    # @staticmethod
-    # def load_records(fpath):
-    #     with open(fpath) as f:
-    #         records = []
-    #         objects = json.load(f, object_pairs_hook=OrderedDict)
-    #         for obj in objects:
-    #             rec = Record()
-    #             rec.__dict__ = dict(obj.items())
-    #             m = Metric()
-    #             m.__dict__.update(dict(rec.metric.items()))
-    #             rec.metric = m
-    #             records.append(rec)
-    #     return records
 
     def format(self):
         return self.metric.format(self.value)
@@ -50,16 +31,12 @@ class Record:
         return Record(**data)
 
 
-def to_dict_by_name(objects):
-    return OrderedDict((o.name, o) for o in objects)
-
-
 class Metric:
     def __init__(self,
                  name=None,
                  short_name=None,
                  description=None,
-                 quality='More is better',  # More is better, Less is better, Equal
+                 quality='More is better',  # "More is better", "Less is better", "Equal"
                  unit='',
                  common=False):
         self.name = name
@@ -104,6 +81,7 @@ class Metric:
         return Metric(**data)
 
 
+# noinspection PyClassHasNoInit
 class Report:
     def flatten(self):
         raise NotImplementedError()
@@ -117,16 +95,16 @@ class Report:
     def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
         raise NotImplementedError()
 
-
-def _append_value_to_row(sample_report, row, metric):
-    try:
-        row.append(next(
-            r.metric.format(r.value)
-            for r in sample_report.records
-            if r.metric.name == metric.name))
-    except StopIteration:
-        row.append('-')  # if no record for the metric
-    return row
+    @staticmethod
+    def _append_value_to_row(sample_report, row, metric):
+        try:
+            row.append(next(
+                r.metric.format(r.value)
+                for r in sample_report.records
+                if r.metric.name == metric.name))
+        except StopIteration:
+            row.append('-')  # if no record for the metric
+        return row
 
 
 class SampleReport(Report):
@@ -157,7 +135,7 @@ class SampleReport(Report):
         rows = ['Sample', self.display_name]
         for metric in self.metric_storage.get_metrics():
             row = [metric.name]
-            _append_value_to_row(self, row, metric)
+            Report._append_value_to_row(self, row, metric)
             rows.append(row)
         return rows
 
@@ -170,13 +148,10 @@ class SampleReport(Report):
 
     def dump(self, fpath):
         with open(fpath, 'w') as f:
-            dump(self, f, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+            dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
     def load(data, sample=None):
-        # with open(fpath) as f:
-        #     data = json.load(f, object_pairs_hook=OrderedDict)
-
         data['sample'] = sample or Sample.load(data['sample'])
         data['records'] = [Record.load(d) for d in data['records']]
         data['metric_storage'] = MetricStorage.load(data['metric_storage'])
@@ -216,7 +191,7 @@ class FullReport(Report):
         for metric in self.metric_storage.get_metrics():
             row = [metric.name]
             for sr in self.sample_reports:
-                _append_value_to_row(sr, row, metric)
+                Report._append_value_to_row(sr, row, metric)
             rows.append(row)
         return rows
 
@@ -227,7 +202,8 @@ class FullReport(Report):
         for sample in samples:
             if sample in jsons_by_sample and sample in htmls_by_sample:
                 with open(jsons_by_sample[sample]) as f:
-                    sample_report = SampleReport.load(load(f), sample)
+                    data = load(f, object_pairs_hook=OrderedDict)
+                    sample_report = SampleReport.load(data, sample)
                     sample_report.html_fpath = htmls_by_sample[sample]
                     full_report.sample_reports.append(sample_report)
                     metric_storage = metric_storage or sample_report.metric_storage
