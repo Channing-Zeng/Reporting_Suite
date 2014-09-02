@@ -49,6 +49,7 @@ elsif( $use_snpeff and ( $vep_anno or $snpeff_anno )) {
     die "The use-snpeff option can only be used with input-vcf\n";
 }
 
+my %trIdById;
 my %trStrandById;
 my %trPosById;
 my %trExonById;
@@ -57,9 +58,10 @@ if( $transcripts_file ) {
     while (<FILE>) {
         chomp;
         my ($chr, $start, $end, $strand, $type, $id, $geneName, $geneId, $numberOfTranscripts, $canonicalTranscriptLength, $transcriptId, $cdsLength, $numerOfExons, $exonRank, $exonSpliceType) = split("\t");
-        push $hash{key} = $strand;  @{ $trStrandById{$transcriptId} }, $strand;
-        push @{ $trPosById{$transcriptId} }, $start;
-        push @{ $trExonById{$transcriptId} }, $exonRank;
+        $trIdById{ $id } = $transcriptId;
+        $trStrandById{ $id } = $strand;
+        $trPosById{ $id } = $start;
+        $trExonById{ $id } = $exonRank;
     }
     close (FILE);
 }

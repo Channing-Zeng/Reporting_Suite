@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 from source.file_utils import safe_mkdir
+from source.main import load_genome_resources
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -175,6 +176,9 @@ def main():
         dir=None,
         description=description,
         extra_opts=extra_opts)
+
+    load_genome_resources(cnf,
+        required=['seq', 'snpeff'])
 
     filter_all(cnf, bcbio_structure)
 
