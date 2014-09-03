@@ -487,16 +487,20 @@ class BCBioRunner:
                 create_dir=False,
                 threads=len(self.bcbio_structure.batches))
 
-        for caller in self.bcbio_structure.variant_callers.values():
-            clean_vcf_fpath = sample.get_clean_filtered_vcf_by_callername(caller.name)
-            if not clean_vcf_fpath:
-                err('VCF does not exist: sample ' + sample.name + ', caller "' + caller.name + '".')
-            else:
-                if self.varqc_after in self.steps:
-                    self.submit(
-                        self.varqc_after, sample.name, suf=caller.name,
-                        wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                        vcf=sample.get_clean_filtered_vcf_by_callername(caller.name), sample=sample.name, caller=caller.name)
+        if self.varqc_after in self.steps:
+            info('VarQC_postVarFilter:')
+            for caller in self.bcbio_structure.variant_callers.values():
+                info('  ' + caller.name)
+                for sample in caller.samples:
+                    info('    ' + sample.name)
+                    clean_vcf_fpath = sample.get_clean_filtered_vcf_by_callername(caller.name)
+                    if not clean_vcf_fpath:
+                        err('VCF does not exist: sample ' + sample.name + ', caller "' + caller.name + '".')
+                    else:
+                        self.submit(
+                            self.varqc_after, sample.name, suf=caller.name,
+                            wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+                            vcf=sample.get_clean_filtered_vcf_by_callername(caller.name), sample=sample.name, caller=caller.name)
 
         if self.varqc_after_summary in self.steps:
             self.submit(
