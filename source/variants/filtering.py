@@ -484,7 +484,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
 
     cnf = cnfs_for_sample_names.get(sample.name)
     if not cnf:
-        info('Warning: for ' + sample.name + ', no cnf is None')
+        info('Warning: for ' + sample.name + ': cnf is None')
         return None, None, None
     work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 

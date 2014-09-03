@@ -68,7 +68,15 @@ class VariantCaller:
         self.combined_filt_maf_fpath = None
 
     def get_filtered_mafs(self):
-        return [sample.filtered_maf_by_callername[self.name] for sample in self.samples]
+        mafs = []
+        for sample in self.samples:
+            maf = sample.filtered_maf_by_callername.get(self.name)
+            if not maf:
+                err('Warning: maf=None for caller ' + self.name + ', sample=' + sample.name)
+            else:
+                mafs.append(maf)
+        return mafs
+
 
     def get_fpaths_by_sample(self, dirname, name, ext):
         return self._get_files_by_sample(dirname, '.' + name + '.' + ext)
