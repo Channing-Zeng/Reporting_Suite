@@ -33,7 +33,8 @@ class Sample:
 
     def get_clean_filtered_vcf_by_callername(self, callername):
         path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + '.anno.filt.vcf')
-        print path
+        if not verify_file(path):
+            return None
         return path
 
     def __str__(self):
