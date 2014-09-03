@@ -488,15 +488,15 @@ class BCBioRunner:
                 threads=len(self.bcbio_structure.batches))
 
         for caller in self.bcbio_structure.variant_callers.values():
-            vcf_fpath = sample.filtered_clean_vcf_by_callername.get(caller.name)
-            if not vcf_fpath:
+            clean_vcf_fpath = sample.get_clean_filtered_vcf_by_callername(caller.name)
+            if not clean_vcf_fpath:
                 err('VCF does not exist: sample ' + sample.name + ', caller "' + caller.name + '".')
             else:
                 if self.varqc_after in self.steps:
                     self.submit(
                         self.varqc_after, sample.name, suf=caller.name,
                         wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                        vcf=sample.filtered_vcf_by_callername[caller.name], sample=sample.name, caller=caller.name)
+                        vcf=sample.get_clean_filtered_vcf_by_callername(caller.name), sample=sample.name, caller=caller.name)
 
         if self.varqc_after_summary in self.steps:
             self.submit(
@@ -583,8 +583,6 @@ class BCBioRunner:
         filter_dirpath = join(dirname(anno_dirpath), self.varfilter_all.dir_name)
         safe_mkdir(filter_dirpath)
         filtered_clean_vcf_fpath = join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt.passed')))
-
-        sample.filtered_clean_vcf_by_callername[caller_name] = filtered_clean_vcf_fpath
 
         return filtered_clean_vcf_fpath
 

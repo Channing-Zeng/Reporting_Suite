@@ -24,13 +24,17 @@ class Sample:
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.filtered_vcf_by_callername = OrderedDict()
-        self.filtered_clean_vcf_by_callername = OrderedDict()
         self.filtered_tsv_by_callername = OrderedDict()
         self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
         self.dirpath = None
         self.var_dirpath = None
         self.normal_match = None
+
+    def get_clean_filtered_vcf_by_callername(self, callername):
+        path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + '.anno.filt.vcf')
+        print path
+        return path
 
     def __str__(self):
         return self.name
