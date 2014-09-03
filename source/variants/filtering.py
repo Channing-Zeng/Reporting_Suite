@@ -426,9 +426,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('*' * 70)
 
     anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
+    anno_vcf_fpaths = anno_vcf_by_sample.values()
 
     f = Filtering(cnf, bcbio_structure, caller)
-    filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_by_sample.values())
+
+    filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths)
 
     global cnfs_for_samples
     for sample in anno_vcf_by_sample.keys():
@@ -436,12 +438,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         cnf_copy['name'] = sample.name
         cnfs_for_samples[sample.name] = cnf_copy
 
-    results = Parallel(n_jobs=len(caller.samples)) \
+    results = [r for r in Parallel(n_jobs=len(caller.samples)) \
         (delayed(postprocess_vcf)
-         (sample, anno_vcf_by_sample[sample], work_filt_vcf_fpath)
-             for sample, work_filt_vcf_fpath in
-             zip(caller.samples, filt_anno_vcf_fpaths)
-         )
+         (sample, anno_vcf_fpath, work_filt_vcf_fpath)
+              for sample, anno_vcf_fpath, work_filt_vcf_fpath in
+              zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+         ) if None not in r]
     info('*' * 70)
 
     for sample, [vcf, tsv, maf] in zip(caller.samples, results):
@@ -473,6 +475,13 @@ def combine_mafs(cnf, maf_fpaths, output_fpath):
 
 
 def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
+    if not original_anno_vcf_fpath or not work_filt_vcf_fpath:
+        if not original_anno_vcf_fpath:
+            err(sample.name + ': original_anno_vcf_fpath is None')
+        if not work_filt_vcf_fpath:
+            err(sample.name + ': work_filt_vcf_fpath is None')
+        return None, None, None
+
     cnf = cnfs_for_samples[sample.name]
     work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
