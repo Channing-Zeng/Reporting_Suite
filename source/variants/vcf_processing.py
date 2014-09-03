@@ -396,12 +396,19 @@ def leave_first_sample(cnf, vcf_fpath):
         return rec
 
     info('Keeping SAMPLE only for the first sample...')
-    out_fpath = iterate_vcf(cnf, vcf_fpath, _f, suffix=sample_name)
+    vcf_fpath = iterate_vcf(cnf, vcf_fpath, _f, suffix=sample_name)
+    # out_fpath = extract_sample(cnf, vcf_fpath, sample_name)
     info()
 
-    if not verify_file(out_fpath):
+    def _f2(line, i):
+        if line.startswith('#CHROM'):
+            return line.replace('\t' + sample_name, '')
+        return line
+    vcf_fpath = iterate_file(cnf, vcf_fpath, _f2)
+
+    if not verify_file(vcf_fpath):
         critical('Error: leave_first_sample didnt generate output file.')
-    return out_fpath
+    return vcf_fpath
 
 
 def extract_sample(cnf, input_fpath, samplename):
