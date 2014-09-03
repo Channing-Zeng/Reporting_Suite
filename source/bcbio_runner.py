@@ -488,9 +488,9 @@ class BCBioRunner:
                 threads=len(self.bcbio_structure.batches))
 
         for caller in self.bcbio_structure.variant_callers.values():
-            vcf_fpath = sample.vcf_by_callername.get(caller.name)
+            vcf_fpath = sample.filtered_clean_vcf_by_callername.get(caller.name)
             if not vcf_fpath:
-                err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + ' .')
+                err('VCF does not exist: sample ' + sample.name + ', caller "' + caller.name + '".')
             else:
                 if self.varqc_after in self.steps:
                     self.submit(
