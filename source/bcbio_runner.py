@@ -58,7 +58,8 @@ class BCBioRunner:
         cnf.work_dir = bcbio_structure.work_dir
 
         hasher = hashlib.sha1(self.final_dir)
-        self.run_id = base64.urlsafe_b64encode(hasher.digest()[0:8])[:-1]
+        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+        self.run_id = bcbio_structure.project_name + '_' + path_hash
 
         self.threads = str(self.cnf.threads)
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))

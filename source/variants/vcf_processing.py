@@ -342,7 +342,7 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name,
                '--normal-id {normal_sample_name} '
                '{transcripts} ').format(**locals())
 
-    call(cnf, cmdline, stdout_to_outputfile=False)
+    call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False)
 
     if verify_file(maf_fpath, 'MAF'):
         info('MAF file saved to ' + maf_fpath)

@@ -417,7 +417,7 @@ def proc_line_polymorphic(rec, self_):
 #     return filtered_fpath
 
 
-cnfs_for_samples = dict()
+cnfs_for_sample_names = dict()
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
@@ -432,18 +432,18 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths)
 
-    global cnfs_for_samples
+    global cnfs_for_sample_names
     for sample in anno_vcf_by_sample.keys():
         cnf_copy = cnf.copy()
         cnf_copy['name'] = sample.name
-        cnfs_for_samples[sample.name] = cnf_copy
+        cnfs_for_sample_names[sample.name] = cnf_copy
 
     results = [r for r in Parallel(n_jobs=len(caller.samples)) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
               zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
-         ) if None not in r]
+         ) if r is not None and None not in r]
     info('*' * 70)
 
     for sample, [vcf, tsv, maf] in zip(caller.samples, results):
@@ -482,7 +482,10 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             err(sample.name + ': work_filt_vcf_fpath is None')
         return None, None, None
 
-    cnf = cnfs_for_samples[sample.name]
+    cnf = cnfs_for_sample_names.get(sample.name)
+    if not cnf:
+        info('Warning: for ' + sample.name + ', no cnf is None')
+        return None, None, None
     work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
     final_vcf_fpath = add_suffix(original_anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
