@@ -1,19 +1,16 @@
 #!/usr/bin/env python
 import sys
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import dirname, realpath
+from os.path import dirname, realpath, join
 from site import addsitedir
-source_dir = abspath(dirname(realpath(__file__)))
+source_dir = dirname(realpath(__file__))
 addsitedir(join(source_dir, 'ext_modules'))
 
 from optparse import OptionParser
-from os.path import join, abspath
-
 from source.bcbio_runner import BCBioRunner
 from source.config import Defaults
 from source.logger import info
@@ -34,8 +31,11 @@ def main():
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
     cnf = process_post_bcbio_args(parser)
 
-    if cnf.qualimap and 'QualiMap' not in cnf.steps: cnf.steps.append('QualiMap')
-    if cnf.load_mongo and 'MongoLoader' not in cnf.steps: cnf.steps.append('MongoLoader')
+    if cnf.qualimap and 'QualiMap' not in cnf.steps:
+        cnf.steps.append('QualiMap')
+        cnf.steps.append('QualiMap_summary')
+    if cnf.load_mongo and 'MongoLoader' not in cnf.steps:
+        cnf.steps.append('MongoLoader')
 
     check_system_resources(cnf, required=['qsub'])
 
