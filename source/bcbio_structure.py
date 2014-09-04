@@ -92,6 +92,9 @@ class VariantCaller:
     def get_filt_vcf_by_samples(self):
         return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
+    def get_pass_filt_vcf_by_samples(self):
+        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.passed_filt_vcf_ending)
+
     def _get_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
 
@@ -151,6 +154,7 @@ class BCBioStructure:
     detail_gene_report_ending = '.details.gene.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
+    passed_filt_vcf_ending = '.anno.filt.passed.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
     filt_maf_ending  = '.anno.filt.passed.maf'
     var_dir          = 'var'
