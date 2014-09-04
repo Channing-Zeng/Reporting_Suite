@@ -1,28 +1,25 @@
 #!/usr/bin/env python
-from genericpath import isfile
 import sys
-from os import getcwd
-from source.summary import process_post_bcbio_args, add_post_bcbio_args
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import abspath, dirname, realpath, pardir, join, basename
+from os.path import dirname, realpath
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 from optparse import OptionParser
-from os.path import join, pardir, isdir, basename, splitext, abspath
+from os.path import join, abspath
 
 from source.bcbio_runner import BCBioRunner
-from source.file_utils import safe_mkdir, adjust_path, remove_quotes, verify_dir, verify_file
-from source.config import Defaults, Config, load_yaml_config
-from source.logger import info, critical
-from source.main import check_system_resources, check_inputs, check_keys, load_genome_resources
+from source.config import Defaults
+from source.logger import info
+from source.main import check_system_resources, load_genome_resources
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
+from source.summary import process_post_bcbio_args, add_post_bcbio_args
 
 
 def main():
