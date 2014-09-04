@@ -77,7 +77,7 @@ class VariantCaller:
         for sample in self.samples:
             maf = sample.filtered_maf_by_callername.get(self.name)
             if not maf:
-                err('Warning: maf=None for caller ' + self.name + ', sample=' + sample.name)
+                err('Warning: MAF files is None for caller ' + self.name + ', sample=' + sample.name)
             else:
                 mafs.append(maf)
         return mafs
@@ -100,9 +100,10 @@ class VariantCaller:
                 dirname,
                 s.name + '-' + self.suf + ending)
 
-            if verify_file(fpath):
-                files_by_sample[s] = fpath
-            else:
+            if isfile(fpath):
+                if verify_file(fpath):
+                    files_by_sample[s] = fpath
+            elif s.phenotype != 'normal':
                 info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
         if to_exit:
@@ -206,7 +207,7 @@ class BCBioStructure:
         if not self.cnf.verbose:
             print ''
         else:
-            info('Done.')
+            info('Done loading BCBio structure.')
 
     def set_up_log(self, proc_name):
         self.log_dirpath = join(self.date_dirpath, 'log')

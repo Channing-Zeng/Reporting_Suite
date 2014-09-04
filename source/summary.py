@@ -58,8 +58,8 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
         if not isdir(cnf.output_dir):
             safe_mkdir(cnf.output_dir)
 
-    info()
     info('*' * 70)
+    info()
 
     return cnf, bcbio_structure
 

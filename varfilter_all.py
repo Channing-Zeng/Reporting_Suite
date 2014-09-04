@@ -179,14 +179,19 @@ def main():
 
     load_genome_resources(cnf,
         required=['seq', 'snpeff'])
+    info('*' * 70)
+    info()
 
     filter_all(cnf, bcbio_structure)
 
 
 def filter_all(cnf, bcbio_structure):
+    info('Starting variant filtering.')
+    info('-' * 70)
     for _, caller in bcbio_structure.variant_callers.items():
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
+    info('Results:')
     for sample in bcbio_structure.samples:
         finalize_one(cnf, bcbio_structure, sample)
 

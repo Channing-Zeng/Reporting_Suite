@@ -252,9 +252,14 @@ class Filtering:
                 critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
 
             with open(control_vars_dump_fpath) as f:
+                info('Loading control vars...')
                 self.control_vars = pickle.load(f)
+                info('Loaded control vars: ' + str(len(self.control_vars)))
+
             with open(varks_dump_fpath) as f:
+                info('Loading varks...')
                 self.varks = pickle.load(f)
+                info('Loaded varks: ' + str(len(self.varks)))
 
         else:
             for vcf_fpath, varks, control_vars in results:
@@ -270,15 +275,19 @@ class Filtering:
                 try:
                     with open(varks_dump_fpath) as f:
                         varks_2 = pickle.load(f)
-                    print 'Varks restored: len=', str(len(varks_2.keys()))
-                    print 'Varks new     : len=', str(len(self.varks.keys()))
+                    print 'Varks restored (to check): len=', str(len(varks_2.keys()))
+                    print 'Varks new                : len=', str(len(self.varks.keys()))
                 except:
                     pass
 
             with open(control_vars_dump_fpath, 'w') as f:
+                info('Saving control vars...')
                 pickle.dump(self.control_vars, f)
+                info('Saved control vars: ' + str(len(self.control_vars)))
             with open(varks_dump_fpath, 'w') as f:
+                info('Saving varks...')
                 pickle.dump(self.varks, f)
+                info('Saved varks: ' + str(len(self.varks)))
 
         vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
         filtering = self
@@ -314,7 +323,7 @@ def proc_line_1st_round(rec, self_, varks, control_vars):
     # Strict filter of DP, QUAL, PMEAN
     [f.apply(rec) for f in self_.round1_filters]
     if rec.is_rejected():
-        return rec
+        return None
 
     # For those who passed, collect controls, samples and af_by_varid
     sample = rec.sample_field()
@@ -421,9 +430,7 @@ cnfs_for_sample_names = dict()
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
-    info('*' * 70)
     info('Running for ' + caller.name)
-    info('*' * 70)
 
     anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
@@ -432,13 +439,14 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths)
 
+    samples = anno_vcf_by_sample.keys()
     global cnfs_for_sample_names
-    for sample in anno_vcf_by_sample.keys():
+    for sample in samples:
         cnf_copy = cnf.copy()
         cnf_copy['name'] = sample.name
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    results = [r for r in Parallel(n_jobs=len(caller.samples)) \
+    results = [r for r in Parallel(n_jobs=len(samples)) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
@@ -446,13 +454,15 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
          ) if r is not None and None not in r]
     info('*' * 70)
 
-    for sample, [vcf, tsv, maf] in zip(caller.samples, results):
+    for sample, [vcf, tsv, maf] in zip(samples, results):
         sample.filtered_vcf_by_callername[caller.name] = vcf
         sample.filtered_tsv_by_callername[caller.name] = tsv
         sample.filtered_maf_by_callername[caller.name] = maf
 
     comb_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.maf')
     caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.get_filtered_mafs(), comb_maf_fpath)
+    info('-' * 70)
+    info()
 
     return caller
 
@@ -483,8 +493,8 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
         return None, None, None
 
     cnf = cnfs_for_sample_names.get(sample.name)
-    if not cnf:
-        info('Warning: for ' + sample.name + ': cnf is None')
+    if cnf is None:
+        info('Error: for ' + sample.name + ': cnf is None')
         return None, None, None
     work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
