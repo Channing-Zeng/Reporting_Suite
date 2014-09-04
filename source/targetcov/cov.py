@@ -41,7 +41,7 @@ def run_target_cov(cnf, sample):
         info('Saved to ')
         info('\t' + summary_report_fpath)
 
-        summary_report_html_fpath = report.save_html(cnf.output_dir, cnf.work_dir,
+        summary_report_html_fpath = report.save_html(cnf.output_dir,
             cnf.name + '.' + BCBioStructure.targetseq_name,
             caption='Target coverage statistics for ' + cnf.name)
 

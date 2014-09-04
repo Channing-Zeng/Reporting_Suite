@@ -10,7 +10,7 @@ def make_summary_reports(cnf, bcbio_structure):
         report = _full_report_for_caller(cnf, callers[0])
 
         full_summary_fpaths = report.save_into_files(
-            cnf.output_dir, cnf.work_dir, base_fname=cnf.name, caption='Variant QC')
+            cnf.output_dir, base_fname=cnf.name, caption='Variant QC')
 
         info()
         info('*' * 70)
@@ -22,7 +22,7 @@ def make_summary_reports(cnf, bcbio_structure):
             caller.summary_qc_report = _full_report_for_caller(cnf, caller)
 
             caller.summary_qc_report_fpaths = caller.summary_qc_report.save_into_files(
-                cnf.output_dir, cnf.work_dir, base_fname=caller.suf + '.' + cnf.name,
+                cnf.output_dir, base_fname=caller.suf + '.' + cnf.name,
                 caption='Variant QC for ' + caller.name)
 
         # Combining
@@ -35,8 +35,7 @@ def make_summary_reports(cnf, bcbio_structure):
         ])
 
         full_summary_fpaths = combined_full_report.save_into_files(
-            cnf.output_dir, cnf.work_dir,
-            base_fname=cnf.name, caption='Variant QC')
+            cnf.output_dir, base_fname=cnf.name, caption='Variant QC')
 
         info()
         info('*' * 70)
@@ -57,7 +56,7 @@ def _full_report_for_caller(cnf, caller):
     htmls_by_sample = caller.get_fpaths_by_sample(cnf.dir, cnf.name, 'html')
 
     return FullReport.construct_from_sample_report_jsons(
-        caller.samples, jsons_by_sample, htmls_by_sample)
+        caller.samples, jsons_by_sample, htmls_by_sample, cnf.output_dir)
 
 
 def _load_sample_report(json_fpath, sample):

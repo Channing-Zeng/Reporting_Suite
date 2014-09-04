@@ -1,6 +1,6 @@
 from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
-from os.path import join
+from os.path import join, relpath
 from ext_modules.simplejson import load, dump, JSONEncoder, dumps
 import datetime
 
@@ -92,7 +92,7 @@ class Report:
     def save_tsv(self, output_dirpath, base_fname):
         return write_tsv_rows(self.flatten(), output_dirpath, base_fname)
 
-    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+    def save_html(self, output_dirpath, base_fname, caption=None):
         raise NotImplementedError()
 
     @staticmethod
@@ -139,9 +139,9 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+    def save_html(self, output_dirpath, base_fname, caption=None):
         return FullReport(name=self.display_name, sample_reports=[self]).save_html(
-            output_dirpath, work_dirpath, base_fname, caption)
+            output_dirpath, base_fname, caption)
 
     def __repr__(self):
         return self.display_name + (', ' + self.report_name if self.report_name else '')
@@ -196,7 +196,7 @@ class FullReport(Report):
         return rows
 
     @staticmethod
-    def construct_from_sample_report_jsons(samples, jsons_by_sample, htmls_by_sample):
+    def construct_from_sample_report_jsons(samples, jsons_by_sample, htmls_by_sample, output_dirpath):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:
@@ -204,7 +204,7 @@ class FullReport(Report):
                 with open(jsons_by_sample[sample]) as f:
                     data = load(f, object_pairs_hook=OrderedDict)
                     sample_report = SampleReport.load(data, sample)
-                    sample_report.html_fpath = htmls_by_sample[sample]
+                    sample_report.html_fpath = relpath(htmls_by_sample[sample], output_dirpath)
                     full_report.sample_reports.append(sample_report)
                     metric_storage = metric_storage or sample_report.metric_storage
 
@@ -215,13 +215,13 @@ class FullReport(Report):
 
         return full_report
 
-    def save_into_files(self, output_dirpath, work_dirpath, base_fname, caption):
+    def save_into_files(self, output_dirpath, base_fname, caption):
         return \
             self.save_txt(output_dirpath, base_fname), \
             self.save_tsv(output_dirpath, base_fname), \
-            self.save_html(output_dirpath, work_dirpath, base_fname, caption)
+            self.save_html(output_dirpath, base_fname, caption)
 
-    def save_html(self, output_dirpath, work_dirpath, base_fname, caption=None):
+    def save_html(self, output_dirpath, base_fname, caption=None):
         class Encoder(JSONEncoder):
             def default(self, o):
                 if isinstance(o, (VariantCaller, Sample)):

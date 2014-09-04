@@ -1,3 +1,4 @@
+from os.path import relpath
 from source.reporting import Metric, Record, FullReport, SampleReport, MetricStorage, ReportSection
 from source.logger import step_greetings, info
 from source.bcbio_structure import BCBioStructure
@@ -11,13 +12,13 @@ def summary_reports(cnf, bcbio_structure):
     full_report = FullReport(cnf.name, [
         SampleReport(sample,
                      records=_parse_qualimap_sample_report(htmls_by_sample[sample]),
-                     html_fpath=htmls_by_sample[sample])
+                     html_fpath=relpath(htmls_by_sample[sample], cnf.output_dir))
             for sample in bcbio_structure.samples
             if sample in htmls_by_sample],
         metric_storage=metric_storage)
 
     final_summary_report_fpaths = full_report.save_into_files(
-        cnf.output_dir, cnf.work_dir, BCBioStructure.qualimap_name, 'QualiMap statistics')
+        cnf.output_dir, BCBioStructure.qualimap_name, 'QualiMap statistics')
 
     info()
     info('*' * 70)

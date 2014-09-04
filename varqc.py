@@ -130,7 +130,7 @@ def process_one(cnf):
         report.plots = qc_plots_for_html_report_fpaths
 
     summary_report_html_fpath = report.save_html(
-        cnf.output_dir, cnf.work_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
+        cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
         caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
 
     info('\t' + summary_report_html_fpath)
