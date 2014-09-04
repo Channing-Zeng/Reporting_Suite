@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+from genericpath import isfile
 import sys
+from os import getcwd
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -15,7 +17,7 @@ from optparse import OptionParser
 from os.path import join, pardir, isdir, basename, splitext, abspath
 
 from source.bcbio_runner import BCBioRunner
-from source.file_utils import safe_mkdir, adjust_path, remove_quotes
+from source.file_utils import safe_mkdir, adjust_path, remove_quotes, verify_dir, verify_file
 from source.config import Defaults, Config, load_yaml_config
 from source.logger import info, critical
 from source.main import check_system_resources, check_inputs, check_keys, load_genome_resources
@@ -26,33 +28,36 @@ def main():
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
+    # parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose output')
-    # parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='overwrite', action='store_false', help='Reuse intermediate results in work directory for subroutines')
 
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='system configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='run configuration yaml (see default one %s)' % Defaults.run_cnf)
-
     (opts, args) = parser.parse_args()
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
-    if not opts.bcbio_final_dir and len(args) > 0:
-        cnf.bcbio_final_dir = args[0]
+    opt_dict = opts.__dict__
+
+    dir_arg = args[0] if len(args) > 0 else getcwd()
+    dir_arg = adjust_path(dir_arg)
+    if not verify_dir(dir_arg):
+        sys.exit(1)
+    if isdir(join(dir_arg, 'final')):
+        bcbio_final_dir = join(dir_arg, 'final')
     else:
-        critical('Usage: ' + __file__ + ' <final_dir>')
+        bcbio_final_dir = dir_arg
 
-    if not check_keys(cnf, ['bcbio_final_dir']):
-        parser.print_help()
-        sys.exit(1)
+    config_dirpath = join(bcbio_final_dir, pardir, 'config')
+    for cnf_name in ['run', 'sys']:
+        if cnf_name + '_cnf' not in opt_dict:
+            cnf_fpath = join(config_dirpath, cnf_name + '_info.yaml')
+            if not isfile(cnf_fpath) or not verify_file(cnf_fpath):
+                critical('Usage: ' + __file__ + ' bcbio_final_dir [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
+            opt_dict[cnf_name + '_cnf'] = cnf_fpath
 
-    if not check_inputs(cnf, dir_keys=['bcbio_final_dir']):
-        sys.exit(1)
-
-    if isdir(join(cnf.bcbio_final_dir, 'final')):
-        cnf.bcbio_final_dir = join(cnf.bcbio_final_dir, 'final')
+    cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
 
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = remove_quotes(cnf.qsub_runner)

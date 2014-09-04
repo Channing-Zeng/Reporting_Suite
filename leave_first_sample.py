@@ -1,22 +1,16 @@
 #!/usr/bin/env python
-from genericpath import isfile
 import sys
-from source.file_utils import safe_mkdir
-from source.main import load_genome_resources
-from source.variants.vcf_processing import leave_first_sample
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, dirname, abspath, realpath, islink, isdir
+from os.path import join, dirname, abspath, realpath
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 import os
-from source.variants.filtering import filter_for_variant_caller
-from source.config import Defaults
 from source.logger import info
 from source.bcbio_structure import BCBioStructure
 from source.summary import summary_script_proc_params
@@ -26,14 +20,9 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    description = ''
-
-    defaults = Defaults.variant_filtering
-
     cnf, bcbio_structure = summary_script_proc_params(
         BCBioStructure.varfilter_name,
-        dir=BCBioStructure.varfilter_dir,
-        description=description)
+        dir=BCBioStructure.varfilter_dir)
 
     info('*' * 70)
     info()
@@ -51,7 +40,7 @@ def proc_all(cnf, bcbio_structure):
 def proc_var_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 
-    filt_vcf_fpath_by_sample = caller.get_filt_vcf_by_samples()
+    filt_vcf_fpath_by_sample = caller.get_pass_filt_vcf_by_samples()
 
     for sample, vcf_fpath in filt_vcf_fpath_by_sample.items():
         info(sample.name)
