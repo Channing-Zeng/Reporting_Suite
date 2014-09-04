@@ -32,7 +32,7 @@ class Sample:
         self.normal_match = None
 
     def get_clean_filtered_vcf_by_callername(self, callername):
-        path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + '.anno.filt.vcf')
+        path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
         if not verify_file(path):
             return None
         return path
@@ -88,6 +88,9 @@ class VariantCaller:
 
     def get_anno_vcf_by_samples(self):
         return self._get_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
+
+    def get_filt_vcf_by_samples(self):
+        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
     def _get_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
