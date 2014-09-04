@@ -1,55 +1,78 @@
 #!/usr/bin/env python
-from genericpath import isdir
-
-import sys
-from os.path import join, pardir
 from optparse import OptionParser
+from os.path import join, pardir, isfile, isdir
+from os import getcwd
+import sys
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
-from source.file_utils import verify_dir, safe_mkdir
+from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, remove_quotes
 from source.config import Defaults, Config
-from source.main import check_keys, check_inputs, set_up_work_dir, set_up_log
+from source.main import check_keys, check_inputs, set_up_work_dir
 from source.logger import info, critical
 
 
-def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
-    info(' '.join(sys.argv))
-    info()
-
-    description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
-
-    parser = OptionParser(description=description)
-    parser.add_option('-d', dest='bcbio_final_dir', help='Path to bcbio-nextgen final directory (default is pwd)')
+def add_post_bcbio_args(parser):
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
-    parser.add_option('--reuse', dest='overwrite', help='Reuse intermediate files from previous run', action='store_false')
-
+    parser.add_option('--reuse', dest='overwrite', action='store_false', help='Reuse intermediate files from previous run')
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
-    parser.add_option('--log-dir', dest='log_dir')
 
+
+def process_post_bcbio_args(parser):
+    (opts, args) = parser.parse_args()
+    opt_dict = opts.__dict__
+
+    dir_arg = args[0] if len(args) > 0 else getcwd()
+    dir_arg = adjust_path(dir_arg)
+    if not verify_dir(dir_arg):
+        sys.exit(1)
+    if isdir(join(dir_arg, 'final')):
+        bcbio_final_dir = join(dir_arg, 'final')
+    else:
+        bcbio_final_dir = dir_arg
+
+    info('BCBio "final" dir: ' + bcbio_final_dir)
+
+    config_dirpath = join(bcbio_final_dir, pardir, 'config')
+    for cnf_name in ['run', 'sys']:
+        if cnf_name + '_cnf' not in opt_dict:
+            cnf_fpath = join(config_dirpath, cnf_name + '_info.yaml')
+            if not isfile(cnf_fpath) or not verify_file(cnf_fpath):
+                critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
+            opt_dict[cnf_name + '_cnf'] = cnf_fpath
+
+    cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
+    cnf.bcbio_final_dir = bcbio_final_dir
+
+    if 'qsub_runner' in cnf:
+        cnf.qsub_runner = remove_quotes(cnf.qsub_runner)
+        cnf.qsub_runner = adjust_path(join(cnf.sys_cnf, pardir, cnf.qsub_runner))
+    if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
+        sys.exit(1)
+
+    return cnf
+
+
+def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
+    description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
+    parser = OptionParser(description=description)
+    add_post_bcbio_args(parser)
+
+    parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--dir', dest='dir', default=dir)
     parser.add_option('--name', dest='name', default=name)
-
     for args, kwargs in extra_opts:
         parser.add_option(*args, **kwargs)
 
-    (opts, args) = parser.parse_args()
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
-    if not opts.bcbio_final_dir and len(args) > 0:
-        cnf.bcbio_final_dir = args[0]
-    else:
-        critical('Usage: ./' + __file__ + ' <final_dir>')
-
-    _check_args(parser, cnf)
+    cnf = process_post_bcbio_args(parser)
 
     load_bcbio_cnf(cnf)
-
     bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf, cnf.name)
-    cnf.work_dir = bcbio_structure.work_dir
 
+    cnf.work_dir = bcbio_structure.work_dir
     set_up_work_dir(cnf)
     if cnf.dir:
         cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir)
@@ -63,20 +86,5 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
 
     return cnf, bcbio_structure
 
-
-def _check_args(parser, cnf):
-    if not check_keys(cnf, ['bcbio_final_dir']):
-        parser.print_help()
-        sys.exit(1)
-    cnf.bcbio_final_dir = verify_dir(cnf.bcbio_final_dir)
-    if not cnf.bcbio_final_dir:
-        sys.exit(1)
-
-    info('BCBio "final" dir: ' + cnf.bcbio_final_dir + ' (set with -d)')
-
-    if 'qsub_runner' in cnf:
-        cnf.qsub_runner = join(cnf.sys_cnf, pardir, cnf.qsub_runner)
-    if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
-        sys.exit(1)
 
 

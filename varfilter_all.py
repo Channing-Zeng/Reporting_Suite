@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.file_utils import safe_mkdir
-from source.main import load_genome_resources
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -13,6 +11,8 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 import os
+from source.file_utils import safe_mkdir
+from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
 from source.logger import info

@@ -14,9 +14,13 @@ addsitedir(join(source_dir, 'ext_modules'))
 from source.ngscat.summarize_ngscat import summary_reports
 from source.bcbio_structure import BCBioStructure
 from source.summary import summary_script_proc_params
+from source.logger import info
 
 
 def main():
+    info(' '.join(sys.argv))
+    info()
+
     cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.ngscat_name, BCBioStructure.ngscat_dir)
 
     summary_reports(cnf, bcbio_structure)
