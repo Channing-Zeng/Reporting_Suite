@@ -56,7 +56,19 @@ def proc_var_caller(caller, cnf, bcbio_structure):
     for sample, vcf_fpath in filt_vcf_fpath_by_sample.items():
         info(sample.name)
         info('Processing ' + vcf_fpath)
-        new_vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+        new_vcf_fpath = vcf_fpath + '.tx'
+
+        with open(vcf_fpath) as f, open(new_vcf_fpath, 'w') as out:
+            for l in f:
+                if l.startswith('#CHROM'):
+                    ts = l.strip().split('\t')
+                    l2 = '\t'.join(ts[:10])
+                    info('  ' + l.strip() + '    ->    ' + l2)
+                    l = l2 + '\n'
+                out.write(l)
+
+        # new_vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+
         info('Saved to ' + new_vcf_fpath)
         if new_vcf_fpath != vcf_fpath:
             os.remove(vcf_fpath)
