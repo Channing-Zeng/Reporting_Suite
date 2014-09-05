@@ -52,28 +52,22 @@ class BCBioRunner:
     def __init__(self, cnf, bcbio_structure, bcbio_cnf):
         self.bcbio_structure = bcbio_structure
         self.final_dir = bcbio_structure.final_dirpath
-        self.cnf = cnf
         self.bcbio_cnf = bcbio_cnf
 
+        self.cnf = cnf
         cnf.work_dir = bcbio_structure.work_dir
 
-        hasher = hashlib.sha1(self.final_dir)
-        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
-        self.run_id = bcbio_structure.project_name + '_' + path_hash
+        self.run_id = self.__make_run_id(bcbio_structure)
 
         self.threads = str(self.cnf.threads)
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.steps = Steps()
-        self.vardict_steps = Steps()
-
+        # self.vardict_steps = Steps()
         self.set_up_steps(cnf, self.run_id)
 
-        def normalize(name):
-            return name.lower().replace('_', '').replace('-', '')
-
-        def contains(x, xs):
-            return normalize(x) in [normalize(y) for y in (xs or [])]
+        normalize = lambda name: name.lower().replace('_', '').replace('-', '')
+        contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
 
         self.steps.extend(
             [s for s in [
@@ -90,24 +84,28 @@ class BCBioRunner:
                 self.qualimap,
                 self.targetcov_summary,
                 self.ngscat_summary,
-                self.qualimap_summary]
-             if contains(s.name, cnf.steps)])
+                self.qualimap_summary,
+            ] if contains(s.name, cnf.steps)])
 
-        self.vardict_steps.extend(
-            [s for s in [
-                self.vardict,
-                self.testsomatic,
-                self.var_to_vcf_somatic,
-                self.varqc,
-                self.varannotate,
-                self.varfilter_all,
-                self.varqc_after,
-                self.varqc_summary,
-                self.varqc_after_summary]
-             if contains(s.name, cnf.vardict_steps)])
+        # self.vardict_steps.extend(
+        #     [s for s in [
+        #         self.vardict,
+        #         self.testsomatic,
+        #         self.var_to_vcf_somatic,
+        #         self.varqc,
+        #         self.varannotate,
+        #         self.varfilter_all,
+        #         self.varqc_after,
+        #         self.varqc_summary,
+        #         self.varqc_after_summary
+        # ] if contains(s.name, cnf.vardict_steps)])
 
         self._symlink_cnv()
 
+    def __make_run_id(self, bcbio_structure):
+        hasher = hashlib.sha1(self.final_dir)
+        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+        return bcbio_structure.project_name + '_' + path_hash
 
     def set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '

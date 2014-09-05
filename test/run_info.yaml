@@ -33,9 +33,9 @@ filter_reject: False   ## Before annotation and QC, drop variants
 variant_filtering:
   impact:             'MODERATE|HIGH'
 
-  # filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
-  # filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
-  # filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
+  filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+  filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+  filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
   # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
   fraction:           0.4

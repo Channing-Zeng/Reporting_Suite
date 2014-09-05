@@ -358,7 +358,7 @@ def proc_line_2nd_round(rec, self_):
     if sample:
         if not self_.undet_sample_filter.apply(rec):
             err('Undetermined sample for rec ' + rec.var_id() + ', sample ' + str(sample))
-            return rec
+            return None
 
         vark_info = self_.varks[rec.var_id()]
         var_n = vark_info.var_n()
