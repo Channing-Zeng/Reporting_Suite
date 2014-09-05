@@ -63,7 +63,7 @@ class BCBioRunner:
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.steps = Steps()
-        # self.vardict_steps = Steps()
+        self.vardict_steps = Steps()
         self.set_up_steps(cnf, self.run_id)
 
         normalize = lambda name: name.lower().replace('_', '').replace('-', '')
