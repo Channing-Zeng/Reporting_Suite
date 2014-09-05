@@ -6,6 +6,7 @@ import operator
 
 from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
+from memory_profiler import profile
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
@@ -120,9 +121,12 @@ class VarkInfo:
 
 cnf_for_samples = dict()
 
+
+@profile
 def process_vcf(vcf_fpath, fun, suffix, *args, **kwargs):
     cnf = cnf_for_samples[basename(vcf_fpath).split('.')[0]]
     return iterate_vcf(cnf, vcf_fpath, fun, suffix, self_=filtering, *args, **kwargs)
+
 
 def rm_prev_round(vcf_fpath):
     return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev')
@@ -136,11 +140,14 @@ def first_round(vcf_fpath):
 
     return res, varks, control_vars
 
+
 def second_round(vcf_fpath):
     return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2')
 
+
 def impact_round(vcf_fpath):
     return process_vcf(vcf_fpath, proc_line_impact, 'impact')
+
 
 def one_per_line(vcf_fpath):
     cnf = cnf_for_samples[basename(vcf_fpath).split('.')[0]]
@@ -224,6 +231,7 @@ class Filtering:
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
 
 
+    @profile
     def run_filtering(self, vcf_fpaths):
         step_greetings('Filtering')
 
@@ -318,6 +326,7 @@ def proc_line_remove_prev_filter(rec, self_):
     rec.FILTER = ['PASS']
     return rec
 
+
 # Counting samples, variants and AF_by_vark
 def proc_line_1st_round(rec, self_, varks, control_vars):
     # Strict filter of DP, QUAL, PMEAN
@@ -348,6 +357,7 @@ def proc_line_1st_round(rec, self_, varks, control_vars):
                 varks[vark] = VarkInfo(vark)
             varks[vark].afs.append(rec.get_val('AF', .0))
     return rec
+
 
 # Based on counted samples, variants and AF_by_vark:
 #   var_n    = number of variants for vark       must be >= [sample_cnt]
@@ -429,6 +439,7 @@ def proc_line_polymorphic(rec, self_):
 cnfs_for_sample_names = dict()
 
 
+@profile
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 

@@ -4,10 +4,10 @@ import os
 import shutil
 import sys
 import base64
-from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink
+from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file, add_suffix
+from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.file_utils import file_exists, safe_mkdir
@@ -267,6 +267,7 @@ class BCBioRunner:
 
         output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
         if output_dirpath and not isdir(output_dirpath) and create_dir:
+            safe_mkdir(join(output_dirpath, pardir))
             safe_mkdir(output_dirpath)
 
         out_fpath = out_fpath or log_fpath
@@ -620,7 +621,7 @@ class BCBioRunner:
                         try:
                             if islink(dst_fpath):
                                 os.unlink(dst_fpath)
-                            os.symlink(src_fpath, dst_fpath)
+                            symlink_plus(src_fpath, dst_fpath)
                         except OSError:
                             pass
 

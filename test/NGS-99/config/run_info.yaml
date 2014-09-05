@@ -3,14 +3,18 @@ genome: hg19
 steps:
 # - VarAnnotate
 # - VarQC
-# - VarFilter
-# - VarQC_after
+# - VarQC_summary
+- VarFilter
+# - VarQC_postVarFilter
+# - VarQC_postVarFilter_summary
 # - TargetCov
-#- NGScat
+# - Seq2C
+# - TargetCov_Summary
+# - ngsCAT
+# - ngsCAT_summary
 # - QualiMap
-- VarQC_Summary
-- TargetCov_Summary
-#- ngsCAT_summary
+# - QualiMap_summary
+#- MongoLoader
 
 #vardict_steps:
 #- VarDict
@@ -29,10 +33,9 @@ filter_reject: False   ## Before annotation and QC, drop variants
 variant_filtering:
   impact:             'MODERATE|HIGH'
 
-
-  # filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
-  # filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
-  # filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
+  filt_depth:         0       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+  filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+  filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
   # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
   fraction:           0.4
@@ -55,7 +58,7 @@ variant_filtering:
 
 quality_control:
   databases: ['dbsnp']
-  novelty: ['all', 'known', 'novel']
+  novelty: ['known', 'novel', 'all']
   db_for_summary: dbsnp
   variant_distribution_scale: 1000  ## in kilobases
 
@@ -226,7 +229,7 @@ tsv_fields:
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
 - COMMON                        : CommonVariant
-#- CLNSIG                        : ClinicalSignificance
+- CLNSIG                        : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
 #- MAF                           : GlobalMinorAlleleFrequency
 #- CDA                           : InClinicalDiagnosticAssay

@@ -287,8 +287,6 @@ class BCBioStructure:
         sample.bed = bed if verify_bed(bed) else None
         sample.bam = bam if verify_bam(bam) else None
 
-        safe_mkdir(join(sample.dirpath, 'qc'))
-
         sample.phenotype = None
 
         if 'metadata' in sample_info:

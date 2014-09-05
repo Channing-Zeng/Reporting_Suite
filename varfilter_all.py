@@ -5,19 +5,21 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import join, pardir, basename, dirname, abspath, realpath, islink, isdir
+from os.path import join, pardir, basename, dirname, abspath, realpath, islink, isdir, relpath
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 import os
-from source.file_utils import safe_mkdir
+from memory_profiler import profile
+
 from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
 from source.logger import info
 from source.bcbio_structure import BCBioStructure
 from source.summary import summary_script_proc_params
+from source.file_utils import safe_mkdir, symlink_plus
 
 
 def main():
@@ -166,7 +168,7 @@ def main():
 
         (['-c', '--control'], dict(
             dest='control',
-            help='The control sample name. Any novel or COSMIC variants passing all '
+            help='The control sample name. Any novel or COSMIC varia    nts passing all '
                  'above filters but also detected in Control sample will be deemed '
                  'considered false positive. Use only when there\'s control sample.'
         ))]
@@ -185,9 +187,11 @@ def main():
     filter_all(cnf, bcbio_structure)
 
 
+# @profile
 def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
+
     for _, caller in bcbio_structure.variant_callers.items():
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
@@ -209,7 +213,8 @@ def symlink_to_dir(fpath, dirpath):
     dst_path = join(dirpath, basename(fpath))
     if islink(dst_path):
         os.unlink(dst_path)
-    os.symlink(fpath, dst_path)
+
+    symlink_plus(fpath, dst_path)
 
 
 def finalize_one(cnf, bcbio_structure, sample):

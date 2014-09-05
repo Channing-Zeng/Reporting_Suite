@@ -12,8 +12,8 @@ from source.logger import info, critical
 
 
 def add_post_bcbio_args(parser):
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', default=Defaults.sys_cnf, help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', default=Defaults.run_cnf, help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
@@ -38,10 +38,11 @@ def process_post_bcbio_args(parser):
 
     config_dirpath = join(bcbio_final_dir, pardir, 'config')
     for cnf_name in ['run', 'sys']:
-        if cnf_name + '_cnf' not in opt_dict:
-            cnf_fpath = join(config_dirpath, cnf_name + '_info.yaml')
+        if not opt_dict.get(cnf_name + '_cnf'):
+            cnf_fpath = adjust_path(join(config_dirpath, cnf_name + '_info.yaml'))
             if not isfile(cnf_fpath) or not verify_file(cnf_fpath):
-                critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
+                cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
+                # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
             opt_dict[cnf_name + '_cnf'] = cnf_fpath
 
     cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
