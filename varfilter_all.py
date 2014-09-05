@@ -11,7 +11,7 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 import os
-# from memory_profiler import profile
+#from memory_profiler import profile
 
 from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
@@ -187,7 +187,7 @@ def main():
     filter_all(cnf, bcbio_structure)
 
 
-# @profile
+#@profile
 def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
@@ -231,8 +231,6 @@ def finalize_one(cnf, bcbio_structure, sample):
 
 if __name__ == '__main__':
     main()
-
-
 
 
 

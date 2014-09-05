@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from optparse import OptionParser
-from os.path import join, pardir, isfile, isdir
+from os.path import join, pardir, isfile, isdir, expanduser
 from os import getcwd
 import sys
 
@@ -49,7 +49,7 @@ def process_post_bcbio_args(parser):
     cnf.bcbio_final_dir = bcbio_final_dir
 
     if 'qsub_runner' in cnf:
-        cnf.qsub_runner = remove_quotes(cnf.qsub_runner)
+        cnf.qsub_runner = expanduser(remove_quotes(cnf.qsub_runner))
         cnf.qsub_runner = adjust_path(join(__file__, pardir, pardir, cnf.qsub_runner))
     if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)

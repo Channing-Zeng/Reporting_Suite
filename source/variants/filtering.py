@@ -6,7 +6,7 @@ import operator
 
 from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
-# from memory_profiler import profile
+##from memory_profiler import profile
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
@@ -122,7 +122,7 @@ class VarkInfo:
 cnf_for_samples = dict()
 
 
-# @profile
+@profile
 def process_vcf(vcf_fpath, fun, suffix, *args, **kwargs):
     cnf = cnf_for_samples[basename(vcf_fpath).split('.')[0]]
     return iterate_vcf(cnf, vcf_fpath, fun, suffix, self_=filtering, *args, **kwargs)
@@ -231,7 +231,7 @@ class Filtering:
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
 
 
-    # @profile
+    @profile
     def run_filtering(self, vcf_fpaths):
         step_greetings('Filtering')
 
@@ -439,7 +439,7 @@ def proc_line_polymorphic(rec, self_):
 cnfs_for_sample_names = dict()
 
 
-# @profile
+@profile
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 

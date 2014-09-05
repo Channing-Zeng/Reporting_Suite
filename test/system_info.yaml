@@ -39,4 +39,4 @@ genomes:
 
 queue: ngs.q
 
-qsub_runner: qsub_runner_local.sh
+qsub_runner: ~/vagrant/reporting_suite/test/qsub_runner_local.sh

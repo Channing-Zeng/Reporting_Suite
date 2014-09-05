@@ -6,6 +6,7 @@ import shutil
 
 from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir
 from collections import OrderedDict
+##from memory_profiler import profile
 
 from ext_modules import vcf_parser
 from ext_modules.vcf_parser.model import _Record
@@ -46,13 +47,13 @@ class Record(_Record):
         if self._bias is None:
             bias_ = self.get_val('BIAS')
             if bias_ is not None:
-                if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':']:
+                if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':', ',']:
                     err('BIAS: ' + str(bias_) + ' for variant ' + self.var_id())
                 if bias_ == 0.0:
                     bias_ = None
                     err('Warning: BIAS is 0 ' + ' for variant ' + self.var_id())
                 else:
-                    bias_.replace(';', ':').replace('.', ':')
+                    bias_.replace(';', ':').replace('.', ':').replace(',', ':')
             self._bias = bias_
         return self._bias
 
@@ -134,15 +135,21 @@ class Record(_Record):
 
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
+    @profile
     def _convert_vcf(inp_f, out_f):
-        max_bunch_size = 1000 * 1000
+        max_bunch_size = 10000
         written_records = 0
         bunch = []
 
         reader = vcf_parser.Reader(inp_f)
         writer = vcf_parser.Writer(out_f, reader)
 
-        for i, rec in enumerate(reader):
+        i = 0
+        while True:
+            rec = next(reader, None)
+            if rec is None:
+                break
+
             rec = proc_rec_fun(Record(rec, input_fpath, i), *args, **kwargs)
             if rec:
                 bunch.append(rec)
@@ -152,8 +159,10 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                 writer.write_records(bunch)
                 info('Written lines: ' + str(written_records))
                 bunch = []
+            i += 1
 
         writer.write_records(bunch)
+        bunch = []
         info('Written lines: ' + str(written_records))
 
     return convert_file(cnf, input_fpath, _convert_vcf,
