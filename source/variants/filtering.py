@@ -6,7 +6,7 @@ import operator
 
 from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
-from memory_profiler import profile
+# from memory_profiler import profile
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
