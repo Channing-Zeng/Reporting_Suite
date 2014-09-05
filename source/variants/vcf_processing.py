@@ -135,7 +135,7 @@ class Record(_Record):
 
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
-    @profile
+    #@profile
     def _convert_vcf(inp_f, out_f):
         max_bunch_size = 10000
         written_records = 0
