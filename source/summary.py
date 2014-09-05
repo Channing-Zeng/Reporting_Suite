@@ -50,7 +50,7 @@ def process_post_bcbio_args(parser):
 
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = remove_quotes(cnf.qsub_runner)
-        cnf.qsub_runner = adjust_path(join(cnf.sys_cnf, pardir, cnf.qsub_runner))
+        cnf.qsub_runner = adjust_path(join(__file__, pardir, cnf.qsub_runner))
     if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
 
