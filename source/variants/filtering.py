@@ -180,9 +180,7 @@ class Filtering:
 
         self.impact_filter = EffectFilter('impact')
 
-        def polymorphic_filter_check(rec):
-            pass
-        self.polymorphic_filter = Filter('POLYMORPHIC', polymorphic_filter_check)
+        self.polymorphic_filter = Filter('POLYMORPHIC', lambda rec: rec)
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN'),
@@ -451,8 +449,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths)
 
     samples = anno_vcf_by_sample.keys()
+
     global cnfs_for_sample_names
+    info('*' * 70)
+    info('Processed samples (' + str(len(samples)) + '):')
     for sample in samples:
+        info(sample.name)
         cnf_copy = cnf.copy()
         cnf_copy['name'] = sample.name
         cnfs_for_sample_names[sample.name] = cnf_copy
@@ -463,9 +465,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
               zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
          ) if r is not None and None not in r]
+    info('Results: ' + str(len(results)))
     info('*' * 70)
 
     for sample, [vcf, tsv, maf] in zip(samples, results):
+        info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
         sample.filtered_vcf_by_callername[caller.name] = vcf
         sample.filtered_tsv_by_callername[caller.name] = tsv
         sample.filtered_maf_by_callername[caller.name] = maf
