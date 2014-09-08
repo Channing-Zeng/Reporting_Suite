@@ -50,18 +50,18 @@ elsif( $use_snpeff and ( $vep_anno or $snpeff_anno )) {
 }
 
 my %trIdById;
+my %trExonById;
 my %trStrandById;
 my %trPosById;
-my %trExonById;
 if( $transcripts_file ) {
     open (FILE, $transcripts_file);
     while (<FILE>) {
         chomp;
         my ($chr, $start, $end, $strand, $type, $id, $geneName, $geneId, $numberOfTranscripts, $canonicalTranscriptLength, $transcriptId, $cdsLength, $numerOfExons, $exonRank, $exonSpliceType) = split("\t");
-        $trIdById{ $id } = $transcriptId;
-        $trStrandById{ $id } = $strand;
-        $trPosById{ $id } = $start;
-        $trExonById{ $id } = $exonRank;
+        $trIdById{ ($transcriptId, $exonRank) } = $transcriptId;
+        $trExonById{ ($transcriptId, $exonRank) } = $exonRank;
+        $trStrandById{ ($transcriptId, $exonRank) } = $strand;
+        $trPosById{ ($transcriptId, $exonRank) } = $start;
     }
     close (FILE);
 }
@@ -116,9 +116,9 @@ my @maf_header = qw(
     Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
 
     Annotation_Transcript Transcript_Strand Transcript_Exon Transcript_Position
-    cDNA_Change Codon_Change Protein_Change
-    Refseq_mRNA_Id Refseq_prot_Id
-    t_ref_count t_alt_count
+#    cDNA_Change Codon_Change Protein_Change
+#    Refseq_mRNA_Id Refseq_prot_Id
+#    t_ref_count t_alt_count
     Filter
 );
 
@@ -261,16 +261,8 @@ while( my $line = $vcf_fh->getline ) {
                     $effect{Effect} = '' unless( $effect{Effect} );
                     $effect{Gene_Name} = '' unless( $effect{Gene_Name} );
 
-#                    print STDERR "\n";
-#                    print STDERR $effect{Amino_Acid_Change};
-#                    print STDERR "\n";
-
                     # HGVS formatted codon/protein changes need to be parsed out of Amino_Acid_Change
                     ( $effect{HGVSp}, $effect{HGVSc} ) = $effect{Amino_Acid_Change} =~ m/^(.*)\/(.*)$/;
-
-#                    print STDERR "\n";
-#                    print STDERR $effect{Amino_Acid_Change};
-#                    print STDERR "\n";
 
                     # Transcript length isn't reported, so we have to use AA length, where available
                     $effect{Amino_Acid_Length} = 0 unless( $effect{Amino_Acid_Length} );
@@ -327,24 +319,26 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{HGVSc} = ( $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
     $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
     my $transcriptId = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
+    my $exonNumber = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
     $maf_line{Transcript_ID} = $transcriptId;
-    $maf_line{Exon_Number} = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
+    $maf_line{Exon_Number} = $exonNumber;
     $maf_line{Validation_Status} = ($filter eq 'PASS' || $filter eq '.') ? 'Valid' : 'Invalid';
     $maf_line{Validation_Method} = ($filter eq 'PASS' || $filter eq '.') ? '' : $filter;
     $maf_line{BAM_File} = $bam_file;
     $maf_line{Filter} = $filter;
 
-    $maf_line{Transcript_Strand} = $trStrandById{ $transcriptId } ? $trStrandById{ $transcriptId } : '';
-    $maf_line{Transcript_Exon} = $trPosById{ $transcriptId } ? $trPosById{ $transcriptId } : '';
-    $maf_line{Transcript_Position} = $trExonById{ $transcriptId } ? $trExonById{ $transcriptId } : '';
+    my $exonId = ( $transcriptId, $exonNumber);
+    $maf_line{Transcript_Strand} = $trStrandById{ $exonId } ? $trStrandById{ $exonId } : '';
+    $maf_line{Transcript_Position} = $trPosById{ $exonId } ? $trPosById{ $exonId } : '';
+    $maf_line{Transcript_Exon} = $trExonById{ $exonId } ? $trExonById{ $exonId } : '';
 
-    $maf_line{cDNA_Change} = '';
-    $maf_line{Codon_Change} = '';
-    $maf_line{Protein_Change} = '';
-    $maf_line{Refseq_mRNA_Id} = '';
-    $maf_line{Refseq_prot_Id} = '';
-    $maf_line{t_ref_count} = '';
-    $maf_line{t_alt_count} = '';
+#    $maf_line{cDNA_Change} = '';
+#    $maf_line{Codon_Change} = '';
+#    $maf_line{Protein_Change} = '';
+#    $maf_line{Refseq_mRNA_Id} = '';
+#    $maf_line{Refseq_prot_Id} = '';
+#    $maf_line{t_ref_count} = '';
+#    $maf_line{t_alt_count} = '';
 
     foreach my $col ( @maf_header ) {
         $maf_fh->print( "\t" ) if ( $col ne $maf_header[0] );

@@ -298,29 +298,29 @@ def read_samples_info_and_split(common_cnf, options, inputs):
 def _get_trasncripts_fpath(cnf):
     transcripts_fpath = None
 
-    custom_transcripts_fpath = cnf['snpeff'].get('only_transcripts')
-    if custom_transcripts_fpath:
-        if verify_file(custom_transcripts_fpath, 'Transcripts for snpEff -onlyTr'):
-            transcripts_fpath = custom_transcripts_fpath
+    # custom_transcripts_fpath = cnf['snpeff'].get('only_transcripts')
+    # if custom_transcripts_fpath:
+    #     if verify_file(custom_transcripts_fpath, 'Transcripts for snpEff -onlyTr'):
+    #         transcripts_fpath = custom_transcripts_fpath
+    #
+    # else:
+    snpeff = get_java_tool_cmdline(cnf, 'snpeff')
+    db_path = cnf['genome'].get('snpeff')
+    if not db_path:
+        err('Please, provide a path to SnpEff data in '
+            'the "genomes" section in the system config.')
+
+    dump_transcript_fpath = join(cnf.work_dir, 'snpeff_transcripts.txt')
+    if verify_file(dump_transcript_fpath):
+        transcripts_fpath = dump_transcript_fpath
 
     else:
-        snpeff = get_java_tool_cmdline(cnf, 'snpeff')
-        db_path = cnf['genome'].get('snpeff')
-        if not db_path:
-            err('Please, provide a path to SnpEff data in '
-                'the "genomes" section in the system config.')
-
-        dump_transcript_fpath = join(cnf.work_dir, 'snpeff_transcripts.txt')
-        if verify_file(dump_transcript_fpath):
+        if isfile(dump_transcript_fpath):
+            os.remove(dump_transcript_fpath)
+        genome = cnf.genome.name
+        cmdline = '{snpeff} dump -dataDir {db_path} -v -txt {genome}'.format(**locals())
+        if call(cnf, cmdline, output_fpath=dump_transcript_fpath):
             transcripts_fpath = dump_transcript_fpath
-
-        else:
-            if isfile(dump_transcript_fpath):
-                os.remove(dump_transcript_fpath)
-            genome = cnf.genome.name
-            cmdline = '{snpeff} dump -dataDir {db_path} -v -txt {genome}'.format(**locals())
-            if call(cnf, cmdline, output_fpath=dump_transcript_fpath):
-                transcripts_fpath = dump_transcript_fpath
 
     return transcripts_fpath
 
