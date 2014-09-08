@@ -444,13 +444,10 @@ class BCBioRunner:
 
             # SUBMITTING
             if self.qualimap in self.steps:
+                qualimap_gff = ''
                 if sample.bed:
-                    self.submit(self.qualimap, sample.name, bam=sample.bam,
-                                bed=sample.bed, sample=sample,
-                                qualimap_gff=' -gff ' + sample.bed + ' ')
-                else:
-                    self.submit(self.qualimap, sample.name, bam=sample.bam,
-                                bed=sample.bed, sample=sample)
+                    qualimap_gff = ' -gff ' + sample.bed + ' '
+                self.submit(self.qualimap, sample.name, bam=sample.bam, sample=sample, qualimap_gff=qualimap_gff)
 
             for caller in self.bcbio_structure.variant_callers.values():
                 vcf_fpath = sample.vcf_by_callername.get(caller.name)
