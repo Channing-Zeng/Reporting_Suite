@@ -5,7 +5,7 @@ Includes:
 - variant quality control,
 - variant filtration,
 - amplicon and exon coverage statistics using built-in means and also ngsCAT (http://www.bioinfomgp.org/ngscat),
-- integrated Qualimap for coverage quality control(http://qualimap.bioinfo.cipf.es),
+- integrated Qualimap for alignment quality control (http://qualimap.bioinfo.cipf.es),
 - CNV caller Seq2C.
 
 Main running script: 
