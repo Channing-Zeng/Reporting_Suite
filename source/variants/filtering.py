@@ -463,7 +463,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-              zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+              zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
          ) if r is not None and None not in r]
     info('Results: ' + str(len(results)))
     info('*' * 70)
