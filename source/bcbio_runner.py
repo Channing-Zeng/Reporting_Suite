@@ -428,22 +428,28 @@ class BCBioRunner:
                 if not sample.bam or not verify_bam(sample.bam):
                     sys.exit('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
 
-            # BEDS
             if (self.targetcov in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                critical('Cannot make targetseq reports without BED file.')
+                err('Warning: no BED file, assuming WGS, thus skipping targetseq reports.')
+            else:
+                if self.targetcov in self.steps:
+                    self.submit(self.targetcov, sample.name, bam=sample.bam,
+                                bed=sample.bed, sample=sample)
+
             if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                critical('Cannot run ngsCAT without BED file.')
-            qualimap_gff = ''
+                err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
+            else:
+                if self.ngscat in self.steps:
+                    self.submit(self.ngscat, sample.name, bam=sample.bam,
+                                bed=sample.bed, sample=sample)
+
+            # SUBMITTING
             if self.qualimap in self.steps:
                 if sample.bed:
                     self.submit(self.qualimap, sample.name, bam=sample.bam,
                                 bed=sample.bed, sample=sample,
                                 qualimap_gff=' -gff ' + sample.bed + ' ')
-
-            # SUBMITTING
-            for step in [self.targetcov, self.ngscat]:
-                if step in self.steps:
-                    self.submit(step, sample.name, bam=sample.bam,
+                else:
+                    self.submit(self.qualimap, sample.name, bam=sample.bam,
                                 bed=sample.bed, sample=sample)
 
             for caller in self.bcbio_structure.variant_callers.values():
