@@ -245,7 +245,7 @@ class BCBioStructure:
             info()
 
     @staticmethod
-    def _move_vcfs_to_var(sample):
+    def move_vcfs_to_var(sample):
         fpaths = []
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
@@ -255,7 +255,7 @@ class BCBioStructure:
                 continue
 
             if 'vcf' in fname.split('.') and \
-                    not (islink(fname) and fname.endswith('.anno.filt.vcf')):
+                    not (islink(fname) and '.anno.filt' in fname):
                 fpaths.append([sample, fname])
 
         if fpaths:
@@ -305,7 +305,7 @@ class BCBioStructure:
                     self.batches[batch_name].tumor.append(sample)
 
         sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
-        self._move_vcfs_to_var(sample)
+        # self.move_vcfs_to_var(sample)
 
         to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
@@ -315,15 +315,14 @@ class BCBioStructure:
 
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
             vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))
+            if not isfile(vcf_fpath):
+                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
+
             self._ungzip_if_needed(self.cnf, vcf_fpath)
-
             if isfile(vcf_fpath) and not verify_file(vcf_fpath):
-                to_exit = True
-                continue
-
-            if not file_exists(vcf_fpath):
                 if sample.phenotype != 'normal':
                     err('Warning: Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
+                to_exit = True
                 vcf_fpath = None
 
             self.variant_callers[caller_name].samples.append(sample)

@@ -7,6 +7,7 @@ import operator
 from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
 ##from memory_profiler import profile
+from source.bcbio_structure import BCBioStructure
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
@@ -528,8 +529,9 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     # shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     # os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
     shutil.copy(work_filt_vcf_fpath, final_vcf_fpath)
-
     igvtools_index(cnf, final_vcf_fpath)
+
+    BCBioStructure.move_vcfs_to_var(sample)
 
     # Cleaning rejected variants
     clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
