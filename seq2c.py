@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+from source.main import load_genome_resources
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -18,6 +19,8 @@ from source.targetcov.copy_number import cnv_reports
 
 def main():
     cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.seq2c_name, BCBioStructure.cnv_summary_dir)
+
+    load_genome_resources(cnf)
 
     cnv_reports(cnf, bcbio_structure)
 

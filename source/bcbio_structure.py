@@ -373,19 +373,19 @@ class BCBioStructure:
             lambda sample: 'qualimapReport.html')
 
     def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
-        fpaths = OrderedDict()
+        fpaths_by_sample = OrderedDict()
 
         for sample in self.samples:
             report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
             info(report_fpath)
 
             if verify_file(report_fpath):
-                fpaths[sample] = report_fpath
+                fpaths_by_sample[sample] = report_fpath
 
-        if len(fpaths) < len(self.samples):
-            sys.exit(1)
+        # if len(fpaths_by_sample) < len(self.samples):
+        #     raise RuntimeError('No ')
 
-        return fpaths
+        return fpaths_by_sample
 
     def clean(self):
         for sample in self.samples:

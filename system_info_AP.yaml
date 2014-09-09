@@ -30,6 +30,8 @@ genomes:
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
 
+    default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+
 queue: ngs.q
 
 qsub_runner: runner_AP.sh

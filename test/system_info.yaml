@@ -37,6 +37,8 @@ genomes:
     chr_lengths: data/chr_lengths_hg19.txt
     exons: data/test_exons.bed
 
+    default_bed: data/test_exons.bed
+
 queue: ngs.q
 
 qsub_runner: ~/vagrant/reporting_suite/test/qsub_runner_local.sh

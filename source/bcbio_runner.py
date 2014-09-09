@@ -430,7 +430,7 @@ class BCBioRunner:
 
             # TargetSeq reports
             if (self.targetcov in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                err('Warning: no BED file, assuming WGS, thus skipping targetseq reports.')
+                err('Warning: no BED file, assuming WGS, thus running targetSeq reports only to generate Seq2C reports.')
             else:
                 if self.targetcov in self.steps:
                     self._submit_job(self.targetcov, sample.name, bam=sample.bam, bed=sample.bed, sample=sample)

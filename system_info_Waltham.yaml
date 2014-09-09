@@ -49,8 +49,9 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
 
-    chr_lengths: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
-    exons: /gpfs/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+    default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
 
 queue: batch.q
 

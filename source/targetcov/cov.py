@@ -15,13 +15,16 @@ from source.utils import get_chr_len_fpath
 from source.file_utils import file_transaction
 
 
-def run_target_cov(cnf, sample):
+def run_targetcov_reports(cnf, sample):
+    summary_report = None
+    summary_report_txt_path = None
+    summary_report_json_fpath = None
     summary_report_html_fpath = None
     gene_report_fpath = None
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = _bedcoverage_hist_stats(cnf, sample.bam, sample.bed)
+    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.bam, sample.bed)
 
     chr_len_fpath = get_chr_len_fpath(cnf)
     exons_bed = cnf['genome']['exons']
@@ -29,23 +32,18 @@ def run_target_cov(cnf, sample):
     if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
 
-        report = _run_header_report(
+        summary_report = run_summary_report(
             cnf, sample, chr_len_fpath,
             cnf.coverage_reports.depth_thresholds, cnf.padding,
             combined_region, max_depth, total_bed_size)
 
-        report.dump(join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json'))
+        summary_report_json_fpath = join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json')
+        summary_report.dump(summary_report_json_fpath)
 
-        summary_report_fpath = report.save_txt(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
+        summary_report_txt_fpath = summary_report.save_txt(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ')
-        info('\t' + summary_report_fpath)
-
-        summary_report_html_fpath = report.save_html(cnf.output_dir,
-            cnf.name + '.' + BCBioStructure.targetseq_name,
-            caption='Target coverage statistics for ' + cnf.name)
-
-        info('\t' + summary_report_html_fpath)
+        info('\t' + summary_report_txt_fpath)
 
     if 'genes' in cnf['coverage_reports']['report_types']:
         if not exons_bed:
@@ -67,7 +65,7 @@ def run_target_cov(cnf, sample):
             target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
 
             info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-            exons, _, _, _ = _bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
+            exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
@@ -78,7 +76,16 @@ def run_target_cov(cnf, sample):
             _run_region_cov_report(cnf, gene_report_fpath, cnf.name, cnf.coverage_reports.depth_thresholds,
                                    amplicons, exons)
 
-    return summary_report_html_fpath, gene_report_fpath
+    if summary_report:
+        report = summary_report
+        summary_report_html_fpath = report.save_html(cnf.output_dir,
+            cnf.name + '.' + BCBioStructure.targetseq_name,
+            caption='Target coverage statistics for ' + cnf.name)
+
+        info('\t' + summary_report_html_fpath)
+
+    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, \
+           gene_report_fpath
 
 
 def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
@@ -141,15 +148,16 @@ metric_storage = MetricStorage(
             Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
         ])))
 
-def _run_header_report(cnf, sample, chr_len_fpath,
+
+def run_summary_report(cnf, sample, chr_len_fpath,
                        depth_thresholds, padding,
                        combined_region, max_depth, total_bed_size):
+
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
         metric_storage.add_metric(
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
-            'depth_metrics'
-        )
+            'depth_metrics')
 
     report = SampleReport(sample, metric_storage=metric_storage)
 
@@ -223,11 +231,11 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
         exon.sample = sample_name
 
     info('Groupping exons per gene...')
-    exon_genes = _get_exon_genes(cnf, exons)
+    exon_genes = _get_exons_merged_by_genes(cnf, exons)
     info()
 
     info('Groupping amplicons per gene...')
-    amplicon_genes_by_name = _get_amplicon_genes(amplicons, exon_genes)
+    amplicon_genes_by_name = _get_amplicons_merged_by_genes(amplicons, exon_genes)
     info()
 
     result_regions = []
@@ -255,7 +263,7 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
         cnf, report_fpath, depth_threshs, result_regions)
 
 
-def _get_amplicon_genes(amplicons, exon_genes):
+def _get_amplicons_merged_by_genes(amplicons, exon_genes):
     amplicon_genes_by_name = dict()
 
     i = 0
@@ -279,11 +287,10 @@ def _get_amplicon_genes(amplicons, exon_genes):
                 amplicon_copy.gene_name = amplicon_gene.gene_name
 
     info('Processed {0:,} regions.'.format(i))
-
     return amplicon_genes_by_name
 
 
-def _get_exon_genes(cnf, subregions):
+def _get_exons_merged_by_genes(cnf, subregions):
     genes_by_name = dict()
 
     i = 0
@@ -310,7 +317,6 @@ def _get_exon_genes(cnf, subregions):
     sorted_genes = sorted(genes_by_name.values(), key=lambda g: (g.chrom, g.start, g.end))
 
     info('Processed {0:,} exons.'.format(i))
-
     return sorted_genes
 
 
@@ -376,7 +382,7 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
     return report_fpath
 
 
-def _bedcoverage_hist_stats(cnf, bam, bed):
+def bedcoverage_hist_stats(cnf, bam, bed):
     regions, max_depth, total_bed_size = [], 0, 0
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
@@ -447,39 +453,35 @@ def intersect_bed(cnf, bed1, bed2):
     return output_fpath
 
 
-# TODO very slow :(
+#TODO: works slow.
 def number_of_mapped_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
     cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
     res = call_check_output(cnf, cmdline)
     return int(res)
 
-
-# TODO very slow :(
+#TODO: works slow.
 def number_of_unmapped_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
     cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
     res = call_check_output(cnf, cmdline)
     return int(res)
 
-
-# TODO very slow :(
+#TODO: works slow.
 def number_of_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
     cmdline = '{samtools} view -c {bam}'.format(**locals())
     res = call_check_output(cnf, cmdline)
     return int(res)
 
-
-# TODO very slow :(
+#TODO: works slow.
 def number_mapped_reads_on_target(cnf, bed, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
     cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
     res = call_check_output(cnf, cmdline)
     return int(res)
 
-
-# TODO very slow :(
+#TODO: works slow.
 def number_bases_in_aligned_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
     cmdline = '{samtools} depth {bam}'.format(**locals())
@@ -493,7 +495,6 @@ def number_bases_in_aligned_reads(cnf, bam):
     return count
 
 
-# TODO how to pass the data stream to samtools vs. creating file
 def get_padded_bed_file(cnf, bed, genome, padding):
     bedtools = get_tool_cmdline(cnf, 'bedtools')
     cmdline = '{bedtools} slop -i {bed} -g {genome} -b {padding}'.format(**locals())

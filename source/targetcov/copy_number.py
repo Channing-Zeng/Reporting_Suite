@@ -7,11 +7,13 @@ import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe
+from source.file_utils import verify_file
 from source.logger import info, err, step_greetings, critical
 from source.reporting import write_tsv_rows, Record, SampleReport
+from source.targetcov.cov import run_targetcov_reports, run_summary_report, bedcoverage_hist_stats
 from source.tools_from_cnf import get_script_cmdline
 
-from source.utils import OrderedDefaultDict
+from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
 
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
@@ -22,15 +24,29 @@ def cnv_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
 
     info('Collecting sample reports...')
-    sample_gene_reports_by_sample = bcbio_structure.get_gene_reports_by_sample()
-    report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
+    summary_report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
+    gene_report_fpaths_by_sample = bcbio_structure.get_gene_reports_by_sample()
+    for sample in bcbio_structure.samples:
+        summ_report_fpath = summary_report_fpath_by_sample.get(sample)
+        gene_report_fpath = gene_report_fpaths_by_sample.get(sample)
 
-    if not sample_gene_reports_by_sample:
+        if gene_report_fpath is None or summ_report_fpath is None:
+            output_dir = cnf.output_dir
+            cnf.output_dir = cnf.work_dir
+            if not sample.bed:
+                sample.bed = cnf.genome.default_bed
+            _, summary_report_json_fpath, _, gene_report_fpath = run_targetcov_reports(cnf, sample)
+            cnf.output_dir = output_dir
+
+            summary_report_fpath_by_sample[sample] = summary_report_json_fpath
+            gene_report_fpaths_by_sample[sample] = gene_report_fpath
+
+    if not gene_report_fpaths_by_sample:
         err('No gene reports, cannot call copy numbers.')
         return None
 
     info('Calculating normalized coverages for CNV...')
-    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, sample_gene_reports_by_sample, report_fpath_by_sample)
+    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
 
     cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
     if amplicon_cnv_rows:
@@ -59,8 +75,7 @@ def _get_lines_by_region_type(report_fpath, region_type):
                 gene_summary_lines.append(line.split()[:8])
 
     if not gene_summary_lines:
-        critical('Regions of type ' + region_type +
-                 ' not found in ' + gene_summary_lines)
+        critical('Regions of type ' + region_type + ' not found in ' + report_fpath)
 
     return gene_summary_lines
 
