@@ -3,6 +3,7 @@ from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
 from os.path import join, basename
+import sys
 from source.bcbio_structure import BCBioStructure, Sample
 from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
@@ -16,6 +17,11 @@ from source.file_utils import file_transaction
 
 
 def run_targetcov_reports(cnf, sample):
+    if not (sample.bam or sample.bed):
+        if not sample.bam: err(sample.name + ': BAM file is required.')
+        if not sample.bed: err(sample.name + ': BED file is required.')
+        sys.exit(1)
+
     summary_report = None
     summary_report_txt_path = None
     summary_report_json_fpath = None
@@ -383,12 +389,19 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
 
 
 def bedcoverage_hist_stats(cnf, bam, bed):
+    if not bam or not bed:
+        err()
+        if not bam: err('BAM file is required.')
+        if not bed: err('BED file is required.')
+        sys.exit(1)
+
     regions, max_depth, total_bed_size = [], 0, 0
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
     cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
-    bedcov_output = join(cnf.work_dir, splitext_plus(basename(bed))[0] + '_' +
-                                       splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
+    bedcov_output = join(cnf.work_dir,
+                         splitext_plus(basename(bed))[0] + '_' +
+                         splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
     call(cnf, cmdline, bedcov_output)
 
     _total_regions_count = 0

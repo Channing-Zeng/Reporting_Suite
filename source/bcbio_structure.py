@@ -283,9 +283,13 @@ class BCBioStructure:
         if not verify_dir(sample.dirpath): sys.exit(1)
 
         bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
-        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
         sample.bed = bed if verify_bed(bed) else None
+        info('BED file for ' + sample.name + ': ' + sample.bed) if sample.bed else err('No BED file for ' + sample.name)
+
+        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
         sample.bam = bam if verify_bam(bam) else None
+        info('BAM file for ' + sample.name + ': ' + sample.bam) if sample.bam else err('No BAM file for ' + sample.name)
+        info()
 
         sample.phenotype = None
 
