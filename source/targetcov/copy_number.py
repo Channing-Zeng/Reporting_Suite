@@ -30,11 +30,19 @@ def cnv_reports(cnf, bcbio_structure):
         summ_report_fpath = summary_report_fpath_by_sample.get(sample)
         gene_report_fpath = gene_report_fpaths_by_sample.get(sample)
 
-        if gene_report_fpath is None or summ_report_fpath is None:
+        if gene_report_fpath is None or summ_report_fpath is None:  # Was WGS
             output_dir = cnf.output_dir
             cnf.output_dir = cnf.work_dir
             if not sample.bed:
-                sample.bed = cnf.genome.default_bed
+                if verify_file(cnf.genome.default_bed):
+                    sample.bed = cnf.genome.default_bed
+                else:
+                    err('Warning: No default amplicon BED file, using exons instead.')
+                    if verify_file(cnf.genome.exons):
+                        sample.bed = cnf.genome.exons
+                    else:
+                        sys.exit(1)
+
             _, summary_report_json_fpath, _, gene_report_fpath = run_targetcov_reports(cnf, sample)
             cnf.output_dir = output_dir
 
