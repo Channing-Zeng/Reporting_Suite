@@ -126,7 +126,9 @@ class SampleReport(Report):
         return self
 
     def add_record(self, metric_name, value, meta=None):
-        rec = Record(self.metric_storage.get_metric(metric_name.strip()), value, meta)
+        metric = self.metric_storage.get_metric(metric_name.strip())
+        assert metric, metric_name
+        rec = Record(metric, value, meta)
         self.records.append(rec)
         info(metric_name + ': ' + rec.format())
         return rec

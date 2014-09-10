@@ -151,7 +151,9 @@ class BCBioStructure:
     ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
     qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
     seq2c_name       = 'Seq2C'
-    detail_gene_report_ending = '.details.gene.txt'
+    detail_gene_report_baseending = '.details.gene'
+    detail_bad_gene_report_baseending = '.bad_regions.gene'
+    detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
     passed_filt_vcf_ending = '.anno.filt.passed.vcf'

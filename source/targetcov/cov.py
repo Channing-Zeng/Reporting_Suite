@@ -9,7 +9,8 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus
 
 from source.logger import step_greetings, critical, info, err
-from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection
+from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
+    write_tsv_rows
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath
@@ -75,12 +76,18 @@ def run_targetcov_reports(cnf, sample):
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
-            gene_report_fpath = join(cnf.output_dir,
-                                     cnf.name + '.' + BCBioStructure.targetseq_dir +
-                                     BCBioStructure.detail_gene_report_ending)
-            info('Region cov report...')
-            _run_region_cov_report(cnf, gene_report_fpath, cnf.name, cnf.coverage_reports.depth_thresholds,
-                                   amplicons, exons)
+            gene_report_basename = cnf.name + '.' + \
+                                   BCBioStructure.targetseq_name + \
+                                   BCBioStructure.detail_gene_report_baseending
+
+            bad_gene_report_basename = cnf.name + '.' + \
+                                       BCBioStructure.targetseq_name + \
+                                       BCBioStructure.detail_bad_gene_report_baseending
+
+            info('Saving region coverage report...')
+            gene_rep_fpath, bad_regions_gene_rep_fpath = _run_region_cov_report(
+                cnf, cnf.output_dir, gene_report_basename, bad_gene_report_basename, cnf.name,
+                cnf.coverage_reports.depth_thresholds, amplicons, exons)
 
     if summary_report:
         report = summary_report
@@ -185,9 +192,9 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     info('* Target coverage statistics *')
     report.add_record('Bases in target', total_bed_size)
 
-    bases_within_threshs, avg_depth, std_dev, percent_within_normal = combined_region.sum_up(depth_thresholds)
+    combined_region.sum_up(depth_thresholds)
 
-    v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
+    v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
@@ -210,24 +217,24 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
-    v_read_bases_on_targ = avg_depth * total_bed_size  # sum of all coverages
+    v_read_bases_on_targ = combined_region.avg_depth * total_bed_size  # sum of all coverages
     report.add_record('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
-    report.add_record('Average target coverage depth', avg_depth)
-    report.add_record('Std. dev. of target coverage depth', std_dev)
+    report.add_record('Average target coverage depth', combined_region.avg_depth)
+    report.add_record('Std. dev. of target coverage depth', combined_region.std_dev)
     report.add_record('Maximum target coverage depth', max_depth)
-    report.add_record('Percentage of target within 20% of mean depth', percent_within_normal)
+    report.add_record('Percentage of target within 20% of mean depth', combined_region.percent_within_normal)
 
-    for depth, bases in bases_within_threshs.items():
-        percent = 100.0 * bases / total_bed_size if total_bed_size else 0
-        report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent)
+    for depth, bases in combined_region.bases_within_threshs.items():
+        percent_val = 100.0 * bases / total_bed_size if total_bed_size else 0
+        report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
     return report
 
 
-def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
-                          amplicons, exons):
+def _run_region_cov_report(cnf, output_dir, report_basename, bad_gene_report_basename,
+                           sample_name, depth_threshs, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
         ampl.sample = sample_name
@@ -264,9 +271,29 @@ def _run_region_cov_report(cnf, report_fpath, sample_name, depth_threshs,
     info('Processed {0:,} genes.'.format(i))
 
     info()
-    info('Building final regions report...')
-    return _build_regions_cov_report(
-        cnf, report_fpath, depth_threshs, result_regions)
+    info('Summing up region stats...')
+    i = 0
+    bad_regions = []
+    for region in result_regions:
+        i += 1
+        if i % 10000 == 0:
+            info('Processed {0:,} regions.'.format(i))
+        region.sum_up(depth_threshs)
+        if region.percent_within_normal < 100:
+            bad_regions.append(region)
+
+    rows = _make_flat_region_report(result_regions, depth_threshs)
+    txt_rep_fpath = write_txt_rows(rows, output_dir, report_basename)
+    tsv_rep_fpath = write_tsv_rows(rows, output_dir, report_basename)
+
+    bad_region_rows = _make_flat_region_report(bad_regions, depth_threshs)
+    bad_regions_txt_rep_fpath = write_txt_rows(bad_region_rows, output_dir, bad_gene_report_basename)
+    bad_regions_tsv_rep_fpath = write_tsv_rows(bad_region_rows, output_dir, bad_gene_report_basename)
+
+    info('')
+    info('Regions saved into: ' + txt_rep_fpath)
+    info('Too low or too high covered regions saved into: ' + bad_regions_txt_rep_fpath)
+    return txt_rep_fpath, bad_regions_txt_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):
@@ -326,14 +353,11 @@ def _get_exons_merged_by_genes(cnf, subregions):
     return sorted_genes
 
 
-def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
-                             extra_headers=list()):
+def _make_flat_region_report(regions, depth_threshs):
     header_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
                      'Mean Depth', 'Standard Dev.', 'Within 20% of Mean'] +\
                     ['{}x'.format(thres) for thres in depth_threshs]
-    max_lengths = map(len, header_fields)
-
-    all_values = []
+    all_rows = [header_fields]
 
     i = 0
     for region in regions:
@@ -341,51 +365,32 @@ def _build_regions_cov_report(cnf, report_fpath, depth_threshs, regions,
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
 
-        bases_within_threshs, avg_depth, std_dev, percent_within_normal = region.sum_up(depth_threshs)
+        region.sum_up(depth_threshs)
 
-        line_fields = map(str, [region.sample,
-                                region.chrom,
-                                region.start,
-                                region.end,
-                                region.gene_name])
-        line_fields += [region.feature]
-        line_fields += [str(region.get_size())]
-        line_fields += ['{0:.2f}'.format(avg_depth)]
-        line_fields += ['{0:.2f}'.format(std_dev)]
-        line_fields += ['{0:.2f}%'.format(percent_within_normal)
-                        if percent_within_normal is not None else '-']
+        row = map(str, [region.sample,
+                        region.chrom,
+                        region.start,
+                        region.end,
+                        region.gene_name])
+        row += [region.feature]
+        row += [str(region.get_size())]
+        row += ['{0:.2f}'.format(region.avg_depth)]
+        row += ['{0:.2f}'.format(region.std_dev)]
+        row += ['{0:.2f}%'.format(region.percent_within_normal)
+                        if region.percent_within_normal is not None else '-']
 
-        for depth_thres, bases in bases_within_threshs.items():
+        for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:
                 percent_str = '-'
             else:
                 percent = 100.0 * bases / region.get_size()
                 percent_str = '{0:.2f}%'.format(percent)
-            line_fields.append(percent_str)
+            row.append(percent_str)
 
-        all_values.append(line_fields)
-        max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
+        all_rows.append(row)
+        # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
     info('Processed {0:,} regions.'.format(i))
-
-    with file_transaction(cnf, report_fpath) as tx:
-        with open(tx, 'w') as out, \
-                open(join(cnf['work_dir'], basename(report_fpath)), 'w') as nice_out:
-            out.write('\t'.join(header_fields) + '\n')
-
-            for line_fields in all_values:
-                out.write('\t'.join(line_fields) + '\n')
-
-            for h, l in zip(header_fields, max_lengths):
-                nice_out.write(h + ' ' * (l - len(h) + 2))
-            nice_out.write('\n')
-
-            for line_tokens in all_values:
-                for v, l in zip(line_tokens, max_lengths):
-                    nice_out.write(v + ' ' * (l - len(v) + 2))
-                nice_out.write('\n')
-    info('')
-    info('Result: ' + report_fpath)
-    return report_fpath
+    return all_rows
 
 
 def bedcoverage_hist_stats(cnf, bam, bed):
