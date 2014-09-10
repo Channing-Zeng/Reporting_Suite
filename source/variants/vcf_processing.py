@@ -344,11 +344,11 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name,
     perl = get_tool_cmdline(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
     cmdline = ('{perl} {vcf2maf} '
-               '--output-maf {maf_fpath} '
                '--input-snpeff {vcf_fpath} '
                '--bam-file {bam_fpath} '
                '--tumor-id {tumor_sample_name} '
                '--normal-id {normal_sample_name} '
+               '--output-maf {maf_fpath} '
                '{transcripts} ').format(**locals())
 
     call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False)

@@ -57,7 +57,10 @@ if( $transcripts_file ) {
     open (FILE, $transcripts_file);
     while (<FILE>) {
         chomp;
+        next if( /^chr/ );
         my ($chr, $start, $end, $strand, $type, $id, $geneName, $geneId, $numberOfTranscripts, $canonicalTranscriptLength, $transcriptId, $cdsLength, $numerOfExons, $exonRank, $exonSpliceType) = split("\t");
+        next if($type ne 'Exon');
+
         $trIdById{ ($transcriptId, $exonRank) } = $transcriptId;
         $trExonById{ ($transcriptId, $exonRank) } = $exonRank;
         $trStrandById{ ($transcriptId, $exonRank) } = $strand;
@@ -115,12 +118,12 @@ my @maf_header = qw(
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
     Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
 
-    Annotation_Transcript Transcript_Strand Transcript_Exon Transcript_Position
+    Transcript_Strand Transcript_Exon Transcript_Position
+    Filter
+);
 #    cDNA_Change Codon_Change Protein_Change
 #    Refseq_mRNA_Id Refseq_prot_Id
 #    t_ref_count t_alt_count
-    Filter
-);
 
 # Add extra columns to the MAF depending on whether we used VEP or snpEff
 my @vepcsq_cols = qw( Allele Gene Feature Feature_type Consequence cDNA_position CDS_position Protein_position Amino_acids Codons Existing_variation AA_MAF EA_MAF ALLELE_NUM RefSeq EXON INTRON MOTIF_NAME MOTIF_POS HIGH_INF_POS MOTIF_SCORE_CHANGE DISTANCE STRAND CLIN_SIG CANONICAL SYMBOL SYMBOL_SOURCE SIFT PolyPhen GMAF BIOTYPE ENSP DOMAINS CCDS HGVSc HGVSp AFR_MAF AMR_MAF ASN_MAF EUR_MAF PUBMED );
@@ -327,11 +330,13 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{BAM_File} = $bam_file;
     $maf_line{Filter} = $filter;
 
-    my $exonId = ( $transcriptId, $exonNumber);
-    $maf_line{Transcript_Strand} = $trStrandById{ $exonId } ? $trStrandById{ $exonId } : '';
-    $maf_line{Transcript_Position} = $trPosById{ $exonId } ? $trPosById{ $exonId } : '';
-    $maf_line{Transcript_Exon} = $trExonById{ $exonId } ? $trExonById{ $exonId } : '';
+    if ($exonNumber) {
+        $maf_line{Transcript_Strand  } = $trStrandById{( $transcriptId, $exonNumber )} ? $trStrandById{( $transcriptId, $exonNumber )} : '';
+        $maf_line{Transcript_Position} = $trPosById   {( $transcriptId, $exonNumber )} ? $trPosById   {( $transcriptId, $exonNumber )} : '';
+        $maf_line{Transcript_Exon    } = $trExonById  {( $transcriptId, $exonNumber )} ? $trExonById  {( $transcriptId, $exonNumber )} : '';
+    }
 
+# TODO
 #    $maf_line{cDNA_Change} = '';
 #    $maf_line{Codon_Change} = '';
 #    $maf_line{Protein_Change} = '';
