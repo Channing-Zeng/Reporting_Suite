@@ -105,7 +105,7 @@ class BCBioRunner:
     def __generate_run_id(self, bcbio_structure):
         hasher = hashlib.sha1(self.final_dir)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
-        return bcbio_structure.project_name + '_' + path_hash
+        return path_hash + '_' + bcbio_structure.project_name
 
     def _set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
