@@ -453,7 +453,8 @@ class BCBioRunner:
             for caller in self.bcbio_structure.variant_callers.values():
                 vcf_fpath = sample.vcf_by_callername.get(caller.name)
                 if not vcf_fpath:
-                    err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + ' .')
+                    if sample.phenotype != 'normal':
+                        err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + '.')
                 else:
                     self._process_vcf(sample, sample.bam, vcf_fpath, caller.name)
 

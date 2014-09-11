@@ -297,6 +297,8 @@ class BCBioStructure:
 
         if 'metadata' in sample_info:
             sample.phenotype = sample_info['metadata']['phenotype']
+            info('Phenotype: ' + str(sample.phenotype))
+
             batch_names = sample_info['metadata']['batch']
             if isinstance(batch_names, basestring):
                 batch_names = [batch_names]
@@ -315,26 +317,31 @@ class BCBioStructure:
 
         to_exit = False
         for caller_name in sample_info['algorithm'].get('variantcaller') or []:
+            info(caller_name)
             caller = self.variant_callers.get(caller_name)
             if not caller:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
 
             vcf_fname = sample.name + '-' + caller_name + '.vcf'
-            vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))
-            if not isfile(vcf_fpath):
-                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
-
+            vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+            if not isfile(vcf_fpath):  # not in var, looking in sample dir
+                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
             self._ungzip_if_needed(self.cnf, vcf_fpath)
-            if isfile(vcf_fpath) and not verify_file(vcf_fpath):
-                if sample.phenotype != 'normal':
-                    err('Warning: Phenotype is ' + str(sample.phenotype) + ', and VCF does not exist.')
+
+            if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
+                err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
                 to_exit = True
                 vcf_fpath = None
 
-            self.variant_callers[caller_name].samples.append(sample)
+            if not isfile(vcf_fpath):
+                if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
+                    err('Warning: Phenotype is ' + str(sample.phenotype) + ', and no VCF file.')
+                vcf_fpath = None
+
             if vcf_fpath:
                 info(vcf_fpath)
-                sample.vcf_by_callername[caller_name] = vcf_fpath  # could be None, that's OK
+                self.variant_callers[caller_name].samples.append(sample)
+                sample.vcf_by_callername[caller_name] = vcf_fpath
 
             # And filtered symlinks
             for ending, dic in zip([BCBioStructure.filt_vcf_ending,
