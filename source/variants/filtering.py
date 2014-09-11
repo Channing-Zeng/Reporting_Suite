@@ -512,7 +512,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     if cnf is None:
         info('Error: for ' + sample.name + ': cnf is None')
         return None, None, None
-    work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
+    # work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
     final_vcf_fpath = add_suffix(original_anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
 

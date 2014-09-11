@@ -76,7 +76,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
                 vcf_fpath = res
 
     if annotated:
-        vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+        # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
         if not cnf.get('no_correct_vcf'):
             vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)

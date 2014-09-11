@@ -15,7 +15,7 @@ from source.variants.vcf_processing import read_sample_names_from_vcf, leave_fir
 def make_tsv(cnf, vcf_fpath):
     step_greetings('Exporting to TSV...')
 
-    vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+    # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
