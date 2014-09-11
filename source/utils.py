@@ -52,15 +52,6 @@ def human_sorted(l):
     return l
 
 
-def index_bam(cnf, bam_fpath):
-    samtools = get_tool_cmdline(cnf, 'samtools')
-    if not samtools:
-        sys.exit(1)
-
-    cmdline = '{samtools} index {bam_fpath}'.format(**locals())
-    call_subprocess(cnf, cmdline, None, None)
-
-
 def get_chr_len_fpath(cnf):
     chr_len_fpath = cnf['genome'].get('chr_lengths')
     if chr_len_fpath:

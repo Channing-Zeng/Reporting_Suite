@@ -12,9 +12,10 @@ from source.calling_process import call
 from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path
 from source.ngscat.bed_file import verify_bed, verify_bam
+from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists, safe_mkdir
-from source.utils import OrderedDefaultDict, index_bam
+from source.utils import OrderedDefaultDict
 
 
 class Sample:
