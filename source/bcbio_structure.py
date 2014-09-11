@@ -14,7 +14,7 @@ from source.file_utils import verify_dir, verify_file, adjust_path
 from source.ngscat.bed_file import verify_bed, verify_bam
 from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists, safe_mkdir
-from source.utils import OrderedDefaultDict
+from source.utils import OrderedDefaultDict, index_bam
 
 
 class Sample:
@@ -81,7 +81,6 @@ class VariantCaller:
             else:
                 mafs.append(maf)
         return mafs
-
 
     def get_fpaths_by_sample(self, dirname, name, ext):
         return self._get_files_by_sample(dirname, '.' + name + '.' + ext)
@@ -289,9 +288,13 @@ class BCBioStructure:
         info('BED file for ' + sample.name + ': ' + sample.bed) if sample.bed else err('No BED file for ' + sample.name)
 
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
-        sample.bam = bam if verify_bam(bam) else None
-        info('BAM file for ' + sample.name + ': ' + sample.bam) if sample.bam else err('No BAM file for ' + sample.name)
-        info()
+        if verify_bam(bam):
+            sample.bam = bam
+            info('BAM file for ' + sample.name + ': ' + sample.bam)
+            index_bam(self.cnf, bam)
+        else:
+            sample.bam = None
+            err('No BAM file for ' + sample.name)
 
         sample.phenotype = None
 
@@ -340,8 +343,8 @@ class BCBioStructure:
 
             if vcf_fpath:
                 info(vcf_fpath)
-                self.variant_callers[caller_name].samples.append(sample)
-                sample.vcf_by_callername[caller_name] = vcf_fpath
+            self.variant_callers[caller_name].samples.append(sample)
+            sample.vcf_by_callername[caller_name] = vcf_fpath
 
             # And filtered symlinks
             for ending, dic in zip([BCBioStructure.filt_vcf_ending,

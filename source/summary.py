@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from optparse import OptionParser
+import os
 from os.path import join, pardir, isfile, isdir, expanduser
 from os import getcwd
 import shutil
@@ -39,16 +40,23 @@ def process_post_bcbio_args(parser):
 
     config_dirpath = join(bcbio_final_dir, pardir, 'config')
     for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
-        cnf_fpath = opt_dict.get(cnf_name + '_cnf')
+        cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
         config_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
+
         if cnf_fpath:
-            shutil.copy(cnf_fpath, config_cnf_fpath)
+            if not verify_file(cnf_fpath):
+                sys.exit(1)
+            if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
+                os.remove(config_cnf_fpath)
+                shutil.copy(cnf_fpath, config_cnf_fpath)
         else:  # No cnf in opts
             if isfile(config_cnf_fpath) and verify_file(config_cnf_fpath):
                 cnf_fpath = config_cnf_fpath
             else:
                 cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
-                shutil.copy(cnf_fpath, config_cnf_fpath)
+                if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
+                    os.remove(config_cnf_fpath)
+                    shutil.copy(cnf_fpath, config_cnf_fpath)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
             opt_dict[cnf_name + '_cnf'] = cnf_fpath
 
@@ -64,7 +72,7 @@ def process_post_bcbio_args(parser):
     return cnf
 
 
-def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
+def summary_script_proc_params(name, dir, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
@@ -72,7 +80,7 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=list()):
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--dir', dest='dir', default=dir)
     parser.add_option('--name', dest='name', default=name)
-    for args, kwargs in extra_opts:
+    for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
     cnf = process_post_bcbio_args(parser)

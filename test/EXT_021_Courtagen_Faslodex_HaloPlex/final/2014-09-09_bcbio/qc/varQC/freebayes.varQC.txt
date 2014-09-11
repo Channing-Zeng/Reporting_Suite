@@ -1,0 +1,13 @@
+Sample           GPP16015    GPP16188    GPP17600    GPP17601    
+nEvalVariants    654         504         484         536         
+nSNPs            618         461         447         500         
+nInsertions      9           15          13          12          
+nDeletions       24          27          24          23          
+nVariantsAtComp  70          55          48          53          
+compRate         10.70       10.91       9.92        9.89        
+nConcordant      60          51          46          51          
+concordantRate   85.71       92.73       95.83       96.23       
+variantRate      0.0000      0.0000      0.0000      0.0000      
+basesPerVariant  4796882.00  6224526.00  6481738.00  5852912.00  
+hetHomRatio      1.60        0.77        0.45        1.54        
+tiTvRatio        1.68        2.29        2.26        2.31        

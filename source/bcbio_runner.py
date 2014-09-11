@@ -263,7 +263,7 @@ class BCBioRunner:
 
 
     def _submit_job(self, step, sample_name='', suf=None, create_dir=True,
-                   out_fpath=None, wait_for_steps=list(), threads=None, **kwargs):
+                   out_fpath=None, wait_for_steps=None, threads=None, **kwargs):
 
         output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
         if output_dirpath and not isdir(output_dirpath) and create_dir:
@@ -563,7 +563,7 @@ class BCBioRunner:
             info('Done.')
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name,
-                     steps=None, job_names_to_wait=list()):
+                     steps=None, job_names_to_wait=None):
         steps = steps or self.steps
         sample_name = sample.name
 

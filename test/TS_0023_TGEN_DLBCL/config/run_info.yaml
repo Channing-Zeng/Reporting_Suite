@@ -10,7 +10,7 @@ steps:
 # - Seq2C
 #- QualiMap
 - VarQC_Summary
-- TargetCov_Summary
+# - TargetCov_Summary
 #- ngsCAT_summary
 #- QualiMap_summary
 #- MongoLoader

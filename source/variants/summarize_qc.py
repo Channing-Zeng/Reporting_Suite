@@ -15,7 +15,8 @@ def make_summary_reports(cnf, bcbio_structure):
         info()
         info('*' * 70)
         for fpath in full_summary_fpaths:
-            info(fpath)
+            if fpath:
+                info(fpath)
 
     else:
         for caller in callers:
@@ -43,12 +44,14 @@ def make_summary_reports(cnf, bcbio_structure):
         for caller in callers:
             info(caller.name)
             for fpath in caller.summary_qc_report_fpaths:
-                info('  ' + fpath)
+                if fpath:
+                    info('  ' + fpath)
             info()
 
         info('Total')
         for fpath in full_summary_fpaths:
-            info('  ' + fpath)
+            if fpath:
+                info('  ' + fpath)
 
 
 def _full_report_for_caller(cnf, caller):

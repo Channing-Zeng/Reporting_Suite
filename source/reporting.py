@@ -5,7 +5,7 @@ from ext_modules.simplejson import load, dump, JSONEncoder, dumps
 import datetime
 
 from source.bcbio_structure import VariantCaller, Sample
-from source.logger import critical, info
+from source.logger import critical, info, err
 from source.quast_reporting.html_saver import write_html_report
 
 
@@ -109,15 +109,15 @@ class Report:
 
 class SampleReport(Report):
     def __init__(self, sample=None, html_fpath=None,
-                 records=list(), metric_storage=None,
-                 report_name='', plots=list(), json_fpath=None,
+                 records=None, metric_storage=None,
+                 report_name='', plots=None, json_fpath=None,
                  **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
-        self.records = records
+        self.records = records or []
         self.metric_storage = metric_storage
         self.report_name = report_name
-        self.plots = plots  # TODO: make real JS plots, not just included PNG
+        self.plots = plots or []  # TODO: make real JS plots, not just included PNG
         self.json_fpath = json_fpath
         self.display_name = sample.name
 
@@ -162,9 +162,9 @@ class SampleReport(Report):
 
 
 class FullReport(Report):
-    def __init__(self, name='', sample_reports=list(), metric_storage=None):
+    def __init__(self, name='', sample_reports=None, metric_storage=None):
         self.name = name
-        self.sample_reports = sample_reports
+        self.sample_reports = sample_reports or []
         self.metric_storage = metric_storage
         if metric_storage:
             for sample_report in sample_reports:
@@ -188,7 +188,8 @@ class FullReport(Report):
         rows = [['Sample'] + [rep.display_name for rep in self.sample_reports]]
 
         if len(self.sample_reports) == 0:
-            critical('No sample reports found: summary will not be produced.')
+            err('No sample reports found: summary will not be produced.')
+            return []
 
         for metric in self.metric_storage.get_metrics():
             row = [metric.name]
@@ -202,11 +203,11 @@ class FullReport(Report):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:
-            if sample in jsons_by_sample and sample in htmls_by_sample:
+            if sample in jsons_by_sample:
                 with open(jsons_by_sample[sample]) as f:
                     data = load(f, object_pairs_hook=OrderedDict)
                     sample_report = SampleReport.load(data, sample)
-                    sample_report.html_fpath = relpath(htmls_by_sample[sample], output_dirpath)
+                    sample_report.html_fpath = relpath(htmls_by_sample[sample], output_dirpath) if sample in htmls_by_sample else None
                     full_report.sample_reports.append(sample_report)
                     metric_storage = metric_storage or sample_report.metric_storage
 
@@ -263,9 +264,9 @@ class ReportSection:
 
 class MetricStorage:
     def __init__(self,
-                 metrics_list=list(),
+                 metrics_list=None,
                  common_for_all_samples_section=None,
-                 sections=list(),
+                 sections=None,
                  sections_by_name=None,
                  **kwargs):
         self.sections_by_name = OrderedDict()
@@ -360,6 +361,9 @@ def read_sample_names(sample_fpath):
 
 
 def write_txt_rows(rows, output_dirpath, base_fname):
+    if not rows:
+        return None
+
     output_fpath = join(output_dirpath, base_fname + '.txt')
 
     col_widths = repeat(0)
@@ -376,6 +380,9 @@ def write_txt_rows(rows, output_dirpath, base_fname):
 
 
 def write_tsv_rows(rows, output_dirpath, base_fname):
+    if not rows:
+        return None
+
     output_fpath = join(output_dirpath, base_fname + '.tsv')
 
     with open(output_fpath, 'w') as out:
