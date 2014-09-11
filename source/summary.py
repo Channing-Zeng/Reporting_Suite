@@ -39,12 +39,16 @@ def process_post_bcbio_args(parser):
 
     config_dirpath = join(bcbio_final_dir, pardir, 'config')
     for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
-        if not opt_dict.get(cnf_name + '_cnf'):
-            cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
-            if not isfile(cnf_fpath) or not verify_file(cnf_fpath):
-                default_cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
-                shutil.copy(default_cnf_fpath, cnf_fpath)
-                cnf_fpath = default_cnf_fpath
+        cnf_fpath = opt_dict.get(cnf_name + '_cnf')
+        config_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
+        if cnf_fpath:
+            shutil.copy(cnf_fpath, config_cnf_fpath)
+        else:  # No cnf in opts
+            if isfile(config_cnf_fpath) and verify_file(config_cnf_fpath):
+                cnf_fpath = config_cnf_fpath
+            else:
+                cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
+                shutil.copy(cnf_fpath, config_cnf_fpath)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
             opt_dict[cnf_name + '_cnf'] = cnf_fpath
 
