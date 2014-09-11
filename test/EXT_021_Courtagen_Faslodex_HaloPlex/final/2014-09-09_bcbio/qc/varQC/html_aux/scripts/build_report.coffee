@@ -123,7 +123,7 @@ reporting.buildReport = ->
 
     sample_reports = report.sample_reports
     for section in report.metric_storage.sections
-        columnNames = (r.metric.name for r in sample_reports[0].records when r.metric.name of section.metrics_by_name)
+        columnNames = (m.name for m in section.metrics)
         columnOrder = (recoverOrderFromCookies section.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, section, columnOrder
