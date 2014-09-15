@@ -515,7 +515,6 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     # work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
     final_vcf_fpath = add_suffix(original_anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
-
     safe_mkdir(dirname(final_vcf_fpath))
 
     file_basepath = splitext(final_vcf_fpath)[0]
@@ -524,14 +523,14 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     final_maf_fpath = file_basepath + '.maf'
     final_clean_vcf_fpath = file_basepath + '.passed.vcf'  # for futrher processing
 
+    BCBioStructure.move_vcfs_to_var(sample)
+
     # Moving final VCF
     if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
     # shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     # os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
     shutil.copy(work_filt_vcf_fpath, final_vcf_fpath)
     igvtools_index(cnf, final_vcf_fpath)
-
-    BCBioStructure.move_vcfs_to_var(sample)
 
     # Cleaning rejected variants
     clean_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
