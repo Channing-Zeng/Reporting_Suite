@@ -80,14 +80,19 @@ def run_targetcov_reports(cnf, sample):
                                    BCBioStructure.targetseq_name + \
                                    BCBioStructure.detail_gene_report_baseending
 
-            bad_gene_report_basename = cnf.name + '.' + \
+            low_gene_report_basename = cnf.name + '.' + \
                                        BCBioStructure.targetseq_name + \
-                                       BCBioStructure.detail_bad_gene_report_baseending
+                                       BCBioStructure.detail_lowcov_gene_report_baseending
+
+            high_gene_report_basename = cnf.name + '.' + \
+                                       BCBioStructure.targetseq_name + \
+                                       BCBioStructure.detail_highcov_gene_report_baseending
 
             info('Saving region coverage report...')
-            gene_rep_fpath, bad_regions_gene_rep_fpath = _run_region_cov_report(
-                cnf, cnf.output_dir, gene_report_basename, bad_gene_report_basename, cnf.name,
-                cnf.coverage_reports.depth_thresholds, amplicons, exons)
+            gene_rep_fpath, low_regions_gene_rep_fpath, high_regions_gene_rep_fpath = _run_region_cov_report(
+                cnf, cnf.output_dir,
+                gene_report_basename, low_gene_report_basename, high_gene_report_basename,
+                cnf.name, cnf.coverage_reports.depth_thresholds, amplicons, exons)
 
     if summary_report:
         report = summary_report
@@ -95,7 +100,7 @@ def run_targetcov_reports(cnf, sample):
             cnf.name + '.' + BCBioStructure.targetseq_name,
             caption='Target coverage statistics for ' + cnf.name)
 
-        info('\t' + summary_report_html_fpath)
+        # info('\t' + summary_report_html_fpath)
 
     return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, \
            gene_report_fpath
@@ -233,7 +238,8 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _run_region_cov_report(cnf, output_dir, report_basename, bad_gene_report_basename,
+def _run_region_cov_report(cnf, output_dir,
+                           report_basename, low_gene_report_basename, high_gene_report_basename,
                            sample_name, depth_threshs, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
@@ -295,29 +301,38 @@ def _run_region_cov_report(cnf, output_dir, report_basename, bad_gene_report_bas
     info('Assuming abnormal if below median*0.55 = ' + str(minimal_cov) +
          ' or above median*1.90 ' + ' = ' + str(maximal_cov))
 
-    bad_regions = []
+    low_regions = []
+    high_regions = []
     i = 0
     for region in regions:
         if region.avg_depth < minimal_cov:
             region.cov_factor = region.avg_depth / median_cov
-            bad_regions.append(region)
+            low_regions.append(region)
 
         if region.avg_depth > maximal_cov:
             region.cov_factor = region.avg_depth / median_cov
-            bad_regions.append(region)
+            high_regions.append(region)
 
     rows = _make_flat_region_report(regions, depth_threshs)
     txt_rep_fpath = write_txt_rows(rows, output_dir, report_basename)
     tsv_rep_fpath = write_tsv_rows(rows, output_dir, report_basename)
 
-    bad_region_rows = _make_flat_region_report(bad_regions, depth_threshs, print_cov_factor=True)
-    bad_regions_txt_rep_fpath = write_txt_rows(bad_region_rows, output_dir, bad_gene_report_basename)
-    bad_regions_tsv_rep_fpath = write_tsv_rows(bad_region_rows, output_dir, bad_gene_report_basename)
+    low_region_rows = _make_flat_region_report(low_regions, depth_threshs, print_cov_factor=True)
+    low_regions_txt_rep_fpath = write_txt_rows(low_region_rows, output_dir, low_gene_report_basename)
+    low_regions_tsv_rep_fpath = write_tsv_rows(low_region_rows, output_dir, low_gene_report_basename)
+
+    high_region_rows = _make_flat_region_report(high_regions, depth_threshs, print_cov_factor=True)
+    high_regions_txt_rep_fpath = write_txt_rows(high_region_rows, output_dir, high_gene_report_basename)
+    high_regions_tsv_rep_fpath = write_tsv_rows(high_region_rows, output_dir, high_gene_report_basename)
 
     info('')
-    info('Regions saved into: ' + txt_rep_fpath)
-    info('Too low or too high covered regions saved into: ' + bad_regions_txt_rep_fpath)
-    return txt_rep_fpath, bad_regions_txt_rep_fpath
+    info('Regions (total ' + str(len(regions)) + ') saved into:')
+    info('\t' + txt_rep_fpath)
+    info('Too low covered regions (total ' + str(len(low_regions)) + ') saved into:')
+    info('\t' + low_regions_txt_rep_fpath)
+    info('Too much covered regions (total ' + str(len(high_regions)) + ') saved into:')
+    info('\t' + high_regions_txt_rep_fpath)
+    return txt_rep_fpath, low_regions_tsv_rep_fpath, high_regions_tsv_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):

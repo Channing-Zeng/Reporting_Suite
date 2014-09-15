@@ -1,0 +1,2 @@
+SAMPLE   Chr   Start  End   Gene      Feature  Size  Mean Depth  Standard Dev.  Within 20% of Mean  Cov factor  1x       5x       10x      25x      50x      100x     500x     1000x    5000x  10000x  50000x  
+sample1  chrM  1200   1300  DQ582201  Exon     100   1882.78     279.03         83.00%              1.95%       100.00%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%  0.00%  0.00%   0.00%   
