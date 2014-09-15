@@ -32,11 +32,12 @@ class Sample:
         self.var_dirpath = None
         self.normal_match = None
 
-    def get_clean_filtered_vcf_by_callername(self, callername):
+    def get_clean_filtered_vcf_fpaths_by_callername(self, callername):
         path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
-        if not verify_file(path):
-            return None
         return path
+
+    def get_clean_filtered_vcf_by_callername(self, callername):
+        return map(verify_file, self.get_clean_filtered_vcf_fpaths_by_callername(callername))
 
     def __str__(self):
         return self.name
