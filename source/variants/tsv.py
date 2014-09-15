@@ -15,7 +15,7 @@ from source.variants.vcf_processing import read_sample_names_from_vcf, leave_fir
 def make_tsv(cnf, vcf_fpath):
     step_greetings('Exporting to TSV...')
 
-    # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+    vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
@@ -129,9 +129,9 @@ def _extract_fields(cnf, vcf_fpath):
                 for i, v in enumerate(values):
                     if v:
                         if len(col_counts) <= i:
-                            err('TSV file may be incorrectly geenrated (number of '
-                                'column names (%d) less than number of fields '
-                                'in the record (%d)). Please, contact Vlad.' %
+                            err('TSV file may be incorrectly generated (number of '
+                                'column names (%d) is less than number of fields '
+                                'in the record (%d)).' %
                                 (len(names), len(values)))
 
                         col_counts[i] += 1
