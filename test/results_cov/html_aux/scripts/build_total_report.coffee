@@ -186,8 +186,8 @@ calc_cell_contents = (report, section, font) ->
 
 
 reporting.buildTotalReport = (report, section, columnOrder) ->
-    if section.name?
-        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.name}</h3>"
+    if section.title?
+        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.title}</h3>"
 
     calc_cell_contents report, section, $('#report').css 'font'
 
@@ -219,14 +219,24 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         if report.sample_reports.length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
-            table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+            if sampleReport.html_fpath?
+                table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+            else
+                table += "<span class=\"sample_name\"\">#{line_caption}</span>"
+
         table += "</td>"
 
-        records = (r for r in sampleReport.records when r.metric.name of section.metrics_by_name)
         for colNum in [0...section.metrics.length]
             pos = columnOrder[colNum]
             metric = section.metrics[pos]
-            rec = records[pos]
+            rec = null
+            for r in sampleReport.records
+                if r.metric.name == metric.name
+                    rec = r
+                    break
+            if not rec?
+                table += "<td></td>"
+                continue
 
             table += "<td metric=\"#{metric.name}\"
                           style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"

@@ -13,7 +13,7 @@ from source.reporting import Metric, SampleReport, FullReport, MetricStorage, Re
     write_tsv_rows
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
-from source.utils import get_chr_len_fpath
+from source.utils import get_chr_len_fpath, median
 from source.file_utils import file_transaction
 
 
@@ -251,7 +251,7 @@ def _run_region_cov_report(cnf, output_dir, report_basename, bad_gene_report_bas
     amplicon_genes_by_name = _get_amplicons_merged_by_genes(amplicons, exon_genes)
     info()
 
-    result_regions = []
+    regions = []
     info('Combining...')
     i = 0
     for exon_gene in exon_genes:
@@ -260,33 +260,57 @@ def _run_region_cov_report(cnf, output_dir, report_basename, bad_gene_report_bas
         i += 1
 
         for exon in exon_gene.subregions:
-            result_regions.append(exon)
-        result_regions.append(exon_gene)
+            regions.append(exon)
+        regions.append(exon_gene)
 
         amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
         if amplicon_gene:
             for amplicon in amplicon_gene.subregions:
-                result_regions.append(amplicon)
-            result_regions.append(amplicon_gene)
+                regions.append(amplicon)
+            regions.append(amplicon_gene)
     info('Processed {0:,} genes.'.format(i))
 
     info()
     info('Summing up region stats...')
     i = 0
-    bad_regions = []
-    for region in result_regions:
+    for region in regions:
         i += 1
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
         region.sum_up(depth_threshs)
-        if region.percent_within_normal < 100:
+        # if region.percent_within_normal < 100:
+        #     bad_regions.append(region)
+
+    info('Calculation median coverage...')
+    median_cov = median((r.avg_depth for r in regions))
+    if median_cov == 0:
+        err('Median coverage is 0')
+        return None, None
+
+    info('Median: ' + str(median_cov))
+    info()
+    info('Extracting abnormally covered regions.')
+    minimal_cov = 0.55 * median_cov
+    maximal_cov = 1.90 * median_cov
+    info('Assuming abnormal if below median*0.55 = ' + str(minimal_cov) +
+         ' or above median*1.90 ' + ' = ' + str(maximal_cov))
+
+    bad_regions = []
+    i = 0
+    for region in regions:
+        if region.avg_depth < minimal_cov:
+            region.cov_factor = region.avg_depth / median_cov
             bad_regions.append(region)
 
-    rows = _make_flat_region_report(result_regions, depth_threshs)
+        if region.avg_depth > maximal_cov:
+            region.cov_factor = region.avg_depth / median_cov
+            bad_regions.append(region)
+
+    rows = _make_flat_region_report(regions, depth_threshs)
     txt_rep_fpath = write_txt_rows(rows, output_dir, report_basename)
     tsv_rep_fpath = write_tsv_rows(rows, output_dir, report_basename)
 
-    bad_region_rows = _make_flat_region_report(bad_regions, depth_threshs)
+    bad_region_rows = _make_flat_region_report(bad_regions, depth_threshs, print_cov_factor=True)
     bad_regions_txt_rep_fpath = write_txt_rows(bad_region_rows, output_dir, bad_gene_report_basename)
     bad_regions_tsv_rep_fpath = write_tsv_rows(bad_region_rows, output_dir, bad_gene_report_basename)
 
@@ -353,10 +377,15 @@ def _get_exons_merged_by_genes(cnf, subregions):
     return sorted_genes
 
 
-def _make_flat_region_report(regions, depth_threshs):
+def _make_flat_region_report(regions, depth_threshs, print_cov_factor=False):
     header_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
-                     'Mean Depth', 'Standard Dev.', 'Within 20% of Mean'] +\
-                    ['{}x'.format(thres) for thres in depth_threshs]
+                     'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
+    if print_cov_factor:
+        header_fields.append('Cov factor')
+
+    for thres in depth_threshs:
+        header_fields.append('{}x'.format(thres))
+
     all_rows = [header_fields]
 
     i = 0
@@ -376,8 +405,9 @@ def _make_flat_region_report(regions, depth_threshs):
         row += [str(region.get_size())]
         row += ['{0:.2f}'.format(region.avg_depth)]
         row += ['{0:.2f}'.format(region.std_dev)]
-        row += ['{0:.2f}%'.format(region.percent_within_normal)
-                        if region.percent_within_normal is not None else '-']
+        row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
+        if print_cov_factor:
+            row += ['{0:.2f}%'.format(region.cov_factor)]
 
         for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:

@@ -285,9 +285,9 @@
   };
 
   reporting.buildTotalReport = function(report, section, columnOrder) {
-    var colNum, i, line_caption, padding, pos, r, rec, records, sort_by, table, _i, _j, _k, _len, _ref, _ref1, _ref2;
-    if (section.name != null) {
-      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.name + "</h3>");
+    var colNum, i, line_caption, padding, pos, r, rec, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3;
+    if (section.title != null) {
+      $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
     calc_cell_contents(report, section, $('#report').css('font'));
     table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + section.name + "\">";
@@ -311,25 +311,29 @@
       if (report.sample_reports.length === 1) {
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {
-        table += "<a class=\"sample_name\" href=\"" + sampleReport.html_fpath + "\">" + line_caption + "</a>";
+        if (sampleReport.html_fpath != null) {
+          table += "<a class=\"sample_name\" href=\"" + sampleReport.html_fpath + "\">" + line_caption + "</a>";
+        } else {
+          table += "<span class=\"sample_name\"\">" + line_caption + "</span>";
+        }
       }
       table += "</td>";
-      records = (function() {
-        var _k, _len1, _ref2, _results;
-        _ref2 = sampleReport.records;
-        _results = [];
-        for (_k = 0, _len1 = _ref2.length; _k < _len1; _k++) {
-          r = _ref2[_k];
-          if (r.metric.name in section.metrics_by_name) {
-            _results.push(r);
-          }
-        }
-        return _results;
-      })();
       for (colNum = _k = 0, _ref2 = section.metrics.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; colNum = 0 <= _ref2 ? ++_k : --_k) {
         pos = columnOrder[colNum];
         metric = section.metrics[pos];
-        rec = records[pos];
+        rec = null;
+        _ref3 = sampleReport.records;
+        for (_l = 0, _len1 = _ref3.length; _l < _len1; _l++) {
+          r = _ref3[_l];
+          if (r.metric.name === metric.name) {
+            rec = r;
+            break;
+          }
+        }
+        if (rec == null) {
+          table += "<td></td>";
+          continue;
+        }
         table += "<td metric=\"" + metric.name + "\" style=\"" + CSS_PROP_TO_COLOR + ": " + rec.color + "\" class='number' quality=\"" + metric.quality + "\"";
         if (rec.num != null) {
           table += " number=\"" + rec.value + "\" data-sortAs=" + rec.value + ">";

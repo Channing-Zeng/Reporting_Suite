@@ -92,6 +92,7 @@
 
   section = {
     name: '',
+    title: '',
     metrics: [],
     metrics_by_name: {}
   };
@@ -141,7 +142,7 @@
   };
 
   reporting.buildReport = function() {
-    var columnNames, columnOrder, common_metrics_by_name, general_records, plot, plots_html, r, rec, sample_report, sample_reports, _i, _j, _k, _l, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+    var columnNames, columnOrder, common_metrics_by_name, general_records, m, plot, plots_html, rec, sample_report, sample_reports, _i, _j, _k, _l, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     if (!(totalReportData = readJson('total-report'))) {
       console.log("Error: cannot read #total-report-json");
       return 1;
@@ -168,13 +169,11 @@
       section = _ref[_i];
       columnNames = (function() {
         var _j, _len1, _ref1, _results;
-        _ref1 = sample_reports[0].records;
+        _ref1 = section.metrics;
         _results = [];
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          r = _ref1[_j];
-          if (r.metric.name in section.metrics_by_name) {
-            _results.push(r.metric.name);
-          }
+          m = _ref1[_j];
+          _results.push(m.name);
         }
         return _results;
       })();
