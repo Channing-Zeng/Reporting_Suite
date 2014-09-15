@@ -33,7 +33,8 @@ class Sample:
         self.normal_match = None
 
     def get_clean_filtered_vcf_fpaths_by_callername(self, callername):
-        path = join(self.dirpath, BCBioStructure.varfilter_dir, self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
+        path = join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
         return path
 
     def get_clean_filtered_vcf_by_callername(self, callername):
@@ -94,7 +95,7 @@ class VariantCaller:
         return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
     def get_pass_filt_vcf_by_samples(self):
-        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.passed_filt_vcf_ending)
+        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.clean_filt_vcf_ending)
 
     def _get_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
@@ -158,7 +159,7 @@ class BCBioStructure:
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
-    passed_filt_vcf_ending = '.anno.filt.passed.vcf'
+    clean_filt_vcf_ending = '.anno.filt.passed.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
     filt_maf_ending  = '.anno.filt.passed.maf'
     var_dir          = 'var'
