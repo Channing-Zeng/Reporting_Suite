@@ -202,6 +202,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         while True:
             try:
                 res_ = do(cmdl, out_fpath)
+                break
             except OSError, e:
                 err('OSError: ' + str(e))
                 err()
