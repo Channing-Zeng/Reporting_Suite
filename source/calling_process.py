@@ -3,6 +3,7 @@ import subprocess
 import os
 import shutil
 from os.path import isfile, exists, join, islink
+import time
 
 from source.logger import info, err
 from source.file_utils import file_exists, file_transaction
@@ -196,12 +197,26 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
             return output_fpath
 
+    def do_handle_oserror(cmdl, out_fpath=None):
+        res_ = None
+        while True:
+            try:
+                res_ = do(cmdl, out_fpath)
+            except OSError, e:
+                err('OSError: ' + str(e))
+                err()
+                err('Waiting...')
+                time.sleep(5)
+                err('Retrying...')
+                err()
+        return res_
+
     res = None  # = proc or output_fpath
     if output_fpath and not output_is_dir:
         with file_transaction(cnf, output_fpath) as tx_out_fpath:
-            res = do(cmdline, tx_out_fpath)
+            res = do_handle_oserror(cmdline, tx_out_fpath)
     else:
-        res = do(cmdline)
+        res = do_handle_oserror(cmdline)
         if res is not None:
             clean()
             return res
