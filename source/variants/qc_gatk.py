@@ -18,7 +18,7 @@ metric_storage = MetricStorage(
             Metric('nConcordant',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
             Metric('concordantRate',  'Conc rate',   'Concordance rate'),
             Metric('variantRate',     'Var/loci',    'Variants per loci rate'),
-            Metric('basesPerVariant', 'Bp/var',      'Bases per variant rate'),
+            Metric('basesPerVariant', 'Bp/var',      'Bases per variant rate',   quality='Less is better'),
             Metric('hetHomRatio',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
             Metric('tiTvRatio',       'Ti/Tv',       'Transition to transversion ratio'),
         ])

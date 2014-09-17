@@ -145,8 +145,8 @@ metric_storage = MetricStorage(
             Metric('Mapped reads', short_name='Mapped'),
             Metric('Percentage of mapped reads', short_name='%', unit='%'),
 
-            Metric('Unmapped reads', short_name='Unmapped'),
-            Metric('Percentage of unmapped reads', short_name='%', unit='%'),
+            Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
+            Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
 
             Metric('Covered bases in target', short_name='Covered'),
             Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
@@ -161,7 +161,7 @@ metric_storage = MetricStorage(
         ]),
         depth_metrics=ReportSection('depth_metrics', 'Target coverage depth', [
             Metric('Average target coverage depth', short_name='Avg'),
-            Metric('Std. dev. of target coverage depth', short_name='Std dev'),
+            Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
             Metric('Maximum target coverage depth', short_name='Max'),
             Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
         ])))
@@ -390,6 +390,14 @@ def _get_exons_merged_by_genes(cnf, subregions):
 
     info('Processed {0:,} exons.'.format(i))
     return sorted_genes
+
+
+# def _make_region_report(regions, depth_threshs):
+#     metric_storage
+#
+#
+# def _make_flaggeed_region_report(regions, depth_threshs)
+
 
 
 def _make_flat_region_report(regions, depth_threshs, print_cov_factor=False):

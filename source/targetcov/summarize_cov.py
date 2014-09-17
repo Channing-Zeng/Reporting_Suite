@@ -1,4 +1,3 @@
-from ext_modules.simplejson import load
 from source.reporting import SampleReport, FullReport, Metric
 from source.logger import step_greetings, info
 from source.targetcov import cov
@@ -29,4 +28,3 @@ def summary_reports(cnf, bcbio_structure):
     for fpath in final_summary_report_fpaths:
         if fpath:
             info('  ' + fpath)
-
