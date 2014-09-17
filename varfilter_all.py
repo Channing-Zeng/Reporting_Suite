@@ -171,7 +171,13 @@ def main():
             help='The control sample name. Any novel or COSMIC varia    nts passing all '
                  'above filters but also detected in Control sample will be deemed '
                  'considered false positive. Use only when there\'s control sample.'
-        ))]
+        )),
+
+        (['--datahub-path'], dict(
+            dest='datahub_path',
+            help='DataHub directory path to upload final MAFs and CNV (can be remote).',
+        )),
+    ]
 
     cnf, bcbio_structure = summary_script_proc_params(
         BCBioStructure.varfilter_name,
@@ -204,6 +210,17 @@ def filter_all(cnf, bcbio_structure):
     for caller in bcbio_structure.variant_callers.values():
         if caller.combined_filt_maf_fpath:
             info(caller.name + ': ' + caller.combined_filt_maf_fpath)
+
+            if cnf.datahub_path:
+                copy_to_datahub(cnf, caller, cnf.datahub_path)
+
+
+def copy_to_datahub(cnf, caller, datahub_dirpath):
+    info('Copying to DataHub...')
+    cmdl1 = 'ssh klpf990@ukapdlnx115.ukapd.astrazeneca.net \'bash -c ""\' '
+    cmdl2 = 'scp {fpath} klpf990@ukapdlnx115.ukapd.astrazeneca.net:' + datahub_dirpath
+    # caller.combined_filt_maf_fpath
+
 
 
 def symlink_to_dir(fpath, dirpath):

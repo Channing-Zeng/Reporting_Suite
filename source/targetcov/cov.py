@@ -332,7 +332,7 @@ def _run_region_cov_report(cnf, output_dir,
     info('\t' + low_regions_txt_rep_fpath)
     info('Too much covered regions (total ' + str(len(high_regions)) + ') saved into:')
     info('\t' + high_regions_txt_rep_fpath)
-    return txt_rep_fpath, low_regions_tsv_rep_fpath, high_regions_tsv_rep_fpath
+    return tsv_rep_fpath, low_regions_tsv_rep_fpath, high_regions_tsv_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):

@@ -1,10 +1,9 @@
-#!/usr/bin/env python
 from optparse import OptionParser
+from distutils import file_util
+import sys
 import os
 from os.path import join, pardir, isfile, isdir, expanduser
 from os import getcwd
-import shutil
-import sys
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, remove_quotes
@@ -47,8 +46,10 @@ def process_post_bcbio_args(parser):
             if not verify_file(cnf_fpath):
                 sys.exit(1)
             if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
+                info('Copying ' + cnf_fpath + ' to ' + config_cnf_fpath)
                 os.remove(config_cnf_fpath)
-                shutil.copy(cnf_fpath, config_cnf_fpath)
+                file_util.copy_file(cnf_fpath, config_cnf_fpath, preserve_times=False)
+
         else:  # No cnf in opts
             if isfile(config_cnf_fpath) and verify_file(config_cnf_fpath):
                 cnf_fpath = config_cnf_fpath
@@ -56,7 +57,8 @@ def process_post_bcbio_args(parser):
                 cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
                 if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
                     os.remove(config_cnf_fpath)
-                    shutil.copy(cnf_fpath, config_cnf_fpath)
+                    file_util.copy_file(cnf_fpath, config_cnf_fpath, preserve_times=False)
+                    info('Copying ' + cnf_fpath + ' to ' + config_cnf_fpath)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
             opt_dict[cnf_name + '_cnf'] = cnf_fpath
 

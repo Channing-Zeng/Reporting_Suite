@@ -120,12 +120,30 @@
   };
 
   preprocessReport = function(report) {
-    var all_metrics_by_name, rec, s, sample_report, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var all_metrics_by_name, full_rep_common_ms, full_rep_common_ms_by_name, key, rec, s, sample_report, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
     all_metrics_by_name = {};
-    extend(all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name);
+    full_rep_common_ms_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name;
+    full_rep_common_ms = (function() {
+      var _results;
+      _results = [];
+      for (key in full_rep_common_ms_by_name) {
+        _results.push(full_rep_common_ms_by_name[key]);
+      }
+      return _results;
+    })();
+    report.metric_storage.common_for_all_samples_section.metrics = full_rep_common_ms;
+    extend(all_metrics_by_name, full_rep_common_ms_by_name);
     _ref = report.metric_storage.sections;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       s = _ref[_i];
+      s.metrics = (function() {
+        var _results;
+        _results = [];
+        for (key in s.metrics_by_name) {
+          _results.push(s.metrics_by_name[key]);
+        }
+        return _results;
+      })();
       extend(all_metrics_by_name, s.metrics_by_name);
     }
     _ref1 = report.sample_reports;

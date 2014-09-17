@@ -13,7 +13,7 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 from source.bcbio_structure import BCBioStructure
-from source.summary import summary_script_proc_params
+from source.prepare_args_and_cnf import summary_script_proc_params
 from source.targetcov.copy_number import cnv_reports
 
 

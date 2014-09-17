@@ -185,7 +185,7 @@ class BCBioRunner:
             interpreter='python',
             script='varfilter_all',
             dir_name=BCBioStructure.varfilter_dir,
-            paramln=spec_params + ' ' + self.final_dir
+            paramln=spec_params + ' ' + self.final_dir + (' --datahub-path ' + cnf.datahub_path if cnf.datahub_path else '')
         )
         self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',

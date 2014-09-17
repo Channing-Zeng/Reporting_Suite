@@ -26,6 +26,7 @@ metric =
     quality: ''
     presision: 0
     type: null
+    all_values_equal: false
 
 
 DRAGGABLE_COLUMNS = false
@@ -40,7 +41,7 @@ get_color = (hue) ->
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 
-all_values_equal = (vals) ->
+check_all_values_equal = (vals) ->
     first_val = null
     for val in vals
         if first_val?
@@ -72,7 +73,7 @@ get_meta_tag_contents = (rec) ->
 
             short_table = true
             for novelty, val_by_db of meta
-                if not all_values_equal(val for db, val of val_by_db when db isnt 'average')
+                if not check_all_values_equal(val for db, val of val_by_db when db isnt 'average')
                     short_table = false
 
             if short_table  # Values are the same for each database
@@ -183,6 +184,8 @@ calc_cell_contents = (report, section, font) ->
                     k = (maxHue - minHue) / (max - min)
                     hue = Math.round minHue + (rec.num - min) * k
                     rec.color = get_color hue
+                    rec.metric.all_values_equal = false
+    return report
 
 
 reporting.buildTotalReport = (report, section, columnOrder) ->
@@ -202,7 +205,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     for colNum in [0...section.metrics.length]
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
-        sort_by = if 'all_values_equal' of metric then 'nosort' else 'numeric'
+        sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
         table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
