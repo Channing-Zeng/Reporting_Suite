@@ -296,7 +296,7 @@ def _run_region_cov_report(cnf, output_dir,
     info('Median: ' + str(median_cov))
     info()
     info('Extracting abnormally covered regions.')
-    minimal_cov = 0.55 * median_cov
+    minimal_cov = 0.50 * median_cov
     maximal_cov = 1.90 * median_cov
     info('Assuming abnormal if below median*0.55 = ' + str(minimal_cov) +
          ' or above median*1.90 ' + ' = ' + str(maximal_cov))
@@ -305,7 +305,7 @@ def _run_region_cov_report(cnf, output_dir,
     high_regions = []
     i = 0
     for region in regions:
-        if region.avg_depth < minimal_cov:
+        if region.avg_depth < minimal_cov or region.avg_depth < 20:
             region.cov_factor = region.avg_depth / median_cov
             low_regions.append(region)
 

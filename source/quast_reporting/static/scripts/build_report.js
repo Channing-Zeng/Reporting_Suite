@@ -120,39 +120,31 @@
   };
 
   preprocessReport = function(report) {
-    var all_metrics_by_name, full_rep_common_ms, full_rep_common_ms_by_name, key, rec, s, sample_report, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var all_metrics_by_name, m, rec, s, sample_report, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4;
     all_metrics_by_name = {};
-    full_rep_common_ms_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name;
-    full_rep_common_ms = (function() {
-      var _results;
-      _results = [];
-      for (key in full_rep_common_ms_by_name) {
-        _results.push(full_rep_common_ms_by_name[key]);
-      }
-      return _results;
-    })();
-    report.metric_storage.common_for_all_samples_section.metrics = full_rep_common_ms;
-    extend(all_metrics_by_name, full_rep_common_ms_by_name);
-    _ref = report.metric_storage.sections;
+    _ref = report.metric_storage.common_for_all_samples_section.metrics;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      s = _ref[_i];
-      s.metrics = (function() {
-        var _results;
-        _results = [];
-        for (key in s.metrics_by_name) {
-          _results.push(s.metrics_by_name[key]);
-        }
-        return _results;
-      })();
+      m = _ref[_i];
+      report.metric_storage.common_for_all_samples_section.metrics_by_name[m.name] = m;
+    }
+    extend(all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name);
+    _ref1 = report.metric_storage.sections;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      s = _ref1[_j];
+      _ref2 = s.metrics;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        m = _ref2[_k];
+        s.metrics_by_name[m.name] = m;
+      }
       extend(all_metrics_by_name, s.metrics_by_name);
     }
-    _ref1 = report.sample_reports;
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      sample_report = _ref1[_j];
+    _ref3 = report.sample_reports;
+    for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+      sample_report = _ref3[_l];
       sample_report.metric_storage = report.metric_storage;
-      _ref2 = sample_report.records;
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        rec = _ref2[_k];
+      _ref4 = sample_report.records;
+      for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
+        rec = _ref4[_m];
         rec.metric = all_metrics_by_name[rec.metric.name];
       }
     }
