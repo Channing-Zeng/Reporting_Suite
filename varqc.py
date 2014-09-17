@@ -5,7 +5,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import abspath, dirname, realpath, join, basename
+from os.path import abspath, dirname, realpath, join, basename, relpath
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -127,7 +127,7 @@ def process_one(cnf):
     # removing variants distribution plot
     if len(qc_plots_for_html_report_fpaths) == 3:  # TODO: fix this
         qc_plots_for_html_report_fpaths = qc_plots_for_html_report_fpaths[1:]
-        report.plots = qc_plots_for_html_report_fpaths
+        report.plots = [relpath(plot_fpath, cnf.output_dir) for plot_fpath in qc_plots_for_html_report_fpaths]
 
     summary_report_html_fpath = report.save_html(
         cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
