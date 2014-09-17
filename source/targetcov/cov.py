@@ -135,7 +135,7 @@ def get_records_by_metrics(records, metrics):
     return _records
 
 
-metric_storage = MetricStorage(
+header_metric_storage = MetricStorage(
     common_for_all_samples_section=ReportSection('common_for_all_samples_section', '', [
         Metric('Bases in target', short_name='Target bp', common=True)
     ]),
@@ -173,11 +173,11 @@ def run_summary_report(cnf, sample, chr_len_fpath,
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
-        metric_storage.add_metric(
+        header_metric_storage.add_metric(
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    report = SampleReport(sample, metric_storage=metric_storage)
+    report = SampleReport(sample, metric_storage=header_metric_storage)
 
     info('* General coverage statistics *')
     info('Getting number of reads...')
@@ -392,8 +392,38 @@ def _get_exons_merged_by_genes(cnf, subregions):
     return sorted_genes
 
 
+region_metric_storage = MetricStorage(
+    sections_by_name=OrderedDict(
+        basic_metrics=ReportSection('basic_metrics', '', [
+            Metric('Mapped reads', short_name='Mapped'),
+# SAMPLE
+# Chr
+# Start
+# End
+# Gene
+# Feature
+# Size
+# Mean
+# Depth
+# Std Dev
+# Within 20% of Mean
+# Depth/Med depth
+# # variants
+# vcf_fpath
+# Cosmoc missed
+# vcf_fpath
+# Oncomine_missed
+# vcf_fpath
+# Hedley_missed
+# vcf_fpath
+# TCGA_missed
+# vcf_fpath
+        ])
+    ))
+
+
 # def _make_region_report(regions, depth_threshs):
-#     metric_storage
+#     metric_storage =
 #
 #
 # def _make_flaggeed_region_report(regions, depth_threshs)

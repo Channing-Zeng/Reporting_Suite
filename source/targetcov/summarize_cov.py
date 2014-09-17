@@ -6,7 +6,7 @@ from source.targetcov import cov
 def summary_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for all samples')
 
-    metric_storage = cov.metric_storage  # TODO parse storage from Json too
+    metric_storage = cov.header_metric_storage  # TODO parse storage from Json too
     for depth in cnf.coverage_reports.depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
         metric_storage.add_metric(

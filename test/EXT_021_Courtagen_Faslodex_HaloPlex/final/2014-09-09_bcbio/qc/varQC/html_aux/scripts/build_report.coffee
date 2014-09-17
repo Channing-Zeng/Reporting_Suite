@@ -96,8 +96,13 @@ merge = (options, overrides) ->
 
 preprocessReport = (report) ->
     all_metrics_by_name = {}
+    for m in report.metric_storage.common_for_all_samples_section.metrics
+        report.metric_storage.common_for_all_samples_section.metrics_by_name[m.name] = m
     extend all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name
+
     for s in report.metric_storage.sections
+        for m in s.metrics
+            s.metrics_by_name[m.name] = m
         extend all_metrics_by_name, s.metrics_by_name
 
     for sample_report in report.sample_reports
