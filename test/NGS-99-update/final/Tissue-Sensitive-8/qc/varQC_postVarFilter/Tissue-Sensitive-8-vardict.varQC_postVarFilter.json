@@ -1,0 +1,806 @@
+{
+    "metric_storage": {
+        "common_for_all_samples_section": {
+            "metrics": [],
+            "name": "common_for_all_samples_section",
+            "metrics_by_name": {},
+            "title": ""
+        },
+        "sections_by_name": {
+            "basic": {
+                "metrics": [
+                    {
+                        "name": "nEvalVariants",
+                        "short_name": "Total",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Total variants evaluated"
+                    },
+                    {
+                        "name": "nSNPs",
+                        "short_name": "SNP",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "SNPs"
+                    },
+                    {
+                        "name": "nInsertions",
+                        "short_name": "Ins",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Insertions"
+                    },
+                    {
+                        "name": "nDeletions",
+                        "short_name": "Del",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Deletions"
+                    },
+                    {
+                        "name": "nVariantsAtComp",
+                        "short_name": "At comp",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
+                    },
+                    {
+                        "name": "compRate",
+                        "short_name": "Comp rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Percentage of eval sites at comp sites"
+                    },
+                    {
+                        "name": "nConcordant",
+                        "short_name": "Concord",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
+                    },
+                    {
+                        "name": "concordantRate",
+                        "short_name": "Conc rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Concordance rate"
+                    },
+                    {
+                        "name": "variantRate",
+                        "short_name": "Var/loci",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Variants per loci rate"
+                    },
+                    {
+                        "name": "basesPerVariant",
+                        "short_name": "Bp/var",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Bases per variant rate"
+                    },
+                    {
+                        "name": "hetHomRatio",
+                        "short_name": "Het/hom",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Heterozygosity to homozygosity ratio"
+                    },
+                    {
+                        "name": "tiTvRatio",
+                        "short_name": "Ti/Tv",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Transition to transversion ratio"
+                    }
+                ],
+                "name": "basic",
+                "metrics_by_name": {
+                    "nSNPs": {
+                        "name": "nSNPs",
+                        "short_name": "SNP",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "SNPs"
+                    },
+                    "nDeletions": {
+                        "name": "nDeletions",
+                        "short_name": "Del",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Deletions"
+                    },
+                    "compRate": {
+                        "name": "compRate",
+                        "short_name": "Comp rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Percentage of eval sites at comp sites"
+                    },
+                    "basesPerVariant": {
+                        "name": "basesPerVariant",
+                        "short_name": "Bp/var",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Bases per variant rate"
+                    },
+                    "nEvalVariants": {
+                        "name": "nEvalVariants",
+                        "short_name": "Total",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Total variants evaluated"
+                    },
+                    "nConcordant": {
+                        "name": "nConcordant",
+                        "short_name": "Concord",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
+                    },
+                    "hetHomRatio": {
+                        "name": "hetHomRatio",
+                        "short_name": "Het/hom",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Heterozygosity to homozygosity ratio"
+                    },
+                    "concordantRate": {
+                        "name": "concordantRate",
+                        "short_name": "Conc rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Concordance rate"
+                    },
+                    "nVariantsAtComp": {
+                        "name": "nVariantsAtComp",
+                        "short_name": "At comp",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
+                    },
+                    "variantRate": {
+                        "name": "variantRate",
+                        "short_name": "Var/loci",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Variants per loci rate"
+                    },
+                    "tiTvRatio": {
+                        "name": "tiTvRatio",
+                        "short_name": "Ti/Tv",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Transition to transversion ratio"
+                    },
+                    "nInsertions": {
+                        "name": "nInsertions",
+                        "short_name": "Ins",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Insertions"
+                    }
+                },
+                "title": ""
+            }
+        },
+        "sections": [
+            {
+                "metrics": [
+                    {
+                        "name": "nEvalVariants",
+                        "short_name": "Total",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Total variants evaluated"
+                    },
+                    {
+                        "name": "nSNPs",
+                        "short_name": "SNP",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "SNPs"
+                    },
+                    {
+                        "name": "nInsertions",
+                        "short_name": "Ins",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Insertions"
+                    },
+                    {
+                        "name": "nDeletions",
+                        "short_name": "Del",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Deletions"
+                    },
+                    {
+                        "name": "nVariantsAtComp",
+                        "short_name": "At comp",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
+                    },
+                    {
+                        "name": "compRate",
+                        "short_name": "Comp rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Percentage of eval sites at comp sites"
+                    },
+                    {
+                        "name": "nConcordant",
+                        "short_name": "Concord",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
+                    },
+                    {
+                        "name": "concordantRate",
+                        "short_name": "Conc rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Concordance rate"
+                    },
+                    {
+                        "name": "variantRate",
+                        "short_name": "Var/loci",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Variants per loci rate"
+                    },
+                    {
+                        "name": "basesPerVariant",
+                        "short_name": "Bp/var",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Bases per variant rate"
+                    },
+                    {
+                        "name": "hetHomRatio",
+                        "short_name": "Het/hom",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Heterozygosity to homozygosity ratio"
+                    },
+                    {
+                        "name": "tiTvRatio",
+                        "short_name": "Ti/Tv",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Transition to transversion ratio"
+                    }
+                ],
+                "name": "basic",
+                "metrics_by_name": {
+                    "nSNPs": {
+                        "name": "nSNPs",
+                        "short_name": "SNP",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "SNPs"
+                    },
+                    "nDeletions": {
+                        "name": "nDeletions",
+                        "short_name": "Del",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Deletions"
+                    },
+                    "compRate": {
+                        "name": "compRate",
+                        "short_name": "Comp rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Percentage of eval sites at comp sites"
+                    },
+                    "basesPerVariant": {
+                        "name": "basesPerVariant",
+                        "short_name": "Bp/var",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Bases per variant rate"
+                    },
+                    "nEvalVariants": {
+                        "name": "nEvalVariants",
+                        "short_name": "Total",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Total variants evaluated"
+                    },
+                    "nConcordant": {
+                        "name": "nConcordant",
+                        "short_name": "Concord",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
+                    },
+                    "hetHomRatio": {
+                        "name": "hetHomRatio",
+                        "short_name": "Het/hom",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Heterozygosity to homozygosity ratio"
+                    },
+                    "concordantRate": {
+                        "name": "concordantRate",
+                        "short_name": "Conc rate",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Concordance rate"
+                    },
+                    "nVariantsAtComp": {
+                        "name": "nVariantsAtComp",
+                        "short_name": "At comp",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
+                    },
+                    "variantRate": {
+                        "name": "variantRate",
+                        "short_name": "Var/loci",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Variants per loci rate"
+                    },
+                    "tiTvRatio": {
+                        "name": "tiTvRatio",
+                        "short_name": "Ti/Tv",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Transition to transversion ratio"
+                    },
+                    "nInsertions": {
+                        "name": "nInsertions",
+                        "short_name": "Ins",
+                        "common": false,
+                        "quality": "More is better",
+                        "unit": "",
+                        "description": "Insertions"
+                    }
+                },
+                "title": ""
+            }
+        ]
+    },
+    "display_name": "Tissue-Sensitive-8",
+    "json_fpath": null,
+    "report_name": "",
+    "sample": {
+        "bam": null,
+        "filtered_vcf_by_callername": {},
+        "name": "Tissue-Sensitive-8",
+        "filtered_maf_by_callername": {},
+        "bed": null,
+        "normal_match": null,
+        "phenotype": null,
+        "filtered_tsv_by_callername": {},
+        "dirpath": null,
+        "vcf_by_callername": {},
+        "var_dirpath": null
+    },
+    "records": [
+        {
+            "metric": {
+                "name": "nEvalVariants",
+                "short_name": "Total",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Total variants evaluated"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 16828,
+                    "dbsnp": 16828,
+                    "cosmic": 16828,
+                    "average": 16828.0
+                },
+                "all": {
+                    "1000genomes": 135102,
+                    "dbsnp": 135102,
+                    "cosmic": 135102,
+                    "average": 135102.0
+                },
+                "novel": {
+                    "1000genomes": 118274,
+                    "dbsnp": 118274,
+                    "cosmic": 118274,
+                    "average": 118274.0
+                }
+            },
+            "value": 135102
+        },
+        {
+            "metric": {
+                "name": "nSNPs",
+                "short_name": "SNP",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "SNPs"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 16333,
+                    "dbsnp": 16333,
+                    "cosmic": 16333,
+                    "average": 16333.0
+                },
+                "all": {
+                    "1000genomes": 132943,
+                    "dbsnp": 132943,
+                    "cosmic": 132943,
+                    "average": 132943.0
+                },
+                "novel": {
+                    "1000genomes": 116610,
+                    "dbsnp": 116610,
+                    "cosmic": 116610,
+                    "average": 116610.0
+                }
+            },
+            "value": 132943
+        },
+        {
+            "metric": {
+                "name": "nInsertions",
+                "short_name": "Ins",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Insertions"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 218,
+                    "dbsnp": 218,
+                    "cosmic": 218,
+                    "average": 218.0
+                },
+                "all": {
+                    "1000genomes": 328,
+                    "dbsnp": 328,
+                    "cosmic": 328,
+                    "average": 328.0
+                },
+                "novel": {
+                    "1000genomes": 110,
+                    "dbsnp": 110,
+                    "cosmic": 110,
+                    "average": 110.0
+                }
+            },
+            "value": 328
+        },
+        {
+            "metric": {
+                "name": "nDeletions",
+                "short_name": "Del",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Deletions"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 273,
+                    "dbsnp": 273,
+                    "cosmic": 273,
+                    "average": 273.0
+                },
+                "all": {
+                    "1000genomes": 1646,
+                    "dbsnp": 1646,
+                    "cosmic": 1646,
+                    "average": 1646.0
+                },
+                "novel": {
+                    "1000genomes": 1373,
+                    "dbsnp": 1373,
+                    "cosmic": 1373,
+                    "average": 1373.0
+                }
+            },
+            "value": 1646
+        },
+        {
+            "metric": {
+                "name": "nVariantsAtComp",
+                "short_name": "At comp",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 5751,
+                    "dbsnp": 16828,
+                    "cosmic": 2285,
+                    "average": 8288.0
+                },
+                "all": {
+                    "1000genomes": 5753,
+                    "dbsnp": 16828,
+                    "cosmic": 7973,
+                    "average": 10184.666666666666
+                },
+                "novel": {
+                    "1000genomes": 2,
+                    "dbsnp": 0,
+                    "cosmic": 5688,
+                    "average": 1896.6666666666667
+                }
+            },
+            "value": 7973
+        },
+        {
+            "metric": {
+                "name": "compRate",
+                "short_name": "Comp rate",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Percentage of eval sites at comp sites"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 34.18,
+                    "dbsnp": 100.0,
+                    "cosmic": 13.58,
+                    "average": 49.25333333333334
+                },
+                "all": {
+                    "1000genomes": 4.26,
+                    "dbsnp": 12.46,
+                    "cosmic": 5.9,
+                    "average": 7.539999999999999
+                },
+                "novel": {
+                    "1000genomes": 0.0,
+                    "dbsnp": 0.0,
+                    "cosmic": 4.81,
+                    "average": 1.6033333333333333
+                }
+            },
+            "value": 5.9
+        },
+        {
+            "metric": {
+                "name": "nConcordant",
+                "short_name": "Concord",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 5591,
+                    "dbsnp": 11004,
+                    "cosmic": 1705,
+                    "average": 6100.0
+                },
+                "all": {
+                    "1000genomes": 5593,
+                    "dbsnp": 11004,
+                    "cosmic": 3994,
+                    "average": 6863.666666666667
+                },
+                "novel": {
+                    "1000genomes": 2,
+                    "dbsnp": 0,
+                    "cosmic": 2289,
+                    "average": 763.6666666666666
+                }
+            },
+            "value": 3994
+        },
+        {
+            "metric": {
+                "name": "concordantRate",
+                "short_name": "Conc rate",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Concordance rate"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 97.22,
+                    "dbsnp": 65.39,
+                    "cosmic": 74.62,
+                    "average": 79.07666666666667
+                },
+                "all": {
+                    "1000genomes": 97.22,
+                    "dbsnp": 65.39,
+                    "cosmic": 50.09,
+                    "average": 70.9
+                },
+                "novel": {
+                    "1000genomes": 100.0,
+                    "dbsnp": 0.0,
+                    "cosmic": 40.24,
+                    "average": 46.74666666666667
+                }
+            },
+            "value": 50.09
+        },
+        {
+            "metric": {
+                "name": "variantRate",
+                "short_name": "Var/loci",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Variants per loci rate"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 5.36e-06,
+                    "dbsnp": 5.36e-06,
+                    "cosmic": 5.36e-06,
+                    "average": 5.36e-06
+                },
+                "all": {
+                    "1000genomes": 4.307e-05,
+                    "dbsnp": 4.307e-05,
+                    "cosmic": 4.307e-05,
+                    "average": 4.307e-05
+                },
+                "novel": {
+                    "1000genomes": 3.77e-05,
+                    "dbsnp": 3.77e-05,
+                    "cosmic": 3.77e-05,
+                    "average": 3.77e-05
+                }
+            },
+            "value": 4.307e-05
+        },
+        {
+            "metric": {
+                "name": "basesPerVariant",
+                "short_name": "Bp/var",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Bases per variant rate"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 186425.0,
+                    "dbsnp": 186425.0,
+                    "cosmic": 186425.0,
+                    "average": 186425.0
+                },
+                "all": {
+                    "1000genomes": 23220.0,
+                    "dbsnp": 23220.0,
+                    "cosmic": 23220.0,
+                    "average": 23220.0
+                },
+                "novel": {
+                    "1000genomes": 26524.0,
+                    "dbsnp": 26524.0,
+                    "cosmic": 26524.0,
+                    "average": 26524.0
+                }
+            },
+            "value": 23220.0
+        },
+        {
+            "metric": {
+                "name": "hetHomRatio",
+                "short_name": "Het/hom",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Heterozygosity to homozygosity ratio"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 2.97,
+                    "dbsnp": 2.97,
+                    "cosmic": 2.97,
+                    "average": 2.97
+                },
+                "all": {
+                    "1000genomes": 30.44,
+                    "dbsnp": 30.44,
+                    "cosmic": 30.44,
+                    "average": 30.44
+                },
+                "novel": {
+                    "1000genomes": 1906.65,
+                    "dbsnp": 1906.65,
+                    "cosmic": 1906.65,
+                    "average": 1906.6500000000003
+                }
+            },
+            "value": 30.44
+        },
+        {
+            "metric": {
+                "name": "tiTvRatio",
+                "short_name": "Ti/Tv",
+                "common": false,
+                "quality": "More is better",
+                "unit": "",
+                "description": "Transition to transversion ratio"
+            },
+            "meta": {
+                "known": {
+                    "1000genomes": 0.74,
+                    "dbsnp": 0.74,
+                    "cosmic": 0.74,
+                    "average": 0.7399999999999999
+                },
+                "all": {
+                    "1000genomes": 0.14,
+                    "dbsnp": 0.14,
+                    "cosmic": 0.14,
+                    "average": 0.14
+                },
+                "novel": {
+                    "1000genomes": 0.09,
+                    "dbsnp": 0.09,
+                    "cosmic": 0.09,
+                    "average": 0.09000000000000001
+                }
+            },
+            "value": 0.14
+        }
+    ],
+    "plots": [],
+    "html_fpath": null
+}

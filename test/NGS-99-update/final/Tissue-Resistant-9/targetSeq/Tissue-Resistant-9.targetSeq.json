@@ -1,0 +1,1285 @@
+{
+    "display_name": "Tissue-Resistant-9",
+    "html_fpath": null,
+    "json_fpath": null,
+    "metric_storage": {
+        "common_for_all_samples_section": {
+            "metrics": [
+                {
+                    "common": true,
+                    "description": null,
+                    "name": "Bases in target",
+                    "quality": "More is better",
+                    "short_name": "Target bp",
+                    "unit": ""
+                }
+            ],
+            "metrics_by_name": {
+                "Bases in target": {
+                    "common": true,
+                    "description": null,
+                    "name": "Bases in target",
+                    "quality": "More is better",
+                    "short_name": "Target bp",
+                    "unit": ""
+                }
+            },
+            "name": "common_for_all_samples_section",
+            "title": ""
+        },
+        "sections": [
+            {
+                "metrics": [
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads",
+                        "quality": "More is better",
+                        "short_name": null,
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Mapped reads",
+                        "quality": "More is better",
+                        "short_name": "Mapped",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of mapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "Unmapped",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Covered bases in target",
+                        "quality": "More is better",
+                        "short_name": "Covered",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target covered by at least 1 read",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Reads on trg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "On padded trg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Read bases mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Read bp on trg",
+                        "unit": ""
+                    }
+                ],
+                "metrics_by_name": {
+                    "Covered bases in target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Covered bases in target",
+                        "quality": "More is better",
+                        "short_name": "Covered",
+                        "unit": ""
+                    },
+                    "Mapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Mapped reads",
+                        "quality": "More is better",
+                        "short_name": "Mapped",
+                        "unit": ""
+                    },
+                    "Percentage of mapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of mapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of reads mapped on padded target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of reads mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of target covered by at least 1 read": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target covered by at least 1 read",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of unmapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Read bases mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Read bases mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Read bp on trg",
+                        "unit": ""
+                    },
+                    "Reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads",
+                        "quality": "More is better",
+                        "short_name": null,
+                        "unit": ""
+                    },
+                    "Reads mapped on padded target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "On padded trg",
+                        "unit": ""
+                    },
+                    "Reads mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Reads on trg",
+                        "unit": ""
+                    },
+                    "Unmapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "Unmapped",
+                        "unit": ""
+                    }
+                },
+                "name": "basic_metrics",
+                "title": ""
+            },
+            {
+                "metrics": [
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Average target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Avg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Std. dev. of target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Std dev",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Maximum target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Max",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target within 20% of mean depth",
+                        "quality": "More is better",
+                        "short_name": "&#177;20% avg",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 1x",
+                        "name": "Part of target covered at least by 1x",
+                        "quality": "More is better",
+                        "short_name": "1x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 5x",
+                        "name": "Part of target covered at least by 5x",
+                        "quality": "More is better",
+                        "short_name": "5x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 10x",
+                        "name": "Part of target covered at least by 10x",
+                        "quality": "More is better",
+                        "short_name": "10x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 25x",
+                        "name": "Part of target covered at least by 25x",
+                        "quality": "More is better",
+                        "short_name": "25x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 50x",
+                        "name": "Part of target covered at least by 50x",
+                        "quality": "More is better",
+                        "short_name": "50x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 100x",
+                        "name": "Part of target covered at least by 100x",
+                        "quality": "More is better",
+                        "short_name": "100x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 500x",
+                        "name": "Part of target covered at least by 500x",
+                        "quality": "More is better",
+                        "short_name": "500x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 1000x",
+                        "name": "Part of target covered at least by 1000x",
+                        "quality": "More is better",
+                        "short_name": "1000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 5000x",
+                        "name": "Part of target covered at least by 5000x",
+                        "quality": "More is better",
+                        "short_name": "5000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 10000x",
+                        "name": "Part of target covered at least by 10000x",
+                        "quality": "More is better",
+                        "short_name": "10000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 50000x",
+                        "name": "Part of target covered at least by 50000x",
+                        "quality": "More is better",
+                        "short_name": "50000x",
+                        "unit": "%"
+                    }
+                ],
+                "metrics_by_name": {
+                    "Average target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Average target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Avg",
+                        "unit": ""
+                    },
+                    "Maximum target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Maximum target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Max",
+                        "unit": ""
+                    },
+                    "Part of target covered at least by 10000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 10000x",
+                        "name": "Part of target covered at least by 10000x",
+                        "quality": "More is better",
+                        "short_name": "10000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 1000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 1000x",
+                        "name": "Part of target covered at least by 1000x",
+                        "quality": "More is better",
+                        "short_name": "1000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 100x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 100x",
+                        "name": "Part of target covered at least by 100x",
+                        "quality": "More is better",
+                        "short_name": "100x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 10x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 10x",
+                        "name": "Part of target covered at least by 10x",
+                        "quality": "More is better",
+                        "short_name": "10x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 1x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 1x",
+                        "name": "Part of target covered at least by 1x",
+                        "quality": "More is better",
+                        "short_name": "1x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 25x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 25x",
+                        "name": "Part of target covered at least by 25x",
+                        "quality": "More is better",
+                        "short_name": "25x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 50000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 50000x",
+                        "name": "Part of target covered at least by 50000x",
+                        "quality": "More is better",
+                        "short_name": "50000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 5000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 5000x",
+                        "name": "Part of target covered at least by 5000x",
+                        "quality": "More is better",
+                        "short_name": "5000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 500x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 500x",
+                        "name": "Part of target covered at least by 500x",
+                        "quality": "More is better",
+                        "short_name": "500x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 50x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 50x",
+                        "name": "Part of target covered at least by 50x",
+                        "quality": "More is better",
+                        "short_name": "50x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 5x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 5x",
+                        "name": "Part of target covered at least by 5x",
+                        "quality": "More is better",
+                        "short_name": "5x",
+                        "unit": "%"
+                    },
+                    "Percentage of target within 20% of mean depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target within 20% of mean depth",
+                        "quality": "More is better",
+                        "short_name": "&#177;20% avg",
+                        "unit": "%"
+                    },
+                    "Std. dev. of target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Std. dev. of target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Std dev",
+                        "unit": ""
+                    }
+                },
+                "name": "depth_metrics",
+                "title": "Target coverage depth"
+            }
+        ],
+        "sections_by_name": {
+            "basic_metrics": {
+                "metrics": [
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads",
+                        "quality": "More is better",
+                        "short_name": null,
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Mapped reads",
+                        "quality": "More is better",
+                        "short_name": "Mapped",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of mapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "Unmapped",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Covered bases in target",
+                        "quality": "More is better",
+                        "short_name": "Covered",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target covered by at least 1 read",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Reads on trg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "On padded trg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Read bases mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Read bp on trg",
+                        "unit": ""
+                    }
+                ],
+                "metrics_by_name": {
+                    "Covered bases in target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Covered bases in target",
+                        "quality": "More is better",
+                        "short_name": "Covered",
+                        "unit": ""
+                    },
+                    "Mapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Mapped reads",
+                        "quality": "More is better",
+                        "short_name": "Mapped",
+                        "unit": ""
+                    },
+                    "Percentage of mapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of mapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of reads mapped on padded target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of reads mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of target covered by at least 1 read": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target covered by at least 1 read",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Percentage of unmapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "%",
+                        "unit": "%"
+                    },
+                    "Read bases mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Read bases mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Read bp on trg",
+                        "unit": ""
+                    },
+                    "Reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads",
+                        "quality": "More is better",
+                        "short_name": null,
+                        "unit": ""
+                    },
+                    "Reads mapped on padded target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on padded target",
+                        "quality": "More is better",
+                        "short_name": "On padded trg",
+                        "unit": ""
+                    },
+                    "Reads mapped on target": {
+                        "common": false,
+                        "description": null,
+                        "name": "Reads mapped on target",
+                        "quality": "More is better",
+                        "short_name": "Reads on trg",
+                        "unit": ""
+                    },
+                    "Unmapped reads": {
+                        "common": false,
+                        "description": null,
+                        "name": "Unmapped reads",
+                        "quality": "More is better",
+                        "short_name": "Unmapped",
+                        "unit": ""
+                    }
+                },
+                "name": "basic_metrics",
+                "title": ""
+            },
+            "depth_metrics": {
+                "metrics": [
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Average target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Avg",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Std. dev. of target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Std dev",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Maximum target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Max",
+                        "unit": ""
+                    },
+                    {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target within 20% of mean depth",
+                        "quality": "More is better",
+                        "short_name": "&#177;20% avg",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 1x",
+                        "name": "Part of target covered at least by 1x",
+                        "quality": "More is better",
+                        "short_name": "1x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 5x",
+                        "name": "Part of target covered at least by 5x",
+                        "quality": "More is better",
+                        "short_name": "5x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 10x",
+                        "name": "Part of target covered at least by 10x",
+                        "quality": "More is better",
+                        "short_name": "10x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 25x",
+                        "name": "Part of target covered at least by 25x",
+                        "quality": "More is better",
+                        "short_name": "25x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 50x",
+                        "name": "Part of target covered at least by 50x",
+                        "quality": "More is better",
+                        "short_name": "50x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 100x",
+                        "name": "Part of target covered at least by 100x",
+                        "quality": "More is better",
+                        "short_name": "100x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 500x",
+                        "name": "Part of target covered at least by 500x",
+                        "quality": "More is better",
+                        "short_name": "500x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 1000x",
+                        "name": "Part of target covered at least by 1000x",
+                        "quality": "More is better",
+                        "short_name": "1000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 5000x",
+                        "name": "Part of target covered at least by 5000x",
+                        "quality": "More is better",
+                        "short_name": "5000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 10000x",
+                        "name": "Part of target covered at least by 10000x",
+                        "quality": "More is better",
+                        "short_name": "10000x",
+                        "unit": "%"
+                    },
+                    {
+                        "common": false,
+                        "description": "Part of target covered at least by 50000x",
+                        "name": "Part of target covered at least by 50000x",
+                        "quality": "More is better",
+                        "short_name": "50000x",
+                        "unit": "%"
+                    }
+                ],
+                "metrics_by_name": {
+                    "Average target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Average target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Avg",
+                        "unit": ""
+                    },
+                    "Maximum target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Maximum target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Max",
+                        "unit": ""
+                    },
+                    "Part of target covered at least by 10000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 10000x",
+                        "name": "Part of target covered at least by 10000x",
+                        "quality": "More is better",
+                        "short_name": "10000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 1000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 1000x",
+                        "name": "Part of target covered at least by 1000x",
+                        "quality": "More is better",
+                        "short_name": "1000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 100x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 100x",
+                        "name": "Part of target covered at least by 100x",
+                        "quality": "More is better",
+                        "short_name": "100x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 10x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 10x",
+                        "name": "Part of target covered at least by 10x",
+                        "quality": "More is better",
+                        "short_name": "10x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 1x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 1x",
+                        "name": "Part of target covered at least by 1x",
+                        "quality": "More is better",
+                        "short_name": "1x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 25x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 25x",
+                        "name": "Part of target covered at least by 25x",
+                        "quality": "More is better",
+                        "short_name": "25x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 50000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 50000x",
+                        "name": "Part of target covered at least by 50000x",
+                        "quality": "More is better",
+                        "short_name": "50000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 5000x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 5000x",
+                        "name": "Part of target covered at least by 5000x",
+                        "quality": "More is better",
+                        "short_name": "5000x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 500x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 500x",
+                        "name": "Part of target covered at least by 500x",
+                        "quality": "More is better",
+                        "short_name": "500x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 50x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 50x",
+                        "name": "Part of target covered at least by 50x",
+                        "quality": "More is better",
+                        "short_name": "50x",
+                        "unit": "%"
+                    },
+                    "Part of target covered at least by 5x": {
+                        "common": false,
+                        "description": "Part of target covered at least by 5x",
+                        "name": "Part of target covered at least by 5x",
+                        "quality": "More is better",
+                        "short_name": "5x",
+                        "unit": "%"
+                    },
+                    "Percentage of target within 20% of mean depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Percentage of target within 20% of mean depth",
+                        "quality": "More is better",
+                        "short_name": "&#177;20% avg",
+                        "unit": "%"
+                    },
+                    "Std. dev. of target coverage depth": {
+                        "common": false,
+                        "description": null,
+                        "name": "Std. dev. of target coverage depth",
+                        "quality": "More is better",
+                        "short_name": "Std dev",
+                        "unit": ""
+                    }
+                },
+                "name": "depth_metrics",
+                "title": "Target coverage depth"
+            }
+        }
+    },
+    "plots": [],
+    "records": [
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Reads",
+                "quality": "More is better",
+                "short_name": null,
+                "unit": ""
+            },
+            "value": 103462980
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Mapped reads",
+                "quality": "More is better",
+                "short_name": "Mapped",
+                "unit": ""
+            },
+            "value": 102828550
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of mapped reads",
+                "quality": "More is better",
+                "short_name": "%",
+                "unit": "%"
+            },
+            "value": 99.38680482622867
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Unmapped reads",
+                "quality": "More is better",
+                "short_name": "Unmapped",
+                "unit": ""
+            },
+            "value": 634430
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of unmapped reads",
+                "quality": "More is better",
+                "short_name": "%",
+                "unit": "%"
+            },
+            "value": 0.6131951737713335
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": true,
+                "description": null,
+                "name": "Bases in target",
+                "quality": "More is better",
+                "short_name": "Target bp",
+                "unit": ""
+            },
+            "value": 59018390
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Covered bases in target",
+                "quality": "More is better",
+                "short_name": "Covered",
+                "unit": ""
+            },
+            "value": 58368678
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of target covered by at least 1 read",
+                "quality": "More is better",
+                "short_name": "%",
+                "unit": "%"
+            },
+            "value": 98.89913635393985
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Reads mapped on target",
+                "quality": "More is better",
+                "short_name": "Reads on trg",
+                "unit": ""
+            },
+            "value": 72044058
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of reads mapped on target",
+                "quality": "More is better",
+                "short_name": "%",
+                "unit": "%"
+            },
+            "value": 70.06231051590244
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Reads mapped on padded target",
+                "quality": "More is better",
+                "short_name": "On padded trg",
+                "unit": ""
+            },
+            "value": 72044058
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of reads mapped on padded target",
+                "quality": "More is better",
+                "short_name": "%",
+                "unit": "%"
+            },
+            "value": 70.06231051590244
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Read bases mapped on target",
+                "quality": "More is better",
+                "short_name": "Read bp on trg",
+                "unit": ""
+            },
+            "value": 6819221371.0
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Average target coverage depth",
+                "quality": "More is better",
+                "short_name": "Avg",
+                "unit": ""
+            },
+            "value": 115.5440087572704
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Std. dev. of target coverage depth",
+                "quality": "More is better",
+                "short_name": "Std dev",
+                "unit": ""
+            },
+            "value": 91.09259434162006
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Maximum target coverage depth",
+                "quality": "More is better",
+                "short_name": "Max",
+                "unit": ""
+            },
+            "value": 11178
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": null,
+                "name": "Percentage of target within 20% of mean depth",
+                "quality": "More is better",
+                "short_name": "&#177;20% avg",
+                "unit": "%"
+            },
+            "value": 20.98951360753826
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 1x",
+                "name": "Part of target covered at least by 1x",
+                "quality": "More is better",
+                "short_name": "1x",
+                "unit": "%"
+            },
+            "value": 98.89913635393985
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 5x",
+                "name": "Part of target covered at least by 5x",
+                "quality": "More is better",
+                "short_name": "5x",
+                "unit": "%"
+            },
+            "value": 97.72135600445895
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 10x",
+                "name": "Part of target covered at least by 10x",
+                "quality": "More is better",
+                "short_name": "10x",
+                "unit": "%"
+            },
+            "value": 96.7112335663511
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 25x",
+                "name": "Part of target covered at least by 25x",
+                "quality": "More is better",
+                "short_name": "25x",
+                "unit": "%"
+            },
+            "value": 91.73766346387964
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 50x",
+                "name": "Part of target covered at least by 50x",
+                "quality": "More is better",
+                "short_name": "50x",
+                "unit": "%"
+            },
+            "value": 77.68552649436896
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 100x",
+                "name": "Part of target covered at least by 100x",
+                "quality": "More is better",
+                "short_name": "100x",
+                "unit": "%"
+            },
+            "value": 47.30600411159979
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 500x",
+                "name": "Part of target covered at least by 500x",
+                "quality": "More is better",
+                "short_name": "500x",
+                "unit": "%"
+            },
+            "value": 0.462262694729558
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 1000x",
+                "name": "Part of target covered at least by 1000x",
+                "quality": "More is better",
+                "short_name": "1000x",
+                "unit": "%"
+            },
+            "value": 0.018297686534654706
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 5000x",
+                "name": "Part of target covered at least by 5000x",
+                "quality": "More is better",
+                "short_name": "5000x",
+                "unit": "%"
+            },
+            "value": 0.00016096677662674294
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 10000x",
+                "name": "Part of target covered at least by 10000x",
+                "quality": "More is better",
+                "short_name": "10000x",
+                "unit": "%"
+            },
+            "value": 5.422038791637657e-05
+        },
+        {
+            "meta": {},
+            "metric": {
+                "common": false,
+                "description": "Part of target covered at least by 50000x",
+                "name": "Part of target covered at least by 50000x",
+                "quality": "More is better",
+                "short_name": "50000x",
+                "unit": "%"
+            },
+            "value": 0.0
+        }
+    ],
+    "report_name": "",
+    "sample": {
+        "bam": "/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/final/Tissue-Resistant-9/Tissue-Resistant-9-ready.bam",
+        "bed": "/gpfs/ngs/oncology/Analysis/translation/TS_0025_Platinum-Resistant-Ovarian/bcbio/NGS-99/work/post_processing/tmp_qualimap.bed",
+        "dirpath": null,
+        "filtered_clean_vcf_by_callername": {},
+        "filtered_maf_by_callername": {},
+        "filtered_tsv_by_callername": {},
+        "filtered_vcf_by_callername": {},
+        "name": "Tissue-Resistant-9",
+        "normal_match": null,
+        "phenotype": null,
+        "var_dirpath": null,
+        "vcf_by_callername": {}
+    }
+}

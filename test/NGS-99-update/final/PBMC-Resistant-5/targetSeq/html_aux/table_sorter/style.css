@@ -1,0 +1,14 @@
+table.tableSorter th div.sortArrow {
+    width: 11px;
+    height: 5px;
+    display: inline-block;
+    vertical-align: 2px;
+    position: relative;
+}
+
+table.tableSorter th div.sortArrow div.sortArrowDescending {
+    width: 11px;
+    height: 5px;
+    background: url('arrow_desc.png') no-repeat 100% 100%;
+    display: none;
+}
