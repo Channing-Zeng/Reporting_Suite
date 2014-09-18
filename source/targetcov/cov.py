@@ -90,7 +90,7 @@ def run_targetcov_reports(cnf, sample):
 
             info('Saving region coverage report...')
             gene_rep_fpath, low_regions_gene_rep_fpath, high_regions_gene_rep_fpath = _run_region_cov_report(
-                cnf, sample, cnf.output_dir,
+                cnf, cnf.output_dir,
                 gene_report_basename, low_gene_report_basename, high_gene_report_basename,
                 cnf.name, cnf.coverage_reports.depth_thresholds, amplicons, exons)
 
@@ -135,7 +135,7 @@ def get_records_by_metrics(records, metrics):
     return _records
 
 
-header_metric_storage = MetricStorage(
+metric_storage = MetricStorage(
     common_for_all_samples_section=ReportSection('common_for_all_samples_section', '', [
         Metric('Bases in target', short_name='Target bp', common=True)
     ]),
@@ -173,11 +173,11 @@ def run_summary_report(cnf, sample, chr_len_fpath,
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
-        header_metric_storage.add_metric(
+        metric_storage.add_metric(
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    report = SampleReport(sample, metric_storage=header_metric_storage)
+    report = SampleReport(sample, metric_storage=metric_storage)
 
     info('* General coverage statistics *')
     info('Getting number of reads...')
@@ -238,7 +238,7 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _run_region_cov_report(cnf, sample, output_dir,
+def _run_region_cov_report(cnf, output_dir,
                            report_basename, low_gene_report_basename, high_gene_report_basename,
                            sample_name, depth_threshs, amplicons, exons):
     for ampl in amplicons:
@@ -317,13 +317,13 @@ def _run_region_cov_report(cnf, sample, output_dir,
     txt_rep_fpath = write_txt_rows(rows, output_dir, report_basename)
     tsv_rep_fpath = write_tsv_rows(rows, output_dir, report_basename)
 
-    report = _make_flagged_region_report(sample, low_regions, depth_threshs)
-    low_regions_html_rep_fpath = report.save_html(output_dir, low_gene_report_basename)
-    low_regions_txt_rep_fpath = report.save_txt(output_dir, low_gene_report_basename)
+    low_region_rows = _make_flat_region_report(low_regions, depth_threshs, print_cov_factor=True)
+    low_regions_txt_rep_fpath = write_txt_rows(low_region_rows, output_dir, low_gene_report_basename)
+    low_regions_tsv_rep_fpath = write_tsv_rows(low_region_rows, output_dir, low_gene_report_basename)
 
-    report = _make_flagged_region_report(sample, high_regions, depth_threshs)
-    high_regions_html_rep_fpath = report.save_html(output_dir, high_gene_report_basename)
-    high_regions_txt_rep_fpath = report.save_txt(output_dir, high_gene_report_basename)
+    high_region_rows = _make_flat_region_report(high_regions, depth_threshs, print_cov_factor=True)
+    high_regions_txt_rep_fpath = write_txt_rows(high_region_rows, output_dir, high_gene_report_basename)
+    high_regions_tsv_rep_fpath = write_tsv_rows(high_region_rows, output_dir, high_gene_report_basename)
 
     info('')
     info('Regions (total ' + str(len(regions)) + ') saved into:')
@@ -332,7 +332,7 @@ def _run_region_cov_report(cnf, sample, output_dir,
     info('\t' + low_regions_txt_rep_fpath)
     info('Too much covered regions (total ' + str(len(high_regions)) + ') saved into:')
     info('\t' + high_regions_txt_rep_fpath)
-    return tsv_rep_fpath, low_regions_html_rep_fpath, high_regions_html_rep_fpath
+    return tsv_rep_fpath, low_regions_tsv_rep_fpath, high_regions_tsv_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):
@@ -392,165 +392,20 @@ def _get_exons_merged_by_genes(cnf, subregions):
     return sorted_genes
 
 
-class SquareSampleReport(SampleReport):
-    def __init__(self, sample=None, rows_of_records=None, **kwargs):
-        SampleReport.__init__(self, sample=sample, records=rows_of_records, **kwargs)
-
-    def add_row(self, row):
-
-
-        metric = self.metric_storage.get_metric(metric_name.strip())
-        assert metric, metric_name
-        rec = Record(metric, value, meta)
-        self.records.append(rec)
-        info(metric_name + ': ' + rec.format())
-        return rec
-
-
-# def _make_region_report(sample, regions, depth_threshs):
-#     metrics = [
-#         Metric('Sample'),
-#         Metric('Chr'),
-#         Metric('Start'),
-#         Metric('End'),
-#         Metric('Gene'),
-#         Metric('Feature'),
-#         Metric('Size'),
-#         Metric('Mean Depth'),
-#         Metric('Std Dev', description='Coverage depth standard deviation'),
-#         Metric('Wn 20% of Mean Depth', description='Persentage of the region that lies within 20% of an avarage depth.'),
-#         Metric('Depth/Median', description='Average depth of coveraege of the region devided by median coverage of the sample'),
-#     ]
-#     for thres in depth_threshs:
-#         metrics.append(Metric('{}x'.format(thres), description='Bases covered by at least {} reads'.format(thres)))
+# def _make_region_report(regions, depth_threshs):
+#     metric_storage
 #
-#     region_metric_storage = MetricStorage(sections=[ReportSection(metrics=metrics)])
 #
-#     report = SquareSampleReport(sample, metric_storage=region_metric_storage,
-#         report_name='Amplicons and exons coverage statistics.')
-#
-#     i = 0
-#     for region in regions:
-#         i += 1
-#         if i % 10000 == 0:
-#             info('Processed {0:,} regions.'.format(i))
-#
-#         region.sum_up(depth_threshs)
-#         report.add_row('Sample', region.sample)
-#
-#         # row = map(str, [region.sample,
-#         # row = map(str, [region.sample,
-#
-#         # report
-#         row = map(str, [region.sample,
-#                         region.chrom,
-#                         region.start,
-#                         region.end,
-#                         region.gene_name])
-#         row += [region.feature]
-#         row += [str(region.get_size())]
-#         row += ['{0:.2f}'.format(region.avg_depth)]
-#         row += ['{0:.2f}'.format(region.std_dev)]
-#         row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
-#         if print_cov_factor:
-#             row += ['{0:.2f}%'.format(region.cov_factor)]
-#
-#         for depth_thres, bases in region.bases_within_threshs.items():
-#             if int(region.get_size()) == 0:
-#                 percent_str = '-'
-#             else:
-#                 percent = 100.0 * bases / region.get_size()
-#                 percent_str = '{0:.2f}%'.format(percent)
-#             row.append(percent_str)
-#
-#         all_rows.append(row)
-#         # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
-#     info('Processed {0:,} regions.'.format(i))
-#     return all_rows
+# def _make_flaggeed_region_report(regions, depth_threshs)
 
 
-def _make_flagged_region_report(sample, caller, regions, depth_threshs):
-    regions_metrics = [
-        Metric('Sample'),
-        Metric('Chr'),
-        Metric('Start'),
-        Metric('End'),
-        Metric('Gene'),
-        Metric('Feature'),
-        Metric('Size'),
-        Metric('MeanDepth'),
-        Metric('StdDev', description='Coverage depth standard deviation'),
-        Metric('Wn 20% of Mean', unit='%', description='Persentage of the region that lies within 20% of an avarage depth.'),
-        Metric('Depth/Median', description='Average depth of coveraege of the region devided by median coverage of the sample'),
-        Metric('Total variants'),
-        Metric('Cosmic missed'),
-        Metric('Oncomine missed'),
-        Metric('Hedley missed'),
-        Metric('TCGA missed'),
-    ]
-    for thres in depth_threshs:
-        regions_metrics.append(Metric('{}x'.format(thres), unit='%', description='Bases covered by at least {} reads'.format(thres)))
 
-    region_metric_storage = MetricStorage(
-        common_for_all_samples_section=ReportSection(metrics=[
-            Metric('Median depth'),
-            Metric('Variants'),
-            Metric('Cosmic missed variants'),
-            Metric('Oncomine missed variants'),
-            Metric('Hedley missed variants'),
-            Metric('TCGA missed variants'),
-        ]),
-        sections_by_name=OrderedDict(
-            low_cov=ReportSection('Low covered regions', 'Low covered regions', regions_metrics[:]),
-            high_cov=ReportSection('Regions', 'Amplcons and exons coverage depth statistics', regions_metrics[:],
-        )))
-    report = SquareSampleReport(sample, metric_storage=region_metric_storage)
-
-    median_depth = #TODO
-    total_vcf_fpath = caller.get_filt_vcf_by_samples().get(sample)
-
-    report.add_record('Median depth', median_depth)
-    report.add_record('Variants', total_vcf_fpath)
-    report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
-
-    i = 0
-    for region in regions:
-        i += 1
-        if i % 10000 == 0:
-            info('Processed {0:,} regions.'.format(i))
-
-        region.sum_up(depth_threshs)
-
-        row = [
-            ['Sample', region.sample],
-            ['Chr', region.chrom],
-            ['Start', region.start],
-            ['End', region.end],
-            ['Gene', region.gene_name],
-            ['Feature', region.feature],
-            ['Size', region.get_size()],
-            ['Mean Depth', region.avg_depth],
-            ['Std Dev', region.std_dev],
-            ['Wn 20% of Mean', region.percent_within_normal],
-            ['Depth/Median', region.sample],
-            ['Total variants', region.num_variants],
-            ['Cosmic missed variants', region.cosmic_missed]]
-
-        for depth_thres, bases in region.bases_within_threshs.items():
-            if int(region.get_size()) == 0:
-                percent = None
-            else:
-                percent = 100.0 * bases / region.get_size()
-            row.append(['{}x'.format(depth_thres), percent])
-
-        report.add_row(row)
-
-    info('Processed {0:,} regions.'.format(i))
-
-
-def _make_flat_region_report(regions, depth_threshs):
-    header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
+def _make_flat_region_report(regions, depth_threshs, print_cov_factor=False):
+    header_fields = ['SAMPLE', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
                      'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
+    if print_cov_factor:
+        header_fields.append('Cov factor')
+
     for thres in depth_threshs:
         header_fields.append('{}x'.format(thres))
 
@@ -564,12 +419,18 @@ def _make_flat_region_report(regions, depth_threshs):
 
         region.sum_up(depth_threshs)
 
-        row = map(str, [region.sample, region.chrom, region.start, region.end, region.gene_name])
+        row = map(str, [region.sample,
+                        region.chrom,
+                        region.start,
+                        region.end,
+                        region.gene_name])
         row += [region.feature]
         row += [str(region.get_size())]
         row += ['{0:.2f}'.format(region.avg_depth)]
         row += ['{0:.2f}'.format(region.std_dev)]
         row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
+        if print_cov_factor:
+            row += ['{0:.2f}%'.format(region.cov_factor)]
 
         for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:

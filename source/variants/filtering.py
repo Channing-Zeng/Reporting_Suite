@@ -166,7 +166,7 @@ class Filtering:
         self.caller = caller
         self.control_vars = set()
         self.sample_names = set([s.name for s in caller.samples])
-        self.varks = dict()  # vark -> VarkInfo(vark, afs)
+        self.varks = list()  # vark -> VarkInfo(vark, afs)
         self.polymorphic_variants = None
 
         self.round1_filters = []
@@ -221,7 +221,7 @@ class Filtering:
                 frac >= Filter.filt_cnf['max_ratio'] and
                 rec.get_val('AF') < 0.3)
 
-        self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: rec.var_id() in self.varks)
+        self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
         self.control_filter = CnfFilter('control', lambda rec: not (filt_cnf['control'] and rec.var_id() in self.control_vars))
         self.dup_filter = Filter('DUP', dup_filter_check)
         self.bias_filter = CnfFilter('bias', bias_filter_check)
@@ -237,7 +237,7 @@ class Filtering:
         info('Removing previous FILTER values')
 
         n_jobs = len(vcf_fpaths)
-        n_jobs = 1
+        # n_jobs = 1
 
         global cnf_for_samples, filtering
         filtering = self
@@ -250,55 +250,55 @@ class Filtering:
         info('First round')
         results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath) for vcf_fpath in vcf_fpaths)
 
-        # control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
-        # varks_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'varks.txt')
+        control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
+        varks_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'varks.txt')
 
-        # if not [all([varks, control_vars]) for (_, varks, control_vars) in results]:
-        #     info('Skipped first round, restoring varks and controls vars.')
-        #     if not verify_file(control_vars_dump_fpath) or not verify_file(varks_dump_fpath):
-        #         critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
-        #
-        #     with open(control_vars_dump_fpath) as f:
-        #         info('Loading control vars...')
-        #         self.control_vars = pickle.load(f)
-        #         info('Loaded control vars: ' + str(len(self.control_vars)))
-        #
-        #     with open(varks_dump_fpath) as f:
-        #         info('Loading varks...')
-        #         self.varks = pickle.load(f)
-        #         info('Loaded varks: ' + str(len(self.varks)))
-        #
-        # else:
-        #     for vcf_fpath, varks, control_vars in results:
-        #         for vark, vark_info in varks.items():
-        #             if vark not in self.varks:
-        #                 self.varks[vark] = vark_info
-        #             else:
-        #                 self.varks[vark].afs.extend(vark_info.afs)
-        #
-        #         self.control_vars.update(control_vars)
-        #
-        #     if isfile(varks_dump_fpath):
-        #         try:
-        #             with open(varks_dump_fpath) as f:
-        #                 varks_2 = pickle.load(f)
-        #             print 'Varks restored (to check): len=', str(len(varks_2.keys()))
-        #             print 'Varks new                : len=', str(len(self.varks.keys()))
-        #         except:
-        #             pass
-        #
-        #     with open(control_vars_dump_fpath, 'w') as f:
-        #         info('Saving control vars...')
-        #         pickle.dump(self.control_vars, f)
-        #         info('Saved control vars: ' + str(len(self.control_vars)))
-        #     with open(varks_dump_fpath, 'w') as f:
-        #         info('Saving varks...')
-        #         pickle.dump(self.varks, f)
-        #         info('Saved varks: ' + str(len(self.varks)))
+        if not [all([varks, control_vars]) for (_, varks, control_vars) in results]:
+            info('Skipped first round, restoring varks and controls vars.')
+            if not verify_file(control_vars_dump_fpath) or not verify_file(varks_dump_fpath):
+                critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
 
-        # vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
-        # filtering = self
-        # info()
+            with open(control_vars_dump_fpath) as f:
+                info('Loading control vars...')
+                self.control_vars = pickle.load(f)
+                info('Loaded control vars: ' + str(len(self.control_vars)))
+
+            with open(varks_dump_fpath) as f:
+                info('Loading varks...')
+                self.varks = pickle.load(f)
+                info('Loaded varks: ' + str(len(self.varks)))
+
+        else:
+            for vcf_fpath, varks, control_vars in results:
+                for vark, vark_info in varks.items():
+                    if vark not in self.varks:
+                        self.varks[vark] = vark_info
+                    else:
+                        self.varks[vark].afs.extend(vark_info.afs)
+
+                self.control_vars.update(control_vars)
+
+            # if isfile(varks_dump_fpath):
+            #     try:
+            #         with open(varks_dump_fpath) as f:
+            #             varks_2 = pickle.load(f)
+            #         print 'Varks restored (to check): len=', str(len(varks_2.keys()))
+            #         print 'Varks new                : len=', str(len(self.varks.keys()))
+            #     except:
+            #         pass
+
+            with open(control_vars_dump_fpath, 'w') as f:
+                info('Saving control vars...')
+                pickle.dump(self.control_vars, f)
+                info('Saved control vars: ' + str(len(self.control_vars)))
+            with open(varks_dump_fpath, 'w') as f:
+                info('Saving varks...')
+                pickle.dump(self.varks, f)
+                info('Saved varks: ' + str(len(self.varks)))
+
+        vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
+        filtering = self
+        info()
 
         info('One effect per line')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath) for vcf_fpath in vcf_fpaths)
@@ -342,22 +342,24 @@ def proc_line_1st_round(rec, self_, varks, control_vars):
 
     vark = rec.var_id()
 
+    all_passed = all(f.apply(rec) for f in self_.round2_filters)
+
     if sample and self_.control and sample == self_.control:
-        # all_passed = all(f.apply(rec, only_check=True) for f in self_.round2_filters)
-        [f.apply(rec) for f in self_.round2_filters]
-        if rec.is_rejected():
-            return None
-
-        # if all_passed or rec.cls() == 'Novel':
+        if all_passed or rec.cls() == 'Novel':
             # So that any novel variants showed up in control won't be filtered:
-            # control_vars.add(vark)
+            control_vars.add(vark)
 
-    # if sample:
-    #     # Undetermined won't count toward samples
-    #     if 'undetermined' not in sample.lower() or Filtering.filt_cnf['count_undetermined']:
-    #         if vark not in varks:
-    #             varks[vark] = VarkInfo(vark)
-    #         varks[vark].afs.append(rec.get_val('AF', .0))
+    if sample and all_passed:
+        # Undetermined won't count toward samples
+        if 'undetermined' not in sample.lower() or Filtering.filt_cnf['count_undetermined']:
+            if vark not in varks:
+                varks[vark] = VarkInfo(vark)
+            varks[vark].afs.append(rec.get_val('AF', .0))
+        else:
+            if not self_.undet_sample_filter.apply(rec):
+                err('Undetermined sample for rec ' + rec.var_id() + ', sample ' + str(sample))
+                return None
+
     return rec
 
 
@@ -368,27 +370,23 @@ def proc_line_1st_round(rec, self_, varks, control_vars):
 def proc_line_2nd_round(rec, self_):
     sample = rec.sample_field()
     if sample:
-        # if not self_.undet_sample_filter.apply(rec):
-        #     err('Undetermined sample for rec ' + rec.var_id() + ', sample ' + str(sample))
-        #     return None
-        #
-        # vark_info = self_.varks[rec.var_id()]
-        # var_n = vark_info.var_n()
-        # frac = vark_info.frac()
-        # avg_af = vark_info.avg_af()
-        #
-        # if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
-        #     info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' +
-        #          str(len(self_.sample_names)) + ', avg_af = ' + str(vark_info.avg_af()))
-        #
-        # if not self_.dup_filter.apply(rec):
-        #     info('Dup filter: vark = ' + rec.var_id())
-        #
-        # if rec.af() is not None:
-        #     if not self_.max_rate_filter.apply(rec, frac=frac):
-        #         info('Max rate filter: vark = ' + rec.var_id() + ', frac = ' + str(frac) + ', af = ' + str(rec.af()))
-        #
-        # self_.control_filter.apply(rec)
+        vark_info = self_.varks[rec.var_id()]
+        var_n = vark_info.var_n()
+        frac = vark_info.frac()
+        avg_af = vark_info.avg_af()
+
+        if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
+            info('Multi filter: vark = ' + rec.var_id() + ', var_n = ' + str(vark_info.var_n()) + ', n_sample = ' +
+                 str(len(self_.sample_names)) + ', avg_af = ' + str(vark_info.avg_af()))
+
+        if not self_.dup_filter.apply(rec):
+            info('Dup filter: vark = ' + rec.var_id())
+
+        if rec.af() is not None:
+            if not self_.max_rate_filter.apply(rec, frac=frac):
+                info('Max rate filter: vark = ' + rec.var_id() + ', frac = ' + str(frac) + ', af = ' + str(rec.af()))
+
+        self_.control_filter.apply(rec)
 
         gmaf = rec.get_val('GMAF')
         req_maf = Filtering.filt_cnf['maf']
