@@ -18,7 +18,7 @@ from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
 from source.logger import info
 from source.bcbio_structure import BCBioStructure
-from source.summary import summary_script_proc_params
+from source.prepare_args_and_cnf import summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus
 
 
@@ -220,7 +220,6 @@ def copy_to_datahub(cnf, caller, datahub_dirpath):
     cmdl1 = 'ssh klpf990@ukapdlnx115.ukapd.astrazeneca.net \'bash -c ""\' '
     cmdl2 = 'scp {fpath} klpf990@ukapdlnx115.ukapd.astrazeneca.net:' + datahub_dirpath
     # caller.combined_filt_maf_fpath
-
 
 
 def symlink_to_dir(fpath, dirpath):

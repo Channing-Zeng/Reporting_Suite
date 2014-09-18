@@ -243,10 +243,10 @@ class FullReport(Report):
 
 
 class ReportSection:
-    def __init__(self, name, title, metrics, **kwargs):
+    def __init__(self, name='', title='', metrics=None, **kwargs):
         self.name = name
         self.title = title
-        self.metrics = metrics
+        self.metrics = metrics or []
         self.metrics_by_name = dict((m.name, m) for m in metrics)
 
     def add_metric(self, metric):
@@ -271,8 +271,9 @@ class MetricStorage:
                  **kwargs):
         self.sections_by_name = OrderedDict()
         self.sections = []
-        self.common_for_all_samples_section = \
-            common_for_all_samples_section or ReportSection('common_for_all_samples_section', '', [])
+        self.common_for_all_samples_section = common_for_all_samples_section or ReportSection('common_for_all_samples_section', '', [])
+        self.common_for_all_samples_section.name = self.common_for_all_samples_section.name or 'common_for_all_samples_section'
+
         if sections:
             self.sections = sections
             for section in sections:
