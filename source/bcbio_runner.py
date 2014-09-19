@@ -488,7 +488,7 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varannotate in self.steps],
                 create_dir=False,
-                threads=len(self.bcbio_structure.batches))
+                threads=2)  #len(self.bcbio_structure.batches))
 
         if self.varqc_after in self.steps:
             info('VarQC_postVarFilter:')
