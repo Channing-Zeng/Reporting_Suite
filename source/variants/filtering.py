@@ -166,7 +166,7 @@ class Filtering:
         self.caller = caller
         self.control_vars = set()
         self.sample_names = set([s.name for s in caller.samples])
-        self.varks = list()  # vark -> VarkInfo(vark, afs)
+        self.varks = dict()  # vark -> VarkInfo(vark, afs)
         self.polymorphic_variants = None
 
         self.round1_filters = []
@@ -370,7 +370,10 @@ def proc_line_1st_round(rec, self_, varks, control_vars):
 def proc_line_2nd_round(rec, self_):
     sample = rec.sample_field()
     if sample:
-        vark_info = self_.varks[rec.var_id()]
+        vark_info = self_.varks.get(rec.var_id())
+        if not vark_info:
+            return None
+            
         var_n = vark_info.var_n()
         frac = vark_info.frac()
         avg_af = vark_info.avg_af()
