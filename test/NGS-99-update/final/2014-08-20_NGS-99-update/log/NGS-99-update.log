@@ -1,0 +1,961 @@
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/az-reporting.py --sys-cnf system_info.yaml --run-cnf run_info.yaml NGS-99-update --reuse
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  ----------------------------------------------------------------------
+2014-09-19 18:34:50  Sample "PBMC-Resistant-10"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-10
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-10/PBMC-Resistant-10-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-10
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-1"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-1
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-1/PBMC-Resistant-1-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-1
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-2"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-2
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-2/PBMC-Resistant-2-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-2
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-4"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-4
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-4/PBMC-Resistant-4-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-4
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-5"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-5
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-5/PBMC-Resistant-5-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-5
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-6"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-6
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-6/PBMC-Resistant-6-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-6
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-7"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-7
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-7/PBMC-Resistant-7-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-7
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-8"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-8
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-8/PBMC-Resistant-8-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-8
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Resistant-9"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Resistant-9
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-9/PBMC-Resistant-9-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Resistant-9
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-10"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-10
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-10/PBMC-Sensitive-10-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-10
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-1"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-1
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-1/PBMC-Sensitive-1-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-1
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-2"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-2
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-2/PBMC-Sensitive-2-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-2
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-3"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-3
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-3/PBMC-Sensitive-3-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-3
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-5"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-5
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-5/PBMC-Sensitive-5-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-5
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-6"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-6
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-6/PBMC-Sensitive-6-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-6
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-7"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-7
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-7/PBMC-Sensitive-7-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-7
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-8"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-8
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-8/PBMC-Sensitive-8-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-8
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "PBMC-Sensitive-9"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for PBMC-Sensitive-9
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-9/PBMC-Sensitive-9-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for PBMC-Sensitive-9
+2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-10"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-10
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/Tissue-Resistant-10-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-10
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-1"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-1
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/Tissue-Resistant-1-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-1
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-2"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-2
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-2/Tissue-Resistant-2-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-2
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-4"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-4
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/Tissue-Resistant-4-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-4
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-5"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-5
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/Tissue-Resistant-5-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-5
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-6"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-6
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/Tissue-Resistant-6-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-6
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-7"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-7
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/Tissue-Resistant-7-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-7
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-8"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-8
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/Tissue-Resistant-8-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-8
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Resistant-9"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Resistant-9
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/Tissue-Resistant-9-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Resistant-9
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-10"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-10
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/Tissue-Sensitive-10-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-10
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-1"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-1
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/Tissue-Sensitive-1-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-1
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-2"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-2
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/Tissue-Sensitive-2-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-2
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-3"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-3
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/Tissue-Sensitive-3-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-3
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-5"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-5
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/Tissue-Sensitive-5-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-5
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-6"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-6
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/Tissue-Sensitive-6-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-6
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-7"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-7
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/Tissue-Sensitive-7-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-7
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-8"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-8
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/Tissue-Sensitive-8-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-8
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Sample "Tissue-Sensitive-9"
+2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50  No BED file for Tissue-Sensitive-9
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/Tissue-Sensitive-9-ready.bam does not exist.
+2014-09-19 18:34:50  No BAM file for Tissue-Sensitive-9
+2014-09-19 18:34:50  Phenotype: tumor
+2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:50  
+2014-09-19 18:34:50  Done loading BCBio structure.
+2014-09-19 18:34:50  VarQC_summary
+2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/tools/qsub.sh -pe smp 4 -S /bin/bash -q ngs.q -j n -o /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/log/VarQC_summary.log -e /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/log/VarQC_summary.log -hold_jid _ -N VQS__c6_FQ=_NGS-99-update /Users/vlad/vagrant/reporting_suite/test/qsub_runner_local.sh "/usr/bin/python  /Users/vlad/vagrant/reporting_suite/varqc_summary.py  --sys-cnf '/Users/vlad/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vlad/vagrant/reporting_suite/test/run_info.yaml'  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final"
+2014-09-19 18:34:50     /usr/bin/python  /Users/vlad/vagrant/reporting_suite/varqc_summary.py  --sys-cnf '/Users/vlad/vagrant/reporting_suite/test/system_info.yaml' --run-cnf '/Users/vlad/vagrant/reporting_suite/test/run_info.yaml'  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final
+2014-09-19 18:34:50     пятница, 19 сентября 2014 г. 18:34:50 (MSK)
+2014-09-19 18:34:50     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/varqc_summary.py --sys-cnf /Users/vlad/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vlad/vagrant/reporting_suite/test/run_info.yaml /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final
+2014-09-19 18:34:50     2014-09-19 18:34:50
+2014-09-19 18:34:50     2014-09-19 18:34:50  BCBio "final" dir: /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final
+2014-09-19 18:34:50     2014-09-19 18:34:50  Copying /Users/vlad/vagrant/reporting_suite/test/run_info.yaml to /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/config/run_info.yaml
+2014-09-19 18:34:50     2014-09-19 18:34:50  Using /Users/vlad/vagrant/reporting_suite/test/system_info.yaml as a system configuration file.
+2014-09-19 18:34:50     2014-09-19 18:34:50  Using /Users/vlad/vagrant/reporting_suite/test/run_info.yaml as a run configuration file.
+2014-09-19 18:34:50     2014-09-19 18:34:50
+2014-09-19 18:34:50     2014-09-19 18:34:50  Loaded system config /Users/vlad/vagrant/reporting_suite/test/system_info.yaml
+2014-09-19 18:34:50     2014-09-19 18:34:50  Loaded run config /Users/vlad/vagrant/reporting_suite/test/run_info.yaml
+2014-09-19 18:34:50     2014-09-19 18:34:50
+2014-09-19 18:34:50     2014-09-19 18:34:50  Using bcbio YAML config /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/config/NGS-99-update.yaml
+2014-09-19 18:34:50     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/varqc_summary.py --sys-cnf /Users/vlad/vagrant/reporting_suite/test/system_info.yaml --run-cnf /Users/vlad/vagrant/reporting_suite/test/run_info.yaml /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final
+2014-09-19 18:34:50     2014-09-19 18:34:50
+2014-09-19 18:34:50     2014-09-19 18:34:50  ----------------------------------------------------------------------
+2014-09-19 18:34:50     2014-09-19 18:34:50  Sample "PBMC-Resistant-10"
+2014-09-19 18:34:50     2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50     2014-09-19 18:34:50  No BED file for PBMC-Resistant-10
+2014-09-19 18:34:50     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-10/PBMC-Resistant-10-ready.bam does not exist.
+2014-09-19 18:34:50     2014-09-19 18:34:50  No BAM file for PBMC-Resistant-10
+2014-09-19 18:34:50     2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:50     2014-09-19 18:34:50  mutect
+2014-09-19 18:34:50     2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:50     2014-09-19 18:34:50  vardict
+2014-09-19 18:34:50     2014-09-19 18:34:50
+2014-09-19 18:34:50     2014-09-19 18:34:50  Sample "PBMC-Resistant-1"
+2014-09-19 18:34:50     2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:50     2014-09-19 18:34:50  No BED file for PBMC-Resistant-1
+2014-09-19 18:34:50     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-1/PBMC-Resistant-1-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BAM file for PBMC-Resistant-1
+2014-09-19 18:34:51     2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:50  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:50  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:50
+2014-09-19 18:34:51     2014-09-19 18:34:50  Sample "PBMC-Resistant-2"
+2014-09-19 18:34:51     2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BED file for PBMC-Resistant-2
+2014-09-19 18:34:51     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-2/PBMC-Resistant-2-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BAM file for PBMC-Resistant-2
+2014-09-19 18:34:51     2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:50  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:50  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:50
+2014-09-19 18:34:51     2014-09-19 18:34:50  Sample "PBMC-Resistant-4"
+2014-09-19 18:34:51     2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BED file for PBMC-Resistant-4
+2014-09-19 18:34:51     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-4/PBMC-Resistant-4-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BAM file for PBMC-Resistant-4
+2014-09-19 18:34:51     2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:50  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:50  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:50
+2014-09-19 18:34:51     2014-09-19 18:34:50  Sample "PBMC-Resistant-5"
+2014-09-19 18:34:51     2014-09-19 18:34:50  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BED file for PBMC-Resistant-5
+2014-09-19 18:34:51     2014-09-19 18:34:50  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-5/PBMC-Resistant-5-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:50  No BAM file for PBMC-Resistant-5
+2014-09-19 18:34:51     2014-09-19 18:34:50  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:50  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:50  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:50  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:50
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Resistant-6"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Resistant-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-6/PBMC-Resistant-6-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Resistant-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Resistant-7"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Resistant-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-7/PBMC-Resistant-7-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Resistant-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Resistant-8"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Resistant-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-8/PBMC-Resistant-8-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Resistant-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Resistant-9"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Resistant-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Resistant-9/PBMC-Resistant-9-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Resistant-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-10"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-10/PBMC-Sensitive-10-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-1"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-1/PBMC-Sensitive-1-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-2"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-2/PBMC-Sensitive-2-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-3"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-3
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-3/PBMC-Sensitive-3-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-3
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-5"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-5/PBMC-Sensitive-5-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-6"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-6/PBMC-Sensitive-6-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-7"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-7/PBMC-Sensitive-7-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-8"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-8/PBMC-Sensitive-8-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "PBMC-Sensitive-9"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for PBMC-Sensitive-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/PBMC-Sensitive-9/PBMC-Sensitive-9-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for PBMC-Sensitive-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: normal
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-10"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/Tissue-Resistant-10-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-1"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/Tissue-Resistant-1-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-2"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-2/Tissue-Resistant-2-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-4"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-4
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/Tissue-Resistant-4-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-4
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-5"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/Tissue-Resistant-5-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-6"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/Tissue-Resistant-6-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-7"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/Tissue-Resistant-7-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-8"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/Tissue-Resistant-8-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Resistant-9"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Resistant-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/Tissue-Resistant-9-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Resistant-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-10"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/Tissue-Sensitive-10-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-10
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-1"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/Tissue-Sensitive-1-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-1
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-2"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/Tissue-Sensitive-2-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-2
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-3"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-3
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/Tissue-Sensitive-3-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-3
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-5"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/Tissue-Sensitive-5-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-5
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-6"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/Tissue-Sensitive-6-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-6
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-7"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/Tissue-Sensitive-7-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-7
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-8"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/Tissue-Sensitive-8-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-8
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Sample "Tissue-Sensitive-9"
+2014-09-19 18:34:51     2014-09-19 18:34:51  /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BED file for Tissue-Sensitive-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/Tissue-Sensitive-9-ready.bam does not exist.
+2014-09-19 18:34:51     2014-09-19 18:34:51  No BAM file for Tissue-Sensitive-9
+2014-09-19 18:34:51     2014-09-19 18:34:51  Phenotype: tumor
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: Phenotype is tumor, and no VCF file.
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Done loading BCBio structure.
+2014-09-19 18:34:51     2014-09-19 18:34:51  **********************************************************************
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/qc/varQC/Tissue-Resistant-4-mutect.varQC.json for Tissue-Resistant-4, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/qc/varQC/Tissue-Resistant-5-mutect.varQC.json for Tissue-Resistant-5, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/qc/varQC/Tissue-Resistant-6-mutect.varQC.json for Tissue-Resistant-6, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/qc/varQC/Tissue-Resistant-7-mutect.varQC.json for Tissue-Resistant-7, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/qc/varQC/Tissue-Resistant-8-mutect.varQC.json for Tissue-Resistant-8, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9-mutect.varQC.json for Tissue-Resistant-9, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/qc/varQC/Tissue-Resistant-10-mutect.varQC.json for Tissue-Resistant-10, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/qc/varQC/Tissue-Sensitive-1-mutect.varQC.json for Tissue-Sensitive-1, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.varQC.json for Tissue-Sensitive-2, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/qc/varQC/Tissue-Sensitive-3-mutect.varQC.json for Tissue-Sensitive-3, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/qc/varQC/Tissue-Sensitive-5-mutect.varQC.json for Tissue-Sensitive-5, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/qc/varQC/Tissue-Sensitive-6-mutect.varQC.json for Tissue-Sensitive-6, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/qc/varQC/Tissue-Sensitive-7-mutect.varQC.json for Tissue-Sensitive-7, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/qc/varQC/Tissue-Sensitive-8-mutect.varQC.json for Tissue-Sensitive-8, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/qc/varQC/Tissue-Sensitive-10-mutect.varQC.json for Tissue-Sensitive-10, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/qc/varQC/Tissue-Resistant-1-mutect.varQC.html for Tissue-Resistant-1, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-2/qc/varQC/Tissue-Resistant-2-mutect.varQC.html for Tissue-Resistant-2, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/qc/varQC/Tissue-Resistant-4-mutect.varQC.html for Tissue-Resistant-4, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/qc/varQC/Tissue-Resistant-5-mutect.varQC.html for Tissue-Resistant-5, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/qc/varQC/Tissue-Resistant-6-mutect.varQC.html for Tissue-Resistant-6, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/qc/varQC/Tissue-Resistant-7-mutect.varQC.html for Tissue-Resistant-7, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/qc/varQC/Tissue-Resistant-8-mutect.varQC.html for Tissue-Resistant-8, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9-mutect.varQC.html for Tissue-Resistant-9, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/qc/varQC/Tissue-Resistant-10-mutect.varQC.html for Tissue-Resistant-10, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/qc/varQC/Tissue-Sensitive-1-mutect.varQC.html for Tissue-Sensitive-1, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-mutect.varQC.html for Tissue-Sensitive-2, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/qc/varQC/Tissue-Sensitive-3-mutect.varQC.html for Tissue-Sensitive-3, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/qc/varQC/Tissue-Sensitive-5-mutect.varQC.html for Tissue-Sensitive-5, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/qc/varQC/Tissue-Sensitive-6-mutect.varQC.html for Tissue-Sensitive-6, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/qc/varQC/Tissue-Sensitive-7-mutect.varQC.html for Tissue-Sensitive-7, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/qc/varQC/Tissue-Sensitive-8-mutect.varQC.html for Tissue-Sensitive-8, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/qc/varQC/Tissue-Sensitive-9-mutect.varQC.html for Tissue-Sensitive-9, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/qc/varQC/Tissue-Sensitive-10-mutect.varQC.html for Tissue-Sensitive-10, mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/qc/varQC/Tissue-Resistant-1-freebayes.varQC.json for Tissue-Resistant-1, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/qc/varQC/Tissue-Resistant-4-freebayes.varQC.json for Tissue-Resistant-4, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/qc/varQC/Tissue-Resistant-5-freebayes.varQC.json for Tissue-Resistant-5, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/qc/varQC/Tissue-Resistant-6-freebayes.varQC.json for Tissue-Resistant-6, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/qc/varQC/Tissue-Resistant-7-freebayes.varQC.json for Tissue-Resistant-7, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9-freebayes.varQC.json for Tissue-Resistant-9, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/qc/varQC/Tissue-Resistant-10-freebayes.varQC.json for Tissue-Resistant-10, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/qc/varQC/Tissue-Sensitive-1-freebayes.varQC.json for Tissue-Sensitive-1, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-freebayes.varQC.json for Tissue-Sensitive-2, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/qc/varQC/Tissue-Sensitive-3-freebayes.varQC.json for Tissue-Sensitive-3, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/qc/varQC/Tissue-Sensitive-5-freebayes.varQC.json for Tissue-Sensitive-5, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/qc/varQC/Tissue-Sensitive-6-freebayes.varQC.json for Tissue-Sensitive-6, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/qc/varQC/Tissue-Sensitive-7-freebayes.varQC.json for Tissue-Sensitive-7, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/qc/varQC/Tissue-Sensitive-8-freebayes.varQC.json for Tissue-Sensitive-8, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/qc/varQC/Tissue-Sensitive-9-freebayes.varQC.json for Tissue-Sensitive-9, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/qc/varQC/Tissue-Resistant-1-freebayes.varQC.html for Tissue-Resistant-1, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-2/qc/varQC/Tissue-Resistant-2-freebayes.varQC.html for Tissue-Resistant-2, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/qc/varQC/Tissue-Resistant-4-freebayes.varQC.html for Tissue-Resistant-4, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/qc/varQC/Tissue-Resistant-5-freebayes.varQC.html for Tissue-Resistant-5, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/qc/varQC/Tissue-Resistant-6-freebayes.varQC.html for Tissue-Resistant-6, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/qc/varQC/Tissue-Resistant-7-freebayes.varQC.html for Tissue-Resistant-7, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/qc/varQC/Tissue-Resistant-8-freebayes.varQC.html for Tissue-Resistant-8, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9-freebayes.varQC.html for Tissue-Resistant-9, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/qc/varQC/Tissue-Resistant-10-freebayes.varQC.html for Tissue-Resistant-10, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/qc/varQC/Tissue-Sensitive-1-freebayes.varQC.html for Tissue-Sensitive-1, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-freebayes.varQC.html for Tissue-Sensitive-2, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/qc/varQC/Tissue-Sensitive-3-freebayes.varQC.html for Tissue-Sensitive-3, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/qc/varQC/Tissue-Sensitive-5-freebayes.varQC.html for Tissue-Sensitive-5, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/qc/varQC/Tissue-Sensitive-6-freebayes.varQC.html for Tissue-Sensitive-6, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/qc/varQC/Tissue-Sensitive-7-freebayes.varQC.html for Tissue-Sensitive-7, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/qc/varQC/Tissue-Sensitive-8-freebayes.varQC.html for Tissue-Sensitive-8, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/qc/varQC/Tissue-Sensitive-9-freebayes.varQC.html for Tissue-Sensitive-9, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/qc/varQC/Tissue-Sensitive-10-freebayes.varQC.html for Tissue-Sensitive-10, freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-1/qc/varQC/Tissue-Resistant-1-vardict.varQC.html for Tissue-Resistant-1, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-2/qc/varQC/Tissue-Resistant-2-vardict.varQC.html for Tissue-Resistant-2, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-4/qc/varQC/Tissue-Resistant-4-vardict.varQC.html for Tissue-Resistant-4, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-5/qc/varQC/Tissue-Resistant-5-vardict.varQC.html for Tissue-Resistant-5, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-6/qc/varQC/Tissue-Resistant-6-vardict.varQC.html for Tissue-Resistant-6, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-7/qc/varQC/Tissue-Resistant-7-vardict.varQC.html for Tissue-Resistant-7, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-8/qc/varQC/Tissue-Resistant-8-vardict.varQC.html for Tissue-Resistant-8, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-9/qc/varQC/Tissue-Resistant-9-vardict.varQC.html for Tissue-Resistant-9, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Resistant-10/qc/varQC/Tissue-Resistant-10-vardict.varQC.html for Tissue-Resistant-10, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-1/qc/varQC/Tissue-Sensitive-1-vardict.varQC.html for Tissue-Sensitive-1, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-2/qc/varQC/Tissue-Sensitive-2-vardict.varQC.html for Tissue-Sensitive-2, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-3/qc/varQC/Tissue-Sensitive-3-vardict.varQC.html for Tissue-Sensitive-3, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-5/qc/varQC/Tissue-Sensitive-5-vardict.varQC.html for Tissue-Sensitive-5, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-6/qc/varQC/Tissue-Sensitive-6-vardict.varQC.html for Tissue-Sensitive-6, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-7/qc/varQC/Tissue-Sensitive-7-vardict.varQC.html for Tissue-Sensitive-7, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-8/qc/varQC/Tissue-Sensitive-8-vardict.varQC.html for Tissue-Sensitive-8, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-9/qc/varQC/Tissue-Sensitive-9-vardict.varQC.html for Tissue-Sensitive-9, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51  Warning: no /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/Tissue-Sensitive-10/qc/varQC/Tissue-Sensitive-10-vardict.varQC.html for Tissue-Sensitive-10, vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  **********************************************************************
+2014-09-19 18:34:51     2014-09-19 18:34:51  mutect
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/mutect.varQC.txt
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/mutect.varQC.tsv
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/mutect.varQC.html
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  freebayes
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/freebayes.varQC.txt
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/freebayes.varQC.tsv
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/freebayes.varQC.html
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  vardict
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/vardict.varQC.txt
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/vardict.varQC.tsv
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/vardict.varQC.html
+2014-09-19 18:34:51     2014-09-19 18:34:51
+2014-09-19 18:34:51     2014-09-19 18:34:51  Total
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/varQC.txt
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/varQC.tsv
+2014-09-19 18:34:51     2014-09-19 18:34:51    /Users/vlad/vagrant/reporting_suite/test/NGS-99-update/final/2014-08-20_NGS-99-update/qc/varQC/varQC.html
+2014-09-19 18:34:51     пятница, 19 сентября 2014 г. 18:34:51 (MSK)
+2014-09-19 18:34:51  
+2014-09-19 18:34:51  Done.
