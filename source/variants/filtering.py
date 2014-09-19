@@ -184,11 +184,11 @@ class Filtering:
         self.polymorphic_filter = Filter('POLYMORPHIC', lambda rec: rec)
 
         self.round2_filters = [
-            InfoFilter('min_p_mean', 'PMEAN'),
-            InfoFilter('min_q_mean', 'QUAL'),
-            InfoFilter('min_freq', 'AF'),
-            InfoFilter('mean_mq', 'MQ'),
-            InfoFilter('signal_noise', 'SN'),
+            InfoFilter('min_p_mean', 'PMEAN', required=False),
+            InfoFilter('min_q_mean', 'QUAL', required=False),
+            InfoFilter('min_freq', 'AF', required=False),
+            InfoFilter('mean_mq', 'MQ', required=False),
+            InfoFilter('signal_noise', 'SN', required=False),
             InfoFilter('mean_vd', 'VD', required=False)]
 
         def dup_filter_check(rec):
