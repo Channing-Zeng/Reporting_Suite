@@ -12,6 +12,6 @@ def index_bam(cnf, bam_fpath):
         samtools = get_tool_cmdline(cnf, 'samtools')
         if not samtools:
             sys.exit(1)
-        cmdline = '{samtools} index {bam}'.format(**locals())
+        cmdline = '{samtools} index {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
     info('Index: ' + indexed_bam)
