@@ -12,7 +12,7 @@ from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_first_sample
 
 
-def run_annotators(cnf, vcf_fpath, bam_fpath=None):
+def run_annotators(cnf, vcf_fpath, bam_fpath=None, transcript_fpath=None):
     annotated = False
     original_vcf = vcf_fpath
 
@@ -109,6 +109,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None):
                 cnf, vcf_fpath,
                 bam_fpath=cnf.bam,
                 tumor_sample_name=cnf.name,
+                transcripts_fpath=transcripts_fpath,
                 normal_sample_name=cnf.match_normal_normal_name)
 
             if isfile(final_maf_fpath):

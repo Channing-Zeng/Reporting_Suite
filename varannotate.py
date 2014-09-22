@@ -13,7 +13,8 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
-from source.variants.vcf_processing import remove_rejected, extract_sample, iterate_vcf, tabix_vcf, igvtools_index
+from source.variants.vcf_processing import remove_rejected, extract_sample, \
+     iterate_vcf, tabix_vcf, igvtools_index, get_trasncripts_fpath
 from source.runner import run_one
 from source.variants.anno import run_annotators
 from source.utils import info
@@ -59,6 +60,8 @@ def main(args):
     # info('Using variants ' + cnf['vcf'])
     # info('Using alignement ' + cnf['bam'])
 
+    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
+
     run_one(cnf, process_one, finalize_one)
 
     if not cnf['keep_intermediate']:
@@ -73,19 +76,19 @@ def set_up_snpeff(cnf):
 
 
 def process_one(cnf):
-    vcf_fpath = cnf['vcf']
-    bam_fpath = cnf['bam']
+    vcf_fpath = cnf.vcf
 
     if cnf.get('filter_reject'):
-        vcf_fpath = remove_rejected(cnf, vcf_fpath)
+        vcf_fpath = remove_rejected(cnf, cnf.vcf)
         if vcf_fpath is None:
             err('No variants left: all rejected and removed.')
             return None, None, None
 
     if cnf.get('extract_sample'):
-        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf['name'])
+        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
-    anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(cnf, vcf_fpath, bam_fpath)
+    anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(
+        cnf, vcf_fpath, cnf.bam, cnf.transcript_fpath)
 
     info()
     info('Indexing ' + anno_vcf_fpath)

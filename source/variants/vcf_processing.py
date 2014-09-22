@@ -295,7 +295,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
     return all_samples
 
 
-def _get_trasncripts_fpath(cnf):
+def get_trasncripts_fpath(cnf):
     transcripts_fpath = None
 
     # custom_transcripts_fpath = cnf['snpeff'].get('only_transcripts')
@@ -325,15 +325,13 @@ def _get_trasncripts_fpath(cnf):
     return transcripts_fpath
 
 
-def convert_to_maf(cnf, vcf_fpath, tumor_sample_name,
-                   bam_fpath=None, normal_sample_name=None,
-                   ):
+def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
+                   bam_fpath=None, normal_sample_name=None):
     step_greetings('Converting to MAF')
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
     #########################################################
-    transcripts_fpath = _get_trasncripts_fpath(cnf)
     transcripts = '--transcripts ' + transcripts_fpath if transcripts_fpath else ''
 
     bam_fpath = bam_fpath or '.'

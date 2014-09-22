@@ -11,7 +11,7 @@ from source.bcbio_structure import BCBioStructure
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_first_sample
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_first_sample, get_trasncripts_fpath
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -231,13 +231,10 @@ class Filtering:
 
 
     # @profile
-    def run_filtering(self, vcf_fpaths):
+    def run_filtering(self, vcf_fpaths, n_jobs=1):
         step_greetings('Filtering')
 
         info('Removing previous FILTER values')
-
-        n_jobs = len(vcf_fpaths)
-        # n_jobs = 1
 
         global cnf_for_samples, filtering
         filtering = self
@@ -444,14 +441,18 @@ cnfs_for_sample_names = dict()
 
 # @profile
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
+    IN_PARALLEL = True
+
     info('Running for ' + caller.name)
 
     anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
 
+    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
     f = Filtering(cnf, bcbio_structure, caller)
 
-    filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths)
+    n_jobs = max(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1
+    filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths, n_jobs)
 
     samples = anno_vcf_by_sample.keys()
 
@@ -464,7 +465,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         cnf_copy['name'] = sample.name
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    results = [r for r in Parallel(n_jobs=len(samples)) \
+    results = [r for r in Parallel(n_jobs) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
@@ -571,6 +572,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             cnf, work_filt_vcf_fpath,
             tumor_sample_name=sample.name,
             bam_fpath=sample.bam,
+            transcripts_fpath=transcripts_fpath,
             normal_sample_name=sample.normal_match.name if sample.normal_match else None)
         if isfile(final_maf_fpath): os.remove(final_maf_fpath)
         shutil.move(maf_fpath, final_maf_fpath)
