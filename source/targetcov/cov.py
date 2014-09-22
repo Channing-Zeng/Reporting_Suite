@@ -3,21 +3,21 @@ from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
 from os.path import join, basename
+import shutil
 import sys
 from source.bcbio_structure import BCBioStructure, Sample
 from source.calling_process import call, call_check_output, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus
+from source.file_utils import intermediate_fname, splitext_plus, add_suffix
 
 from source.logger import step_greetings, critical, info, err
 from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
-    write_tsv_rows
+    write_tsv_rows, Record
 from source.targetcov.Region import Region
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath, median
-from source.file_utils import file_transaction
 
 
-def run_targetcov_reports(cnf, sample):
+def run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
     if not (sample.bam or sample.bed):
         if not sample.bam: err(sample.name + ': BAM file is required.')
         if not sample.bed: err(sample.name + ': BED file is required.')
@@ -76,22 +76,9 @@ def run_targetcov_reports(cnf, sample):
             for exon in exons:
                 exon.gene_name = exon.extra_fields[0]
 
-            gene_report_basename = cnf.name + '.' + \
-                                   BCBioStructure.targetseq_name + \
-                                   BCBioStructure.detail_gene_report_baseending
-
-            low_gene_report_basename = cnf.name + '.' + \
-                                       BCBioStructure.targetseq_name + \
-                                       BCBioStructure.detail_lowcov_gene_report_baseending
-
-            high_gene_report_basename = cnf.name + '.' + \
-                                       BCBioStructure.targetseq_name + \
-                                       BCBioStructure.detail_highcov_gene_report_baseending
-
             info('Saving region coverage report...')
-            gene_rep_fpath, low_regions_gene_rep_fpath, high_regions_gene_rep_fpath = _run_region_cov_report(
-                cnf, sample, cnf.output_dir,
-                gene_report_basename, low_gene_report_basename, high_gene_report_basename,
+            gene_rep_fpath = _run_region_cov_report(
+                cnf, filtered_vcf_by_callername or dict(), sample, cnf.output_dir,
                 cnf.name, cnf.coverage_reports.depth_thresholds, amplicons, exons)
 
     if summary_report:
@@ -102,8 +89,7 @@ def run_targetcov_reports(cnf, sample):
 
         # info('\t' + summary_report_html_fpath)
 
-    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, \
-           gene_report_fpath
+    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, gene_report_fpath
 
 
 def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
@@ -238,8 +224,7 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _run_region_cov_report(cnf, sample, output_dir,
-                           report_basename, low_gene_report_basename, high_gene_report_basename,
+def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
                            sample_name, depth_threshs, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
@@ -314,25 +299,34 @@ def _run_region_cov_report(cnf, sample, output_dir,
             high_regions.append(region)
 
     rows = _make_flat_region_report(regions, depth_threshs)
-    txt_rep_fpath = write_txt_rows(rows, output_dir, report_basename)
-    tsv_rep_fpath = write_tsv_rows(rows, output_dir, report_basename)
 
-    report = _make_flagged_region_report(sample, low_regions, depth_threshs)
-    low_regions_html_rep_fpath = report.save_html(output_dir, low_gene_report_basename)
-    low_regions_txt_rep_fpath = report.save_txt(output_dir, low_gene_report_basename)
-
-    report = _make_flagged_region_report(sample, high_regions, depth_threshs)
-    high_regions_html_rep_fpath = report.save_html(output_dir, high_gene_report_basename)
-    high_regions_txt_rep_fpath = report.save_txt(output_dir, high_gene_report_basename)
-
+    # Saving gene details report
+    gene_report_basename = cnf.name + '.' + \
+                           BCBioStructure.targetseq_name + \
+                           BCBioStructure.detail_gene_report_baseending
+    txt_rep_fpath = write_txt_rows(rows, output_dir, gene_report_basename)
+    tsv_rep_fpath = write_tsv_rows(rows, output_dir, gene_report_basename)
     info('')
     info('Regions (total ' + str(len(regions)) + ') saved into:')
     info('\t' + txt_rep_fpath)
-    info('Too low covered regions (total ' + str(len(low_regions)) + ') saved into:')
-    info('\t' + low_regions_txt_rep_fpath)
-    info('Too much covered regions (total ' + str(len(high_regions)) + ') saved into:')
-    info('\t' + high_regions_txt_rep_fpath)
-    return tsv_rep_fpath, low_regions_html_rep_fpath, high_regions_html_rep_fpath
+
+    for caller_name, vcf_fpath in filtered_vcf_by_callername.items():
+        for kind, regions, f_basename in zip(
+                ['low', 'high'],
+                [low_regions, high_regions],
+                [BCBioStructure.detail_lowcov_gene_report_baseending,
+                 BCBioStructure.detail_highcov_gene_report_baseending]):
+
+            report_basename = cnf.name + '' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
+
+            report = _make_flagged_region_report(sample, vcf_fpath, regions, depth_threshs)
+            regions_html_rep_fpath = report.save_html(output_dir, report_basename)
+            regions_txt_rep_fpath = report.save_txt(output_dir, report_basename)
+
+            info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
+            info('\t' + regions_txt_rep_fpath)
+
+    return tsv_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):
@@ -392,20 +386,39 @@ def _get_exons_merged_by_genes(cnf, subregions):
     return sorted_genes
 
 
-# class SquareSampleReport(SampleReport):
-#     def __init__(self, sample=None, rows_of_records=None, **kwargs):
-#         SampleReport.__init__(self, sample=sample, records=rows_of_records, **kwargs)
-#
-#     def add_record(self, metric_name, value, meta=None):
-#         raise NotImplementedError
-#
-#     def add_row(self, row):
-#         # self.metric_storage.get_metric(metric_name.strip())
-#         assert metric, metric_name
-#         rec = Record(metric, value, meta)
-#         self.records.append(rec)
-#         info(metric_name + ': ' + rec.format())
-#         return rec
+class SquareSampleReport(SampleReport):
+    def __init__(self, **kwargs):
+        SampleReport.__init__(self, **kwargs)
+
+    def flatten(self):
+        rows = []
+
+        for m in self.metric_storage.get_metrics():
+            if m.name in [r.metric.name for r in self.records]:
+                rows.append(m.name)
+
+        for i in range(len(self.records[0].value)):
+            row = []
+            for metric in self.metric_storage.get_metrics():
+                rec = next(
+                    r.metric.format(r.value[i])
+                    for r in self.records
+                    if r.metric.name == metric.name)
+                row.append(rec)
+
+            rows.append(row)
+        return rows
+
+    # def add_record(self, metric_name, value, meta=None):
+    #     raise NotImplementedError
+    #
+    # def add_row(self, row):
+    #     # self.metric_storage.get_metric(metric_name.strip())
+    #     assert metric, metric_name
+    #     rec = Record(metric, value, meta)
+    #     self.records.append(rec)
+    #     info(metric_name + ': ' + rec.format())
+    #     return rec
 
 
 # def _make_region_report(sample, regions, depth_threshs):
@@ -470,7 +483,7 @@ def _get_exons_merged_by_genes(cnf, subregions):
 #     return all_rows
 
 
-def _make_flagged_region_report(sample, caller, regions, depth_threshs):
+def _make_flagged_region_report(sample, filtered_vcf_fpath, regions, depth_threshs):
     regions_metrics = [
         Metric('Sample'),
         Metric('Chr'),
@@ -505,14 +518,20 @@ def _make_flagged_region_report(sample, caller, regions, depth_threshs):
             low_cov=ReportSection('Low covered regions', 'Low covered regions', regions_metrics[:]),
             high_cov=ReportSection('Regions', 'Amplcons and exons coverage depth statistics', regions_metrics[:],
         )))
+
     report = SquareSampleReport(sample, metric_storage=region_metric_storage)
 
-    median_depth = #TODO
-    total_vcf_fpath = caller.get_filt_vcf_by_samples().get(sample)
+    median_depth = median(r.avg_depth for r in regions)
+    cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
+
+    # TODO: tmp
+    shutil.copy(cosmic_missed_vcf_fpath, filtered_vcf_fpath)
 
     report.add_record('Median depth', median_depth)
-    report.add_record('Variants', total_vcf_fpath)
+    report.add_record('Variants', filtered_vcf_fpath)
     report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
+
+    rec_by_name = [report.add_record(metric.name, []) for metric in regions_metrics]
 
     i = 0
     for region in regions:
@@ -521,32 +540,32 @@ def _make_flagged_region_report(sample, caller, regions, depth_threshs):
             info('Processed {0:,} regions.'.format(i))
 
         region.sum_up(depth_threshs)
+        region.cosmic_missed = 44
 
-        row = [
-            ['Sample', region.sample],
-            ['Chr', region.chrom],
-            ['Start', region.start],
-            ['End', region.end],
-            ['Gene', region.gene_name],
-            ['Feature', region.feature],
-            ['Size', region.get_size()],
-            ['Mean Depth', region.avg_depth],
-            ['Std Dev', region.std_dev],
-            ['Wn 20% of Mean', region.percent_within_normal],
-            ['Depth/Median', region.sample],
-            ['Total variants', region.num_variants],
-            ['Cosmic missed variants', region.cosmic_missed]]
+        rec_by_name['Sample'].value.append(         region.sample)
+        rec_by_name['Chr'].value.append(            region.chrom)
+        rec_by_name['Start'].value.append(          region.start)
+        rec_by_name['End'].value.append(            region.end)
+        rec_by_name['Gene'].value.append(           region.gene_name)
+        rec_by_name['Feature'].value.append(        region.feature)
+        rec_by_name['Size'].value.append(           region.get_size())
+        rec_by_name['MeanDepth'].value.append(      region.avg_depth)
+        rec_by_name['StdDev'].value.append(         region.std_dev)
+        rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
+        rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth)
+        rec_by_name['Total variants'].value.append( 0)
+        rec_by_name['Cosmic missed'].value.append(  0)
 
         for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:
                 percent = None
             else:
                 percent = 100.0 * bases / region.get_size()
-            row.append(['{}x'.format(depth_thres), percent])
-
-        report.add_row(row)
+            rec_by_name['{}x'.format(depth_thres)].value.append(percent)
 
     info('Processed {0:,} regions.'.format(i))
+
+    return report
 
 
 def _make_flat_region_report(regions, depth_threshs):
@@ -570,7 +589,7 @@ def _make_flat_region_report(regions, depth_threshs):
         row += [str(region.get_size())]
         row += ['{0:.2f}'.format(region.avg_depth)]
         row += ['{0:.2f}'.format(region.std_dev)]
-        row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-'ot None else '-']
+        row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
 
         for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:

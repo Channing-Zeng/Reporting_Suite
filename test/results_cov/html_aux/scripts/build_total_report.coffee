@@ -26,21 +26,23 @@ metric =
     quality: ''
     presision: 0
     type: null
+    all_values_equal: false
 
 
 DRAGGABLE_COLUMNS = false
 
-RED_HUE = 0
+BLUE_HUE = 240
 GREEN_HUE = 120
+RED_HUE = 0
 GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
 CSS_PROP_TO_COLOR = 'background-color'  # color
-get_color = (hue) ->
+get_color = (hue, lightness) ->
+    lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
-    lightness = 92
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 
-all_values_equal = (vals) ->
+check_all_values_equal = (vals) ->
     first_val = null
     for val in vals
         if first_val?
@@ -72,7 +74,7 @@ get_meta_tag_contents = (rec) ->
 
             short_table = true
             for novelty, val_by_db of meta
-                if not all_values_equal(val for db, val of val_by_db when db isnt 'average')
+                if not check_all_values_equal (val for db, val of val_by_db when db isnt 'average')
                     short_table = false
 
             if short_table  # Values are the same for each database
@@ -129,10 +131,11 @@ calc_records_cell_contents = (records, font) ->
         rec.frac_width = $.fn.intPartTextWidth num_html, font
 
 
+mean = (a, b) -> (a + b) / 2
+
+
 calc_cell_contents = (report, section, font) ->
     max_frac_widths_by_metric = {}
-    min_val_by_metric = {}
-    max_val_by_metric = {}
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     for sampleReport in report.sample_reports
@@ -143,17 +146,20 @@ calc_cell_contents = (report, section, font) ->
             else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
 
-            # Max and min value (for heatmap)
             if rec.num?
-                if not (rec.metric.name of min_val_by_metric)
-                    min_val_by_metric[rec.metric.name] = rec.num
-                else if min_val_by_metric[rec.metric.name] > rec.num
-                    min_val_by_metric[rec.metric.name] = rec.num
+                rec.metric.values = [] if not rec.metric.values?
+                rec.metric.values.push rec.num
 
-                if not (rec.metric.name of max_val_by_metric)
-                    max_val_by_metric[rec.metric.name] = rec.num
-                else if max_val_by_metric[rec.metric.name] < rec.num
-                    max_val_by_metric[rec.metric.name] = rec.num
+    for metric in section.metrics when metric.values?
+        vals = metric.values.slice().sort((a, b) -> a - b)
+        l = vals.length
+
+        metric.min = vals[0]
+        metric.max = vals[vals.length - 1]
+        metric.med = if l % 2 != 0 then vals[(l - 1) / 2] else mean(vals[l / 2], vals[(l / 2) - 1])
+        metric.q1 = vals[Math.floor((l - 1) / 4)]
+        metric.q3 = vals[Math.floor((l - 1) * 3 / 4)]
+        metric.d = metric.q3 - metric.q1
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for sampleReport in report.sample_reports
@@ -165,24 +171,67 @@ calc_cell_contents = (report, section, font) ->
                 if rec.right_shift != 0
                     a = 0
 
+            metric = rec.metric
+
             # Color heatmap
             if rec.num?
-                max = max_val_by_metric[rec.metric.name]
-                min = min_val_by_metric[rec.metric.name]
+                outer_fence_brightness = 50
+                inner_fence_brightness = 60
+                min_normal_brightness = 80
+                median_brightness = 100
 
-                maxHue = GREEN_HUE
-                minHue = RED_HUE
-                if rec.metric.quality == 'Less is better'
-                    maxHue = RED_HUE
-                    minHue = GREEN_HUE
+                low_outer_fence = metric.q1 - 3 * metric.d
+                low_inner_fence = metric.q1 - 1.5 * metric.d
+                top_inner_fence = metric.q3 + 1.5 * metric.d
+                top_outer_fence = metric.q3 + 3 * metric.d
 
-                if max == min
-                    rec.metric.all_values_equal = true
-#                    rec.color = get_color GREEN_HUE
+                top_hue = RED_HUE
+                low_hue = BLUE_HUE
+                if metric.quality == 'More is better'
+                    top_hue = BLUE_HUE
+                    low_hue = RED_HUE
+
+                if metric.min == metric.max
+                    metric.all_values_equal = true
                 else
-                    k = (maxHue - minHue) / (max - min)
-                    hue = Math.round minHue + (rec.num - min) * k
-                    rec.color = get_color hue
+                    metric.all_values_equal = false
+
+                    rec.text_color = 'black'
+
+                    if rec.num < low_outer_fence
+                        rec.color = get_color low_hue, outer_fence_brightness
+                        rec.text_color = 'white'
+
+                    else if rec.num < low_inner_fence
+                        rec.color = get_color low_hue, inner_fence_brightness
+
+                    else if rec.num < metric.med
+                        k = (median_brightness - min_normal_brightness) / (metric.med - low_inner_fence)
+                        brightness = Math.round median_brightness - (metric.med - rec.num) * k
+                        rec.color = get_color low_hue, brightness
+
+
+                    else if rec.num > top_inner_fence
+                        rec.color = get_color top_hue, inner_fence_brightness
+
+                    else if rec.num > top_outer_fence
+                        rec.color = get_color top_hue, outer_fence_brightness
+                        rec.text_color = 'white'
+
+                    else if rec.num > metric.med
+                        k = (median_brightness - min_normal_brightness) / (top_inner_fence - metric.med)
+                        brightness = Math.round median_brightness - (rec.num - metric.med) * k
+                        rec.color = get_color top_hue, brightness
+    return report
+
+
+median = (x) ->
+    return null if (x.length == 0)
+    sorted = x.slice().sort((a, b) -> a - b)
+    if sorted.length % 2 == 1
+        sorted[(sorted.length - 1) / 2]
+    else
+        (sorted[(sorted.length / 2) - 1] + sorted[(sorted.length / 2)]) / 2
 
 
 reporting.buildTotalReport = (report, section, columnOrder) ->
@@ -202,7 +251,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     for colNum in [0...section.metrics.length]
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
-        sort_by = if 'all_values_equal' of metric then 'nosort' else 'numeric'
+        sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
         table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
@@ -239,7 +288,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 continue
 
             table += "<td metric=\"#{metric.name}\"
-                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"
+                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}; color: #{rec.text_color}\"
                           class='number'
                           quality=\"#{metric.quality}\""
             if rec.num?
@@ -284,7 +333,6 @@ set_legend = ->
     legend = '<span>'
     step = 6
     for hue in [RED_HUE..GREEN_HUE] by step
-
         legend += "<span style=\"#{CSS_PROP_TO_COLOR}: #{get_color hue}\">"
 
         switch hue

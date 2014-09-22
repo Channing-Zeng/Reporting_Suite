@@ -37,7 +37,7 @@ class Sample:
                     self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
         return path
 
-    def get_clean_filtered_vcf_by_callername(self, callername):
+    def find_clean_filtered_vcf_by_callername(self, callername):
         return map(verify_file, self.get_clean_filtered_vcf_fpaths_by_callername(callername))
 
     def __str__(self):
@@ -85,22 +85,21 @@ class VariantCaller:
                 mafs.append(maf)
         return mafs
 
-    def get_fpaths_by_sample(self, dirname, name, ext):
-        return self._get_files_by_sample(dirname, '.' + name + '.' + ext)
+    def find_fpaths_by_sample(self, dirname, name, ext):
+        return self._find_files_by_sample(dirname, '.' + name + '.' + ext)
 
-    def get_anno_vcf_by_samples(self):
-        return self._get_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
+    def find_anno_vcf_by_samples(self):
+        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
     def get_filt_vcf_by_samples(self):
-        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
+        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
-    def get_pass_filt_vcf_by_samples(self):
-        return self._get_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.clean_filt_vcf_ending)
+    def find_pass_filt_vcf_by_samples(self):
+        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.clean_filt_vcf_ending)
 
-    def _get_files_by_sample(self, dirname, ending):
+    def _find_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
 
-        to_exit = False
         for s in self.samples:
             fpath = join(
                 self.bcbio_structure.final_dirpath,
@@ -113,9 +112,6 @@ class VariantCaller:
                     files_by_sample[s] = fpath
             elif s.phenotype != 'normal':
                 info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
-
-        if to_exit:
-            sys.exit(1)
 
         return files_by_sample
 

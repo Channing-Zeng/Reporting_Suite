@@ -31,9 +31,9 @@ metric =
 
 DRAGGABLE_COLUMNS = false
 
-RED_HUE = 0
-GREEN_HUE = 120
 BLUE_HUE = 240
+GREEN_HUE = 120
+RED_HUE = 0
 GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
 CSS_PROP_TO_COLOR = 'background-color'  # color
 get_color = (hue, lightness) ->
@@ -175,30 +175,53 @@ calc_cell_contents = (report, section, font) ->
 
             # Color heatmap
             if rec.num?
-                max_bri = 0
-                min_bri = 100
-#                if metric.quality == 'Less is better'
+                outer_fence_brightness = 50
+                inner_fence_brightness = 60
+                min_normal_brightness = 80
+                median_brightness = 100
+
+                low_outer_fence = metric.q1 - 3 * metric.d
+                low_inner_fence = metric.q1 - 1.5 * metric.d
+                top_inner_fence = metric.q3 + 1.5 * metric.d
+                top_outer_fence = metric.q3 + 3 * metric.d
+
+                top_hue = RED_HUE
+                low_hue = BLUE_HUE
+                if metric.quality == 'More is better'
+                    top_hue = BLUE_HUE
+                    low_hue = RED_HUE
 
                 if metric.min == metric.max
                     metric.all_values_equal = true
-                    # rec.color = get_color GREEN_HUE
                 else
                     metric.all_values_equal = false
 
-                    if rec.num < metric.q1 - 3 * metric.d
-                        rec.color = get_color BLUE_HUE, 30
-                    else if rec.num < metric.q1 - 1.5 * metric.d
-                        rec.color = get_color BLUE_HUE, 60
+                    rec.text_color = 'black'
 
-                    else if rec.num > metric.q3 + 1.5 * metric.d
-                        rec.color = '#88FFFF'
-                    else if rec.num > metric.q3 + 3 * metric.d
-                        rec.color = '#55FFFF'
+                    if rec.num < low_outer_fence
+                        rec.color = get_color low_hue, outer_fence_brightness
+                        rec.text_color = 'white'
 
-#                    k = ()
-#                    k = (maxHue - minHue) / (metric.max - metric.min)
-#                    hue = Math.round minHue + (rec.num - metric.min) * k
-#                    rec.color = get_color hue
+                    else if rec.num < low_inner_fence
+                        rec.color = get_color low_hue, inner_fence_brightness
+
+                    else if rec.num < metric.med
+                        k = (median_brightness - min_normal_brightness) / (metric.med - low_inner_fence)
+                        brightness = Math.round median_brightness - (metric.med - rec.num) * k
+                        rec.color = get_color low_hue, brightness
+
+
+                    else if rec.num > top_inner_fence
+                        rec.color = get_color top_hue, inner_fence_brightness
+
+                    else if rec.num > top_outer_fence
+                        rec.color = get_color top_hue, outer_fence_brightness
+                        rec.text_color = 'white'
+
+                    else if rec.num > metric.med
+                        k = (median_brightness - min_normal_brightness) / (top_inner_fence - metric.med)
+                        brightness = Math.round median_brightness - (rec.num - metric.med) * k
+                        rec.color = get_color top_hue, brightness
     return report
 
 
@@ -265,7 +288,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 continue
 
             table += "<td metric=\"#{metric.name}\"
-                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"
+                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}; color: #{rec.text_color}\"
                           class='number'
                           quality=\"#{metric.quality}\""
             if rec.num?

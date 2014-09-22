@@ -445,13 +445,13 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     info('Running for ' + caller.name)
 
-    anno_vcf_by_sample = caller.get_anno_vcf_by_samples()
+    anno_vcf_by_sample = caller.find_anno_vcf_by_samples()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
 
     cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
     f = Filtering(cnf, bcbio_structure, caller)
 
-    n_jobs = max(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1
+    n_jobs = min(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1
     filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths, n_jobs)
 
     samples = anno_vcf_by_sample.keys()

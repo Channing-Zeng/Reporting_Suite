@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 from source.bcbio_structure import Sample
+from source.file_utils import adjust_path
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -29,6 +30,14 @@ def main(args):
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
                 help='capture panel/amplicons')
+             ),
+            (['--caller-names'], dict(
+                dest='caller_names',
+                help='names of variant callers used to create vcfs provided by --vcf')
+             ),
+            (['--vcfs'], dict(
+                dest='vcfs',
+                help='filteted variants in VCF, comma-separate, must correspond to caller-names')
              ),
             (['--padding'], dict(
                 dest='padding',
@@ -69,6 +78,10 @@ def main(args):
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])
 
+    cnf.vcfs = map(adjust_path, cnf.vcfs.split(',') if cnf.vcfs else [])
+    cnf.caller_names = cnf.vcfs.split(',') if cnf.vcfs else []
+    cnf.vcfs_by_callername = zip(cnf.caller_names, cnf.vcfs)
+
     run_one(cnf, process_one, finalize_one)
 
     if not cnf['keep_intermediate']:
@@ -77,7 +90,8 @@ def main(args):
 
 def process_one(cnf):
     sample = Sample(cnf.name, cnf.bam, cnf.bed)
-    return run_targetcov_reports(cnf, sample)
+
+    return run_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
 
 
 def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary_report_html_path,

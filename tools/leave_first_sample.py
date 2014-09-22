@@ -40,7 +40,7 @@ def proc_all(cnf, bcbio_structure):
 def proc_var_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 
-    filt_vcf_fpath_by_sample = caller.get_pass_filt_vcf_by_samples()
+    filt_vcf_fpath_by_sample = caller.find_pass_filt_vcf_by_samples()
 
     for sample, vcf_fpath in filt_vcf_fpath_by_sample.items():
         info(sample.name)

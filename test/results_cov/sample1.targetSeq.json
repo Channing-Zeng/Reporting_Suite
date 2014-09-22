@@ -55,7 +55,7 @@
                         "name": "Unmapped reads",
                         "short_name": "Unmapped",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -63,7 +63,7 @@
                         "name": "Percentage of unmapped reads",
                         "short_name": "%",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "%",
                         "description": null
                     },
@@ -154,7 +154,7 @@
                         "name": "Unmapped reads",
                         "short_name": "Unmapped",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -178,7 +178,7 @@
                         "name": "Percentage of unmapped reads",
                         "short_name": "%",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "%",
                         "description": null
                     },
@@ -239,7 +239,7 @@
                         "name": "Std. dev. of target coverage depth",
                         "short_name": "Std dev",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -386,7 +386,7 @@
                         "name": "Std. dev. of target coverage depth",
                         "short_name": "Std dev",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -505,7 +505,7 @@
                         "name": "Unmapped reads",
                         "short_name": "Unmapped",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -513,7 +513,7 @@
                         "name": "Percentage of unmapped reads",
                         "short_name": "%",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "%",
                         "description": null
                     },
@@ -604,7 +604,7 @@
                         "name": "Unmapped reads",
                         "short_name": "Unmapped",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -628,7 +628,7 @@
                         "name": "Percentage of unmapped reads",
                         "short_name": "%",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "%",
                         "description": null
                     },
@@ -689,7 +689,7 @@
                         "name": "Std. dev. of target coverage depth",
                         "short_name": "Std dev",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -836,7 +836,7 @@
                         "name": "Std. dev. of target coverage depth",
                         "short_name": "Std dev",
                         "common": false,
-                        "quality": "More is better",
+                        "quality": "Less is better",
                         "unit": "",
                         "description": null
                     },
@@ -983,7 +983,7 @@
                 "name": "Unmapped reads",
                 "short_name": "Unmapped",
                 "common": false,
-                "quality": "More is better",
+                "quality": "Less is better",
                 "unit": "",
                 "description": null
             },
@@ -995,7 +995,7 @@
                 "name": "Percentage of unmapped reads",
                 "short_name": "%",
                 "common": false,
-                "quality": "More is better",
+                "quality": "Less is better",
                 "unit": "%",
                 "description": null
             },
@@ -1115,7 +1115,7 @@
                 "name": "Std. dev. of target coverage depth",
                 "short_name": "Std dev",
                 "common": false,
-                "quality": "More is better",
+                "quality": "Less is better",
                 "unit": "",
                 "description": null
             },
