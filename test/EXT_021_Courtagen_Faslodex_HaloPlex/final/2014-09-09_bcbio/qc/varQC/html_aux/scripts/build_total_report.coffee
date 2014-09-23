@@ -31,6 +31,9 @@ metric =
 
 DRAGGABLE_COLUMNS = false
 
+
+################
+# Color heat map
 BLUE_HUE = 240
 BLUE_OUTER_BRT = 55
 BLUE_INNER_BRT = 65
@@ -43,14 +46,15 @@ RED_HUE = 0
 RED_OUTER_BRT = 50
 RED_INNER_BRT = 60
 
-GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
-
-CSS_PROP_TO_COLOR = 'background-color'  # color
+MIN_NORMAL_BRT = 80
+MEDIAN_BRT = 100  # just white.
 
 get_color = (hue, lightness) ->
     lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
     return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
+
+################
 
 
 check_all_values_equal = (vals) ->
@@ -168,9 +172,14 @@ calc_cell_contents = (report, section, font) ->
         metric.min = vals[0]
         metric.max = vals[vals.length - 1]
         metric.med = if l % 2 != 0 then vals[(l - 1) / 2] else mean(vals[l / 2], vals[(l / 2) - 1])
-        metric.q1 = vals[Math.floor((l - 1) / 4)]
-        metric.q3 = vals[Math.floor((l - 1) * 3 / 4)]
-        metric.d = metric.q3 - metric.q1
+        q1 = vals[Math.floor((l - 1) / 4)]
+        q3 = vals[Math.floor((l - 1) * 3 / 4)]
+
+        d = q3 - q1
+        metric.low_outer_fence = q1 - 3 * d
+        metric.low_inner_fence = q1 - 1.5 * d
+        metric.top_inner_fence = q3 + 1.5 * d
+        metric.top_outer_fence = q3 + 3 * d
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for sampleReport in report.sample_reports
@@ -179,21 +188,10 @@ calc_cell_contents = (report, section, font) ->
             if rec.frac_width?
                 rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
 
-                if rec.right_shift != 0
-                    a = 0
-
             metric = rec.metric
 
             # Color heatmap
             if rec.num?
-                min_normal_brt = 80
-                median_brt = 100
-
-                low_outer_fence = metric.q1 - 3 * metric.d
-                low_inner_fence = metric.q1 - 1.5 * metric.d
-                top_inner_fence = metric.q3 + 1.5 * metric.d
-                top_outer_fence = metric.q3 + 3 * metric.d
-
                 [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
                 [low_hue, inner_low_brt, outer_low_brt] = [RED_HUE, RED_INNER_BRT, RED_OUTER_BRT]
 
@@ -209,29 +207,31 @@ calc_cell_contents = (report, section, font) ->
 
                     rec.text_color = 'black'
 
-                    if rec.num < low_outer_fence
+                    # Low outliers
+                    if rec.num < rec.metric.low_outer_fence
                         rec.color = get_color low_hue, outer_low_brt
                         rec.text_color = 'white'
 
-                    else if rec.num < low_inner_fence
+                    else if rec.num < rec.metric.low_inner_fence
                         rec.color = get_color low_hue, inner_low_brt
 
+                    # Normal values
                     else if rec.num < metric.med
-                        k = (median_brt - min_normal_brt) / (metric.med - low_inner_fence)
-                        brt = Math.round median_brt - (metric.med - rec.num) * k
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (metric.med - rec.metric.low_inner_fence)
+                        brt = Math.round MEDIAN_BRT - (metric.med - rec.num) * k
                         rec.color = get_color low_hue, brt
 
-
-                    else if rec.num > top_inner_fence
+                    # High outliers
+                    else if rec.num > rec.metric.top_inner_fence
                         rec.color = get_color top_hue, inner_top_brt
 
-                    else if rec.num > top_outer_fence
+                    else if rec.num > rec.metric.top_outer_fence
                         rec.color = get_color top_hue, outer_top_brt
                         rec.text_color = 'white'
 
                     else if rec.num > metric.med
-                        k = (median_brt - min_normal_brt) / (top_inner_fence - metric.med)
-                        brt = Math.round median_brt - (rec.num - metric.med) * k
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
+                        brt = Math.round MEDIAN_BRT - (rec.num - metric.med) * k
                         rec.color = get_color top_hue, brt
     return report
 
@@ -263,7 +263,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
         sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
-        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
+        direction = if metric.quality == 'Less is better' then 'ascending' else 'descending'
+        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
@@ -299,7 +300,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 continue
 
             table += "<td metric=\"#{metric.name}\"
-                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}; color: #{rec.text_color}\"
+                          style=\"background-color: #{rec.color}; color: #{rec.text_color}\"
                           class='number'
                           quality=\"#{metric.quality}\""
             if rec.num?
@@ -340,26 +341,26 @@ reporting.buildCommonRecords = (common_records) ->
     $('#report').append table
 
 
-set_legend = ->
-    legend = '<span>'
-    step = 6
-    for hue in [RED_HUE..GREEN_HUE] by step
-        legend += "<span style=\"#{CSS_PROP_TO_COLOR}: #{get_color hue}\">"
-
-        switch hue
-            when RED_HUE              then legend += 'w'
-            when RED_HUE   +     step then legend += 'o'
-            when RED_HUE   + 2 * step then legend += 'r'
-            when RED_HUE   + 3 * step then legend += 's'
-            when RED_HUE   + 4 * step then legend += 't'
-            when GREEN_HUE - 3 * step then legend += 'b'
-            when GREEN_HUE - 2 * step then legend += 'e'
-            when GREEN_HUE -     step then legend += 's'
-            when GREEN_HUE            then legend += 't'
-            else                           legend += '.'
-        legend += "</span>"
-    legend += "</span>"
-    $('#report_legend').append legend
+#set_legend = ->
+#    legend = '<span>'
+#    step = 6
+#    for hue in [RED_HUE..GREEN_HUE] by step
+#        legend += "<span style=\"background-color: #{get_color hue}\">"
+#
+#        switch hue
+#            when RED_HUE              then legend += 'w'
+#            when RED_HUE   +     step then legend += 'o'
+#            when RED_HUE   + 2 * step then legend += 'r'
+#            when RED_HUE   + 3 * step then legend += 's'
+#            when RED_HUE   + 4 * step then legend += 't'
+#            when GREEN_HUE - 3 * step then legend += 'b'
+#            when GREEN_HUE - 2 * step then legend += 'e'
+#            when GREEN_HUE -     step then legend += 's'
+#            when GREEN_HUE            then legend += 't'
+#            else                           legend += '.'
+#        legend += "</span>"
+#    legend += "</span>"
+#    $('#report_legend').append legend
 
 
 $.fn._splitDot_partTextWidth = (html, font, part_type) ->  # part_type = 'int'|'frac'
@@ -401,7 +402,6 @@ $.fn.textWidth = (text, font) ->
 
 String.prototype.trunc = (n) ->
     this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')
-
 
 
 #postprocess_cells = ->

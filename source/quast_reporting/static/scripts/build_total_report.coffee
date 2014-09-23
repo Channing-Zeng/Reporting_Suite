@@ -263,7 +263,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
         sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
-        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
+        direction = if metric.quality == 'Less is better' then 'ascending' else 'descending'
+        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction} position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
@@ -340,26 +341,26 @@ reporting.buildCommonRecords = (common_records) ->
     $('#report').append table
 
 
-set_legend = ->
-    legend = '<span>'
-    step = 6
-    for hue in [RED_HUE..GREEN_HUE] by step
-        legend += "<span style=\"#{CSS_PROP_TO_COLOR}: #{get_color hue}\">"
-
-        switch hue
-            when RED_HUE              then legend += 'w'
-            when RED_HUE   +     step then legend += 'o'
-            when RED_HUE   + 2 * step then legend += 'r'
-            when RED_HUE   + 3 * step then legend += 's'
-            when RED_HUE   + 4 * step then legend += 't'
-            when GREEN_HUE - 3 * step then legend += 'b'
-            when GREEN_HUE - 2 * step then legend += 'e'
-            when GREEN_HUE -     step then legend += 's'
-            when GREEN_HUE            then legend += 't'
-            else                           legend += '.'
-        legend += "</span>"
-    legend += "</span>"
-    $('#report_legend').append legend
+#set_legend = ->
+#    legend = '<span>'
+#    step = 6
+#    for hue in [RED_HUE..GREEN_HUE] by step
+#        legend += "<span style=\"background-color: #{get_color hue}\">"
+#
+#        switch hue
+#            when RED_HUE              then legend += 'w'
+#            when RED_HUE   +     step then legend += 'o'
+#            when RED_HUE   + 2 * step then legend += 'r'
+#            when RED_HUE   + 3 * step then legend += 's'
+#            when RED_HUE   + 4 * step then legend += 't'
+#            when GREEN_HUE - 3 * step then legend += 'b'
+#            when GREEN_HUE - 2 * step then legend += 'e'
+#            when GREEN_HUE -     step then legend += 's'
+#            when GREEN_HUE            then legend += 't'
+#            else                           legend += '.'
+#        legend += "</span>"
+#    legend += "</span>"
+#    $('#report_legend').append legend
 
 
 $.fn._splitDot_partTextWidth = (html, font, part_type) ->  # part_type = 'int'|'frac'
@@ -401,7 +402,6 @@ $.fn.textWidth = (text, font) ->
 
 String.prototype.trunc = (n) ->
     this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')
-
 
 
 #postprocess_cells = ->
