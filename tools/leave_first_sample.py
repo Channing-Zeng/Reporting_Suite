@@ -40,10 +40,10 @@ def proc_all(cnf, bcbio_structure):
 def proc_var_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 
-    filt_vcf_fpath_by_sample = caller.find_pass_filt_vcf_by_samples()
+    filt_vcf_fpath_by_sample = caller.find_pass_filt_vcf_by_sample()
 
-    for sample, vcf_fpath in filt_vcf_fpath_by_sample.items():
-        info(sample.name)
+    for sample_name, vcf_fpath in filt_vcf_fpath_by_sample.items():
+        info(sample_name)
         info('Processing ' + vcf_fpath)
         new_vcf_fpath = vcf_fpath + '.tx'
 

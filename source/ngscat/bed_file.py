@@ -35,7 +35,7 @@ def verify_bed(fpath, description=''):
     if not verify_file(fpath, description):
         return None
 
-    fpath = expanduser(fpath)
+    fpath = adjust_path(fpath)
 
     error = BedFile(fpath).checkformat()
     if error:

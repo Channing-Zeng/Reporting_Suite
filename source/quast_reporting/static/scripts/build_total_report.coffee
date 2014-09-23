@@ -264,7 +264,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         metric = section.metrics[pos]
         sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
         direction = if metric.quality == 'Less is better' then 'ascending' else 'descending'
-        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction} position='#{pos}'>
+        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction}position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}

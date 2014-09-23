@@ -351,7 +351,7 @@
       metric = section.metrics[pos];
       sort_by = metric.all_values_equal ? 'nosort' : 'numeric';
       direction = metric.quality === 'Less is better' ? 'ascending' : 'descending';
-      table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " data-direction=" + direction + " position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(metric)) + "</span> </th>";
+      table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " data-direction=" + direction + "position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(metric)) + "</span> </th>";
     }
     i = 0;
     _ref1 = report.sample_reports;

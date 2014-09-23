@@ -145,7 +145,8 @@ class BCBioRunner:
             script='targetcov',
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\''
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
+                    '{caller_names} {vcfs}'
         )
         self.ngscat = Step(cnf, run_id,
             name='ngsCAT', short_name='nc',
@@ -393,6 +394,8 @@ class BCBioRunner:
     #                 job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
 
     def post_jobs(self):
+        callers = self.bcbio_structure.variant_callers.values()
+
         if self.qualimap in self.steps:
             bed_by_sample = dict((s, s.bed) for s in self.bcbio_structure.samples if s.bed)
             beds = set(bed_by_sample.values())
@@ -427,13 +430,6 @@ class BCBioRunner:
                     or self.vardict in self.vardict_steps:
                 if not sample.bam or not verify_bam(sample.bam):
                     sys.exit('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
-
-            # TargetSeq reports
-            if (self.targetcov in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                err('Warning: no BED file, assuming WGS, thus running targetSeq reports only to generate Seq2C reports.')
-            else:
-                if self.targetcov in self.steps:
-                    self._submit_job(self.targetcov, sample.name, bam=sample.bam, bed=sample.bed, sample=sample)
 
             # ngsCAT reports
             if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
@@ -490,6 +486,33 @@ class BCBioRunner:
                 create_dir=False,
                 threads=min(len(self.bcbio_structure.batches), 20) + 1,
             )
+
+        # TargetSeq reports
+        for sample in self.bcbio_structure.samples:
+            if self.targetcov in self.steps:
+                info('Target coverage for "' + sample.name + '"')
+                if not self.cnf.verbose:
+                    info(ending='')
+
+                if not sample.bed or not verify_file(sample.bed):
+                    err('Warning: no BED file, assuming WGS, thus running targetSeq reports only to generate Seq2C reports.')
+                else:
+                    for c in callers:
+                        print c.get_filt_vcf_by_sample()
+                    callers_and_filtered_vcfs = [(c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers]
+                    callers_and_filtered_vcfs = [(c, f) for (c, f) in callers_and_filtered_vcfs if f]
+                    if callers_and_filtered_vcfs:
+                        caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
+                    else:
+                        caller_names, filtered_vcfs = [], []
+
+                    if self.targetcov in self.steps:
+                        self._submit_job(
+                            self.targetcov, sample.name,
+                            wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+                            bam=sample.bam, bed=sample.bed, sample=sample,
+                            caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
+                            vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 
         if self.varqc_after in self.steps:
             info('VarQC_postVarFilter:')

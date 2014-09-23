@@ -45,7 +45,7 @@ def cnv_reports(cnf, bcbio_structure):
 
             _, summary_report_json_fpath, _, gene_report_fpath = \
                 run_targetcov_reports(cnf, sample, filtered_vcf_by_callername = {
-                    c.name: c.get_filt_vcf_by_samples().get(sample) for c in bcbio_structure.callers})
+                    c.name: c.get_filt_vcf_by_sample().get(sample.name) for c in bcbio_structure.callers})
 
             cnf.output_dir = output_dir
 

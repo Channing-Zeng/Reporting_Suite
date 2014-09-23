@@ -445,7 +445,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     info('Running for ' + caller.name)
 
-    anno_vcf_by_sample = caller.find_anno_vcf_by_samples()
+    anno_vcf_by_sample = caller.find_anno_vcf_by_sample()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
 
     cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
@@ -454,12 +454,10 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     n_jobs = min(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1
     filt_anno_vcf_fpaths = f.run_filtering(anno_vcf_fpaths, n_jobs)
 
-    samples = anno_vcf_by_sample.keys()
-
     global cnfs_for_sample_names
     info('*' * 70)
-    info('Processed samples (' + str(len(samples)) + '):')
-    for sample in samples:
+    info('Processed samples (' + str(len(caller.samples)) + '):')
+    for sample in caller.samples:
         info(sample.name)
         cnf_copy = cnf.copy()
         cnf_copy['name'] = sample.name
@@ -469,12 +467,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
               for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-              zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+              zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
          ) if r is not None and None not in r]
     info('Results: ' + str(len(results)))
     info('*' * 70)
 
-    for sample, [vcf, tsv, maf] in zip(samples, results):
+    for sample, [vcf, tsv, maf] in zip(caller.samples, results):
         info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
         sample.filtered_vcf_by_callername[caller.name] = vcf
         sample.filtered_tsv_by_callername[caller.name] = tsv
@@ -572,7 +570,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             cnf, work_filt_vcf_fpath,
             tumor_sample_name=sample.name,
             bam_fpath=sample.bam,
-            transcripts_fpath=transcripts_fpath,
+            transcripts_fpath=cnf.transcripts_fpath,
             normal_sample_name=sample.normal_match.name if sample.normal_match else None)
         if isfile(final_maf_fpath): os.remove(final_maf_fpath)
         shutil.move(maf_fpath, final_maf_fpath)

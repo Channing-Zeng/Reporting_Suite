@@ -52,7 +52,7 @@ aux_files = [
 ]
 
 
-def write_html_report(json, output_dirpath, report_base_name, caption):
+def write_html_report(json, output_dirpath, report_base_name, caption=''):
     html_fpath = _init_html(output_dirpath, report_base_name + '.html', caption)
     _append(html_fpath, json, 'totalReport')
     return html_fpath

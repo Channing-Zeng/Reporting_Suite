@@ -88,13 +88,13 @@ class VariantCaller:
     def find_fpaths_by_sample(self, dirname, name, ext):
         return self._find_files_by_sample(dirname, '.' + name + '.' + ext)
 
-    def find_anno_vcf_by_samples(self):
+    def find_anno_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
-    def get_filt_vcf_by_samples(self):
+    def get_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
-    def find_pass_filt_vcf_by_samples(self):
+    def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.clean_filt_vcf_ending)
 
     def _find_files_by_sample(self, dirname, ending):
@@ -109,7 +109,7 @@ class VariantCaller:
 
             if isfile(fpath):
                 if verify_file(fpath):
-                    files_by_sample[s] = fpath
+                    files_by_sample[s.name] = fpath
             elif s.phenotype != 'normal':
                 info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 

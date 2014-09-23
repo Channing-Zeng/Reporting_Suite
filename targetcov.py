@@ -79,7 +79,7 @@ def main(args):
     info('Using amplicons/capture panel ' + cnf['bed'])
 
     cnf.vcfs = map(adjust_path, cnf.vcfs.split(',') if cnf.vcfs else [])
-    cnf.caller_names = cnf.vcfs.split(',') if cnf.vcfs else []
+    cnf.caller_names = cnf.caller_names.split(',') if cnf.caller_names else []
     cnf.vcfs_by_callername = zip(cnf.caller_names, cnf.vcfs)
 
     run_one(cnf, process_one, finalize_one)
@@ -95,11 +95,16 @@ def process_one(cnf):
 
 
 def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary_report_html_path,
-                 gene_report_fpath):
+                 gene_report_fpath, abnormal_regions_reports):
     if summary_report_txt_path:
         info('Summary report: ' + summary_report_txt_path)
     if gene_report_fpath:
-        info('Exons coverage report: ' + gene_report_fpath)
+        info('Exons coverage report:')
+        info('   ' + gene_report_fpath)
+    if abnormal_regions_reports:
+        info('Abnormal region reports:')
+        for rep in abnormal_regions_reports:
+            info('  ' + rep)
 
 
 if __name__ == '__main__':

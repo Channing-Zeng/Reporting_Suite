@@ -64,7 +64,7 @@ report =
     order: null
     sample_reports: []
     metric_storage:
-        common_for_all_samples_section:
+        general_section:
             name: ''
             metrics: []
         sections: []
@@ -96,9 +96,9 @@ merge = (options, overrides) ->
 
 preprocessReport = (report) ->
     all_metrics_by_name = {}
-    for m in report.metric_storage.common_for_all_samples_section.metrics
-        report.metric_storage.common_for_all_samples_section.metrics_by_name[m.name] = m
-    extend all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name
+    for m in report.metric_storage.general_section.metrics
+        report.metric_storage.general_section.metrics_by_name[m.name] = m
+    extend all_metrics_by_name, report.metric_storage.general_section.metrics_by_name
 
     for s in report.metric_storage.sections
         for m in s.metrics
@@ -122,7 +122,7 @@ reporting.buildReport = ->
 
     $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
-    common_metrics_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name
+    common_metrics_by_name = report.metric_storage.general_section.metrics_by_name
     general_records = (rec for rec in report.sample_reports[0].records when rec.metric.name of common_metrics_by_name)
     reporting.buildCommonRecords general_records
 

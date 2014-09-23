@@ -132,6 +132,7 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
     to_exit = False
 
     def _verify_input_file(_key):
+        cnf[_key] = adjust_path(cnf[_key])
         if not verify_file(cnf[_key], _key):
             return False
         if 'bam' in _key and not verify_bam(cnf[_key]):

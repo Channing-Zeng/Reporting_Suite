@@ -109,7 +109,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None, transcript_fpath=None):
                 cnf, vcf_fpath,
                 bam_fpath=cnf.bam,
                 tumor_sample_name=cnf.name,
-                transcripts_fpath=transcripts_fpath,
+                transcripts_fpath=cnf.transcripts_fpath,
                 normal_sample_name=cnf.match_normal_normal_name)
 
             if isfile(final_maf_fpath):
