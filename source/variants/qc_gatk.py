@@ -9,18 +9,18 @@ from source.tools_from_cnf import get_gatk_cmdline
 metric_storage = MetricStorage(
     sections=[
         ReportSection('basic', '', [
-            Metric('nEvalVariants',   'Total',       'Total variants evaluated'),
-            Metric('nSNPs',           'SNP',         'SNPs'),
-            Metric('nInsertions',     'Ins',         'Insertions'),
-            Metric('nDeletions',      'Del',         'Deletions'),
-            Metric('nVariantsAtComp', 'At comp',     'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
-            Metric('compRate',        'Comp rate',   'Percentage of eval sites at comp sites'),
-            Metric('nConcordant',     'Concord',     'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
-            Metric('concordantRate',  'Conc rate',   'Concordance rate'),
-            Metric('variantRate',     'Var/loci',    'Variants per loci rate'),
-            Metric('basesPerVariant', 'Bp/var',      'Bases per variant rate',   quality='Less is better'),
-            Metric('hetHomRatio',     'Het/hom',     'Heterozygosity to homozygosity ratio'),
-            Metric('tiTvRatio',       'Ti/Tv',       'Transition to transversion ratio'),
+            Metric('nEvalVariants',   'Total',     'Total variants evaluated'),
+            Metric('nSNPs',           'SNP',       'SNPs'),
+            Metric('nInsertions',     'Ins',       'Insertions'),
+            Metric('nDeletions',      'Del',       'Deletions'),
+            Metric('nVariantsAtComp', 'At comp',   'Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)'),
+            Metric('compRate',        'Comp rate', 'Percentage of eval sites at comp sites'),
+            Metric('nConcordant',     'Concord',   'Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)'),
+            Metric('concordantRate',  'Conc rate', 'Concordance rate'),
+            Metric('variantRate',     'Var/loci',  'Variants per loci rate'),
+            Metric('basesPerVariant', 'Bp/var',    'Bases per variant rate',   quality='Less is better'),
+            Metric('hetHomRatio',     'Het/hom',   'Heterozygosity to homozygosity ratio'),
+            Metric('tiTvRatio',       'Ti/Tv',     'Transition to transversion ratio'),
         ])
     ]
 )

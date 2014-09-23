@@ -32,10 +32,21 @@ metric =
 DRAGGABLE_COLUMNS = false
 
 BLUE_HUE = 240
+BLUE_OUTER_BRT = 55
+BLUE_INNER_BRT = 65
+
 GREEN_HUE = 120
+GREEN_OUTER_BRT = 50
+GREEN_INNER_BRT = 60
+
 RED_HUE = 0
+RED_OUTER_BRT = 50
+RED_INNER_BRT = 60
+
 GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
+
 CSS_PROP_TO_COLOR = 'background-color'  # color
+
 get_color = (hue, lightness) ->
     lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
@@ -175,21 +186,21 @@ calc_cell_contents = (report, section, font) ->
 
             # Color heatmap
             if rec.num?
-                outer_fence_brightness = 50
-                inner_fence_brightness = 60
-                min_normal_brightness = 80
-                median_brightness = 100
+                min_normal_brt = 80
+                median_brt = 100
 
                 low_outer_fence = metric.q1 - 3 * metric.d
                 low_inner_fence = metric.q1 - 1.5 * metric.d
                 top_inner_fence = metric.q3 + 1.5 * metric.d
                 top_outer_fence = metric.q3 + 3 * metric.d
 
-                top_hue = BLUE_HUE
-                low_hue = RED_HUE
-                if metric.quality == 'More is better'
-                    top_hue = RED_HUE
-                    low_hue = BLUE_HUE
+                [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
+                [low_hue, inner_low_brt, outer_low_brt] = [RED_HUE, RED_INNER_BRT, RED_OUTER_BRT]
+
+                if metric.quality == 'Less is better'  # then swap colors
+                    [top_hue, low_hue] = [low_hue, top_hue]
+                    [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
+                    [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
 
                 if metric.min == metric.max
                     metric.all_values_equal = true
@@ -199,29 +210,29 @@ calc_cell_contents = (report, section, font) ->
                     rec.text_color = 'black'
 
                     if rec.num < low_outer_fence
-                        rec.color = get_color low_hue, outer_fence_brightness
+                        rec.color = get_color low_hue, outer_low_brt
                         rec.text_color = 'white'
 
                     else if rec.num < low_inner_fence
-                        rec.color = get_color low_hue, inner_fence_brightness
+                        rec.color = get_color low_hue, inner_low_brt
 
                     else if rec.num < metric.med
-                        k = (median_brightness - min_normal_brightness) / (metric.med - low_inner_fence)
-                        brightness = Math.round median_brightness - (metric.med - rec.num) * k
-                        rec.color = get_color low_hue, brightness
+                        k = (median_brt - min_normal_brt) / (metric.med - low_inner_fence)
+                        brt = Math.round median_brt - (metric.med - rec.num) * k
+                        rec.color = get_color low_hue, brt
 
 
                     else if rec.num > top_inner_fence
-                        rec.color = get_color top_hue, inner_fence_brightness
+                        rec.color = get_color top_hue, inner_top_brt
 
                     else if rec.num > top_outer_fence
-                        rec.color = get_color top_hue, outer_fence_brightness
+                        rec.color = get_color top_hue, outer_top_brt
                         rec.text_color = 'white'
 
                     else if rec.num > metric.med
-                        k = (median_brightness - min_normal_brightness) / (top_inner_fence - metric.med)
-                        brightness = Math.round median_brightness - (rec.num - metric.med) * k
-                        rec.color = get_color top_hue, brightness
+                        k = (median_brt - min_normal_brt) / (top_inner_fence - metric.med)
+                        brt = Math.round median_brt - (rec.num - metric.med) * k
+                        rec.color = get_color top_hue, brt
     return report
 
 
