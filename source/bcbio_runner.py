@@ -497,8 +497,6 @@ class BCBioRunner:
                 if not sample.bed or not verify_file(sample.bed):
                     err('Warning: no BED file, assuming WGS, thus running targetSeq reports only to generate Seq2C reports.')
                 else:
-                    for c in callers:
-                        print c.get_filt_vcf_by_sample()
                     callers_and_filtered_vcfs = [(c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers]
                     callers_and_filtered_vcfs = [(c, f) for (c, f) in callers_and_filtered_vcfs if f]
                     if callers_and_filtered_vcfs:
