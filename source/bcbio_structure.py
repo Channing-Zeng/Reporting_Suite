@@ -396,7 +396,7 @@ class BCBioStructure:
             info(report_fpath)
 
             if verify_file(report_fpath):
-                fpaths_by_sample[sample] = report_fpath
+                fpaths_by_sample[sample.name] = report_fpath
 
         # if len(fpaths_by_sample) < len(self.samples):
         #     raise RuntimeError('No ')
