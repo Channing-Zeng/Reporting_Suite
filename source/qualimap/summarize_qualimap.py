@@ -8,13 +8,15 @@ def summary_reports(cnf, bcbio_structure):
     step_greetings('QualiMap statistics for all samples')
 
     htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
+    if not htmls_by_sample:
+        return []
 
     full_report = FullReport(cnf.name, [
         SampleReport(sample,
-                     records=_parse_qualimap_sample_report(htmls_by_sample[sample]),
-                     html_fpath=relpath(htmls_by_sample[sample], cnf.output_dir))
+                     records=_parse_qualimap_sample_report(htmls_by_sample[sample.name]),
+                     html_fpath=relpath(htmls_by_sample[sample.name], cnf.output_dir))
             for sample in bcbio_structure.samples
-            if sample in htmls_by_sample],
+            if sample.name in htmls_by_sample],
         metric_storage=metric_storage)
 
     final_summary_report_fpaths = full_report.save_into_files(
