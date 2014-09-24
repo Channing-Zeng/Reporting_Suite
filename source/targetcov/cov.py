@@ -7,7 +7,7 @@ import shutil
 import sys
 from source.bcbio_structure import BCBioStructure, Sample
 from source.calling_process import call, call_check_output, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus, add_suffix
+from source.file_utils import intermediate_fname, splitext_plus, add_suffix, verify_file
 
 from source.logger import step_greetings, critical, info, err
 from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
@@ -322,9 +322,9 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
                 [BCBioStructure.detail_lowcov_gene_report_baseending,
                  BCBioStructure.detail_highcov_gene_report_baseending]):
 
-            report_basename = cnf.name + '' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
+            report_basename = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-            report = _make_flagged_region_report(sample, vcf_fpath, regions, depth_threshs)
+            report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions, depth_threshs)
             regions_html_rep_fpath = report.save_html(output_dir, report_basename,
                   caption='Regions with ' + kind + ' coverage for ' + caller_name)
 
@@ -457,7 +457,7 @@ def _get_exons_merged_by_genes(cnf, subregions):
 #     return all_rows
 
 
-def _make_flagged_region_report(sample, filtered_vcf_fpath, regions, depth_threshs):
+def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, depth_threshs):
     regions_metrics = [
         Metric('Sample'),
         Metric('Chr'),
@@ -507,12 +507,22 @@ def _make_flagged_region_report(sample, filtered_vcf_fpath, regions, depth_thres
     median_depth = median(r.avg_depth for r in regions)
     cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
 
-    # TODO: tmp
+    cosmic_fpath = cnf.genome.cosmic
+    if not cosmic_fpath and not verify_file(cosmic_fpath):
+        info('Skipping counting variants from Cosmic.')
+        report.add_record('Cosmic missed variants', None)
+    else:
+        info('Counting missed variants from Cosmic.')
+        report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
+        # TODO: tmp
+        #bedtools = get_tool_cmdline(cnf, 'bedtools')
+        #cmdline = '{bedtools} intersect -a {cosmic_fpath} -b {bed2} -u'.format(**locals())
+        #call(cnf, cmdline, output_fpath)
+
     shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
 
     report.add_record('Median depth', median_depth)
     report.add_record('Variants', filtered_vcf_fpath)
-    report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
 
     rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
     for rec in rec_by_name.values():
