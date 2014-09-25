@@ -2,7 +2,8 @@
 from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
-from os.path import join, basename
+import os
+from os.path import join, basename, isfile
 import shutil
 import sys
 from source.bcbio_structure import BCBioStructure, Sample
@@ -10,6 +11,7 @@ from source.calling_process import call, call_check_output, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, add_suffix, verify_file
 
 from source.logger import step_greetings, critical, info, err
+from source.ngscat.bed_file import verify_bed
 from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
     write_tsv_rows, Record, SquareSampleReport
 from source.targetcov.Region import Region
@@ -323,13 +325,17 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
                     [BCBioStructure.detail_lowcov_gene_report_baseending,
                      BCBioStructure.detail_highcov_gene_report_baseending]):
 
-                report_basename = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
+                report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-                report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions, depth_threshs)
-                regions_html_rep_fpath = report.save_html(output_dir, report_basename,
+                bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
+                missed_vcf_fpath_by_name = _prepare_missed_vcfs(cnf, report_base_name, bed_fpath)
+                report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions,
+                                                     bed_fpath, missed_vcf_fpath_by_name, depth_threshs)
+
+                regions_html_rep_fpath = report.save_html(output_dir, report_base_name,
                       caption='Regions with ' + kind + ' coverage for ' + caller_name)
 
-                regions_txt_rep_fpath = report.save_txt(output_dir, report_basename,
+                regions_txt_rep_fpath = report.save_txt(output_dir, report_base_name,
                     [report.metric_storage.sections_by_name[kind + '_cov']])
 
                 abnormal_regions_reports.append(regions_txt_rep_fpath)
@@ -337,6 +343,27 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
                 info('\t' + regions_txt_rep_fpath)
 
     return tsv_rep_fpath, abnormal_regions_reports
+
+
+def _save_regions_to_bed(cnf, regions, f_basename):
+    bed_fpath = join(cnf.work_dir, f_basename + '.bed')
+    info()
+    info('Saving regions to ' + bed_fpath)
+
+    if isfile(bed_fpath):
+        if cnf.reuse_intermediate:
+            if not verify_bed(bed_fpath):
+                sys.exit(1)
+            return bed_fpath
+        else:
+            os.remove(bed_fpath)
+
+    with open(bed_fpath, 'w') as f:
+        for region in regions:
+            f.write('\t'.join([region.chrom, str(region.start), str(region.end)]) + '\n')
+
+    info('Saved to ' + bed_fpath)
+    return bed_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):
@@ -458,7 +485,8 @@ def _get_exons_merged_by_genes(cnf, subregions):
 #     return all_rows
 
 
-def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, depth_threshs):
+def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fpath,
+                                missed_vcf_fpath_by_name, depth_threshs):
     regions_metrics = [
         Metric('Sample'),
         Metric('Chr'),
@@ -496,29 +524,18 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, depth_
 
     report = SquareSampleReport(sample, metric_storage=region_metric_storage)
 
-    i = 0
-    for region in regions:
-        i += 1
-        if i % 10000 == 0:
-            info('Processed {0:,} regions.'.format(i))
+    for vcf_full_name, missed_vcf_fpath in missed_vcf_fpath_by_name.items():
+        if not missed_vcf_fpath and not verify_file(missed_vcf_fpath):
+            info('Skipping counting variants from ' + vcf_full_name)
+            report.add_record(vcf_full_name + ' missed variants', None)
+        else:
+            info('Counting missed variants from ' + vcf_full_name)
+            report.add_record(vcf_full_name + ' missed variants', missed_vcf_fpath)
 
-        region.sum_up(depth_threshs)
-        region.cosmic_missed = 44
+    _proc_regions(regions, _preprocess_flagged_region, depth_threshs)
 
     median_depth = median(r.avg_depth for r in regions)
     cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
-
-    cosmic_fpath = cnf.genome.cosmic
-    if not cosmic_fpath and not verify_file(cosmic_fpath):
-        info('Skipping counting variants from Cosmic.')
-        report.add_record('Cosmic missed variants', None)
-    else:
-        info('Counting missed variants from Cosmic.')
-        report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
-        # TODO: tmp
-        # bedtools = get_tool_cmdline(cnf, 'bedtools')
-        # cmdline = '{bedtools} intersect -a {cosmic_fpath} -b {bed2} -u'.format(**locals())
-        # call(cnf, cmdline, output_fpath)
 
     shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
 
@@ -529,39 +546,77 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, depth_
     for rec in rec_by_name.values():
         report.records.append(rec)
 
+    _proc_regions(regions, _process_flagged_region, rec_by_name, median_depth)
+
+    return report
+
+
+def _prepare_missed_vcfs(cnf, report_base_name, bed_fpath):
+    missed_vcf_fpath_by_name = OrderedDict()
+
+    for vcf_name, vcf_full_name in [('cosmic', 'Cosmic')]:
+        vcf_fpath = cnf.genome[vcf_name]
+
+        missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_missed.vcf')
+        missed_vcf_fpath_by_name[vcf_full_name] = missed_vcf_fpath
+
+        if not vcf_fpath and not verify_file(vcf_fpath):
+            info('Skipping counting variants from ' + vcf_full_name)
+        else:
+            info('Counting missed variants from ' + vcf_full_name)
+
+            fpath = join(cnf.work_dir, 'good_regions')
+
+            bedtools = get_tool_cmdline(cnf, 'bedtools')
+            cmdline = '{bedtools} intersect -a {vcf_fpath} -b {bed_fpath}'.format(**locals())
+            call(cnf, cmdline, output_fpath=missed_vcf_fpath)
+
+    return missed_vcf_fpath_by_name
+
+
+def _proc_regions(regions, fn, *args, **kwargs):
     i = 0
     for region in regions:
         i += 1
+
+        fn(region, *args, **kwargs)
+
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
 
-        rec_by_name['Sample'].value.append(         region.sample)
-        rec_by_name['Chr'].value.append(            region.chrom)
-        rec_by_name['Start'].value.append(          region.start)
-        rec_by_name['End'].value.append(            region.end)
-        rec_by_name['Gene'].value.append(           region.gene_name)
-        rec_by_name['Feature'].value.append(        region.feature)
-        rec_by_name['Size'].value.append(           region.get_size())
-        rec_by_name['MeanDepth'].value.append(      region.avg_depth)
-        rec_by_name['StdDev'].value.append(         region.std_dev)
-        rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
-        rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth if median_depth != 0 else None)
-        rec_by_name['Total variants'].value.append( 0)
-        rec_by_name['Cosmic missed'].value.append(  0)
-        rec_by_name['Oncomine missed'].value.append(0)
-        rec_by_name['Hedley missed'].value.append(  0)
-        rec_by_name['TCGA missed'].value.append(    0)
+    if not i % 10000:
+        info('Processed {0:,} regions.'.format(i))
 
-        for depth_thres, bases in region.bases_within_threshs.items():
-            if int(region.get_size()) == 0:
-                percent = None
-            else:
-                percent = 100.0 * bases / region.get_size()
-            rec_by_name['{}x'.format(depth_thres)].value.append(percent)
 
-    info('Processed {0:,} regions.'.format(i))
+def _preprocess_flagged_region(region, depth_threshs):
+    region.sum_up(depth_threshs)
+    region.cosmic_missed = 44
 
-    return report
+
+def _process_flagged_region(region, rec_by_name, median_depth):
+    rec_by_name['Sample'].value.append(         region.sample)
+    rec_by_name['Chr'].value.append(            region.chrom)
+    rec_by_name['Start'].value.append(          region.start)
+    rec_by_name['End'].value.append(            region.end)
+    rec_by_name['Gene'].value.append(           region.gene_name)
+    rec_by_name['Feature'].value.append(        region.feature)
+    rec_by_name['Size'].value.append(           region.get_size())
+    rec_by_name['MeanDepth'].value.append(      region.avg_depth)
+    rec_by_name['StdDev'].value.append(         region.std_dev)
+    rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
+    rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth if median_depth != 0 else None)
+    rec_by_name['Total variants'].value.append( 0)
+    rec_by_name['Cosmic missed'].value.append(  0)
+    rec_by_name['Oncomine missed'].value.append(0)
+    rec_by_name['Hedley missed'].value.append(  0)
+    rec_by_name['TCGA missed'].value.append(    0)
+
+    for depth_thres, bases in region.bases_within_threshs.items():
+        if int(region.get_size()) == 0:
+            percent = None
+        else:
+            percent = 100.0 * bases / region.get_size()
+        rec_by_name['{}x'.format(depth_thres)].value.append(percent)
 
 
 def _make_flat_region_report(regions, depth_threshs):
