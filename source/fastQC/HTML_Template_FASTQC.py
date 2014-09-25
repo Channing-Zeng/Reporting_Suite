@@ -1,6 +1,7 @@
 import sys
 import os
-from  source.fastQC.HTML_Parser_FASTQC import get_graphs
+import itertools
+from source.fastQC.HTML_Parser_FASTQC import get_graphs
 
 
 def print_html(input_files):
@@ -10,21 +11,71 @@ def print_html(input_files):
     print >> outfile, """<html>
         <head>
     <title>FASTQC</title> """
+    print >> outfile, print_js()
     print >> outfile, print_css()
     print >> outfile, """
         </head>
-        <body>
-            <table border="1">"""
+        <body>"""
+    print_graphs(outfile, graphs)
+    print >> outfile, """</body> </html>"""
 
 
 def print_graphs(outfile, graphs):
-    i = 0
-    while i < graphs.len():
-        print >> outfile, "<tr>"
+    print >> outfile, '<table >'
+    for graph_name, values in graphs.items():
+        print >> outfile, '<tr class="title" ><td colspan=" ' + str(
+            len(values)) + '"><h2 >' + graph_name + '</h2><td></tr>'
+        print >> outfile, '<tr >'
+        for div_contains in values:
+            bam_file_name = div_contains[0]
+            ok_img = div_contains[1]
+            graph = div_contains[2]
+            table = div_contains[3]
+            print >> outfile, '<td class="data">' + str(ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(
+                table) + '</td>'
+        print >> outfile, '</tr>'
 
-        print >> outfile, "</tr>"
+    print >> outfile, '</table>'
 
-        i += 1
+
+def none_type_validation(obj):
+    if obj is None:
+        return ""
+    else:
+        return str(obj)
+
+
+def print_to_html(outfile, text_to_html):
+    print >> outfile, text_to_html
+
+
+def group2(iterator, count):
+    if count > len(iterator): count = len(iterator)
+    return itertools.imap(None, *([iter(iterator)] * count))
+
+
+def print_js():
+    return """
+    <script src="http://code.jquery.com/jquery-latest.min.js"
+        type="text/javascript"></script>
+    <script>
+
+
+
+    $(document).ready(function(){
+      $("img.indented").click(function resize() {
+            if ($("img.indented").height() == 500) {
+                $("img.indented").width(300);
+                $("img.indented").height(300);
+            }
+            else {
+                $("img.indented").width(500);
+                $("img.indented").height(500);
+            }
+             return false;
+    });
+});
+</script> """
 
 
 def print_css():
@@ -86,6 +137,8 @@ def print_css():
 
         img.indented {
         margin-left: 3em;
+        width:300;
+        height:300;
         }
         }
 
@@ -157,6 +210,7 @@ def print_css():
         div.module {
         padding-bottom:1.5em;
         padding-top:1.5em;
+
         }
 
         div.footer {
@@ -180,6 +234,7 @@ def print_css():
 
         h2 {
         color: #800000;
+        background-color: #ADD8E6;
         padding-bottom: 0;
         margin-bottom: 0;
         clear:left;
@@ -197,8 +252,13 @@ def print_css():
         padding: 0.4em;
         }
 
+        tr.title {
+        background-color: #F0E68C;
+        }
+
         td {
         font-family: monospace;
+        vertical-align: top;
         text-align: left;
         background-color: #EEE;
         color: #000;
@@ -209,6 +269,7 @@ def print_css():
         padding-top: 0;
         margin-top: 0;
         border-top: 0;
+
         }
 
 
@@ -217,4 +278,8 @@ def print_css():
         margin-top: 0;
         }
      </style> """
+
+
+if __name__ == "__main__":
+    print_html(sys.argv[1:])
 
