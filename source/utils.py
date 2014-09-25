@@ -5,8 +5,8 @@ from collections import OrderedDict
 from os.path import join, basename
 from source.calling_process import call_subprocess
 from source.tools_from_cnf import get_tool_cmdline
-from source.logger import info
-from source.file_utils import file_exists
+from source.logger import info, critical
+from source.file_utils import file_exists, verify_file
 
 
 class OrderedDefaultDict(OrderedDict):
@@ -55,6 +55,9 @@ def human_sorted(l):
 def get_chr_len_fpath(cnf):
     chr_len_fpath = cnf['genome'].get('chr_lengths')
     if chr_len_fpath:
+        if not verify_file(chr_len_fpath):
+            critical('Could not open a file with chromosome lengths provided in system config. '
+                     'Remove it from the config to generate it automatically.')
         return chr_len_fpath
 
     chr_len_fpath = join(cnf['work_dir'], 'chr_lengths.txt')
