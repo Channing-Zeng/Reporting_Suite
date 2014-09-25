@@ -25,7 +25,7 @@ class Defaults:
     tmp_base_dir = getcwd()
 
     verbose = True
-    threads = 4
+    threads = 1
     overwrite = None
     reuse_intermediate = True
     keep_intermediate = True
