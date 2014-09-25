@@ -27,8 +27,8 @@ def cnv_reports(cnf, bcbio_structure):
     summary_report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
     gene_report_fpaths_by_sample = bcbio_structure.get_gene_reports_by_sample()
     for sample in bcbio_structure.samples:
-        summ_report_fpath = summary_report_fpath_by_sample.get(sample)
-        gene_report_fpath = gene_report_fpaths_by_sample.get(sample)
+        summ_report_fpath = summary_report_fpath_by_sample.get(sample.name)
+        gene_report_fpath = gene_report_fpaths_by_sample.get(sample.name)
 
         if gene_report_fpath is None or summ_report_fpath is None:  # Was WGS
             output_dir = cnf.output_dir
@@ -43,21 +43,22 @@ def cnv_reports(cnf, bcbio_structure):
                     else:
                         sys.exit(1)
 
-            _, summary_report_json_fpath, _, gene_report_fpath = \
-                run_targetcov_reports(cnf, sample, filtered_vcf_by_callername = {
-                    c.name: c.get_filt_vcf_by_sample().get(sample.name) for c in bcbio_structure.variant_callers.values()})
+            _, summary_report_json_fpath, _, gene_report_fpath, _ = \
+                run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None)
 
             cnf.output_dir = output_dir
 
-            summary_report_fpath_by_sample[sample] = summary_report_json_fpath
-            gene_report_fpaths_by_sample[sample] = gene_report_fpath
+            summary_report_fpath_by_sample[sample.name] = summary_report_json_fpath
+            gene_report_fpaths_by_sample[sample.name] = gene_report_fpath
 
     if not gene_report_fpaths_by_sample:
         err('No gene reports, cannot call copy numbers.')
         return None
 
     info('Calculating normalized coverages for CNV...')
-    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
+    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(
+        cnf, bcbio_structure.samples,
+        gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
 
     cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
     if amplicon_cnv_rows:
@@ -91,22 +92,25 @@ def _get_lines_by_region_type(report_fpath, region_type):
     return gene_summary_lines
 
 
-def _summarize_copy_number(cnf, gene_reports_by_sample, report_fpath_by_sample):
+def _summarize_copy_number(cnf, samples, gene_reports_by_sample, report_fpath_by_sample):
     amplicon_summary_lines = []
     gene_amplicon_summary_lines = []
     mapped_reads_by_sample = OrderedDict()
 
-    for sample, gene_report_fpath in gene_reports_by_sample.items():
-        json_fpath = report_fpath_by_sample[sample]
+    for sample_name, gene_report_fpath in gene_reports_by_sample.items():
+        json_fpath = report_fpath_by_sample[sample_name]
 
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
         gene_amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
 
         with open(json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
-            cov_report = SampleReport.load(data, sample)
+        sample = next((sample for sample in samples if sample.name == sample_name), None)
+        if not sample:
+            continue
+        cov_report = SampleReport.load(data, sample)
 
-        mapped_reads_by_sample[sample.name] = int(next(
+        mapped_reads_by_sample[sample_name] = int(next(
             rec.value for rec in cov_report.records
             if rec.metric.name == 'Mapped reads'))
 

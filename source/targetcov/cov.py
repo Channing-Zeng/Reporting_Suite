@@ -315,25 +315,26 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
     info('\t' + txt_rep_fpath)
 
     abnormal_regions_reports = []
-    for caller_name, vcf_fpath in filtered_vcf_by_callername:
-        for kind, regions, f_basename in zip(
-                ['low', 'high'],
-                [low_regions, high_regions],
-                [BCBioStructure.detail_lowcov_gene_report_baseending,
-                 BCBioStructure.detail_highcov_gene_report_baseending]):
+    if filtered_vcf_by_callername:
+        for caller_name, vcf_fpath in filtered_vcf_by_callername:
+            for kind, regions, f_basename in zip(
+                    ['low', 'high'],
+                    [low_regions, high_regions],
+                    [BCBioStructure.detail_lowcov_gene_report_baseending,
+                     BCBioStructure.detail_highcov_gene_report_baseending]):
 
-            report_basename = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
+                report_basename = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-            report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions, depth_threshs)
-            regions_html_rep_fpath = report.save_html(output_dir, report_basename,
-                  caption='Regions with ' + kind + ' coverage for ' + caller_name)
+                report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions, depth_threshs)
+                regions_html_rep_fpath = report.save_html(output_dir, report_basename,
+                      caption='Regions with ' + kind + ' coverage for ' + caller_name)
 
-            regions_txt_rep_fpath = report.save_txt(output_dir, report_basename,
-                [report.metric_storage.sections_by_name[kind + '_cov']])
+                regions_txt_rep_fpath = report.save_txt(output_dir, report_basename,
+                    [report.metric_storage.sections_by_name[kind + '_cov']])
 
-            abnormal_regions_reports.append(regions_txt_rep_fpath)
-            info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-            info('\t' + regions_txt_rep_fpath)
+                abnormal_regions_reports.append(regions_txt_rep_fpath)
+                info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
+                info('\t' + regions_txt_rep_fpath)
 
     return tsv_rep_fpath, abnormal_regions_reports
 
