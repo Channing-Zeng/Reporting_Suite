@@ -516,9 +516,9 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, depth_
         info('Counting missed variants from Cosmic.')
         report.add_record('Cosmic missed variants', cosmic_missed_vcf_fpath)
         # TODO: tmp
-        #bedtools = get_tool_cmdline(cnf, 'bedtools')
-        #cmdline = '{bedtools} intersect -a {cosmic_fpath} -b {bed2} -u'.format(**locals())
-        #call(cnf, cmdline, output_fpath)
+        # bedtools = get_tool_cmdline(cnf, 'bedtools')
+        # cmdline = '{bedtools} intersect -a {cosmic_fpath} -b {bed2} -u'.format(**locals())
+        # call(cnf, cmdline, output_fpath)
 
     shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
 

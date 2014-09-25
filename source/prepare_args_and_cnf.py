@@ -39,28 +39,30 @@ def process_post_bcbio_args(parser):
 
     config_dirpath = join(bcbio_final_dir, pardir, 'config')
     for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
-        cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
-        config_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
+        provided_cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
+        project_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
 
-        if cnf_fpath:
-            if not verify_file(cnf_fpath):
+        if provided_cnf_fpath:
+            if not verify_file(provided_cnf_fpath):
                 sys.exit(1)
-            if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
-                info('Copying ' + cnf_fpath + ' to ' + config_cnf_fpath)
-                os.remove(config_cnf_fpath)
-                file_util.copy_file(cnf_fpath, config_cnf_fpath, preserve_times=False)
+            if provided_cnf_fpath != project_cnf_fpath:
+                info('Copying ' + provided_cnf_fpath + ' to ' + project_cnf_fpath)
+                if isfile(project_cnf_fpath):
+                    os.remove(project_cnf_fpath)
+                file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
 
         else:  # No cnf in opts
-            if isfile(config_cnf_fpath) and verify_file(config_cnf_fpath):
-                cnf_fpath = config_cnf_fpath
+            if isfile(project_cnf_fpath) and verify_file(project_cnf_fpath):
+                provided_cnf_fpath = project_cnf_fpath
             else:
-                cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
-                if isfile(config_cnf_fpath) and cnf_fpath != config_cnf_fpath:
-                    os.remove(config_cnf_fpath)
-                    file_util.copy_file(cnf_fpath, config_cnf_fpath, preserve_times=False)
-                    info('Copying ' + cnf_fpath + ' to ' + config_cnf_fpath)
+                provided_cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
+                if provided_cnf_fpath != project_cnf_fpath:
+                    info('Copying ' + provided_cnf_fpath + ' to ' + project_cnf_fpath)
+                    if isfile(project_cnf_fpath):
+                        os.remove(project_cnf_fpath)
+                    file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
-            opt_dict[cnf_name + '_cnf'] = cnf_fpath
+            opt_dict[cnf_name + '_cnf'] = provided_cnf_fpath
 
     cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
     cnf.bcbio_final_dir = bcbio_final_dir
