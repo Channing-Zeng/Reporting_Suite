@@ -15,7 +15,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.config import Defaults
-from source.targetcov.cov import run_targetcov_reports
+from source.targetcov.cov import generate_targetcov_reports
 from source.runner import run_one
 from source.utils import info
 
@@ -90,7 +90,7 @@ def main(args):
 
 def process_one(cnf):
     sample = Sample(cnf.name, cnf.bam, cnf.bed)
-    return run_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
+    return generate_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
 
 
 def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary_report_html_path,
@@ -99,7 +99,7 @@ def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary
         info('Summary report: ' + summary_report_txt_path)
     if gene_report_fpath:
         info('Exons coverage report:')
-        info('   ' + gene_report_fpath)
+        info('  ' + gene_report_fpath)
     if abnormal_regions_reports:
         info('Abnormal region reports:')
         for rep in abnormal_regions_reports:

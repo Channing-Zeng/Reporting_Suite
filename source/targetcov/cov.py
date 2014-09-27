@@ -19,7 +19,7 @@ from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath, median
 
 
-def run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
+def generate_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
     if not (sample.bam or sample.bed):
         if not sample.bam: err(sample.name + ': BAM file is required.')
         if not sample.bed: err(sample.name + ': BED file is required.')
@@ -42,7 +42,7 @@ def run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
     if 'summary' in cnf['coverage_reports']['report_types']:
         step_greetings('Target coverage summary report')
 
-        summary_report = run_summary_report(
+        summary_report = generate_summary_report(
             cnf, sample, chr_len_fpath,
             cnf.coverage_reports.depth_thresholds, cnf.padding,
             combined_region, max_depth, total_bed_size)
@@ -83,7 +83,7 @@ def run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
                 exon.gene_name = exon.extra_fields[0]
 
             info('Saving region coverage report...')
-            gene_report_fpath, abnormal_regions_reports = _run_region_cov_report(
+            gene_report_fpath, abnormal_regions_reports = _generate_region_cov_report(
                 cnf, filtered_vcf_by_callername or dict(), sample, cnf.output_dir,
                 cnf.name, cnf.coverage_reports.depth_thresholds, amplicons, exons)
 
@@ -95,7 +95,8 @@ def run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
 
         # info('\t' + summary_report_html_fpath)
 
-    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, gene_report_fpath, abnormal_regions_reports
+    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, \
+           gene_report_fpath, abnormal_regions_reports
 
 
 def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
@@ -159,9 +160,9 @@ header_metric_storage = MetricStorage(
         ])))
 
 
-def run_summary_report(cnf, sample, chr_len_fpath,
-                       depth_thresholds, padding,
-                       combined_region, max_depth, total_bed_size):
+def generate_summary_report(cnf, sample, chr_len_fpath,
+                            depth_thresholds, padding,
+                            combined_region, max_depth, total_bed_size):
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
@@ -230,8 +231,8 @@ def run_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
-                           sample_name, depth_threshs, amplicons, exons):
+def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
+                                sample_name, depth_threshs, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
         ampl.sample = sample_name
@@ -294,15 +295,8 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
 
     low_regions = []
     high_regions = []
-    i = 0
-    for region in regions:
-        if region.avg_depth < minimal_cov or region.avg_depth < 20:
-            region.cov_factor = region.avg_depth / median_cov
-            low_regions.append(region)
-
-        if region.avg_depth > maximal_cov:
-            region.cov_factor = region.avg_depth / median_cov
-            high_regions.append(region)
+    _proc_regions(regions, _classify_regions, low_regions, high_regions,
+                  median_cov, minimal_cov, maximal_cov)
 
     rows = _make_flat_region_report(regions, depth_threshs)
 
@@ -345,6 +339,16 @@ def _run_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
     return tsv_rep_fpath, abnormal_regions_reports
 
 
+def _classify_regions(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
+    if region.avg_depth < minimal_cov or region.avg_depth < 20:
+        region.cov_factor = region.avg_depth / median_cov
+        low_regions.append(region)
+
+    if region.avg_depth > maximal_cov:
+        region.cov_factor = region.avg_depth / median_cov
+        high_regions.append(region)
+
+
 def _save_regions_to_bed(cnf, regions, f_basename):
     bed_fpath = join(cnf.work_dir, f_basename + '.bed')
     info()
@@ -360,7 +364,7 @@ def _save_regions_to_bed(cnf, regions, f_basename):
 
     with open(bed_fpath, 'w') as f:
         for region in regions:
-            f.write('\t'.join([region.chrom, str(region.start), str(region.end)]) + '\n')
+            f.write('\t'.join([region.chrom, str(region.start), str(region.end), str(region.avg_depth)]) + '\n')
 
     info('Saved to ' + bed_fpath)
     return bed_fpath

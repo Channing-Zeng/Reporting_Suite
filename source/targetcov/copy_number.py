@@ -10,7 +10,7 @@ from source.calling_process import call_subprocess, call_pipe
 from source.file_utils import verify_file
 from source.logger import info, err, step_greetings, critical
 from source.reporting import write_tsv_rows, Record, SampleReport
-from source.targetcov.cov import run_targetcov_reports, run_summary_report, bedcoverage_hist_stats
+from source.targetcov.cov import generate_targetcov_reports, generate_summary_report, bedcoverage_hist_stats
 from source.tools_from_cnf import get_script_cmdline
 
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
@@ -44,7 +44,7 @@ def cnv_reports(cnf, bcbio_structure):
                         sys.exit(1)
 
             _, summary_report_json_fpath, _, gene_report_fpath, _ = \
-                run_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None)
+                generate_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None)
 
             cnf.output_dir = output_dir
 
