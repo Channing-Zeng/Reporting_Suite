@@ -9,7 +9,7 @@ steps:
 # - VarQC_postVarFilter_summary
 # - TargetCov
 # - Seq2C
-# - TargetCov_Summary
+- TargetCov_Summary
 # - ngsCAT
 # - ngsCAT_summary
 # - QualiMap

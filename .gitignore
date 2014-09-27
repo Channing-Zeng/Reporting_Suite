@@ -78,3 +78,6 @@ test/run_info_all.yaml
 test/NGS-99/final/2014-07-03_NGS-99/
 test/NGS-99
 test/NGS-99/final
+
+test/EXT_021_Courtagen_Faslodex_HaloPlex/*
+test/EXT_021_Courtagen_Faslodex_HaloPlex/

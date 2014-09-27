@@ -82,7 +82,7 @@
     order: null,
     sample_reports: [],
     metric_storage: {
-      common_for_all_samples_section: {
+      general_section: {
         name: '',
         metrics: []
       },
@@ -120,21 +120,31 @@
   };
 
   preprocessReport = function(report) {
-    var all_metrics_by_name, rec, s, sample_report, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2;
+    var all_metrics_by_name, m, rec, s, sample_report, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4;
     all_metrics_by_name = {};
-    extend(all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name);
-    _ref = report.metric_storage.sections;
+    _ref = report.metric_storage.general_section.metrics;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      s = _ref[_i];
+      m = _ref[_i];
+      report.metric_storage.general_section.metrics_by_name[m.name] = m;
+    }
+    extend(all_metrics_by_name, report.metric_storage.general_section.metrics_by_name);
+    _ref1 = report.metric_storage.sections;
+    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+      s = _ref1[_j];
+      _ref2 = s.metrics;
+      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
+        m = _ref2[_k];
+        s.metrics_by_name[m.name] = m;
+      }
       extend(all_metrics_by_name, s.metrics_by_name);
     }
-    _ref1 = report.sample_reports;
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      sample_report = _ref1[_j];
+    _ref3 = report.sample_reports;
+    for (_l = 0, _len3 = _ref3.length; _l < _len3; _l++) {
+      sample_report = _ref3[_l];
       sample_report.metric_storage = report.metric_storage;
-      _ref2 = sample_report.records;
-      for (_k = 0, _len2 = _ref2.length; _k < _len2; _k++) {
-        rec = _ref2[_k];
+      _ref4 = sample_report.records;
+      for (_m = 0, _len4 = _ref4.length; _m < _len4; _m++) {
+        rec = _ref4[_m];
         rec.metric = all_metrics_by_name[rec.metric.name];
       }
     }
@@ -142,14 +152,14 @@
   };
 
   reporting.buildReport = function() {
-    var columnNames, columnOrder, common_metrics_by_name, general_records, plot, plots_html, r, rec, sample_report, sample_reports, _i, _j, _k, _l, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
+    var columnNames, columnOrder, common_metrics_by_name, general_records, m, plot, plots_html, rec, sample_report, sample_reports, _i, _j, _k, _l, _len, _len1, _len2, _ref, _ref1, _ref2, _results;
     if (!(totalReportData = readJson('total-report'))) {
       console.log("Error: cannot read #total-report-json");
       return 1;
     }
     report = preprocessReport(totalReportData.report);
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
-    common_metrics_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name;
+    common_metrics_by_name = report.metric_storage.general_section.metrics_by_name;
     general_records = (function() {
       var _i, _len, _ref, _results;
       _ref = report.sample_reports[0].records;
@@ -169,13 +179,11 @@
       section = _ref[_i];
       columnNames = (function() {
         var _j, _len1, _ref1, _results;
-        _ref1 = sample_reports[0].records;
+        _ref1 = section.metrics;
         _results = [];
         for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-          r = _ref1[_j];
-          if (r.metric.name in section.metrics_by_name) {
-            _results.push(r.metric.name);
-          }
+          m = _ref1[_j];
+          _results.push(m.name);
         }
         return _results;
       })();

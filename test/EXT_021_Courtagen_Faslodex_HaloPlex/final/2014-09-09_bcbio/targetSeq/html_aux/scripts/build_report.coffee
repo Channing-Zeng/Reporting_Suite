@@ -64,7 +64,7 @@ report =
     order: null
     sample_reports: []
     metric_storage:
-        common_for_all_samples_section:
+        general_section:
             name: ''
             metrics: []
         sections: []
@@ -96,8 +96,13 @@ merge = (options, overrides) ->
 
 preprocessReport = (report) ->
     all_metrics_by_name = {}
-    extend all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name
+    for m in report.metric_storage.general_section.metrics
+        report.metric_storage.general_section.metrics_by_name[m.name] = m
+    extend all_metrics_by_name, report.metric_storage.general_section.metrics_by_name
+
     for s in report.metric_storage.sections
+        for m in s.metrics
+            s.metrics_by_name[m.name] = m
         extend all_metrics_by_name, s.metrics_by_name
 
     for sample_report in report.sample_reports
@@ -117,13 +122,13 @@ reporting.buildReport = ->
 
     $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
-    common_metrics_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name
+    common_metrics_by_name = report.metric_storage.general_section.metrics_by_name
     general_records = (rec for rec in report.sample_reports[0].records when rec.metric.name of common_metrics_by_name)
     reporting.buildCommonRecords general_records
 
     sample_reports = report.sample_reports
     for section in report.metric_storage.sections
-        columnNames = (r.metric.name for r in sample_reports[0].records when r.metric.name of section.metrics_by_name)
+        columnNames = (m.name for m in section.metrics)
         columnOrder = (recoverOrderFromCookies section.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, section, columnOrder

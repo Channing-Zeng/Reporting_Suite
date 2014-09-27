@@ -90,7 +90,6 @@ def main(args):
 
 def process_one(cnf):
     sample = Sample(cnf.name, cnf.bam, cnf.bed)
-
     return run_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
 
 

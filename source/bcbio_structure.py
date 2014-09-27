@@ -365,43 +365,62 @@ class BCBioStructure:
 
         return sample
 
+    def fin_gene_reports_by_sample(self):
+        return [fpath if verify_file(fpath) else None
+                for fpath in self.get_gene_reports_by_sample()]
+
     def get_gene_reports_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self._get_fpaths_per_sample(
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' +
                            BCBioStructure.targetseq_dir +
                            BCBioStructure.detail_gene_report_ending)
 
+    def find_targetcov_reports_by_sample(self, ext='json'):
+        return [fpath if verify_file(fpath) else None
+                for fpath in self.get_targetcov_report_fpaths_by_sample(ext)]
+
     def get_targetcov_report_fpaths_by_sample(self, ext='json'):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self._get_fpaths_per_sample(
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' +
                            BCBioStructure.targetseq_dir + '.' + ext)
 
+    def find_ngscat_reports_by_sample(self):
+        return [fpath if verify_file(fpath) else None
+                for fpath in self.get_ngscat_report_fpaths_by_sample()]
+
     def get_ngscat_report_fpaths_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self._get_fpaths_per_sample(
             BCBioStructure.ngscat_dir,
             lambda sample: 'captureQC.html')
 
+    def find_qualimap_reports_by_sample(self):
+        return [fpath if verify_file(fpath) else None
+                for fpath in self.get_qualimap_report_fpaths_by_sample()]
+
     def get_qualimap_report_fpaths_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self._get_fpaths_per_sample(
             BCBioStructure.qualimap_dir,
             lambda sample: 'qualimapReport.html')
 
-    def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
+    def _get_fpaths_per_sample(self, base_dir, get_name_fn):
         fpaths_by_sample = OrderedDict()
 
         for sample in self.samples:
             report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
             info(report_fpath)
 
-            if verify_file(report_fpath):
-                fpaths_by_sample[sample.name] = report_fpath
+            fpaths_by_sample[sample.name] = report_fpath
 
         # if len(fpaths_by_sample) < len(self.samples):
         #     raise RuntimeError('No ')
 
         return fpaths_by_sample
+
+    def _find_files_per_sample(self, base_dir, get_name_fn):
+        return [fpath if verify_file(fpath) else None
+                for fpath in self._get_fpaths_per_sample(base_dir, get_name_fn)]
 
     def clean(self):
         for sample in self.samples:
