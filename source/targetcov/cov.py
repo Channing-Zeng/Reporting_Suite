@@ -293,9 +293,8 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     info('Assuming abnormal if below median*0.55 = ' + str(minimal_cov) +
          ' or above median*1.90 ' + ' = ' + str(maximal_cov))
 
-    low_regions = []
-    high_regions = []
-    _proc_regions(regions, _classify_regions, low_regions, high_regions,
+    low_regions, high_regions = [], []
+    _proc_regions(regions, _classify_region, low_regions, high_regions,
                   median_cov, minimal_cov, maximal_cov)
 
     rows = _make_flat_region_report(regions, depth_threshs)
@@ -308,10 +307,10 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     tsv_rep_fpath = write_tsv_rows(rows, output_dir, gene_report_basename)
     info('')
     info('Regions (total ' + str(len(regions)) + ') saved into:')
-    info('\t' + txt_rep_fpath)
+    info('  ' + txt_rep_fpath)
 
     abnormal_regions_reports = []
-    if filtered_vcf_by_callername:
+    if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
         for caller_name, vcf_fpath in filtered_vcf_by_callername:
             for kind, regions, f_basename in zip(
                     ['low', 'high'],
@@ -322,9 +321,9 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
                 report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
                 bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
-                missed_vcf_fpath_by_name = _prepare_missed_vcfs(cnf, report_base_name, bed_fpath)
-                report = _make_flagged_region_report(cnf, sample, vcf_fpath, regions,
-                                                     bed_fpath, missed_vcf_fpath_by_name, depth_threshs)
+                missed_vcf_fpath_by_name = _prepare_missed_vcfs(cnf, vcf_fpath, report_base_name, bed_fpath)
+                report = _make_flagged_region_report(
+                    cnf, sample, vcf_fpath, regions, bed_fpath, missed_vcf_fpath_by_name, depth_threshs)
 
                 regions_html_rep_fpath = report.save_html(output_dir, report_base_name,
                       caption='Regions with ' + kind + ' coverage for ' + caller_name)
@@ -339,7 +338,7 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     return tsv_rep_fpath, abnormal_regions_reports
 
 
-def _classify_regions(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
+def _classify_region(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
     if region.avg_depth < minimal_cov or region.avg_depth < 20:
         region.cov_factor = region.avg_depth / median_cov
         low_regions.append(region)
@@ -534,7 +533,7 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fp
             report.add_record(vcf_full_name + ' missed variants', None)
         else:
             info('Counting missed variants from ' + vcf_full_name)
-            report.add_record(vcf_full_name + ' missed variants', missed_vcf_fpath)
+            # report.add_record(vcf_full_name + ' missed variants', missed_vcf_fpath)
 
     _proc_regions(regions, _preprocess_flagged_region, depth_threshs)
 
@@ -555,25 +554,48 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fp
     return report
 
 
-def _prepare_missed_vcfs(cnf, report_base_name, bed_fpath):
+def _prepare_missed_vcfs(cnf, caller_vcf_fpath, report_base_name, bed_fpath):
     missed_vcf_fpath_by_name = OrderedDict()
 
-    for vcf_name, vcf_full_name in [('cosmic', 'Cosmic')]:
-        vcf_fpath = cnf.genome[vcf_name]
+    for db_vcf_name, vcf_full_name in [('dbsnp', 'DBSNP')]:
+        db_vcf_fpath = cnf.genome[db_vcf_name]
 
-        missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_missed.vcf')
-        missed_vcf_fpath_by_name[vcf_full_name] = missed_vcf_fpath
+        db_in_roi_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + db_vcf_name + '_roi.vcf')
+        missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + db_vcf_name + '_missed.vcf')
 
-        if not vcf_fpath and not verify_file(vcf_fpath):
+        if not db_vcf_fpath and not verify_file(db_vcf_fpath):
             info('Skipping counting variants from ' + vcf_full_name)
         else:
             info('Counting missed variants from ' + vcf_full_name)
 
-            fpath = join(cnf.work_dir, 'good_regions')
-
             bedtools = get_tool_cmdline(cnf, 'bedtools')
-            cmdline = '{bedtools} intersect -a {vcf_fpath} -b {bed_fpath}'.format(**locals())
-            call(cnf, cmdline, output_fpath=missed_vcf_fpath)
+
+            # Take variants from DB VCF that lie in BED
+            # (-wa means to take whole regions from a, not the parts that overlap)
+            cmdline = '{bedtools} intersect -wa -a {db_vcf_fpath} -b {bed_fpath}'.format(**locals())
+            call(cnf, cmdline, output_fpath=db_in_roi_vcf_fpath + '_tmp')
+
+            with open(db_vcf_fpath) as inp, open(db_in_roi_vcf_fpath, 'w') as out:
+                for line in inp:
+                    if line.startswith('#'):
+                        out.write(line)
+            with open(db_in_roi_vcf_fpath + '_tmp') as inp, open(db_in_roi_vcf_fpath, 'a') as out:
+                for line in inp:
+                    out.write(line)
+
+            # Take variants from VCF missed in DB (but only in the regions from BED)
+            cmdline = '{bedtools} intersect -v -a {caller_vcf_fpath} -b {db_in_roi_vcf_fpath}'.format(**locals())
+            call(cnf, cmdline, output_fpath=missed_vcf_fpath + '_tmp')
+
+            with open(caller_vcf_fpath) as inp, open(missed_vcf_fpath, 'w') as out:
+                for line in inp:
+                    if line.startswith('#'):
+                        out.write(line)
+            with open(missed_vcf_fpath + '_tmp') as inp, open(missed_vcf_fpath, 'a') as out:
+                for line in inp:
+                    out.write(line)
+
+            missed_vcf_fpath_by_name[vcf_full_name] = missed_vcf_fpath
 
     return missed_vcf_fpath_by_name
 
