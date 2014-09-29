@@ -15,6 +15,7 @@ class Region:
         self.extra_fields = extra_fields
         self.bases_by_depth = defaultdict(int)
         self.subregions = []
+        self.missed_by_db = dict()
 
     def add_subregion(self, subregion):
         self.subregions.append(subregion)
