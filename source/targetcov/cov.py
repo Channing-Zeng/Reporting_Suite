@@ -51,10 +51,11 @@ def generate_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
         summary_report_json_fpath = join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json')
         summary_report.dump(summary_report_json_fpath)
 
-        summary_report_txt_fpath = summary_report.save_txt(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
+        summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
+        summary_report_html_fpath = summary_report.save_html(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
         info()
         info('Saved to ')
-        info('\t' + summary_report_txt_fpath)
+        info('  ' + summary_report_txt_fpath)
 
 
     if 'genes' in cnf['coverage_reports']['report_types']:
@@ -313,7 +314,10 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     abnormal_regions_reports = []
     if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
         for caller_name, vcf_fpath in filtered_vcf_by_callername:
-            vcf_dbs = [VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+            vcf_dbs = [
+                VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+                VCFDataBase('cosmic', 'Cosmic', cnf.genome),
+                VCFDataBase('oncomine', 'Oncomine', cnf.genome),
                        ]
 
             for kind, regions, f_basename in zip(
@@ -329,17 +333,18 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
                     vcf_db.missed_vcf_fpath = _prepare_missed_vcfs(cnf, vcf_db, caller_name, vcf_fpath, report_base_name, bed_fpath)
 
                 report = _make_flagged_region_report(
-                    cnf, sample, vcf_fpath, regions, bed_fpath, vcf_dbs, depth_threshs)
+                    cnf, sample, vcf_fpath, caller_name, regions, bed_fpath, vcf_dbs, depth_threshs)
 
                 regions_html_rep_fpath = report.save_html(output_dir, report_base_name,
-                      caption='Regions with ' + kind + ' coverage for ' + caller_name)
+                    caption='Regions with ' + kind + ' coverage for ' + caller_name)
 
                 regions_txt_rep_fpath = report.save_txt(output_dir, report_base_name,
                     [report.metric_storage.sections_by_name[kind + '_cov']])
 
                 abnormal_regions_reports.append(regions_txt_rep_fpath)
                 info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-                info('\t' + regions_txt_rep_fpath)
+                info('  ' + str(regions_html_rep_fpath))
+                info('  ' + regions_txt_rep_fpath)
 
     return tsv_rep_fpath, abnormal_regions_reports
 
@@ -501,7 +506,7 @@ class VCFDataBase():
         self.vcf_fpath = genome_cnf.get(name)
 
 
-def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fpath,
+def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, regions, bed_fpath,
                                 vcf_dbs, depth_threshs):
     regions_metrics = [
         Metric('Sample'),
@@ -541,6 +546,8 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fp
     report = SquareSampleReport(sample, metric_storage=region_metric_storage)
 
     for vcf_db in vcf_dbs:
+        _proc_regions(regions, lambda r: r.sum_up(depth_threshs))
+
         if not vcf_db.missed_vcf_fpath and not verify_file(vcf_db.missed_vcf_fpath):
             info('Skipping counting variants from ' + vcf_db.descriptive_name)
             report.add_record(vcf_db.descriptive_name + ' missed variants', None)
@@ -548,7 +555,11 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fp
             info('Counting missed variants from ' + vcf_db.descriptive_name)
             report.add_record(vcf_db.descriptive_name + ' missed variants', vcf_db.missed_vcf_fpath)
 
-        _proc_regions(regions, _preprocess_flagged_region, vcf_db, depth_threshs)
+            def _(r): r.missed_by_db[vcf_db.descriptive_name] = _count_variants(r, vcf_db.vcf_fpath)
+            _proc_regions(regions, _)
+
+    def _(r): r.var_num = _count_variants(r, filtered_vcf_fpath)
+    _proc_regions(regions, _)
 
     median_depth = median(r.avg_depth for r in regions)
     cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
@@ -562,7 +573,7 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, regions, bed_fp
     for rec in rec_by_name.values():
         report.records.append(rec)
 
-    _proc_regions(regions, _process_flagged_region, rec_by_name, median_depth)
+    _proc_regions(regions, _fill_in_record_info, rec_by_name, median_depth)
 
     return report
 
@@ -616,19 +627,17 @@ def _proc_regions(regions, fn, *args, **kwargs):
         info('Processed {0:,} regions.'.format(i))
 
 
-def _preprocess_flagged_region(region, vcf_db, depth_threshs):
-    region.sum_up(depth_threshs)
-
+def _count_variants(region, vcf_fpath):
     num = 0
-    with open(vcf_db.missed_vcf_fpath) as inp:
+    with open(vcf_fpath) as inp:
         reader = vcf_parser.Reader(inp)
         for rec in reader:
             if region.start <= rec.POS <= region.end:
                 num += 1
-    region.missed_by_db[vcf_db.descriptive_name] = num
+    return num
 
 
-def _process_flagged_region(region, rec_by_name, median_depth):
+def _fill_in_record_info(region, rec_by_name, median_depth):
     rec_by_name['Sample'].value.append(         region.sample)
     rec_by_name['Chr'].value.append(            region.chrom)
     rec_by_name['Start'].value.append(          region.start)
@@ -640,7 +649,8 @@ def _process_flagged_region(region, rec_by_name, median_depth):
     rec_by_name['StdDev'].value.append(         region.std_dev)
     rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
     rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth if median_depth != 0 else None)
-    rec_by_name['Total variants'].value.append( 0)
+    rec_by_name['Total variants'].value.append( region.var_num)
+
     for db_descriptive_name, num in region.missed_by_db.items():
         rec_by_name[db_descriptive_name + ' missed'].value.append(num)
 

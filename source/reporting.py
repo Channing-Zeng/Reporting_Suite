@@ -185,7 +185,12 @@ class SquareSampleReport(SampleReport):
                 try:
                     r = next((r for r in self.records if r.metric.name == m.name), None)
                     if r:
-                        val = r.value if m.name in self.metric_storage.general_section.metrics_by_name else r.value[i]
+                        if m.name in self.metric_storage.general_section.metrics_by_name:
+                            val = r.value
+                        elif not r.value:
+                            val = None
+                        else:
+                            val = r.value[i]
                         row.append(r.metric.format(val))
                 except StopIteration:
                     row.append('-')  # if no record for the metric

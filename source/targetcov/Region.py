@@ -16,6 +16,7 @@ class Region:
         self.bases_by_depth = defaultdict(int)
         self.subregions = []
         self.missed_by_db = dict()
+        self.var_num = None
 
     def add_subregion(self, subregion):
         self.subregions.append(subregion)
