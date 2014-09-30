@@ -290,10 +290,13 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     info('Median: ' + str(median_cov))
     info()
     info('Extracting abnormally covered regions.')
-    minimal_cov = 0.50 * median_cov
-    maximal_cov = 1.90 * median_cov
-    info('Assuming abnormal if below median*0.55 = ' + str(minimal_cov) +
-         ' or above median*1.90 ' + ' = ' + str(maximal_cov))
+    minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
+    maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
+    info('Assuming abnormal if below min(median*' +
+         str(cnf.coverage_reports.min_cov_factor) +
+         str(minimal_cov) + ', ' + str(cnf.coverage_reports.min_cov) +
+         ') or above median*' + str(cnf.coverage_reports.max_cov_factor) +
+         ' = ' + str(maximal_cov))
 
     low_regions, high_regions = [], []
     _proc_regions(regions, _classify_region, low_regions, high_regions,
@@ -315,7 +318,7 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
         for caller_name, vcf_fpath in filtered_vcf_by_callername:
             vcf_dbs = [
-                VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+                # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
                 VCFDataBase('cosmic', 'Cosmic', cnf.genome),
                 VCFDataBase('oncomine', 'Oncomine', cnf.genome),
                        ]
@@ -350,7 +353,7 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
 
 
 def _classify_region(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
-    if region.avg_depth < minimal_cov or region.avg_depth < 20:
+    if region.avg_depth < minimal_cov:
         region.cov_factor = region.avg_depth / median_cov
         low_regions.append(region)
 
@@ -557,6 +560,7 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, re
 
             def _(r): r.missed_by_db[vcf_db.descriptive_name] = _count_variants(r, vcf_db.vcf_fpath)
             _proc_regions(regions, _)
+        info()
 
     def _(r): r.var_num = _count_variants(r, filtered_vcf_fpath)
     _proc_regions(regions, _)
