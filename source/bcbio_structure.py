@@ -144,10 +144,12 @@ class BCBioStructure:
     varqc_after_summary_name = 'varQC_postVarFilter_summary'
     ngscat_name              = 'ngscat'
     qualimap_name            = 'qualimap'
+    fastqc_name              = 'fastqc'
     varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
     varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
     ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
     qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
+    fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
     seq2c_name       = 'Seq2C'
     detail_gene_report_baseending = '.details.gene'
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
@@ -404,7 +406,12 @@ class BCBioStructure:
             BCBioStructure.qualimap_dir,
             lambda sample: 'qualimapReport.html')
 
-    def _get_fpaths_per_sample(self, base_dir, get_name_fn):
+    def get_fastqc_report_fpaths_by_sample(self):
+        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+            BCBioStructure.fastqc_dir,
+            lambda sample: 'fastqc_report.html')
+
+    def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
         fpaths_by_sample = OrderedDict()
 
         for sample in self.samples:

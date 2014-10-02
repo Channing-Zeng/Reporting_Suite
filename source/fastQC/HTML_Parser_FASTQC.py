@@ -4,67 +4,56 @@ import os
 from bs4 import BeautifulSoup
 import collections
 import itertools
-import re
 
-header = ["Basic Statistics",
-          "Per base sequence quality",
-          "Per tile sequence quality",
-          "Per sequence quality scores",
-          "Per base sequence content",
-          "Per sequence GC content",
-          "Per base N content",
-          "Sequence Length Distribution",
-          "Sequence Duplication Levels",
-          "Overrepresented sequences",
-          "Adapter Content",
-          "Kmer Content"]
+
+_header = ["Basic Statistics",
+           "Per base sequence quality",
+           "Per tile sequence quality",
+           "Per sequence quality scores",
+           "Per base sequence content",
+           "Per sequence GC content",
+           "Per base N content",
+           "Sequence Length Distribution",
+           "Sequence Duplication Levels",
+           "Overrepresented sequences",
+           "Adapter Content",
+           "Kmer Content"]
 
 
 def get_graphs(input_files):
-    m = collections.OrderedDict()
-    for input_file in input_files:
-        if os.path.exists(input_file):
-            with open(input_file) as source_file_obj:
-                broken_html = source_file_obj.read()
-                # print broken_html
-                soup = BeautifulSoup(broken_html)
-                #divs_module = soup.select("div > div")
-                bam_file_name = soup.title.string.strip(" FastQC Report")
+    parsed_data = collections.OrderedDict()
+    for sample_name, input_value in input_files.items():
+        if os.path.exists(input_value):
+            with open(input_value) as source_file_obj:
+                html = source_file_obj.read()
+                soup = BeautifulSoup(html)
+                #bam_file_name = soup.title.string.strip(" FastQC Report")
 
-                divs_module = soup.find_all("div", class_="module")
-
-                sort_graph_by_type(m, divs_module, bam_file_name)
+                module_divs = soup.find_all("div", class_="module")
+                _sort_graph_by_type(parsed_data, module_divs, sample_name)
                 soup.decompose()
 
-    return m
+    return parsed_data
 
 
-def sort_graph_by_type(m, divs, bam_file_name):
+def _sort_graph_by_type(parsed_data, divs, bam_file_name):
     i = 0
-
     for div in divs:
-
         table = ""
         ok_img = ""
         graph = ""
-
         for content in div.contents:
+            if 'table' == content.name: table = content
+            if 'h2' == content.name: ok_img = content.next_element
+            if 'p' == content.name: graph = content.next_element
 
-            if content.name == 'table':
-                table = content
-            if content.name == 'h2':
-                ok_img = content.next_element
-            if content.name == 'p':
-                graph = content.next_element
-
-        if header[i] not in m:
-            m[header[i]] = list()
-
-        m[header[i]].append([bam_file_name, ok_img, graph, table])
+        if _header[i] not in parsed_data:
+            parsed_data[_header[i]] = list()
+        parsed_data[_header[i]].append([bam_file_name, ok_img, graph, table])
         i += 1
 
 
-def group2(iterator, count):
+def _group2(iterator, count):
     if count > len(iterator): count = len(iterator)
     return itertools.imap(None, *([iter(iterator)] * count))
 
@@ -72,8 +61,8 @@ def group2(iterator, count):
 if __name__ == "__main__":
     m = get_graphs(sys.argv[1:])
     # print m
-    #for keys, values in m.items():
-    #print keys
+    # for keys, values in m.items():
+    # print keys
     #for a, b in values:
     #print a
     #for a in group2(values, 3):

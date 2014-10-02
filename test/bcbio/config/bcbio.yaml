@@ -9,14 +9,14 @@ details:
     quality_format: standard
     realign: gatk
     recalibrate: false
-    variant_regions: ~/vagrant/reporting_suite/test/data/test_exons.bed
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
     variantcaller:
     - mutect
   analysis: variant2
-  description: sample1
+  description: sample2
   files:
-  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
-  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-10_GGCTAC_L008_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-10_GGCTAC_L008_R2_001.fastq.gz
   genome_build: hg19
   metadata:
     batch: sample_batch
@@ -32,14 +32,152 @@ details:
     quality_format: standard
     realign: gatk
     recalibrate: false
-    variant_regions: ~/vagrant/reporting_suite/test/data/test_exons.bed
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
     variantcaller:
     - mutect
   analysis: variant2
-  description: sample2
+  description: sample1
   files:
-  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-10_GGCTAC_L008_R1_001.fastq.gz
-  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-10_GGCTAC_L008_R2_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample3
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample4
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample5
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample6
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample7
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: sample_batch
+    phenotype: tumor
+
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: ~/vagrant/reporting_suite/test/data/sample1.bed
+    variantcaller:
+    - mutect
+  analysis: variant2
+  description: sample8
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/PBMC-Resistant-1_TTAGGC_L007_R2_001.fastq.gz
   genome_build: hg19
   metadata:
     batch: sample_batch

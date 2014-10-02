@@ -1,38 +1,36 @@
 import sys
-import os
 import itertools
-from source.fastQC.HTML_Parser_FASTQC import get_graphs
+from source.fastqc.html_parser_fastqc import get_graphs
 
 
-def print_html(input_files):
+def print_html(a_outfile, input_files):
     graphs = get_graphs(input_files)
-    outfile = open("FASTQCSummary.html", "w")
-
-    print >> outfile, """<html>
-        <head>
-    <title>FASTQC</title> """
-    print >> outfile, print_js()
-    print >> outfile, print_css()
-    print >> outfile, """
-        </head>
-        <body>"""
-    print_graphs(outfile, graphs)
-    print >> outfile, """</body> </html>"""
+    with open(a_outfile, 'w') as outfile:
+        print >> outfile, """<html> <head> <title>FASTQC</title> """
+        print >> outfile, print_js()
+        print >> outfile, print_css()
+        print >> outfile, """ </head> <body>"""
+        links_show_hide(outfile, input_files)
+        print_graphs(outfile, graphs)
+        print >> outfile, """ </body> </html>"""
 
 
 def print_graphs(outfile, graphs):
     print >> outfile, '<table >'
+
     for graph_name, values in graphs.items():
         print >> outfile, '<tr class="title" ><td colspan=" ' + str(
             len(values)) + '"><h2 >' + graph_name + '</h2><td></tr>'
         print >> outfile, '<tr >'
+        i = 0
         for div_contains in values:
             bam_file_name = div_contains[0]
             ok_img = div_contains[1]
             graph = div_contains[2]
             table = div_contains[3]
-            print >> outfile, '<td class="data">' + str(ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(
-                table) + '</td>'
+            print >> outfile, '<td  name="tcol' + str(i) + '"  id="tcol' + str(i) + '"  class="data">' + str(
+                ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(table) + '</td>'
+            i += 1
         print >> outfile, '</tr>'
 
     print >> outfile, '</table>'
@@ -43,6 +41,7 @@ def none_type_validation(obj):
         return ""
     else:
         return str(obj)
+        return str(obj)
 
 
 def print_to_html(outfile, text_to_html):
@@ -52,6 +51,15 @@ def print_to_html(outfile, text_to_html):
 def group2(iterator, count):
     if count > len(iterator): count = len(iterator)
     return itertools.imap(None, *([iter(iterator)] * count))
+
+
+def links_show_hide(outfile, input_files):
+    print >> outfile, '<form name="tcol" onsubmit="return false">  Show columns'
+    i = 0
+    for sample, file in input_files.items():
+        print >> outfile, '<input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(i) + ')" checked> ' + sample
+        i += 1
+    print >> outfile, '</form> '
 
 
 def print_js():
@@ -73,8 +81,42 @@ def print_js():
                 $("img.indented").height(500);
             }
              return false;
+        });
     });
-});
+
+            var showMode = 'table-cell';
+
+            // However, IE5 at least does not render table cells correctly
+            // using the style 'table-cell', but does when the style 'block'
+            // is used, so handle this
+
+            if (document.all) showMode='block';
+
+            // This is the function that actually does the manipulation
+
+    function toggleVis(btn){
+            // First isolate the checkbox by name using the
+            // name of the form and the name of the checkbox
+
+            btn   = document.forms['tcol'].elements[btn];
+
+            // Next find all the table cells by using the DOM function
+            // getElementsByName passing in the constructed name of
+            // the cells, derived from the checkbox name
+
+            cells = document.getElementsByName('t'+btn.name);
+
+            // Once the cells and checkbox object has been retrieved
+            // the show hide choice is simply whether the checkbox is
+            // checked or clear
+
+            //	mode = btn.checked ? showMode : 'none';
+
+            // Apply the style to the CSS display property for the cells
+
+            for(j = 0; j < cells.length; j++) $(cells[j]).toggle("slide");  //cells[j].style.display = mode;
+    }
+
 </script> """
 
 
