@@ -407,11 +407,11 @@ class BCBioStructure:
             lambda sample: 'qualimapReport.html')
 
     def get_fastqc_report_fpaths_by_sample(self):
-        return self.get_per_sample_fpaths_for_bcbio_final_dir(
+        return self._get_fpaths_per_sample(
             BCBioStructure.fastqc_dir,
             lambda sample: 'fastqc_report.html')
 
-    def get_per_sample_fpaths_for_bcbio_final_dir(self, base_dir, get_name_fn):
+    def _get_fpaths_per_sample(self, base_dir, get_name_fn):
         fpaths_by_sample = OrderedDict()
 
         for sample in self.samples:
