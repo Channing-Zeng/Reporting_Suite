@@ -293,9 +293,9 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
     maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
     info('Assuming abnormal if below min(median*' +
-         str(cnf.coverage_reports.min_cov_factor) +
-         str(minimal_cov) + ', ' + str(cnf.coverage_reports.min_cov) +
-         ') or above median*' + str(cnf.coverage_reports.max_cov_factor) +
+         str(cnf.coverage_reports.min_cov_factor) + ', ' +
+         str(cnf.coverage_reports.min_cov) + ') = ' + str(minimal_cov) +
+         ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
          ' = ' + str(maximal_cov))
 
     low_regions, high_regions = [], []
