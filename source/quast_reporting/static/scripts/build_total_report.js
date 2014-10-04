@@ -221,7 +221,7 @@
   calc_cell_contents = function(report, section, font) {
     var brt, d, inner_low_brt, inner_top_brt, k, l, low_hue, max_frac_widths_by_metric, outer_low_brt, outer_top_brt, q1, q3, rec, top_hue, vals, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _m, _n, _o, _ref, _ref1, _ref10, _ref11, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
     max_frac_widths_by_metric = {};
-    if (!type in report || report.type === 'FullReport' || report.type === 'SquareSampleReport') {
+    if ((report.type == null) || report.type === 'FullReport' || report.type === 'SquareSampleReport') {
       _ref = report.sample_reports;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         sampleReport = _ref[_i];

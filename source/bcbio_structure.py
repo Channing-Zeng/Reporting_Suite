@@ -38,7 +38,7 @@ class Sample:
         return path
 
     def find_clean_filtered_vcf_by_callername(self, callername):
-        return map(verify_file, self.get_clean_filtered_vcf_fpaths_by_callername(callername))
+        return verify_file(self.get_clean_filtered_vcf_fpaths_by_callername(callername))
 
     def __str__(self):
         return self.name
@@ -367,9 +367,9 @@ class BCBioStructure:
 
         return sample
 
-    def fin_gene_reports_by_sample(self):
-        return [fpath if verify_file(fpath) else None
-                for fpath in self.get_gene_reports_by_sample()]
+    def find_gene_reports_by_sample(self):
+        return dict((sname, verify_file(fpath))
+                    for sname, fpath in self.get_gene_reports_by_sample().items())
 
     def get_gene_reports_by_sample(self):
         return self._get_fpaths_per_sample(
@@ -379,8 +379,8 @@ class BCBioStructure:
                            BCBioStructure.detail_gene_report_ending)
 
     def find_targetcov_reports_by_sample(self, ext='json'):
-        return [fpath if verify_file(fpath) else None
-                for fpath in self.get_targetcov_report_fpaths_by_sample(ext)]
+        return dict((sname, verify_file(fpath))
+                    for sname, fpath in self.get_targetcov_report_fpaths_by_sample(ext).items())
 
     def get_targetcov_report_fpaths_by_sample(self, ext='json'):
         return self._get_fpaths_per_sample(
@@ -389,8 +389,8 @@ class BCBioStructure:
                            BCBioStructure.targetseq_dir + '.' + ext)
 
     def find_ngscat_reports_by_sample(self):
-        return [fpath if verify_file(fpath) else None
-                for fpath in self.get_ngscat_report_fpaths_by_sample()]
+        return dict((sname, verify_file(fpath))
+                    for sname, fpath in self.get_ngscat_report_fpaths_by_sample().items())
 
     def get_ngscat_report_fpaths_by_sample(self):
         return self._get_fpaths_per_sample(
@@ -398,8 +398,8 @@ class BCBioStructure:
             lambda sample: 'captureQC.html')
 
     def find_qualimap_reports_by_sample(self):
-        return [fpath if verify_file(fpath) else None
-                for fpath in self.get_qualimap_report_fpaths_by_sample()]
+        return dict((sname, verify_file(fpath))
+                    for sname, fpath in self.get_qualimap_report_fpaths_by_sample().items())
 
     def get_qualimap_report_fpaths_by_sample(self):
         return self._get_fpaths_per_sample(
@@ -427,8 +427,8 @@ class BCBioStructure:
         return fpaths_by_sample
 
     def _find_files_per_sample(self, base_dir, get_name_fn):
-        return [fpath if verify_file(fpath) else None
-                for fpath in self._get_fpaths_per_sample(base_dir, get_name_fn)]
+        return dict((sname, verify_file(fpath))
+                    for sname, fpath in self._get_fpaths_per_sample(base_dir, get_name_fn).items())
 
     def clean(self):
         for sample in self.samples:

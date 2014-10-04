@@ -152,7 +152,7 @@ calc_cell_contents = (report, section, font) ->
     max_frac_widths_by_metric = {}
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
-    if not type of report or report.type == 'FullReport' or report.type == 'SquareSampleReport'
+    if not report.type? or report.type == 'FullReport' or report.type == 'SquareSampleReport'
         for sampleReport in report.sample_reports
             for rec in sampleReport.records
                 calc_record_cell_contents rec, font
