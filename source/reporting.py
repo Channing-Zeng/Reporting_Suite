@@ -97,8 +97,20 @@ class Report:
     def save_tsv(self, output_dirpath, base_fname, sections=None):
         return write_tsv_rows(self.flatten(sections), output_dirpath, base_fname)
 
-    def save_html(self, output_dirpath, base_fname, caption=None):
-        raise NotImplementedError()
+    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+        class Encoder(JSONEncoder):
+            def default(self, o):
+                if isinstance(o, (VariantCaller, Sample)):
+                    return o.for_json()
+                return o.__dict__
+
+        json = dumps(dict(
+            date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
+            data_outside_reports={},
+            report=self,
+            type_=None,
+        ), separators=(',', ':'), cls=Encoder)
+        return write_html_report(json, output_dirpath, base_fname, caption)
 
     @staticmethod
     def _append_value_to_row(sample_report, row, metric):
@@ -146,9 +158,8 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, output_dirpath, base_fname, caption=''):
-        return FullReport(name=self.display_name, sample_reports=[self]).save_html(
-            output_dirpath, base_fname, caption)
+    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+        return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='SampleReport')
 
     def __repr__(self):
         return self.display_name + (', ' + self.report_name if self.report_name else '')
@@ -197,8 +208,32 @@ class SquareSampleReport(SampleReport):
             rows.append(row)
         return rows
 
-    def save_html(self, output_dirpath, base_fname, caption=''):
-        return None  # TODO
+    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+        return None
+        # sample_reports = []
+        # fr = FullReport(self.report_name, sample_reports, self.metric_storage)
+
+        # for i in range(len(next(r for r in self.records if isinstance(r.value, list)).value)):row = []
+        #     row = []
+        #     for m in self.metric_storage.get_metrics(self.metric_storage.sections):
+        #         try:
+        #             r = next((r for r in self.records if r.metric.name == m.name), None)
+        #             if r:
+        #                 if m.name in self.metric_storage.general_section.metrics_by_name:
+        #                     val = r.value
+        #                 elif not r.value:
+        #                     val = None
+        #                 else:
+        #                     val = r.value[i]
+        #                 row.append(r.metric.format(val))
+        #         except StopIteration:
+        #             row.append('-')  # if no record for the metric
+
+            # records = []
+            # sr = SampleReport(self.sample, self.html_fpath, records=None, metric_storage=None,
+            #      report_name='', plots=None, json_fpath=None,
+            #      )
+            # return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='SquareSampleReport')
 
     # def add_record(self, metric_name, value, meta=None):
     #     raise NotImplementedError
@@ -275,19 +310,8 @@ class FullReport(Report):
             self.save_tsv(output_dirpath, base_fname, sections), \
             self.save_html(output_dirpath, base_fname, caption)
 
-    def save_html(self, output_dirpath, base_fname, caption=''):
-        class Encoder(JSONEncoder):
-            def default(self, o):
-                if isinstance(o, (VariantCaller, Sample)):
-                    return o.for_json()
-                return o.__dict__
-
-        json = dumps(dict(
-            date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
-            data_outside_reports={},
-            report=self,
-        ), separators=(',', ':'), cls=Encoder)
-        return write_html_report(json, output_dirpath, base_fname, caption)
+    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+        return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='FullReport')
 
     def __repr__(self):
         return self.name

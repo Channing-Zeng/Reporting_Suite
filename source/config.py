@@ -42,7 +42,7 @@ class Defaults:
         depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
         padding=250,
         report_types='summary,genes',
-        min_cov=10,
+        min_cov=20,
         min_cov_factor=0.20,
         max_cov_factor=2.5,
     )
