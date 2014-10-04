@@ -418,7 +418,8 @@ class BCBioStructure:
             report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
             info(report_fpath)
 
-            fpaths_by_sample[sample.name] = report_fpath
+            if verify_file(report_fpath):
+                fpaths_by_sample[sample.name] = report_fpath
 
         # if len(fpaths_by_sample) < len(self.samples):
         #     raise RuntimeError('No ')

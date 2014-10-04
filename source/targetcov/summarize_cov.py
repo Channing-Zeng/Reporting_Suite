@@ -13,8 +13,8 @@ def summary_reports(cnf, bcbio_structure):
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    jsons_by_sample = bcbio_structure.find_targetcov_reports_by_sample('json')
-    htmls_by_sample = bcbio_structure.find_targetcov_reports_by_sample('html')
+    jsons_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
+    htmls_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('html')
 
     full_report = FullReport.construct_from_sample_report_jsons(
         bcbio_structure.samples, jsons_by_sample, htmls_by_sample, cnf.output_dir)
