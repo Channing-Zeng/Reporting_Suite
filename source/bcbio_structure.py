@@ -227,8 +227,8 @@ class BCBioStructure:
             self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
             if file_exists(self.cnf.log):
                 bak_fpath = self.cnf.log + '.bak'
-                if isfile(bak_fpath):
-                    os.remove(bak_fpath)
+                while isfile(bak_fpath):
+                    bak_fpath += '.bak'
                 os.rename(self.cnf.log, bak_fpath)
             elif isfile(self.cnf.log):
                 try:
