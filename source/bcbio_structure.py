@@ -220,7 +220,7 @@ class BCBioStructure:
             info('Done loading BCBio structure.')
 
     def set_up_log(self, proc_name):
-        self.log_dirpath = join(self.date_dirpath, 'log')
+        self.log_dirpath = join(self.date_dirpath, (self.project_name if self.project_name else 'project') + '.log')
         safe_mkdir(self.log_dirpath)
 
         if not proc_name:
