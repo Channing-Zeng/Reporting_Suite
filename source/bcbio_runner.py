@@ -449,7 +449,7 @@ class BCBioRunner:
                    self.ngscat]) \
                     or self.vardict in self.vardict_steps:
                 if not sample.bam or not verify_bam(sample.bam):
-                    sys.exit('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
+                    err('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
 
             # ngsCAT reports
             if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
@@ -508,8 +508,8 @@ class BCBioRunner:
             )
 
         # TargetSeq reports
-        for sample in self.bcbio_structure.samples:
-            if self.targetcov in self.steps:
+        if self.targetcov in self.steps or 'AbnormalCovReport' in self.cnf.steps:
+            for sample in self.bcbio_structure.samples:
                 info('Target coverage for "' + sample.name + '"')
                 if not self.cnf.verbose:
                     info(ending='')
@@ -524,13 +524,19 @@ class BCBioRunner:
                     else:
                         caller_names, filtered_vcfs = [], []
 
-                    if self.targetcov in self.steps:
+                    if 'AbnormalCovReport' in self.cnf.steps:
                         self._submit_job(
                             self.targetcov, sample.name,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                             bam=sample.bam, bed=sample.bed, sample=sample,
                             caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                             vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
+                    elif self.targetcov in self.steps:
+                        self._submit_job(
+                            self.targetcov, sample.name,
+                            bam=sample.bam, bed=sample.bed, sample=sample,
+                            caller_names='', vcfs='')
+
 
         if self.varqc_after in self.steps:
             info('VarQC_postVarFilter:')

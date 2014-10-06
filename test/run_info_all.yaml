@@ -16,6 +16,7 @@ steps:
 - QualiMap_summary
 - Combined_report
 #- MongoLoader
+#- AbnormalCovReport
 
 #vardict_steps:
 #- VarDict

@@ -565,6 +565,9 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, re
     def _(r): r.var_num = _count_variants(r, filtered_vcf_fpath)
     _proc_regions(regions, _)
 
+    if not regions:
+        return None
+
     median_depth = median(r.avg_depth for r in regions)
     cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
 

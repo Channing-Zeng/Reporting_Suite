@@ -14,8 +14,9 @@ steps:
 - ngsCAT_summary
 #- QualiMap
 #- QualiMap_summary
-- Combined_report
+#- Combined_report
 #- MongoLoader
+#- AbnormalCovReport
 
 #vardict_steps:
 #- VarDict
