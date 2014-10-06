@@ -447,6 +447,9 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     anno_vcf_by_sample = caller.find_anno_vcf_by_sample()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
+    if len(anno_vcf_fpaths) == 0:
+        err('No vcfs for ' + caller.name + '. Skipping.')
+        return caller
 
     cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
     f = Filtering(cnf, bcbio_structure, caller)

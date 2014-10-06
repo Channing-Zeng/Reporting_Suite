@@ -240,9 +240,10 @@ def finalize_one(cnf, bcbio_structure, sample):
                 sample.filtered_tsv_by_callername,
                 sample.filtered_maf_by_callername]:
         for caller_name, fpath in dic.items():
-            info(caller_name + ': ' + fpath)
-            symlink_to_dir(fpath, join(dirname(fpath), pardir))
-            symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
+            if fpath:
+                info(caller_name + ': ' + fpath)
+                symlink_to_dir(fpath, join(dirname(fpath), pardir))
+                symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
 
 
 if __name__ == '__main__':
