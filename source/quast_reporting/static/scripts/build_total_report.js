@@ -25,7 +25,8 @@
   record = {
     metric: null,
     value: '',
-    meta: null
+    meta: null,
+    html_fpath: ''
   };
 
   metric = {
@@ -222,7 +223,7 @@
     var brt, d, inner_low_brt, inner_top_brt, k, l, low_hue, max_frac_widths_by_metric, outer_low_brt, outer_top_brt, q1, q3, rec, top_hue, vals, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _len6, _m, _n, _o, _ref, _ref1, _ref10, _ref11, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
     max_frac_widths_by_metric = {};
     if ((report.type == null) || report.type === 'FullReport' || report.type === 'SquareSampleReport') {
-      _ref = report.sample_reports;
+      _ref = (report.hasOwnProperty('sample_reports') ? report.sample_reports : [report]);
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         sampleReport = _ref[_i];
         _ref1 = sampleReport.records;
@@ -284,7 +285,7 @@
       metric.top_inner_fence = q3 + 1.5 * d;
       metric.top_outer_fence = q3 + 3 * d;
     }
-    _ref5 = report.sample_reports;
+    _ref5 = (report.hasOwnProperty('sample_reports') ? report.sample_reports : [report]);
     for (_n = 0, _len5 = _ref5.length; _n < _len5; _n++) {
       sampleReport = _ref5[_n];
       _ref6 = sampleReport.records;
@@ -352,7 +353,7 @@
   };
 
   reporting.buildTotalReport = function(report, section, columnOrder) {
-    var colNum, direction, i, line_caption, padding, pos, r, rec, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3;
+    var caller, caller_links, colNum, direction, html_fpath, i, k, line_caption, padding, pos, r, rec, sample_reports_length, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4;
     if (section.title != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
@@ -368,15 +369,16 @@
       table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " data-direction=" + direction + "position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(metric)) + "</span> </th>";
     }
     i = 0;
-    _ref1 = report.sample_reports;
+    sample_reports_length = report.hasOwnProperty('sample_reports') ? report.sample_reports.length : 1;
+    _ref1 = (report.hasOwnProperty('sample_reports') ? report.sample_reports : [report]);
     for (_j = 0, _len = _ref1.length; _j < _len; _j++) {
       sampleReport = _ref1[_j];
       line_caption = sampleReport.display_name;
       if (line_caption.length > 30) {
         line_caption = "<span title=\"" + line_caption + "\">" + (line_caption.trunc(80)) + "</span>";
       }
-      table += "\n<tr> <td class=\"left_column_td\" data-sortAs=" + (report.sample_reports.length - i) + ">";
-      if (report.sample_reports.length === 1) {
+      table += "\n<tr> <td class=\"left_column_td\" data-sortAs=" + (sample_reports_length - i) + ">";
+      if (sample_reports_length === 1) {
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {
         if (sampleReport.html_fpath != null) {
@@ -413,7 +415,39 @@
         } else {
           padding = "";
         }
-        table += "<a style=\"" + padding + "\" " + (get_meta_tag_contents(rec)) + ">" + rec.cell_contents + " </a> </td>";
+        if (rec.html_fpath != null) {
+          if (typeof rec.html_fpath === 'string') {
+            table += "<a href=\"" + rec.html_fpath + "\">" + rec.cell_contents + " </a> </td>";
+          } else {
+            if (((function() {
+              var _ref4, _results;
+              _ref4 = rec.html_fpath;
+              _results = [];
+              for (k in _ref4) {
+                if (!__hasProp.call(_ref4, k)) continue;
+                _results.push(k);
+              }
+              return _results;
+            })()).length === 0) {
+              rec.value = null;
+              calc_record_cell_contents(rec, $('#report').css('font'));
+              table += "" + rec.cell_contents + "</td>";
+            } else {
+              caller_links = "";
+              _ref4 = rec.html_fpath;
+              for (caller in _ref4) {
+                html_fpath = _ref4[caller];
+                if (caller_links.length !== 0) {
+                  caller_links += ", ";
+                }
+                caller_links += "<a href=\"" + html_fpath + "\">" + caller + "</a>";
+              }
+              table += "" + rec.cell_contents + " (" + caller_links + ")</td>";
+            }
+          }
+        } else {
+          table += "<a style=\"" + padding + "\" " + (get_meta_tag_contents(rec)) + ">" + rec.cell_contents + " </a> </td>";
+        }
       }
       table += "</tr>";
       i += 1;
@@ -434,7 +468,13 @@
     table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">";
     for (_j = 0, _len1 = common_records.length; _j < _len1; _j++) {
       rec = common_records[_j];
-      table += "\n<tr><td> <span class='metric_name'>" + (get_metric_name_html(rec.metric, use_full_name = true)) + ":</span> " + rec.cell_contents + " </td></tr>";
+      table += "\n<tr><td>";
+      if (rec.html_fpath != null) {
+        table += "<a href=\"" + rec.html_fpath + "\"> " + rec.cell_contents + "</a>";
+      } else {
+        table += "<span class='metric_name'>" + (get_metric_name_html(rec.metric, use_full_name = true)) + ":</span> " + rec.cell_contents;
+      }
+      table += "</td></tr>";
     }
     table += "\n</table>\n";
     return $('#report').append(table);

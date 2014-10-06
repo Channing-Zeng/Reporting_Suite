@@ -105,9 +105,13 @@ preprocessReport = (report) ->
             s.metrics_by_name[m.name] = m
         extend all_metrics_by_name, s.metrics_by_name
 
-    for sample_report in report.sample_reports
-        sample_report.metric_storage = report.metric_storage
-        for rec in sample_report.records
+    if report.hasOwnProperty('sample_reports')
+        for sample_report in report.sample_reports
+            sample_report.metric_storage = report.metric_storage
+            for rec in sample_report.records
+                rec.metric = all_metrics_by_name[rec.metric.name]
+    else
+        for rec in report.records
             rec.metric = all_metrics_by_name[rec.metric.name]
 
     return report
@@ -123,19 +127,19 @@ reporting.buildReport = ->
     $('#report_date').html '<p>' + totalReportData.date + '</p>'
 
     common_metrics_by_name = report.metric_storage.general_section.metrics_by_name
-    general_records = (rec for rec in report.sample_reports[0].records when rec.metric.name of common_metrics_by_name)
+    records = if report.hasOwnProperty('sample_reports') then report.sample_reports[0].records else report.records
+    general_records = (rec for rec in records when rec.metric.name of common_metrics_by_name)
     reporting.buildCommonRecords general_records
 
-    sample_reports = report.sample_reports
     for section in report.metric_storage.sections
         columnNames = (m.name for m in section.metrics)
         columnOrder = (recoverOrderFromCookies section.name) or report.order or [0...columnNames.length]
 
         reporting.buildTotalReport report, section, columnOrder
-        plots_html = ""
-        for sample_report in sample_reports
-            for plot in sample_report.plots
+        if report.hasOwnProperty('plots')
+            plots_html = ""
+            for plot in report.plots
                 plots_html += "<img src=\"#{plot}\"/>"
-        $('#plot').html plots_html
+            $('#plot').html plots_html
 
     return 0

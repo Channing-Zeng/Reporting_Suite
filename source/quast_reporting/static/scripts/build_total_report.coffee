@@ -154,7 +154,7 @@ calc_cell_contents = (report, section, font) ->
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     if not report.type? or report.type == 'FullReport' or report.type == 'SquareSampleReport'
-        for sampleReport in report.sample_reports
+        for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
             for rec in sampleReport.records
                 calc_record_cell_contents rec, font
 
@@ -206,7 +206,7 @@ calc_cell_contents = (report, section, font) ->
         metric.top_outer_fence = q3 + 3   * d
 
     # Second round: setting shift and color properties based on max/min widths and vals
-    for sampleReport in report.sample_reports
+    for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
         for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
             # Padding based on frac width
             if rec.frac_width?
@@ -294,14 +294,15 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
     i = 0
-    for sampleReport in report.sample_reports
+    sample_reports_length = if report.hasOwnProperty('sample_reports') then report.sample_reports.length else 1
+    for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
         line_caption = sampleReport.display_name  # sample name
         if line_caption.length > 30
             line_caption = "<span title=\"#{line_caption}\">#{line_caption.trunc(80)}</span>"
 
         table += "\n<tr>
-            <td class=\"left_column_td\" data-sortAs=#{report.sample_reports.length - i}>"
-        if report.sample_reports.length == 1
+            <td class=\"left_column_td\" data-sortAs=#{sample_reports_length - i}>"
+        if sample_reports_length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
             if sampleReport.html_fpath?
