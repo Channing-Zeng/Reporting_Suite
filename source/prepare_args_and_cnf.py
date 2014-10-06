@@ -2,7 +2,7 @@ from optparse import OptionParser
 from distutils import file_util
 import sys
 import os
-from os.path import join, pardir, isfile, isdir, expanduser
+from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath
 from os import getcwd
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
@@ -37,7 +37,12 @@ def process_post_bcbio_args(parser):
 
     info('BCBio "final" dir: ' + bcbio_final_dir)
 
-    config_dirpath = join(bcbio_final_dir, pardir, 'config')
+    config_dirpath = abspath(join(bcbio_final_dir, pardir, 'config'))
+    if not verify_dir(config_dirpath):
+        critical('No config directory ' + dirname(config_dirpath) + ', check if you provided a correct path ' +
+                 'to the bcbio directory. \nIt can be provided by the first argument for the script, nor the default one' +
+                 'is the current working directory (' + bcbio_final_dir + ')')
+
     for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
         provided_cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
         project_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
