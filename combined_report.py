@@ -50,11 +50,23 @@ def make_combined_report(cnf, bcbio_structure):
 
     # individual reports
     individual_reports_section = ReportSection('individual_reports', '', [])
+
+    # varQC reports -- special case
     callers = bcbio_structure.variant_callers.values()
-    vq_htmls_by_sample = OrderedDict()
-    for caller in callers:
-        vq_htmls_by_sample.update(caller.find_fpaths_by_sample(bcbio_structure.varqc_dir,
-                                                           bcbio_structure.varqc_name, 'html'))
+    if len(callers) == 0:
+        vq_htmls_by_sample = None
+    elif len(callers) == 1:
+        vq_htmls_by_sample = callers[0].find_fpaths_by_sample(bcbio_structure.varqc_dir,
+                                                              bcbio_structure.varqc_name, 'html')
+    else:
+        vq_htmls_by_sample = OrderedDict()
+        for sample in bcbio_structure.samples:
+            vq_htmls_by_sample[sample.name] = OrderedDict()
+        for caller in callers:
+            for sample, fpath in caller.find_fpaths_by_sample(bcbio_structure.varqc_dir,
+                                                              bcbio_structure.varqc_name, 'html').items():
+                vq_htmls_by_sample[sample][caller.name] = fpath
+    # other reports
     tc_htmls_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('html')
     nc_htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
     qm_htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()

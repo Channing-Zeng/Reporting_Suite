@@ -338,9 +338,22 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 padding = ""
 
             if rec.html_fpath?
-                table += "<a href=\"#{rec.html_fpath}\">#{rec.cell_contents}
+                if typeof rec.html_fpath is 'string'
+                    table += "<a href=\"#{rec.html_fpath}\">#{rec.cell_contents}
                             </a>
                           </td>"
+                else  # varQC -- several variant callers for one sample are possible
+                    if (k for own k of rec.html_fpath).length == 0
+                        rec.value = null
+                        calc_record_cell_contents rec, $('#report').css 'font'
+                        table += "#{rec.cell_contents}</td>"
+                    else
+                        caller_links = ""
+                        for caller, html_fpath of rec.html_fpath
+                            if caller_links.length != 0
+                              caller_links += ", "
+                            caller_links += "<a href=\"#{html_fpath}\">#{caller}</a>"
+                        table += "#{rec.cell_contents} (#{caller_links})</td>"
             else
                 table += "<a style=\"#{padding}\"
                               #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
