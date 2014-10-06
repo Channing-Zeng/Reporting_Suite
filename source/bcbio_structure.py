@@ -151,6 +151,7 @@ class BCBioStructure:
     qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
     seq2c_name       = 'Seq2C'
+    combined_report_name = combined_report_dir = 'combined_report'
     detail_gene_report_baseending = '.details.gene'
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
     detail_highcov_gene_report_baseending = '.details.high_cov.gene'

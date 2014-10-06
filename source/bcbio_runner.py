@@ -86,6 +86,7 @@ class BCBioRunner:
                 self.ngscat_summary,
                 self.qualimap_summary,
                 self.fastqc_summary,
+                self.combined_report,
             ] if contains(s.name, cnf.steps)])
 
         # self.vardict_steps.extend(
@@ -233,6 +234,13 @@ class BCBioRunner:
             interpreter='python',
             script='qualimap_summary',
             dir_name=BCBioStructure.qualimap_summary_dir,
+            paramln=cnfs_line + ' \'' + self.final_dir + '\''
+        )
+        self.combined_report = Step(cnf, run_id,
+            name='Combined_report', short_name='cr',
+            interpreter='python',
+            script='combined_report',
+            dir_name=BCBioStructure.combined_report_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
 
@@ -583,6 +591,17 @@ class BCBioRunner:
 
         if self.fastqc_summary in self.steps:
             self._submit_job(self.fastqc_summary)
+
+        if self.combined_report in self.steps:
+            wait_for_steps = []
+            wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
+            wait_for_steps += [self.targetcov_summary.job_name()] if self.targetcov_summary in self.steps else []
+            wait_for_steps += [self.ngscat_summary.job_name()] if self.ngscat_summary in self.steps else []
+            wait_for_steps += [self.qualimap_summary.job_name()] if self.qualimap_summary in self.steps else []
+            self._submit_job(
+                self.combined_report,
+                wait_for_steps=wait_for_steps
+            )
 
         if self.mongo_loader in self.steps:
             for sample in self.bcbio_structure.samples:

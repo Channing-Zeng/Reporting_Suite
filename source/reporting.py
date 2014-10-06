@@ -17,10 +17,12 @@ class Record:
     def __init__(self,
                  metric=None,
                  value=None,
-                 meta=None):
+                 meta=None,
+                 html_fpath=None):
         self.metric = metric
         self.value = value
         self.meta = meta or dict()
+        self.html_fpath = html_fpath
 
     def format(self):
         return self.metric.format(self.value)

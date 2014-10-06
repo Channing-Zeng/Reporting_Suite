@@ -18,6 +18,7 @@ record =
     metric: null
     value: ''
     meta: null
+    html_fpath: ''
 
 metric =
     name: ''
@@ -336,10 +337,15 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
             else
                 padding = ""
 
-            table += "<a style=\"#{padding}\"
-                          #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
-                      </a>
-                    </td>"
+            if rec.html_fpath?
+                table += "<a href=\"#{rec.html_fpath}\">#{rec.cell_contents}
+                            </a>
+                          </td>"
+            else
+                table += "<a style=\"#{padding}\"
+                              #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
+                            </a>
+                          </td>"
         table += "</tr>"
         i += 1
     table += "\n</table>\n"
@@ -356,10 +362,14 @@ reporting.buildCommonRecords = (common_records) ->
 
     table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
     for rec in common_records
-        table += "\n<tr><td>
-                <span class='metric_name'>#{get_metric_name_html(rec.metric, use_full_name=true)}:</span>
-                #{rec.cell_contents}
-              </td></tr>"
+        table += "\n<tr><td>"
+        if rec.html_fpath?
+            table += "<a href=\"#{rec.html_fpath}\">
+                         #{rec.cell_contents}</a>"
+        else
+            table += "<span class='metric_name'>#{get_metric_name_html(rec.metric, use_full_name=true)}:</span>
+                          #{rec.cell_contents}"
+        table += "</td></tr>"
     table += "\n</table>\n"
 
     $('#report').append table
