@@ -55,4 +55,4 @@ genomes:
 
 queue: batch.q
 
-qsub_runner: runner_Waltham.sh
+qsub_runner: runner_cloud.sh

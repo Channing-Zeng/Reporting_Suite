@@ -12,9 +12,9 @@ steps:
 - TargetCov_Summary
 - ngsCAT
 - ngsCAT_summary
-#- QualiMap
-#- QualiMap_summary
-#- Combined_report
+- QualiMap
+- QualiMap_summary
+- Combined_report
 #- MongoLoader
 #- AbnormalCovReport
 
