@@ -41,7 +41,6 @@ def none_type_validation(obj):
         return ""
     else:
         return str(obj)
-        return str(obj)
 
 
 def print_to_html(outfile, text_to_html):
@@ -323,5 +322,5 @@ def print_css():
 
 
 if __name__ == "__main__":
-    print_html(sys.argv[1:])
+    print_html(sys.argv[1], sys.argv[2:])
 
