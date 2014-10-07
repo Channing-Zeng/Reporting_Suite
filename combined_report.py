@@ -7,7 +7,7 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import abspath, dirname, realpath, join
+from os.path import abspath, dirname, realpath, join, relpath
 from site import addsitedir
 from collections import OrderedDict
 source_dir = abspath(dirname(realpath(__file__)))
@@ -46,7 +46,7 @@ def make_combined_report(cnf, bcbio_structure):
             general_section.add_metric(cur_metric)
             general_records.append(Record(metric=cur_metric,
                                           value=cur_metric.name,
-                                          html_fpath=summary_report_fpath))
+                                          html_fpath=_convert_to_relpath(cnf, summary_report_fpath)))
 
     # individual reports
     individual_reports_section = ReportSection('individual_reports', '', [])
@@ -86,7 +86,8 @@ def make_combined_report(cnf, bcbio_structure):
                 if sample.name in htmls_by_sample:
                     sample_reports_records[sample.name].append(Record(metric=cur_metric,
                                                                       value=cur_metric.name,
-                                                                      html_fpath=htmls_by_sample[sample.name]))
+                                                                      html_fpath=_convert_to_relpath(cnf,
+                                                                                 htmls_by_sample[sample.name])))
                 else:
                     sample_reports_records[sample.name].append(Record(metric=cur_metric,
                                                                       value=None,
@@ -108,6 +109,17 @@ def make_combined_report(cnf, bcbio_structure):
     info('*' * 70)
     info('Combined report saved in: ')
     info('  ' + final_summary_report_fpath)
+
+
+def _convert_to_relpath(cnf, value):
+    if isinstance(value, str):
+        return relpath(value, cnf.output_dir)
+    elif isinstance(value, dict):
+        for k in value.keys():
+            value[k] = relpath(value[k], cnf.output_dir)
+        return value
+    else:
+        return value
 
 
 if __name__ == '__main__':
