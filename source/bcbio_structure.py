@@ -311,7 +311,7 @@ class BCBioStructure:
         sample.phenotype = None
 
         if 'metadata' in sample_info:
-            sample.phenotype = sample_info['metadata'].get('phenotype', 'tumor')
+            sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
             info('Phenotype: ' + str(sample.phenotype))
 
             batch_names = sample_info['metadata']['batch']
@@ -331,7 +331,11 @@ class BCBioStructure:
         # self.move_vcfs_to_var(sample)
 
         to_exit = False
-        for caller_name in sample_info['algorithm'].get('variantcaller') or []:
+        variantcallers = sample_info['algorithm'].get('variantcaller') or []
+        if isinstance(variantcallers, basestring):
+            variantcallers = [variantcallers]
+
+        for caller_name in variantcallers:
             info(caller_name)
             caller = self.variant_callers.get(caller_name)
             if not caller:
