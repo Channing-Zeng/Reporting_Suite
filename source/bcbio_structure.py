@@ -190,9 +190,14 @@ class BCBioStructure:
         info()
         info('-' * 70)
 
-        self.samples = [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]
-        if any(s is None for s in self.samples):
-            sys.exit(1)
+        for sample in [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]:
+            if sample.dirpath is None:
+                err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
+            else:
+                self.samples.append(sample)
+
+        if not self.samples:
+            critical('No directory for any sample. Exiting.')
 
         for b in self.batches.values():
             for t_sample in b.tumor:
@@ -278,13 +283,14 @@ class BCBioStructure:
 
     def _read_sample_details(self, sample_info):
         sample = Sample(name=sample_info['description'])
-        self.samples.append(sample)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
 
         sample.dirpath = adjust_path(join(self.final_dirpath, sample.name))
-        if not verify_dir(sample.dirpath): sys.exit(1)
+        if not verify_dir(sample.dirpath):
+            sample.dirpath = None
+            return sample
 
         bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
         sample.bed = bed if verify_bed(bed) else None
@@ -365,8 +371,8 @@ class BCBioStructure:
             sys.exit(1)
 
         info()
-
         return sample
+
 
     def find_gene_reports_by_sample(self):
         return dict((sname, verify_file(fpath))
