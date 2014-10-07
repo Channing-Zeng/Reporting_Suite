@@ -53,7 +53,10 @@ test/results_cov
 test/results_cov/
 
 test/bcbio/final/**/varAnnotate
-test/bcbio/final/**/qc
+test/bcbio/final/**/qc/ngscat
+test/bcbio/final/**/qc/qualimap
+test/bcbio/final/**/qc/varQC
+test/bcbio/final/**/qc/varQC_postVarFilter
 test/bcbio/final/**/targetSeq
 test/bcbio/final/**/varFilter*
 test/bcbio/final/**/vardict
