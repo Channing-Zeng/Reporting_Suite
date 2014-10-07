@@ -81,6 +81,9 @@ def read_opts_and_cnfs(extra_opts,
         (['--proc-name'], dict(
             dest='proc_name'
         )),
+        (['--project-name'], dict(
+            dest='project_name'
+        )),
     ]
 
     parser = OptionParser(description=description)
@@ -110,7 +113,7 @@ def read_opts_and_cnfs(extra_opts,
         cnf.caller = None
 
     cnf.proc_name = cnf.proc_name or proc_name
-    set_up_dirs(cnf, cnf.proc_name)
+    set_up_dirs(cnf, cnf.proc_name, cnf.project_name)
     info(' '.join(sys.argv))
     info()
 
@@ -253,7 +256,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     info('Loaded resources for ' + genome_cnf['name'])
 
 
-def set_up_dirs(cnf, proc_name=None):
+def set_up_dirs(cnf, proc_name, project_name):
     """ Creates output_dir, work_dir; sets up log
     """
     cnf.output_dir = adjust_path(cnf.output_dir)
@@ -261,7 +264,7 @@ def set_up_dirs(cnf, proc_name=None):
     info('Saving into ' + cnf.output_dir)
 
     set_up_work_dir(cnf)
-    set_up_log(cnf, proc_name)
+    set_up_log(cnf, proc_name, project_name)
 
 
 def set_up_work_dir(cnf):
@@ -276,9 +279,11 @@ def set_up_work_dir(cnf):
     safe_mkdir(cnf.work_dir, 'working directory')
 
 
-def set_up_log(cnf, proc_name=None):
+def set_up_log(cnf, proc_name,  project_name):
     log_fname = proc_name + '_' if proc_name else ''
     log_fname += cnf.name + '_log.txt'
 
     cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log
+    logger.proc_name = proc_name
+    logger.project_name = project_name

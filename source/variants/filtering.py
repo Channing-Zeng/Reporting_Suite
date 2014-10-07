@@ -544,7 +544,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
         info('All variants are rejected.')
     if isfile(final_clean_vcf_fpath): os.remove(final_clean_vcf_fpath)
     if islink(clean_filtered_vcf_fpath): os.unlink(clean_filtered_vcf_fpath)
-    shutil.move(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
+    shutil.copy(clean_filtered_vcf_fpath, final_clean_vcf_fpath)
     # os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
     igvtools_index(cnf, final_clean_vcf_fpath)
 
@@ -553,7 +553,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
         tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath)
 
         if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
-        shutil.move(tsv_fpath, final_tsv_fpath)
+        shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
         final_tsv_fpath = None
 
@@ -575,8 +575,8 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             bam_fpath=sample.bam,
             transcripts_fpath=cnf.transcripts_fpath,
             normal_sample_name=sample.normal_match.name if sample.normal_match else None)
-        if isfile(final_maf_fpath): os.remove(final_maf_fpath)
-        shutil.move(maf_fpath, final_maf_fpath)
+        # if isfile(final_maf_fpath): os.remove(final_maf_fpath)
+        shutil.copy(maf_fpath, final_maf_fpath)
         info('-' * 70)
         info()
     else:

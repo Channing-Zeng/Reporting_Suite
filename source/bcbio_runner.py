@@ -113,7 +113,8 @@ class BCBioRunner:
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
         spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
-                      '--log-dir ' + self.bcbio_structure.log_dirpath + ' '
+                      '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
+                      '--project-name ' + self.bcbio_structure.project_name
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',

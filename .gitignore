@@ -50,6 +50,7 @@ test/results_anno
 test/results_qs_summary
 test/results_varfilter
 test/results_cov
+test/results_cov/
 
 test/bcbio/final/**/varAnnotate
 test/bcbio/final/**/qc

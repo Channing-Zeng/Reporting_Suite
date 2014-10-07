@@ -2,9 +2,14 @@ from os import environ
 import sys
 from datetime import datetime
 from time import sleep
+import smtplib
+from email.mime.text import MIMEText
 
 
 log_fpath = None
+project_name = None
+proc_name = None
+address = 'vladislav.sav@gmail.com'
 
 
 def timestamp():
@@ -22,8 +27,28 @@ def info(msg='', ending='\n', print_date=True):
     _log(sys.stdout, msg, ending, print_date)
 
 
+def warn(msg='', ending='\n', print_date=True):
+    _log(sys.stdout, msg, ending, print_date)
+
+
 def err(msg='', ending='\n', print_date=True):
     _log(sys.stderr, msg, ending, print_date)
+    _send_email(msg)
+
+
+def _send_email(msg=''):
+    if msg:
+        msg = MIMEText(msg)
+        msg['Subject'] = 'Reporting for ' + (project_name or '') + ' ' +\
+                         (proc_name or '')
+        msg['From'] = 'AZ reporting'
+        msg['To'] = address
+        try:
+            s = smtplib.SMTP('localhost')
+            s.sendmail(msg['From'], [msg['To']], msg.as_string())
+            s.quit()
+        except:
+            pass
 
 
 def critical(msg=''):

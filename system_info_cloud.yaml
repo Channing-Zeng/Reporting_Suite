@@ -1,0 +1,55 @@
+resources:
+  gatk:
+    jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
+    path: /usr/local/share/bcbio-nextgen/toolplus/gatk/2014.2-3.1.7-10-g867c2fb/GenomeAnalysisTK.jar
+  snpeff:
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: /usr/local/tools/share/java/snpeff/snpEff.jar
+  snpsift:
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: /usr/local/tools/share/java/snpeff/SnpSift.jar
+  qualimap:
+    path: /usr/local/bin/qualimap
+  samtools:
+    path: /usr/local/bin/samtools
+  bedtools:
+    path: /usr/local/bin/bedtools
+  vcfannotate:
+    path: /usr/local/bin/vcfannotate
+  perl:
+    path: /usr/bin/perl
+  java:
+    path: /usr/bin/java
+  python:
+    path: /usr/bin/python
+  vardict_pl:
+    path: /usr/local/bin/vardict
+  testsomatic_r:
+    path: /usr/local/bin/testsomatic.R
+  var2vcf_somatic_pl:
+    path: /usr/local/bin/var2vcf_somatic.pl
+  igvtools:
+    path: /usr/local/src/IGVTools/igvtools.jar
+  vcf_loader:
+    path: /usr/local/src/mongo-loader/VCFLoader.jar
+  cov2cnv2:
+    path: /usr/local/src/Seq2C/cov2cnv2.pl
+
+genomes:
+  hg19:
+    seq: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/seq/hg19.fa
+
+    dbsnp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
+    cosmic: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+    dbnsfp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+    snpeff: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/snpeff
+    1000genomes: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
+    oncomine: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/mutation_details.vcf
+
+    chr_lengths: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    exons: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+    default_bed: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+
+queue: all.q
+
+qsub_runner: runner_Waltham.sh

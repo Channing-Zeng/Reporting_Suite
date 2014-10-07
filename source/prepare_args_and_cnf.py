@@ -20,6 +20,7 @@ def add_post_bcbio_args(parser):
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='overwrite', action='store_false', help='Reuse intermediate files from previous run')
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
+    parser.add_option('--project-name', dest='project')
 
 
 def process_post_bcbio_args(parser):
