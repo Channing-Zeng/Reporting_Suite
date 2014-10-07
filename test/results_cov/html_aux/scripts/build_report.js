@@ -82,7 +82,7 @@
     order: null,
     sample_reports: [],
     metric_storage: {
-      common_for_all_samples_section: {
+      general_section: {
         name: '',
         metrics: []
       },
@@ -122,12 +122,12 @@
   preprocessReport = function(report) {
     var all_metrics_by_name, m, rec, s, sample_report, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _m, _ref, _ref1, _ref2, _ref3, _ref4;
     all_metrics_by_name = {};
-    _ref = report.metric_storage.common_for_all_samples_section.metrics;
+    _ref = report.metric_storage.general_section.metrics;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       m = _ref[_i];
-      report.metric_storage.common_for_all_samples_section.metrics_by_name[m.name] = m;
+      report.metric_storage.general_section.metrics_by_name[m.name] = m;
     }
-    extend(all_metrics_by_name, report.metric_storage.common_for_all_samples_section.metrics_by_name);
+    extend(all_metrics_by_name, report.metric_storage.general_section.metrics_by_name);
     _ref1 = report.metric_storage.sections;
     for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
       s = _ref1[_j];
@@ -159,7 +159,7 @@
     }
     report = preprocessReport(totalReportData.report);
     $('#report_date').html('<p>' + totalReportData.date + '</p>');
-    common_metrics_by_name = report.metric_storage.common_for_all_samples_section.metrics_by_name;
+    common_metrics_by_name = report.metric_storage.general_section.metrics_by_name;
     general_records = (function() {
       var _i, _len, _ref, _results;
       _ref = report.sample_reports[0].records;

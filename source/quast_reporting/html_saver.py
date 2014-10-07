@@ -38,7 +38,7 @@ aux_files = [
     'scripts/build_report.js',
     'dragtable.js',
     'ie_html5.js',
-    'img/draggable.png',
+    # 'img/draggable.png',
     'bootstrap/bootstrap-tooltip-5px-lower.min.js',
     'bootstrap/bootstrap.min.css',
     'bootstrap/bootstrap.min.js',
@@ -47,8 +47,6 @@ aux_files = [
     'common.css',
     'table_sorter/tsort.js',
     'table_sorter/style.css',
-    'table_sorter/arrow_asc.png',
-    'table_sorter/arrow_desc.png',
 ]
 
 

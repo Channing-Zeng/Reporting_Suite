@@ -1,29 +1,5 @@
 {
     "metric_storage": {
-        "common_for_all_samples_section": {
-            "metrics": [
-                {
-                    "name": "Bases in target",
-                    "short_name": "Target bp",
-                    "common": true,
-                    "quality": "More is better",
-                    "unit": "",
-                    "description": null
-                }
-            ],
-            "name": "common_for_all_samples_section",
-            "metrics_by_name": {
-                "Bases in target": {
-                    "name": "Bases in target",
-                    "short_name": "Target bp",
-                    "common": true,
-                    "quality": "More is better",
-                    "unit": "",
-                    "description": null
-                }
-            },
-            "title": ""
-        },
         "sections_by_name": {
             "basic_metrics": {
                 "metrics": [
@@ -473,6 +449,30 @@
                 },
                 "title": "Target coverage depth"
             }
+        },
+        "general_section": {
+            "metrics": [
+                {
+                    "name": "Bases in target",
+                    "short_name": "Target bp",
+                    "common": true,
+                    "quality": "More is better",
+                    "unit": "",
+                    "description": null
+                }
+            ],
+            "name": "general_section",
+            "metrics_by_name": {
+                "Bases in target": {
+                    "name": "Bases in target",
+                    "short_name": "Target bp",
+                    "common": true,
+                    "quality": "More is better",
+                    "unit": "",
+                    "description": null
+                }
+            },
+            "title": ""
         },
         "sections": [
             {
