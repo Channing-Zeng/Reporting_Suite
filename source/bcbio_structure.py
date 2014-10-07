@@ -311,7 +311,7 @@ class BCBioStructure:
         sample.phenotype = None
 
         if 'metadata' in sample_info:
-            sample.phenotype = sample_info['metadata']['phenotype']
+            sample.phenotype = sample_info['metadata'].get('phenotype', 'tumor')
             info('Phenotype: ' + str(sample.phenotype))
 
             batch_names = sample_info['metadata']['batch']
