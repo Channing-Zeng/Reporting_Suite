@@ -55,7 +55,8 @@ def _send_email(msg=''):
 
 
 def critical(msg=''):
-    err(msg)
+    if msg:
+        err(msg)
     sys.exit(1)
 
 

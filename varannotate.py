@@ -14,7 +14,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, \
-     iterate_vcf, tabix_vcf, igvtools_index, get_trasncripts_fpath
+     iterate_vcf, tabix_vcf, igvtools_index, get_trasncripts_fpath, fix_chromosome_names
 from source.runner import run_one
 from source.variants.anno import run_annotators
 from source.utils import info
@@ -78,8 +78,10 @@ def set_up_snpeff(cnf):
 def process_one(cnf):
     vcf_fpath = cnf.vcf
 
+    vcf_fpath = fix_chromosome_names(cnf, vcf_fpath)
+
     if cnf.get('filter_reject'):
-        vcf_fpath = remove_rejected(cnf, cnf.vcf)
+        vcf_fpath = remove_rejected(cnf, vcf_fpath)
         if vcf_fpath is None:
             err('No variants left: all rejected and removed.')
             return None, None, None

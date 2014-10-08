@@ -32,6 +32,17 @@ class Sample:
         self.var_dirpath = None
         self.normal_match = None
 
+    # def get_filtered_vcf_fpath_by_callername(callername):
+    #     fpath = join(
+    #         self.bcbio_structure.final_dirpath,
+    #         s.name,
+    #         dirname,
+    #         s.name + '-' + self.suf + ending)
+    #     return verify_file(fpath)
+    #
+    # def find_filtered_vcf_by_callername(callername):
+    #     return
+
     def get_clean_filtered_vcf_fpaths_by_callername(self, callername):
         path = join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
