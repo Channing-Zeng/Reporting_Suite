@@ -20,7 +20,9 @@ from source.logger import info
 def main():
     info(' '.join(sys.argv))
     info()
+
     cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.fastqc_name, BCBioStructure.fastqc_dir)
+
     summary_reports(cnf, bcbio_structure)
 
 

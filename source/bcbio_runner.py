@@ -223,7 +223,7 @@ class BCBioRunner:
 
         self.fastqc_summary = Step(
             cnf, run_id,
-            name='fastqc_summary', short_name='fastqc',
+            name='FastQC_summary', short_name='fastqc',
             interpreter='python',
             script='fastqc_summary',
             dir_name=BCBioStructure.fastqc_summary_dir,
@@ -605,6 +605,7 @@ class BCBioRunner:
             wait_for_steps += [self.targetcov_summary.job_name()] if self.targetcov_summary in self.steps else []
             wait_for_steps += [self.ngscat_summary.job_name()] if self.ngscat_summary in self.steps else []
             wait_for_steps += [self.qualimap_summary.job_name()] if self.qualimap_summary in self.steps else []
+            wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
             self._submit_job(
                 self.combined_report,
                 wait_for_steps=wait_for_steps

@@ -36,7 +36,8 @@ def make_combined_report(cnf, bcbio_structure):
     # summary reports
     general_section = ReportSection('general_section', '', [])
     general_records = []
-    for (step_name, step_summary_dir) in [(bcbio_structure.targetseq_name, bcbio_structure.targetseq_summary_dir),
+    for (step_name, step_summary_dir) in [(bcbio_structure.fastqc_name, bcbio_structure.fastqc_summary_dir),
+                                          (bcbio_structure.targetseq_name, bcbio_structure.targetseq_summary_dir),
                                           (bcbio_structure.varqc_name, bcbio_structure.varqc_summary_dir),
                                           (bcbio_structure.ngscat_name, bcbio_structure.ngscat_summary_dir),
                                           (bcbio_structure.qualimap_name, bcbio_structure.qualimap_summary_dir)]:
@@ -67,6 +68,7 @@ def make_combined_report(cnf, bcbio_structure):
                                                               bcbio_structure.varqc_name, 'html').items():
                 vq_htmls_by_sample[sample][caller.name] = fpath
     # other reports
+    fc_htmls_by_sample = bcbio_structure.get_fastqc_report_fpaths_by_sample()
     tc_htmls_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('html')
     nc_htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
     qm_htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
@@ -75,7 +77,8 @@ def make_combined_report(cnf, bcbio_structure):
     for sample in bcbio_structure.samples:
         sample_reports_records[sample.name] = list(general_records)
 
-    for (step_name, htmls_by_sample) in [(bcbio_structure.targetseq_name, tc_htmls_by_sample),
+    for (step_name, htmls_by_sample) in [(bcbio_structure.fastqc_name, fc_htmls_by_sample),
+                                         (bcbio_structure.targetseq_name, tc_htmls_by_sample),
                                          (bcbio_structure.varqc_name, vq_htmls_by_sample),
                                          (bcbio_structure.ngscat_name, nc_htmls_by_sample),
                                          (bcbio_structure.qualimap_name, qm_htmls_by_sample)]:
