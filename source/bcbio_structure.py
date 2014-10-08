@@ -336,7 +336,7 @@ class BCBioStructure:
             vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
             if not isfile(vcf_fpath):  # not in var, looking in sample dir
                 vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-            self._ungzip_if_needed(self.cnf, vcf_fpath)
+            _ungzip_if_needed(self.cnf, vcf_fpath)
 
             if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
                 err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
