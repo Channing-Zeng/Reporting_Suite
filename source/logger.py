@@ -48,6 +48,7 @@ def _send_email(msg=''):
             s = smtplib.SMTP('localhost')
             s.sendmail(msg['From'], [msg['To']], msg.as_string())
             s.quit()
+            info('Mail sent to ' + address)
         except:
             traceback.print_exc()
             warn('Could not send email with error. Proceeding.')
