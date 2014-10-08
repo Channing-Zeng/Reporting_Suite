@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
+#from ext_modules.bs4 import BeautifulSoup ### TODO: make it work
 from bs4 import BeautifulSoup
 import collections
 import itertools

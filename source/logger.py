@@ -4,6 +4,7 @@ from datetime import datetime
 from time import sleep
 import smtplib
 from email.mime.text import MIMEText
+import traceback
 
 
 log_fpath = None
@@ -28,12 +29,12 @@ def info(msg='', ending='\n', print_date=True):
 
 
 def warn(msg='', ending='\n', print_date=True):
-    _log(sys.stdout, msg, ending, print_date)
+    _log(sys.stderr, msg, ending, print_date)
 
 
 def err(msg='', ending='\n', print_date=True):
-    _log(sys.stderr, msg, ending, print_date)
-    _send_email(msg)
+    warn(msg, ending, print_date)
+    # _send_email(msg)
 
 
 def _send_email(msg=''):
@@ -47,12 +48,16 @@ def _send_email(msg=''):
             s = smtplib.SMTP('localhost')
             s.sendmail(msg['From'], [msg['To']], msg.as_string())
             s.quit()
+            info('Mail sent to ' + address)
         except:
+            traceback.print_exc()
+            warn('Could not send email with error. Proceeding.')
             pass
 
 
 def critical(msg=''):
-    err(msg)
+    if msg:
+        err(msg)
     sys.exit(1)
 
 

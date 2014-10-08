@@ -19,32 +19,63 @@ from source.utils import OrderedDefaultDict
 
 
 class Sample:
-    def __init__(self, name, bam=None, bed=None, vcf=None):
+    def __init__(self, name, bcbio_structure=None, bam=None, bed=None, vcf=None):
         self.name = name
         self.bam = bam
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
-        self.filtered_vcf_by_callername = OrderedDict()
-        self.filtered_tsv_by_callername = OrderedDict()
-        self.filtered_maf_by_callername = OrderedDict()
+        # self.filtered_vcf_by_callername = OrderedDict()
+        # self.filtered_tsv_by_callername = OrderedDict()
+        # self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
         self.dirpath = None
         self.var_dirpath = None
         self.normal_match = None
 
-    def get_clean_filtered_vcf_fpaths_by_callername(self, callername):
-        path = join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
-        return path
+    # def get_filtered_vcf_fpath_by_callername(callername):
+    #     fpath = join(
+    #         self.bcbio_structure.final_dirpath,
+    #         s.name,
+    #         dirname,
+    #         s.name + '-' + self.suf + ending)
+    #     return verify_file(fpath)
+    #
+    # def find_filtered_vcf_by_callername(callername):
+    #     return
 
-    def find_clean_filtered_vcf_by_callername(self, callername):
-        return verify_file(self.get_clean_filtered_vcf_fpaths_by_callername(callername))
+    def find_filt_vcf_by_callername(self, callername):
+        return verify_file(self.get_filt_vcf_fpaths_by_callername(callername))
+
+    def find_filt_tsv_by_callername(self, callername):
+        return verify_file(self.get_filt_tsv_fpaths_by_callername(callername))
+
+    def find_filt_maf_by_callername(self, callername):
+        return verify_file(self.get_filt_maf_fpaths_by_callername(callername))
+
+    def find_clean_filt_vcf_by_callername(self, callername):
+        return verify_file(self.get_clean_filt_vcf_fpaths_by_callername(callername))
+
+    def get_filt_vcf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
+
+    def get_filt_tsv_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
+
+    def get_filt_maf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_maf_ending)
+
+    def get_clean_filt_vcf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
 
     def __str__(self):
         return self.name
 
     def for_json(self):
-        return self.__dict__
+        return dict((k, v) for k, v in self.__dict__.items if k != 'bcbio_structure')
     #     return dict(
     #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
     #         for k, v in self.__dict__.items())
@@ -58,7 +89,8 @@ class Sample:
             return self.name, 0
 
     @staticmethod
-    def load(data):
+    def load(data, bcbio_structure):
+        data['bcbio_structure'] = bcbio_structure
         sample = Sample(**data)
         sample.__dict__ = data
         return sample
@@ -75,15 +107,8 @@ class VariantCaller:
 
         self.combined_filt_maf_fpath = None
 
-    def get_filtered_mafs(self):
-        mafs = []
-        for sample in self.samples:
-            maf = sample.filtered_maf_by_callername.get(self.name)
-            if not maf:
-                err('Warning: MAF files is None for caller ' + self.name + ', sample=' + sample.name)
-            else:
-                mafs.append(maf)
-        return mafs
+    def find_filt_maf_by_sample(self):
+        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_maf_ending)
 
     def find_fpaths_by_sample(self, dirname, name, ext):
         return self._find_files_by_sample(dirname, '.' + name + '.' + ext)
@@ -160,7 +185,7 @@ class BCBioStructure:
     filt_vcf_ending  = '.anno.filt.vcf'
     clean_filt_vcf_ending = '.anno.filt.passed.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
-    filt_maf_ending  = '.anno.filt.passed.maf'
+    filt_maf_ending  = '.anno.filt.maf'
     var_dir          = 'var'
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
@@ -248,15 +273,6 @@ class BCBioStructure:
             logger.log_fpath = self.cnf.log
 
     @staticmethod
-    def _ungzip_if_needed(cnf, fpath):
-        if not file_exists(fpath) and file_exists(fpath + '.gz'):
-            gz_fpath = fpath + '.gz'
-            gunzip = get_tool_cmdline(cnf, 'gunzip')
-            cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
-            call(cnf, cmdline, output_fpath=fpath)
-            info()
-
-    @staticmethod
     def move_vcfs_to_var(sample):
         fpaths = []
         for fname in os.listdir(sample.dirpath):
@@ -285,7 +301,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = Sample(name=sample_info['description'])
+        sample = Sample(name=sample_info['description'], bcbio_structure=self)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -311,7 +327,7 @@ class BCBioStructure:
         sample.phenotype = None
 
         if 'metadata' in sample_info:
-            sample.phenotype = sample_info['metadata']['phenotype']
+            sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
             info('Phenotype: ' + str(sample.phenotype))
 
             batch_names = sample_info['metadata']['batch']
@@ -331,7 +347,11 @@ class BCBioStructure:
         # self.move_vcfs_to_var(sample)
 
         to_exit = False
-        for caller_name in sample_info['algorithm'].get('variantcaller') or []:
+        variantcallers = sample_info['algorithm'].get('variantcaller') or []
+        if isinstance(variantcallers, basestring):
+            variantcallers = [variantcallers]
+
+        for caller_name in variantcallers:
             info(caller_name)
             caller = self.variant_callers.get(caller_name)
             if not caller:
@@ -341,7 +361,7 @@ class BCBioStructure:
             vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
             if not isfile(vcf_fpath):  # not in var, looking in sample dir
                 vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-            self._ungzip_if_needed(self.cnf, vcf_fpath)
+            _ungzip_if_needed(self.cnf, vcf_fpath)
 
             if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
                 err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
@@ -358,17 +378,13 @@ class BCBioStructure:
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_callername[caller_name] = vcf_fpath
 
-            # And filtered symlinks
-            for ending, dic in zip([BCBioStructure.filt_vcf_ending,
-                                    BCBioStructure.filt_tsv_ending,
-                                    BCBioStructure.filt_maf_ending],
-                                   [sample.filtered_vcf_by_callername,
-                                    sample.filtered_tsv_by_callername,
-                                    sample.filtered_maf_by_callername]):
-
-                fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
-                if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
-                    dic[caller_name] = fpath
+            # for fpath in [sample.find_filt_vcf_by_callername(caller_name),
+            #               sample.find_filt_tsv_by_callername(caller_name),
+            #               sample.find_filt_maf_by_callername(caller_name)]:
+            #
+            #     fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
+            #     if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
+            #         dic[caller_name] = fpath
 
         if to_exit:
             sys.exit(1)
@@ -515,6 +531,20 @@ def load_bcbio_cnf(cnf):
 
 def _normalize(name):
     return name.lower().replace('_', '').replace('-', '')
+
+
+def _ungzip_if_needed(cnf, fpath):
+    if fpath.endswith('.gz'):
+        fpath = fpath[:-3]
+    if not file_exists(fpath) and file_exists(fpath + '.gz'):
+        gz_fpath = fpath + '.gz'
+        gunzip = get_tool_cmdline(cnf, 'gunzip')
+        cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
+        res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
+        info()
+        if not res:
+            return None
+    return fpath
 
 
 # def get_trailing_number(string):

@@ -13,7 +13,7 @@ def summary_reports(cnf, bcbio_structure):
     if not htmls_by_sample:
         return None
 
-    final_summary_report_fpath = join(cnf.output_dir,  'FASTQCSummary.html')
+    final_summary_report_fpath = join(cnf.output_dir, BCBioStructure.fastqc_name + '.html')
 
     info()
     info('*' * 70)
@@ -21,9 +21,5 @@ def summary_reports(cnf, bcbio_structure):
     info('  ' + final_summary_report_fpath )
     print_html(final_summary_report_fpath, htmls_by_sample)
     return final_summary_report_fpath
-
-
-#if __name__ == "__main__":
-    #summary_reports(cnf, bcbio_structure)
 
 

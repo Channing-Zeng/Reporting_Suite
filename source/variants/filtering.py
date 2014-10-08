@@ -477,12 +477,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     for sample, [vcf, tsv, maf] in zip(caller.samples, results):
         info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
-        sample.filtered_vcf_by_callername[caller.name] = vcf
-        sample.filtered_tsv_by_callername[caller.name] = tsv
-        sample.filtered_maf_by_callername[caller.name] = maf
+        # sample.filtered_vcf_by_callername[caller.name] = vcf
+        # sample.filtered_tsv_by_callername[caller.name] = tsv
+        # sample.filtered_maf_by_callername[caller.name] = maf
 
     comb_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.maf')
-    caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.get_filtered_mafs(), comb_maf_fpath)
+    caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.find_filt_maf_by_sample().values(), comb_maf_fpath)
     info('-' * 70)
     info()
 

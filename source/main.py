@@ -3,6 +3,7 @@ import sys
 from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir
 from optparse import OptionParser
 from shutil import rmtree
+from source.bcbio_structure import _ungzip_if_needed
 
 from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes
 from source import logger
@@ -244,7 +245,17 @@ def load_genome_resources(cnf, required=list(), optional=list()):
         else:
             genome_cnf[key] = abspath(expanduser(genome_cnf[key]))
             if not verify_file(genome_cnf[key], key):
-                to_exit = True
+                gz_fpath = genome_cnf[key] + '.gz'
+                if verify_file(gz_fpath):
+                    info(key + ' is in GZip, trying to uncompress...')
+                    fpath = _ungzip_if_needed(cnf, gz_fpath)
+                    if fpath:
+                        genome_cnf[key] = fpath
+                    else:
+                        err('Could not uncompress probably due to permission denied or no left space in device, trying to use as is.')
+                        genome_cnf[key] = gz_fpath
+                else:
+                    err('Err: no ' + genome_cnf[key] + ' and ' + gz_fpath)
 
     if to_exit:
         sys.exit(1)

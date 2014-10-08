@@ -223,7 +223,7 @@ class BCBioRunner:
 
         self.fastqc_summary = Step(
             cnf, run_id,
-            name='fastqc_summary', short_name='fastqc',
+            name='FastQC_summary', short_name='fastqc',
             interpreter='python',
             script='fastqc_summary',
             dir_name=BCBioStructure.fastqc_summary_dir,
@@ -545,7 +545,7 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    clean_vcf_fpath = sample.get_clean_filtered_vcf_fpaths_by_callername(caller.name)
+                    clean_vcf_fpath = sample.get_clean_filt_vcf_fpaths_by_callername(caller.name)
                     if not file_exists(clean_vcf_fpath) and not self.varfilter_all:
                         err('VCF does not exist: sample ' + sample.name + ', caller "' +
                             caller.name + '". You need to run VarFilter first.')
@@ -553,7 +553,7 @@ class BCBioRunner:
                         self._submit_job(
                             self.varqc_after, sample.name, suf=caller.name,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            vcf=sample.get_clean_filtered_vcf_fpaths_by_callername(caller.name), sample=sample.name, caller=caller.name)
+                            vcf=sample.get_clean_filt_vcf_fpaths_by_callername(caller.name), sample=sample.name, caller=caller.name)
 
         if self.varqc_after_summary in self.steps:
             self._submit_job(
@@ -605,6 +605,7 @@ class BCBioRunner:
             wait_for_steps += [self.targetcov_summary.job_name()] if self.targetcov_summary in self.steps else []
             wait_for_steps += [self.ngscat_summary.job_name()] if self.ngscat_summary in self.steps else []
             wait_for_steps += [self.qualimap_summary.job_name()] if self.qualimap_summary in self.steps else []
+            wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
             self._submit_job(
                 self.combined_report,
                 wait_for_steps=wait_for_steps

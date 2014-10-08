@@ -360,6 +360,22 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
     return maf_fpath
 
 
+def fix_chromosome_names(cnf, vcf_fpath):
+    step_greetings('Fixing chromosome names...')
+
+    def _proc_rec(rec):
+        if not rec.CHROM.startswith('chr'):
+            rec.CHROM = 'chr' + rec.CHROM
+        return rec
+
+    out_fpath = iterate_vcf(cnf, vcf_fpath, _proc_rec, 'chr')
+
+    if not verify_file(out_fpath):
+        critical()
+
+    return out_fpath
+
+
 def vcf_one_per_line(cnf, vcf_fpath):
     info('Converting VCF to one-effect-per-line...')
 

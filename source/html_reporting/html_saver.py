@@ -8,7 +8,7 @@ from json import dumps, JSONEncoder
 
 from source.bcbio_structure import VariantCaller, Sample
 from source.file_utils import verify_file
-from source.quast_reporting import json_saver
+from source.html_reporting import json_saver
 from source.file_utils import file_exists
 
 

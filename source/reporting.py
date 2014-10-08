@@ -6,7 +6,7 @@ import datetime
 
 from source.bcbio_structure import VariantCaller, Sample
 from source.logger import critical, info, err
-from source.quast_reporting.html_saver import write_html_report
+from source.html_reporting.html_saver import write_html_report
 
 
 def to_dict_by_name(objects):
@@ -171,8 +171,8 @@ class SampleReport(Report):
             dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
-    def load(data, sample=None):
-        data['sample'] = sample or Sample.load(data['sample'])
+    def load(data, sample=None, bcbio_structure=None):
+        data['sample'] = sample or Sample.load(data['sample'], bcbio_structure)
         data['records'] = [Record.load(d) for d in data['records']]
         data['metric_storage'] = MetricStorage.load(data['metric_storage'])
 
@@ -287,15 +287,16 @@ class FullReport(Report):
         return rows
 
     @staticmethod
-    def construct_from_sample_report_jsons(samples, jsons_by_sample, htmls_by_sample, output_dirpath):
+    def construct_from_sample_report_jsons(samples, bcbio_structure, jsons_by_sample, htmls_by_sample, output_dirpath):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:
             if sample.name in jsons_by_sample:
                 with open(jsons_by_sample[sample.name]) as f:
                     data = load(f, object_pairs_hook=OrderedDict)
-                    sample_report = SampleReport.load(data, sample)
-                    sample_report.html_fpath = relpath(htmls_by_sample[sample.name], output_dirpath) if sample.name in htmls_by_sample else None
+                    sample_report = SampleReport.load(data, sample, bcbio_structure)
+                    sample_report.html_fpath = relpath(htmls_by_sample[sample.name], output_dirpath) \
+                        if sample.name in htmls_by_sample else None
                     full_report.sample_reports.append(sample_report)
                     metric_storage = metric_storage or sample_report.metric_storage
 

@@ -59,11 +59,12 @@ def _full_report_for_caller(cnf, caller):
     htmls_by_sample = caller.find_fpaths_by_sample(cnf.dir, cnf.name, 'html')
 
     return FullReport.construct_from_sample_report_jsons(
-        caller.samples, jsons_by_sample, htmls_by_sample, cnf.output_dir)
+        caller.samples, caller.bcbio_structure, jsons_by_sample,
+        htmls_by_sample, cnf.output_dir)
 
 
-def _load_sample_report(json_fpath, sample):
+def _load_sample_report(json_fpath, sample, bcbio_structure):
     with open(json_fpath) as f:
         json = load(f)
-    return SampleReport.load(json, sample)
+    return SampleReport.load(json, sample, bcbio_structure)
 

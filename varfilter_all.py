@@ -209,7 +209,7 @@ def filter_all(cnf, bcbio_structure):
     info('Combined MAF files:')
     for caller in bcbio_structure.variant_callers.values():
         if caller.combined_filt_maf_fpath:
-            info(caller.name + ': ' + caller.combined_filt_maf_fpath)
+            info('  ' + caller.name + ': ' + caller.combined_filt_maf_fpath)
 
             if cnf.datahub_path:
                 copy_to_datahub(cnf, caller, cnf.datahub_path)
@@ -236,12 +236,14 @@ def symlink_to_dir(fpath, dirpath):
 def finalize_one(cnf, bcbio_structure, sample):
     info(sample.name + ':')
 
-    for dic in [sample.filtered_vcf_by_callername,
-                sample.filtered_tsv_by_callername,
-                sample.filtered_maf_by_callername]:
-        for caller_name, fpath in dic.items():
+    # TODO: if sample is normal, suppress warning in verify_fpath
+    for caller_name, caller in bcbio_structure.variant_callers.items():
+        for fpath in [
+            sample.find_filt_vcf_by_callername(caller_name),
+            sample.find_filt_tsv_by_callername(caller_name),
+            sample.find_filt_maf_by_callername(caller_name)]:
             if fpath:
-                info(caller_name + ': ' + fpath)
+                info('  ' + caller_name + ': ' + fpath)
                 symlink_to_dir(fpath, join(dirname(fpath), pardir))
                 symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
 
