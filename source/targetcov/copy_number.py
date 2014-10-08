@@ -57,8 +57,9 @@ def cnv_reports(cnf, bcbio_structure):
 
     info('Calculating normalized coverages for CNV...')
     amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(
-        cnf, bcbio_structure.samples,
-        gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
+        cnf, bcbio_structure,
+        gene_report_fpaths_by_sample,
+        summary_report_fpath_by_sample)
 
     cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
     if amplicon_cnv_rows:
@@ -92,7 +93,7 @@ def _get_lines_by_region_type(report_fpath, region_type):
     return gene_summary_lines
 
 
-def _summarize_copy_number(cnf, samples, gene_reports_by_sample, report_fpath_by_sample):
+def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample):
     amplicon_summary_lines = []
     gene_amplicon_summary_lines = []
     mapped_reads_by_sample = OrderedDict()
@@ -105,10 +106,11 @@ def _summarize_copy_number(cnf, samples, gene_reports_by_sample, report_fpath_by
 
         with open(json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
-        sample = next((sample for sample in samples if sample.name == sample_name), None)
+        sample = next((sample for sample in bcbio_structure.samples
+                       if sample.name == sample_name), None)
         if not sample:
             continue
-        cov_report = SampleReport.load(data, sample)
+        cov_report = SampleReport.load(data, sample, bcbio_structure)
 
         mapped_reads_by_sample[sample_name] = int(next(
             rec.value for rec in cov_report.records

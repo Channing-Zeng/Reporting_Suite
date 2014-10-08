@@ -89,7 +89,7 @@ def main(args):
 
 
 def process_one(cnf):
-    sample = Sample(cnf.name, cnf.bam, cnf.bed)
+    sample = Sample(cnf.name, bam=cnf.bam, bed=cnf.bed)
     return generate_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
 
 

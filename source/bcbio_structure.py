@@ -19,14 +19,14 @@ from source.utils import OrderedDefaultDict
 
 
 class Sample:
-    def __init__(self, name, bam=None, bed=None, vcf=None):
+    def __init__(self, name, bcbio_structure=None, bam=None, bed=None, vcf=None):
         self.name = name
         self.bam = bam
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
-        self.filtered_vcf_by_callername = OrderedDict()
-        self.filtered_tsv_by_callername = OrderedDict()
-        self.filtered_maf_by_callername = OrderedDict()
+        # self.filtered_vcf_by_callername = OrderedDict()
+        # self.filtered_tsv_by_callername = OrderedDict()
+        # self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
         self.dirpath = None
         self.var_dirpath = None
@@ -43,19 +43,39 @@ class Sample:
     # def find_filtered_vcf_by_callername(callername):
     #     return
 
-    def get_clean_filtered_vcf_fpaths_by_callername(self, callername):
-        path = join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
-        return path
+    def find_filt_vcf_by_callername(self, callername):
+        return verify_file(self.get_filt_vcf_fpaths_by_callername(callername))
 
-    def find_clean_filtered_vcf_by_callername(self, callername):
-        return verify_file(self.get_clean_filtered_vcf_fpaths_by_callername(callername))
+    def find_filt_tsv_by_callername(self, callername):
+        return verify_file(self.get_filt_tsv_fpaths_by_callername(callername))
+
+    def find_filt_maf_by_callername(self, callername):
+        return verify_file(self.get_filt_maf_fpaths_by_callername(callername))
+
+    def find_clean_filt_vcf_by_callername(self, callername):
+        return verify_file(self.get_clean_filt_vcf_fpaths_by_callername(callername))
+
+    def get_filt_vcf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
+
+    def get_filt_tsv_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
+
+    def get_filt_maf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.filt_maf_ending)
+
+    def get_clean_filt_vcf_fpaths_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
 
     def __str__(self):
         return self.name
 
     def for_json(self):
-        return self.__dict__
+        return dict((k, v) for k, v in self.__dict__.items if k != 'bcbio_structure')
     #     return dict(
     #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
     #         for k, v in self.__dict__.items())
@@ -69,7 +89,8 @@ class Sample:
             return self.name, 0
 
     @staticmethod
-    def load(data):
+    def load(data, bcbio_structure):
+        data['bcbio_structure'] = bcbio_structure
         sample = Sample(**data)
         sample.__dict__ = data
         return sample
@@ -86,15 +107,8 @@ class VariantCaller:
 
         self.combined_filt_maf_fpath = None
 
-    def get_filtered_mafs(self):
-        mafs = []
-        for sample in self.samples:
-            maf = sample.filtered_maf_by_callername.get(self.name)
-            if not maf:
-                err('Warning: MAF files is None for caller ' + self.name + ', sample=' + sample.name)
-            else:
-                mafs.append(maf)
-        return mafs
+    def find_filt_maf_by_sample(self):
+        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_maf_ending)
 
     def find_fpaths_by_sample(self, dirname, name, ext):
         return self._find_files_by_sample(dirname, '.' + name + '.' + ext)
@@ -171,7 +185,7 @@ class BCBioStructure:
     filt_vcf_ending  = '.anno.filt.vcf'
     clean_filt_vcf_ending = '.anno.filt.passed.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
-    filt_maf_ending  = '.anno.filt.passed.maf'
+    filt_maf_ending  = '.anno.filt.maf'
     var_dir          = 'var'
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
@@ -287,7 +301,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = Sample(name=sample_info['description'])
+        sample = Sample(name=sample_info['description'], bcbio_structure=self)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -364,17 +378,13 @@ class BCBioStructure:
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_callername[caller_name] = vcf_fpath
 
-            # And filtered symlinks
-            for ending, dic in zip([BCBioStructure.filt_vcf_ending,
-                                    BCBioStructure.filt_tsv_ending,
-                                    BCBioStructure.filt_maf_ending],
-                                   [sample.filtered_vcf_by_callername,
-                                    sample.filtered_tsv_by_callername,
-                                    sample.filtered_maf_by_callername]):
-
-                fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
-                if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
-                    dic[caller_name] = fpath
+            # for fpath in [sample.find_filt_vcf_by_callername(caller_name),
+            #               sample.find_filt_tsv_by_callername(caller_name),
+            #               sample.find_filt_maf_by_callername(caller_name)]:
+            #
+            #     fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
+            #     if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
+            #         dic[caller_name] = fpath
 
         if to_exit:
             sys.exit(1)

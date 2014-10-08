@@ -29,12 +29,12 @@ def info(msg='', ending='\n', print_date=True):
 
 
 def warn(msg='', ending='\n', print_date=True):
-    _log(sys.stdout, msg, ending, print_date)
+    _log(sys.stderr, msg, ending, print_date)
 
 
 def err(msg='', ending='\n', print_date=True):
-    _log(sys.stderr, msg, ending, print_date)
-    _send_email(msg)
+    warn(msg, ending, print_date)
+    # _send_email(msg)
 
 
 def _send_email(msg=''):
