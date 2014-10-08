@@ -406,26 +406,31 @@ def read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def leave_first_sample(cnf, vcf_fpath):
+def leave_main_sample(cnf, vcf_fpath, samplename):
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
     if len(vcf_header_samples) <= 1:
         return vcf_fpath
 
-    sample_name = vcf_header_samples[0]
+    name = next((name for name in vcf_header_samples if name == samplename), None)
+    if name is None:
+        err('No sample ' + samplename + ' in header for ' + vcf_fpath)
+        return vcf_fpath
+    index = vcf_header_samples.index(name)
 
     # def _f1(rec):
     #     rec.samples = [sample_name]
     #     return rec
     #
-    info('Keeping SAMPLE only for the first sample (' + sample_name + ')')
+    info('Keeping SAMPLE only for the first sample (' + samplename + ')')
     # vcf_fpath = iterate_vcf(cnf, vcf_fpath, _f1, suffix=sample_name)
     # out_fpath = extract_sample(cnf, vcf_fpath, sample_name)
     # info()
 
     def _f(line, i):
         if line and (line.startswith('#CHROM') or line[0] != '#'):
-            return '\t'.join(line.split('\t')[:10])
+            ts = line.split('\t')
+            return '\t'.join(ts[:9] + [ts[9 + index]])
         return line
     vcf_fpath = iterate_file(cnf, vcf_fpath, _f)
 

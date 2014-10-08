@@ -9,13 +9,13 @@ from source.tools_from_cnf import get_java_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import file_exists
 from source.logger import step_greetings, info, err, critical
-from source.variants.vcf_processing import read_sample_names_from_vcf, leave_first_sample, vcf_one_per_line
+from source.variants.vcf_processing import read_sample_names_from_vcf, leave_main_sample, vcf_one_per_line
 
 
-def make_tsv(cnf, vcf_fpath):
+def make_tsv(cnf, vcf_fpath, samplename):
     step_greetings('Exporting to TSV...')
 
-    vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+    vcf_fpath = leave_main_sample(cnf, vcf_fpath, samplename)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 

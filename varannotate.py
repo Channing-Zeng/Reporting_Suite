@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-from source.bcbio_structure import BCBioStructure
+from source.bcbio_structure import BCBioStructure, Sample
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -76,21 +76,21 @@ def set_up_snpeff(cnf):
 
 
 def process_one(cnf):
-    vcf_fpath = cnf.vcf
+    sample = Sample(cnf.name, vcf=cnf.vcf, bam=cnf.bam)
 
-    vcf_fpath = fix_chromosome_names(cnf, vcf_fpath)
+    sample.vcf = fix_chromosome_names(cnf, sample.vcf)
 
     if cnf.get('filter_reject'):
-        vcf_fpath = remove_rejected(cnf, vcf_fpath)
-        if vcf_fpath is None:
+        sample.vcf = remove_rejected(cnf, sample.vcf)
+        if sample.vcf is None:
             err('No variants left: all rejected and removed.')
             return None, None, None
 
     if cnf.get('extract_sample'):
-        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
+        sample.vcf = extract_sample(cnf, sample.vcf, sample.name)
 
     anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(
-        cnf, vcf_fpath, cnf.bam, cnf.transcript_fpath)
+        cnf, sample.vcf, sample.bam, sample.name, cnf.transcript_fpath)
 
     info()
     info('Indexing ' + anno_vcf_fpath)

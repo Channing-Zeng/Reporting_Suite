@@ -24,6 +24,7 @@ class Sample:
         self.bam = bam
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
+        self.vcf = vcf
         # self.filtered_vcf_by_callername = OrderedDict()
         # self.filtered_tsv_by_callername = OrderedDict()
         # self.filtered_maf_by_callername = OrderedDict()

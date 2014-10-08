@@ -11,7 +11,7 @@ from source.bcbio_structure import BCBioStructure
 
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_first_sample, get_trasncripts_fpath
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv

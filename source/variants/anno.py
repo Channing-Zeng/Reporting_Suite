@@ -9,12 +9,12 @@ from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_first_sample
+from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_main_sample
 
 
-def run_annotators(cnf, vcf_fpath, bam_fpath=None, transcript_fpath=None):
+def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None):
     annotated = False
-    original_vcf = vcf_fpath
+    original_vcf = cnf.vcf
 
     if 'gatk' in cnf:
         res = _gatk(cnf, vcf_fpath, bam_fpath)
@@ -93,7 +93,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath=None, transcript_fpath=None):
 
         # Converting to TSV
         if 'tsv_fields' in cnf:
-            tsv_fpath = make_tsv(cnf, vcf_fpath)
+            tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
             if not tsv_fpath:
                 critical('TSV convertion didn\'t work')
 
