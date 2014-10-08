@@ -248,10 +248,11 @@ def load_genome_resources(cnf, required=list(), optional=list()):
                 gz_fpath = genome_cnf[key] + '.gz'
                 if verify_file(gz_fpath):
                     info(key + ' is in GZip, trying to uncompress...')
-                    try:
-                        genome_cnf[key] = _ungzip_if_needed(cnf, gz_fpath)
-                    except OSError:
-                        err('Could not uncompress probably due to permission denied, trying to use as is.')
+                    fpath = _ungzip_if_needed(cnf, gz_fpath)
+                    if fpath:
+                        genome_cnf[key] = fpath
+                    else:
+                        err('Could not uncompress probably due to permission denied or no left space in device, trying to use as is.')
                         genome_cnf[key] = gz_fpath
                 else:
                     err('Err: no ' + genome_cnf[key] + ' and ' + gz_fpath)

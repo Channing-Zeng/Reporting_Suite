@@ -519,8 +519,10 @@ def _ungzip_if_needed(cnf, fpath):
         gz_fpath = fpath + '.gz'
         gunzip = get_tool_cmdline(cnf, 'gunzip')
         cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
-        call(cnf, cmdline, output_fpath=fpath)
+        res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
         info()
+        if not res:
+            return None
     return fpath
 
 
