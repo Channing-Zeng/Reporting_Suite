@@ -248,18 +248,6 @@ class BCBioStructure:
             logger.log_fpath = self.cnf.log
 
     @staticmethod
-    def _ungzip_if_needed(cnf, fpath):
-        if fpath.endswith('.gz'):
-            fpath = fpath[:-3]
-        if not file_exists(fpath) and file_exists(fpath + '.gz'):
-            gz_fpath = fpath + '.gz'
-            gunzip = get_tool_cmdline(cnf, 'gunzip')
-            cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
-            call(cnf, cmdline, output_fpath=fpath)
-            info()
-        return fpath
-
-    @staticmethod
     def move_vcfs_to_var(sample):
         fpaths = []
         for fname in os.listdir(sample.dirpath):
@@ -522,6 +510,18 @@ def load_bcbio_cnf(cnf):
 
 def _normalize(name):
     return name.lower().replace('_', '').replace('-', '')
+
+
+def _ungzip_if_needed(cnf, fpath):
+    if fpath.endswith('.gz'):
+        fpath = fpath[:-3]
+    if not file_exists(fpath) and file_exists(fpath + '.gz'):
+        gz_fpath = fpath + '.gz'
+        gunzip = get_tool_cmdline(cnf, 'gunzip')
+        cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
+        call(cnf, cmdline, output_fpath=fpath)
+        info()
+    return fpath
 
 
 # def get_trailing_number(string):

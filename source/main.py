@@ -3,6 +3,7 @@ import sys
 from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir
 from optparse import OptionParser
 from shutil import rmtree
+from source.bcbio_structure import _ungzip_if_needed
 
 from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes
 from source import logger
@@ -248,7 +249,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
                 if verify_file(gz_fpath):
                     info(key + ' is in GZip, trying to uncompress...')
                     try:
-                        genome_cnf[key] = self._ungzip_if_needed(cnf, gz_fpath)
+                        genome_cnf[key] = _ungzip_if_needed(cnf, gz_fpath)
                     except OSError:
                         err('Could not uncompress probably due to permission denied, trying to use as is.')
                         genome_cnf[key] = gz_fpath
