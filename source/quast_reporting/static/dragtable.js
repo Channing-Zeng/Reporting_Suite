@@ -40,7 +40,7 @@ var classes = {
     rightToCell_of_emptySpace: 'right_to_cell_of_empty_space',
 
     mainReportTable_id: 'main_report_table',
-    totalReportJson_id: 'total-report-json',
+    totalReportJson_id: 'total-report-json'
 };
 
 var dragTable = {
@@ -371,7 +371,7 @@ var dragTable = {
 
             $(drag_obj.newTable).animate({
                 left: final_pos.x,
-                top: final_pos.y,
+                top: final_pos.y
             }, 'fast', function() {
                 $(drag_obj.newTable).remove();
                 $(DT.getColumn(drag_obj.table, col_index)).removeClass(classes.cell_of_emptySpace);
@@ -497,11 +497,11 @@ var dragTable = {
                 dataType: 'json',
                 data: {
                     reportId: document.reportId,
-                    order: string,
-                },
+                    order: string
+                }
             });
         }
-    },
+    }
 };
 
 var DT = dragTable;

@@ -263,7 +263,7 @@ function bindTip(placeholder, series, plot, xToPrettyStringFunction, xUnit, posi
 var tipElementExists = false;
 function showTip(pageX, pageY, offset, plotWidth, plotHeight,
                  series, centralSeriesIndex, xIndex, xStr, position) {
-    const LINE_HEIGHT = 16; // pixels
+    LINE_HEIGHT = 16; // pixels
 
     position = ((position != null) ? position : 'bottom right');
 //    pageY -= LINE_HEIGHT * (centralSeriesIndex + 1.5);
@@ -274,11 +274,11 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
         $('<div id="plot_tip" class="white_stroked"></div>').appendTo('body');
 
         $('<div id="plot_tip_vertical_rule"></div>').css({
-            height: plotHeight,
+            height: plotHeight
         }).appendTo('body');
 
         $('<div id="plot_tip_horizontal_rule"></div>').css({
-            width: plotWidth,
+            width: plotWidth
         }).appendTo('body');
 
         tipElementExists = true;
@@ -286,21 +286,21 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
 
     $('#plot_tip').html('').css({
         top: pageY + 5 - ((directions[0] == 'top') ? LINE_HEIGHT * (series.length + 2) : 0),
-        left: pageX + 10,
+        left: pageX + 10
     }).show();
 
     $('#plot_tip_vertical_rule').html('').css({
         top: offset.top,
-        left: pageX,
+        left: pageX
     }).show();
 
     $('#plot_tip_horizontal_rule').html('').css({
         top: pageY,
-        left: offset.left,
+        left: offset.left
     }).show();
 
     $('<div>' + xStr + '</div>').css({
-        height: LINE_HEIGHT,
+        height: LINE_HEIGHT
     }).appendTo('#plot_tip');
 
     var sortedYsAndColors = [];
@@ -309,7 +309,7 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
             y: (series[i].data[xIndex] || series[i].data[series[i].data.length - 1])[1],
             color: series[i].color,
             label: (series[i].isReference ? 'Reference' : series[i].label),
-            isCurrent: i == centralSeriesIndex,
+            isCurrent: i == centralSeriesIndex
         });
     }
     sortedYsAndColors.sort(function(a, b) { return a.y < b.y;});
@@ -320,7 +320,7 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
         $('<div id="tip_line' + i + '">' + toPrettyString(item.y)
             + ', <span style="color: ' + item.color + ';">' + item.label + '</span></div>').css({
                 height: LINE_HEIGHT,
-                "font-weight": item.isCurrent ? "bold" : "normal",
+                "font-weight": item.isCurrent ? "bold" : "normal"
             }).appendTo('#plot_tip');
     }
 }
@@ -472,6 +472,5 @@ jQuery.fn.exists = function(){
 //
 //
 //
-
 
 
