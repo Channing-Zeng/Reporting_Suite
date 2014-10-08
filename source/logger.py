@@ -4,6 +4,7 @@ from datetime import datetime
 from time import sleep
 import smtplib
 from email.mime.text import MIMEText
+import traceback
 
 
 log_fpath = None
@@ -48,6 +49,8 @@ def _send_email(msg=''):
             s.sendmail(msg['From'], [msg['To']], msg.as_string())
             s.quit()
         except:
+            traceback.print_exc()
+            err('Could not send email with error. Proceeding.')
             pass
 
 
