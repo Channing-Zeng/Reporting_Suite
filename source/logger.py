@@ -34,7 +34,7 @@ def warn(msg='', ending='\n', print_date=True):
 
 def err(msg='', ending='\n', print_date=True):
     _log(sys.stderr, msg, ending, print_date)
-    # _send_email(msg)
+    _send_email(msg)
 
 
 def _send_email(msg=''):
@@ -50,7 +50,7 @@ def _send_email(msg=''):
             s.quit()
         except:
             traceback.print_exc()
-            err('Could not send email with error. Proceeding.')
+            warn('Could not send email with error. Proceeding.')
             pass
 
 
