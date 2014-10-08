@@ -39,12 +39,12 @@ genomes:
   hg19:
     seq: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/seq/hg19.fa
 
-    dbsnp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
-    cosmic: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
+    dbsnp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf.gz
+    cosmic: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf.gz
     dbnsfp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
     snpeff: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/snpeff
-    1000genomes: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
-    oncomine: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/mutation_details.vcf
+    1000genomes: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf.gz
+    oncomine: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/oncomine.vcf
 
     chr_lengths: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
