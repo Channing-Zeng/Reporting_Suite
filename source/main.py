@@ -62,7 +62,7 @@ def read_opts_and_cnfs(extra_opts,
              metavar='SYS_CNF.yaml',
              default=Defaults.sys_cnfs['uk'],
              help='System configuration file with paths to external tools and genome resources. The default is  '
-                  '(see default one %s)' % Defaults.sys_cnfs['uk'])
+                  '(see default one %s)' % Defaults.sys_cnf)
          ),
         (['--run-cnf'], dict(
              dest='run_cnf',
