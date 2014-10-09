@@ -99,7 +99,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
 
             if isfile(final_tsv_fpath):
                 os.remove(final_tsv_fpath)
-            shutil.move(tsv_fpath, final_tsv_fpath)
+            shutil.copy(tsv_fpath, final_tsv_fpath)
         else:
             final_tsv_fpath = None
 
@@ -114,7 +114,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
 
             if isfile(final_maf_fpath):
                 os.remove(final_maf_fpath)
-            shutil.move(maf_fpath, final_maf_fpath)
+            shutil.copy(maf_fpath, final_maf_fpath)
         else:
             final_maf_fpath = None
 

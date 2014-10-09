@@ -44,33 +44,49 @@ class Sample:
     # def find_filtered_vcf_by_callername(callername):
     #     return
 
+
+    def find_vcf_fpath_by_callername(self, callername):
+        return verify_file(self.get_vcf_fpath_by_callername(callername))
+
+    def get_vcf_fpath_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.var_dir, self.name + '-' + callername + '.vcf')
+
+
+    def find_anno_vcf_fpath_by_callername(self, callername):
+        return verify_file(self.get_anno_vcf_fpath_by_callername(callername))
+
+    def get_anno_vcf_fpath_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varannotate_dir,
+                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending)
+
+
     def find_filt_vcf_by_callername(self, callername):
-        return verify_file(self.get_filt_vcf_fpaths_by_callername(callername))
+        return verify_file(self.get_filt_vcf_fpath_by_callername(callername))
 
     def find_filt_tsv_by_callername(self, callername):
-        return verify_file(self.get_filt_tsv_fpaths_by_callername(callername))
+        return verify_file(self.get_filt_tsv_fpath_by_callername(callername))
 
     def find_filt_maf_by_callername(self, callername):
-        return verify_file(self.get_filt_maf_fpaths_by_callername(callername))
+        return verify_file(self.get_filt_maf_fpath_by_callername(callername))
 
-    def find_clean_filt_vcf_by_callername(self, callername):
-        return verify_file(self.get_clean_filt_vcf_fpaths_by_callername(callername))
+    def find_pass_filt_vcf_by_callername(self, callername):
+        return verify_file(self.get_pass_filt_vcf_fpath_by_callername(callername))
 
-    def get_filt_vcf_fpaths_by_callername(self, callername):
+    def get_filt_vcf_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
 
-    def get_filt_tsv_fpaths_by_callername(self, callername):
+    def get_filt_tsv_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
 
-    def get_filt_maf_fpaths_by_callername(self, callername):
+    def get_filt_maf_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.filt_maf_ending)
 
-    def get_clean_filt_vcf_fpaths_by_callername(self, callername):
+    def get_pass_filt_vcf_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.clean_filt_vcf_ending)
+                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending)
 
     def __str__(self):
         return self.name
@@ -121,7 +137,7 @@ class VariantCaller:
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
 
     def find_pass_filt_vcf_by_sample(self):
-        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.clean_filt_vcf_ending)
+        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
     def _find_files_by_sample(self, dirname, ending):
         files_by_sample = OrderedDict()
@@ -184,7 +200,7 @@ class BCBioStructure:
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
-    clean_filt_vcf_ending = '.anno.filt.passed.vcf'
+    pass_filt_vcf_ending = '.anno.filt.passed.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
     filt_maf_ending  = '.anno.filt.maf'
     var_dir          = 'var'

@@ -433,7 +433,7 @@ def leave_main_sample(cnf, vcf_fpath, samplename):
             ts = line.split('\t')
             return '\t'.join(ts[:9] + [ts[9 + index]])
         return line
-    vcf_fpath = iterate_file(cnf, vcf_fpath, _f)
+    vcf_fpath = iterate_file(cnf, vcf_fpath, _f, suffix='1sm')
 
     if not verify_file(vcf_fpath):
         critical('Error: leave_first_sample didnt generate output file.')

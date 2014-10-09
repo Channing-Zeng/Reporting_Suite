@@ -545,7 +545,7 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    clean_vcf_fpath = sample.get_clean_filt_vcf_fpaths_by_callername(caller.name)
+                    clean_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name)
                     if not file_exists(clean_vcf_fpath) and not self.varfilter_all:
                         err('VCF does not exist: sample ' + sample.name + ', caller "' +
                             caller.name + '". You need to run VarFilter first.')
@@ -553,7 +553,8 @@ class BCBioRunner:
                         self._submit_job(
                             self.varqc_after, sample.name, suf=caller.name,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            vcf=sample.get_clean_filt_vcf_fpaths_by_callername(caller.name), sample=sample.name, caller=caller.name)
+                            vcf=sample.get_pass_filt_vcf_fpath_by_callername(caller.name),
+                            sample=sample.name, caller=caller.name)
 
         if self.varqc_after_summary in self.steps:
             self._submit_job(
@@ -614,8 +615,12 @@ class BCBioRunner:
         if self.mongo_loader in self.steps:
             for sample in self.bcbio_structure.samples:
                 for caller in self.bcbio_structure.variant_callers.values():
-                    filt_vcf_fpath = sample.filtered_vcf_by_callername.get(caller.name)
-                    if filt_vcf_fpath:
+
+                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
+                    anno_vcf = sample.get_anno_vcf_fpath_by_callername(caller.name)
+                    vcf = sample.get_vcf_fpath_by_callername(caller.name)
+
+                    if file_exists(filt_vcf_fpath) or file_exists(vcf) or file_exists(anno_vcf):
                         self._submit_job(
                             self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
@@ -649,13 +654,11 @@ class BCBioRunner:
                 normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
-        anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
-        annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
-
-        filter_dirpath = join(dirname(anno_dirpath), self.varfilter_all.dir_name)
-        safe_mkdir(filter_dirpath)
-        sample.filtered_vcf_by_callername[caller_name] = \
-            join(filter_dirpath, basename(add_suffix(annotated_vcf_fpath, 'filt.passed')))
+        # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
+        # annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
+        #
+        # filter_dirpath = join(dirname(anno_dirpath), self.varfilter_all.dir_name)
+        # safe_mkdir(filter_dirpath)
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)
