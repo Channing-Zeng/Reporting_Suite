@@ -76,7 +76,7 @@ class Sample:
         return self.name
 
     def for_json(self):
-        return dict((k, v) for k, v in self.__dict__.items if k != 'bcbio_structure')
+        return dict((k, v) for k, v in self.__dict__.items() if k != 'bcbio_structure')
     #     return dict(
     #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
     #         for k, v in self.__dict__.items())
