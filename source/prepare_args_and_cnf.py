@@ -13,7 +13,7 @@ from source.logger import info, critical
 
 
 def add_post_bcbio_args(parser):
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnfs['us'])
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
@@ -44,6 +44,17 @@ def process_post_bcbio_args(parser):
                  'to the bcbio directory. \nIt can be provided by the first argument for the script, nor the default one' +
                  'is the current working directory (' + bcbio_final_dir + ')')
 
+    import socket
+    hostname = socket.gethostname()
+    print hostname
+    Defaults.sys_cnf = Defaults.sys_cnfs['us']
+    if 'ukap' in hostname:
+        Defaults.sys_cnf = Defaults.sys_cnfs['uk']
+    elif 'local' in hostname:
+        Defaults.sys_cnf = Defaults.sys_cnfs['local']
+    elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+        Defaults.sys_cnf = Defaults.sys_cnfs['us']
+
     for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
         provided_cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
         project_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
@@ -52,7 +63,7 @@ def process_post_bcbio_args(parser):
             if not verify_file(provided_cnf_fpath):
                 sys.exit(1)
             if provided_cnf_fpath != project_cnf_fpath:
-                info('Copying ' + provided_cnf_fpath + ' to ' + project_cnf_fpath)
+                info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
                 if isfile(project_cnf_fpath):
                     os.remove(project_cnf_fpath)
                 file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
@@ -63,13 +74,14 @@ def process_post_bcbio_args(parser):
             else:
                 provided_cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
                 if provided_cnf_fpath != project_cnf_fpath:
-                    info('Copying ' + provided_cnf_fpath + ' to ' + project_cnf_fpath)
+                    info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
                     if isfile(project_cnf_fpath):
                         os.remove(project_cnf_fpath)
                     file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
             opt_dict[cnf_name + '_cnf'] = provided_cnf_fpath
 
+    info()
     cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
     cnf.bcbio_final_dir = bcbio_final_dir
 

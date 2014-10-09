@@ -30,7 +30,13 @@ class Defaults:
     reuse_intermediate = True
     keep_intermediate = True
 
-    sys_cnf = join(cur_dirpath, pardir, 'system_info_Waltham.yaml')
+    sys_cnfs = dict(
+        us=abspath(join(cur_dirpath, pardir, 'system_info_Waltham.yaml')),
+        uk=abspath(join(cur_dirpath, pardir, 'system_info_AP.yaml')),
+        cloud=abspath(join(cur_dirpath, pardir, 'system_info_cloud.yaml')),
+        local=abspath(join(cur_dirpath, pardir, 'test', 'system_info.yaml')),
+    )
+    sys_cnf = sys_cnfs['us']
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
@@ -240,8 +246,8 @@ def fill_dict_from_defaults(cur_cnf, defaults_dict):
 def _check_paths(sys_cnf, run_cnf):
     to_exit = False
 
-    info('Using ' + sys_cnf + ' as a system configuration file.')
-    info('Using ' + run_cnf + ' as a run configuration file.')
+    info('System configuration file: ' + sys_cnf)
+    info('Run configuration file:    ' + run_cnf)
     info()
 
     for fn in [sys_cnf, run_cnf]:

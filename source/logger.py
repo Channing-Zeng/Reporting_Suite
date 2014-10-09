@@ -40,9 +40,8 @@ def err(msg='', ending='\n', print_date=True):
 def _send_email(msg=''):
     if msg:
         msg = MIMEText(msg)
-        msg['Subject'] = 'Reporting for ' + (project_name or '') + ' ' +\
-                         (proc_name or '')
-        msg['From'] = 'AZ reporting'
+        msg['Subject'] = 'Reporting for ' + (project_name or '') + ' ' + (proc_name or '')
+        msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = address
         try:
             s = smtplib.SMTP('localhost')
@@ -50,7 +49,7 @@ def _send_email(msg=''):
             s.quit()
             info('Mail sent to ' + address)
         except:
-            traceback.print_exc()
+            # traceback.print_exc()
             warn('Could not send email with error. Proceeding.')
             pass
 
