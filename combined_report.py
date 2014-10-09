@@ -15,7 +15,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 from source.prepare_args_and_cnf import summary_script_proc_params
 from source.bcbio_structure import BCBioStructure
-from source.logger import info, step_greetings
+from source.logger import info, step_greetings, send_email
 from source.file_utils import verify_file
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 
@@ -112,6 +112,8 @@ def make_combined_report(cnf, bcbio_structure):
     info('*' * 70)
     info('Combined report saved in: ')
     info('  ' + final_summary_report_fpath)
+    send_email('Combined report:' +
+               '\n  ' + final_summary_report_fpath)
 
 
 def _convert_to_relpath(cnf, value):

@@ -1,5 +1,5 @@
 from os.path import join
-from source.logger import step_greetings, info
+from source.logger import step_greetings, info, send_email
 from source.bcbio_structure import BCBioStructure
 
 from source.fastqc.html_template_fastqc import print_html
@@ -17,8 +17,10 @@ def summary_reports(cnf, bcbio_structure):
 
     info()
     info('*' * 70)
-    info('Summary:')
-    info('  ' + final_summary_report_fpath )
+    info('Fastqc summary:')
+    info('  ' + final_summary_report_fpath)
+    send_email('Fastqc summary: ' + final_summary_report_fpath)
+
     print_html(final_summary_report_fpath, htmls_by_sample)
     return final_summary_report_fpath
 

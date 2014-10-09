@@ -1,4 +1,5 @@
 from os import environ
+import socket
 import sys
 from datetime import datetime
 from time import sleep
@@ -34,13 +35,14 @@ def warn(msg='', ending='\n', print_date=True):
 
 def err(msg='', ending='\n', print_date=True):
     warn(msg, ending, print_date)
-    _send_email(msg)
+    send_email(msg)
 
 
-def _send_email(msg=''):
+def send_email(msg=''):
     if msg:
         msg = MIMEText(msg)
-        msg['Subject'] = 'Reporting for ' + (project_name or '') + ' ' + (proc_name or '')
+        msg['Subject'] = 'Reporting for the project ' + (project_name or '<unknown>') + \
+                         ', process ' + (proc_name or '<unknown>')
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = address
         try:
@@ -48,10 +50,12 @@ def _send_email(msg=''):
             s.sendmail(msg['From'], [msg['To']], msg.as_string())
             s.quit()
             info('Mail sent to ' + address)
-        except:
-            # traceback.print_exc()
-            warn('Could not send email with error. Proceeding.')
-            pass
+        except socket.error:
+            warn('Could not send email with exception: ')
+            warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+            for line in msg.as_string().split('\n'):
+                print '   | ' + line
+            print ''
 
 
 def critical(msg=''):

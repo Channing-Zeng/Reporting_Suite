@@ -16,7 +16,7 @@ import os
 from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
-from source.logger import info
+from source.logger import info, send_email
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus
@@ -201,18 +201,24 @@ def filter_all(cnf, bcbio_structure):
     for _, caller in bcbio_structure.variant_callers.items():
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
+    msg = ['Filtering finished.']
     info('Results:')
     for sample in bcbio_structure.samples:
-        finalize_one(cnf, bcbio_structure, sample)
+        finalize_one(cnf, bcbio_structure, sample, msg)
 
     info()
     info('Combined MAF files:')
+    msg.append('')
+    msg.append('Combined MAF files:')
     for caller in bcbio_structure.variant_callers.values():
         if caller.combined_filt_maf_fpath:
             info('  ' + caller.name + ': ' + caller.combined_filt_maf_fpath)
+            msg.append('  ' + caller.name + ': ' + caller.combined_filt_maf_fpath)
 
             if cnf.datahub_path:
                 copy_to_datahub(cnf, caller, cnf.datahub_path)
+
+    send_email('\n'.join(msg))
 
 
 def copy_to_datahub(cnf, caller, datahub_dirpath):
@@ -233,17 +239,20 @@ def symlink_to_dir(fpath, dirpath):
     symlink_plus(fpath, dst_path)
 
 
-def finalize_one(cnf, bcbio_structure, sample):
+def finalize_one(cnf, bcbio_structure, sample, msg):
     info(sample.name + ':')
+    msg.append(sample.name + ':')
 
     # TODO: if sample is normal, suppress warning in verify_fpath
     for caller_name, caller in bcbio_structure.variant_callers.items():
+        msg.append('  ' + caller_name)
         for fpath in [
             sample.find_filt_vcf_by_callername(caller_name),
             sample.find_filt_tsv_by_callername(caller_name),
             sample.find_filt_maf_by_callername(caller_name)]:
             if fpath:
                 info('  ' + caller_name + ': ' + fpath)
+                msg.append('    ' + fpath)
                 symlink_to_dir(fpath, join(dirname(fpath), pardir))
                 symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
 

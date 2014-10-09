@@ -8,7 +8,7 @@ from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe
 from source.file_utils import verify_file
-from source.logger import info, err, step_greetings, critical
+from source.logger import info, err, step_greetings, critical, send_email
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.cov import generate_targetcov_reports, generate_summary_report, bedcoverage_hist_stats
 from source.tools_from_cnf import get_script_cmdline
@@ -75,6 +75,10 @@ def cnv_reports(cnf, bcbio_structure):
             info('  Amplicon level:      ' + cnv_ampl_report_fpath)
         if cnv_gene_ampl_report_fpath:
             info('  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
+
+    send_email('Seq2C:' +
+               '\n  Amplicon level:      ' + cnv_ampl_report_fpath +
+               '\n  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
 
     return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
 

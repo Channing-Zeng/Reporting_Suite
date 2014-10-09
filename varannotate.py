@@ -18,7 +18,7 @@ from source.variants.vcf_processing import remove_rejected, extract_sample, \
 from source.runner import run_one
 from source.variants.anno import run_annotators
 from source.utils import info
-from source.logger import err
+from source.logger import err, send_email
 
 
 def main(args):
@@ -83,7 +83,7 @@ def process_one(cnf):
     if cnf.get('filter_reject'):
         sample.vcf = remove_rejected(cnf, sample.vcf)
         if sample.vcf is None:
-            err('No variants left: all rejected and removed.')
+            err('No variants left for ' + cnf.vcf + ': all rejected and removed.')
             return None, None, None
 
     if cnf.get('extract_sample'):
@@ -100,12 +100,18 @@ def process_one(cnf):
 
 
 def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath):
+    msg = ['Annoatation finished for ' + cnf.name + ':']
     if anno_vcf_fpath:
+        msg.append('VCF: ' + anno_vcf_fpath)
         info('Saved final VCF to ' + anno_vcf_fpath)
     if anno_tsv_fpath:
+        msg.append('TSV: ' + anno_tsv_fpath)
         info('Saved final TSV to ' + anno_tsv_fpath)
     if anno_maf_fpath:
+        msg.append('MAF: ' + anno_maf_fpath)
         info('Saved final MAF to ' + anno_maf_fpath)
+
+    send_email('\n'.join(msg))
 
 
 def finalize_all(cnf, samples, results):

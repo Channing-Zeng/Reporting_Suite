@@ -1,5 +1,5 @@
 from source.reporting import SampleReport, FullReport, Metric
-from source.logger import step_greetings, info
+from source.logger import step_greetings, info, send_email
 from source.targetcov import cov
 
 
@@ -29,3 +29,5 @@ def summary_reports(cnf, bcbio_structure):
     for fpath in final_summary_report_fpaths:
         if fpath:
             info('  ' + fpath)
+
+    send_email('TargetSeq summary: \n' + '\n'.join(final_summary_report_fpaths))

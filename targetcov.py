@@ -2,6 +2,7 @@
 import sys
 from source.bcbio_structure import Sample
 from source.file_utils import adjust_path
+from source.logger import send_email
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -95,15 +96,24 @@ def process_one(cnf):
 
 def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary_report_html_path,
                  gene_report_fpath, abnormal_regions_reports):
+    msg = ['TargetSeq reprots finished for ' + cnf.name + ':']
+
     if summary_report_txt_path:
+        msg.append('Summary TXT:  ' + summary_report_txt_path)
+        msg.append('Summary HTML: ' + summary_report_html_path)
         info('Summary report: ' + summary_report_txt_path)
     if gene_report_fpath:
+        msg.append('Exons coverage: ' + gene_report_fpath)
         info('Exons coverage report:')
         info('  ' + gene_report_fpath)
     if abnormal_regions_reports:
+        msg.append('Abnormal region reports: ')
         info('Abnormal region reports:')
         for rep in abnormal_regions_reports:
+            msg.append('  ' + rep)
             info('  ' + rep)
+
+    send_email('\n'.join(msg))
 
 
 if __name__ == '__main__':

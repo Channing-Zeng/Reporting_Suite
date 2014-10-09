@@ -13,7 +13,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 import shutil
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
-from source.logger import err, info
+from source.logger import err, info, warn, send_email
 from source.variants import qc_gatk
 from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
 from source.runner import run_one
@@ -59,7 +59,7 @@ if verify_module('matplotlib'):
     matplotlib.use('Agg')  # non-GUI backend
     from source.variants.qc_plots import draw_plots
 else:
-    info('Warning: matplotlib is not installed, cannot draw plots.')
+    warn('Warning: matplotlib is not installed, cannot draw plots.')
 
 
 def check_quality_control_config(cnf):
@@ -69,7 +69,7 @@ def check_quality_control_config(cnf):
     dbs_dict = {}
     for db in qc_cnf['databases']:
         if not db:
-            err('Empty field for quality_control databases')
+            err('Empty field for quality_control databases in system config ' + cnf.sys_cnf)
             to_exit = True
         elif file_exists(db):
             if not verify_file(db, 'VCF'):
@@ -77,12 +77,12 @@ def check_quality_control_config(cnf):
             dbs_dict[basename(db)] = db
         elif db not in cnf.genome:
             to_exit = True
-            err(db + ' for variant qc is not found in genome resources in system config.')
+            err(db + ' for variant qc is not found in genome resources in system config ' + cnf.sys_cnf)
         else:
             dbs_dict[db] = cnf['genome'][db]
 
     if to_exit:
-        exit()
+        sys.exit(1)
 
     qc_cnf['database_vcfs'] = dbs_dict
 
@@ -144,7 +144,11 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
     if qc_plots_fpaths:
         info('Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
     elif not verify_module('matplotlib'):
-        info('Warning: QC plots were not generated because matplotlib is not installed.')
+        warn('Warning: QC plots were not generated because matplotlib is not installed.')
+
+    send_email('VarQC finished for ' + cnf.name + ':' +
+               '\nReport: ' + qc_report_fpath +
+               '\nPlots: ' + ', '.join(qc_plots_fpaths))
 
 
 def finalize_all(cnf, samples, results):

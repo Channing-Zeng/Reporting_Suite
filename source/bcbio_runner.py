@@ -11,7 +11,7 @@ from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.file_utils import file_exists, safe_mkdir
-from source.logger import info, err, critical
+from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
 
 
@@ -47,6 +47,13 @@ class Steps(list):
             self.add_step(step)
 
 
+class JobRunning:
+    def __init__(self, name, log_fpath, qsub_cmdline):
+        self.name = name
+        self.log_fpath = log_fpath
+        self.qsub_cmdline = qsub_cmdline
+
+
 # noinspection PyAttributeOutsideInit
 class BCBioRunner:
     def __init__(self, cnf, bcbio_structure, bcbio_cnf):
@@ -65,6 +72,8 @@ class BCBioRunner:
         self.steps = Steps()
         self.vardict_steps = Steps()
         self._set_up_steps(cnf, self.run_id)
+
+        self.jobs = []
 
         normalize = lambda name: name.lower().replace('_', '').replace('-', '')
         contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
@@ -332,6 +341,8 @@ class BCBioRunner:
             print step.name,
 
         call(self.cnf, qsub_cmdline, silent=True)
+
+        self.jobs.append(JobRunning(name=step.name, log_fpath=log_fpath, qsub_cmdline=qsub_cmdline))
 
         if self.cnf.verbose: info()
         return output_dirpath
@@ -631,6 +642,17 @@ class BCBioRunner:
             print ''
         if self.cnf.verbose:
             info('Done.')
+
+        msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name +
+               '. Log files for each jobs to track:']
+        lengths = []
+        for job in self.jobs:
+            lengths.append(len(job.name))
+        max_length = max(lengths)
+
+        for job in self.jobs:
+            msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
+        send_email('\n'.join(msg))
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name,
                      steps=None, job_names_to_wait=None):

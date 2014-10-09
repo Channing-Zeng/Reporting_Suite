@@ -46,7 +46,8 @@ def process_post_bcbio_args(parser):
 
     import socket
     hostname = socket.gethostname()
-    print hostname
+    info('hostname: ' + hostname)
+    
     Defaults.sys_cnf = Defaults.sys_cnfs['us']
     if 'ukap' in hostname:
         Defaults.sys_cnf = Defaults.sys_cnfs['uk']
