@@ -10,7 +10,7 @@ from source import logger
 from source.logger import info, err, critical
 from source.calling_process import call
 from source.config import load_yaml_config
-from source.file_utils import verify_dir, verify_file, adjust_path
+from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes
 from source.ngscat.bed_file import verify_bed, verify_bam
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_tool_cmdline
@@ -219,7 +219,7 @@ class BCBioStructure:
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.set_up_log(proc_name, self.project_name, cnf.email)
+        self.set_up_log(proc_name, self.project_name, remove_quotes(cnf.email) if cnf.email else '')
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         self.cnf.work_dir = self.work_dir

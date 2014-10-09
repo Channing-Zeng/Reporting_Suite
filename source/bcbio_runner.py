@@ -7,7 +7,7 @@ import base64
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus
+from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
 from source.tools_from_cnf import get_tool_cmdline
 
 from source.file_utils import file_exists, safe_mkdir
@@ -121,7 +121,7 @@ class BCBioRunner:
     def _set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         if self.cnf.email:
-            cnfs_line += ' --email \'' + self.cnf.email + '\''
+            cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ''
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
         spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
                       '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \

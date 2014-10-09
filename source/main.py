@@ -300,5 +300,5 @@ def set_up_log(cnf, proc_name,  project_name):
     cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log
     logger.proc_name = proc_name
-    logger.address = cnf.email
+    logger.address = remove_quotes(cnf.email) if cnf.email else ''
     logger.project_name = project_name

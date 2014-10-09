@@ -48,15 +48,12 @@ def send_email(msg=''):
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
-        msg['To'] = my_address
-        to = [my_address]
-        if address:
-            to.append(address)
+        msg['To'] = my_address + ',' + address
         try:
             s = smtplib.SMTP('localhost')
-            s.sendmail(msg['From'], to, msg.as_string())
+            s.sendmail(msg['From'], msg['To'].split(','), msg.as_string())
             s.quit()
-            info('Mail sent to ' + ', '.join(to))
+            info('Mail sent to ' + msg['To'])
         except socket.error:
             warn('Could not send email with exception: ')
             warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
