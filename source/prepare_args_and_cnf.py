@@ -21,6 +21,7 @@ def add_post_bcbio_args(parser):
     parser.add_option('--reuse', dest='overwrite', action='store_false', help='Reuse intermediate files from previous run')
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
     parser.add_option('--project-name', dest='project')
+    parser.add_option('--email', dest='email')
 
 
 def process_post_bcbio_args(parser):
@@ -47,7 +48,7 @@ def process_post_bcbio_args(parser):
     import socket
     hostname = socket.gethostname()
     info('hostname: ' + hostname)
-    
+
     Defaults.sys_cnf = Defaults.sys_cnfs['us']
     if 'ukap' in hostname:
         Defaults.sys_cnf = Defaults.sys_cnfs['uk']

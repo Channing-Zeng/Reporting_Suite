@@ -85,6 +85,9 @@ def read_opts_and_cnfs(extra_opts,
         (['--project-name'], dict(
             dest='project_name'
         )),
+        (['--email'], dict(
+            dest='email'
+        )),
     ]
 
     parser = OptionParser(description=description)
@@ -297,4 +300,5 @@ def set_up_log(cnf, proc_name,  project_name):
     cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log
     logger.proc_name = proc_name
+    logger.address = cnf.email
     logger.project_name = project_name

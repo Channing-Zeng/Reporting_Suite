@@ -30,6 +30,7 @@ def main():
     parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
+    # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
     cnf = process_post_bcbio_args(parser)
 
     if cnf.qualimap and 'QualiMap' not in cnf.steps:

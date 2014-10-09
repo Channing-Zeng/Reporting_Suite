@@ -11,7 +11,8 @@ import traceback
 log_fpath = None
 project_name = None
 proc_name = None
-address = 'vladislav.sav@gmail.com'
+my_address = 'vladislav.sav@gmail.com'
+address = None
 
 
 def timestamp():
@@ -47,17 +48,19 @@ def send_email(msg=''):
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
-        msg['To'] = address
+        msg['To'] = [my_address]
+        if address:
+            msg['To'].append(address)
         try:
             s = smtplib.SMTP('localhost')
-            s.sendmail(msg['From'], [msg['To']], msg.as_string())
+            s.sendmail(msg['From'], msg['To'], msg.as_string())
             s.quit()
             info('Mail sent to ' + address)
         except socket.error:
             warn('Could not send email with exception: ')
             warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
-            for line in msg.as_string().split('\n'):
-                print '   | ' + line
+            # for line in msg.as_string().split('\n'):
+            #     print '   | ' + line
             print ''
 
 

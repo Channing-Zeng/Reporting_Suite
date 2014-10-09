@@ -119,7 +119,9 @@ class BCBioRunner:
         return path_hash + '_' + bcbio_structure.project_name
 
     def _set_up_steps(self, cnf, run_id):
-        cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\' '
+        cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
+        if self.cnf.email:
+            cnfs_line += ' --email \'' + self.cnf.email + '\''
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
         spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
                       '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
