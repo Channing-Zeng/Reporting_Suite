@@ -397,8 +397,9 @@ def vcf_one_per_line(cnf, vcf_fpath):
 
 
 def read_sample_names_from_vcf(vcf_fpath):
-    basic_fields = next((l.strip()[1:].split() for l in open(vcf_fpath)
-                        if l.strip().startswith('#CHROM')), None)
+    basic_fields = next(
+        (l.strip()[1:].split() for l in open(vcf_fpath)
+        if l.strip().startswith('#CHROM')), None)
     if not basic_fields:
         critical('Error: no VCF header in ' + vcf_fpath)
     if len(basic_fields) < 9:
