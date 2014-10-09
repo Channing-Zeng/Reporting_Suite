@@ -42,25 +42,26 @@ def err(msg='', ending='\n', print_date=True):
 def send_email(msg=''):
     if msg:
         msg = MIMEText(msg)
-        subject = 'Reporting for the project ' + (project_name or '<unknown>')
+        subject = 'Reporting for the project ' + ('"' + project_name + '"' or '<unknown>')
         if proc_name:
             subject += ', process ' + proc_name
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
-        msg['To'] = [my_address]
+        msg['To'] = my_address
+        to = [my_address]
         if address:
-            msg['To'].append(address)
+            to.append(address)
         try:
             s = smtplib.SMTP('localhost')
-            s.sendmail(msg['From'], msg['To'], msg.as_string())
+            s.sendmail(msg['From'], to, msg.as_string())
             s.quit()
-            info('Mail sent to ' + address)
+            info('Mail sent to ' + ', '.join(to))
         except socket.error:
             warn('Could not send email with exception: ')
             warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
-            # for line in msg.as_string().split('\n'):
-            #     print '   | ' + line
+            for line in msg.as_string().split('\n'):
+                print '   | ' + line
             print ''
 
 

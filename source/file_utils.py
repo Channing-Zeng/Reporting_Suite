@@ -17,7 +17,7 @@ import fnmatch
 import time
 from ext_modules import yaml
 
-from source.logger import info, err
+from source.logger import info, err, warn
 
 
 try:
@@ -512,12 +512,12 @@ def file_exists(fpath):
 
 def verify_file(fpath, description=''):
     if not fpath:
-        err((description + ': f' if description else 'F') + 'ile name is empty.')
+        warn((description + ': f' if description else 'F') + 'ile name is empty.')
         return fpath
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        err((description + ': ' if description else '') + fpath + ' does not exist.')
+        warn((description + ': ' if description else '') + fpath + ' does not exist.')
         return None
 
     if not isfile(fpath):
@@ -533,12 +533,12 @@ def verify_file(fpath, description=''):
 
 def verify_dir(fpath, description=''):
     if not fpath:
-        err((description + ': d' if description else 'D') + 'ir name is empty.')
+        warn((description + ': d' if description else 'D') + 'ir name is empty.')
         return None
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        err((description + ': ' if description else '') + fpath + ' does not exist.')
+        warn((description + ': ' if description else '') + fpath + ' does not exist.')
         return None
 
     if not isdir(fpath):

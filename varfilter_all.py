@@ -16,10 +16,10 @@ import os
 from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
 from source.config import Defaults
-from source.logger import info, send_email
+from source.logger import info, send_email, err
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
-from source.file_utils import safe_mkdir, symlink_plus
+from source.file_utils import safe_mkdir, symlink_plus, file_exists, verify_file
 
 
 def main():
@@ -247,14 +247,22 @@ def finalize_one(cnf, bcbio_structure, sample, msg):
     for caller_name, caller in bcbio_structure.variant_callers.items():
         msg.append('  ' + caller_name)
         for fpath in [
-            sample.find_filt_vcf_by_callername(caller_name),
-            sample.find_filt_tsv_by_callername(caller_name),
-            sample.find_filt_maf_by_callername(caller_name)]:
-            if fpath:
-                info('  ' + caller_name + ': ' + fpath)
-                msg.append('    ' + fpath)
-                symlink_to_dir(fpath, join(dirname(fpath), pardir))
-                symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
+            sample.get_filt_vcf_fpath_by_callername(caller_name),
+            sample.get_filt_tsv_fpath_by_callername(caller_name),
+            sample.get_filt_maf_fpath_by_callername(caller_name)]:
+
+            if not file_exists(fpath):
+                if sample.phenotype == 'normal':
+                    continue
+                else:
+                    err('Phenotype is ' + sample.phenotype + ', and ' + fpath +
+                        ' for ' + sample.name + ', ' + caller_name + ' does not exist.')
+                    continue
+
+            info('  ' + caller_name + ': ' + fpath)
+            msg.append('    ' + fpath)
+            symlink_to_dir(fpath, join(dirname(fpath), pardir))
+            symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
 
 
 if __name__ == '__main__':
