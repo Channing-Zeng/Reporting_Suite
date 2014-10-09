@@ -1,6 +1,6 @@
 import sys
 import subprocess
-from os.path import join, dirname, abspath
+from os.path import join, dirname, abspath, pardir
 from distutils.version import LooseVersion
 from source.file_utils import verify_file
 
@@ -37,16 +37,14 @@ def get_tool_cmdline(cnf, interpreter, tool_name=None,
         tool_path = cnf.resources[tool_name.lower()]['path']
         return verify_file(tool_path, tool_name)
 
-    # IN PROJECT ROOT DIR?
-    project_base_path = dirname(dirname(abspath(__file__)))
-    tool_path = join(project_base_path, tool_name)
-    if file_exists(tool_path):
-        return verify_file(tool_path, tool_name)
-
-    # SOME OF BASIC SCRIPTS?
-    tool_path += '.py'
-    if file_exists(tool_path):
-        return verify_file(tool_path, tool_name)
+    # IN PROJECT ROOT DIR? IN EXTERNAL?
+    project_base_path = abspath(join(dirname(abspath(__file__)), pardir))
+    external_dirpath = join(project_base_path, 'external')
+    for dirpath in [project_base_path, external_dirpath]:
+        for ext in ['', '.py', '.pl']:
+            tool_path = join(dirpath, tool_name + ext)
+            if file_exists(tool_path):
+                return verify_file(tool_path, tool_name)
 
     # IN PATH?
     tool_path = which(tool_name)

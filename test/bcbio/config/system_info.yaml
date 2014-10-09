@@ -22,8 +22,6 @@ resources:
     path: ~/vagrant/VarDict/testsomatic.R
   var2vcf_somatic_pl:
     path: ~/vagrant/VarDict/var2vcf_somatic.pl
-  cov2cnv2:
-    path: ~/vagrant/reporting_suite/external/cov2cnv2.pl
 
 genomes:
   hg19:
