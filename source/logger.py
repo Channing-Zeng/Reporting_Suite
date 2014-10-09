@@ -41,8 +41,11 @@ def err(msg='', ending='\n', print_date=True):
 def send_email(msg=''):
     if msg:
         msg = MIMEText(msg)
-        msg['Subject'] = 'Reporting for the project ' + (project_name or '<unknown>') + \
-                         ', process ' + (proc_name or '<unknown>')
+        subject = 'Reporting for the project ' + (project_name or '<unknown>')
+        if proc_name:
+            subject += ', process ' + proc_name
+        msg['Subject'] = subject
+
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = address
         try:
