@@ -550,7 +550,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
-        tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath)
+        tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath, sample.name)
 
         if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
         shutil.copy(tsv_fpath, final_tsv_fpath)
