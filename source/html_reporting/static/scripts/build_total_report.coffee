@@ -54,8 +54,7 @@ get_color = (hue, lightness) ->
     lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
     [r, g, b] = hslToRgb(hue / 360, 0.8, lightness / 100)
-    colorStr = '#' + r.toString(16) + g.toString(16) + b.toString(16)
-    return colorStr
+    return '#' + r.toString(16) + g.toString(16) + b.toString(16)
 #    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 ################
@@ -366,6 +365,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         table += "</tr>"
         i += 1
     table += "\n</table>\n"
+    table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table
 
@@ -388,6 +388,7 @@ reporting.buildCommonRecords = (common_records) ->
                           #{rec.cell_contents}"
         table += "</td></tr>"
     table += "\n</table>\n"
+    table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table
 

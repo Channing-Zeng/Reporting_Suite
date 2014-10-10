@@ -2,32 +2,38 @@
   margin: 0 100px 50px 0;
   min-width: 532px;
   font-size: 1em; }
-  #report .common_table {
-    padding-right: 50px !important;
-    margin-bottom: 30px; }
-    #report .common_table span.metric_name {
+  #report table.common_table {
+    padding-right: 50px !important; }
+    #report table.common_table span.metric_name {
       font-weight: bold; }
-  #report .report_table {
+  #report table.report_table {
     padding-right: 50px !important;
-    margin-bottom: 30px; }
-    #report .report_table td, #report .report_table th {
+    border-width: 0;
+    border-spacing: 0;
+    border-collapse: collapse; }
+    #report table.report_table td, #report table.report_table th {
       margin: 0;
-      padding: 2px 2px 0 4px;
+      padding-top: 0;
       white-space: nowrap;
       text-align: left; }
-    #report .report_table td.number {
+      #report table.report_table td a, #report table.report_table th a {
+        padding-top: 1px;
+        padding-bottom: 1px;
+        padding-left: 2px;
+        padding-right: 2px; }
+    #report table.report_table td.number {
       text-align: left; }
-    #report .report_table td.number > span {
+    #report table.report_table td.number > span {
       padding-right: 4px; }
-    #report .report_table tr.top_row_tr td, #report .report_table tr.top_row_tr th, #report .report_table tr.group_header td, #report .report_table tr.group_header th {
+    #report table.report_table tr.top_row_tr td, #report table.report_table tr.top_row_tr th, #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       font-weight: bold;
       border-bottom: 1px solid #bbbbbb; }
-    #report .report_table tr.group_header td, #report .report_table tr.group_header th {
+    #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       height: 20px;
       vertical-align: bottom; }
-    #report .report_table tr td:first-child, #report .report_table tr th:first-child {
+    #report table.report_table tr td:first-child, #report table.report_table tr th:first-child {
       padding-left: 0; }
-    #report .report_table tr.row_hidden, #report .report_table tr.group_empty {
+    #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
       display: none; }
 
 #contigs_are_ordered {
@@ -39,34 +45,41 @@ table.moving_table {
   -moz-box-shadow: 0px 0px 5px 1px #888888;
   -webkit-box-shadow: 0px 0px 5px 1px #888888;
   background-color: white;
-  z-index: 3 !important; }
+  z-index: 3 !important;
+  border-width: 0;
+  border-spacing: 0;
+  border-collapse: collapse; }
 
-table.draggable .drag_handle {
-  padding: 2px 0px 0 0px;
-  margin: 0 0px 0 1px;
-  cursor: grab;
-  cursor: -moz-grab;
-  cursor: -webkit-grab; }
-table.draggable .drag_handle .drag_image {
-  height: 9px;
-  width: 9px;
-  display: inline-block;
-  background: url("img/draggable.png") no-repeat; }
-table.draggable .drag_handle:active, table.draggable td.cell_of_moving_table .drag_handle {
-  cursor: grabbing !important;
-  cursor: -moz-grabbing !important;
-  cursor: -webkit-grabbing !important; }
-table.draggable td.cell_of_moving_table {
-  padding-left: 14px !important;
-  padding-right: 0.6em !important; }
-table.draggable td.hovered_column_td {
-  background-color: #cccccc; }
-table.draggable td.cell_of_empty_space * {
-  visibility: hidden; }
-table.draggable td.cell_of_empty_space {
-  border: none !important; }
-table.draggable td.top_cell_of_empty_space {
-  border-top: 1px solid #888888 !important; }
+table.draggable {
+  border-width: 0;
+  border-spacing: 0;
+  border-collapse: collapse; }
+  table.draggable .drag_handle {
+    padding: 2px 0px 0 0px;
+    margin: 0 0px 0 1px;
+    cursor: grab;
+    cursor: -moz-grab;
+    cursor: -webkit-grab; }
+  table.draggable .drag_handle .drag_image {
+    height: 9px;
+    width: 9px;
+    display: inline-block;
+    background: url("img/draggable.png") no-repeat; }
+  table.draggable .drag_handle:active, table.draggable td.cell_of_moving_table .drag_handle {
+    cursor: grabbing !important;
+    cursor: -moz-grabbing !important;
+    cursor: -webkit-grabbing !important; }
+  table.draggable td.cell_of_moving_table {
+    padding-left: 14px !important;
+    padding-right: 0.6em !important; }
+  table.draggable td.hovered_column_td {
+    background-color: #cccccc; }
+  table.draggable td.cell_of_empty_space * {
+    visibility: hidden; }
+  table.draggable td.cell_of_empty_space {
+    border: none !important; }
+  table.draggable td.top_cell_of_empty_space {
+    border-top: 1px solid #888888 !important; }
 
 .plot-switch {
   margin-left: 10px; }

@@ -64,11 +64,10 @@
   MEDIAN_BRT = 100;
 
   get_color = function(hue, lightness) {
-    var b, colorStr, g, r, _ref;
+    var b, g, r, _ref;
     lightness = lightness != null ? lightness : 92;
     _ref = hslToRgb(hue / 360, 0.8, lightness / 100), r = _ref[0], g = _ref[1], b = _ref[2];
-    colorStr = '#' + r.toString(16) + g.toString(16) + b.toString(16);
-    return colorStr;
+    return '#' + r.toString(16) + g.toString(16) + b.toString(16);
   };
 
   check_all_values_equal = function(vals) {
@@ -456,6 +455,7 @@
       i += 1;
     }
     table += "\n</table>\n";
+    table += "<div style=\"height: 30px; display: block;\"></div>";
     return $('#report').append(table);
   };
 
@@ -480,6 +480,7 @@
       table += "</td></tr>";
     }
     table += "\n</table>\n";
+    table += "<div style=\"height: 30px; display: block;\"></div>";
     return $('#report').append(table);
   };
 
