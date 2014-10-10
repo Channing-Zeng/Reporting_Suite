@@ -277,10 +277,12 @@ class BCBioStructure:
 
         if not proc_name:
             self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
+            i = 1
             if file_exists(self.cnf.log):
-                bak_fpath = self.cnf.log + '.bak'
+                bak_fpath = self.cnf.log + '.' + str(i)
                 while isfile(bak_fpath):
-                    bak_fpath += '.bak'
+                    bak_fpath = self.cnf.log + '.' + str(i)
+                    i += 1
                 os.rename(self.cnf.log, bak_fpath)
             elif isfile(self.cnf.log):
                 try:

@@ -64,8 +64,11 @@
   MEDIAN_BRT = 100;
 
   get_color = function(hue, lightness) {
+    var b, colorStr, g, r, _ref;
     lightness = lightness != null ? lightness : 92;
-    return 'hsl(' + hue + ', 80%, ' + lightness + '%)';
+    _ref = hslToRgb(hue / 360, 0.8, lightness / 100), r = _ref[0], g = _ref[1], b = _ref[2];
+    colorStr = '#' + r.toString(16) + g.toString(16) + b.toString(16);
+    return colorStr;
   };
 
   check_all_values_equal = function(vals) {

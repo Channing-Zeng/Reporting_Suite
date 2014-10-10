@@ -1,9 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
     <style type="text/css">
         body {
             padding-bottom: 30px;
+            margin: 0;
+            padding: 0;
         }
         .content {
             margin-left: 120px;
@@ -28,6 +32,7 @@
 
     <script type="text/javascript">
         window.reporting = {};
+        window.console = {log: function() {}};
     </script>
 
     <script type="text/javascript" src="/static/jquery-1.8.2.min.js"></script>
@@ -52,7 +57,7 @@
 
             dragTable.init();
 
-            $("[rel=tooltip]").tooltip({ animation: false, });
+            $("[rel=tooltip]").tooltip({ animation: false });
 
             $('table.tableSorter').tableSort();
         });

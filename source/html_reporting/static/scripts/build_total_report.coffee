@@ -53,7 +53,10 @@ MEDIAN_BRT = 100  # just white.
 get_color = (hue, lightness) ->
     lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
-    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
+    [r, g, b] = hslToRgb(hue / 360, 0.8, lightness / 100)
+    colorStr = '#' + r.toString(16) + g.toString(16) + b.toString(16)
+    return colorStr
+#    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
 
 ################
 

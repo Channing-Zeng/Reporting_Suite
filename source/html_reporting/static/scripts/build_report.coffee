@@ -13,7 +13,7 @@ showPlotWithInfo = (info) ->
                 newSeries.push(series)
                 newColors.push(series.color)
             else
-                console.log('no series with number ' + number)
+                if window.console? then console.log('no series with number ' + number)
 
         if newSeries.length == 0
             newSeries.push
@@ -118,8 +118,9 @@ preprocessReport = (report) ->
 
 
 reporting.buildReport = ->
-    unless (totalReportData = readJson 'total-report')
-        console.log "Error: cannot read #total-report-json"
+    totalReportData = readJson 'total-report'
+    unless (totalReportData)
+        if window.console? then console.log "Error: cannot read #total-report-json"
         return 1
 
     report = preprocessReport totalReportData.report

@@ -20,7 +20,9 @@
           newSeries.push(series);
           newColors.push(series.color);
         } else {
-          console.log('no series with number ' + number);
+          if (window.console != null) {
+            console.log('no series with number ' + number);
+          }
         }
       }
       if (newSeries.length === 0) {
@@ -161,8 +163,11 @@
 
   reporting.buildReport = function() {
     var columnNames, columnOrder, common_metrics_by_name, general_records, m, plot, plots_html, rec, records, _i, _j, _k, _len, _len1, _ref, _ref1, _ref2, _results;
-    if (!(totalReportData = readJson('total-report'))) {
-      console.log("Error: cannot read #total-report-json");
+    totalReportData = readJson('total-report');
+    if (!totalReportData) {
+      if (window.console != null) {
+        console.log("Error: cannot read #total-report-json");
+      }
       return 1;
     }
     report = preprocessReport(totalReportData.report);
