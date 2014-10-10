@@ -263,7 +263,7 @@ function bindTip(placeholder, series, plot, xToPrettyStringFunction, xUnit, posi
 var tipElementExists = false;
 function showTip(pageX, pageY, offset, plotWidth, plotHeight,
                  series, centralSeriesIndex, xIndex, xStr, position) {
-    var LINE_HEIGHT = 16; // pixels
+    LINE_HEIGHT = 16; // pixels
 
     position = ((position != null) ? position : 'bottom right');
 //    pageY -= LINE_HEIGHT * (centralSeriesIndex + 1.5);
