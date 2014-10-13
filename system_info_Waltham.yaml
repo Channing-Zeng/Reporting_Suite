@@ -51,7 +51,7 @@ genomes:
 
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
-    default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+    default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome-expanded.bed
 
 queue: batch.q
 
