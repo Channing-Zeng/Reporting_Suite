@@ -51,20 +51,27 @@ def group2(iterator, count):
     if count > len(iterator): count = len(iterator)
     return itertools.imap(None, *([iter(iterator)] * count))
 
+
 def chunks(l, n):
-    """ Yield successive n-sized chunks from l.
-    """
     for i in xrange(0, len(l), n):
-        yield l[i:i+n]
+        yield l[i:i + n]
+
 
 def links_show_hide(outfile, input_files):
-    print >> outfile, '<form name="tcol" onsubmit="return false">  Show columns'
+    print >> outfile, '<form name="tcol" onsubmit="return false">  Show columns <br/>'
+    print >> outfile, '<table>'
     i = 0
 
-    list(chunks(range(10, 75), 10))
-    for sample, file in input_files.items():
-        print >> outfile, '<input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(i) + ')" checked> ' + sample
-        i += 1
+    list_of_chunks = list(chunks(input_files.keys(), 6))
+   
+    for samples in list_of_chunks:
+        print >> outfile, '<tr>'
+        for sample in samples:
+            print >> outfile, '<td><input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(
+                i) + ')" checked> ' + sample + '</td>'
+            i += 1
+        print >> outfile, '</tr>'
+    print >> outfile, '</table>'
     print >> outfile, '</form> '
 
 
