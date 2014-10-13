@@ -117,7 +117,7 @@ def read_opts_and_cnfs(extra_opts,
         cnf.caller = None
 
     cnf.proc_name = cnf.proc_name or proc_name
-    set_up_dirs(cnf, cnf.proc_name, cnf.project_name)
+    set_up_dirs(cnf)
     info(' '.join(sys.argv))
     info()
 
@@ -270,7 +270,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     info('Loaded resources for ' + genome_cnf['name'])
 
 
-def set_up_dirs(cnf, proc_name, project_name):
+def set_up_dirs(cnf):
     """ Creates output_dir, work_dir; sets up log
     """
     cnf.output_dir = adjust_path(cnf.output_dir)
@@ -278,7 +278,7 @@ def set_up_dirs(cnf, proc_name, project_name):
     info('Saving into ' + cnf.output_dir)
 
     set_up_work_dir(cnf)
-    set_up_log(cnf, proc_name, project_name)
+    set_up_log(cnf)
 
 
 def set_up_work_dir(cnf):
@@ -293,13 +293,14 @@ def set_up_work_dir(cnf):
     safe_mkdir(cnf.work_dir, 'working directory')
 
 
-def set_up_log(cnf, proc_name,  project_name):
-    log_fname = proc_name + '_' if proc_name else ''
+def set_up_log(cnf):
+    log_fname = cnf.proc_name + '_' if cnf.proc_name else ''
     log_fname += cnf.name + '_log.txt'
 
     cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log
     logger.smtp_host = cnf.smtp_host
-    logger.proc_name = proc_name
+    logger.proc_name = cnf.proc_name
     logger.address = remove_quotes(cnf.email) if cnf.email else ''
-    logger.project_name = project_name
+    logger.project_name = cnf.project_name
+    logger.project_fpath = cnf.output_dir

@@ -220,7 +220,7 @@ class BCBioStructure:
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.set_up_log(cnf, proc_name, self.project_name)
+        self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         self.cnf.work_dir = self.work_dir
@@ -268,9 +268,10 @@ class BCBioStructure:
         else:
             info('Done loading BCBio structure.')
 
-    def set_up_log(self, cnf, proc_name, project_name):
+    def set_up_log(self, cnf, proc_name, project_name, project_fpath):
         logger.proc_name = proc_name
         logger.project_name = project_name
+        logger.project_fpath = project_fpath
         logger.address = remove_quotes(cnf.email) if cnf.email else ''
         logger.smtp_host = cnf.smtp_host
 

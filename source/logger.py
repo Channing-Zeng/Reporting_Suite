@@ -11,6 +11,7 @@ import traceback
 smtp_host = 'localhost'
 log_fpath = None
 project_name = None
+project_fpath = None
 proc_name = None
 my_address = 'vladislav.sav@gmail.com'
 address = None
@@ -48,10 +49,12 @@ def send_email(msg='', subj=''):
             subject += project_name
         else:
             subject += 'Reporting'
+        if project_fpath:
+            subject += ' - ' + project_fpath
         if proc_name:
-            subject += ': ' + proc_name
+            subject += ' - ' + proc_name
         if subj:
-            subject += ' ' + subj
+            subject += ': ' + subj
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
