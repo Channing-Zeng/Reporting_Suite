@@ -195,6 +195,7 @@ class BCBioStructure:
     seq2c_name       = 'Seq2C'
     combined_report_name = combined_report_dir = 'combined_report'
     detail_gene_report_baseending = '.details.gene'
+    detail_sorted_gene_report_baseending = '.sorted.details.gene'
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
     detail_highcov_gene_report_baseending = '.details.high_cov.gene'
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
@@ -219,7 +220,7 @@ class BCBioStructure:
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.set_up_log(proc_name, self.project_name, remove_quotes(cnf.email) if cnf.email else '')
+        self.set_up_log(cnf, proc_name, self.project_name)
 
         self.work_dir = join(cnf.bcbio_final_dir, pardir, 'work', 'post_processing')
         self.cnf.work_dir = self.work_dir
@@ -267,10 +268,11 @@ class BCBioStructure:
         else:
             info('Done loading BCBio structure.')
 
-    def set_up_log(self, proc_name, project_name, email):
+    def set_up_log(self, cnf, proc_name, project_name):
         logger.proc_name = proc_name
         logger.project_name = project_name
-        logger.address = email
+        logger.address = remove_quotes(cnf.email) if cnf.email else ''
+        logger.smtp_host = cnf.smtp_host
 
         self.log_dirpath = join(self.date_dirpath, 'log')
         safe_mkdir(self.log_dirpath)
@@ -332,7 +334,20 @@ class BCBioStructure:
             return sample
 
         bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
-        sample.bed = bed if verify_bed(bed) else None
+        if verify_bed(bed):  # WGS, thus using default BED file
+            sample.bed = bed
+        elif verify_file(self.cnf.genome.default_bed):
+            err('Notice: no BED file for ' + sample.name + ', using default BED file ' +
+                self.cnf.genome.default_bed)
+            sample.bed = self.cnf.genome.default_bed
+        elif verify_file(self.cnf.genome.exons):
+            err('Warning: no default amplicon BED file, using exons instead.')
+            sample.bed = self.cnf.genome.exons
+        else:
+            err('No BED file for sample, no default BED file and exons (or cannot read them)'
+                ' - skipping targetSeq reproting.')
+            sample.bed = None
+
         info('BED file for ' + sample.name + ': ' + sample.bed) if sample.bed else err('No BED file for ' + sample.name)
 
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
@@ -415,9 +430,9 @@ class BCBioStructure:
 
     def find_gene_reports_by_sample(self):
         return dict((sname, verify_file(fpath))
-                    for sname, fpath in self.get_gene_reports_by_sample().items())
+                    for sname, fpath in self.get_gene_report_fpaths_by_sample().items())
 
-    def get_gene_reports_by_sample(self):
+    def get_gene_report_fpaths_by_sample(self):
         return self._get_fpaths_per_sample(
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' +

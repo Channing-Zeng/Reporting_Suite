@@ -96,6 +96,11 @@ class Report:
     def save_txt(self, output_dirpath, base_fname, sections=None):
         return write_txt_rows(self.flatten(sections), output_dirpath, base_fname)
 
+    def save_json(self, output_dirpath, base_fname, sections=None):
+        fpath = join(output_dirpath, base_fname + '.json')
+        self.dump(fpath)
+        return fpath
+
     def save_tsv(self, output_dirpath, base_fname, sections=None):
         return write_tsv_rows(self.flatten(sections), output_dirpath, base_fname)
 
@@ -113,6 +118,10 @@ class Report:
             type_=None,
         ), separators=(',', ':'), cls=Encoder)
         return write_html_report(json, output_dirpath, base_fname, caption)
+
+    def dump(self, fpath):
+        with open(fpath, 'w') as f:
+            dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
     def _append_value_to_row(sample_report, row, metric):
@@ -165,10 +174,6 @@ class SampleReport(Report):
 
     def __repr__(self):
         return self.display_name + (', ' + self.report_name if self.report_name else '')
-
-    def dump(self, fpath):
-        with open(fpath, 'w') as f:
-            dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
     def load(data, sample=None, bcbio_structure=None):

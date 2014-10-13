@@ -84,7 +84,7 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, multiple_samples=False)
 
     results_one = process_one_fun(cnf)
 
-    if finalize_one_fun:
+    if finalize_one_fun and results_one:
         info('')
         info('*' * 70)
         if multiple_samples:

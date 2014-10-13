@@ -7,8 +7,8 @@ steps:
 # - VarFilter
 # - VarQC_postVarFilter
 # - VarQC_postVarFilter_summary
-# - TargetCov
-# - Seq2C
+- TargetCov
+- Seq2C
 - TargetCov_Summary
 # - ngsCAT
 # - ngsCAT_summary

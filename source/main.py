@@ -299,6 +299,7 @@ def set_up_log(cnf, proc_name,  project_name):
 
     cnf.log = join(cnf.work_dir, log_fname)
     logger.log_fpath = cnf.log
+    logger.smtp_host = cnf.smtp_host
     logger.proc_name = proc_name
     logger.address = remove_quotes(cnf.email) if cnf.email else ''
     logger.project_name = project_name

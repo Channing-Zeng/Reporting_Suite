@@ -10,7 +10,7 @@ from source.calling_process import call_subprocess, call_pipe
 from source.file_utils import verify_file
 from source.logger import info, err, step_greetings, critical, send_email
 from source.reporting import write_tsv_rows, Record, SampleReport
-from source.targetcov.cov import generate_targetcov_reports, generate_summary_report, bedcoverage_hist_stats
+from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports
 from source.tools_from_cnf import get_script_cmdline
 
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
@@ -19,47 +19,23 @@ from source.utils import median, mean
 # Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-
+# get_targetcov_fpaths_by_sample
 def cnv_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
 
     info('Collecting sample reports...')
     summary_report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
-    gene_report_fpaths_by_sample = bcbio_structure.get_gene_reports_by_sample()
+    gene_report_fpaths_by_sample = bcbio_structure.get_gene_report_fpaths_by_sample()
+
     for sample in bcbio_structure.samples:
-        summ_report_fpath = summary_report_fpath_by_sample.get(sample.name)
-        gene_report_fpath = gene_report_fpaths_by_sample.get(sample.name)
-
-        if gene_report_fpath is None or summ_report_fpath is None:  # Was WGS
-            output_dir = cnf.output_dir
-            cnf.output_dir = cnf.work_dir
-            if not sample.bed:
-                if verify_file(cnf.genome.default_bed):
-                    sample.bed = cnf.genome.default_bed
-                else:
-                    err('Warning: No default amplicon BED file, using exons instead.')
-                    if verify_file(cnf.genome.exons):
-                        sample.bed = cnf.genome.exons
-                    else:
-                        sys.exit(1)
-
-            _, summary_report_json_fpath, _, gene_report_fpath, _ = \
-                generate_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None)
-
-            cnf.output_dir = output_dir
-
-            summary_report_fpath_by_sample[sample.name] = summary_report_json_fpath
-            gene_report_fpaths_by_sample[sample.name] = gene_report_fpath
-
-    if not gene_report_fpaths_by_sample:
-        err('No gene reports, cannot call copy numbers.')
-        return None
+        if (not verify_file(summary_report_fpath_by_sample.get(sample.name)) or
+            not verify_file(gene_report_fpaths_by_sample.get(sample.name))):
+            # TargetSeq was not run but needed, thus running.
+            make_targetseq_reports(cnf, sample)
 
     info('Calculating normalized coverages for CNV...')
-    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(
-        cnf, bcbio_structure,
-        gene_report_fpaths_by_sample,
-        summary_report_fpath_by_sample)
+    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, bcbio_structure,
+        gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
 
     cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
     if amplicon_cnv_rows:
@@ -69,16 +45,19 @@ def cnv_reports(cnf, bcbio_structure):
 
     info()
     info('*' * 70)
+    msg = 'Seq2C was not generated.'
     if cnv_ampl_report_fpath or cnv_gene_ampl_report_fpath:
         info('Seq2C:')
+        msg = 'Seq2C:'
         if cnv_ampl_report_fpath:
             info('  Amplicon level:      ' + cnv_ampl_report_fpath)
+            msg += '\n  Amplicon level:      ' + cnv_ampl_report_fpath
         if cnv_gene_ampl_report_fpath:
             info('  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
+            msg += '\n  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath
 
-    send_email('Seq2C:' +
-               '\n  Amplicon level:      ' + cnv_ampl_report_fpath +
-               '\n  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
+    if msg:
+        send_email(msg)
 
     return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
 
@@ -144,7 +123,8 @@ def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
             reordered = sample, gene, chrom, s, e, tag, size, cov
             f.write('\t'.join(reordered) + '\n')
 
-    os.environ['PERL5LIB'] = '/group/cancer_informatics/tools_resources/NGS/lib/perl5:' + os.environ['PERL5LIB']
+    os.environ['PERL5LIB'] = '/group/cancer_informatics/tools_resources/NGS/lib/perl5' + \
+        (':' + os.environ['PERL5LIB'] if 'PERL5LIB' in os.environ else '')
     cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
     if not cov2cnv2: sys.exit(1)
     cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())

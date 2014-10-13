@@ -9,7 +9,7 @@ import sys
 from ext_modules import vcf_parser
 from source.bcbio_structure import BCBioStructure, Sample
 from source.calling_process import call, call_check_output, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus, add_suffix, verify_file
+from source.file_utils import intermediate_fname, splitext_plus, add_suffix, verify_file, file_exists
 
 from source.logger import step_greetings, critical, info, err
 from source.ngscat.bed_file import verify_bed
@@ -20,85 +20,71 @@ from source.tools_from_cnf import get_tool_cmdline
 from source.utils import get_chr_len_fpath, median
 
 
-def generate_targetcov_reports(cnf, sample, filtered_vcf_by_callername=None):
+def make_targetseq_reports(cnf, sample):
     if not (sample.bam or sample.bed):
         if not sample.bam: err(sample.name + ': BAM file is required.')
         if not sample.bed: err(sample.name + ': BED file is required.')
         sys.exit(1)
 
-    summary_report = None
-    summary_report_txt_path = None
-    summary_report_json_fpath = None
-    summary_report_html_fpath = None
-    gene_report_fpath = None
-    abnormal_regions_reports = []
-
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
     amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.bam, sample.bed)
 
+    general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
+
+    info()
+    per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons)
+
+    return general_rep_fpath, per_gene_rep_fpath
+
+
+def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size):
+    step_greetings('Target coverage summary report')
+
     chr_len_fpath = get_chr_len_fpath(cnf)
+
+    summary_report = generate_summary_report(cnf, sample, chr_len_fpath,
+        cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, total_bed_size)
+
+    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
+    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
+    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name,
+                                                         caption='Target coverage statistics for ' + cnf.name)
+    info()
+    info('Saved to ')
+    info('  ' + summary_report_txt_fpath)
+    return summary_report_json_fpath
+
+
+def make_and_save_region_report(cnf, sample, amplicons):
+    step_greetings('Analysing regions.')
+
     exons_bed = cnf['genome']['exons']
+    if not exons_bed:
+        err('Warning: no genes or exons specified for the genome in system config, cannot make per-exon report.')
+        return None
 
-    if 'summary' in cnf['coverage_reports']['report_types']:
-        step_greetings('Target coverage summary report')
+    # log('Annotating amplicons...')
+    # annotate_amplicons(amplicons, genes_bed)
 
-        summary_report = generate_summary_report(
-            cnf, sample, chr_len_fpath,
-            cnf.coverage_reports.depth_thresholds, cnf.padding,
-            combined_region, max_depth, total_bed_size)
+    info('Sorting exons BED file.')
+    exons_bed = sort_bed(cnf, exons_bed)
 
-        summary_report_json_fpath = join(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name + '.json')
-        summary_report.dump(summary_report_json_fpath)
+    info('Getting the exons that overlap amplicons.')
+    overlapped_exons_bed = intersect_bed(cnf, exons_bed, sample.bed)
 
-        summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
-        summary_report_html_fpath = summary_report.save_html(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
-        info()
-        info('Saved to ')
-        info('  ' + summary_report_txt_fpath)
+    info('Adding other exons for the genes of overlapped exons.')
+    target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
 
+    info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
+    exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
+    for exon in exons:
+        exon.gene_name = exon.extra_fields[0]
 
-    if 'genes' in cnf['coverage_reports']['report_types']:
-        step_greetings('Analysing regions.')
+    info('Saving region coverage report...')
+    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, cnf.name, amplicons, exons)
 
-        if not exons_bed:
-            if cnf['reports'] == 'genes':
-                critical('Error: no genes or exons specified for the genome in system config, '
-                         'cannot run per-exon report.')
-            else:
-                err('Warning: no genes or exons specified for the genome in system config, '
-                    'cannot run per-exon report.')
-        else:
-            # log('Annotating amplicons.')
-            # annotate_amplicons(amplicons, genes_bed)
-
-            info('Sorting exons BED file.')
-            exons_bed = sort_bed(cnf, exons_bed)
-            info('Getting the exons that overlap amplicons.')
-            overlapped_exons_bed = intersect_bed(cnf, exons_bed, sample.bed)
-            info('Adding other exons for the genes of overlapped exons.')
-            target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
-
-            info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-            exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
-            for exon in exons:
-                exon.gene_name = exon.extra_fields[0]
-
-            info('Saving region coverage report...')
-            gene_report_fpath, abnormal_regions_reports = _generate_region_cov_report(
-                cnf, filtered_vcf_by_callername or dict(), sample, cnf.output_dir,
-                cnf.name, cnf.coverage_reports.depth_thresholds, amplicons, exons)
-
-    if summary_report:
-        report = summary_report
-        summary_report_html_fpath = report.save_html(cnf.output_dir,
-            cnf.name + '.' + BCBioStructure.targetseq_name,
-            caption='Target coverage statistics for ' + cnf.name)
-
-        # info('\t' + summary_report_html_fpath)
-
-    return summary_report_txt_path, summary_report_json_fpath, summary_report_html_fpath, \
-           gene_report_fpath, abnormal_regions_reports
+    return gene_report_fpath
 
 
 def _add_other_exons(cnf, exons_bed, overlapped_exons_bed):
@@ -233,8 +219,7 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_dir,
-                                sample_name, depth_threshs, amplicons, exons):
+def _generate_region_cov_report(cnf, sample, output_dir, sample_name, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
         ampl.sample = sample_name
@@ -277,35 +262,22 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
         i += 1
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
-        region.sum_up(depth_threshs)
-        # if region.percent_within_normal < 100:
-        #     bad_regions.append(region)
+        region.sum_up(cnf.coverage_reports.depth_thresholds)
 
-    info('Calculation median coverage...')
-    median_cov = median((r.avg_depth for r in regions))
-    if median_cov == 0:
-        err('Median coverage is 0')
-        return None, None
+    # info('Sorting...')
+    # sorted_regions = sorted(regions, lambda r: (r.start, r.end))
+    # info('Saving sorted version...')
+    # sorted_regions_fpath = join(cnf.work_dir, (sample.name + '.' + BCBioStructure.detail_sorted_gene_report_baseending))
+    # with open(sorted_regions_fpath, 'w') as f:
+    #     for r in sorted_regions:
+    #         f.write('\t'.join(map(str, [
+    #             r.chr, r.start, r.end, r.gene, r.feature,
+    #             r.size, r.avg_depth, r.std_dev, r.percent_within_normal])) + '\n')
 
-    info('Median: ' + str(median_cov))
-    info()
-    info('Extracting abnormally covered regions.')
-    minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
-    maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
-    info('Assuming abnormal if below min(median*' +
-         str(cnf.coverage_reports.min_cov_factor) + ', ' +
-         str(cnf.coverage_reports.min_cov) + ') = ' + str(minimal_cov) +
-         ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
-         ' = ' + str(maximal_cov))
+    info('Saving report...')
+    rows = _make_flat_region_report(regions, cnf.coverage_reports.depth_thresholds)
 
-    low_regions, high_regions = [], []
-    _proc_regions(regions, _classify_region, low_regions, high_regions,
-                  median_cov, minimal_cov, maximal_cov)
-
-    rows = _make_flat_region_report(regions, depth_threshs)
-
-    # Saving gene details report
-    gene_report_basename = cnf.name + '.' + \
+    gene_report_basename = sample.name + '.' + \
                            BCBioStructure.targetseq_name + \
                            BCBioStructure.detail_gene_report_baseending
     txt_rep_fpath = write_txt_rows(rows, output_dir, gene_report_basename)
@@ -314,73 +286,7 @@ def _generate_region_cov_report(cnf, filtered_vcf_by_callername, sample, output_
     info('Regions (total ' + str(len(regions)) + ') saved into:')
     info('  ' + txt_rep_fpath)
 
-    abnormal_regions_reports = []
-    if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
-        for caller_name, vcf_fpath in filtered_vcf_by_callername:
-            vcf_dbs = [
-                # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
-                VCFDataBase('cosmic', 'Cosmic', cnf.genome),
-                VCFDataBase('oncomine', 'Oncomine', cnf.genome),
-                       ]
-
-            for kind, regions, f_basename in zip(
-                    ['low', 'high'],
-                    [low_regions, high_regions],
-                    [BCBioStructure.detail_lowcov_gene_report_baseending,
-                     BCBioStructure.detail_highcov_gene_report_baseending]):
-
-                report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
-
-                bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
-                for vcf_db in vcf_dbs:
-                    vcf_db.missed_vcf_fpath = _prepare_missed_vcfs(cnf, vcf_db, caller_name, vcf_fpath, report_base_name, bed_fpath)
-
-                report = _make_flagged_region_report(
-                    cnf, sample, vcf_fpath, caller_name, regions, bed_fpath, vcf_dbs, depth_threshs)
-
-                regions_html_rep_fpath = report.save_html(output_dir, report_base_name,
-                    caption='Regions with ' + kind + ' coverage for ' + caller_name)
-
-                regions_txt_rep_fpath = report.save_txt(output_dir, report_base_name,
-                    [report.metric_storage.sections_by_name[kind + '_cov']])
-
-                abnormal_regions_reports.append(regions_txt_rep_fpath)
-                info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-                info('  ' + str(regions_html_rep_fpath))
-                info('  ' + regions_txt_rep_fpath)
-
-    return tsv_rep_fpath, abnormal_regions_reports
-
-
-def _classify_region(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
-    if region.avg_depth < minimal_cov:
-        region.cov_factor = region.avg_depth / median_cov
-        low_regions.append(region)
-
-    if region.avg_depth > maximal_cov:
-        region.cov_factor = region.avg_depth / median_cov
-        high_regions.append(region)
-
-
-def _save_regions_to_bed(cnf, regions, f_basename):
-    bed_fpath = join(cnf.work_dir, f_basename + '.bed')
-    info()
-    info('Saving regions to ' + bed_fpath)
-
-    if isfile(bed_fpath):
-        if cnf.reuse_intermediate:
-            if not verify_bed(bed_fpath):
-                sys.exit(1)
-            return bed_fpath
-        else:
-            os.remove(bed_fpath)
-
-    with open(bed_fpath, 'w') as f:
-        for region in regions:
-            f.write('\t'.join([region.chrom, str(region.start), str(region.end), str(region.avg_depth)]) + '\n')
-
-    info('Saved to ' + bed_fpath)
-    return bed_fpath
+    return tsv_rep_fpath
 
 
 def _get_amplicons_merged_by_genes(amplicons, exon_genes):
@@ -397,7 +303,7 @@ def _get_amplicons_merged_by_genes(amplicons, exon_genes):
                 amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
                 if amplicon_gene is None:
                     amplicon_gene = Region(
-                        sample=amplicon.sample, chrom=amplicon.chrom,
+                        sample_name=amplicon.sample, chrom=amplicon.chrom,
                         start=amplicon.start, end=amplicon.end, size=0,
                         feature='Gene-' + amplicon.feature,
                         gene_name=exon_gene.gene_name)
@@ -427,7 +333,7 @@ def _get_exons_merged_by_genes(cnf, subregions):
         gene = genes_by_name.get(exon.gene_name)
         if gene is None:
             gene = Region(
-                sample=exon.sample, chrom=exon.chrom,
+                sample_name=exon.sample, chrom=exon.chrom,
                 start=exon.start, end=exon.end, size=0,
                 feature='Gene-' + exon.feature,
                 gene_name=exon.gene_name)
@@ -502,173 +408,6 @@ def _get_exons_merged_by_genes(cnf, subregions):
 #     return all_rows
 
 
-class VCFDataBase():
-    def __init__(self, name, descriptive_name, genome_cnf):
-        self.name = name
-        self.descriptive_name = descriptive_name
-        self.vcf_fpath = genome_cnf.get(name)
-
-
-def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, regions, bed_fpath,
-                                vcf_dbs, depth_threshs):
-    regions_metrics = [
-        Metric('Sample'),
-        Metric('Chr'),
-        Metric('Start'),
-        Metric('End'),
-        Metric('Gene'),
-        Metric('Feature'),
-        Metric('Size'),
-        Metric('MeanDepth'),
-        Metric('StdDev', description='Coverage depth standard deviation'),
-        Metric('Wn 20% of Mean', unit='%', description='Persentage of the region that lies within 20% of an avarage depth.'),
-        Metric('Depth/Median', description='Average depth of coveraege of the region devided by median coverage of the sample'),
-        Metric('Total variants')
-    ]
-    for vcf_db in vcf_dbs:
-        regions_metrics.append(Metric(vcf_db.descriptive_name + ' missed'))
-
-    for thres in depth_threshs:
-        regions_metrics.append(Metric('{}x'.format(thres), unit='%', description='Bases covered by at least {} reads'.format(thres)))
-
-    general_metrics = [
-        Metric('Median depth'),
-        Metric('Variants'),
-    ]
-    for vcf_db in vcf_dbs:
-        general_metrics.append(
-            Metric(vcf_db.descriptive_name + ' missed variants'))
-
-    region_metric_storage = MetricStorage(
-        general_section=ReportSection(metrics=general_metrics),
-        sections_by_name=OrderedDict(
-            low_cov=ReportSection('Low covered regions', 'Low covered regions', regions_metrics[:]),
-            high_cov=ReportSection('Regions', 'Amplcons and exons coverage depth statistics', regions_metrics[:],
-        )))
-
-    report = SquareSampleReport(sample, metric_storage=region_metric_storage)
-
-    for vcf_db in vcf_dbs:
-        _proc_regions(regions, lambda r: r.sum_up(depth_threshs))
-
-        if not vcf_db.missed_vcf_fpath and not verify_file(vcf_db.missed_vcf_fpath):
-            info('Skipping counting variants from ' + vcf_db.descriptive_name)
-            report.add_record(vcf_db.descriptive_name + ' missed variants', None)
-        else:
-            info('Counting missed variants from ' + vcf_db.descriptive_name)
-            report.add_record(vcf_db.descriptive_name + ' missed variants', vcf_db.missed_vcf_fpath)
-
-            def _(r): r.missed_by_db[vcf_db.descriptive_name] = _count_variants(r, vcf_db.vcf_fpath)
-            _proc_regions(regions, _)
-        info()
-
-    def _(r): r.var_num = _count_variants(r, filtered_vcf_fpath)
-    _proc_regions(regions, _)
-
-    if not regions:
-        return None
-
-    median_depth = median(r.avg_depth for r in regions)
-    cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
-
-    shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
-
-    report.add_record('Median depth', median_depth)
-    report.add_record('Variants', filtered_vcf_fpath)
-
-    rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
-    for rec in rec_by_name.values():
-        report.records.append(rec)
-
-    _proc_regions(regions, _fill_in_record_info, rec_by_name, median_depth)
-
-    return report
-
-
-def _add_vcf_header(source_vcf_fpath, dest_vcf_fpath):
-    with open(source_vcf_fpath) as inp, open(dest_vcf_fpath, 'w') as out:
-        for line in inp:
-            if line.startswith('#'):
-                out.write(line)
-    with open(dest_vcf_fpath + '_tmp') as inp, open(dest_vcf_fpath, 'a') as out:
-        for line in inp:
-            out.write(line)
-
-
-def _prepare_missed_vcfs(cnf, vcf_db, caller_name, input_vcf_fpath, report_base_name, bed_fpath):
-    if not vcf_db.vcf_fpath and not verify_file(vcf_db.vcf_fpath):
-        info('Skipping counting variants from ' + vcf_db.descriptive_name)
-    else:
-        info('Counting missed variants from ' + vcf_db.descriptive_name)
-        db_in_roi_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + vcf_db.name + '_roi.vcf')
-        missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '_missed.vcf')
-
-        bedtools = get_tool_cmdline(cnf, 'bedtools')
-
-        db_vcf_fpath = vcf_db.vcf_fpath
-        # Take variants from DB VCF that lie in BED
-        # (-wa means to take whole regions from a, not the parts that overlap)
-        cmdline = '{bedtools} intersect -wa -a {db_vcf_fpath} -b {bed_fpath}'.format(**locals())
-        call(cnf, cmdline, output_fpath=db_in_roi_vcf_fpath + '_tmp')
-        _add_vcf_header(db_vcf_fpath, db_in_roi_vcf_fpath)
-
-        # Take variants from VCF missed in DB (but only in the regions from BED)
-        cmdline = '{bedtools} intersect -v -a {input_vcf_fpath} -b {db_in_roi_vcf_fpath}'.format(**locals())
-        call(cnf, cmdline, output_fpath=missed_vcf_fpath + '_tmp')
-        _add_vcf_header(input_vcf_fpath, missed_vcf_fpath)
-
-        return missed_vcf_fpath
-
-
-def _proc_regions(regions, fn, *args, **kwargs):
-    i = 0
-    for region in regions:
-        i += 1
-
-        fn(region, *args, **kwargs)
-
-        if i % 10000 == 0:
-            info('Processed {0:,} regions.'.format(i))
-
-    if not i % 10000:
-        info('Processed {0:,} regions.'.format(i))
-
-
-def _count_variants(region, vcf_fpath):
-    num = 0
-    with open(vcf_fpath) as inp:
-        reader = vcf_parser.Reader(inp)
-        for rec in reader:
-            if region.start <= rec.POS <= region.end:
-                num += 1
-    return num
-
-
-def _fill_in_record_info(region, rec_by_name, median_depth):
-    rec_by_name['Sample'].value.append(         region.sample)
-    rec_by_name['Chr'].value.append(            region.chrom)
-    rec_by_name['Start'].value.append(          region.start)
-    rec_by_name['End'].value.append(            region.end)
-    rec_by_name['Gene'].value.append(           region.gene_name)
-    rec_by_name['Feature'].value.append(        region.feature)
-    rec_by_name['Size'].value.append(           region.get_size())
-    rec_by_name['MeanDepth'].value.append(      region.avg_depth)
-    rec_by_name['StdDev'].value.append(         region.std_dev)
-    rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
-    rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth if median_depth != 0 else None)
-    rec_by_name['Total variants'].value.append( region.var_num)
-
-    for db_descriptive_name, num in region.missed_by_db.items():
-        rec_by_name[db_descriptive_name + ' missed'].value.append(num)
-
-    for depth_thres, bases in region.bases_within_threshs.items():
-        if int(region.get_size()) == 0:
-            percent = None
-        else:
-            percent = 100.0 * bases / region.get_size()
-        rec_by_name['{}x'.format(depth_thres)].value.append(percent)
-
-
 def _make_flat_region_report(regions, depth_threshs):
     header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
                      'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
@@ -685,7 +424,7 @@ def _make_flat_region_report(regions, depth_threshs):
 
         region.sum_up(depth_threshs)
 
-        row = map(str, [region.sample, region.chrom, region.start, region.end, region.gene_name])
+        row = map(str, [region.sample_name, region.chrom, region.start, region.end, region.gene_name])
         row += [region.feature]
         row += [str(region.get_size())]
         row += ['{0:.2f}'.format(region.avg_depth)]
@@ -706,7 +445,7 @@ def _make_flat_region_report(regions, depth_threshs):
     return all_rows
 
 
-def bedcoverage_hist_stats(cnf, bam, bed):
+def bedcoverage_hist_stats(cnf, bam, bed, reuse=False):
     if not bam or not bed:
         err()
         if not bam: err('BAM file is required.')
@@ -720,7 +459,10 @@ def bedcoverage_hist_stats(cnf, bam, bed):
     bedcov_output = join(cnf.work_dir,
                          splitext_plus(basename(bed))[0] + '_' +
                          splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
-    call(cnf, cmdline, bedcov_output)
+    if reuse and file_exists(bedcov_output) and verify_file(bedcov_output):
+        pass
+    else:
+        call(cnf, cmdline, bedcov_output)
 
     _total_regions_count = 0
 
@@ -748,7 +490,7 @@ def bedcoverage_hist_stats(cnf, bam, bed):
             line_region_key_tokens = (None, chrom, start, end)
 
             if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
-                region = Region(sample=None, chrom=chrom,
+                region = Region(sample_name=None, chrom=chrom,
                                 start=start, end=end, size=region_size,
                                 extra_fields=extra_fields)
                 regions.append(region)

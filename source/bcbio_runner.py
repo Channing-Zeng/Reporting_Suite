@@ -239,7 +239,6 @@ class BCBioRunner:
             script='fastqc_summary',
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
-
         )
         self.qualimap_summary = Step(cnf, run_id,
             name='QualiMap_summary', short_name='qms',

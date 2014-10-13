@@ -16,7 +16,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.config import Defaults
-from source.targetcov.cov import generate_targetcov_reports
+from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.utils import info
 
@@ -91,27 +91,26 @@ def main(args):
 
 def process_one(cnf):
     sample = Sample(cnf.name, bam=cnf.bam, bed=cnf.bed)
-    return generate_targetcov_reports(cnf, sample, cnf.vcfs_by_callername)
+    return make_targetseq_reports(cnf, sample)  # cnf.vcfs_by_callername
 
 
-def finalize_one(cnf, summary_report_txt_path, summary_report_json_path, summary_report_html_path,
-                 gene_report_fpath, abnormal_regions_reports):
+def finalize_one(cnf, summary_report_txt_path, gene_report_fpath):
     msg = ['TargetSeq reprots finished for ' + cnf.name + ':']
 
     if summary_report_txt_path:
         msg.append('Summary TXT:  ' + summary_report_txt_path)
-        msg.append('Summary HTML: ' + summary_report_html_path)
+        # msg.append('Summary HTML: ' + summary_report_html_path)
         info('Summary report: ' + summary_report_txt_path)
     if gene_report_fpath:
-        msg.append('Exons coverage: ' + gene_report_fpath)
-        info('Exons coverage report:')
+        msg.append('Per-region report: ' + gene_report_fpath)
+        info('Per-region report:')
         info('  ' + gene_report_fpath)
-    if abnormal_regions_reports:
-        msg.append('Abnormal region reports: ')
-        info('Abnormal region reports:')
-        for rep in abnormal_regions_reports:
-            msg.append('  ' + rep)
-            info('  ' + rep)
+    # if abnormal_regions_reports:
+    #     msg.append('Abnormal region reports: ')
+    #     info('Abnormal region reports:')
+    #     for rep in abnormal_regions_reports:
+    #         msg.append('  ' + rep)
+    #         info('  ' + rep)
 
     send_email('\n'.join(msg))
 

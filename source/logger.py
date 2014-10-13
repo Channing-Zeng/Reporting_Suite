@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 import traceback
 
 
+smtp_host = 'localhost'
 log_fpath = None
 project_name = None
 proc_name = None
@@ -39,18 +40,24 @@ def err(msg='', ending='\n', print_date=True):
     send_email(msg)
 
 
-def send_email(msg=''):
+def send_email(msg='', subj=''):
     if msg:
         msg = MIMEText(msg)
-        subject = 'Reporting for the project ' + ('"' + project_name + '"' or '<unknown>')
+        subject = ''
+        if project_name:
+            subject += project_name
+        else:
+            subject += 'Reporting'
         if proc_name:
-            subject += ', process ' + proc_name
+            subject += ': ' + proc_name
+        if subj:
+            subject += ' ' + subj
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = my_address + ',' + address
         try:
-            s = smtplib.SMTP('localhost')
+            s = smtplib.SMTP(smtp_host)
             s.sendmail(msg['From'], msg['To'].split(','), msg.as_string())
             s.quit()
             info('Mail sent to ' + msg['To'])
