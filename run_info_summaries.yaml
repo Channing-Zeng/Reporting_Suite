@@ -14,7 +14,7 @@ steps:
 - ngsCAT_summary
 #- QualiMap
 - QualiMap_summary
-- fastqc_summary
+- FastQC_summary
 - Combined_report
 #- MongoLoader
 #- AbnormalCovReport
