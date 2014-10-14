@@ -89,7 +89,7 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
     if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
         for caller_name, vcf_fpath in filtered_vcf_by_callername:
             vcf_dbs = [
-                VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+                # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
                 VCFDataBase('cosmic', 'Cosmic', cnf.genome),
                 VCFDataBase('oncomine', 'Oncomine', cnf.genome),
             ]
