@@ -39,14 +39,16 @@ def _read_regions(gene_report_fpath):
                 print depth_threshs
                 continue
 
-            sample_name, chrom, start, end, gene, feature, size, avg_depth, \
-                std_dev, percent_within_normal = tokens[:10]
+            sample_name, chrom, start, end, gene, exon_num, strand, feature, size, avg_depth, \
+                std_dev, percent_within_normal = tokens[:12]
             region = Region(
                 sample_name=sample_name,
                 chrom=chrom,
                 start=int(start),
                 end=int(end),
                 gene_name=gene,
+                exon_num=int(exon_num),
+                strand=strand,
                 feature=feature,
                 size=int(size),
                 avg_depth=float(avg_depth),
@@ -55,7 +57,7 @@ def _read_regions(gene_report_fpath):
             )
 
             percents = []
-            for token in tokens[10:]:
+            for token in tokens[12:]:
                 try:
                     v = float(token[:-1])
                 except:
@@ -209,7 +211,7 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
             for line in f:
                 if not line.startswith('#'):
                     tokens = line.strip().split('\t')
-                    chrom, start, end, gene, feature, missed_vars = tokens[:7]
+                    chrom, start, end, gene, feature, missed_vars = tokens[:9]
                     vcf_db.missed_vars_by_region_info[(chrom, int(start), int(end), feature)] = int(missed_vars)
 
         info('Missed variants from ' + vcf_db.descriptive_name + ': ' +

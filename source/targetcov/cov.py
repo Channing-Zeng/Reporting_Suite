@@ -81,6 +81,8 @@ def make_and_save_region_report(cnf, sample, amplicons):
     exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, target_exons_bed)
     for exon in exons:
         exon.gene_name = exon.extra_fields[0]
+        exon.exon_num = exon.extra_fields[1]
+        exon.strand = exon.extra_fields[2]
 
     info('Saving region coverage report...')
     gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, cnf.name, amplicons, exons)
@@ -410,7 +412,7 @@ def _get_exons_merged_by_genes(cnf, subregions):
 
 
 def _make_flat_region_report(regions, depth_threshs):
-    header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Feature', 'Size',
+    header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Exon', 'Strand', 'Feature', 'Size',
                      'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
     for thres in depth_threshs:
         header_fields.append('{}x'.format(thres))
@@ -425,12 +427,21 @@ def _make_flat_region_report(regions, depth_threshs):
 
         region.sum_up(depth_threshs)
 
-        row = map(str, [region.sample_name, region.chrom, region.start, region.end, region.gene_name])
-        row += [region.feature]
-        row += [str(region.get_size())]
-        row += ['{0:.2f}'.format(region.avg_depth)]
-        row += ['{0:.2f}'.format(region.std_dev)]
-        row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
+        row = [
+            region.sample_name,
+            region.chrom,
+            '{:,}'.format(region.start),
+            '{:,}'.format(region.end),
+            region.gene_name,
+            str(region.exon_num) if region.exon_num else '',
+            region.strand if region.strand else '',
+            region.gene_name,
+            region.feature,
+            '{:,}'.format(region.get_size()),
+            '{0:.2f}'.format(region.avg_depth),
+            '{0:.2f}'.format(region.std_dev),
+            '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-'
+        ]
 
         for depth_thres, bases in region.bases_within_threshs.items():
             if int(region.get_size()) == 0:
@@ -438,6 +449,9 @@ def _make_flat_region_report(regions, depth_threshs):
             else:
                 percent = 100.0 * bases / region.get_size()
                 percent_str = '{0:.2f}%'.format(percent)
+                if percent > 100:
+                    err('Percent = ' + percent_str + ', bases = ' + str(bases) + ', size = ' + str(region.get_size()) +
+                        ', start = ' + str(region.start) + ', end = ' + str(regions.end))
             row.append(percent_str)
 
         all_rows.append(row)

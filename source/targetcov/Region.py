@@ -9,21 +9,25 @@ from source.ngscat.bed_file import verify_bed
 
 class Region:
     def __init__(self, sample_name=None, chrom=None, start=None, end=None,
-                 gene_name=None, feature=None, size=None, avg_depth=None, std_dev=None,
-                 percent_within_normal=None, extra_fields=list()):
+                 gene_name=None, exon_num=None, strand=None, feature=None, size=None, avg_depth=None,
+                 std_dev=None, percent_within_normal=None, extra_fields=list()):
         self.sample_name = sample_name
         self.chrom = chrom
         self.start = start
         self.end = end
         self.size = size
+
         self.gene_name = gene_name
+        self.exon_num = exon_num
+        self.strand = strand
+
         self.feature = feature
         self.avg_depth = avg_depth
         self.std_dev = std_dev
         self.percent_within_normal = percent_within_normal
         self.bases_within_threshs = OrderedDict()
 
-        self.extra_fields = extra_fields
+        self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
         self.bases_by_depth = defaultdict(int)
         self.subregions = []
         self.missed_by_db = dict()

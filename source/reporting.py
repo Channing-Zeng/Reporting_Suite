@@ -48,12 +48,13 @@ class Metric:
         self.common = common
         self.unit = unit
 
-    def format(self, value):
+    def format(self, value, human_readable=False):
+        return Metric.format_value(value, unit=self.unit)
+
+    @staticmethod
+    def format_value(value, unit=''):
         if value is None:
             return '-'
-
-        name = self.name
-        unit = self.unit
 
         if isinstance(value, basestring):
             try:
@@ -63,8 +64,6 @@ class Metric:
                     value = float(value)
                 except ValueError:
                     # assert False, 'Strange value ' + str(value)
-                    if value == 0:
-                        return '0'
                     return '{value}{unit}'.format(**locals())
 
         if isinstance(value, int):
@@ -85,6 +84,7 @@ class Metric:
             return ','.join(list)
 
         return '-'
+
 
     def __repr__(self):
         return self.name
@@ -130,10 +130,10 @@ class Report:
             dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
-    def _append_value_to_row(sample_report, row, metric):
+    def _append_value_to_row(sample_report, row, metric, human_readable=False):
         try:
             row.append(next(
-                r.metric.format(r.value)
+                r.metric.format(r.value, human_readable)
                 for r in sample_report.records
                 if r.metric.name == metric.name))
         except StopIteration:
