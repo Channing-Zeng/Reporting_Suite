@@ -552,11 +552,15 @@ class BCBioRunner:
                 else:
                     caller_names, filtered_vcfs = [], []
 
+                wait_for_steps = []
+                if self.varfilter_all in self.steps:
+                    wait_for_steps.extend([self.varfilter_all.job_name()])
+                if self.targetcov in self.steps:
+                    wait_for_steps.extend([self.targetcov.job_name(sample.name)])
+
                 self._submit_job(
                     self.abnormal_regions, sample.name,
-                    wait_for_steps=(
-                        ([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []) +
-                         [self.targetcov.job_name(sample.name) if self.targetcov in self.steps else []]),
+                    wait_for_steps=wait_for_steps,
                     sample=sample,
                     caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                     vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
