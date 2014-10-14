@@ -28,6 +28,7 @@ class Region:
         self.subregions = []
         self.missed_by_db = dict()
         self.var_num = None
+        self.percent_within_threshs = defaultdict(float)
 
     def add_subregion(self, subregion):
         self.subregions.append(subregion)

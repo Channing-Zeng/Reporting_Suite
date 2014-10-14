@@ -52,9 +52,17 @@ def _read_regions(gene_report_fpath):
                 std_dev=float(std_dev),
                 percent_within_normal=float(percent_within_normal[:-1])
             )
-            depth_details = [float(v[:-1]) for v in tokens[10:]]
-            for thresh, value in zip(depth_threshs, depth_details):
-                region.bases_within_threshs[thresh] = value
+
+            percents = []
+            for token in tokens[10:]:
+                try:
+                    v = float(token[:-1])
+                except:
+                    v = '-'
+                percents.append(v)
+
+            for thresh, percent in zip(depth_threshs, percents):
+                region.percent_within_threshs[thresh] = percent
             regions.append(region)
     return regions
 
@@ -212,7 +220,7 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
                 r.missed_by_db[vcf_db.descriptive_name] = 0
             r.missed_by_db[vcf_db.descriptive_name] += \
                 vcf_db.missed_vars_by_region_info.get((r.chrom, r.start, r.end, r.feature), 0)
-# (6000, 7000, 'JB137814', 1000)
+
     rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
     for rec in rec_by_name.values():
         report.records.append(rec)
@@ -294,12 +302,6 @@ def _fill_in_record_info(region, rec_by_name, median_depth):
     for db_descriptive_name, num in region.missed_by_db.items():
         rec_by_name[db_descriptive_name + ' missed'].value.append(num)
 
-    for depth_thres, bases in region.bases_within_threshs.items():
-        if int(region.get_size()) == 0:
-            percent = None
-        else:
-            percent = 100.0 * bases / region.get_size()
+    for depth_thres, percent in region.percent_within_threshs.items():
         rec_by_name['{}x'.format(depth_thres)].value.append(percent)
-
-
 
