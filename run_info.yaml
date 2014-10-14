@@ -67,6 +67,7 @@ quality_control:
   db_for_summary: cosmic
   variant_distribution_scale: 1000  ## in kilobases
 
+
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
   min_cov: 10

@@ -1,5 +1,6 @@
 # coding=utf-8
 from collections import OrderedDict
+import os
 from os.path import join
 import shutil
 from ext_modules import vcf_parser
@@ -238,6 +239,7 @@ def _add_vcf_header(source_vcf_fpath, dest_vcf_fpath):
     with open(dest_vcf_fpath + '_tmp') as inp, open(dest_vcf_fpath, 'a') as out:
         for line in inp:
             out.write(line)
+    os.remove(dest_vcf_fpath + '_tmp')
     info(dest_vcf_fpath)
 
 
