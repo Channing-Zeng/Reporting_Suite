@@ -80,14 +80,23 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
     info()
 
     info('Extracting abnormally covered regions.')
-    minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
-    maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
+    # minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
+    # maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
+    #
+    # info('Assuming abnormal if below min(median*' +
+    #      str(cnf.coverage_reports.min_cov_factor) + ', ' +
+    #      str(cnf.coverage_reports.min_cov) + ') = ' + str(minimal_cov) +
+    #      ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
+    #      ' = ' + str(maximal_cov))
 
-    info('Assuming abnormal if below min(median*' +
-         str(cnf.coverage_reports.min_cov_factor) + ', ' +
-         str(cnf.coverage_reports.min_cov) + ') = ' + str(minimal_cov) +
-         ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
-         ' = ' + str(maximal_cov))
+    # Outliers method
+    rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
+    l = len(rs_by_depth)
+    q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
+    q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
+    d = q3 - q1
+    minimal_cov = q1 - 3 * d
+    maximal_cov = q1 + 3 * d
 
     info('Classifying regions...')
     low_regions, high_regions = [], []

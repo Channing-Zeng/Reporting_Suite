@@ -196,7 +196,7 @@ calc_cell_contents = (report, section, font) ->
         l = vals.length
 
         metric.min = vals[0]
-        metric.max = vals[vals.length - 1]
+        metric.max = vals[l - 1]
         metric.med = if l % 2 != 0 then vals[(l - 1) / 2] else mean(vals[l / 2], vals[(l / 2) - 1])
         q1 = vals[Math.floor((l - 1) / 4)]
         q3 = vals[Math.floor((l - 1) * 3 / 4)]
