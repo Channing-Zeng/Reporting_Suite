@@ -14,10 +14,13 @@ from source.tools_from_cnf import get_tool_cmdline
 from source.utils import median
 
 
-def make_abnormal_regions_reports(cnf, bcbio_structure, sample, filtered_vcf_by_callername=None):
-    gene_rep_fpath = bcbio_structure.get_gene_report_fpaths_by_sample().get(sample.name)
+def make_abnormal_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
+    detail_gene_rep_fpath = join(cnf.output_dir,
+                                 sample.name + '.' + BCBioStructure.targetseq_dir +
+                                 BCBioStructure.detail_gene_report_baseending + '.tsv')
 
-    regions = _read_regions(gene_rep_fpath)
+    info('Reading regions from ' + detail_gene_rep_fpath)
+    regions = _read_regions(detail_gene_rep_fpath)
 
     abnormal_regions_reports = _generate_abnormal_regions_reports(cnf, sample, regions,
         filtered_vcf_by_callername or dict())
@@ -29,18 +32,29 @@ def _read_regions(gene_report_fpath):
     regions = []
     with open(gene_report_fpath) as f:
         for line in f:
-            chrom, start, end, gene, feature, size, avg_depth, std_dev, percent_within_normal = line.strip().split()
+            tokens = line.strip().split('\t')
+            if line.startswith('Sample\tChr') or line.startswith('#'):
+                depth_threshs = [int(v[:-1]) for v in tokens[10:]]
+                print depth_threshs
+                continue
+
+            sample_name, chrom, start, end, gene, feature, size, avg_depth, \
+                std_dev, percent_within_normal = tokens[:10]
             region = Region(
-                chrom,
-                int(start),
-                int(end),
-                gene,
-                feature,
-                int(size),
-                float(avg_depth),
-                float(std_dev),
-                float(percent_within_normal)
+                sample_name=sample_name,
+                chrom=chrom,
+                start=int(start),
+                end=int(end),
+                gene_name=gene,
+                feature=feature,
+                size=int(size),
+                avg_depth=float(avg_depth),
+                std_dev=float(std_dev),
+                percent_within_normal=float(percent_within_normal[:-1])
             )
+            depth_details = [float(v[:-1]) for v in tokens[10:]]
+            for thresh, value in zip(depth_threshs, depth_details):
+                region.bases_within_threshs[thresh] = value
             regions.append(region)
     return regions
 
@@ -48,6 +62,7 @@ def _read_regions(gene_report_fpath):
 def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_callername):
     info('Calculation median coverage...')
     median_cov = median((r.avg_depth for r in regions))
+    sample.median_cov = median_cov
     if median_cov == 0:
         err('Median coverage is 0')
         return None, None
@@ -70,11 +85,11 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
     _proc_regions(regions, _classify_region, low_regions, high_regions,
                   median_cov, minimal_cov, maximal_cov)
 
-    abnormal_regions_reports = []
+    abnormal_regions_report_fpaths = []
     if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
         for caller_name, vcf_fpath in filtered_vcf_by_callername:
             vcf_dbs = [
-                # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+                VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
                 VCFDataBase('cosmic', 'Cosmic', cnf.genome),
                 VCFDataBase('oncomine', 'Oncomine', cnf.genome),
             ]
@@ -83,16 +98,18 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
                     [low_regions, high_regions],
                     [BCBioStructure.detail_lowcov_gene_report_baseending,
                      BCBioStructure.detail_highcov_gene_report_baseending]):
+                if len(regions) == 0:
+                    err('No flagged regions with too ' + kind + ' coverage, skipping counting missed variants.')
+                    continue
 
                 report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-                abnormal_regions_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
+                abnormal_regions_bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
                 for vcf_db in vcf_dbs:
-                    vcf_db.missed_vcf_fpath, \
-                    vcf_db.annotated_bed = _find_missed_variants(cnf, vcf_db,
-                        caller_name, vcf_fpath, report_base_name, abnormal_regions_fpath)
+                    vcf_db.missed_vcf_fpath, vcf_db.annotated_bed = _find_missed_variants(cnf, vcf_db,
+                        caller_name, vcf_fpath, report_base_name, abnormal_regions_bed_fpath)
 
-                report = _make_flagged_region_report(cnf, sample, vcf_fpath, caller_name, vcf_dbs)
+                report = _make_flagged_region_report(cnf, sample, regions, vcf_fpath, caller_name, vcf_dbs)
 
                 regions_html_rep_fpath = report.save_html(cnf.output_dir, report_base_name,
                     caption='Regions with ' + kind + ' coverage for ' + caller_name)
@@ -100,12 +117,12 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
                 regions_txt_rep_fpath = report.save_txt(cnf.output_dir, report_base_name,
                     [report.metric_storage.sections_by_name[kind + '_cov']])
 
-                abnormal_regions_reports.append(regions_txt_rep_fpath)
+                abnormal_regions_report_fpaths.append(regions_txt_rep_fpath)
                 info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-                info('  ' + str(regions_html_rep_fpath))
-                info('  ' + regions_txt_rep_fpath)
+                info('  HTML: ' + str(regions_html_rep_fpath))
+                info('  TXT:  ' + regions_txt_rep_fpath)
 
-    return abnormal_regions_reports
+    return abnormal_regions_report_fpaths
 
 
 def _classify_region(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
@@ -124,9 +141,10 @@ class VCFDataBase():
         self.descriptive_name = descriptive_name
         self.vcf_fpath = genome_cnf.get(name)
         self.annotated_bed = None
+        self.missed_vars_by_region_info = OrderedDict()
 
 
-def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, vcf_dbs):
+def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller_name, vcf_dbs):
     regions_metrics = [
         Metric('Sample'),
         Metric('Chr'),
@@ -165,36 +183,41 @@ def _make_flagged_region_report(cnf, sample, filtered_vcf_fpath, caller_name, vc
     report = SquareSampleReport(sample, metric_storage=region_metric_storage)
 
     for vcf_db in vcf_dbs:
-        vcf_db.missed_vars_by_region_info = OrderedDict()  # indexed by name (chr, start, end, feature)
+        if not vcf_db.annotated_bed:
+            report.add_record(vcf_db.descriptive_name + ' missed variants', None)
+            continue
 
         with open(vcf_db.annotated_bed) as f:
             for line in f:
-                print line
-                tokens = line.strip().split()
-                chrom, start, end, gene, feature, missed_vars = tokens[:5]
-                vcf_db.missed_vars_by_region_info[(chrom, start, end, feature)] = missed_vars
+                if not line.startswith('#'):
+                    tokens = line.strip().split('\t')
+                    chrom, start, end, gene, feature, missed_vars = tokens[:7]
+                    vcf_db.missed_vars_by_region_info[(chrom, int(start), int(end), feature)] = int(missed_vars)
 
-        if not vcf_db.missed_vcf_fpath and not verify_file(vcf_db.missed_vcf_fpath):
-            info('Skipping counting variants from ' + vcf_db.descriptive_name)
-            report.add_record(vcf_db.descriptive_name + ' missed variants', None)
-        else:
-            info('Counting missed variants from ' + vcf_db.descriptive_name)
-            report.add_record(vcf_db.descriptive_name + ' missed variants',
-                              vcf_db.missed_vcf_fpath)
+        info('Missed variants from ' + vcf_db.descriptive_name + ': ' +
+             str(sum(vcf_db.missed_vars_by_region_info.values())))
+        report.add_record(vcf_db.descriptive_name + ' missed variants', vcf_db.missed_vcf_fpath)
 
         info()
 
     # cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
     # shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
-    #
-    # report.add_record('Median depth', median_depth)
-    # report.add_record('Variants', filtered_vcf_fpath)
-    #
-    # rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
-    # for rec in rec_by_name.values():
-    #     report.records.append(rec)
-    #
-    # _proc_regions(regions, _fill_in_record_info, rec_by_name, median_depth)
+
+    report.add_record('Median depth', sample.median_cov)
+    report.add_record('Variants', filtered_vcf_fpath)
+
+    for r in regions:
+        for vcf_db in vcf_dbs:
+            if vcf_db.descriptive_name not in r.missed_by_db:
+                r.missed_by_db[vcf_db.descriptive_name] = 0
+            r.missed_by_db[vcf_db.descriptive_name] += \
+                vcf_db.missed_vars_by_region_info.get((r.chrom, r.start, r.end, r.feature), 0)
+# (6000, 7000, 'JB137814', 1000)
+    rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
+    for rec in rec_by_name.values():
+        report.records.append(rec)
+
+    _proc_regions(regions, _fill_in_record_info, rec_by_name, sample.median_cov)
 
     return report
 
@@ -207,17 +230,18 @@ def _add_vcf_header(source_vcf_fpath, dest_vcf_fpath):
     with open(dest_vcf_fpath + '_tmp') as inp, open(dest_vcf_fpath, 'a') as out:
         for line in inp:
             out.write(line)
+    info(dest_vcf_fpath)
 
 
 def _find_missed_variants(cnf, vcf_db, caller_name, input_vcf_fpath, report_base_name, bed_fpath):
-    if not vcf_db.vcf_fpath and not verify_file(vcf_db.vcf_fpath):
+    if not vcf_db.vcf_fpath and not verify_file(vcf_db.vcf_fpath, vcf_db.descriptive_name):
         info('Skipping counting variants from ' + vcf_db.descriptive_name)
-        return None
+        return None, None
 
     info('Counting missed variants from ' + vcf_db.descriptive_name)
     db_in_roi_vcf_fpath = join(cnf.work_dir, report_base_name + '_' + vcf_db.name + '_roi.vcf')
     missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '_missed.vcf')
-    annotated_regions_fpath = join(cnf.work_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '.bed')
+    annotated_regions_bed_fpath = join(cnf.work_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '.bed')
 
     bedtools = get_tool_cmdline(cnf, 'bedtools')
 
@@ -227,18 +251,20 @@ def _find_missed_variants(cnf, vcf_db, caller_name, input_vcf_fpath, report_base
     cmdline = '{bedtools} intersect -wa -a {db_vcf_fpath} -b {bed_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=db_in_roi_vcf_fpath + '_tmp')
     _add_vcf_header(db_vcf_fpath, db_in_roi_vcf_fpath)
+    info()
 
     # Take variants from VCF missed in DB (but only in the regions from BED)
     cmdline = '{bedtools} intersect -v -a {input_vcf_fpath} -b {db_in_roi_vcf_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=missed_vcf_fpath + '_tmp')
     _add_vcf_header(input_vcf_fpath, missed_vcf_fpath)
+    info()
 
     # Take variants from VCF missed in DB (but only in the regions from BED)
-    cmdline = '{bedtools} intersect -wao -a {bed_fpath} -b {missed_vcf_fpath}'.format(**locals())
-    call(cnf, cmdline, output_fpath=missed_vcf_fpath + '_tmp')
-    _add_vcf_header(input_vcf_fpath, annotated_regions_fpath)
+    cmdline = '{bedtools} intersect -c -a {bed_fpath} -b {missed_vcf_fpath}'.format(**locals())
+    call(cnf, cmdline, output_fpath=annotated_regions_bed_fpath)
+    info()
 
-    return missed_vcf_fpath, annotated_regions_fpath
+    return missed_vcf_fpath, annotated_regions_bed_fpath
 
 
 # def _count_variants(region, vcf_fpath):
@@ -252,14 +278,14 @@ def _find_missed_variants(cnf, vcf_db, caller_name, input_vcf_fpath, report_base
 
 
 def _fill_in_record_info(region, rec_by_name, median_depth):
-    rec_by_name['Sample'].value.append(         region.sample)
+    rec_by_name['Sample'].value.append(         region.sample_name)
     rec_by_name['Chr'].value.append(            region.chrom)
     rec_by_name['Start'].value.append(          region.start)
     rec_by_name['End'].value.append(            region.end)
     rec_by_name['Gene'].value.append(           region.gene_name)
     rec_by_name['Feature'].value.append(        region.feature)
     rec_by_name['Size'].value.append(           region.get_size())
-    rec_by_name['MeanDepth'].value.append(      region.avg_depth)
+    rec_by_name['AvgDepth'].value.append(      region.avg_depth)
     rec_by_name['StdDev'].value.append(         region.std_dev)
     rec_by_name['Wn 20% of Mean'].value.append( region.percent_within_normal)
     rec_by_name['Depth/Median'].value.append(   region.avg_depth / median_depth if median_depth != 0 else None)

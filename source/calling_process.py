@@ -130,7 +130,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         info('   ' + line.strip())
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
-                        info('   ' + line.strip())
+                        err('   ' + line.strip())
+                    info()
 
             # CHECK RES CODE
             ret_code = proc.wait()

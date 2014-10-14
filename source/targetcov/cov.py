@@ -28,7 +28,8 @@ def make_targetseq_reports(cnf, sample):
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.bam, sample.bed)
+    amplicons, combined_region, max_depth, total_bed_size = \
+        bedcoverage_hist_stats(cnf, sample.name, sample.bam, sample.bed)
 
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
 
@@ -77,7 +78,7 @@ def make_and_save_region_report(cnf, sample, amplicons):
     target_exons_bed = _add_other_exons(cnf, exons_bed, overlapped_exons_bed)
 
     info('Calculation of coverage statistics for exons of the genes ovelapping with the input regions...')
-    exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.bam, target_exons_bed)
+    exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, target_exons_bed)
     for exon in exons:
         exon.gene_name = exon.extra_fields[0]
 
@@ -222,11 +223,11 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
 def _generate_region_cov_report(cnf, sample, output_dir, sample_name, amplicons, exons):
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
-        ampl.sample = sample_name
+        ampl.sample_name = sample_name
 
     for exon in exons:
         exon.feature = 'Exon'
-        exon.sample = sample_name
+        exon.sample_name = sample_name
 
     info('Groupping exons per gene...')
     exon_genes = _get_exons_merged_by_genes(cnf, exons)
@@ -303,7 +304,7 @@ def _get_amplicons_merged_by_genes(amplicons, exon_genes):
                 amplicon_gene = amplicon_genes_by_name.get(exon_gene.gene_name)
                 if amplicon_gene is None:
                     amplicon_gene = Region(
-                        sample_name=amplicon.sample, chrom=amplicon.chrom,
+                        sample_name=amplicon.sample_name, chrom=amplicon.chrom,
                         start=amplicon.start, end=amplicon.end, size=0,
                         feature='Gene-' + amplicon.feature,
                         gene_name=exon_gene.gene_name)
@@ -333,7 +334,7 @@ def _get_exons_merged_by_genes(cnf, subregions):
         gene = genes_by_name.get(exon.gene_name)
         if gene is None:
             gene = Region(
-                sample_name=exon.sample, chrom=exon.chrom,
+                sample_name=exon.sample_name, chrom=exon.chrom,
                 start=exon.start, end=exon.end, size=0,
                 feature='Gene-' + exon.feature,
                 gene_name=exon.gene_name)
@@ -445,7 +446,7 @@ def _make_flat_region_report(regions, depth_threshs):
     return all_rows
 
 
-def bedcoverage_hist_stats(cnf, bam, bed, reuse=False):
+def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     if not bam or not bed:
         err()
         if not bam: err('BAM file is required.')
@@ -487,10 +488,10 @@ def bedcoverage_hist_stats(cnf, bam, bed, reuse=False):
                 start, end = map(int, line_tokens[1:3])
                 extra_fields = line_tokens[3:-4]
 
-            line_region_key_tokens = (None, chrom, start, end)
+            line_region_key_tokens = (sample_name, chrom, start, end)
 
             if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
-                region = Region(sample_name=None, chrom=chrom,
+                region = Region(sample_name=sample_name, chrom=chrom,
                                 start=start, end=end, size=region_size,
                                 extra_fields=extra_fields)
                 regions.append(region)

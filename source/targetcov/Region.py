@@ -1,8 +1,7 @@
 from collections import defaultdict, OrderedDict
 import math
 import os
-from string import join
-from os.path import isfile
+from os.path import isfile, join
 import sys
 from source.logger import info
 from source.ngscat.bed_file import verify_bed
@@ -22,6 +21,7 @@ class Region:
         self.avg_depth = avg_depth
         self.std_dev = std_dev
         self.percent_within_normal = percent_within_normal
+        self.bases_within_threshs = OrderedDict()
 
         self.extra_fields = extra_fields
         self.bases_by_depth = defaultdict(int)
@@ -136,7 +136,8 @@ def _save_regions_to_bed(cnf, regions, f_basename):
 
     with open(bed_fpath, 'w') as f:
         for r in regions:
-            f.write('\t'.join(map(str, [r.chr, r.start, r.end, r.gene, r.feature])) + '\n')
+            f.write('\t'.join(map(str, [
+                r.chrom, r.start, r.end, r.gene_name, r.feature])) + '\n')
 
                 # r.size, r.avg_depth, r.std_dev, r.percent_within_normal
             # f.write('\t'.join([

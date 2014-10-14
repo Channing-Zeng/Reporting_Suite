@@ -88,6 +88,7 @@ class BCBioRunner:
                 self.varqc_summary,
                 self.varqc_after_summary,
                 self.targetcov,
+                self.abnormal_regions,
                 self.seq2c,
                 self.ngscat,
                 self.qualimap,
@@ -160,7 +161,14 @@ class BCBioRunner:
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
-                    '{caller_names} {vcfs}'
+        )
+        self.abnormal_regions = Step(cnf, run_id,
+            name='AbnormalCovReport', short_name='acr',
+            interpreter='python',
+            script='abnormal_regions',
+            dir_name=BCBioStructure.targetseq_dir,
+            paramln=spec_params + ' -o \'{output_dir}\' {caller_names} {vcfs} '
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         )
         self.ngscat = Step(cnf, run_id,
             name='ngsCAT', short_name='nc',
@@ -464,6 +472,14 @@ class BCBioRunner:
                 if not sample.bam or not verify_bam(sample.bam):
                     err('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
 
+            # TargetCov reports
+            if self.targetcov in self.steps:
+                info('Target coverage for "' + sample.name + '"')
+                self._submit_job(
+                    self.targetcov, sample.name,
+                    bam=sample.bam, bed=sample.bed, sample=sample,
+                    caller_names='', vcfs='')
+
             # ngsCAT reports
             if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
                 err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
@@ -517,39 +533,33 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varannotate in self.steps],
                 create_dir=False,
-                threads=min(len(self.bcbio_structure.batches), 20) + 1,
-            )
+                threads=min(len(self.bcbio_structure.batches), 20) + 1)
 
         # TargetSeq reports
-        if self.targetcov in self.steps or 'AbnormalCovReport' in self.cnf.steps:
+        if self.abnormal_regions in self.steps:
             for sample in self.bcbio_structure.samples:
-                info('Target coverage for "' + sample.name + '"')
                 if not self.cnf.verbose:
                     info(ending='')
 
                 if not sample.bed or not verify_file(sample.bed):
-                    err('Warning: no BED file, assuming WGS, thus running targetSeq reports only to generate Seq2C reports.')
+                    err('Warning: no BED file, assuming WGS, thus running targetSeq reports '
+                        'only to generate Seq2C reports.')
+                    continue
+
+                callers_and_filtered_vcfs = [(c, f) for c, f in ((c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers) if f]
+                if callers_and_filtered_vcfs:
+                    caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
                 else:
-                    callers_and_filtered_vcfs = [(c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers]
-                    callers_and_filtered_vcfs = [(c, f) for (c, f) in callers_and_filtered_vcfs if f]
-                    if callers_and_filtered_vcfs:
-                        caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
-                    else:
-                        caller_names, filtered_vcfs = [], []
+                    caller_names, filtered_vcfs = [], []
 
-                    if 'AbnormalCovReport' in self.cnf.steps:
-                        self._submit_job(
-                            self.targetcov, sample.name,
-                            wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            bam=sample.bam, bed=sample.bed, sample=sample,
-                            caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
-                            vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
-                    elif self.targetcov in self.steps:
-                        self._submit_job(
-                            self.targetcov, sample.name,
-                            bam=sample.bam, bed=sample.bed, sample=sample,
-                            caller_names='', vcfs='')
-
+                self._submit_job(
+                    self.abnormal_regions, sample.name,
+                    wait_for_steps=(
+                        ([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []) +
+                         [self.targetcov.job_name(sample.name) if self.targetcov in self.steps else []]),
+                    sample=sample,
+                    caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
+                    vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 
         if self.varqc_after in self.steps:
             info('VarQC_postVarFilter:')

@@ -16,6 +16,10 @@ proc_name = None
 my_address = 'vladislav.sav@gmail.com'
 address = None
 
+import socket
+hostname = socket.gethostname()
+is_local = 'local' in hostname
+
 
 def timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
@@ -38,11 +42,16 @@ def warn(msg='', ending='\n', print_date=True):
 
 def err(msg='', ending='\n', print_date=True):
     warn(msg, ending, print_date)
-    send_email(msg)
+    if msg:
+        send_email(msg)
 
 
 def send_email(msg='', subj=''):
     if msg:
+        addresses = [my_address]
+        if address:
+            addresses.append(address)
+
         msg = MIMEText(msg)
         subject = ''
         if project_name:
@@ -58,10 +67,10 @@ def send_email(msg='', subj=''):
         msg['Subject'] = subject
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
-        msg['To'] = my_address + ',' + address
+        msg['To'] = ','.join(addresses)
         try:
             s = smtplib.SMTP(smtp_host)
-            s.sendmail(msg['From'], msg['To'].split(','), msg.as_string())
+            s.sendmail(msg['From'], addresses, msg.as_string())
             s.quit()
             info('Mail sent to ' + msg['To'])
         except socket.error:
@@ -83,9 +92,10 @@ def _log(out, msg='', ending='\n', print_date=True):
         msg = timestamp() + msg
 
     out.write(msg + ending)
+
     sys.stdout.flush()
     sys.stderr.flush()
-    if environ.get('PYCHARM'):
+    if is_local:
         sleep(0.01)
 
     if log_fpath:

@@ -104,16 +104,25 @@ def read_opts_and_cnfs(extra_opts,
     if not check_inputs(cnf, file_keys, dir_keys):
         sys.exit(1)
 
-    assert key_for_sample_name and cnf[key_for_sample_name]
-    if not cnf[key_for_sample_name]:
-        critical('Error: ' + key_for_sample_name + ' must be provided '
-                 'in options or in ' + cnf.run_cnf + '.')
+    if cnf.name:
+        cnf.name = remove_quotes(cnf.name)
+    else:
+        if not key_for_sample_name or not cnf[key_for_sample_name]:
+            if cnf.name:
+                critical('Error: ' + (key_for_sample_name or 'key_for_sample_name') + ' must be provided '
+                         'in options or in ' + cnf.run_cnf + '.')
+        key_fname = basename(cnf[key_for_sample_name])
+        cnf.name = key_fname.split('.')[0]
 
-    key_fname = basename(cnf[key_for_sample_name])
-    cnf.name = remove_quotes(cnf.name) or key_fname.split('.')[0]
-    try:
-        cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
-    except:
+    if cnf.caller:
+        cnf.caller = remove_quotes(cnf.caller)
+    elif key_for_sample_name and cnf[key_for_sample_name]:
+        key_fname = basename(cnf[key_for_sample_name])
+        try:
+            cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
+        except:
+            cnf.caller = None
+    else:
         cnf.caller = None
 
     cnf.proc_name = cnf.proc_name or proc_name

@@ -1,7 +1,7 @@
 from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
 from os.path import join, relpath
-from ext_modules.simplejson import load, dump, JSONEncoder, dumps
+from json import load, dump, JSONEncoder, dumps
 import datetime
 
 from source.bcbio_structure import VariantCaller, Sample
@@ -63,12 +63,18 @@ class Metric:
                     value = float(value)
                 except ValueError:
                     # assert False, 'Strange value ' + str(value)
+                    if value == 0:
+                        return '0'
                     return '{value}{unit}'.format(**locals())
 
         if isinstance(value, int):
+            if value == 0:
+                return '0'
             return '{value:,}{unit}'.format(**locals())
 
         if isinstance(value, float):
+            if value == 0:
+                return '0'
             presision = 2
             for i in range(10, 2, -1):
                 if value < 1./(10**i):
@@ -197,22 +203,24 @@ class SquareSampleReport(SampleReport):
                 row.append(m.name)
         rows.append(row)
 
-        for i in range(len(next(r for r in self.records if isinstance(r.value, list)).value)):
-            row = []
-            for m in self.metric_storage.get_metrics(sections):
-                try:
-                    r = next((r for r in self.records if r.metric.name == m.name), None)
-                    if r:
-                        if m.name in self.metric_storage.general_section.metrics_by_name:
-                            val = r.value
-                        elif not r.value:
-                            val = None
-                        else:
-                            val = r.value[i]
-                        row.append(r.metric.format(val))
-                except StopIteration:
-                    row.append('-')  # if no record for the metric
-            rows.append(row)
+        next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
+        if next_list_value:
+            for i in range(len(next_list_value)):
+                row = []
+                for m in self.metric_storage.get_metrics(sections):
+                    try:
+                        r = next((r for r in self.records if r.metric.name == m.name), None)
+                        if r:
+                            if m.name in self.metric_storage.general_section.metrics_by_name:
+                                val = r.value
+                            elif not r.value:
+                                val = None
+                            else:
+                                val = r.value[i]
+                            row.append(r.metric.format(val))
+                    except StopIteration:
+                        row.append('-')  # if no record for the metric
+                rows.append(row)
         return rows
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):

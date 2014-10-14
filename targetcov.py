@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import sys
 from source.bcbio_structure import Sample
-from source.file_utils import adjust_path
 from source.logger import send_email
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -31,14 +30,6 @@ def main(args):
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
                 help='capture panel/amplicons')
-             ),
-            (['--caller-names'], dict(
-                dest='caller_names',
-                help='names of variant callers used to create vcfs provided by --vcf')
-             ),
-            (['--vcfs'], dict(
-                dest='vcfs',
-                help='filteted variants in VCF, comma-separate, must correspond to caller-names')
              ),
             (['--padding'], dict(
                 dest='padding',
@@ -72,16 +63,8 @@ def main(args):
         required=['seq', 'exons'],
         optional=['chr_lengths', 'genes'])
 
-    if cnf['report_types']:
-        cnf['coverage_reports']['report_types'] = cnf['report_types']
-        del cnf['report_types']
-
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])
-
-    cnf.vcfs = map(adjust_path, cnf.vcfs.split(',') if cnf.vcfs else [])
-    cnf.caller_names = cnf.caller_names.split(',') if cnf.caller_names else []
-    cnf.vcfs_by_callername = zip(cnf.caller_names, cnf.vcfs)
 
     run_one(cnf, process_one, finalize_one)
 

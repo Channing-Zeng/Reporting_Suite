@@ -8,8 +8,8 @@ steps:
 # - VarQC_postVarFilter
 # - VarQC_postVarFilter_summary
 - TargetCov
-- Seq2C
-- TargetCov_Summary
+# - Seq2C
+# - TargetCov_Summary
 # - ngsCAT
 # - ngsCAT_summary
 # - QualiMap
@@ -17,7 +17,7 @@ steps:
 # - FastQC_summary
 # - Combined_report
 # - MongoLoader
-#- AbnormalCovReport
+- AbnormalCovReport
 
 #vardict_steps:
 #- VarDict
