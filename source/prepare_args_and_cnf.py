@@ -49,15 +49,21 @@ def process_post_bcbio_args(parser):
     hostname = socket.gethostname()
     info('hostname: ' + hostname)
 
-    Defaults.sys_cnf = Defaults.sys_cnfs['us']
-    if 'ukap' in hostname:
-        Defaults.sys_cnf = Defaults.sys_cnfs['uk']
-    elif 'local' in hostname:
-        Defaults.sys_cnf = Defaults.sys_cnfs['local']
-    elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
-        Defaults.sys_cnf = Defaults.sys_cnfs['us']
+    opts.sys_cnf = adjust_path(opts.sys_cnf)
+    if opts.sys_cnf:
+        if not verify_file(opts.sys_cnf):
+            sys.exit(1)
+    else:
+        opts.sys_cnf = Defaults.sys_cnfs['us']
+        if 'ukap' in hostname:
+            opts.sys_cnf = Defaults.sys_cnfs['uk']
+        elif 'local' in hostname:
+            opts.sys_cnf = Defaults.sys_cnfs['local']
+        elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+            opts.sys_cnf = Defaults.sys_cnfs['us']
+    info('Using ' + opts.sys_cnf)
 
-    for file_basename, cnf_name in zip(['run', 'system'], ['run', 'sys']):
+    for file_basename, cnf_name in zip(['run'], ['run']):
         provided_cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
         project_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
 
