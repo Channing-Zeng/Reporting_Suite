@@ -124,8 +124,6 @@ class BCBioRunner:
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         if self.cnf.email:
             cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ' '
-        if self.cnf.transcripts_fpath:
-            cnfs_line += ' --transcripts ' + self.cnf.transcripts_fpath + ' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
 
         # Params for those who doesn't call bcbio_structure
@@ -133,14 +131,19 @@ class BCBioRunner:
                       '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
                       '--project-name ' + self.bcbio_structure.project_name + ' ' \
 
+        anno_paramline = spec_params + ('' +
+             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
+             '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
+             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\' ')
+        if self.cnf.transcripts_fpath:
+            anno_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
+
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
             interpreter='python',
             script='varannotate',
             dir_name=BCBioStructure.varannotate_dir,
-            paramln=spec_params + ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} '
-                                  '-o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                                  '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\''
+            paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
@@ -208,13 +211,20 @@ class BCBioRunner:
                     ' --name ' + BCBioStructure.varqc_after_name +
                     ' --dir ' + BCBioStructure.varqc_after_dir
         )
+        varfilter_paramline = spec_params + ' ' + self.final_dir
+        if cnf.datahub_path:
+            varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
+        if self.cnf.transcripts_fpath:
+            varfilter_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
+
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
             script='varfilter_all',
             dir_name=BCBioStructure.varfilter_dir,
-            paramln=spec_params + ' ' + self.final_dir + (' --datahub-path ' + cnf.datahub_path if cnf.datahub_path else '')
+            paramln=varfilter_paramline,
         )
+
         self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',
             interpreter='java',

@@ -5,7 +5,7 @@ steps:
 # - VarQC
 # - VarQC_summary
 - VarFilter
-# - VarQC_postVarFilter
+- VarQC_postVarFilter
 # - VarQC_postVarFilter_summary
 # - TargetCov
 # - Seq2C

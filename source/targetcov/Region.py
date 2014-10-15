@@ -25,13 +25,13 @@ class Region:
         self.avg_depth = avg_depth
         self.std_dev = std_dev
         self.percent_within_normal = percent_within_normal
-        self.bases_within_threshs = OrderedDict()
 
         self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
         self.bases_by_depth = defaultdict(int)
         self.subregions = []
         self.missed_by_db = dict()
         self.var_num = None
+        self.bases_within_threshs = None
         self.percent_within_threshs = defaultdict(float)
 
     def add_subregion(self, subregion):
@@ -59,11 +59,12 @@ class Region:
         return '"' + '\t'.join(map(str, ts)) + '"'
 
     def calc_bases_within_threshs(self, depth_thresholds):
-        self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
-        for depth, bases in self.bases_by_depth.iteritems():
-            for depth_thres in depth_thresholds:
-                if depth >= depth_thres:
-                    self.bases_within_threshs[depth_thres] += bases
+        if self.bases_within_threshs is None:
+            self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
+            for depth, bases in self.bases_by_depth.iteritems():
+                for depth_thres in depth_thresholds:
+                    if depth >= depth_thres:
+                        self.bases_within_threshs[depth_thres] += bases
 
         return self.bases_within_threshs
 

@@ -31,7 +31,8 @@ def make_targetseq_reports(cnf, sample):
     amplicons, combined_region, max_depth, total_bed_size = \
         bedcoverage_hist_stats(cnf, sample.name, sample.bam, sample.bed)
 
-    general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
+    general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region,
+        max_depth, total_bed_size)
 
     info()
     per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons)
@@ -424,8 +425,6 @@ def _make_flat_region_report(regions, depth_threshs):
         i += 1
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
-
-        region.sum_up(depth_threshs)
 
         row = [
             region.sample_name,

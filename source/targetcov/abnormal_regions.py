@@ -20,15 +20,16 @@ def make_abnormal_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
         info('No variants, skipping flagging regions reports...')
         return []
 
-    detail_gene_rep_fpath = join(cnf.output_dir,
-                                 sample.name + '.' + BCBioStructure.targetseq_dir +
-                                 BCBioStructure.detail_gene_report_baseending + '.tsv')
+    detail_gene_rep_fpath = join(
+        cnf.output_dir,
+        sample.name + '.' + BCBioStructure.targetseq_dir +
+        BCBioStructure.detail_gene_report_baseending + '.tsv')
 
     info('Reading regions from ' + detail_gene_rep_fpath)
     regions = _read_regions(detail_gene_rep_fpath)
 
-    abnormal_regions_reports = _generate_abnormal_regions_reports(cnf, sample, regions,
-        filtered_vcf_by_callername or dict())
+    abnormal_regions_reports = _generate_abnormal_regions_reports(
+        cnf, sample, regions, filtered_vcf_by_callername or dict())
 
     return abnormal_regions_reports
 
@@ -185,7 +186,8 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
         regions_metrics.append(Metric(vcf_db.descriptive_name + ' missed'))
 
     for thres in cnf.coverage_reports.depth_thresholds:
-        regions_metrics.append(Metric('{}x'.format(thres), unit='%', description='Bases covered by at least {} reads'.format(thres)))
+        regions_metrics.append(Metric('{}x'.format(thres), unit='%',
+            description='Bases covered by at least {} reads'.format(thres)))
 
     general_metrics = [
         Metric('Median depth'),
