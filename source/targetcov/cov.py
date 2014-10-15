@@ -543,30 +543,39 @@ def intersect_bed(cnf, bed1, bed2):
 #TODO: works slow.
 def number_of_mapped_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_mapped_reads')
     cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
-    res = call_check_output(cnf, cmdline)
-    return int(res)
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
 
 #TODO: works slow.
 def number_of_unmapped_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_unmapped_reads')
     cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
-    res = call_check_output(cnf, cmdline)
-    return int(res)
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
 
 #TODO: works slow.
 def number_of_reads(cnf, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_reads')
     cmdline = '{samtools} view -c {bam}'.format(**locals())
-    res = call_check_output(cnf, cmdline)
-    return int(res)
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
 
 #TODO: works slow.
 def number_mapped_reads_on_target(cnf, bed, bam):
     samtools = get_tool_cmdline(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_mapped_reads_target')
     cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
-    res = call_check_output(cnf, cmdline)
-    return int(res)
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
 
 #TODO: works slow.
 def number_bases_in_aligned_reads(cnf, bam):
