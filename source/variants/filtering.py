@@ -451,7 +451,6 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         err('No vcfs for ' + caller.name + '. Skipping.')
         return caller
 
-    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
     f = Filtering(cnf, bcbio_structure, caller)
 
     n_jobs = min(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1

@@ -296,7 +296,12 @@ def read_samples_info_and_split(common_cnf, options, inputs):
 
 
 def get_trasncripts_fpath(cnf):
-    transcripts_fpath = None
+    if cnf.transcripts_fpath:
+        if verify_file(cnf.transcripts_fpath):
+            return cnf.transcripts_fpath
+
+        if isfile(cnf.transcripts_fpath):
+            os.remove(cnf.transcripts_fpath)
 
     # custom_transcripts_fpath = cnf['snpeff'].get('only_transcripts')
     # if custom_transcripts_fpath:
@@ -304,25 +309,26 @@ def get_trasncripts_fpath(cnf):
     #         transcripts_fpath = custom_transcripts_fpath
     #
     # else:
+
+    dump_transcript_fpath = join(cnf.work_dir, 'snpeff_transcripts.txt')
+    if isfile(dump_transcript_fpath) and verify_file(dump_transcript_fpath):
+        cnf.transcripts_fpath = dump_transcript_fpath
+        return cnf.transcripts_fpath
+
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
         err('Please, provide a path to SnpEff data in '
             'the "genomes" section in the system config.')
-
-    dump_transcript_fpath = join(cnf.work_dir, 'snpeff_transcripts.txt')
-    if verify_file(dump_transcript_fpath):
-        transcripts_fpath = dump_transcript_fpath
-
     else:
         if isfile(dump_transcript_fpath):
             os.remove(dump_transcript_fpath)
         genome = cnf.genome.name
         cmdline = '{snpeff} dump -dataDir {db_path} -v -txt {genome}'.format(**locals())
         if call(cnf, cmdline, output_fpath=dump_transcript_fpath):
-            transcripts_fpath = dump_transcript_fpath
+            cnf.transcripts_fpath = dump_transcript_fpath
 
-    return transcripts_fpath
+    return cnf.transcripts_fpath
 
 
 def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,

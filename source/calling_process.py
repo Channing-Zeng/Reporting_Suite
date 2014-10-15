@@ -5,7 +5,7 @@ import shutil
 from os.path import isfile, exists, join, islink
 import time
 
-from source.logger import info, err
+from source.logger import info, err, warn, send_email
 from source.file_utils import file_exists, file_transaction
 
 
@@ -117,6 +117,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
                                     stdin=open(stdin_fpath) if stdin_fpath else None)
+            stderr_dump = ''
+
             if return_proc:
                 # TODO: make this yield (as well as other returns),
                 # TODO: ...move cleaning to finally, and use this function from with statement
@@ -130,7 +132,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         info('   ' + line.strip())
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
-                        err('   ' + line.strip())
+                        warn('   ' + line.strip())
+                        stderr_dump += line
                     info()
 
             # CHECK RES CODE
@@ -139,9 +142,19 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
-                err()
-                err('Command returned status ' + str(ret_code) +
+                warn()
+                warn('Command returned status ' + str(ret_code) +
                     ('. Log saved to ' + cnf.log if cnf.log is not None else '.'))
+
+                msg = 'Command returned status. ' + str(ret_code)
+                if cnf.log: msg += 'Log saved to ' + cnf.log
+                msg += '\n'
+                msg += '\n'
+                if stderr_dump:
+                    msg += 'Stderr:\n'
+                    msg += stderr_dump
+                send_email(msg)
+
                 if exit_on_error:
                     clean()
                     sys.exit(1)
@@ -175,15 +188,28 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             # PRINT STDOUT AND STDERR
             if ret_code != 0:
                 with open(err_fpath) as err_f:
-                    info('')
-                    info(err_f.read())
-                    info('')
+                    stderr_dump = err_f.read()
+
+                info('')
+                warn(stderr_dump)
+                info('')
+
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
                 err()
                 err('Command returned status ' + str(ret_code) +
                     ('. Log saved to ' + cnf.log if 'log' in cnf else '.'))
+
+                msg = 'Command returned status. ' + str(ret_code)
+                if cnf.log: msg += 'Log saved to ' + cnf.log
+                msg += '\n'
+                msg += '\n'
+                if stderr_dump:
+                    msg += 'Stderr:\n'
+                    msg += stderr_dump
+                send_email(msg)
+
                 if exit_on_error:
                     clean()
                     sys.exit(1)

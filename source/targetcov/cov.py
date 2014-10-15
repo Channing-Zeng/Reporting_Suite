@@ -435,7 +435,6 @@ def _make_flat_region_report(regions, depth_threshs):
             region.gene_name,
             str(region.exon_num) if region.exon_num else '',
             region.strand if region.strand else '',
-            region.gene_name,
             region.feature,
             '{:,}'.format(region.get_size()),
             '{0:.2f}'.format(region.avg_depth),

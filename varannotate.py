@@ -35,11 +35,14 @@ def main(args):
             (['--match-normal-sample-name'], dict(
                 dest='match_normal_normal_name')
              ),
-            (['--clinical_reporting'], dict(
+            (['--clinical-reporting'], dict(
                 dest='clinical_reporting',
                 help='used to generate some annotations by GATK',
                 action='store_true',
                 default=None)
+             ),
+            (['--transcripts'], dict(
+                dest='transcripts_fpath')
              ),
         ],
         required_keys=['vcf'],
@@ -49,7 +52,7 @@ def main(args):
 
     check_system_resources(cnf,
         required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'],
-        optional=[])
+        optional=['transcripts_fpath'])
 
     load_genome_resources(cnf,
         required=['seq', 'snpeff'],
@@ -59,8 +62,6 @@ def main(args):
 
     # info('Using variants ' + cnf['vcf'])
     # info('Using alignement ' + cnf['bam'])
-
-    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
 
     run_one(cnf, process_one, finalize_one)
 
@@ -73,6 +74,8 @@ def set_up_snpeff(cnf):
         if 'snpeff' in cnf:
             cnf['snpeff']['clinical_reporting'] = cnf['clinical_reporting']
         del cnf['clinical_reporting']
+
+    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
 
 
 def process_one(cnf):

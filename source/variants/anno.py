@@ -22,20 +22,15 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
             vcf_fpath = res
             annotated = True
 
-    if 'dbsnp' in cnf:
-        res = _snpsift_annotate(cnf, cnf['dbsnp'], 'dbsnp', vcf_fpath)
-        if res:
-            vcf_fpath = res
-            annotated = True
+    dbs = [(dbname, cnf[dbname])
+           for dbname in ['dbsnp', 'cosmic', 'oncomine', 'clinvar']
+           if dbname in cnf]
 
-    if 'cosmic' in cnf:
-        res = _snpsift_annotate(cnf, cnf['cosmic'], 'cosmic', vcf_fpath)
-        if res:
-            vcf_fpath = res
-            annotated = True
-
-    if 'oncomine' in cnf:
-        res = _snpsift_annotate(cnf, cnf['oncomine'], 'oncomine', vcf_fpath)
+    if 'custom_vcfs' in cnf:
+        dbs.extend(cnf['custom_vcfs'].items())
+ 
+    for dbname, dbconf in dbs:
+        res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
         if res:
             vcf_fpath = res
             annotated = True

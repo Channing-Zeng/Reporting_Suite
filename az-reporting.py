@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants.vcf_processing import get_trasncripts_fpath
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -39,7 +40,7 @@ def main():
     if cnf.load_mongo and 'MongoLoader' not in cnf.steps:
         cnf.steps.append('MongoLoader')
 
-    check_system_resources(cnf, required=['qsub'])
+    check_system_resources(cnf, required=['qsub'], optional='transcripts_fpath')
 
     load_genome_resources(cnf, required=['seq'])
 
@@ -48,6 +49,9 @@ def main():
     info('*' * 70)
 
     bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf)
+
+    get_trasncripts_fpath(cnf)
+
     bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
     bcbio_runner.post_jobs()
 

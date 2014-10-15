@@ -145,6 +145,9 @@ oncomine:
   - om_MutClass
   - om_MutClassPC
 
+clinvar:
+  all-annotations: True
+
 snpeff:
   clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
   cancer: False

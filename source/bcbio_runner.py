@@ -13,6 +13,7 @@ from source.tools_from_cnf import get_tool_cmdline
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
+from source.variants.vcf_processing import get_trasncripts_fpath
 
 
 class Step:
@@ -122,11 +123,15 @@ class BCBioRunner:
     def _set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         if self.cnf.email:
-            cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ''
+            cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ' '
+        if self.cnf.transcripts_fpath:
+            cnfs_line += ' --transcripts ' + self.cnf.transcripts_fpath + ' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
+
+        # Params for those who doesn't call bcbio_structure
         spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
                       '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
-                      '--project-name ' + self.bcbio_structure.project_name
+                      '--project-name ' + self.bcbio_structure.project_name + ' ' \
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
@@ -445,6 +450,9 @@ class BCBioRunner:
                 bed = self._qualimap_bed(bed)
                 for s in samples:
                     s.bed = bed
+
+        if self.varannotate in self.steps or self.varfilter_all in self.steps:
+            get_trasncripts_fpath(self.cnf)
 
         for sample in self.bcbio_structure.samples:
             if not (any(step in self.steps for step in

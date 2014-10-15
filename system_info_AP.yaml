@@ -26,6 +26,7 @@ genomes:
     dbnsfp: /home/klpf990/dbNSFP2.3.txt.gz
     snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
 
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed

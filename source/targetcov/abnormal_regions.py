@@ -16,6 +16,10 @@ from source.utils import median
 
 
 def make_abnormal_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
+    if not filtered_vcf_by_callername:
+        info('No variants, skipping flagging regions reports...')
+        return []
+
     detail_gene_rep_fpath = join(cnf.output_dir,
                                  sample.name + '.' + BCBioStructure.targetseq_dir +
                                  BCBioStructure.detail_gene_report_baseending + '.tsv')
@@ -34,9 +38,8 @@ def _read_regions(gene_report_fpath):
     with open(gene_report_fpath) as f:
         for line in f:
             tokens = line.strip().split('\t')
-            if line.startswith('Sample\tChr') or line.startswith('#'):
-                depth_threshs = [int(v[:-1]) for v in tokens[10:]]
-                print depth_threshs
+            if line.startswith('Sample') or line.startswith('#'):
+                depth_threshs = [int(v[:-1]) for v in tokens[12:]]
                 continue
 
             sample_name, chrom, start, end, gene, exon_num, strand, feature, size, avg_depth, \
@@ -44,13 +47,13 @@ def _read_regions(gene_report_fpath):
             region = Region(
                 sample_name=sample_name,
                 chrom=chrom,
-                start=int(start),
-                end=int(end),
+                start=int(''.join([c for c in start if c.isdigit()])),
+                end=int(''.join([c for c in end if c.isdigit()])),
                 gene_name=gene,
-                exon_num=int(exon_num),
-                strand=strand,
+                exon_num=int(exon_num) if exon_num else None,
+                strand=strand or None,
                 feature=feature,
-                size=int(size),
+                size=int(''.join([c for c in size if c.isdigit()])),
                 avg_depth=float(avg_depth),
                 std_dev=float(std_dev),
                 percent_within_normal=float(percent_within_normal[:-1])
@@ -106,41 +109,40 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
                   median_cov, minimal_cov, maximal_cov)
 
     abnormal_regions_report_fpaths = []
-    if filtered_vcf_by_callername:  # No VCFs passed, so no need to find missed variants.
-        for caller_name, vcf_fpath in filtered_vcf_by_callername:
-            vcf_dbs = [
-                # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
-                VCFDataBase('cosmic', 'Cosmic', cnf.genome),
-                VCFDataBase('oncomine', 'Oncomine', cnf.genome),
-            ]
-            for kind, regions, f_basename in zip(
-                    ['low', 'high'],
-                    [low_regions, high_regions],
-                    [BCBioStructure.detail_lowcov_gene_report_baseending,
-                     BCBioStructure.detail_highcov_gene_report_baseending]):
-                if len(regions) == 0:
-                    err('No flagged regions with too ' + kind + ' coverage, skipping counting missed variants.')
-                    continue
+    for caller_name, vcf_fpath in filtered_vcf_by_callername:
+        vcf_dbs = [
+            # VCFDataBase('dbsnp', 'DBSNP', cnf.genome),
+            VCFDataBase('cosmic', 'Cosmic', cnf.genome),
+            VCFDataBase('oncomine', 'Oncomine', cnf.genome),
+        ]
+        for kind, regions, f_basename in zip(
+                ['low', 'high'],
+                [low_regions, high_regions],
+                [BCBioStructure.detail_lowcov_gene_report_baseending,
+                 BCBioStructure.detail_highcov_gene_report_baseending]):
+            if len(regions) == 0:
+                err('No flagged regions with too ' + kind + ' coverage, skipping counting missed variants.')
+                continue
 
-                report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
+            report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-                abnormal_regions_bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
-                for vcf_db in vcf_dbs:
-                    vcf_db.missed_vcf_fpath, vcf_db.annotated_bed = _find_missed_variants(cnf, vcf_db,
-                        caller_name, vcf_fpath, report_base_name, abnormal_regions_bed_fpath)
+            abnormal_regions_bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
+            for vcf_db in vcf_dbs:
+                vcf_db.missed_vcf_fpath, vcf_db.annotated_bed = _find_missed_variants(cnf, vcf_db,
+                    caller_name, vcf_fpath, report_base_name, abnormal_regions_bed_fpath)
 
-                report = _make_flagged_region_report(cnf, sample, regions, vcf_fpath, caller_name, vcf_dbs)
+            report = _make_flagged_region_report(cnf, sample, regions, vcf_fpath, caller_name, vcf_dbs)
 
-                regions_html_rep_fpath = report.save_html(cnf.output_dir, report_base_name,
-                    caption='Regions with ' + kind + ' coverage for ' + caller_name)
+            regions_html_rep_fpath = report.save_html(cnf.output_dir, report_base_name,
+                caption='Regions with ' + kind + ' coverage for ' + caller_name)
 
-                regions_txt_rep_fpath = report.save_txt(cnf.output_dir, report_base_name,
-                    [report.metric_storage.sections_by_name[kind + '_cov']])
+            regions_txt_rep_fpath = report.save_txt(cnf.output_dir, report_base_name,
+                [report.metric_storage.sections_by_name[kind + '_cov']])
 
-                abnormal_regions_report_fpaths.append(regions_txt_rep_fpath)
-                info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-                info('  HTML: ' + str(regions_html_rep_fpath))
-                info('  TXT:  ' + regions_txt_rep_fpath)
+            abnormal_regions_report_fpaths.append(regions_txt_rep_fpath)
+            info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
+            info('  HTML: ' + str(regions_html_rep_fpath))
+            info('  TXT:  ' + regions_txt_rep_fpath)
 
     return abnormal_regions_report_fpaths
 

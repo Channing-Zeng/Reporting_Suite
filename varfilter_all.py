@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from source.variants.vcf_processing import get_trasncripts_fpath
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -177,6 +178,10 @@ def main():
             dest='datahub_path',
             help='DataHub directory path to upload final MAFs and CNV (can be remote).',
         )),
+
+        (['--transcripts'], dict(
+            dest='transcripts_fpath')
+         ),
     ]
 
     cnf, bcbio_structure = summary_script_proc_params(
@@ -190,6 +195,7 @@ def main():
     info('*' * 70)
     info()
 
+    get_trasncripts_fpath(cnf)
     filter_all(cnf, bcbio_structure)
 
 
