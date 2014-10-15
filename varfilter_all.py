@@ -224,7 +224,7 @@ def filter_all(cnf, bcbio_structure):
             if cnf.datahub_path:
                 copy_to_datahub(cnf, caller, cnf.datahub_path)
 
-    send_email('\n'.join(msg))
+    # send_email('\n'.join(msg))
 
 
 def copy_to_datahub(cnf, caller, datahub_dirpath):

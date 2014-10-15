@@ -114,7 +114,7 @@ def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath):
         msg.append('MAF: ' + anno_maf_fpath)
         info('Saved final MAF to ' + anno_maf_fpath)
 
-    send_email('\n'.join(msg))
+    # send_email('\n'.join(msg))
 
 
 def finalize_all(cnf, samples, results):

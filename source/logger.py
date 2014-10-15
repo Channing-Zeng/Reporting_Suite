@@ -12,7 +12,7 @@ log_fpath = None
 project_name = None
 project_fpath = None
 proc_name = None
-my_address = 'vladislav.sav@gmail.com'
+my_address = 'Vlad.Saveliev@astrazeneca.com'
 address = None
 
 import socket
@@ -43,8 +43,8 @@ def warn(msg='', ending='\n', print_date=True):
 
 def err(msg='', ending='\n', print_date=True):
     warn(msg, ending, print_date)
-    if msg:
-        send_email(msg)
+    # if msg:
+    #     send_email(msg)
 
 
 def send_email(msg='', subj=''):

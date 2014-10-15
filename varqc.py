@@ -146,9 +146,9 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
     elif not verify_module('matplotlib'):
         warn('Warning: QC plots were not generated because matplotlib is not installed.')
 
-    send_email('VarQC finished for ' + cnf.name + ':' +
-               '\nReport: ' + qc_report_fpath +
-               '\nPlots: ' + ', '.join(qc_plots_fpaths))
+    # send_email('VarQC finished for ' + cnf.name + ':' +
+    #            '\nReport: ' + qc_report_fpath +
+    #            '\nPlots: ' + ', '.join(qc_plots_fpaths))
 
 
 def finalize_all(cnf, samples, results):

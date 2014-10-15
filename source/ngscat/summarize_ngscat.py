@@ -30,7 +30,7 @@ def summary_reports(cnf, bcbio_structure):
     for fpath in final_summary_report_fpaths:
         if fpath:
             info('  ' + fpath)
-    send_email('NGSCAT summary: \n' + '\n'.join(final_summary_report_fpaths))
+    # send_email('NGSCAT summary: \n' + '\n'.join(final_summary_report_fpaths))
 
 
     return final_summary_report_fpaths

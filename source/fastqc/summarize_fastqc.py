@@ -19,7 +19,7 @@ def summary_reports(cnf, bcbio_structure):
     info('*' * 70)
     info('Fastqc summary:')
     info('  ' + final_summary_report_fpath)
-    send_email('Fastqc summary: ' + final_summary_report_fpath)
+    # send_email('Fastqc summary: ' + final_summary_report_fpath)
 
     print_html(final_summary_report_fpath, htmls_by_sample)
     return final_summary_report_fpath

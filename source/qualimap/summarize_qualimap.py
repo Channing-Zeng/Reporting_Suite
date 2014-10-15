@@ -27,7 +27,7 @@ def summary_reports(cnf, bcbio_structure):
     info('Summary:')
     for fpath in final_summary_report_fpaths:
         if fpath: info('  ' + fpath)
-    send_email('Qualimap summary: \n' + '\n'.join(final_summary_report_fpaths))
+    # send_email('Qualimap summary: \n' + '\n'.join(final_summary_report_fpaths))
 
     return final_summary_report_fpaths
 

@@ -30,4 +30,4 @@ def summary_reports(cnf, bcbio_structure):
         if fpath:
             info('  ' + fpath)
 
-    send_email('TargetSeq summary: \n' + '\n'.join(final_summary_report_fpaths))
+    # send_email('TargetSeq summary: \n' + '\n'.join(final_summary_report_fpaths))

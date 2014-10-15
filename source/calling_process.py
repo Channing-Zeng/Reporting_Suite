@@ -153,7 +153,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if stderr_dump:
                     msg += 'Stderr:\n'
                     msg += stderr_dump
-                send_email(msg)
+                # send_email(msg)
 
                 if exit_on_error:
                     clean()
@@ -208,7 +208,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if stderr_dump:
                     msg += 'Stderr:\n'
                     msg += stderr_dump
-                send_email(msg)
+                # send_email(msg)
 
                 if exit_on_error:
                     clean()

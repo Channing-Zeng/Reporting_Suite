@@ -95,7 +95,7 @@ def finalize_one(cnf, summary_report_txt_path, gene_report_fpath):
     #         msg.append('  ' + rep)
     #         info('  ' + rep)
 
-    send_email('\n'.join(msg))
+    # send_email('\n'.join(msg))
 
 
 if __name__ == '__main__':

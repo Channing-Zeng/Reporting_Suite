@@ -76,7 +76,7 @@ def finalize_one(cnf, *abnormal_regions_reports):
             msg.append('  ' + rep)
             info('  ' + rep)
 
-    send_email('\n'.join(msg))
+    # send_email('\n'.join(msg))
 
 
 if __name__ == '__main__':

@@ -56,8 +56,8 @@ def cnv_reports(cnf, bcbio_structure):
             info('  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
             msg += '\n  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath
 
-    if msg:
-        send_email(msg)
+    # if msg:
+        # send_email(msg)
 
     return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
 
