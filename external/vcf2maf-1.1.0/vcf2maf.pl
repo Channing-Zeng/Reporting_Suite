@@ -118,7 +118,7 @@ my @maf_header = qw(
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
     Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
 
-    Transcript_Strand Transcript_Exon Transcript_Position
+    Transcript_Strand Transcript_Exon Transcript_Position CAF
     Filter
 );
 #    cDNA_Change Codon_Change Protein_Change
@@ -329,6 +329,7 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Validation_Method} = ($filter eq 'PASS' || $filter eq '.') ? '' : $filter;
     $maf_line{BAM_File} = $bam_file;
     $maf_line{Filter} = $filter;
+    $maf_line{CAF} = $info{CAF};
 
     if ($exonNumber) {
         $maf_line{Transcript_Strand  } = $trStrandById{( $transcriptId, $exonNumber )} ? $trStrandById{( $transcriptId, $exonNumber )} : '';

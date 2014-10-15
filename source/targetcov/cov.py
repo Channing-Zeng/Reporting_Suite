@@ -450,7 +450,8 @@ def _make_flat_region_report(regions, depth_threshs):
                 percent = 100.0 * bases / region.get_size()
                 percent_str = '{0:.2f}%'.format(percent)
                 if percent > 100:
-                    err('Percent = ' + percent_str + ', bases = ' + str(bases) + ', size = ' + str(region.get_size()) +
+                    err('Percent = ' + percent_str + ', bases = ' + str(bases) +
+                        ', size = ' + str(region.get_size()) +
                         ', start = ' + str(region.start) + ', end = ' + str(regions.end))
             row.append(percent_str)
 
