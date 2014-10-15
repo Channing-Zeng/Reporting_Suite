@@ -8,7 +8,6 @@ from email.mime.text import MIMEText
 import traceback
 
 
-smtp_host = 'localhost'
 log_fpath = None
 project_name = None
 project_fpath = None
@@ -19,6 +18,8 @@ address = None
 import socket
 hostname = socket.gethostname()
 is_local = 'local' in hostname
+
+smtp_host = None  # set up in source/config.py and system_info.yaml
 
 
 def timestamp():
@@ -47,7 +48,7 @@ def err(msg='', ending='\n', print_date=True):
 
 
 def send_email(msg='', subj=''):
-    if msg:
+    if msg and smtp_host:
         addresses = [my_address]
         if address:
             addresses.append(address)
@@ -68,17 +69,33 @@ def send_email(msg='', subj=''):
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = ','.join(addresses)
-        try:
-            s = smtplib.SMTP(smtp_host)
+
+        def try_send(host):
+            s = smtplib.SMTP(host)
             s.sendmail(msg['From'], addresses, msg.as_string())
             s.quit()
-            info('Mail sent to ' + msg['To'])
-        except socket.error:
-            warn('Could not send email with exception: ')
-            warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+            info('Mail sent to ' + msg['To'] + ' using ' + host)
+
+        def print_msg():
             for line in msg.as_string().split('\n'):
                 print '   | ' + line
             print ''
+
+        try:
+            try_send(smtp_host)
+        except socket.error:
+            warn('Could not send email using the sever "' + smtp_host + '" with exception: ')
+            warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+            if smtp_host != 'localhost':
+                warn('Trying "localhost" as a server...')
+                try:
+                    try_send('localhost')
+                except socket.error:
+                    warn('Could not send email using the sever "localhost" with exception: ')
+                    warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+                    print_msg()
+            else:
+                print_msg()
 
 
 def critical(msg=''):

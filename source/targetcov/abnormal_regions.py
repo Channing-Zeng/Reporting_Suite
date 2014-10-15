@@ -74,40 +74,55 @@ def _read_regions(gene_report_fpath):
     return regions
 
 
-def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_callername):
-    info('Calculation median coverage...')
-    median_cov = median((r.avg_depth for r in regions))
-    sample.median_cov = median_cov
-    if median_cov == 0:
-        err('Median coverage is 0')
-        return None, None
+def classify_regions(region):
+    pass
 
-    info('Median: ' + str(median_cov))
-    info()
 
-    info('Extracting abnormally covered regions.')
-    # minimal_cov = min(cnf.coverage_reports.min_cov_factor * median_cov, cnf.coverage_reports.min_cov)
-    # maximal_cov = cnf.coverage_reports.max_cov_factor * median_cov
-    #
-    # info('Assuming abnormal if below min(median*' +
-    #      str(cnf.coverage_reports.min_cov_factor) + ', ' +
-    #      str(cnf.coverage_reports.min_cov) + ') = ' + str(minimal_cov) +
-    #      ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
-    #      ' = ' + str(maximal_cov))
+def classify_based_on_min_and_max(cnf, sample, regions):
+    min_cov = min(cnf.coverage_reports.min_cov_factor * sample.median_cov, cnf.coverage_reports.min_cov)
+    max_cov = cnf.coverage_reports.max_cov_factor * sample.median_cov
 
-    # Outliers method
+    info('Assuming abnormal if below min(median*' +
+         str(cnf.coverage_reports.min_cov_factor) + ', ' +
+         str(cnf.coverage_reports.min_cov) + ') = ' + str(min_cov) +
+         ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
+         ' = ' + str(max_cov))
+
+    return min_cov, max_cov
+
+
+def classify_outliers(cnf, sample, regions):
     rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
     l = len(rs_by_depth)
     q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
     q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
     d = q3 - q1
-    minimal_cov = q1 - 3 * d
-    maximal_cov = q1 + 3 * d
+    min_cov = q1 - 3 * d
+    max_cov = q1 + 3 * d
+    info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
+         'min_cov = {}, max_cov = {}'.format(l, q1, q3, d, min_cov, max_cov))
+
+    return min_cov, max_cov
+
+
+def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_callername):
+    info('Calculation median coverage...')
+
+    median_cov = median((r.avg_depth for r in regions))
+    sample.median_cov = median_cov
+    if median_cov == 0:
+        err('Median coverage is 0')
+        return None, None
+    info('Median: ' + str(median_cov))
+    info()
+
+    info('Extracting abnormally covered regions.')
+    mim_cov, max_cov = classify_outliers(cnf, sample, regions)
 
     info('Classifying regions...')
     low_regions, high_regions = [], []
     _proc_regions(regions, _classify_region, low_regions, high_regions,
-                  median_cov, minimal_cov, maximal_cov)
+                  sample.median_cov, mim_cov, max_cov)
 
     abnormal_regions_report_fpaths = []
     for caller_name, vcf_fpath in filtered_vcf_by_callername:

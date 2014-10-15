@@ -43,7 +43,6 @@ class Defaults:
     qualimap = False    # 'True' adds 'QualiMap' to steps
     load_mongo = False  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh'
-    smtp_host = 'localhost'
 
     coverage_reports = dict(
         depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
