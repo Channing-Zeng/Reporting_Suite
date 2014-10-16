@@ -413,17 +413,33 @@ def read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def leave_main_sample(cnf, vcf_fpath, samplename):
+def get_main_sample_index(cnf, vcf_fpath, samplename):
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
-    if len(vcf_header_samples) <= 1:
-        return vcf_fpath
+    if len(vcf_header_samples) == 0:
+        return None
 
-    name = next((name for name in vcf_header_samples if name == samplename), None)
+    if len(vcf_header_samples) == 1:
+        return 0
+
+    name = next((name for name in vcf_header_samples if name.lower() in samplename.lower()), None)
     if name is None:
-        err('No sample ' + samplename + ' in header for ' + vcf_fpath)
+        err('No sample ' + samplename + ' in header with samples ' + ', '.join(vcf_header_samples) + ' for ' + vcf_fpath)
+        name = next((name for name in vcf_header_samples if name.lower() != 'none'), None)
+        if name is None:
+            err('All sample names are None. Skipping.')
+            return None
+
+    try:
+        return vcf_header_samples.index(name)
+    except ValueError:
+        return None
+
+
+def leave_main_sample(cnf, vcf_fpath, samplename):
+    index = get_main_sample_index(cnf, vcf_fpath, samplename)
+    if index is None:
         return vcf_fpath
-    index = vcf_header_samples.index(name)
 
     # def _f1(rec):
     #     rec.samples = [sample_name]
@@ -442,7 +458,9 @@ def leave_main_sample(cnf, vcf_fpath, samplename):
     vcf_fpath = iterate_file(cnf, vcf_fpath, _f, suffix='1sm')
 
     if not verify_file(vcf_fpath):
-        critical('Error: leave_first_sample didnt generate output file.')
+        err('Error: leave_first_sample didnt generate output file.')
+        return None
+
     return vcf_fpath
 
 

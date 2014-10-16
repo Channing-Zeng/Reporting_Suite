@@ -9,17 +9,18 @@ from source.tools_from_cnf import get_java_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import file_exists
 from source.logger import step_greetings, info, err, critical
-from source.variants.vcf_processing import read_sample_names_from_vcf, leave_main_sample, vcf_one_per_line
+from source.variants.vcf_processing import read_sample_names_from_vcf, leave_main_sample, vcf_one_per_line, \
+    get_main_sample_index
 
 
 def make_tsv(cnf, vcf_fpath, samplename):
     step_greetings('Exporting to TSV...')
 
-    vcf_fpath = leave_main_sample(cnf, vcf_fpath, samplename)
+    main_sample_index = get_main_sample_index(cnf, vcf_fpath, samplename)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
-    tsv_fpath = _extract_fields(cnf, vcf_fpath)
+    tsv_fpath = _extract_fields(cnf, main_sample_index, vcf_fpath)
     if not tsv_fpath:
         return tsv_fpath
 
@@ -47,7 +48,7 @@ def filter_info_tsv_fileds(inp_f, fields):
     return new_fields
 
 
-def _extract_fields(cnf, vcf_fpath):
+def _extract_fields(cnf, main_sample_index, vcf_fpath):
     fname, _ = splitext_plus(basename(vcf_fpath))
     tsv_fpath = join(cnf['work_dir'], fname + '.tsv')
 
@@ -96,16 +97,16 @@ def _extract_fields(cnf, vcf_fpath):
     else:
         return None
 
-    sample_names = read_sample_names_from_vcf(vcf_fpath)
-    if len(sample_names) == 0:
+    if main_sample_index is None:  # No sample names or no main sample is ambiguous
         fields = [f for f in fields if not f.startswith('GEN[*]')]
+    else:
+        fields = [f.replace('[*]', '[' + str(main_sample_index) + ']') for f in fields]
 
     # info_fields = [f for f in fields if f not in ['SAMPLE', 'CHROM', 'POS', 'REF', 'ALT', 'ID'm ]
     # with open(broken_format_column_vcf_fpath) as vcf_f:
     #     fields = filter_info_tsv_fileds(vcf_f, fields)
 
     # fields = [f for f in fields if '[*]' not in f or 'EFF[*]' in f]
-
 
     anno_line = ' '.join([f for f in fields if f != 'SAMPLE'])
     snpsift = get_java_tool_cmdline(cnf, 'snpsift')
@@ -133,8 +134,8 @@ def _extract_fields(cnf, vcf_fpath):
                                 'column names (%d) is less than number of fields '
                                 'in the record (%d)).' %
                                 (len(names), len(values)))
-                        if len(col_counts) <= i:
-                            col_counts.append(0)
+                        # while len(col_counts) <= i:
+                        #     col_counts.append(0)
                         col_counts[i] += 1
 
     with file_transaction(cnf, tsv_fpath) as tx:
