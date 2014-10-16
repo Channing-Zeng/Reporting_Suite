@@ -320,9 +320,10 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
             g_chr, g_start, g_end, g_gene_name, g_feature, \
             overlap_size = line.split('\t')
 
-            gene = genes_by_name[g_gene_name]
-            amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
-            gene.add_amplicon(amplicon)
+            if g_gene_name != '.':
+                gene = genes_by_name[g_gene_name]
+                amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
+                gene.add_amplicon(amplicon)
 
             if i and i % 100000 == 0:
                 info('  Processed {0:,} regions, current gene {1}'.format(i, g_gene_name))
