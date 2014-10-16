@@ -209,7 +209,7 @@ tsv_fields:
 - QD                            : QualityByDepth
 - ReadPosRankSum                : ReadPosRankSum
 
-## FORMAT fields for the sample
+## FORMAT fields for the sample  # * will be replaced with the tumor sample ID
 - GEN[*].GT                     : Genotype
 #- GEN[*].FT                     : GenotypeWasCalled
 #- GEN[*].GL                     : GenotypeLikelihoods

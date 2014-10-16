@@ -31,7 +31,11 @@ def cnv_reports(cnf, bcbio_structure):
         if (not verify_file(summary_report_fpath_by_sample.get(sample.name)) or
             not verify_file(gene_report_fpaths_by_sample.get(sample.name))):
             # TargetSeq was not run but needed, thus running.
+            name, output_dir = cnf.name, cnf.output_dir
+            cnf.name, cnf.output_dir = 'TargetCov', join(sample.dirpath, 'TargetCov')
             make_targetseq_reports(cnf, sample)
+            cnf.name, cnf.output_dir = name, output_dir
+
 
     info('Calculating normalized coverages for CNV...')
     amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, bcbio_structure,
