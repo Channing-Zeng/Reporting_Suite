@@ -133,7 +133,8 @@ def _extract_fields(cnf, vcf_fpath):
                                 'column names (%d) is less than number of fields '
                                 'in the record (%d)).' %
                                 (len(names), len(values)))
-
+                        if len(col_counts) <= i:
+                            col_counts.append(0)
                         col_counts[i] += 1
 
     with file_transaction(cnf, tsv_fpath) as tx:
