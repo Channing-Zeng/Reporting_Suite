@@ -28,7 +28,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
 
     if 'custom_vcfs' in cnf:
         dbs.extend(cnf['custom_vcfs'].items())
- 
+
     for dbname, dbconf in dbs:
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
         if res:
@@ -170,7 +170,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
         critical('Please, provide a path to DB NSFP file in '
                  'the "genomes" section in the system config.')
 
-    annotations = cnf['dbnsfp'].get('annotations', [])
+    annotations = cnf['dbnsfp'].get('annotations') or []
 
     # all_fields.extend(['dbNSFP_' + ann for ann in annotations])
 
@@ -207,7 +207,7 @@ def _snpeff(cnf, input_fpath):
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
     stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
-    extra_opts = cnf['snpeff'].get('opts', '')
+    extra_opts = cnf['snpeff'].get('opts') or ''
     db_path = cnf['genome'].get('snpeff')
     if not db_path:
         err('Please, provide a path to SnpEff data in '
@@ -337,7 +337,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
         'QualByDepth': 'QD',
         'ReadPosRankSumTest': 'ReadPosRankSum'
     }
-    annotations = cnf['gatk'].get('annotations', [])
+    annotations = cnf['gatk'].get('annotations') or []
 
     # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
 

@@ -124,7 +124,7 @@ class BCBioRunner:
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         if self.cnf.email:
             cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ' '
-        overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite, '')
+        overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite) or ''
 
         # Params for those who doesn't call bcbio_structure
         spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \

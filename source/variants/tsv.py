@@ -184,7 +184,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map):
     with open(inp_tsv_fpath) as f:
         first_line = f.readline()
     fields = first_line.split()
-    new_fields = [field_map.get(f, f) for f in fields]
+    new_fields = [field_map.get(f) or f for f in fields]
     new_first_line = '\t'.join(new_fields)
 
     if cnf.get('keep_intermediate'):

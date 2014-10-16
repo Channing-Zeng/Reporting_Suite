@@ -236,7 +236,7 @@ def _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample):
         for gn, v_by_sample in norm_depths_by_sample.items():
             if sample_name not in v_by_sample:
                 info(sample_name + ' - no ' + gn)
-            mean_depths_by_sample[sample_name].append(v_by_sample.get(sample_name, 0))
+            mean_depths_by_sample[sample_name].append(v_by_sample.get(sample_name) or 0)
 
     median_depth_by_sample = OrderedDict()
     for sample_name in mapped_reads_by_sample:

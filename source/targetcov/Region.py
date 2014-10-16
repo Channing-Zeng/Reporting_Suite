@@ -1,4 +1,5 @@
 from collections import defaultdict, OrderedDict
+import copy
 import math
 import os
 from os.path import isfile, join
@@ -28,18 +29,10 @@ class Region:
 
         self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
         self.bases_by_depth = defaultdict(int)
-        self.subregions = []
         self.missed_by_db = dict()
         self.var_num = None
         self.bases_within_threshs = None
         self.percent_within_threshs = defaultdict(float)
-
-    def add_subregion(self, subregion):
-        self.subregions.append(subregion)
-        self.size += subregion.get_size()
-        self.end = max(subregion.end, self.end)
-        for depth, bases in subregion.bases_by_depth.items():
-            self.add_bases_for_depth(depth, bases)
 
     def get_size(self):
         if self.size is not None:
@@ -52,7 +45,7 @@ class Region:
         self.bases_by_depth[depth] += bases
 
     def key(self):
-        return hash((self.sample_name, self.chrom, self.start, self.end))
+        return hash((self.sample_name, self.chrom, self.start, self.end, self.extra_fields))
 
     def __str__(self, depth_thresholds=None):
         ts = [self.sample_name, self.chrom, self.start, self.end, self.feature] + self.extra_fields
@@ -113,6 +106,53 @@ class Region:
                 self.start < reg2.start < self.end)
 
 
+class GeneInfo():
+    def __init__(self, sample_name, gene_name, chrom, feature):
+        self.sample_name = sample_name
+        self.gene_name = gene_name
+        self.feature = feature
+        self.chrom = chrom
+        self.exons = []
+        self.amplicons = []
+
+        self.start = None
+        self.end = None
+        self.size = 0
+        self.info_by_feature = dict((f, dict(start=None, end=None, size=0)) for f in ['Exon', 'Amplicon'])
+
+    def add_exon(self, exon):
+        self._add_subregion(self.exons, exon, 'Exon')
+        self.start = self.info_by_feature['Exon']['start']
+        self.end = self.info_by_feature['Exon']['end']
+        self.size = self.info_by_feature['Exon']['size']
+
+    def _add_subregion(self, regions, region, feature):
+        regions.append(region)
+        self.info_by_feature[feature]['start'] = min(self.info_by_feature[feature].get('start') or region.start, region.start)
+        self.info_by_feature[feature]['end'] = max(self.info_by_feature[feature].get('end') or region.end, region.end)
+        self.info_by_feature[feature]['size'] = self.info_by_feature[feature]['size'] + region.size
+
+    def add_amplicon(self, amplicon):
+        amplicon = copy.copy(amplicon)
+        amplicon.gene_name = self.gene_name
+        self._add_subregion(self.amplicons, amplicon, 'Amplicon')
+
+    def get_summary_region(self, regions, feature):
+        return Region(
+            sample_name=self.sample_name, chrom=self.chrom,
+            start=self.info_by_feature[feature]['start'],
+            end=self.info_by_feature[feature]['end'],
+            size=self.info_by_feature[feature]['size'],
+            feature='Gene-' + feature, gene_name=self.gene_name)
+
+    # def add_subregion(self, subregion):
+    #     self.size += subregion.get_size()
+    #     self.end = max(subregion.end, self.end)
+    #     self.subregions.append(subregion)
+        # for depth, bases in subregion.bases_by_depth.items():
+        #     self.add_bases_for_depth(depth, bases)
+
+
 def _proc_regions(regions, fn, *args, **kwargs):
     i = 0
     for region in regions:
@@ -127,7 +167,7 @@ def _proc_regions(regions, fn, *args, **kwargs):
         info('Processed {0:,} regions.'.format(i))
 
 
-def _save_regions_to_bed(cnf, regions, f_basename):
+def save_regions_to_bed(cnf, regions, f_basename):
     bed_fpath = join(cnf.work_dir, f_basename + '.bed')
     info()
     info('Saving regions to ' + bed_fpath)
@@ -142,14 +182,12 @@ def _save_regions_to_bed(cnf, regions, f_basename):
 
     with open(bed_fpath, 'w') as f:
         for r in regions:
-            f.write('\t'.join(map(str, [
-                r.chrom, r.start, r.end, r.gene_name, r.feature])) + '\n')
+            f.write('\t'.join(map(str, [r.chrom, r.start, r.end, r.gene_name, r.feature])) + '\n')
 
                 # r.size, r.avg_depth, r.std_dev, r.percent_within_normal
             # f.write('\t'.join([
             #     region.chrom,
             #     str(region.start), str(region.end), str(region.avg_depth)]) + '\n')
-
 
     info('Saved to ' + bed_fpath)
     return bed_fpath

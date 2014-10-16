@@ -133,7 +133,7 @@ def process_one(cnf):
 
     report_fpath = ngscat_main.ngscat(
         cnf, filtered_bams, cnf['bed'], cnf['output_dir'], cnf['genome'].get('seq'),
-        cnf['saturation'] == 'y', int(cnf.get('threads', '1')), cnf['extend'],
+        cnf['saturation'] == 'y', int(cnf.get('threads') or '1'), cnf['extend'],
         cnf['depthlist'], cnf['coverage_reports']['depth_thresholds'],
         cnf['feature'])
 

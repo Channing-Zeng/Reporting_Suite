@@ -10,12 +10,12 @@ from source.file_utils import add_suffix, verify_file
 
 from source.logger import info, err
 from source.reporting import Metric, MetricStorage, ReportSection, Record, SquareSampleReport
-from source.targetcov.Region import Region, _proc_regions, _save_regions_to_bed
+from source.targetcov.Region import Region, _proc_regions, save_regions_to_bed
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import median
 
 
-def make_abnormal_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
+def make_flagged_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
     if not filtered_vcf_by_callername:
         info('No variants, skipping flagging regions reports...')
         return []
@@ -28,7 +28,7 @@ def make_abnormal_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
     info('Reading regions from ' + detail_gene_rep_fpath)
     regions = _read_regions(detail_gene_rep_fpath)
 
-    abnormal_regions_reports = _generate_abnormal_regions_reports(
+    abnormal_regions_reports = _generate_flagged_regions_reports(
         cnf, sample, regions, filtered_vcf_by_callername or dict())
 
     return abnormal_regions_reports
@@ -74,38 +74,66 @@ def _read_regions(gene_report_fpath):
     return regions
 
 
-def classify_regions(region):
-    pass
-
-
 def classify_based_on_min_and_max(cnf, sample, regions):
-    min_cov = min(cnf.coverage_reports.min_cov_factor * sample.median_cov, cnf.coverage_reports.min_cov)
-    max_cov = cnf.coverage_reports.max_cov_factor * sample.median_cov
+    def simple_min_and_max():
+        cov_cnf = cnf.coverage_reports
+        _min_cov = min(cov_cnf.min_cov_factor * sample.median_cov, cov_cnf.min_cov)
+        _max_cov = cov_cnf.max_cov_factor * sample.median_cov
 
-    info('Assuming abnormal if below min(median*' +
-         str(cnf.coverage_reports.min_cov_factor) + ', ' +
-         str(cnf.coverage_reports.min_cov) + ') = ' + str(min_cov) +
-         ', or above median*' + str(cnf.coverage_reports.max_cov_factor) +
-         ' = ' + str(max_cov))
+        info('Assuming abnormal if below min(median*' +
+             str(cov_cnf.min_cov_factor) + ', ' + str(cov_cnf.min_cov) + ') = ' +
+             str(_min_cov) + ', or above median*' + str(cov_cnf.max_cov_factor) +
+             ' = ' + str(_max_cov))
+        return _min_cov, _max_cov
 
-    return min_cov, max_cov
+    def min_and_max_based_on_outliers():
+        rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
+        l = len(rs_by_depth)
+        q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
+        q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
+        d = q3 - q1
+        _min_cov = q1 - 3 * d
+        _max_cov = q1 + 3 * d
+
+        info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
+             'min_cov = {}, max_cov = {}'.format(l, q1, q3, d, _min_cov, _max_cov))
+        return _min_cov, _max_cov
+
+    min_cov, max_cov = min_and_max_based_on_outliers()
+
+    low_regions, high_regions = [], []
+
+    def _classify_region(region, median_cov, minimal_cov, maximal_cov):
+        if region.avg_depth < minimal_cov:
+            region.cov_factor = region.avg_depth / median_cov
+            low_regions.append(region)
+
+        if region.avg_depth > maximal_cov:
+            region.cov_factor = region.avg_depth / median_cov
+            high_regions.append(region)
+
+    info('Classifying regions...')
+    _proc_regions(regions, _classify_region, low_regions, high_regions,
+        sample.median_cov, min_cov, max_cov)
+
+    return low_regions, high_regions
 
 
-def classify_outliers(cnf, sample, regions):
-    rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
-    l = len(rs_by_depth)
-    q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
-    q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
-    d = q3 - q1
-    min_cov = q1 - 3 * d
-    max_cov = q1 + 3 * d
-    info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
-         'min_cov = {}, max_cov = {}'.format(l, q1, q3, d, min_cov, max_cov))
-
-    return min_cov, max_cov
+def classify_based_on_justin(cnf, sample, regions):
+    # Экзоны и ампликоны по отдельности. Если среднее покрытие 12k,
+    # выбрать колонку где покрытие хотя бы на 2k, отсортировать и показать
+    # те строки, где меньше чем на 80% покрытие. Вывести cosmic id где в этих
+    # регионах. Вывести HTML репорты со ссылками на бамы и vcf в IGV.
+    #
+    # Саммари репорт должен содержать те экзоны, которые оказались флаггед
+    # хотя бы в 20% проектов.
+    low_regions, high_regions = [], []
 
 
-def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_callername):
+    return low_regions, high_regions
+
+
+def _generate_flagged_regions_reports(cnf, sample, regions, filtered_vcf_by_callername):
     info('Calculation median coverage...')
 
     median_cov = median((r.avg_depth for r in regions))
@@ -117,12 +145,8 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
     info()
 
     info('Extracting abnormally covered regions.')
-    mim_cov, max_cov = classify_outliers(cnf, sample, regions)
-
-    info('Classifying regions...')
-    low_regions, high_regions = [], []
-    _proc_regions(regions, _classify_region, low_regions, high_regions,
-                  sample.median_cov, mim_cov, max_cov)
+    # low_regions, high_regions = classify_based_on_min_and_max(cnf, sample, regions)
+    low_regions, high_regions = classify_based_on_justin(cnf, sample, regions)
 
     abnormal_regions_report_fpaths = []
     for caller_name, vcf_fpath in filtered_vcf_by_callername:
@@ -142,7 +166,7 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
 
             report_base_name = cnf.name + '_' + caller_name + '.' + BCBioStructure.targetseq_name + f_basename
 
-            abnormal_regions_bed_fpath = _save_regions_to_bed(cnf, regions, report_base_name)
+            abnormal_regions_bed_fpath = save_regions_to_bed(cnf, regions, report_base_name)
             for vcf_db in vcf_dbs:
                 vcf_db.missed_vcf_fpath, vcf_db.annotated_bed = _find_missed_variants(cnf, vcf_db,
                     caller_name, vcf_fpath, report_base_name, abnormal_regions_bed_fpath)
@@ -161,16 +185,6 @@ def _generate_abnormal_regions_reports(cnf, sample, regions, filtered_vcf_by_cal
             info('  TXT:  ' + regions_txt_rep_fpath)
 
     return abnormal_regions_report_fpaths
-
-
-def _classify_region(region, low_regions, high_regions, median_cov, minimal_cov, maximal_cov):
-    if region.avg_depth < minimal_cov:
-        region.cov_factor = region.avg_depth / median_cov
-        low_regions.append(region)
-
-    if region.avg_depth > maximal_cov:
-        region.cov_factor = region.avg_depth / median_cov
-        high_regions.append(region)
 
 
 class VCFDataBase():
@@ -250,7 +264,7 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
             if vcf_db.descriptive_name not in r.missed_by_db:
                 r.missed_by_db[vcf_db.descriptive_name] = 0
             r.missed_by_db[vcf_db.descriptive_name] += \
-                vcf_db.missed_vars_by_region_info.get((r.chrom, r.start, r.end, r.feature), 0)
+                vcf_db.missed_vars_by_region_info.get((r.chrom, r.start, r.end, r.feature)) or 0
 
     rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
     for rec in rec_by_name.values():

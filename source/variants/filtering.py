@@ -397,7 +397,7 @@ def proc_line_2nd_round(rec, self_):
 
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
         # but not in ClnSNP or COSMIC.
-        for eff in map(Effect, rec.INFO.get('EFF', [])):
+        for eff in map(Effect, rec.INFO.get('EFF') or []):
             if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
