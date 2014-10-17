@@ -31,7 +31,7 @@ class Region:
         self.bases_by_depth = defaultdict(int)
         self.missed_by_db = dict()
         self.var_num = None
-        self.bases_within_threshs = None
+        self.bases_within_threshs = OrderedDict()
         self.percent_within_threshs = defaultdict(float)
 
     def get_size(self):
@@ -52,7 +52,7 @@ class Region:
         return '"' + '\t'.join(map(str, ts)) + '"'
 
     def calc_bases_within_threshs(self, depth_thresholds):
-        if self.bases_within_threshs is None:
+        if self.bases_by_depth and not self.bases_within_threshs:
             self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
             for depth, bases in self.bases_by_depth.iteritems():
                 for depth_thres in depth_thresholds:
@@ -62,30 +62,33 @@ class Region:
         return self.bases_within_threshs
 
     def calc_avg_depth(self):
-        depth_sum = sum(
-            depth * bases
-            for depth, bases
-            in self.bases_by_depth.items())
-        self.avg_depth = float(depth_sum) / self.get_size()
+        if self.bases_by_depth:
+            depth_sum = sum(
+                depth * bases
+                for depth, bases
+                in self.bases_by_depth.items())
+            self.avg_depth = float(depth_sum) / self.get_size()
         return self.avg_depth
 
     def calc_std_dev(self, avg_depth):
-        sum_of_sq_var = sum(
-            (depth - avg_depth) ** 2 * bases
-            for depth, bases
-            in self.bases_by_depth.items())
-        self.std_dev = math.sqrt(float(sum_of_sq_var) / self.get_size())
+        if self.bases_by_depth:
+            sum_of_sq_var = sum(
+                (depth - avg_depth) ** 2 * bases
+                for depth, bases
+                in self.bases_by_depth.items())
+            self.std_dev = math.sqrt(float(sum_of_sq_var) / self.get_size())
         return self.std_dev
 
     def calc_percent_within_normal(self, avg_depth):
-        bases_within_normal = sum(
-            bases
-            for depth, bases
-            in self.bases_by_depth.items()
-            if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
+        if self.bases_by_depth:
+            bases_within_normal = sum(
+                bases
+                for depth, bases
+                in self.bases_by_depth.items()
+                if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
 
-        self.percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
-            if self.get_size() else None
+            self.percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
+                if self.get_size() else None
 
         return self.percent_within_normal
 

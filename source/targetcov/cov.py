@@ -463,18 +463,20 @@ def _make_flat_region_report(regions, depth_threshs):
             '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
             '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
 
-        if region.bases_within_threshs:
-            for depth_thres, bases in region.bases_within_threshs.items():
-                if int(region.get_size()) == 0:
-                    percent_str = '-'
-                else:
-                    percent = 100.0 * bases / region.get_size()
-                    percent_str = '{0:.2f}%'.format(percent)
-                    if percent > 100:
-                        err('Percent = ' + percent_str + ', bases = ' + str(bases) +
-                            ', size = ' + str(region.get_size()) +
-                            ', start = ' + str(region.start) + ', end = ' + str(region.end))
-                row.append(percent_str)
+        for thresh in depth_threshs:
+            bases = region.bases_within_threshs.get(thresh)
+            if bases is None:
+                percent_str = '.'
+            elif int(region.get_size()) == 0:
+                percent_str = '-'
+            else:
+                percent = 100.0 * bases / region.get_size()
+                percent_str = '{0:.2f}%'.format(percent)
+                if percent > 100:
+                    err('Percent = ' + percent_str + ', bases = ' + str(bases) +
+                        ', size = ' + str(region.get_size()) +
+                        ', start = ' + str(region.start) + ', end = ' + str(region.end))
+            row.append(percent_str)
 
         all_rows.append(row)
         # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
