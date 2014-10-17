@@ -28,23 +28,24 @@ class Filter:
         self.required = required
         self.word = word.upper()
 
-        self.num_passed = 0
-        self.num_rejected = 0
+        # self.num_passed = 0
+        # self.num_rejected = 0
 
     @staticmethod
     def __remove_pass(rec):
         if rec.FILTER == ['PASS']:
             rec.FILTER = None
 
+    # Call check function. If False, add value to the FILTER field (unless only_check)
     def apply(self, rec, only_check=False, *args, **kvargs):
         if only_check:
             return self.check(rec, *args, **kvargs)
 
         if self.check(rec, *args, **kvargs):  # True if PASS, False otherwise
-            self.num_passed += 1
+            # self.num_passed += 1
             return True
         else:
-            self.num_rejected += 1
+            # self.num_rejected += 1
 
             if self.word not in rec.FILTER:
                 self.__remove_pass(rec)
@@ -52,7 +53,7 @@ class Filter:
             return False
 
 
-class CnfFilter(Filter):
+class CnfFilter(Filter):  # get value from config by key, compare with value in INFO
     def __init__(self, key, check, *args, **kvargs):
         self.key = key
         Filter.__init__(self, key.upper(), check, *args, **kvargs)

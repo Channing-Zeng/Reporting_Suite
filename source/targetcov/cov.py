@@ -52,10 +52,10 @@ def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_
     summary_report = generate_summary_report(cnf, sample, chr_len_fpath,
         cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, total_bed_size)
 
-    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
-    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name)
-    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, cnf.name + '.' + BCBioStructure.targetseq_name,
-                                                         caption='Target coverage statistics for ' + cnf.name)
+    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name)
+    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name)
+    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name,
+                                                         caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
     info('  ' + summary_report_txt_fpath)
@@ -117,7 +117,7 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     info()
 
     info('Building region coverage report.')
-    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, cnf.name, genes_sorted)
+    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes_sorted)
 
     return gene_report_fpath
 
