@@ -20,7 +20,7 @@ def add_post_bcbio_args(parser):
     parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='overwrite', action='store_false', help='Reuse intermediate files from previous run')
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
-    parser.add_option('--project-name', dest='project')
+    parser.add_option('--project-name', '--project', dest='project_name')
     parser.add_option('--email', dest='email')
 
 
@@ -108,8 +108,8 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=None):
     add_post_bcbio_args(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
-    parser.add_option('--dir', dest='dir', default=dir)
-    parser.add_option('--name', dest='name', default=name)
+    parser.add_option('--dir', dest='dir', default=dir)  # to distinguish VarQC_summary and VarQC_after_summary
+    parser.add_option('--name', dest='name', default=name)  # proc name
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 

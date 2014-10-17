@@ -213,10 +213,12 @@ class BCBioStructure:
         self.batches = OrderedDefaultDict(Batch)
         self.samples = []
         self.variant_callers = OrderedDict()
-        self.project_name = bcbio_cnf.fc_name
-        self.cnf.name = proc_name or self.project_name or critical('No fc_name in bcbio YAML file.')
 
+        # Date dirpath is from bcbio and named after fc_name, not our own project name
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
+        self.project_name = bcbio_cnf.fc_name = cnf.project_name or bcbio_cnf.fc_date
+        self.cnf.name = proc_name or self.project_name or critical('No fc_name in bcbio YAML file and no --project-name provided.')
+
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
