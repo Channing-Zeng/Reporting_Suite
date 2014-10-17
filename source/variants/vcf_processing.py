@@ -29,7 +29,7 @@ class Record(_Record):
         file_base_name = basename(input_fpath)
         self.sample_name_from_file = file_base_name.split('-')[0]
         self._bias = None
-        self._vark = None
+        self._variant = None
         self._af = None
 
     def get_main_sample(self):
@@ -48,10 +48,10 @@ class Record(_Record):
             bias_ = self.get_val('BIAS')
             if bias_ is not None:
                 if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':', ',']:
-                    err('BIAS: ' + str(bias_) + ' for variant ' + self.var_id())
+                    err('BIAS: ' + str(bias_) + ' for variant ' + self.get_variant())
                 if bias_ == 0.0:
                     bias_ = None
-                    err('Warning: BIAS is 0 ' + ' for variant ' + self.var_id())
+                    err('Warning: BIAS is 0 ' + ' for variant ' + self.get_variant())
                 else:
                     bias_.replace(';', ':').replace('.', ':').replace(',', ':')
             self._bias = bias_
@@ -127,10 +127,10 @@ class Record(_Record):
     def sample_field(self):
         return self.sample_name_from_file
 
-    def var_id(self):
-        if self._vark is None:
-            self._vark = ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
-        return self._vark
+    def get_variant(self):
+        if self._variant is None:
+            self._variant = ':'.join(map(str, [self.CHROM, self.POS, self.REF, self.ALT]))
+        return self._variant
 
 
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,

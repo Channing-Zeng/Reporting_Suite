@@ -32,6 +32,7 @@ class Sample:
         self.dirpath = None
         self.var_dirpath = None
         self.normal_match = None
+        self.min_af = None
 
     # def get_filtered_vcf_fpath_by_callername(callername):
     #     fpath = join(
@@ -361,6 +362,9 @@ class BCBioStructure:
         else:
             sample.bam = None
             err('No BAM file for ' + sample.name)
+
+        if 'min_allele_fraction' in sample_info['algorithm']:
+            sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
 
         sample.phenotype = None
 

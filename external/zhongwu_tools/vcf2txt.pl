@@ -109,6 +109,7 @@ foreach my $d (@data) {
     $pass = "MINVD" if ( $d->[29] && $d->[29] < $MINVD );
     my $class = $d->[3] =~ /COSM/ ? "COSMIC" : ($d->[3] =~ /^rs/ ? (checkCLNSIG($d->[30]) == 1 ? "ClnSNP" : "dbSNP") : "Novel");
     $class = "dbSNP" if ( $d->[28] && $d->[28] > $MAF ); # if there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC
+    # look at dbsnp, if it is very low MAF, keep it,
 
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
     if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
