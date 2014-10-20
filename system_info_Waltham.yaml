@@ -58,4 +58,4 @@ queue: batch.q
 
 qsub_runner: runner_cloud.sh
 
-smtp_host: 'uw26.usuwb.astrazeneca.net'
+#smtp_host: 'uw26.usuwb.astrazeneca.net'

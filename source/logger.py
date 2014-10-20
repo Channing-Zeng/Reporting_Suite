@@ -48,6 +48,8 @@ def err(msg='', ending='\n', print_date=True):
 
 
 def send_email(msg='', subj=''):
+    return
+
     if msg and smtp_host:
         addresses = [my_address]
         if address:
