@@ -112,7 +112,7 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     info()
 
     info('Sorting genes...')
-    genes_sorted = sorted(genes_by_name.values(), key=lambda r: (r.chrom, r.start, r.end))
+    genes_sorted = sorted(genes_by_name.values(), key=lambda r: (r.chrom, r.get_start(), r.get_end()))
     _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted)
     info()
 
@@ -257,10 +257,10 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes_sort
             info('Processed {0:,} genes, current gene {1}'.format(i, gene.gene_name))
         i += 1
 
-        final_regions.extend(gene.exons)
-        final_regions.append(gene.get_summary_region(gene.exons, 'Exon'))
-        final_regions.extend(gene.amplicons)
-        final_regions.append(gene.get_summary_region(gene.amplicons, 'Amplicon'))
+        final_regions.extend(gene.get_exons())
+        final_regions.append(gene.get_summary_region(gene.get_exons(), 'Exon', cnf.coverage_reports.depth_thresholds))
+        final_regions.extend(gene.get_amplicons())
+        final_regions.append(gene.get_summary_region(gene.get_amplicons(), 'Amplicon', cnf.coverage_reports.depth_thresholds))
     info('Processed {0:,} genes.'.format(i))
 
     info()
@@ -316,8 +316,8 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
     i = 0
     with open(genes_ovelaps_with_amplicons_fpath) as f:
         for line in f:
-            a_chr, a_start, a_end, _, a_feature, \
-            g_chr, g_start, g_end, g_gene_name, g_feature, \
+            a_chr, a_start, a_end, _, _, \
+            g_chr, g_start, g_end, g_gene_name, _, \
             overlap_size = line.split('\t')
 
             if g_gene_name != '.':

@@ -73,7 +73,8 @@ def _get_lines_by_region_type(report_fpath, region_type):
     with open(report_fpath, 'r') as f:
         for line in f:
             if region_type in line:
-                gene_summary_lines.append(line.split()[:8])
+                ts = line.split()
+                gene_summary_lines.append(ts[:10])
 
     if not gene_summary_lines:
         critical('Regions of type ' + region_type + ' not found in ' + report_fpath)
@@ -124,7 +125,8 @@ def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
     gene_depths_fpaths = join(cnf.work_dir, 'gene_depths.txt')
     with open(gene_depths_fpaths, 'w') as f:
         for tokens in gene_summary_lines:
-            sample, chrom, s, e, gene, tag, size, cov = tokens
+            sample, chrom, s, e, gene, exon, strand, tag, size, cov = tokens
+            s, e, size, cov = [''.join(c for c in l if c.isdigit()) for l in [s, e, size, cov]]
             reordered = sample, gene, chrom, s, e, tag, size, cov
             f.write('\t'.join(reordered) + '\n')
 

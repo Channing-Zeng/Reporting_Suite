@@ -11,12 +11,14 @@ from source.ngscat.bed_file import verify_bed
 class Region:
     def __init__(self, sample_name=None, chrom=None, start=None, end=None,
                  gene_name=None, exon_num=None, strand=None, feature=None, size=None, avg_depth=None,
-                 std_dev=None, percent_within_normal=None, extra_fields=list()):
+                 std_dev=None, percent_within_normal=None, extra_fields=list(), bases_by_depth=None):
         self.sample_name = sample_name
         self.chrom = chrom
         self.start = start
         self.end = end
         self.size = size
+        self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
+        self.bases_by_depth = bases_by_depth or defaultdict(int)
 
         self.gene_name = gene_name
         self.exon_num = exon_num
@@ -27,12 +29,25 @@ class Region:
         self.std_dev = std_dev
         self.percent_within_normal = percent_within_normal
 
-        self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
-        self.bases_by_depth = defaultdict(int)
         self.missed_by_db = dict()
         self.var_num = None
         self.bases_within_threshs = OrderedDict()
         self.percent_within_threshs = defaultdict(float)
+
+    def get_start(self):
+        return self.start
+
+    def get_end(self):
+        return self.end
+
+    def get_avg_depth(self):
+        return self.avg_depth
+
+    def get_std_dev(self):
+        return self.std_dev
+
+    def get_bases_by_depth(self):
+        return self.bases_by_depth
 
     def get_size(self):
         if self.size is not None:
@@ -109,44 +124,84 @@ class Region:
                 self.start < reg2.start < self.end)
 
 
-class GeneInfo():
+class GeneInfo:
+    """ Collects subregions.
+        - Knows it's sample, gene and chromosome.
+        - Stores feature-specific subregions, start, end, size and based_by_depth which get recalculated
+          on each new subregion.
+        - Not a Region, so does not support sum_up, but returns Region object for a given feature.
+    """
     def __init__(self, sample_name, gene_name, chrom, feature):
         self.sample_name = sample_name
         self.gene_name = gene_name
         self.feature = feature
         self.chrom = chrom
-        self.exons = []
-        self.amplicons = []
 
-        self.start = None
-        self.end = None
-        self.size = 0
-        self.info_by_feature = dict((f, dict(start=None, end=None, size=0)) for f in ['Exon', 'Amplicon'])
+        self.subregions_by_feature = dict((f,
+             dict(
+                 regions=[],
+                 start=None,
+                 end=None,
+                 size=0,
+                 bases_by_depth=defaultdict(int)))
+             for f in ['Exon', 'Amplicon'])
+
+    def get_exons(self):
+        return self.subregions_by_feature['Exon']['regions']
+
+    def get_amplicons(self):
+        return self.subregions_by_feature['Amplicon']['regions']
+
+    def get_start(self):
+        return self._get_exon_value('start')
+
+    def get_end(self):
+        return self._get_exon_value('end')
+
+    def get_size(self):
+        return self._get_exon_value('size')
+
+    def get_bases_by_depth(self):
+        return self._get_exon_value('bases_by_depth')
+
+    def _get_exon_value(self, key):
+        return self.subregions_by_feature['Exon'][key]
+
+    def _add_subregion(self, region, feature):
+        self.subregions_by_feature[feature]['regions'].append(region)
+
+        self.subregions_by_feature[feature]['start'] = \
+            min(self.subregions_by_feature[feature].get('start') or region.start, region.start)
+
+        self.subregions_by_feature[feature]['end'] = \
+            max(self.subregions_by_feature[feature].get('end') or region.end, region.end)
+
+        self.subregions_by_feature[feature]['size'] = \
+            self.subregions_by_feature[feature]['size'] + region.size
+
+        for d, bs in region.bases_by_depth.items():
+            self.subregions_by_feature[feature]['bases_by_depth'][d] += bs
 
     def add_exon(self, exon):
-        self._add_subregion(self.exons, exon, 'Exon')
-        self.start = self.info_by_feature['Exon']['start']
-        self.end = self.info_by_feature['Exon']['end']
-        self.size = self.info_by_feature['Exon']['size']
-
-    def _add_subregion(self, regions, region, feature):
-        regions.append(region)
-        self.info_by_feature[feature]['start'] = min(self.info_by_feature[feature].get('start') or region.start, region.start)
-        self.info_by_feature[feature]['end'] = max(self.info_by_feature[feature].get('end') or region.end, region.end)
-        self.info_by_feature[feature]['size'] = self.info_by_feature[feature]['size'] + region.size
+        self._add_subregion(exon, 'Exon')
 
     def add_amplicon(self, amplicon):
         amplicon = copy.copy(amplicon)
         amplicon.gene_name = self.gene_name
-        self._add_subregion(self.amplicons, amplicon, 'Amplicon')
+        self._add_subregion(amplicon, 'Amplicon')
 
-    def get_summary_region(self, regions, feature):
-        return Region(
-            sample_name=self.sample_name, chrom=self.chrom,
-            start=self.info_by_feature[feature]['start'],
-            end=self.info_by_feature[feature]['end'],
-            size=self.info_by_feature[feature]['size'],
-            feature='Gene-' + feature, gene_name=self.gene_name)
+    def get_summary_region(self, regions, feature, depth_thresholds):
+        region = Region(
+            sample_name=self.sample_name,
+            chrom=self.chrom,
+            feature='Gene-' + feature,
+            gene_name=self.gene_name,
+            start=self.subregions_by_feature[feature]['start'],
+            end=self.subregions_by_feature[feature]['end'],
+            size=self.subregions_by_feature[feature]['size'],
+            bases_by_depth=self.subregions_by_feature[feature]['bases_by_depth'])
+        region.sum_up(depth_thresholds)
+        return region
 
     # def add_subregion(self, subregion):
     #     self.size += subregion.get_size()
@@ -185,7 +240,7 @@ def save_regions_to_bed(cnf, regions, f_basename):
 
     with open(bed_fpath, 'w') as f:
         for r in regions:
-            f.write('\t'.join(map(str, [r.chrom, r.start, r.end, r.gene_name, r.feature])) + '\n')
+            f.write('\t'.join(map(str, [r.chrom, r.get_start(), r.get_end(), r.gene_name, r.feature])) + '\n')
 
                 # r.size, r.avg_depth, r.std_dev, r.percent_within_normal
             # f.write('\t'.join([
