@@ -308,7 +308,19 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
             if sampleReport.html_fpath?
-                table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+                if typeof sampleReport.html_fpath is 'string'
+                    table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+                else  # several links for one sample are possible multi-reports (e.g. TargQC)
+                    if (k for own k of sampleReport.html_fpath).length == 0
+                        table += "<span class=\"sample_name\"\">#{line_caption}</span>"
+                    else
+                        links = ""
+                        for report_name, html_fpath of sampleReport.html_fpath
+                            if links.length != 0
+                              links += ", "
+                            links += "<a href=\"#{html_fpath}\">#{report_name}</a>"
+                        table += "<span class=\"sample_name\"\">#{line_caption} (#{links})</span>"
+                # table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
             else
                 table += "<span class=\"sample_name\"\">#{line_caption}</span>"
 

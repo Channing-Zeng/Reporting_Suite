@@ -187,11 +187,13 @@ class BCBioStructure:
     varqc_after_summary_name = 'varQC_postVarFilter_summary'
     ngscat_name              = 'ngscat'
     qualimap_name            = 'qualimap'
+    targqc_name              = 'targQC'
     fastqc_name              = 'fastqc'
     varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
     varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
     ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
     qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
+    targqc_summary_dir                         = join('qc', targqc_name)
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
     seq2c_name       = 'Seq2C'
     combined_report_name = combined_report_dir = 'combined_report'

@@ -96,6 +96,7 @@ class BCBioRunner:
                 self.targetcov_summary,
                 self.ngscat_summary,
                 self.qualimap_summary,
+                self.targqc_summary,
                 self.fastqc_summary,
                 self.combined_report,
             ] if contains(s.name, cnf.steps)])
@@ -239,7 +240,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.targetseq_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir
         )
-
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
@@ -254,20 +254,28 @@ class BCBioRunner:
             dir_name=BCBioStructure.ngscat_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
+        self.qualimap_summary = Step(cnf, run_id,
+            name='QualiMap_summary', short_name='qms',
+            interpreter='python',
+            script='qualimap_summary',
+            dir_name=BCBioStructure.qualimap_summary_dir,
+            paramln=cnfs_line + ' \'' + self.final_dir + '\''
+        )
+        self.targqc_summary = Step(
+            cnf, run_id,
+            name='TargQC_summary', short_name='targqc',
+            interpreter='python',
+            script='targqc_summary',
+            dir_name=BCBioStructure.targqc_summary_dir,
+            paramln=cnfs_line + ' \'' + self.final_dir + '\''
 
+        )
         self.fastqc_summary = Step(
             cnf, run_id,
             name='FastQC_summary', short_name='fastqc',
             interpreter='python',
             script='fastqc_summary',
             dir_name=BCBioStructure.fastqc_summary_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
-        )
-        self.qualimap_summary = Step(cnf, run_id,
-            name='QualiMap_summary', short_name='qms',
-            interpreter='python',
-            script='qualimap_summary',
-            dir_name=BCBioStructure.qualimap_summary_dir,
             paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
         self.combined_report = Step(cnf, run_id,
@@ -640,6 +648,16 @@ class BCBioRunner:
                     self.qualimap.job_name(s.name)
                     for s in self.bcbio_structure.samples
                     if self.qualimap in self.steps])
+
+        if self.targqc_summary in self.steps:
+            wait_for_steps = []
+            wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+            wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+            wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+            self._submit_job(
+                self.targqc_summary,
+                wait_for_steps=wait_for_steps
+            )
 
         if self.fastqc_summary in self.steps:
             self._submit_job(self.fastqc_summary)

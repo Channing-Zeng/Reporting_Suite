@@ -386,9 +386,9 @@ class MetricStorage:
     def get_metric(self, metric_name):
         return next((m for m in self.get_metrics() if m.name == metric_name), None)
 
-    def get_metrics(self, sections=None):
+    def get_metrics(self, sections=None, skip_general_section=False):
         metrics = []
-        for section in ((sections or self.sections) + [self.general_section]):
+        for section in ((sections or self.sections) + ([] if skip_general_section else [self.general_section])):
             if sections:
                 pass
             for m in section.metrics:
@@ -414,6 +414,12 @@ def read_sample_names(sample_fpath):
             sample_names.append(sample_name)
 
     return sample_names
+
+
+def load_records(json_fpath):
+    with open(json_fpath) as f:
+        data = load(f, object_pairs_hook=OrderedDict)
+        return [Record.load(d) for d in data['records']]
 
 
 # def get_per_sample_fpaths_for_bcbio_final_dir(
