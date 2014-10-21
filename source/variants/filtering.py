@@ -439,7 +439,7 @@ def proc_line_2nd_round(rec, cnf_, self_):
         if caf:
             print caf
             cafs = caf[1:-1].split(',')
-            gmaf = int(cafs[cnf_.main_sample_index])
+            gmaf = int(cafs[cnf_.main_sample_index][1:-1])
             req_maf = Filtering.filt_cnf.get('maf')
             # if there's MAF with frequency, it'll be considered
             # dbSNP regardless of COSMIC
