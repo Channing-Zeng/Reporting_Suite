@@ -77,7 +77,7 @@ def links_show_hide(outfile, input_files):
 
 def print_js():
     return """
-    <script src="http://code.jquery.com/jquery-latest.min.js"
+    <script src="../../combined_report/html_aux/jquery-1.8.2.min.js"
         type="text/javascript"></script>
     <script>
 

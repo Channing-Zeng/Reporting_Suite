@@ -230,7 +230,7 @@ class BCBioRunner:
             interpreter='java',
             script='vcf_loader',
             dir_name='mongo_loader',
-            paramln=' -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
+            paramln=' -module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
         self.targetcov_summary = Step(cnf, run_id,
             name='TargetCov_summary', short_name='tcs',

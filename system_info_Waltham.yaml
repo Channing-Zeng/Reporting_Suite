@@ -34,7 +34,9 @@ resources:
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
   vcf_loader:
-    path: /group/ngs/share/mongo-loader/VCFLoader.jar
+    #path: /group/ngs/share/mongo-loader/VCFLoader.jar
+    path: C:\Workspace\VCFStore\target\VCFStore.jar
+
 #  cov2cnv2:
 #    path: /group/cancer_informatics/tools_resources/NGS/bin/cov2cnv2.pl
 
