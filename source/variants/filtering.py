@@ -432,14 +432,16 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         self_.control_filter.apply(rec)
 
+        cls = rec.cls()
+
         caf = rec.get_val('CAF')
-        gmaf = int(caf[cnf_.main_sample_index])
-
-        req_maf = Filtering.filt_cnf['maf']
-
-        # if there's MAF with frequency, it'll be considered
-        # dbSNP regardless of COSMIC
-        cls = 'dbSNP' if req_maf and gmaf and gmaf > req_maf else rec.cls()
+        if caf:
+            gmaf = int(caf[cnf_.main_sample_index])
+            req_maf = Filtering.filt_cnf.get('maf')
+            # if there's MAF with frequency, it'll be considered
+            # dbSNP regardless of COSMIC
+            if req_maf is not None and gmaf > req_maf:
+                cls = 'dbSNP'
 
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
         # but not in ClnSNP or COSMIC.
