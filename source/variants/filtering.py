@@ -238,10 +238,11 @@ class Filtering:
             return not (  # Filter novel variants with strand bias.
                 Filter.filt_cnf['bias'] is True and
                 cls in ['Novel', 'dbSNP'] and
-                rec.bias() and rec.bias() in ['2:1', '2:0'] and rec.af() < 0.3)
+                rec.bias() and rec.bias() in ['2:1', '2:0']
+                and rec.af() < 0.3)
 
         def nonclnsnp_filter_check(rec, cls):
-            return rec.check_clnsig() != -1 or cls == 'COSMIC'
+            return not (rec.check_clnsig() == -1 or cls != 'COSMIC')
 
         def multi_filter_check(rec, var_n, frac, avg_af):
             return not (  # reject if novel and present in [fraction] samples
@@ -436,7 +437,9 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         caf = rec.get_val('CAF')
         if caf:
-            gmaf = int(caf[cnf_.main_sample_index])
+            print caf
+            cafs = caf[1:-1].split(',')
+            gmaf = int(cafs[cnf_.main_sample_index])
             req_maf = Filtering.filt_cnf.get('maf')
             # if there's MAF with frequency, it'll be considered
             # dbSNP regardless of COSMIC
