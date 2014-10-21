@@ -11,6 +11,7 @@ from joblib import Parallel, delayed
 from source.bcbio_structure import BCBioStructure
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
+from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath, \
     get_main_sample_index
 from source.utils import mean
@@ -168,6 +169,11 @@ def second_round(vcf_fpath, sample_name):
     main_sample_index = get_main_sample_index(cnf, vcf_fpath, sample_name)
     cnf.main_sample_index = main_sample_index
 
+    #TODO: tmp
+    res = _snpsift_annotate(cnf, cnf['clinvar'], 'clinvar', vcf_fpath)
+    if not res:
+        err('Could not annotate with clinvar.')
+
     return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf)
 
 
@@ -268,7 +274,7 @@ class Filtering:
 
         info('Fixing previous . values to PASS')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, s)
-                                            for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('First round')

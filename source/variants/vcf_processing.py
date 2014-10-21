@@ -122,6 +122,15 @@ class Record(_Record):
         for c in self.INFO.get('CLNSIG'):
             if 4 <= c <= 6 or c == 255:
                 return 1
+            # 0 - Uncertain significance,
+            # 1 - not provided,
+            # 2 - Benign,
+            # 3 - Likely benign,
+            # 4 - Likely pathogenic,
+            # 5 - Pathogenic,
+            # 6 - drug response,
+            # 7 - histocompatibility,
+            # 255 - other 
 
         return -1
 

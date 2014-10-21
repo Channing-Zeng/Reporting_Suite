@@ -16,10 +16,7 @@ from source.tools_from_cnf import get_script_cmdline
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
 
-# Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
-# is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-# get_targetcov_fpaths_by_sample
 def cnv_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
 
@@ -36,7 +33,6 @@ def cnv_reports(cnf, bcbio_structure):
                 BCBioStructure.targetseq_name, sample.name, join(sample.dirpath, BCBioStructure.targetseq_name)
             make_targetseq_reports(cnf, sample)
             cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
-
 
     info('Calculating normalized coverages for CNV...')
     amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, bcbio_structure,
@@ -117,6 +113,11 @@ def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_
 
 
 def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
+    """
+    Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
+    is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
+    """
+
     mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
     with open(mapped_read_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
