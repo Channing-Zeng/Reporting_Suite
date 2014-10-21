@@ -15,7 +15,7 @@ resources:
   plot_vcfstats:
     path: ~/bin/bcftools/plot-vcfstats
   qsub:
-    path: ../tools/qsub.sh
+    path: ~/vagrant/reporting_suite/tools/qsub.sh
   vardict_pl:
     path: ~/vagrant/VarDict/vardict.pl
   testsomatic_r:

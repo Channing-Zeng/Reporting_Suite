@@ -7,8 +7,8 @@ import operator
 from os.path import basename, join, isfile, dirname, splitext, islink
 from joblib import Parallel, delayed
 ##from memory_profiler import profile
-from source.bcbio_structure import BCBioStructure
 
+from source.bcbio_structure import BCBioStructure
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath
@@ -258,10 +258,10 @@ class Filtering:
         global filtering
         filtering = self
 
-        info('Removing previous FILTER values')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, cnf_for_samples[s])
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
+        # info('Removing previous FILTER values')
+        # vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, cnf_for_samples[s])
+        #                                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        # info()
 
         info('First round')
         results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath, cnf_for_samples[s])
@@ -361,17 +361,17 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
 
     var_str = rec.get_variant()  # = tuple (chrom, pos, ref, alt)
 
-    all_passed = all(f.apply(rec) for f in self_.round2_filters)
+    all(f.apply(rec) for f in self_.round2_filters)
 
     min_freq_filter = self_.min_freq_filters[sample]
-    all_passed = all_passed and min_freq_filter.apply(rec)
+    min_freq_filter.apply(rec)
 
     if sample and self_.control and sample == self_.control:
-        if all_passed or rec.cls() == 'Novel':
+        if not rec.is_rejected() or rec.cls() == 'Novel':
             # So that any novel variants showed up in control won't be filtered:
             control_vars.add(var_str)
 
-    if sample and all_passed:
+    if sample and not rec.is_rejected():
         # Undetermined won't count toward samples
         if 'undetermined' not in sample.lower() or Filtering.filt_cnf['count_undetermined']:
             if var_str not in variant_dict:

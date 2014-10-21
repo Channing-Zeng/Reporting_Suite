@@ -4,11 +4,11 @@ steps:
 # - VarAnnotate
 # - VarQC
 # - VarQC_summary
-# - VarFilter
+- VarFilter
 # - VarQC_postVarFilter
 # - VarQC_postVarFilter_summary
-- TargetCov
-- Seq2C
+# - TargetCov
+# - Seq2C
 # - TargetCov_summary
 # - ngsCAT
 # - ngsCAT_summary
