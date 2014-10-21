@@ -176,7 +176,7 @@ class _Record(object):
     def add_filter(self, flt):
         if self.FILTER is None:
             self.FILTER = [flt]
-        else:
+        elif flt not in self.FILTER:
             self.FILTER.append(flt)
 
     def add_info(self, info, value=True):

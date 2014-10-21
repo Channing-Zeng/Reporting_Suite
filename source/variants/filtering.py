@@ -38,18 +38,21 @@ class Filter:
 
     # Call check function. If False, add value to the FILTER field (unless only_check)
     def apply(self, rec, only_check=False, *args, **kvargs):
+        # if rec.is_rejected():
+        #     return False
+
         if only_check:
             return self.check(rec, *args, **kvargs)
 
-        if self.check(rec, *args, **kvargs):  # True if PASS, False otherwise
+        if self.check(rec, *args, **kvargs):  # True if passed, False otherwise
             # self.num_passed += 1
             return True
         else:
             # self.num_rejected += 1
 
-            if self.word not in rec.FILTER:
+            if rec.FILTER:
                 self.__remove_pass(rec)
-                rec.add_filter(self.word)
+            rec.add_filter(self.word)
             return False
 
 
@@ -141,34 +144,34 @@ cnf_for_samples = dict()
 
 
 # @profile
-def process_vcf(vcf_fpath, fun, suffix, cnf, *args, **kwargs):
+def process_vcf(vcf_fpath, fun, suffix, cnf=None, *args, **kwargs):
     return iterate_vcf(cnf, vcf_fpath, fun, suffix, cnf_=cnf, self_=filtering, *args, **kwargs)
 
 
-def rm_prev_round(vcf_fpath, cnf):
-    return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev', cnf)
+def rm_prev_round(vcf_fpath, sample_name):
+    return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev', cnf_for_samples[sample_name])
 
 
-def first_round(vcf_fpath, cnf):
+def first_round(vcf_fpath, sample_name):
     variant_dict = dict()  # tuples of (chrom, pos, ref, alt)
     control_variants = set()  # variants from controls samples
     res = process_vcf(
-        vcf_fpath, proc_line_1st_round, 'r1', cnf,
+        vcf_fpath, proc_line_1st_round, 'r1', cnf_for_samples[sample_name],
         variant_dict=variant_dict, control_vars=control_variants)
 
     return res, variant_dict, control_variants
 
 
-def second_round(vcf_fpath, cnf):
-    return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf)
+def second_round(vcf_fpath, sample_name):
+    return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf_for_samples[sample_name])
 
 
-def impact_round(vcf_fpath, cnf):
-    return process_vcf(vcf_fpath, proc_line_impact, 'impact', cnf)
+def impact_round(vcf_fpath, sample_name):
+    return process_vcf(vcf_fpath, proc_line_impact, 'impact', cnf_for_samples[sample_name])
 
 
-def one_per_line(vcf_fpath, cnf):
-    return vcf_one_per_line(cnf, vcf_fpath)
+def one_per_line(vcf_fpath, sample_name):
+    return vcf_one_per_line(cnf_for_samples[sample_name], vcf_fpath)
 
 
 class Filtering:
@@ -258,14 +261,14 @@ class Filtering:
         global filtering
         filtering = self
 
-        # info('Removing previous FILTER values')
-        # vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, cnf_for_samples[s])
-        #                                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        # info()
+        info('Fixing previous . values to PASS')
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, s)
+                                            for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        info()
 
         info('First round')
-        results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath, cnf_for_samples[s])
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath, s)
+                                          for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
@@ -319,17 +322,17 @@ class Filtering:
         info()
 
         info('One effect per line')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, cnf_for_samples[s])
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, s)
                                              for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('Second round')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, cnf_for_samples[s])
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, s)
                                              for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('Filtering by impact')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath, cnf_for_samples[s])
+        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath, s)
                                              for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
@@ -344,7 +347,8 @@ class Filtering:
 
 
 def proc_line_remove_prev_filter(rec, cnf_, self_):
-    rec.FILTER = ['PASS']
+    if not rec.FILTER:
+        rec.FILTER = ['PASS']
     return rec
 
 
@@ -352,8 +356,8 @@ def proc_line_remove_prev_filter(rec, cnf_, self_):
 def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
     # Strict filter of DP, QUAL, PMEAN
 
-    [f.apply(rec) for f in self_.round1_filters]
-    if rec.is_rejected():
+    all_passed = all([f.apply(rec) for f in self_.round1_filters])
+    if not all_passed:
         return None
 
     # For those who passed, collect controls, samples and af_by_varid
