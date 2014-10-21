@@ -115,11 +115,12 @@ class Record(_Record):
         return self.FILTER and 'PASS' not in self.FILTER
 
     def check_clnsig(self):
-        if not self.INFO.get('CLNSIG'):
+        clnsig = self.INFO.get('CLNSIG')
+        if not clnsig:
             return 0
 
         for c in self.INFO.get('CLNSIG'):
-            if 3 < c < 7 or c == 255:
+            if 4 <= c <= 6 or c == 255:
                 return 1
 
         return -1

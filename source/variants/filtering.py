@@ -11,7 +11,8 @@ from joblib import Parallel, delayed
 from source.bcbio_structure import BCBioStructure
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath, \
+    get_main_sample_index
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -163,7 +164,11 @@ def first_round(vcf_fpath, sample_name):
 
 
 def second_round(vcf_fpath, sample_name):
-    return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf_for_samples[sample_name])
+    cnf = cnf_for_samples[sample_name]
+    main_sample_index = get_main_sample_index(cnf, vcf_fpath, sample_name)
+    cnf.main_sample_index = main_sample_index
+
+    return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf)
 
 
 def impact_round(vcf_fpath, sample_name):
@@ -323,17 +328,17 @@ class Filtering:
 
         info('One effect per line')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, s)
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('Second round')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, s)
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('Filtering by impact')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath, s)
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         # if 'polymorphic_variants' in self.filt_cnf:
@@ -361,29 +366,29 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
         return None
 
     # For those who passed, collect controls, samples and af_by_varid
-    sample = cnf_.name
+    samplename = cnf_.name
 
     var_str = rec.get_variant()  # = tuple (chrom, pos, ref, alt)
 
-    all(f.apply(rec) for f in self_.round2_filters)
+    [f.apply(rec) for f in self_.round2_filters]
 
-    min_freq_filter = self_.min_freq_filters[sample]
+    min_freq_filter = self_.min_freq_filters[samplename]
     min_freq_filter.apply(rec)
 
-    if sample and self_.control and sample == self_.control:
+    if samplename and self_.control and samplename == self_.control:
         if not rec.is_rejected() or rec.cls() == 'Novel':
             # So that any novel variants showed up in control won't be filtered:
             control_vars.add(var_str)
 
-    if sample and not rec.is_rejected():
+    if samplename and not rec.is_rejected():
         # Undetermined won't count toward samples
-        if 'undetermined' not in sample.lower() or Filtering.filt_cnf['count_undetermined']:
+        if 'undetermined' not in samplename.lower() or Filtering.filt_cnf['count_undetermined']:
             if var_str not in variant_dict:
                 variant_dict[var_str] = VariantInfo(var_str)
             variant_dict[var_str].afs.append(rec.get_val('AF', .0))
         else:
             if not self_.undet_sample_filter.apply(rec):
-                err('Undetermined sample for rec ' + rec.get_variant() + ', sample ' + str(sample))
+                err('Undetermined sample for rec ' + rec.get_variant() + ', sample ' + str(samplename))
                 return None
 
     return rec
@@ -394,8 +399,11 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
 #   fraction = variant_n / number of total samples   must be > [fraction]
 #   avg_af   = avg AF for this variant               must be < [freq]
 def proc_line_2nd_round(rec, cnf_, self_):
-    sample = rec.sample_field()
-    if sample:
+    if rec.is_rejected():
+        return rec
+
+    sample_name = rec.sample_field()
+    if sample_name:
         var_info = self_.variant_dict.get(rec.get_variant())
         if not var_info:
             return None
@@ -418,7 +426,9 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         self_.control_filter.apply(rec)
 
-        gmaf = rec.get_val('GMAF')
+        caf = rec.get_val('CAF')
+        gmaf = int(caf[cnf_.main_sample_index])
+
         req_maf = Filtering.filt_cnf['maf']
 
         # if there's MAF with frequency, it'll be considered

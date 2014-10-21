@@ -76,6 +76,9 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
         if not cnf.get('no_correct_vcf'):
             vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
+        info('Adding SAMPLE=' + samplename + ' annotation...')
+        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
+
         final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
         vcf_basename = splitext(final_vcf_fname)[0]
         final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
@@ -83,7 +86,8 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
         final_maf_fpath = join(cnf['output_dir'], vcf_basename + '.maf')
 
         # Moving final VCF
-        if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
+        if isfile(final_vcf_fpath):
+            os.remove(final_vcf_fpath)
         shutil.copy(vcf_fpath, final_vcf_fpath)
 
         # Converting to TSV
@@ -365,6 +369,17 @@ def _gatk(cnf, input_fpath, bam_fpath):
         return output_fpath
     else:
         return None
+
+
+def _add_annotation(cnf, input_fpath, key, value):
+    step_greetings('Filtering malformed fields...')
+
+    def proc_rec(rec):
+        rec.INFO[key] = value
+        return rec
+
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
+    return output_fpath
 
 
 def _filter_malformed_fields(cnf, input_fpath):
