@@ -220,7 +220,7 @@ class Filtering:
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN', required=False),
-            InfoFilter('min_q_mean', 'QUAL', required=False),
+            InfoFilter('min_q_mean', 'QMEAN', required=False),
             InfoFilter('mean_mq', 'MQ', required=False),
             InfoFilter('signal_noise', 'SN', required=False),
             InfoFilter('mean_vd', 'VD', required=False)]
@@ -448,7 +448,6 @@ def proc_line_2nd_round(rec, cnf_, self_):
         # Then we check if the calss is deleterious dnSNP
         # Then we filter for strand bias only variants with Novel and dbSNP class
         # And then filter out all dbSNP variants that are significant according to Clinvar
-
         caf = rec.get_val('CAF')
         if caf:
             print caf
