@@ -443,33 +443,8 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         cls = rec.cls()
 
-        # We check for caf - and if it is above the required value, we assume that the variant class is dnSNP regardless of Cosmic. The class is needed for further CLNSIG and BIAS filters.
-        # Then we check if the calss is deleterious dnSNP
-        # Then we filter for strand bias only variants with Novel and dbSNP class
-        # And then filter out all dbSNP variants that are significant according to Clinvar
         if 'CAF' in rec.INFO:
-            vals = rec.INFO['CAF']
-            
-            cafs = [''.join(c for c in v if c not in '[]') for v in vals if v]
-            print cafs
-            if len(cafs) == 0:
-                print 'cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + rec.get_variant() + ' in ' + sample_name
-            else:
-                allele_cafs = [c for c in cafs[1:] if c]
-                if len(allele_cafs) == 0:
-                    print 'cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
-                else:
-                    allele_cafs = map(float, allele_cafs)
-                    min_allele_caf = min(allele_cafs)
-                    req_maf = Filtering.filt_cnf.get('maf')
-
-                    # if there's MAF with frequency, it'll be considered
-                    # dbSNP regardless of COSMIC
-                    if req_maf is not None and min_allele_caf > req_maf:
-                        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class was ' + cls + ', becomes dbSNP')
-                        cls = 'dbSNP'
-                    else:
-                        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + cls)
+            cls = process_cafs_for_dbsnp(rec, cls)
 
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
         # but not in ClnSNP or COSMIC.
@@ -484,6 +459,39 @@ def proc_line_2nd_round(rec, cnf_, self_):
         self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
 
     return rec
+
+
+def process_cafs_for_dbsnp(rec, prev_cls):
+    vals = rec.INFO['CAF']
+
+    cafs = [''.join(c for c in v if c not in '[]') for v in vals if v]
+    info('cafs = ' + str(cafs))
+    if len(cafs) == 0:
+        err('No correct CAFs: cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + rec.get_variant() + ' in ' + sample_name)
+        return prev_cls
+
+    allele_cafs = [c for c in cafs[1:] if c and c != '.']
+    if len(allele_cafs) == 0:
+        err('No allelic CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name)
+        return prev_cls
+
+    try:
+        allele_cafs = map(float, allele_cafs)
+    except ValueError:
+        err('Could not parse CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name)
+        return prev_cls
+
+    min_allele_caf = min(allele_cafs)
+    req_maf = Filtering.filt_cnf.get('maf')
+
+    # if there's MAF with frequency, it'll be considered
+    # dbSNP regardless of COSMIC
+    if req_maf is not None and min_allele_caf > req_maf:
+        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class was ' + prev_cls + ', becomes dbSNP')
+        return 'dbSNP'
+
+    info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + prev_cls)
+    return prev_cls
 
 
 def proc_line_impact(rec, cnf_, self_):
