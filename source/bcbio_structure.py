@@ -321,7 +321,11 @@ class BCBioStructure:
             src_fpath = join(sample.dirpath, fname)
             dst_fpath = join(sample.var_dirpath, fname)
             if exists(dst_fpath):
-                os.remove(dst_fpath)
+                try:
+                    os.remove(dst_fpath)
+                except OSError:
+                    info('Cannot move ' + src_fpath + ' to ' + dst_fpath + ': dst exists, and permissions denied to remove it.')
+                    continue
             safe_mkdir(sample.var_dirpath)
             info('Moving ' + src_fpath + ' to ' + dst_fpath)
             os.rename(src_fpath, dst_fpath)
