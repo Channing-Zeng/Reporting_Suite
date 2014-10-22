@@ -355,7 +355,7 @@
   };
 
   reporting.buildTotalReport = function(report, section, columnOrder) {
-    var caller, caller_links, colNum, direction, html_fpath, i, k, line_caption, padding, pos, r, rec, sample_reports_length, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4;
+    var caller, caller_links, colNum, direction, html_fpath, i, k, line_caption, links, padding, pos, r, rec, report_name, sample_reports_length, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
     if (section.title != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
@@ -384,19 +384,45 @@
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {
         if (sampleReport.html_fpath != null) {
-          table += "<a class=\"sample_name\" href=\"" + sampleReport.html_fpath + "\">" + line_caption + "</a>";
+          if (typeof sampleReport.html_fpath === 'string') {
+            table += "<a class=\"sample_name\" href=\"" + sampleReport.html_fpath + "\">" + line_caption + "</a>";
+          } else {
+            if (((function() {
+              var _ref2, _results;
+              _ref2 = sampleReport.html_fpath;
+              _results = [];
+              for (k in _ref2) {
+                if (!__hasProp.call(_ref2, k)) continue;
+                _results.push(k);
+              }
+              return _results;
+            })()).length === 0) {
+              table += "<span class=\"sample_name\"\">" + line_caption + "</span>";
+            } else {
+              links = "";
+              _ref2 = sampleReport.html_fpath;
+              for (report_name in _ref2) {
+                html_fpath = _ref2[report_name];
+                if (links.length !== 0) {
+                  links += ", ";
+                }
+                links += "<a href=\"" + html_fpath + "\">" + report_name + "</a>";
+              }
+              table += "<span class=\"sample_name\"\">" + line_caption + " (" + links + ")</span>";
+            }
+          }
         } else {
           table += "<span class=\"sample_name\"\">" + line_caption + "</span>";
         }
       }
       table += "</td>";
-      for (colNum = _k = 0, _ref2 = section.metrics.length; 0 <= _ref2 ? _k < _ref2 : _k > _ref2; colNum = 0 <= _ref2 ? ++_k : --_k) {
+      for (colNum = _k = 0, _ref3 = section.metrics.length; 0 <= _ref3 ? _k < _ref3 : _k > _ref3; colNum = 0 <= _ref3 ? ++_k : --_k) {
         pos = columnOrder[colNum];
         metric = section.metrics[pos];
         rec = null;
-        _ref3 = sampleReport.records;
-        for (_l = 0, _len1 = _ref3.length; _l < _len1; _l++) {
-          r = _ref3[_l];
+        _ref4 = sampleReport.records;
+        for (_l = 0, _len1 = _ref4.length; _l < _len1; _l++) {
+          r = _ref4[_l];
           if (r.metric.name === metric.name) {
             rec = r;
             break;
@@ -422,11 +448,11 @@
             table += "<a href=\"" + rec.html_fpath + "\">" + rec.cell_contents + " </a> </td>";
           } else {
             if (((function() {
-              var _ref4, _results;
-              _ref4 = rec.html_fpath;
+              var _ref5, _results;
+              _ref5 = rec.html_fpath;
               _results = [];
-              for (k in _ref4) {
-                if (!__hasProp.call(_ref4, k)) continue;
+              for (k in _ref5) {
+                if (!__hasProp.call(_ref5, k)) continue;
                 _results.push(k);
               }
               return _results;
@@ -436,9 +462,9 @@
               table += "" + rec.cell_contents + "</td>";
             } else {
               caller_links = "";
-              _ref4 = rec.html_fpath;
-              for (caller in _ref4) {
-                html_fpath = _ref4[caller];
+              _ref5 = rec.html_fpath;
+              for (caller in _ref5) {
+                html_fpath = _ref5[caller];
                 if (caller_links.length !== 0) {
                   caller_links += ", ";
                 }

@@ -1,4 +1,4 @@
-from genericpath import isdir
+from genericpath import isdir, exists
 import os
 import shutil
 import pickle
@@ -443,6 +443,13 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         self_.control_filter.apply(rec)
 
+        # DBSNP:
+        #   if gmaf < req_maf, keep it
+        #   if dbSNP_del, keep even if gmaf > req_maf
+        #   and keep CLNSIG >= 5 always
+        # Cosmic:
+        #   keep everything
+
         cls = rec.cls()
 
         if 'CAF' in rec.INFO:
@@ -452,6 +459,7 @@ def proc_line_2nd_round(rec, cnf_, self_):
         # but not in ClnSNP or COSMIC.
         for eff in map(Effect, rec.INFO.get('EFF') or []):
             if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
+                info('eff.efftype = ' + eff.efftype + ', eff.pos / int(eff.aal) = ' + str(eff.pos / int(eff.aal)))
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
 
@@ -578,6 +586,9 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     comb_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.maf')
     caller.combined_filt_maf_fpath = combine_mafs(cnf, caller.find_filt_maf_by_sample().values(), comb_maf_fpath)
+    comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, caller.name + '.maf')
+    if not exists(comb_maf_fpath_symlink):
+        os.symlink(comb_maf_fpath, comb_maf_fpath_symlink)
     info('-' * 70)
     info()
 
