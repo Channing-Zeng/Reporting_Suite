@@ -237,7 +237,7 @@ class BCBioStructure:
         # Moving raw variants in the date dir to var_raw
         raw_var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir + '_raw')
         for fname in os.listdir(self.date_dirpath):
-            if '.var' in fname:
+            if '.vcf' in fname:
                 if not isdir(raw_var_dirpath):
                     safe_mkdir(raw_var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
