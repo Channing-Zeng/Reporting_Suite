@@ -258,10 +258,12 @@ class Filtering:
                 var_n >= Filter.filt_cnf['sample_cnt'] and
                 avg_af < Filter.filt_cnf['freq']):
                 return False
+            return True
 
         def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
             if frac >= Filter.filt_cnf['max_ratio'] and rec.get_val('AF') < 0.3:
                 return False
+            return True
 
         # self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
         self.control_filter = CnfFilter('control', lambda rec:
@@ -428,8 +430,8 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
             info('Multi filter: vark = ' + rec.get_variant() +
-                 ', var_n = ' + str(var_info.occurence_num()) + ', n_sample = ' +
-                 str(len(self_.sample_names)) + ', avg_af = ' + str(var_info.avg_af()))
+                 ', var_n = ' + str(var_n) + ', n_sample = ' +
+                 str(len(self_.sample_names)) + ', avg_af = ' + str(avg_af))
 
         if not self_.dup_filter.apply(rec, main_sample_index=cnf_.main_sample_index):
             info('Dup filter: variant = ' + rec.get_variant())
@@ -452,8 +454,6 @@ def proc_line_2nd_round(rec, cnf_, self_):
             if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
-
-
 
         self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
         self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
