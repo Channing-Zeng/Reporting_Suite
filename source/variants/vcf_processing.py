@@ -54,7 +54,7 @@ class Record(_Record):
                 if bias_ == 0.0:
                     bias_ = None
                     err('Warning: BIAS is 0 ' + ' for variant ' + self.get_variant())
-                else:
+                elif isinstance(bias_, basestring):
                     bias_.replace(';', ':').replace('.', ':').replace(',', ':')
             self._bias = bias_
         return self._bias
