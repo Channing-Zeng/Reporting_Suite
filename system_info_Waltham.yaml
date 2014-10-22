@@ -13,6 +13,8 @@ resources:
     path: /group/ngs/src/snpEff/SnpSift.jar
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
+  qualimap2:
+    path: /group/ngs/src/qualimap_v2.0/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
   bedtools:

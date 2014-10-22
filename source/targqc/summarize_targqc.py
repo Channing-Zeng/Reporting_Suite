@@ -1,10 +1,15 @@
 from collections import OrderedDict
-from os.path import relpath
-from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, Record, load_records
+from os.path import relpath, join
+from os import listdir
+import shutil
+from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
 from source.logger import step_greetings, info, send_email, critical
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
+from source.tools_from_cnf import get_tool_cmdline, get_qualimap_type
+from source.calling_process import call
+from source.file_utils import safe_mkdir, verify_file, verify_dir
 
 
 qualimap_to_targetcov_dict = {'Number of reads': cov.header_metric_storage.get_metric('Reads'),
@@ -137,12 +142,38 @@ def summary_reports(cnf, bcbio_structure):
                                   qualimap_htmls_by_sample.keys())],
         metric_storage=targqc_metric_storage)
 
-    final_summary_report_fpath = targqc_full_report.save_html(
+    # Qualimap2 run for multi-sample plots
+    if len(qualimap_htmls_by_sample):
+        qualimap = get_tool_cmdline(cnf, interpreter=None, tool_name='qualimap2')
+        if qualimap is not None and get_qualimap_type(qualimap) == "full":
+            qualimap_output_dir = join(cnf.output_dir, 'qualimap_multi_bamqc')
+            plots_dirpath = join(cnf.output_dir, 'plots')
+
+            safe_mkdir(qualimap_output_dir)
+            rows = []
+            for sample_name, html_fpath in qualimap_htmls_by_sample.items():
+                rows += [[sample_name, html_fpath]]
+            data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
+            cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
+            call(cnf, cmdline)
+            targqc_full_report.plots = []
+            qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
+            if verify_dir(qualimap_plots_dirpath):
+                shutil.move(qualimap_plots_dirpath, plots_dirpath)
+            for plot_fpath in listdir(plots_dirpath):
+                plot_fpath = join(plots_dirpath, plot_fpath)
+                if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
+                    targqc_full_report.plots.append(relpath(plot_fpath, cnf.output_dir))
+            shutil.rmtree(qualimap_output_dir)  # TODO: make nicer
+
+    final_summary_report_fpaths = targqc_full_report.save_into_files(
         cnf.output_dir, bcbio_structure.targqc_name,
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     info()
     info('*' * 70)
     info('TargQC summary saved in: ')
-    info('  ' + final_summary_report_fpath)
-    send_email('TargQC summary: \n' + final_summary_report_fpath)
+    for fpath in final_summary_report_fpaths:
+        if fpath: info('  ' + fpath)
+
+    #send_email('TargQC summary: \n' + '\n'.join(final_summary_report_fpaths))

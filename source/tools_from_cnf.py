@@ -27,7 +27,7 @@ def get_tool_cmdline(cnf, interpreter, tool_name=None,
 
         return get_script_cmdline(
             cnf, interpreter, tool_name,
-            extra_warning, suppress_warn)
+            extra_warning=extra_warning, suppress_warn=suppress_warn)
 
     # IN SYSTEM CONFIG?
     if (cnf.resources is not None and
@@ -159,4 +159,33 @@ def _get_gatk_version(tool_cmdline):
         return '1.0'
     if version.startswith("v"):
         version = version[1:]
+    return version
+
+
+def get_qualimap_type(tool_cmdline):
+    """Qualimap supports multi-bamqc functionality only starting from v.2.0
+    """
+    if LooseVersion(_get_qualimap_version(tool_cmdline)) >= LooseVersion("2.0"):
+        return "full"
+    else:
+        return "limited"
+
+
+def _get_qualimap_version(tool_cmdline):
+    cmdline = tool_cmdline + ' -version'  # actually, Qualimap doesn't have -version option
+
+    version = None
+    with subprocess.Popen(cmdline,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          shell=True).stdout as stdout:
+        out = stdout.read().strip()
+        flag = "QualiMap v."
+        if out.startswith(flag) >= 0:
+            version = out.split(flag)[-1].strip()
+    if not version:
+        info('WARNING: could not determine Qualimap version, using 1.0')
+        return '1.0'
+    if version.split('.') > 2:  # only major version
+        version = '.'.join(version.split('.')[:2])
     return version
