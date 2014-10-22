@@ -105,7 +105,7 @@ class Record(_Record):
         if self.ID and 'COSM' in self.ID:
             cls = 'COSMIC'
         elif self.ID and self.ID.startswith('rs'):
-            if self.check_clnsig == 'significant':
+            if self.check_clnsig() == 'significant':
                 cls = 'ClnSNP'
             else:
                 cls = 'dbSNP'

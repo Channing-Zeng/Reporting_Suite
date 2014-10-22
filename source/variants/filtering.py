@@ -247,7 +247,10 @@ class Filtering:
             return rec.af(main_sample_index) >= 0.3
 
         def nonclnsnp_filter_check(rec, cls):
-            return not (rec.check_clnsig() == 'not_significant' or cls != 'COSMIC')
+            if cls in ['COSMIC']:
+                return True
+
+            return rec.check_clnsig() != 'not_significant'
 
         def multi_filter_check(rec, var_n, frac, avg_af):
             return not (  # reject if novel and present in [fraction] samples
@@ -441,6 +444,11 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         cls = rec.cls()
 
+        # We check for caf - and if it is above the required value, we assume that the variant class is dnSNP regardless of Cosmic. The class is needed for further CLNSIG and BIAS filters.
+        # Then we check if the calss is deleterious dnSNP
+        # Then we filter for strand bias only variants with Novel and dbSNP class
+        # And then filter out all dbSNP variants that are significant according to Clinvar
+
         caf = rec.get_val('CAF')
         if caf:
             print caf
@@ -468,7 +476,7 @@ def proc_line_2nd_round(rec, cnf_, self_):
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
 
-        self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)       # dbSNP, Novel, and bias satisfied - keep
+        self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
         self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
 
     return rec
