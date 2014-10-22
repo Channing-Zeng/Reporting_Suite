@@ -242,6 +242,7 @@ class BCBioStructure:
                     safe_mkdir(raw_var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
                 dst_fpath = join(raw_var_dirpath, fname)
+                info('Moving ' + src_fpath + ' to ' + raw_var_dirpath)
                 try:
                     os.rename(src_fpath, dst_fpath)
                 except OSError:
