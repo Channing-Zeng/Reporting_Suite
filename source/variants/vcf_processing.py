@@ -32,20 +32,22 @@ class Record(_Record):
         self._variant = None
         self._af = None
 
-    def get_main_sample(self):
+    def _get_main_sample(self, main_sample_index=None):
         if len(self._sample_indexes) == 0:
             return None
+        if main_sample_index is not None:
+            return self.samples[main_sample_index]
         try:
             sample_index = [sname.lower() for sname in self._sample_indexes]\
-                .index(self.sample_name_from_file.lower())
+                            .index(self.sample_name_from_file.lower())
         except ValueError:
             return self.samples[0]
         else:
             return self.samples[sample_index]
 
-    def bias(self):
+    def bias(self, main_sample_index):
         if self._bias is None:
-            bias_ = self.get_val('BIAS')
+            bias_ = self.get_val('BIAS', main_sample_index)
             if bias_ is not None:
                 if not isinstance(bias_, basestring) or len(bias_) != 3 or bias_[1] not in [';', ':', ',']:
                     err('BIAS: ' + str(bias_) + ' for variant ' + self.get_variant())
@@ -57,12 +59,12 @@ class Record(_Record):
             self._bias = bias_
         return self._bias
 
-    def af(self):
+    def af(self, main_sample_index):
         if self._af is None:
-            self._af = self.get_val('AF')
+            self._af = self.get_val('AF', main_sample_index)
         return self._af
 
-    def get_val(self, key, default=None):
+    def get_val(self, key, default=None, main_sample_index=None):
         if key in self.INFO:
             val = self.INFO[key]
             if not isinstance(val, basestring):
@@ -71,7 +73,7 @@ class Record(_Record):
                 except:
                     pass
         else:
-            main_sample = self.get_main_sample()
+            main_sample = self._get_main_sample(main_sample_index)
             if main_sample:
                 sample_data = main_sample.data._asdict()
                 if key in sample_data:
@@ -103,7 +105,7 @@ class Record(_Record):
         if self.ID and 'COSM' in self.ID:
             cls = 'COSMIC'
         elif self.ID and self.ID.startswith('rs'):
-            if self.check_clnsig:
+            if self.check_clnsig == 'significant':
                 cls = 'ClnSNP'
             else:
                 cls = 'dbSNP'
@@ -117,11 +119,11 @@ class Record(_Record):
     def check_clnsig(self):
         clnsig = self.INFO.get('CLNSIG')
         if not clnsig:
-            return 0
+            return 'no_clnsig'
 
         for c in self.INFO.get('CLNSIG'):
             if 4 <= c <= 6 or c == 255:
-                return 1
+                return 'significant'
             # 0 - Uncertain significance,
             # 1 - not provided,
             # 2 - Benign,
@@ -132,7 +134,7 @@ class Record(_Record):
             # 7 - histocompatibility,
             # 255 - other 
 
-        return -1
+        return 'not_significant'
 
     def sample_field(self):
         return self.sample_name_from_file

@@ -170,7 +170,7 @@ def second_round(vcf_fpath, sample_name):
     cnf.main_sample_index = main_sample_index
 
     #TODO: tmp
-    res = _snpsift_annotate(cnf, cnf['clinvar'], 'clinvar', vcf_fpath)
+    res = _snpsift_annotate(cnf, cnf.get('clinvar'), 'clinvar', vcf_fpath)
     if not res:
         err('Could not annotate with clinvar.')
 
@@ -225,24 +225,29 @@ class Filtering:
             InfoFilter('signal_noise', 'SN', required=False),
             InfoFilter('mean_vd', 'VD', required=False)]
 
-        def dup_filter_check(rec):
+        def dup_filter_check(rec, main_sample_index):
             pstd = rec.get_val('PSTD')
-            bias = rec.bias()
+            bias = rec.bias(main_sample_index)
 
             # all variants from one position in reads
             if pstd is not None and bias is not None:
                 return not (pstd == 0 and bias[-1] != '0' and bias[-1] != '1')
             return True
 
-        def bias_filter_check(rec, cls):
-            return not (  # Filter novel variants with strand bias.
-                Filter.filt_cnf['bias'] is True and
-                cls in ['Novel', 'dbSNP'] and
-                rec.bias() and rec.bias() in ['2:1', '2:0']
-                and rec.af() < 0.3)
+        def bias_filter_check(rec, cls, main_sample_index):  # Filter novel variants with strand bias.
+            if not Filter.filt_cnf['bias'] is True:
+                return True  # I we don't need to check bias, just keep the variant
+
+            if not cls in ['Novel', 'dbSNP']:
+                return True  # Check only for novel and dnSNP
+
+            if not (rec.bias(main_sample_index) and rec.bias(main_sample_index) in ['2:1', '2:0']):
+                return True  # Variant has to have bias and with proper values
+
+            return rec.af(main_sample_index) >= 0.3
 
         def nonclnsnp_filter_check(rec, cls):
-            return not (rec.check_clnsig() == -1 or cls != 'COSMIC')
+            return not (rec.check_clnsig() == 'not_significant' or cls != 'COSMIC')
 
         def multi_filter_check(rec, var_n, frac, avg_af):
             return not (  # reject if novel and present in [fraction] samples
@@ -424,12 +429,13 @@ def proc_line_2nd_round(rec, cnf_, self_):
                  ', var_n = ' + str(var_info.occurence_num()) + ', n_sample = ' +
                  str(len(self_.sample_names)) + ', avg_af = ' + str(var_info.avg_af()))
 
-        if not self_.dup_filter.apply(rec):
+        if not self_.dup_filter.apply(rec, main_sample_index=cnf_.main_sample_index):
             info('Dup filter: variant = ' + rec.get_variant())
 
-        if rec.af() is not None:
+        if rec.af(cnf_.main_sample_index) is not None:
             if not self_.max_rate_filter.apply(rec, frac=frac):
-                info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' + str(rec.af()))
+                info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
+                     str(rec.af(cnf_.main_sample_index)))
 
         self_.control_filter.apply(rec)
 
@@ -439,13 +445,21 @@ def proc_line_2nd_round(rec, cnf_, self_):
         if caf:
             print caf
             cafs = caf[1:-1].split(',')
-            if cafs and len(cafs) > cnf_.main_sample_index:
-                gmaf = float(cafs[cnf_.main_sample_index])
-                req_maf = Filtering.filt_cnf.get('maf')
-                # if there's MAF with frequency, it'll be considered
-                # dbSNP regardless of COSMIC
-                if req_maf is not None and gmaf > req_maf:
-                    cls = 'dbSNP'
+            if len(cafs) == 0:
+                print 'Cafs = ' + str(caf) + ', caf = ' + str(cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
+            else:
+                allele_cafs = [c for c in cafs[1:] if c]
+                if len(allele_cafs) == 0:
+                    print 'Cafs = ' + str(caf) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
+                else:
+                    allele_cafs = map(float, allele_cafs)
+                    min_allele_caf = min(allele_cafs)
+                    req_maf = Filtering.filt_cnf.get('maf')
+
+                    # if there's MAF with frequency, it'll be considered
+                    # dbSNP regardless of COSMIC
+                    if req_maf is not None and min_allele_caf > req_maf:
+                        cls = 'dbSNP'
 
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
         # but not in ClnSNP or COSMIC.
@@ -454,8 +468,8 @@ def proc_line_2nd_round(rec, cnf_, self_):
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
 
-        self_.bias_filter.apply(rec, cls=cls)
-        self_.nonclnsnp_filter.apply(rec, cls=cls)
+        self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)       # dbSNP, Novel, and bias satisfied - keep
+        self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
 
     return rec
 

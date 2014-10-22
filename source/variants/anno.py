@@ -124,7 +124,11 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
 
 
 def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
-    step_greetings('Annotate with ' + dbname)
+    if not vcf_conf:
+        err('No database for ' + dbname + ', skipping.')
+        return None
+
+    step_greetings('Annotating with ' + dbname)
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
 
