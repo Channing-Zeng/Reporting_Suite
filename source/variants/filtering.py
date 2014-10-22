@@ -449,7 +449,8 @@ def proc_line_2nd_round(rec, cnf_, self_):
         # And then filter out all dbSNP variants that are significant according to Clinvar
         if 'CAF' in rec.INFO:
             vals = rec.INFO['CAF']
-            cafs = [''.join(c for c in v if c not in '[]') for v in vals]
+            
+            cafs = [''.join(c for c in v if c not in '[]') for v in vals if v]
             print cafs
             if len(cafs) == 0:
                 print 'cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + rec.get_variant() + ' in ' + sample_name
