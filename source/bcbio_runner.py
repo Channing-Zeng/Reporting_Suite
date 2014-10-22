@@ -496,7 +496,7 @@ class BCBioRunner:
                    self.ngscat]) \
                     or self.vardict in self.vardict_steps:
                 if not sample.bam or not verify_bam(sample.bam):
-                    err('Cannot run coverage reports (targetcov, qulimap, ngscat, vardict) without BAM files.')
+                    err('Cannot run coverage reports (targetcov, qualimap, ngscat, vardict) without BAM files.')
 
             # TargetCov reports
             if self.targetcov in self.steps:
@@ -664,11 +664,15 @@ class BCBioRunner:
 
         if self.combined_report in self.steps:
             wait_for_steps = []
+            # summaries
             wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
-            wait_for_steps += [self.targetcov_summary.job_name()] if self.targetcov_summary in self.steps else []
-            wait_for_steps += [self.ngscat_summary.job_name()] if self.ngscat_summary in self.steps else []
-            wait_for_steps += [self.qualimap_summary.job_name()] if self.qualimap_summary in self.steps else []
+            wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
             wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
+            # and individual reports too
+            wait_for_steps += [self.varqc.job_name(s.name) for s in self.bcbio_structure.samples if self.varqc in self.steps]
+            wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+            wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+            wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
             self._submit_job(
                 self.combined_report,
                 wait_for_steps=wait_for_steps

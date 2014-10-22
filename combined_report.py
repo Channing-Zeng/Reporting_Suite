@@ -37,10 +37,8 @@ def make_combined_report(cnf, bcbio_structure):
     general_section = ReportSection('general_section', '', [])
     general_records = []
     for (step_name, step_summary_dir) in [(bcbio_structure.fastqc_name, bcbio_structure.fastqc_summary_dir),
-                                          (bcbio_structure.targetseq_name, bcbio_structure.targetseq_summary_dir),
-                                          (bcbio_structure.varqc_name, bcbio_structure.varqc_summary_dir),
-                                          (bcbio_structure.ngscat_name, bcbio_structure.ngscat_summary_dir),
-                                          (bcbio_structure.qualimap_name, bcbio_structure.qualimap_summary_dir)]:
+                                          (bcbio_structure.targqc_name, bcbio_structure.targqc_summary_dir),
+                                          (bcbio_structure.varqc_name, bcbio_structure.varqc_summary_dir)]:
         summary_report_fpath = join(bcbio_structure.date_dirpath, step_summary_dir, step_name + '.html')
         if verify_file(summary_report_fpath):
             cur_metric = Metric(step_name + ' summary', common=True)
@@ -55,33 +53,43 @@ def make_combined_report(cnf, bcbio_structure):
     # varQC reports -- special case
     callers = bcbio_structure.variant_callers.values()
     if len(callers) == 0:
-        vq_htmls_by_sample = None
+        varqc_htmls_by_sample = None
     elif len(callers) == 1:
-        vq_htmls_by_sample = callers[0].find_fpaths_by_sample(bcbio_structure.varqc_dir,
+        varqc_htmls_by_sample = callers[0].find_fpaths_by_sample(bcbio_structure.varqc_dir,
                                                               bcbio_structure.varqc_name, 'html')
     else:
-        vq_htmls_by_sample = OrderedDict()
+        varqc_htmls_by_sample = OrderedDict()
         for sample in bcbio_structure.samples:
-            vq_htmls_by_sample[sample.name] = OrderedDict()
+            varqc_htmls_by_sample[sample.name] = OrderedDict()
         for caller in callers:
             for sample, fpath in caller.find_fpaths_by_sample(bcbio_structure.varqc_dir,
                                                               bcbio_structure.varqc_name, 'html').items():
-                vq_htmls_by_sample[sample][caller.name] = fpath
+                varqc_htmls_by_sample[sample][caller.name] = fpath
+
+    # targQC reports -- another special case
+    targetcov_htmls_by_sample = bcbio_structure.find_targetcov_reports_by_sample('html')
+    ngscat_htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
+    qualimap_htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
+    targqc_htmls_by_sample = OrderedDict()
+    for sample in bcbio_structure.samples:
+        targqc_htmls_by_sample[sample.name] = OrderedDict()
+        if sample.name in targetcov_htmls_by_sample:
+            targqc_htmls_by_sample[sample.name]['targetcov'] = targetcov_htmls_by_sample[sample.name]
+        if sample.name in ngscat_htmls_by_sample:
+            targqc_htmls_by_sample[sample.name]['ngscat'] = ngscat_htmls_by_sample[sample.name]
+        if sample.name in qualimap_htmls_by_sample:
+            targqc_htmls_by_sample[sample.name]['qualimap'] = qualimap_htmls_by_sample[sample.name]
+
     # other reports
-    fc_htmls_by_sample = bcbio_structure.get_fastqc_report_fpaths_by_sample()
-    tc_htmls_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('html')
-    nc_htmls_by_sample = bcbio_structure.get_ngscat_report_fpaths_by_sample()
-    qm_htmls_by_sample = bcbio_structure.get_qualimap_report_fpaths_by_sample()
+    fastqc_htmls_by_sample = bcbio_structure.get_fastqc_report_fpaths_by_sample()
 
     sample_reports_records = dict()
     for sample in bcbio_structure.samples:
         sample_reports_records[sample.name] = list(general_records)
 
-    for (step_name, htmls_by_sample) in [(bcbio_structure.fastqc_name, fc_htmls_by_sample),
-                                         (bcbio_structure.targetseq_name, tc_htmls_by_sample),
-                                         (bcbio_structure.varqc_name, vq_htmls_by_sample),
-                                         (bcbio_structure.ngscat_name, nc_htmls_by_sample),
-                                         (bcbio_structure.qualimap_name, qm_htmls_by_sample)]:
+    for (step_name, htmls_by_sample) in [(bcbio_structure.fastqc_name, fastqc_htmls_by_sample),
+                                         (bcbio_structure.targqc_name, targqc_htmls_by_sample),
+                                         (bcbio_structure.varqc_name, varqc_htmls_by_sample)]:
         if htmls_by_sample:
             cur_metric = Metric(step_name)
             individual_reports_section.add_metric(cur_metric)
