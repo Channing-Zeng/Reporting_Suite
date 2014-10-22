@@ -253,16 +253,15 @@ class Filtering:
             return rec.check_clnsig() != 'not_significant'
 
         def multi_filter_check(rec, var_n, frac, avg_af):
-            return not (  # reject if novel and present in [fraction] samples
-                rec.ID is None and
+            if (rec.ID is None and      # reject if novel and present in [fraction] samples
                 frac > Filter.filt_cnf['fraction'] and
                 var_n >= Filter.filt_cnf['sample_cnt'] and
-                avg_af < Filter.filt_cnf['freq'])
+                avg_af < Filter.filt_cnf['freq']):
+                return False
 
         def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
-            return not (
-                frac >= Filter.filt_cnf['max_ratio'] and
-                rec.get_val('AF') < 0.3)
+            if frac >= Filter.filt_cnf['max_ratio'] and rec.get_val('AF') < 0.3:
+                return False
 
         # self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
         self.control_filter = CnfFilter('control', lambda rec:
@@ -453,11 +452,11 @@ def proc_line_2nd_round(rec, cnf_, self_):
             print caf
             cafs = caf[1:-1].split(',')
             if len(cafs) == 0:
-                print 'Cafs = ' + str(caf) + ', caf = ' + str(cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
+                print 'cafs = ' + str(cafs) + ', caf = ' + str(caf) + ' for ' + rec.get_variant() + ' in ' + sample_name
             else:
                 allele_cafs = [c for c in cafs[1:] if c]
                 if len(allele_cafs) == 0:
-                    print 'Cafs = ' + str(caf) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
+                    print 'cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name
                 else:
                     allele_cafs = map(float, allele_cafs)
                     min_allele_caf = min(allele_cafs)
@@ -474,6 +473,8 @@ def proc_line_2nd_round(rec, cnf_, self_):
             if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
                 if eff.pos / int(eff.aal) < 0.95:
                     cls = 'dbSNP_del'
+
+
 
         self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
         self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
