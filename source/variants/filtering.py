@@ -447,12 +447,12 @@ def proc_line_2nd_round(rec, cnf_, self_):
         # Then we check if the calss is deleterious dnSNP
         # Then we filter for strand bias only variants with Novel and dbSNP class
         # And then filter out all dbSNP variants that are significant according to Clinvar
-        caf = rec.get_val('CAF')
-        if caf:
-            print caf
-            cafs = caf[1:-1].split(',')
+        if 'CAF' in rec.INFO:
+            vals = rec.INFO['CAF']
+            cafs = [''.join(c for c in v if c not in '[]') for v in vals]
+            print cafs
             if len(cafs) == 0:
-                print 'cafs = ' + str(cafs) + ', caf = ' + str(caf) + ' for ' + rec.get_variant() + ' in ' + sample_name
+                print 'cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + rec.get_variant() + ' in ' + sample_name
             else:
                 allele_cafs = [c for c in cafs[1:] if c]
                 if len(allele_cafs) == 0:
@@ -465,7 +465,10 @@ def proc_line_2nd_round(rec, cnf_, self_):
                     # if there's MAF with frequency, it'll be considered
                     # dbSNP regardless of COSMIC
                     if req_maf is not None and min_allele_caf > req_maf:
+                        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class was ' + cls + ', becomes dbSNP')
                         cls = 'dbSNP'
+                    else:
+                        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + cls)
 
         # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
         # but not in ClnSNP or COSMIC.
