@@ -25,7 +25,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
-         overwrite=False, check_output=False, return_proc=False, print_stderr=True):
+         overwrite=False, check_output=False, return_proc=False, print_stderr=True,
+         return_err_code=False):
     """
     Required arguments:
     ------------------------------------------------------------
@@ -50,6 +51,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     overwrite                       overwrite even if reuse_intermediate=True
     check_output                    subprocess.check_output; returns stdout
     return_proc                     proc = subprocess.Popen; returns proc
+    return_err_code                 if return code !=0, return this code (only if exit_on_error=False)
 
     ------------------------------------------------------------
     """
@@ -159,7 +161,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     clean()
                     sys.exit(1)
                 else:
-                    return None
+                    if return_err_code:
+                        return ret_code
+                    else:
+                        return None
             return output_fpath
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE

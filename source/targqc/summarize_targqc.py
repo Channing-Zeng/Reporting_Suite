@@ -3,7 +3,7 @@ from os.path import relpath, join
 from os import listdir
 import shutil
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
-from source.logger import step_greetings, info, send_email, critical
+from source.logger import step_greetings, info, send_email, critical, warn
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
@@ -154,17 +154,23 @@ def summary_reports(cnf, bcbio_structure):
             for sample_name, html_fpath in qualimap_htmls_by_sample.items():
                 rows += [[sample_name, html_fpath]]
             data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
-            cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
-            call(cnf, cmdline)
-            targqc_full_report.plots = []
-            qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
-            if verify_dir(qualimap_plots_dirpath):
-                shutil.move(qualimap_plots_dirpath, plots_dirpath)
-            for plot_fpath in listdir(plots_dirpath):
-                plot_fpath = join(plots_dirpath, plot_fpath)
-                if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
-                    targqc_full_report.plots.append(relpath(plot_fpath, cnf.output_dir))
-            shutil.rmtree(qualimap_output_dir)  # TODO: make nicer
+            cmdline = '{qualimap} multi-bamqc --data TEST {data_file} -outdir {qualimap_output_dir}'.format(**locals())
+            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True) #, check_output=True)
+            if ret_code is None or ret_code == 0:
+                targqc_full_report.plots = []
+                qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
+                if verify_dir(qualimap_plots_dirpath):
+                    shutil.move(qualimap_plots_dirpath, plots_dirpath)
+                for plot_fpath in listdir(plots_dirpath):
+                    plot_fpath = join(plots_dirpath, plot_fpath)
+                    if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
+                        targqc_full_report.plots.append(relpath(plot_fpath, cnf.output_dir))
+            else:
+                warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
+            if verify_dir(qualimap_output_dir):
+                shutil.rmtree(qualimap_output_dir)  # TODO: make nicer
+        else:
+            warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
     final_summary_report_fpaths = targqc_full_report.save_into_files(
         cnf.output_dir, bcbio_structure.targqc_name,
