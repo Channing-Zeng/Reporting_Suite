@@ -3,17 +3,21 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection
 
 metric_storage = MetricStorage(
     sections=[
-        ReportSection('basic', '', [
+        ReportSection('basic_metrics', '', [
             Metric('Number reads',                       'Reads',              'Number of mapped reads'),
             Metric('% target bases with coverage >= 1x', 'Target covered',     '% target bases with coverage >= 1x'),
-            Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
             Metric('% reads on target',                  '% reads on target',  '% reads on target'),
+        ]),
+        ReportSection('on_off_metrics', 'ON/OFF target', [
             Metric('Duplicated reads on/off target',     'Duplicated reads',   '% duplicated reads on/off target. '
                                                                                'Percentage of duplicated on-target reads normally should be greater '
                                                                                'than the percentage of duplicated off-target reads',            quality='Equal'),
+        ]),
+        ReportSection('depth_metrics', '', [
+            Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
             Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
-            Metric('Coverage per position',              'Cov. per position',  'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
-            Metric('Standard deviation of coverage',     'Cov. std. dev.',     'Standard deviation of coverage within regions',                 quality='Less is better')
+            Metric('Coverage per position',              'Cov per bp',         'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),
+            Metric('Standard deviation of coverage',     'Std dev mean',       'Mean of normalized standard deviations of the coverage within target regions.', quality='Less is better')
         ])
     ]
 )

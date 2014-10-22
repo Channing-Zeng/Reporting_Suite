@@ -150,7 +150,7 @@ header_metric_storage = MetricStorage(
         Metric('Bases in target', short_name='Target bp', common=True)
     ]),
     sections_by_name=OrderedDict(
-        basic_metrics=ReportSection('basic_metrics', '', [
+        basic_metrics=ReportSection('basic_metrics', 'General', [
             Metric('Reads'),
             Metric('Mapped reads', short_name='Mapped'),
             Metric('Percentage of mapped reads', short_name='%', unit='%'),
