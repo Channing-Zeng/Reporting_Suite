@@ -85,8 +85,7 @@ class BCBioRunner:
         self.steps.extend([
             self.varqc_summary,
             self.varqc_after_summary,
-            self.targetcov_summary,
-            self.ngscat_summary,
+            self.fastqc_summary,
             self.targqc_summary,
             self.combined_report,
         ])
@@ -103,8 +102,6 @@ class BCBioRunner:
                 self.seq2c,
                 self.ngscat,
                 self.qualimap,
-                self.qualimap_summary,
-                self.fastqc_summary,
             ] if contains(s.name, cnf.steps)])
 
         # self.vardict_steps.extend(
@@ -239,33 +236,12 @@ class BCBioRunner:
             dir_name='mongo_loader',
             paramln='-project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
-        self.targetcov_summary = Step(cnf, run_id,
-            name='TargetCov_summary', short_name='tcs',
-            interpreter='python',
-            script='targetcov_summary',
-            dir_name=BCBioStructure.targetseq_summary_dir,
-            paramln=cnfs_line + ' ' + self.final_dir
-        )
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
             script='seq2c',
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir
-        )
-        self.ngscat_summary = Step(cnf, run_id,
-            name='ngsCAT_summary', short_name='ncs',
-            interpreter='python',
-            script='ngscat_summary',
-            dir_name=BCBioStructure.ngscat_summary_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
-        )
-        self.qualimap_summary = Step(cnf, run_id,
-            name='QualiMap_summary', short_name='qms',
-            interpreter='python',
-            script='qualimap_summary',
-            dir_name=BCBioStructure.qualimap_summary_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
         )
         self.targqc_summary = Step(
             cnf, run_id,
@@ -624,14 +600,6 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varqc_after in self.steps])
 
-        if self.targetcov_summary in self.steps:
-            self._submit_job(
-                self.targetcov_summary,
-                wait_for_steps=[
-                    self.targetcov.job_name(s.name)
-                    for s in self.bcbio_structure.samples
-                    if self.targetcov in self.steps])
-
         if self.seq2c in self.steps:
             self._submit_job(
                 self.seq2c,
@@ -639,22 +607,6 @@ class BCBioRunner:
                     self.targetcov.job_name(s.name)
                     for s in self.bcbio_structure.samples
                     if self.targetcov in self.steps])
-
-        if self.ngscat_summary in self.steps:
-            self._submit_job(
-                self.ngscat_summary,
-                wait_for_steps=[
-                    self.ngscat.job_name(s.name)
-                    for s in self.bcbio_structure.samples
-                    if self.ngscat in self.steps])
-
-        if self.qualimap_summary in self.steps:
-            self._submit_job(
-                self.qualimap_summary,
-                wait_for_steps=[
-                    self.qualimap.job_name(s.name)
-                    for s in self.bcbio_structure.samples
-                    if self.qualimap in self.steps])
 
         if self.targqc_summary in self.steps:
             wait_for_steps = []
