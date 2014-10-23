@@ -90,8 +90,10 @@ foreach my $s (@samples) {
     $samplemedian{ $s } = median( \@tmp );
 }
 
+my $a;
 while( my ($k, $v) = each %norm1) {
     foreach my $s (@samples) {
+        $a = $b - 1;
         $norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
         $norm2{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
         $norm3{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));

@@ -6,9 +6,9 @@ from os.path import join
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
-from source.calling_process import call_subprocess, call_pipe
+from source.calling_process import call_subprocess, call_pipe, call
 from source.file_utils import verify_file
-from source.logger import info, err, step_greetings, critical, send_email
+from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports
 from source.tools_from_cnf import get_script_cmdline
@@ -35,14 +35,8 @@ def cnv_reports(cnf, bcbio_structure):
             cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
 
     info('Calculating normalized coverages for CNV...')
-    amplicon_cnv_rows, gene_cnv_rows = _summarize_copy_number(cnf, bcbio_structure,
+    cnv_gene_ampl_report_fpath, cnv_ampl_report_fpath = _summarize_copy_number(cnf, bcbio_structure,
         gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
-
-    cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath = None, None
-    if amplicon_cnv_rows:
-        cnv_ampl_report_fpath = write_tsv_rows(amplicon_cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons')
-    if gene_cnv_rows:
-        cnv_gene_ampl_report_fpath = write_tsv_rows(gene_cnv_rows, cnf.output_dir, BCBioStructure.seq2c_name)
 
     info()
     info('*' * 70)
@@ -111,16 +105,19 @@ def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_
 
     # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)
 
-    results_amplicon = None
-    # results_amplicon = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines)
-    results_gene_amplicon = run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_amplicon_summary_lines)
+    cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
+    cnv_gene_ampl_report_fpath = \
+        run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_amplicon_summary_lines, cnv_gene_ampl_report_fpath)
+
+    # cnv_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons.tsv')
+    # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
 
     # save_results_separate_for_samples(results)
 
-    return [results_amplicon, results_gene_amplicon]
+    return [cnv_gene_ampl_report_fpath, None]
 
 
-def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
+def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines, output_fpath):
     """
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
@@ -144,10 +141,8 @@ def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines):
     cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
     if not cov2cnv2: sys.exit(1)
     cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
-
-    proc = call_pipe(cnf, cmdline)
-    results = [l.split() for l in proc.stdout]
-    return results
+    if call(cnf, cmdline, output_fpath):
+        return output_fpath
 
 
 # def save_results_separate_for_samples(results):
