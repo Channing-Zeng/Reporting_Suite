@@ -404,7 +404,7 @@ class Reader(object):
             try:
                 if self.infos[ID].num == 1 and entry_type not in ('Flag',):
                     val = val[0]
-            except KeyError:
+            except (KeyError, TypeError), e:
                 pass
 
             retdict[ID] = val
