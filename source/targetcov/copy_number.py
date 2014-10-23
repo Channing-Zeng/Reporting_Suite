@@ -22,7 +22,7 @@ def cnv_reports(cnf, bcbio_structure):
 
     info('Collecting sample reports...')
     summary_report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
-    gene_report_fpaths_by_sample = bcbio_structure.get_gene_report_fpaths_by_sample()
+    gene_report_fpaths_by_sample = bcbio_structure.get_gene_report_tsv_fpaths_by_sample()
 
     for sample in bcbio_structure.samples:
         if (not verify_file(summary_report_fpath_by_sample.get(sample.name)) or

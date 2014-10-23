@@ -202,6 +202,7 @@ class BCBioStructure:
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
     detail_highcov_gene_report_baseending = '.details.high_cov.gene'
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
+    detail_gene_report_tsv_ending = detail_gene_report_baseending + '.tsv'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'
@@ -465,6 +466,13 @@ class BCBioStructure:
             lambda sample: sample.name + '.' +
                            BCBioStructure.targetseq_dir +
                            BCBioStructure.detail_gene_report_ending)
+
+    def get_gene_report_tsv_fpaths_by_sample(self):
+        return self._get_fpaths_per_sample(
+            BCBioStructure.targetseq_dir,
+            lambda sample: sample.name + '.' +
+                           BCBioStructure.targetseq_dir +
+                           BCBioStructure.detail_gene_report_tsv_ending)
 
     def find_targetcov_reports_by_sample(self, ext='json'):
         return dict((sname, verify_file(fpath))
