@@ -67,7 +67,7 @@ def _get_lines_by_region_type(report_fpath, region_type):
                 new_format = True
 
             if region_type in line:
-                ts = line.split()
+                ts = line.split('\t')
                 if new_format:
                     ts = ts[:5] + ts[7:10]  # Skipping Exon, Strand
                 else:
