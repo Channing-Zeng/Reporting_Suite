@@ -557,6 +557,10 @@ class Reader(object):
         else:
             ID = None
 
+        if len(row) <= 3:
+            print 'len(row) <= 3: ' + line
+            return None
+
         ref = row[3]
         alt = self._map(self._parse_alt, row[4].split(','))
 
