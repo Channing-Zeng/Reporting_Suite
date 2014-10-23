@@ -198,12 +198,12 @@ def remove_rejected(cnf, input_fpath):
         else:
             return None
 
-    out_fpath = iterate_vcf(cnf, input_fpath, _proc_rec, 'no_rej')
+    output_fpath = iterate_vcf(cnf, input_fpath, _proc_rec, 'no_rej')
 
-    if not verify_file(out_fpath):
+    if not verify_file(output_fpath):
         exit(1)
 
-    return out_fpath
+    return output_fpath
 
     #def __iter_file(l, i):
     #    if l.startswith('#'):

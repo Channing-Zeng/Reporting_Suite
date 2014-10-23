@@ -3,19 +3,14 @@ genome: hg19          ## Loads from "genomes" section from system_config yaml
 steps:
 #- VarAnnotate
 #- VarQC
-#- VarQC_summary
 #- VarFilter
 #- VarQC_postVarFilter
-#- VarQC_postVarFilter_summary
 #- TargetCov
 - Seq2C
-#- TargetCov_summary
 #- ngsCAT
-#- ngsCAT_summary
 #- QualiMap
 #- QualiMap_summary
 #- FastQC_summary
-#- Combined_report
 #- MongoLoader
 #- AbnormalCovReport
 

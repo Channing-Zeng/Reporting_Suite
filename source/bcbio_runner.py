@@ -35,6 +35,9 @@ class Step:
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
 
+    def __repr__(self):
+        return self.name
+
 
 class Steps(list):
     def __init__(self):
@@ -79,6 +82,15 @@ class BCBioRunner:
         normalize = lambda name: name.lower().replace('_', '').replace('-', '')
         contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
 
+        self.steps.extend([
+            self.varqc_summary,
+            self.varqc_after_summary,
+            self.targetcov_summary,
+            self.ngscat_summary,
+            self.targqc_summary,
+            self.combined_report,
+        ])
+
         self.steps.extend(
             [s for s in [
                 self.varqc,
@@ -86,19 +98,13 @@ class BCBioRunner:
                 self.varfilter_all,
                 self.mongo_loader,
                 self.varqc_after,
-                self.varqc_summary,
-                self.varqc_after_summary,
                 self.targetcov,
                 self.abnormal_regions,
                 self.seq2c,
                 self.ngscat,
                 self.qualimap,
-                self.targetcov_summary,
-                self.ngscat_summary,
                 self.qualimap_summary,
-                self.targqc_summary,
                 self.fastqc_summary,
-                self.combined_report,
             ] if contains(s.name, cnf.steps)])
 
         # self.vardict_steps.extend(
@@ -481,7 +487,8 @@ class BCBioRunner:
                          self.varqc,
                          self.varqc_after,
                          self.varannotate,
-                         self.mongo_loader])
+                         self.mongo_loader,
+                         self.abnormal_regions])
                 or self.vardict_steps):
                 continue
 
@@ -698,16 +705,20 @@ class BCBioRunner:
         if self.cnf.verbose:
             info('Done.')
 
-        msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name +
-               '. Log files for each jobs to track:']
-        lengths = []
-        for job in self.jobs:
-            lengths.append(len(job.name))
-        max_length = max(lengths)
+        if not self.jobs:
+            info()
+            info('No jobs submitted.')
+        else:
+            msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name +
+                   '. Log files for each jobs to track:']
+            lengths = []
+            for job in self.jobs:
+                lengths.append(len(job.name))
+            max_length = max(lengths)
 
-        for job in self.jobs:
-            msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
-        send_email('\n'.join(msg))
+            for job in self.jobs:
+                msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
+            send_email('\n'.join(msg))
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name,
                      steps=None, job_names_to_wait=None):

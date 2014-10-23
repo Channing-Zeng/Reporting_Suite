@@ -204,7 +204,7 @@ class BCBioStructure:
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
-    pass_filt_vcf_ending = '.anno.filt.passed.vcf'
+    pass_filt_vcf_ending = '.anno.filt.pass.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
     filt_maf_ending  = '.anno.filt.maf'
     var_dir          = 'var'
