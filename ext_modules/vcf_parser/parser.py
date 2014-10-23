@@ -572,6 +572,10 @@ class Reader(object):
             except ValueError:
                 qual = None
 
+        if len(row) <= 6:
+            print 'len(row) <= 6: ' + line
+            return None
+
         filt = row[6]
         if filt == '.':
             filt = None
