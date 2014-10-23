@@ -258,7 +258,8 @@ class Filtering:
                 var_n >= Filter.filt_cnf['sample_cnt'] and
                 avg_af < Filter.filt_cnf['freq']):
                 return False
-            return True
+            else:
+                return True
 
         def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
             if frac >= Filter.filt_cnf['max_ratio'] and rec.get_val('AF') < 0.3:
@@ -376,10 +377,9 @@ def proc_line_remove_prev_filter(rec, cnf_, self_):
 # Counting samples, variants and AF_by_vark
 def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
     # Strict filter of DP, QUAL, PMEAN
-
-    all_passed = all([f.apply(rec) for f in self_.round1_filters])
-    if not all_passed:
-        return None
+    for f in self_.round1_filters:
+        if not f.check(rec):
+            return None
 
     # For those who passed, collect controls, samples and af_by_varid
     samplename = cnf_.name
@@ -387,12 +387,11 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
     var_str = rec.get_variant()  # = tuple (chrom, pos, ref, alt)
 
     [f.apply(rec) for f in self_.round2_filters]
-
     min_freq_filter = self_.min_freq_filters[samplename]
     min_freq_filter.apply(rec)
 
     if samplename and self_.control and samplename == self_.control:
-        if not rec.is_rejected() or rec.cls() == 'Novel':
+        if not rec.is_rejected() and rec.cls() == 'Novel':
             # So that any novel variants showed up in control won't be filtered:
             control_vars.add(var_str)
 
@@ -451,7 +450,6 @@ def proc_line_2nd_round(rec, cnf_, self_):
         #   keep everything
 
         cls = rec.cls()
-
         if 'CAF' in rec.INFO:
             cls = process_cafs_for_dbsnp(rec, cls)
 
@@ -464,7 +462,7 @@ def proc_line_2nd_round(rec, cnf_, self_):
                     cls = 'dbSNP_del'
 
         self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
-        self_.nonclnsnp_filter.apply(rec, cls=cls)  # significant and not Cosmic - keep
+        self_.nonclnsnp_filter.apply(rec, cls=cls)
 
     return rec
 
