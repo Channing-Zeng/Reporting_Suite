@@ -558,7 +558,7 @@ class Reader(object):
             ID = None
 
         if len(row) <= 3:
-            print 'len(row) <= 3: ' + line
+            print 'len(row) <= 3: ' + line + '       | row = ' + str(row)
             return None
 
         ref = row[3]
@@ -573,7 +573,7 @@ class Reader(object):
                 qual = None
 
         if len(row) <= 6:
-            print 'len(row) <= 6: ' + line
+            print 'len(row) <= 6: ' + line + '       | row = ' + str(row)
             return None
 
         filt = row[6]
