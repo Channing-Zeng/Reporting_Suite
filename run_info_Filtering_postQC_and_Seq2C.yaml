@@ -3,14 +3,12 @@ genome: hg19          ## Loads from "genomes" section from system_config yaml
 steps:
 #- VarAnnotate
 #- VarQC
-#- VarFilter
-#- VarQC_postVarFilter
+- VarFilter
+- VarQC_postVarFilter
 #- TargetCov
-#- Seq2C
+- Seq2C
 #- ngsCAT
 #- QualiMap
-- QualiMap_summary
-- FastQC_summary
 #- MongoLoader
 #- AbnormalCovReport
 
@@ -39,10 +37,11 @@ variant_filtering:
   fraction:           0.4
   sample_cnt:         10
   freq:               0.15
-  count_undetermined: True    # Undeteremined won't be counted for the sample count.
+  count_undetermined: True    # Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
 
   max_ratio:          1       # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
   min_freq:           0.05    # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
+  # If min_allele_fraction is provided in the bcbio-nextgen YAML, that value is taken instead.
   mean_mq:            20      # The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified _mean_mq_.
 
   bias:               False   # Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
@@ -61,6 +60,7 @@ quality_control:
   novelty: ['known', 'novel', 'all']
   db_for_summary: cosmic
   variant_distribution_scale: 1000  ## in kilobases
+
 
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
@@ -139,6 +139,10 @@ oncomine:
   - om_MutClass
   - om_MutClassPC
 
+clinvar:
+  annotation:
+  - CLNSIG  # Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other
+
 snpeff:
   clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
   cancer: False
@@ -200,7 +204,7 @@ tsv_fields:
 - QD                            : QualityByDepth
 - ReadPosRankSum                : ReadPosRankSum
 
-## FORMAT fields for the sample
+## FORMAT fields for the sample  # * will be replaced with the tumor sample ID
 - GEN[*].GT                     : Genotype
 #- GEN[*].FT                     : GenotypeWasCalled
 #- GEN[*].GL                     : GenotypeLikelihoods
@@ -229,9 +233,9 @@ tsv_fields:
 - KGPROD                        : Has1000GenomeSubmission
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
-- CAF                           : CAF
+- CAF                           : PerAlleleFrequencies  # An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter
 - COMMON                        : CommonVariant
-# - CLNSIG                      : ClinicalSignificance
+- CLNSIG                        : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
 # - MAF                         : GlobalMinorAlleleFrequency
 # - CDA                         : InClinicalDiagnosticAssay

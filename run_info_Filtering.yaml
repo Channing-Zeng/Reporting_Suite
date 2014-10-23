@@ -9,8 +9,6 @@ steps:
 #- Seq2C
 #- ngsCAT
 #- QualiMap
-#- QualiMap_summary
-#- FastQC_summary
 #- MongoLoader
 #- AbnormalCovReport
 

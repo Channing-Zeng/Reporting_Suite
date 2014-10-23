@@ -9,7 +9,6 @@ steps:
 - Seq2C
 - ngsCAT
 #- QualiMap
-- Combined_report
 #- MongoLoader
 #- AbnormalCovReport
 
