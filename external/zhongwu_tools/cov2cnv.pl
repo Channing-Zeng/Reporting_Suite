@@ -3,8 +3,7 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use lib '../../ext_modules/perl_modules/';
-use Statistics::Basic;
+use Stats::Basic;
 use Getopt::Std;
 use strict;
 
@@ -25,7 +24,7 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $stat = new Statistics::Basic;
+my $stat = new Stats::Basic;
 my $meanreads = $stat->mean(\@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
