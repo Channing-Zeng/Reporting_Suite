@@ -86,7 +86,9 @@ my $meddepth = median(\@depth);
 my %factor2;  # Gene factor
 while( my ($k, $v) = each %norm1) {
     my @t = values %$v;
-    $factor2{ $k } = median(\@t) ? $meddepth/median(\@t) : 0;
+    my $a = median(\@t);
+#    print STDERR "$a\n";
+    $factor2{ $k } = median(\@t) != 0 ? $meddepth/median(\@t) : 0;
 }
 my %samplemedian;
 my @samples = keys %samples;
