@@ -5,6 +5,7 @@ import gzip
 import sys
 import itertools
 import codecs
+import traceback
 
 try:
     from collections import OrderedDict
@@ -551,58 +552,63 @@ class Reader(object):
     def next(self):
         '''Return the next record in the file.'''
         line = self.reader.next()
-        row = re.split(self._separator, line.rstrip())
-        chrom = row[0]
-        if self._prepend_chr:
-            chrom = 'chr' + chrom
-        pos = int(row[1])
-
-        if row[2] != '.':
-            ID = row[2]
-        else:
-            ID = None
-
-        if len(row) <= 3:
-            print 'len(row) <= 3: ' + line + '       | row = ' + str(row)
-            return None
-
-        ref = row[3]
-        alt = self._map(self._parse_alt, row[4].split(','))
-
         try:
-            qual = int(row[5])
-        except ValueError:
+            row = re.split(self._separator, line.rstrip())
+            chrom = row[0]
+            if self._prepend_chr:
+                chrom = 'chr' + chrom
+            pos = int(row[1])
+
+            if row[2] != '.':
+                ID = row[2]
+            else:
+                ID = None
+
+            if len(row) <= 3:
+                print 'len(row) <= 3: ' + line + '       | row = ' + str(row)
+                return None
+
+            ref = row[3]
+            alt = self._map(self._parse_alt, row[4].split(','))
+
             try:
-                qual = float(row[5])
+                qual = int(row[5])
             except ValueError:
-                qual = None
+                try:
+                    qual = float(row[5])
+                except ValueError:
+                    qual = None
 
-        if len(row) <= 6:
-            print 'len(row) <= 6: ' + line + '       | row = ' + str(row)
-            return None
+            if len(row) <= 6:
+                print 'len(row) <= 6: ' + line + '       | row = ' + str(row)
+                return None
 
-        filt = row[6]
-        if filt == '.':
-            filt = None
-        elif filt == 'PASS':
-            filt = []
+            filt = row[6]
+            if filt == '.':
+                filt = None
+            elif filt == 'PASS':
+                filt = []
+            else:
+                filt = filt.split(';')
+            info = self._parse_info(row[7])
+
+            try:
+                fmt = row[8]
+            except IndexError:
+                fmt = None
+
+            record = _Record(chrom, pos, ID, ref, alt, qual, filt,
+                    info, fmt, self._sample_indexes)
+
+            if fmt is not None:
+                samples = self._parse_samples(row[9:], fmt, record)
+                record.samples = samples
+        except:
+            print line
+            traceback.print_exc()
+            sys.exit(1)
         else:
-            filt = filt.split(';')
-        info = self._parse_info(row[7])
-
-        try:
-            fmt = row[8]
-        except IndexError:
-            fmt = None
-
-        record = _Record(chrom, pos, ID, ref, alt, qual, filt,
-                info, fmt, self._sample_indexes)
-
-        if fmt is not None:
-            samples = self._parse_samples(row[9:], fmt, record)
-            record.samples = samples
-
-        return record
+            return record
 
     def fetch(self, chrom, start, end=None):
         """ fetch records from a Tabix indexed VCF, requires pysam
