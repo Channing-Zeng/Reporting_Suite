@@ -3,6 +3,8 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
+use lib '../ext_modules/perl_modules/';
+use Statistics::Basic;
 use Getopt::Std;
 use strict;
 
@@ -10,24 +12,24 @@ our ($opt_c, $opt_a, $opt_i);
 
 getopts( 'aic:' );
 
-sub median {
-    my @vals = sort {$a <=> $b} @_;
-    my $len = @vals;
-    if($len%2) #odd?
-    {
-        return $vals[int($len/2)];
-    }
-    else #even
-    {
-        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
-    }
-}
+#sub median {
+#    my @vals = sort {$a <=> $b} @_;
+#    my $len = @vals;
+#    if($len%2) #odd?
+#    {
+#        return $vals[int($len/2)];
+#    }
+#    else #even
+#    {
+#        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+#    }
+#}
 
-sub mean {
-    my $result;
-    foreach (@_) { $result += $_ }
-    return $result / @_;
-}
+#sub mean {
+#    my $result;
+#    foreach (@_) { $result += $_ }
+#    return $result / @_;
+#}
 
 my $CNT = shift;
 my %cnt;
@@ -42,7 +44,8 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $meanreads = mean @cnt;
+my $stat = new Statistics::Basic;
+my $meanreads = $stat->mean(\@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
     $factor{ $k } = $meanreads/$v;
@@ -79,11 +82,11 @@ while(my($k, $v) = each %data) {
     }
 }
 
-my $meddepth = median(\@depth);
+my $meddepth = $stat->median(\@depth);
 my %factor2;  # Gene factor
 while( my ($k, $v) = each %norm1) {
     my @t = values %$v;
-    $factor2{ $k } = median(\@t) ? $meddepth/median(\@t) : 0;
+    $factor2{ $k } = $stat->median(\@t) ? $meddepth/$stat->median(\@t) : 0;
 }
 my %samplemedian;
 my @samples = keys %samples;
@@ -92,7 +95,7 @@ foreach my $s (@samples) {
     while( my ($k, $v) = each %norm1 ) {
         push( @tmp, $v->{ $s } );
     }
-    $samplemedian{ $s } = median( \@tmp );
+    $samplemedian{ $s } = $stat->median( \@tmp );
 }
 
 my $a;
@@ -115,7 +118,7 @@ while( my ($k, $v) = each %norm2) {
         if ( $opt_c ) {
             my @controls = split(/:/, $opt_c);
             my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-            my $cntl_ave = mean \@tcntl ;
+            my $cntl_ave = $stat->mean( \@tcntl );
             print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
             #print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$norm1b{ $k }->{ $opt_c })/log(2));
         }
