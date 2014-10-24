@@ -699,7 +699,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             bam_fpath=sample.bam,
             transcripts_fpath=cnf.transcripts_fpath,
             normal_sample_name=sample.normal_match.name if sample.normal_match else None)
-        # if isfile(final_maf_fpath): os.remove(final_maf_fpath)
+        if isfile(final_maf_fpath): os.remove(final_maf_fpath)
         shutil.copy(maf_fpath, final_maf_fpath)
         info('-' * 70)
         info()
