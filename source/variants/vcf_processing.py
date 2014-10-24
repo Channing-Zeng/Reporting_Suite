@@ -391,7 +391,7 @@ def fix_chromosome_names(cnf, vcf_fpath):
     if not verify_file(out_fpath):
         err('Could not run fix_chromosome_names')
 
-    return out_fpath
+    return vcf_fpath
 
 
 def vcf_one_per_line(cnf, vcf_fpath):
