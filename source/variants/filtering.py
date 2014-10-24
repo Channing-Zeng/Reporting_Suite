@@ -677,7 +677,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             final_tsv_fpath = None
         else:
             if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
-        shutil.copy(tsv_fpath, final_tsv_fpath)
+            shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
         final_tsv_fpath = None
 

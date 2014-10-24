@@ -11,17 +11,22 @@ our ($opt_c, $opt_a, $opt_i);
 getopts( 'aic:' );
 
 sub median {
-    my @sorted = sort @_;
-    @sorted[($#sorted / 2)];
+    my @vals = sort {$a <=> $b} @_;
+    my $len = @vals;
+    if($len%2) #odd?
+    {
+        return $vals[int($len/2)];
+    }
+    else #even
+    {
+        return ($vals[int($len/2)-1] + $vals[int($len/2)])/2;
+    }
 }
 
 sub mean {
-    my @arr = @_;
-    my $sum = 0;
-    for ( @arr ) {
-        $sum += $_;
-    }
-    $sum / $#arr;
+    my $result;
+    foreach (@_) { $result += $_ }
+    return $result / @_;
 }
 
 my $CNT = shift;
@@ -37,7 +42,7 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $meanreads = mean(@cnt);
+my $meanreads = mean @cnt;
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
     $factor{ $k } = $meanreads/$v;
@@ -93,7 +98,6 @@ foreach my $s (@samples) {
 my $a;
 while( my ($k, $v) = each %norm1) {
     foreach my $s (@samples) {
-        $a = $b - 1;
         $norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
         $norm2{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
         $norm3{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
@@ -111,7 +115,7 @@ while( my ($k, $v) = each %norm2) {
         if ( $opt_c ) {
             my @controls = split(/:/, $opt_c);
             my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-            my $cntl_ave = mean( \@tcntl );
+            my $cntl_ave = mean \@tcntl ;
             print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
             #print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$norm1b{ $k }->{ $opt_c })/log(2));
         }
