@@ -466,7 +466,7 @@ class Reader(object):
 
                 if i < len(samp_fmt._nums):
                     print 'Error: i = ' + str(i) + ', samp_fmt._nums = ' + str(samp_fmt._nums) + \
-                          'nfields = ' + nfields + ', samp_fmt._fields = ' + str(samp_fmt._fields) + \
+                          'nfields = ' + int(nfields) + ', samp_fmt._fields = ' + str(samp_fmt._fields) + \
                           'sample = ' + str(sample)
                     exit()
                 entry_num = samp_fmt._nums[i]
