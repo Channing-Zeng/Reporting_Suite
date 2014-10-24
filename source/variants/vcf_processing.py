@@ -389,7 +389,7 @@ def fix_chromosome_names(cnf, vcf_fpath):
     out_fpath = iterate_vcf(cnf, vcf_fpath, _proc_rec, 'chr')
 
     if not verify_file(out_fpath):
-        critical()
+        err('Could not run fix_chromosome_names')
 
     return out_fpath
 
