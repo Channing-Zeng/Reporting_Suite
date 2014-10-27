@@ -650,7 +650,7 @@ class BCBioRunner:
                             self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                             path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
-                            project=self.bcbio_structure.final_dirpath)
+                            project=self.bcbio_structure.project_name)
 
         if not self.cnf.verbose:
             print ''
