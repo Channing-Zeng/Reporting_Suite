@@ -139,8 +139,8 @@ class BCBioRunner:
              ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
              '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
              '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\' ')
-        if self.cnf.transcripts_fpath:
-            anno_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
+        # if self.cnf.transcripts_fpath:
+        #     anno_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
