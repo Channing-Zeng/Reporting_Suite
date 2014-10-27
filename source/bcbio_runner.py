@@ -234,7 +234,7 @@ class BCBioRunner:
             interpreter='java',
             script='vcf_loader',
             dir_name='mongo_loader',
-            paramln='-project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
+            paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
