@@ -97,7 +97,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:
                     if not silent:
-                        info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                        info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
                     stderr = subprocess.PIPE
                 else:
@@ -172,7 +172,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 # STDOUT TO TO FILE
                 if stdout_to_outputfile:
                     if not silent:
-                        info(cmdl + ' > ' + out_fpath + (' < ' + stdin_fpath if stdin_fpath else ''))
+                        info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
                     stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
                 else:

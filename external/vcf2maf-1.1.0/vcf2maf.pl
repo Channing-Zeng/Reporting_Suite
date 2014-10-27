@@ -127,7 +127,7 @@ my @maf_header = qw(
 
 # Add extra columns to the MAF depending on whether we used VEP or snpEff
 my @vepcsq_cols = qw( Allele Gene Feature Feature_type Consequence cDNA_position CDS_position Protein_position Amino_acids Codons Existing_variation AA_MAF EA_MAF ALLELE_NUM RefSeq EXON INTRON MOTIF_NAME MOTIF_POS HIGH_INF_POS MOTIF_SCORE_CHANGE DISTANCE STRAND CLIN_SIG CANONICAL SYMBOL SYMBOL_SOURCE SIFT PolyPhen GMAF BIOTYPE ENSP DOMAINS CCDS HGVSc HGVSp AFR_MAF AMR_MAF ASN_MAF EUR_MAF PUBMED );
-my @snpeff_cols = qw( Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Rank Genotype_Number );
+my @snpeff_cols = qw( Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Rank Genotype_Number Warnings Errors );
 push( @maf_header, ( $vep_anno ? @vepcsq_cols : @snpeff_cols ));
 
 # Parse through each variant in the annotated VCF, pull out CSQ/EFF from the INFO column, and choose
