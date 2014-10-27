@@ -347,6 +347,16 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
                    bam_fpath=None, normal_sample_name=None):
     step_greetings('Converting to MAF')
 
+    if transcripts_fpath:
+        transcripts_fpath_copy = join(cnf.work_dir, tumor_sample_name + '_' + basename(transcripts_fpath))
+        if isfile(transcripts_fpath_copy) and not file_exists(transcripts_fpath_copy):
+            os.remove(transcripts_fpath_copy)
+
+        if not file_exists(transcripts_fpath_copy):
+            info('Copying transcripts file ' + transcripts_fpath + ' to ' + transcripts_fpath_copy)
+            shutil.copyfile(transcripts_fpath, transcripts_fpath_copy)
+            transcripts_fpath = transcripts_fpath_copy
+
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
     #########################################################
