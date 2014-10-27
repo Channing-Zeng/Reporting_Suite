@@ -70,6 +70,12 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
                 annotated = True
                 vcf_fpath = res
 
+    if 'mongo' in cnf:
+        res = _mongo(cnf, vcf_fpath)
+        if res:
+            vcf_fpath = res
+            annotated = True
+
     if annotated:
         # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
@@ -123,6 +129,24 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
         return None, None, None
 
 
+def _mongo(cnf, input_fpath):
+    if 'mongo' not in cnf:
+        return None
+
+    executable = get_java_tool_cmdline(cnf, 'vcf_loader')
+    output_fpath = intermediate_fname(cnf, input_fpath, 'mongo')
+    project_name = cnf.get("project_name")
+
+    cmdline = (
+        '{executable} -module annotation -inputFile {input_fpath} ' ''
+        '-outputFile {output_fpath} -project {project_name} ').format(**locals())
+    if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
+                       stdout_to_outputfile=False, exit_on_error=False):
+        return output_fpath
+    else:
+        return None
+
+
 def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     if not vcf_conf:
         err('No database for ' + dbname + ', skipping.')
@@ -137,7 +161,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         db_path = vcf_conf.get('path')
         if not db_path:
             critical('Please, privide a path to ' + dbname + ' in the run config '
-                     '("path:" field), or in the "genomes" section in the system config')
+                                                             '("path:" field), or in the "genomes" section in the system config')
         if not verify_file(db_path):
             exit()
 
@@ -149,7 +173,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                        stdout_to_outputfile=True, exit_on_error=False)
+                                   stdout_to_outputfile=True, exit_on_error=False)
     if not output_fpath:
         err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
         return output_fpath
@@ -161,6 +185,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             line = line.replace(' ', '_')
             assert ' ' not in line
         return line
+
     output_fpath = iterate_file(cnf, output_fpath, proc_line)
     return output_fpath
 
@@ -188,7 +213,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-            stdout_to_outputfile=True, exit_on_error=False):
+                       stdout_to_outputfile=True, exit_on_error=False):
         return output_fpath
     else:
         return None
@@ -208,9 +233,9 @@ def _snpeff(cnf, input_fpath):
         return None, None, None
 
     # self.all_fields.extend([
-    #     "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
-    #     "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
-    #     "EFF[*].TRID", "EFF[*].RANK"])
+    # "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
+    # "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
+    # "EFF[*].TRID", "EFF[*].RANK"])
 
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
@@ -274,7 +299,7 @@ def _tracks(cnf, track_path, input_fpath):
     assert input_fpath
     output_fpath = intermediate_fname(cnf, input_fpath, field_name)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                        stdout_to_outputfile=True)
+                                   stdout_to_outputfile=True)
     if not output_fpath:
         err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_path)
         return output_fpath
@@ -367,9 +392,9 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                stdout_to_outputfile=False, exit_on_error=False,
-                to_remove=[output_fpath + '.idx',
-                           input_fpath + '.idx']):
+                       stdout_to_outputfile=False, exit_on_error=False,
+                       to_remove=[output_fpath + '.idx',
+                                  input_fpath + '.idx']):
         return output_fpath
     else:
         return None

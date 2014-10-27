@@ -23,6 +23,8 @@ steps:
 #- VarQC_Summary
 
 
+
+
 filter_reject: False  ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 
@@ -149,6 +151,9 @@ snpeff:
   only_transcripts: '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt'
   extra_opts: ''
   ## no "annotations" section here, always applied all annotations
+
+mongo:
+  all-annotations: True
 
 tracks:
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
