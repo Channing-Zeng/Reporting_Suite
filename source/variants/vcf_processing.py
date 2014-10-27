@@ -329,16 +329,18 @@ def get_trasncripts_fpath(cnf):
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
     db_path = cnf['genome'].get('snpeff')
-    if not db_path:
-        err('Please, provide a path to SnpEff data in '
-            'the "genomes" section in the system config.')
+    if db_path:
+        db_path_cmdline = ' -dataDir {db_path} '
     else:
-        if isfile(dump_transcript_fpath):
-            os.remove(dump_transcript_fpath)
-        genome = cnf.genome.name
-        cmdline = '{snpeff} dump -dataDir {db_path} -v -txt {genome}'.format(**locals())
-        if call(cnf, cmdline, output_fpath=dump_transcript_fpath):
-            cnf.transcripts_fpath = dump_transcript_fpath
+        db_path_cmdline = ''
+        # err('Please, provide a path to SnpEff data in '
+        #     'the "genomes" section in the system config.')
+    if isfile(dump_transcript_fpath):
+        os.remove(dump_transcript_fpath)
+    genome = cnf.genome.name
+    cmdline = '{snpeff} dump {db_path_cmdline} -v -txt {genome}'.format(**locals())
+    if call(cnf, cmdline, output_fpath=dump_transcript_fpath):
+        cnf.transcripts_fpath = dump_transcript_fpath
 
     return cnf.transcripts_fpath
 
@@ -377,7 +379,9 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
                '--output-maf {maf_fpath} '
                '{transcripts} ').format(**locals())
 
-    call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False)
+    res = call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False, exit_on_error=False)
+    if not res:
+        return None
 
     if verify_file(maf_fpath, 'MAF'):
         info('MAF file saved to ' + maf_fpath)

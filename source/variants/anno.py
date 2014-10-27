@@ -217,10 +217,14 @@ def _snpeff(cnf, input_fpath):
     stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
     extra_opts = cnf['snpeff'].get('opts') or ''
     db_path = cnf['genome'].get('snpeff')
-    if not db_path:
-        err('Please, provide a path to SnpEff data in '
-            'the "genomes" section in the system config.')
-        return None, None, None
+    if db_path:
+        db_path_cmdline = ' -dataDir ' + db_path
+    else:
+        # err('Please, provide a path to SnpEff data in '
+        #     'the "genomes" section in the system config.')
+        # return None, None, None
+        db_path_cmdline = ''
+
     opts = ''
     if cnf['snpeff'].get('cancer'):
         opts += ' -cancer '
@@ -242,8 +246,8 @@ def _snpeff(cnf, input_fpath):
     else:
         extra_opts = ''
 
-    cmdline = ('{executable} eff {opts} -dataDir {db_path} -stats {stats_fpath} '
-               '-csvStats -noLog -1 -i vcf -o vcf {extra_opts} {ref_name} '
+    cmdline = ('{executable} eff {opts} {db_path_cmdline} -stats {stats_fpath} '
+               '-csvStats -noLog -i vcf -o vcf {extra_opts} {ref_name} '
                '{input_fpath}').format(**locals())
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')

@@ -111,6 +111,9 @@ def _extract_fields(cnf, main_sample_index, vcf_fpath):
 
     anno_line = ' '.join([f for f in fields if f != 'SAMPLE'])
     snpsift = get_java_tool_cmdline(cnf, 'snpsift')
+    if not snpsift:
+        err('No SnpSIFT installed, skipping converting to TSV.')
+        return None
     snpsift_cmdline = snpsift + ' extractFields ' + vcf_fpath + ' ' + anno_line
 
     res = call(cnf, snpsift_cmdline, tsv_fpath, exit_on_error=False, print_stderr=True)

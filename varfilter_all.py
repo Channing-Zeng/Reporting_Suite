@@ -212,23 +212,24 @@ def filter_all(cnf, bcbio_structure):
     for sample in bcbio_structure.samples:
         finalize_one(cnf, bcbio_structure, sample, msg)
 
-    info()
-    info('Combined MAF files:')
-    msg.append('')
-    msg.append('Combined MAF files:')
-    for caller in bcbio_structure.variant_callers.values():
-        if caller.combined_filt_maf_fpath:
-            info('  ' + caller.name)
-            info('     ' + caller.combined_filt_maf_fpath)
-            info('     ' + caller.combined_filt_pass_maf_fpath)
-            msg.append('  ' + caller.name)
-            msg.append('     ' + caller.combined_filt_maf_fpath)
-            msg.append('     ' + caller.combined_filt_pass_maf_fpath)
+    if any(c.combined_filt_maf_fpath for c in bcbio_structure.variant_callers.values()):
+        info()
+        info('Combined MAF files:')
+        msg.append('')
+        msg.append('Combined MAF files:')
+        for caller in bcbio_structure.variant_callers.values():
+            if caller.combined_filt_maf_fpath:
+                info('  ' + caller.name)
+                info('     ' + caller.combined_filt_maf_fpath)
+                info('     ' + caller.combined_filt_pass_maf_fpath)
+                msg.append('  ' + caller.name)
+                msg.append('     ' + caller.combined_filt_maf_fpath)
+                msg.append('     ' + caller.combined_filt_pass_maf_fpath)
 
-            if cnf.datahub_path:
-                copy_to_datahub(cnf, caller, cnf.datahub_path)
+                if cnf.datahub_path:
+                    copy_to_datahub(cnf, caller, cnf.datahub_path)
 
-    # send_email('\n'.join(msg))
+        # send_email('\n'.join(msg))
 
 
 def copy_to_datahub(cnf, caller, datahub_dirpath):

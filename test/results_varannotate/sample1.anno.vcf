@@ -3,7 +3,7 @@
 ##reference=file:///home/chapmanb/bio/bcbio-nextgen/tests/data/automated/tool-data/../../genomes/hg19/seq/hg19.fa
 ##SnpSiftVersion="SnpSift 3.6a (build 2014-04-24), by Pablo Cingolani"
 ##SnpSiftCmd="SnpSift annotate -info ID,CNT,AA,CDS /Users/vlad/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/cosmic-v68-hg19.vcf /Users/vlad/vagrant/reporting_suite/test/bcbio/work/post_processing/varannotate/sample1-mutect.tmp.vcf "
-##SnpEffVersion="3.6c (build 2014-05-20), by Pablo Cingolani"
+##SnpEffVersion="4.0e (build 2014-09-13), by Pablo Cingolani"
 ##SnpEffCmd="SnpEff  -hgvs -stats /Users/vlad/vagrant/reporting_suite/test/results_varannotate/sample1.snpEff_summary.html -csvStats -i vcf -o vcf hg19 /Users/vlad/vagrant/reporting_suite/test/results_varannotate/work_sample1/sample1.no_eff.vcf "
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
 ##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">
@@ -32,6 +32,8 @@
 ##INFO=<ID=AA,Number=1,Type=String,Description="Peptide annotation">
 ##INFO=<ID=CDS,Number=1,Type=String,Description="CDS annotation">
 ##INFO=<ID=EFF,Number=.,Type=String,Description="Predicted effects for this variant.Format: 'Effect ( Effect_Impact | Functional_Class | Codon_Change | Amino_Acid_Change| Amino_Acid_length | Gene_Name | Transcript_BioType | Gene_Coding | Transcript_ID | Exon_Rank  | Genotype_Number [ | ERRORS | WARNINGS ] )' ">
+##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected' ">
+##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected' ">
 ##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
@@ -40,16 +42,16 @@
 ##FILTER=<ID=LowQual,Description="Low quality">
 ##contig=<ID=chrM,length=16571>
 ##contig=<ID=chr22,length=20001>
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample2
-chrM	150	.	T	C	7470.77	.	AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=INTERGENIC(MODIFIER||||||||||1);SAMAC=2	GT:AF:AD:DP:GQ:PL	1/1:0.01:244:244:99:1
-chrM	152	rs117135796	T	C	8577.78	.	AC=2;AF=1.0;AN=2;DB;FS=0.0;GC=46.02;HRun=1;HaplotypeScore=0.8667;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=34.31;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:250:250:99:1
-chrM	195	.	C	TGG	7551.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;HaplotypeScore=1.981;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.21;EFF=INTERGENIC(MODIFIER||||||||||1);Run=1	GT:AD:DP:GQ:PL	1/1:250:250:99:7580
-chrM	410	.	A	T	7375.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=45.64;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=29.5;EFF=INTERGENIC(MODIFIER||||||||||1);HScore=1.7323	GT:AD:DP:GQ:PL	1/1:250:250:99:7404
-chrM	2261	.	C	T	7152.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=39.15;HRun=0;HaplotypeScore=2.0;MLEAF=1.0;MQ=60.0;MQ0=0;QD=28.61;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:250:250:99:7181
-chrM	2354	.	C	T	7216.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=41.15;HRun=1;HaplotypeScore=0.0;MLEAC=60.0;MQ0=0;QD=28.87;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:250:250:99:7245
-chrM	2485	.	C	T	5493.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=43.14;HRun=0;HaplotypeScore=1.9258;MLEAC=2;MLEAF=1.0;QD=21.98;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:1237:238:99:5522
-chrM	2708	.	G	A	4890.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=218;Dels=0.0;FS=0.0;GC=46.88;HRun=1;HaplotypeScore=0.9973;MLEAC=2;MLEAF=1.0;MQ=59.97;MQ0=0;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:0,218:218:99:.
-chrM	3493	.	A	C	358.77	MIN_Q_MEAN;IMPACT	AC=1;AF=0.5;AN=2;BaseQRankSum=-8.442;DP=250;Dels=0.0;FS=231.833;GC=50.37;HRun=3;HaplotypeScore=15.2879;MLEAC=1;MLEAF=0.5;MQ=5.0;QD=1.44;ReadPosRankSum=-2.352;EFF=INTERGENIC(MODIFIER||||||||||1);RankSum=1.168	GT:AD:DP:GQ:PL	0/1:97:238:99:3449
-chrM	4746	.	A	G	7554.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=41.15;HRun=0;HaplotypeScore=1.8255;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.22;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	1/1:250:250:99:7583
-chr22	150	.	T	C	7470.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	0/1:244:244:99:7499
-chr22	153	.	T	TCC	7470.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=INTERGENIC(MODIFIER||||||||||1)	GT:AD:DP:GQ:PL	0/1:244:244:99:7499
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	sample1	sample2
+chrM	150	.	T	C	7470.77	.	AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=intergenic_region(MODIFIER||||||||||1);SAMAC=2;SAMPLE=sample1	GT:AF:AD:DP:GQ:PL	1/1:0.01:244:244:99:1	1/1:0.01:244:244:99:1
+chrM	152	rs117135796	T	C	8577.78	.	AC=2;AF=1.0;AN=2;DB;FS=0.0;GC=46.02;HRun=1;HaplotypeScore=0.8667;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=34.31;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:1	1/1:250:250:99:1
+chrM	195	.	C	TGG	7551.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;HaplotypeScore=1.981;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.21;EFF=intergenic_region(MODIFIER||||||||||1);Run=1;SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:7580	1/1:250:250:99:7580
+chrM	410	.	A	T	7375.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=45.64;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=29.5;EFF=intergenic_region(MODIFIER||||||||||1);HScore=1.7323;SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:7404	1/1:250:250:99:7580
+chrM	2261	.	C	T	7152.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=39.15;HRun=0;HaplotypeScore=2.0;MLEAF=1.0;MQ=60.0;MQ0=0;QD=28.61;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:7181	1/1:250:250:99:7580
+chrM	2354	.	C	T	7216.77	.	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=41.15;HRun=1;HaplotypeScore=0.0;MLEAC=60.0;MQ0=0;QD=28.87;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:7245	1/1:250:250:99:7245
+chrM	2485	.	C	T	5493.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=43.14;HRun=0;HaplotypeScore=1.9258;MLEAC=2;MLEAF=1.0;QD=21.98;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:1237:238:99:5522	1/1:1237:238:99:5522
+chrM	2708	.	G	A	4890.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=218;Dels=0.0;FS=0.0;GC=46.88;HRun=1;HaplotypeScore=0.9973;MLEAC=2;MLEAF=1.0;MQ=59.97;MQ0=0;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:0,218:218:99:.	1/1:0,218:218:99:.
+chrM	3493	.	A	C	358.77	MIN_Q_MEAN;IMPACT	AC=1;AF=0.5;AN=2;BaseQRankSum=-8.442;DP=250;Dels=0.0;FS=231.833;GC=50.37;HRun=3;HaplotypeScore=15.2879;MLEAC=1;MLEAF=0.5;MQ=5.0;QD=1.44;ReadPosRankSum=-2.352;EFF=intergenic_region(MODIFIER||||||||||1);RankSum=1.168;SAMPLE=sample1	GT:AD:DP:GQ:PL	0/1:97:238:99:3449	0/1:97:238:99:3449
+chrM	4746	.	A	G	7554.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=250;Dels=0.0;FS=0.0;GC=41.15;HRun=0;HaplotypeScore=1.8255;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.22;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	1/1:250:250:99:7583	1/1:250:250:99:7583
+chr22	150	.	T	C	7470.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	0/1:244:244:99:7499	0/1:244:244:99:7499
+chr22	153	.	T	TCC	7470.77	MIN_Q_MEAN;IMPACT	AC=2;AF=1.0;AN=2;DP=244;Dels=0.0;FS=0.0;GC=46.0;HRun=1;HaplotypeScore=0.0;MLEAC=2;MLEAF=1.0;MQ=60.0;MQ0=0;QD=30.62;EFF=intergenic_region(MODIFIER||||||||||1);SAMPLE=sample1	GT:AD:DP:GQ:PL	0/1:244:244:99:7499	0/1:244:244:99:7499
