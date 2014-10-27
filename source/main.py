@@ -294,8 +294,8 @@ def set_up_work_dir(cnf):
     if not cnf.work_dir:
         work_dir_name = 'work_' + cnf.name
         cnf.work_dir = join(cnf.output_dir, work_dir_name)
-        if not cnf.reuse_intermediate and isdir(cnf.work_dir):
-            rmtree(cnf.work_dir)
+        # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
+        #     rmtree(cnf.work_dir)
     else:
         cnf.work_dir = adjust_path(cnf.work_dir)
 

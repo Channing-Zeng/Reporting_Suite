@@ -55,7 +55,7 @@ def main(args):
         optional=['transcripts_fpath'])
 
     load_genome_resources(cnf,
-        required=['seq', 'snpeff'],
+        required=['seq'],
         optional=['dbsnp', 'cosmic', 'oncomine'])
 
     set_up_snpeff(cnf)

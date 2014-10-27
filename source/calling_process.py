@@ -106,7 +106,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.PIPE
-                    stderr = subprocess.PIPE
+                    stderr = subprocess.STDOUT
             else:
                 if not silent:
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
@@ -131,7 +131,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 # PRINT STDOUT AND STDERR
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
-                        info('   ' + line.strip())
+                        if stderr == subprocess.STDOUT:
+                            err('   ' + line.strip())
+                        else:
+                            info('   ' + line.strip())
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
                         warn('   ' + line.strip())

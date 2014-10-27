@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 
 from source.bcbio_structure import BCBioStructure
 from source.variants.Effect import Effect
-from source.logger import step_greetings, info, critical, err
+from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath, \
     get_main_sample_index
@@ -565,13 +565,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         if sample.min_af is not None:
             cnf_copy['variant_filtering']['min_freq'] = sample.min_af
         cnfs_for_sample_names[sample.name] = cnf_copy
-        # TODO: pass min_freq to filters
 
     results = [r for r in Parallel(n_jobs) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
-              for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-              zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+             for sample, anno_vcf_fpath, work_filt_vcf_fpath in
+             zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
          ) if r is not None and None not in r]
     info('Results: ' + str(len(results)))
     info('*' * 70)
@@ -582,21 +581,24 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         # sample.filtered_tsv_by_callername[caller.name] = tsv
         # sample.filtered_maf_by_callername[caller.name] = maf
 
-    caller.combined_filt_maf_fpath, caller.combined_filt_pass_maf_fpath = \
-        combine_mafs(cnf,
-                     caller.find_filt_maf_by_sample().values(),
-                     join(bcbio_structure.var_dirpath, caller.name))
+    caller.combined_filt_maf_fpath, \
+    caller.combined_filt_pass_maf_fpath = \
+        combine_mafs(
+            cnf,
+            caller.find_filt_maf_by_sample().values(),
+            join(bcbio_structure.var_dirpath, caller.name))
 
-    comb_basefname = basename(caller.combined_filt_maf_fpath)
-    pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
+    if caller.combined_filt_maf_fpath and caller.combined_filt_pass_maf_fpath:
+        comb_basefname = basename(caller.combined_filt_maf_fpath)
+        pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
 
-    comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
-    comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
+        comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
+        comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
 
-    if not exists(comb_maf_fpath_symlink):
-        os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
-    if not exists(comb_pass_maf_fpath_symlink):
-        os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
+        if not exists(comb_maf_fpath_symlink):
+            os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
+        if not exists(comb_pass_maf_fpath_symlink):
+            os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
 
     info('-' * 70)
     info()
@@ -610,6 +612,10 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
 
     if isfile(output_fpath): os.remove(output_fpath)
     if isfile(output_pass_fpath): os.remove(output_pass_fpath)
+
+    if not maf_fpaths:
+        warn('No MAFs - no combined MAF will be made.')
+        return None, None
 
     if not isdir(dirname(output_fpath)): safe_mkdir(dirname(output_fpath))
 
@@ -672,13 +678,14 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
         tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath, sample.name)
+        if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
         if not tsv_fpath:
             err('TSV convertion didn\'t work for ' + sample.name)
             final_tsv_fpath = None
         else:
-            if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
             shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
+        if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
         final_tsv_fpath = None
 
     # Converting clean VCF to TSV
@@ -692,7 +699,7 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
     #     final_clean_tsv_fpath = None
 
     # Converting to MAF
-    if work_filt_vcf_fpath and cnf.make_maf:
+    if cnf.make_maf and work_filt_vcf_fpath:
         maf_fpath = convert_to_maf(
             cnf, work_filt_vcf_fpath,
             tumor_sample_name=sample.name,
@@ -700,10 +707,14 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
             transcripts_fpath=cnf.transcripts_fpath,
             normal_sample_name=sample.normal_match.name if sample.normal_match else None)
         if isfile(final_maf_fpath): os.remove(final_maf_fpath)
-        shutil.copy(maf_fpath, final_maf_fpath)
+        if maf_fpath:
+            shutil.copy(maf_fpath, final_maf_fpath)
+        else:
+            final_maf_fpath = None
         info('-' * 70)
         info()
     else:
+        if isfile(final_maf_fpath): os.remove(final_maf_fpath)
         final_maf_fpath = None
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
