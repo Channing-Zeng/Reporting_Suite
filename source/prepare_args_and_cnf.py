@@ -73,10 +73,14 @@ def process_post_bcbio_args(parser):
             if provided_cnf_fpath != project_cnf_fpath:
                 info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
                 if isfile(project_cnf_fpath):
-                    os.remove(project_cnf_fpath)
-                file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
+                    try:
+                        os.remove(project_cnf_fpath)
+                    except OSError:
+                        pass
+                if not isfile(project_cnf_fpath):
+                    file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
 
-        else:  # No cnf in opts
+        else:  # No configs provided in command line options
             if isfile(project_cnf_fpath) and verify_file(project_cnf_fpath):
                 provided_cnf_fpath = project_cnf_fpath
             else:
@@ -84,10 +88,14 @@ def process_post_bcbio_args(parser):
                 if provided_cnf_fpath != project_cnf_fpath:
                     info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
                     if isfile(project_cnf_fpath):
-                        os.remove(project_cnf_fpath)
-                    file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
+                        try:
+                            os.remove(project_cnf_fpath)
+                        except OSError:
+                            pass
+                    if not isfile(project_cnf_fpath):
+                        file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
                 # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
-            opt_dict[cnf_name + '_cnf'] = provided_cnf_fpath
+        opt_dict[cnf_name + '_cnf'] = project_cnf_fpath
 
     info()
     cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
