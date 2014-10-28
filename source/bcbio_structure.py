@@ -211,7 +211,7 @@ class BCBioStructure:
     var_dir          = 'var'
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
-        self.final_dirpath = bcbio_final_dirpath
+        self.final_dirpath = bcbio_final_dirpath = adjust_path(bcbio_final_dirpath)
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
@@ -225,8 +225,8 @@ class BCBioStructure:
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        bcbio_project_dirname = dirname(join(bcbio_final_dirpath, pardir))
-        bcbio_project_parent_dirname = dirname(join(bcbio_final_dirpath, pardir, pardir))
+        bcbio_project_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir))))
+        bcbio_project_parent_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir, pardir))))
         self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
