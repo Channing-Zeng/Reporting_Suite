@@ -154,13 +154,12 @@ def summary_reports(cnf, bcbio_structure):
             for sample_name, html_fpath in qualimap_htmls_by_sample.items():
                 rows += [[sample_name, html_fpath]]
             data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
-            cmdline = '{qualimap} multi-bamqc --data TEST {data_file} -outdir {qualimap_output_dir}'.format(**locals())
-            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True) #, check_output=True)
-            if ret_code is None or ret_code == 0:
-                targqc_full_report.plots = []
-                qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
-                if verify_dir(qualimap_plots_dirpath):
-                    shutil.move(qualimap_plots_dirpath, plots_dirpath)
+            cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
+            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True)
+            targqc_full_report.plots = []
+            qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
+            if (ret_code is None or ret_code == 0) and verify_dir(qualimap_plots_dirpath):
+                shutil.move(qualimap_plots_dirpath, plots_dirpath)
                 for plot_fpath in listdir(plots_dirpath):
                     plot_fpath = join(plots_dirpath, plot_fpath)
                     if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
