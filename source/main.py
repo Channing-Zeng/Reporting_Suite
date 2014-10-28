@@ -5,12 +5,15 @@ from optparse import OptionParser
 from shutil import rmtree
 from source.bcbio_structure import _ungzip_if_needed
 
-from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes
+from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path
 from source import logger
 from source.config import Config, Defaults
 from source.logger import info, err, critical
 from source.file_utils import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
+
+
+code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
 
 
 def read_opts_and_cnfs(extra_opts,
@@ -166,6 +169,7 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
 
     for key in dir_keys:
         if key and key in cnf and cnf[key]:
+            cnf[key] = adjust_system_path(cnf[key])
             if not verify_dir(cnf[key], key):
                 to_exit = True
             else:
@@ -197,7 +201,7 @@ def check_system_resources(cnf, required=list(), optional=list()):
                 err(program + ' is required. Specify path in system config or in your environment.')
                 to_exit = True
             else:
-                data['path'] = adjust_path(data['path'])
+                data['path'] = adjust_system_path(data['path'])
                 if not isdir(data['path']) and not file_exists(data['path']):
                     err(data['path'] + ' does not exist.')
                     to_exit = True
@@ -211,7 +215,7 @@ def check_system_resources(cnf, required=list(), optional=list()):
         if data is None:
             continue
         else:
-            data['path'] = expanduser(data['path'])
+            data['path'] = adjust_system_path(data['path'])
             if not isdir(data['path']) and not file_exists(data['path']):
                 err(data['path'] + ' does not exist.')
                 to_exit = True
@@ -233,7 +237,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     to_exit = False
 
     for key in genome_cnf.keys():
-        genome_cnf[key] = adjust_path(genome_cnf[key])
+        genome_cnf[key] = adjust_system_path(genome_cnf[key])
 
     for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if key not in genome_cnf:
@@ -243,7 +247,6 @@ def load_genome_resources(cnf, required=list(), optional=list()):
                 err('Please, provide path to ' + key + ' in system config genome section.')
             to_exit = True
         else:
-            genome_cnf[key] = adjust_path(genome_cnf[key])
             if key == 'snpeff':
                 if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
                     to_exit = True
@@ -255,7 +258,6 @@ def load_genome_resources(cnf, required=list(), optional=list()):
         if key not in genome_cnf:
             continue
         else:
-            genome_cnf[key] = abspath(expanduser(genome_cnf[key]))
             if not verify_file(genome_cnf[key], key):
                 gz_fpath = genome_cnf[key] + '.gz'
                 if verify_file(gz_fpath):

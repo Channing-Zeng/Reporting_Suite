@@ -6,11 +6,10 @@ resources:
     # path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/snpEff.jar
-    # config: /usr/local/share/java/snpeff/snpEff.config
+    path: external/snpEff/snpEff.jar
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/SnpSift.jar
+    path: external/snpEff/SnpSift.jar
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
   qualimap2:
@@ -47,7 +46,6 @@ genomes:
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-    # snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
@@ -58,6 +56,6 @@ genomes:
 
 queue: batch.q
 
-qsub_runner: runner_cloud.sh
+qsub_runner: runner_Waltham.sh
 
 #smtp_host: 'uw26.usuwb.astrazeneca.net'

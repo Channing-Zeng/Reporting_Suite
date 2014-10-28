@@ -4,10 +4,10 @@ resources:
     path: /usr/local/share/bcbio-nextgen/toolplus/gatk/2014.2-3.1.7-10-g867c2fb/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /usr/local/tools/share/java/snpeff/snpEff.jar
+    path: external/snpEff/snpEff.jar
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /usr/local/tools/share/java/snpeff/SnpSift.jar
+    path: external/snpEff/SnpSift.jar
   qualimap:
     path: /usr/local/bin/qualimap
   samtools:
@@ -52,4 +52,4 @@ genomes:
 
 queue: all.q
 
-qsub_runner: runner_Waltham.sh
+qsub_runner: runner_cloud.sh

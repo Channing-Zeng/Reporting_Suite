@@ -4,11 +4,11 @@ resources:
     path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.2-34-gce410d5/GenomeAnalysisTK.jar
     options: ["-U", "ALLOW_N_CIGAR_READS"]
   snpeff:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.6/snpEff.jar
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: external/snpEff/snpEff.jar
   snpsift:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.6/SnpSift.jar
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: external/snpEff/SnpSift.jar
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:

@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 from collections import defaultdict, OrderedDict
-from os.path import join, abspath, exists, pardir, splitext, basename, islink
+from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
 import re
 from source import logger
 from source.logger import info, err, critical
@@ -219,12 +219,14 @@ class BCBioStructure:
         self.variant_callers = OrderedDict()
 
         # Date dirpath is from bcbio and named after fc_name, not our own project name
-        self.project_name = bcbio_cnf.fc_name = cnf.project_name or bcbio_cnf.fc_name
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
-        self.cnf.name = proc_name or self.project_name or critical('No fc_name in bcbio YAML file and no --project-name provided.')
-
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
+
+        bcbio_project_dirname = dirname(join(bcbio_final_dirpath, pardir))
+        bcbio_project_parent_dirname = dirname(join(bcbio_final_dirpath, pardir, pardir))
+        self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
+        self.cnf.name = proc_name or self.project_name
 
         self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
 
