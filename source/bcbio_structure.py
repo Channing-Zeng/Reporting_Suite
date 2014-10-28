@@ -219,6 +219,8 @@ class BCBioStructure:
         self.variant_callers = OrderedDict()
 
         # Date dirpath is from bcbio and named after fc_name, not our own project name
+        info('fc_name: ' + bcbio_cnf.fc_name)
+        info('fc_date: ' + bcbio_cnf.fc_date)
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
@@ -226,6 +228,7 @@ class BCBioStructure:
         bcbio_project_dirname = dirname(join(bcbio_final_dirpath, pardir))
         bcbio_project_parent_dirname = dirname(join(bcbio_final_dirpath, pardir, pardir))
         self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
+        info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
 
         self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
@@ -298,10 +301,13 @@ class BCBioStructure:
         logger.smtp_host = cnf.smtp_host
 
         self.log_dirpath = join(self.date_dirpath, 'log')
+        info('log_dirpath: ' + self.log_dirpath)
         safe_mkdir(self.log_dirpath)
 
         if not proc_name:
+            info('self.cnf.name: ' + self.cnf.name)
             self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
+            info('log_dirpath: ' + self.cnf.log)
             i = 1
             if file_exists(self.cnf.log):
                 bak_fpath = self.cnf.log + '.' + str(i)
