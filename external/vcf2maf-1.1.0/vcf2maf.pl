@@ -359,7 +359,6 @@ while( my $line = $vcf_fh->getline ) {
 #    $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
 #    $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
 
-
 #    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
 #    Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
 #    Transcript_Strand Transcript_Exon Transcript_Position
