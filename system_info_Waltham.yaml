@@ -52,6 +52,7 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
+    snpeff: /users/klpf990/snpeff/data   # data dir path
 
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
