@@ -343,6 +343,29 @@ while( my $line = $vcf_fh->getline ) {
 #    $maf_line{t_ref_count} = '';
 #    $maf_line{t_alt_count} = '';
 
+#Refseq_mRNA_Id   NM_015557  NM_001215
+#Refseq_prot_Id         NP_056372   NP_001206
+#COSMIC_overlapping_mutations            
+#ref_context    TGAGGAGATGGAACAGCTCCT  TGCACTTTCACTGGGGAGGTG
+#gc_content    0.542  0.592
+#CCLE_ONCOMAP_overlapping_mutations                  
+#CCLE_ONCOMAP_total_mutations_in_gene              
+# t_alt_count    11        16
+# t_ref_count    216     72
+#dbSNP_global_MAF
+#filter    PASS PASS
+#Calculated allele
+#COSMIC_CDS_Change
+#COSMIC_AA_Change (sometimes, SNPEff uses a different transcript as canonical, e.g. MYD88 L265P will be annotated as L273P)
+#CLNSIG (from clinical significance)
+# Var_Class (dbSNP, ClnSNP, COSMIC, Novel, dbSNP_deleterious)
+
+#And cohort level statistics:
+#1.     #_samples
+#2.     #_samples with the same variant detected
+#3.     %_samples with the same variant detected
+#4.     Ave_allele_freq in samples with the same variant detected
+
     foreach my $col ( @maf_header ) {
         $maf_fh->print( "\t" ) if ( $col ne $maf_header[0] );
         $maf_fh->print( $maf_line{$col} );
