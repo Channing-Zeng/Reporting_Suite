@@ -3,7 +3,8 @@
 
 import shutil
 import os
-from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath, splitext, islink
+from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath, splitext, islink, dirname, \
+    pardir
 import gzip
 import tempfile
 import contextlib
@@ -502,6 +503,15 @@ def adjust_path(path):
     if not path:
         return path
     return abspath(expanduser(remove_quotes(path)))
+
+
+code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
+
+def adjust_system_path(path):
+    path = expanduser(remove_quotes(path))
+    path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
+    path = abspath(path)
+    return path
 
 
 def file_exists(fpath):

@@ -209,7 +209,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
     ann_line = ('-f ' + ','.join(annotations)) if annotations else ''
 
-    cmdline = '{executable} dbnsfp {ann_line} -v {db_path} ' \
+    cmdline = '{executable} dbnsfp {ann_line} -v -db {db_path} ' \
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath,

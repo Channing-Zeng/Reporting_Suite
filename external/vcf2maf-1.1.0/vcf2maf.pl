@@ -115,18 +115,81 @@ my @maf_header = qw(
     dbSNP_RS dbSNP_Val_Status Tumor_Sample_Barcode Matched_Norm_Sample_Barcode
     Match_Norm_Seq_Allele1 Match_Norm_Seq_Allele2 Verification_Status Validation_Status
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
-    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp Transcript_ID Exon_Number
+    Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp
 
-    Transcript_Strand Transcript_Exon Transcript_Position CAFFilter
+    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
+    Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
+    Transcript_Strand Transcript_Exon Transcript_Position
+
+    Refseq_mRNA_Id Refseq_prot_Id
+    COSMIC_overlapping_mutations
+
+    CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene
+    t_alt_count t_ref_count
+    dbSNP_global_MAF Filter
+    Calculated_allele COSMIC_CDS_Change COSMIC_AA_Change CLNSIG
+    Var_Class
+
+    Num_samples Num_samples_with_the_same_variant Ave_AF_in_samples_with_the_same_variant
+
+    Strand_Bias Position_mean Position_std Base_quality_mean Base_quality_std Strand_bias_Fisher_pvalue
+    Strand_bias_odd_ratio Mapping_quality_mean Signal_to_noize MSI Good_amplicon Total_amplicons
+    Failed_amplicons Amplicon_bias_frac
 );
+
+
+    # I added
+    # - cohort filtering
+    # - VarDict specific fields
+
+    # Can add
+    # - cDNA change      (NCBI)
+    # - Refseq_mRNA_Id   (NCBI)
+    # - Refseq_prot_Id   (NCBI)
+    # - COSMIC_overlapping_mutations
+    # - COSMIC_CDS_Change COSMIC_AA_Change
+    # - CLNSIG
+    # - dbSNP_global_MAF (CAF?)
+    # - Var_Class
+    # - CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene  (Annotate with ONCOMAP)
+
+    # Not add
+    # - Calculated_allele - ?
+    # - t_alt_count t_ref_count (from Mutect? - need to read Mutect stats)
+    # - ref_context gc_content (where? can actually count manually)
+
+
 #    Codon_Change Protein_Change
 #    Refseq_mRNA_Id Refseq_prot_Id
 #    t_ref_count t_alt_count
 
-# Add extra columns to the MAF depending on whether we used VEP or snpEff
-my @vepcsq_cols = qw( Allele Gene Feature Feature_type Consequence cDNA_position CDS_position Protein_position Amino_acids Codons Existing_variation AA_MAF EA_MAF ALLELE_NUM RefSeq EXON INTRON MOTIF_NAME MOTIF_POS HIGH_INF_POS MOTIF_SCORE_CHANGE DISTANCE STRAND CLIN_SIG CANONICAL SYMBOL SYMBOL_SOURCE SIFT PolyPhen GMAF BIOTYPE ENSP DOMAINS CCDS HGVSc HGVSp AFR_MAF AMR_MAF ASN_MAF EUR_MAF PUBMED );
-my @snpeff_cols = qw( Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Rank Genotype_Number Warnings Errors );
-push( @maf_header, ( $vep_anno ? @vepcsq_cols : qw( Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID ) ));
+    #Refseq_mRNA_Id   NM_015557  NM_001215
+    #Refseq_prot_Id         NP_056372   NP_001206
+    #COSMIC_overlapping_mutations            
+    #ref_context    TGAGGAGATGGAACAGCTCCT  TGCACTTTCACTGGGGAGGTG
+    #gc_content    0.542  0.592
+    #CCLE_ONCOMAP_overlapping_mutations                  
+    #CCLE_ONCOMAP_total_mutations_in_gene              
+    # t_alt_count    11        16
+    # t_ref_count    216     72
+    #dbSNP_global_MAF
+    #filter    PASS PASS
+    #Calculated allele
+    #COSMIC_CDS_Change
+    #COSMIC_AA_Change (sometimes, SNPEff uses a different transcript as canonical, e.g. MYD88 L265P will be annotated as L273P)
+    #CLNSIG (from clinical significance)
+    # Var_Class (dbSNP, ClnSNP, COSMIC, Novel, dbSNP_deleterious)
+
+    #And cohort level statistics:
+    #1.     #_samples
+    #2.     #_samples with the same variant detected
+    #3.     %_samples with the same variant detected
+    #4.     Ave_allele_freq in samples with the same variant detected
+
+
+my @snpeff_cols = qw(
+    Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name
+    Transcript_BioType Gene_Coding Transcript_ID Exon_Rank Genotype_Number Warnings Errors );
 
 # Parse through each variant in the annotated VCF, pull out CSQ/EFF from the INFO column, and choose
 # one transcript per variant whose annotation will be used in the MAF
@@ -182,72 +245,12 @@ while( my $line = $vcf_fh->getline ) {
     my @all_effects = (); # A list of all effects per variant that can be reported in extra MAF columns
     my $maf_effect = {}; # A single effect per variant to report in the standard MAF columns
 
-    ### Parsing VEP consequences
-    # INFO:CSQ is a comma-delimited list of VEP consequences, with pipe-delim details per consequence
-    # VEP replaces commas in details with '&'. We'll assume that all '&'s we see, were formerly commas
-    # Consequence often reports multiple effects on the same transcript e.g. missense, splice_region
-    # CSQ = Allele | Gene | Feature | Feature_type | Consequence | cDNA_position | CDS_position | Protein_position | Amino_acids | Codons | Existing_variation | AA_MAF | EA_MAF | ALLELE_NUM | RefSeq | EXON | INTRON | MOTIF_NAME | MOTIF_POS | HIGH_INF_POS | MOTIF_SCORE_CHANGE | DISTANCE | STRAND | CLIN_SIG | CANONICAL | SYMBOL | SYMBOL_SOURCE | SIFT | PolyPhen | GMAF | BIOTYPE | ENSP | DOMAINS | CCDS | HGVSc | HGVSp | AFR_MAF | AMR_MAF | ASN_MAF | EUR_MAF | PUBMED , ...
-    if( $info{CSQ} ) {
-
-        foreach my $csq_line ( split( /,/, $info{CSQ} )) {
-            my $idx = 0;
-            my %effect = map{s/\&/,/g; ( $vepcsq_cols[$idx++], $_ )} split( /\|/, $csq_line );
-
-            # Skip effects on other ALT alleles
-            if( $effect{ALLELE_NUM} == $alt_allele_num ) {
-
-                # Fix potential warnings about undefined variables
-                $effect{BIOTYPE} = '' unless( $effect{BIOTYPE} );
-                $effect{Consequence} = '' unless( $effect{Consequence} );
-                $effect{CANONICAL} = '' unless( $effect{CANONICAL} );
-                $effect{SYMBOL} = '' unless( $effect{SYMBOL} );
-
-                # Remove transcript ID from HGVS codon/protein changes, to make it easier on the eye
-                $effect{HGVSc} =~ s/^.*:// if( $effect{HGVSc} );
-                $effect{HGVSp} =~ s/^.*:// if( $effect{HGVSp} );
-
-                # Transcript length isn't directly reported, but can be parsed out from another field
-                ( $effect{Transcript_Length} ) = $effect{cDNA_position} =~ m/\/(\d+)$/;
-                $effect{Transcript_Length} = 0 unless( $effect{Transcript_Length} );
-
-                # If there are many possible consequences on a transcript, choose the most severe one
-                ( $effect{Consequence} ) = sort { GetEffectPriority($a) <=> GetEffectPriority($b) } split( /,/, $effect{Consequence} );
-
-                push( @all_effects, \%effect );
-            }
-        }
-
-        # Sort effects first by transcript biotype, then by severity, and then by longest transcript
-        @all_effects = sort {
-            GetBiotypePriority( $a->{BIOTYPE} ) <=> GetBiotypePriority( $b->{BIOTYPE} ) ||
-            GetEffectPriority( $a->{Consequence} ) <=> GetEffectPriority( $b->{Consequence} ) ||
-            $b->{Transcript_Length} <=> $a->{Transcript_Length}
-        } @all_effects;
-
-        # For the MAF, we will report the effect on the canonical transcript of the first priority gene
-        my $maf_gene = $all_effects[0]->{SYMBOL};
-        if( $maf_gene and $maf_gene ne '' ) {
-            ( $maf_effect ) = grep { $_->{SYMBOL} eq $maf_gene and $_->{CANONICAL} eq "YES" } @all_effects;
-
-            # If that gene had no canonical transcript tagged, choose the longest transcript instead
-            unless( $maf_effect ) {
-                ( $maf_effect ) = sort { $b->{Transcript_Length} <=> $a->{Transcript_Length} } grep { $_->{SYMBOL} eq $maf_gene } @all_effects;
-            }
-        }
-        # If the top priority effect doesn't have a gene name, then use the first one that does
-        else {
-            ( $maf_effect ) = grep { defined $_->{SYMBOL} } @all_effects;
-            # If VEP still fails to provide any annotation, it's intergenic
-            $maf_effect->{Consequence} = "intergenic_variant" unless( $maf_effect->{Consequence} );
-        }
-    }
-
     ### Parsing snpEff effects
     # INFO:EFF is a comma-delimited list of snpEff effects, with pipe-delim details per effect
     # But note the parentheses, the Effect defined separately, and the last two columns being optional
     # Only AA lengths for coding transcripts are provided. So we're SOL for non-coding transcripts
     # EFF = Effect ( Effect_Impact | Functional_Class | Codon_Change | Amino_Acid_Change | Amino_Acid_Length | Gene_Name | Transcript_BioType | Gene_Coding | Transcript_ID | Exon_Rank  | Genotype_Number [ | ERRORS | WARNINGS ] ) , ...
-    elsif( $info{EFF} ) {
+    if( $info{EFF} ) {
 
         foreach my $eff_line ( split( /,/, $info{EFF} )) {
             if( $eff_line =~ /^(\w+)\((.+)\)$/ ) {
@@ -293,9 +296,6 @@ while( my $line = $vcf_fh->getline ) {
         }
     }
 
-    my $tr_strand;
-
-
     # Construct the MAF columns from the $maf_effect hash, and print to output
     my %maf_line = map{ ( $_, ( $maf_effect->{$_} ? $maf_effect->{$_} : '' )) } @maf_header;
     $maf_line{Hugo_Symbol} = ( $maf_effect->{SYMBOL} ? $maf_effect->{SYMBOL} : ( $maf_effect->{Gene_Name} ? $maf_effect->{Gene_Name} : 'Unknown' ));
@@ -316,23 +316,58 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Matched_Norm_Sample_Barcode} = $normal_id;
     $maf_line{Match_Norm_Seq_Allele1} = '.'; #$normal_a1;
     $maf_line{Match_Norm_Seq_Allele2} = '.'; #$normal_a2;
+    $maf_line{BAM_File} = $bam_file;
     $maf_line{HGVSc} = ( $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
     $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
+
     my $transcriptId = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
     my $exonNumber = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
     $maf_line{Transcript_ID} = $transcriptId;
     $maf_line{Exon_Number} = $exonNumber;
+
     $maf_line{Validation_Status} = ($filter eq 'PASS' || $filter eq '.') ? 'Valid' : 'Invalid';
     $maf_line{Validation_Method} = ($filter eq 'PASS' || $filter eq '.') ? '' : $filter;
-    $maf_line{BAM_File} = $bam_file;
     $maf_line{Filter} = $filter;
-    $maf_line{CAF} = $info{CAF};
 
     if ($exonNumber) {
         $maf_line{Transcript_Strand  } = $trStrandById{( $transcriptId, $exonNumber )} ? $trStrandById{( $transcriptId, $exonNumber )} : '';
         $maf_line{Transcript_Position} = $trPosById   {( $transcriptId, $exonNumber )} ? $trPosById   {( $transcriptId, $exonNumber )} : '';
         $maf_line{Transcript_Exon    } = $trExonById  {( $transcriptId, $exonNumber )} ? $trExonById  {( $transcriptId, $exonNumber )} : '';
     }
+
+    $maf_line{dbSNP_global_MAF} = $info{CAF};
+    $maf_line{CLNSIG} = $info{CLNSIG} ? $info{CLNSIG} : '';
+
+    # Cohort
+    $maf_line{Num_samples} = $info{Num_samples} ? $info{Num_samples} : '';
+    $maf_line{Num_samples_with_the_same_variant} = $info{Num_samples_with_the_same_variant} ? $info{Num_samples_with_the_same_variant} : '';
+    $maf_line{Ave_AF_in_samples_with_the_same_variant} = $info{Ave_AF_in_samples_with_the_same_variant} ? $info{Ave_AF_in_samples_with_the_same_variant} : '';
+
+    # Vardict
+    $maf_line{Strand_Bias} = $info{BIAS} ? $info{BIAS} : '';
+    $maf_line{Position_mean} = $info{PMEAN} ? $info{PMEAN} : '';
+    $maf_line{Position_std} = $info{PSTD} ? $info{PSTD} : '';
+    $maf_line{Base_quality_mean} = $info{QMEAN} ? $info{QMEAN} : '';
+    $maf_line{Base_quality_std} = $info{QSTD} ? $info{QSTD} : '';
+    $maf_line{Strand_bias_Fisher_pvalue} = $info{SBF} ? $info{SBF} : '';
+    $maf_line{Strand_bias_odd_ratio} = $info{ODDRATIO} ? $info{ODDRATIO} : '';
+#    $maf_line{Mapping_quality_mean} = '';
+    $maf_line{Signal_to_noize} = $info{SB} ? $info{SB} : '';
+    $maf_line{MSI} = $info{MSI} ? $info{MSI} : '';
+#    $maf_line{Good_amplicon} = '';
+    $maf_line{Total_amplicons} = $info{TLAMP} ? $info{TLAMP} : '';
+#    $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
+#    $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
+
+
+#    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
+#    Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
+#    Transcript_Strand Transcript_Exon Transcript_Position
+#
+#    Refseq_mRNA_Id Refseq_prot_Id COSMIC_overlapping_mutations ref_context gc_content
+#    CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene t_alt_count t_ref_count
+#    dbSNP_global_MAF Filter Calculated_allele COSMIC_CDS_Change COSMIC_AA_Change CLNSIG Var_Class
+
 
 # TODO
 #    $maf_line{cDNA_Change} = '';
@@ -353,7 +388,7 @@ while( my $line = $vcf_fh->getline ) {
 $maf_fh->close if( $output_maf );
 $vcf_fh->close;
 
-# Prioritize Sequence Ontology terms from VEP/snpEffsnpEff in order of severity, as estimated by Ensembl:
+# Prioritize Sequence Ontology terms from VEP/snpEff in order of severity, as estimated by Ensembl:
 # http://useast.ensembl.org/info/genome/variation/predicted_data.html#consequences
 # ::NOTE:: snpEff conversion to SO terms has caveats, so handle exceptions as necessary
 sub GetEffectPriority {
@@ -383,7 +418,7 @@ sub GetEffectPriority {
         'non_coding_transcript_exon_variant' => 13, # snpEff-specific synonym for non_coding_exon_variant
         'nc_transcript_variant' => 14, # A transcript variant of a non coding RNA
         'intron_variant' => 14, # A transcript variant occurring within an intron
-        'INTRAGENIC' => 14, # snpEff-specific effect where the variant hits a gene without transcripts??
+        'intragenic_variant' => 14, # snpEff-specific effect where the variant hits a gene without transcripts??
         'NMD_transcript_variant' => 15, # A variant in a transcript that is the target of NMD
         'upstream_gene_variant' => 16, # A sequence variant located 5' of a gene
         'downstream_gene_variant' => 16, # A sequence variant located 3' of a gene
@@ -463,7 +498,7 @@ sub GetBiotypePriority {
         'artifact' => 9, # Used to tag mistakes in the public databases (Ensembl/SwissProt/Trembl)
         '' => 9
     );
-    $biotype_priority{$biotype} or die "ERROR: Unrecognized biotype \"$biotype\". Please update your hashes!";
+    $biotype_priority{$biotype} or return 9; # die  "ERROR: Unrecognized biotype \"$biotype\". Please update your hashes!";
     return $biotype_priority{$biotype};
 }
 

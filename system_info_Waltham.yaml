@@ -6,19 +6,20 @@ resources:
     # path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/snpEff.jar
-    # config: /usr/local/share/java/snpeff/snpEff.config
+    path: external/snpEff/snpEff.jar
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff/SnpSift.jar
+    path: external/snpEff/SnpSift.jar
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
   qualimap2:
     path: /group/ngs/src/qualimap_v2.0/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
+#    path: /group/cancer_informatics/tools_resources/NGS/bin/samtools
   bedtools:
     path: /group/ngs/src/bedtools/bin/bedtools
+#    path: /opt/az/local/bedtools/bedtools2-2.21.0/bin/bedtools
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   perl:
@@ -27,6 +28,7 @@ resources:
     path: /usr/bin/java
   python:
     path: /opt/az/local/psf/python/64_2.7.3/python
+#    path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   vardict_pl:
     path: /gpfs/group/ngs/src/vardict/vardict
   testsomatic_r:
@@ -47,17 +49,21 @@ genomes:
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-    # snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff   # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
+    snpeff: /users/klpf990/snpeff/data  # data dir path
 
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
     default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome-expanded.bed
 
+    capture_panels:
+      agilent: //ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
+
+
 queue: batch.q
 
-qsub_runner: runner_cloud.sh
+qsub_runner: runner_Waltham.sh
 
 #smtp_host: 'uw26.usuwb.astrazeneca.net'

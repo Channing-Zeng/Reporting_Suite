@@ -4,7 +4,7 @@ import os
 import shutil
 import sys
 from collections import defaultdict, OrderedDict
-from os.path import join, abspath, exists, pardir, splitext, basename, islink
+from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
 import re
 from source import logger
 from source.logger import info, err, critical
@@ -211,7 +211,7 @@ class BCBioStructure:
     var_dir          = 'var'
 
     def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
-        self.final_dirpath = bcbio_final_dirpath
+        self.final_dirpath = bcbio_final_dirpath = adjust_path(bcbio_final_dirpath)
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
@@ -219,12 +219,17 @@ class BCBioStructure:
         self.variant_callers = OrderedDict()
 
         # Date dirpath is from bcbio and named after fc_name, not our own project name
-        self.project_name = bcbio_cnf.fc_name = cnf.project_name or bcbio_cnf.fc_name
+        info('fc_name: ' + bcbio_cnf.fc_name)
+        info('fc_date: ' + bcbio_cnf.fc_date)
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
-        self.cnf.name = proc_name or self.project_name or critical('No fc_name in bcbio YAML file and no --project-name provided.')
-
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
+
+        bcbio_project_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir))))
+        bcbio_project_parent_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir, pardir))))
+        self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
+        info('Project name: ' + self.project_name)
+        self.cnf.name = proc_name or self.project_name
 
         self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
 
@@ -296,10 +301,13 @@ class BCBioStructure:
         logger.smtp_host = cnf.smtp_host
 
         self.log_dirpath = join(self.date_dirpath, 'log')
+        info('log_dirpath: ' + self.log_dirpath)
         safe_mkdir(self.log_dirpath)
 
         if not proc_name:
+            info('self.cnf.name: ' + self.cnf.name)
             self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
+            info('log_dirpath: ' + self.cnf.log)
             i = 1
             if file_exists(self.cnf.log):
                 bak_fpath = self.cnf.log + '.' + str(i)

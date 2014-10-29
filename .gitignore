@@ -51,6 +51,7 @@ test/results_qs_summary
 test/results_varfilter
 test/results_cov
 test/results_cov/
+test/results_anno
 
 test/bcbio/final/**/varAnnotate
 test/bcbio/final/**/qc/ngscat
@@ -87,3 +88,5 @@ test/NGS-99/final
 test/EXT_021_Courtagen_Faslodex_HaloPlex/*
 test/EXT_021_Courtagen_Faslodex_HaloPlex/
 test/NGS-99-update-final/*
+
+external/snpEff/data

@@ -2,7 +2,7 @@ import sys
 import subprocess
 from os.path import join, dirname, abspath, pardir
 from distutils.version import LooseVersion
-from source.file_utils import verify_file
+from source.file_utils import verify_file, code_base_path, adjust_system_path
 
 from source.logger import info, err
 from source.file_utils import file_exists, which
@@ -35,12 +35,11 @@ def get_tool_cmdline(cnf, interpreter, tool_name=None,
         'path' in cnf.resources[tool_name.lower()]):
 
         tool_path = cnf.resources[tool_name.lower()]['path']
+        tool_path = adjust_system_path(tool_path)
         return verify_file(tool_path, tool_name)
 
     # IN PROJECT ROOT DIR? IN EXTERNAL?
-    project_base_path = abspath(join(dirname(abspath(__file__)), pardir))
-    external_dirpath = join(project_base_path, 'external')
-    for dirpath in [project_base_path, external_dirpath]:
+    for dirpath in [code_base_path, join(code_base_path, 'external')]:
         for ext in ['', '.py', '.pl']:
             tool_path = join(dirpath, tool_name + ext)
             if file_exists(tool_path):

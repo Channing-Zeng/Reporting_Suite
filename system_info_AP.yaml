@@ -4,11 +4,11 @@ resources:
     path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.2-34-gce410d5/GenomeAnalysisTK.jar
     options: ["-U", "ALLOW_N_CIGAR_READS"]
   snpeff:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.6/snpEff.jar
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: external/snpEff/snpEff.jar
   snpsift:
-    jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: /ngs/RDI/PROGRAMS/snpEff3.6/SnpSift.jar
+    jvm_opts: ["-Xms750m", "-Xmx3g"]
+    path: external/snpEff/SnpSift.jar
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
@@ -26,7 +26,7 @@ genomes:
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/mutation_details.vcf
     dbnsfp: /home/klpf990/dbNSFP2.3.txt.gz
-    snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff # data dir path
+    snpeff: /home/klpf990/snpeff/data  # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
 
