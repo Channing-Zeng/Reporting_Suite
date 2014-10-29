@@ -426,6 +426,9 @@ def proc_line_2nd_round(rec, cnf_, self_):
         var_n = var_info.occurence_num()
         frac = var_info.frac()
         avg_af = var_info.avg_af()
+        rec.INFO['Num_samples'] = len(filtering.sample_names)
+        rec.INFO['Num_samples_with_the_same_variant'] = var_n
+        rec.INFO['Ave_AF_in_samples_with_the_same_variant'] = avg_af
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
             info('Multi filter: vark = ' + rec.get_variant() +
