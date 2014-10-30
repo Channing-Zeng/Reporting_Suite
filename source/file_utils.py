@@ -505,7 +505,8 @@ def adjust_path(path):
     path = remove_quotes(path)
     if path is None: return None
 
-    path = expanduser(path)
+    if path and path.startswith('~'):
+        path = expanduser(path)
     if path is None: return None
 
     path = abspath(path)
@@ -522,7 +523,8 @@ def adjust_system_path(path):
     path = remove_quotes(path)
     if path is None: return None
 
-    path = expanduser(path)
+    if path and path.startswith('~'):
+        path = expanduser(path)
     if path is None: return None
 
     path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
