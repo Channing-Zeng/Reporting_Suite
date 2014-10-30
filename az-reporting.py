@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.variants.vcf_processing import get_trasncripts_fpath
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -18,6 +17,7 @@ from source.logger import info
 from source.main import check_system_resources, load_genome_resources
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 from source.prepare_args_and_cnf import add_post_bcbio_args, process_post_bcbio_args
+from source.variants.vcf_processing import get_trasncripts_fpath
 
 
 def main():
@@ -28,15 +28,11 @@ def main():
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
 
-    parser.add_option('--qualimap', dest='qualimap', action='store_true', default=Defaults.qualimap, help='Run QualiMap in the end')
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
     cnf = process_post_bcbio_args(parser)
 
-    if cnf.qualimap and 'QualiMap' not in cnf.steps:
-        cnf.steps.append('QualiMap')
-        cnf.steps.append('QualiMap_summary')
     if cnf.load_mongo and 'MongoLoader' not in cnf.steps:
         cnf.steps.append('MongoLoader')
 
