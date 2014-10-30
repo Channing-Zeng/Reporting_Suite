@@ -33,7 +33,7 @@ def main():
     # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
     cnf = process_post_bcbio_args(parser)
 
-    if cnf.load_mongo and 'MongoLoader' not in cnf.steps:
+    if cnf.steps and cnf.load_mongo and 'MongoLoader' not in cnf.steps:
         cnf.steps.append('MongoLoader')
 
     check_system_resources(cnf, required=['qsub'], optional='transcripts_fpath')
