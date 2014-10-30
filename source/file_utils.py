@@ -3,7 +3,7 @@
 
 import shutil
 import os
-from os.path import isfile, isdir, getsize, exists, expanduser, basename, join, abspath, splitext, islink, dirname, \
+from os.path import isfile, isdir, getsize, exists, basename, join, abspath, splitext, islink, dirname, \
     pardir
 import gzip
 import tempfile
@@ -505,8 +505,7 @@ def adjust_path(path):
     path = remove_quotes(path)
     if path is None: return None
 
-    if path and path.startswith('~'):
-        path = expanduser(path)
+    path = expanduser(path)
     if path is None: return None
 
     path = abspath(path)
@@ -523,8 +522,7 @@ def adjust_system_path(path):
     path = remove_quotes(path)
     if path is None: return None
 
-    if path and path.startswith('~'):
-        path = expanduser(path)
+    path = expanduser(path)
     if path is None: return None
 
     path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
@@ -532,6 +530,43 @@ def adjust_system_path(path):
 
     path = abspath(path)
     return path
+
+
+# Expand paths beginning with '~' or '~user'.
+# '~' means $HOME; '~user' means that user's home directory.
+# If the path doesn't begin with '~', or if the user or $HOME is unknown,
+# the path is returned unchanged (leaving error reporting to whatever
+# function is called with the expanded path as argument).
+# See also module 'glob' for expansion of *, ? and [...] in pathnames.
+# (A function should also be defined to do full *sh-style environment
+# variable expansion.)
+def expanduser(path):
+    """Expand ~ and ~user constructs.
+
+    If user or $HOME is unknown, do nothing."""
+    if path[:1] != '~':
+        return path
+    i, n = 1, len(path)
+    while i < n and path[i] not in '/\\':
+        i = i + 1
+
+    if 'HOME' in os.environ:
+        userhome = os.environ['HOME']
+    elif 'USERPROFILE' in os.environ:
+        userhome = os.environ['USERPROFILE']
+    elif not 'HOMEPATH' in os.environ:
+        return path
+    else:
+        try:
+            drive = os.environ['HOMEDRIVE']
+        except KeyError:
+            drive = ''
+        userhome = join(drive, os.environ['HOMEPATH'])
+
+    if i != 1: #~user
+        userhome = join(dirname(userhome), path[1:i])
+
+    return userhome + path[i:]
 
 
 def file_exists(fpath):
