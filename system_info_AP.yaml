@@ -18,6 +18,9 @@ resources:
 #  cov2cnv2:
 #    path: /ngs/RDI/SCRIPTS/cov2cnv2.pl
 
+   vcf_loader:
+    path: /external/mongo_loader/VCFStore.jar
+
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

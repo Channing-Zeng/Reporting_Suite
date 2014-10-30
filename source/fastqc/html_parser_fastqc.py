@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 import os
-#from ext_modules.bs4 import BeautifulSoup ### TODO: make it work
+# from ext_modules.bs4 import BeautifulSoup ### TODO: make it work
 from bs4 import BeautifulSoup
 import collections
 import itertools
@@ -60,12 +60,18 @@ def _group2(iterator, count):
 
 
 if __name__ == "__main__":
-    m = get_graphs(sys.argv[1:])
-    # print m
-    # for keys, values in m.items():
-    # print keys
-    #for a, b in values:
-    #print a
+    k = 0
+    d = collections.OrderedDict()
+    for i in sys.argv[1:]:
+        k += 1
+        d[k]=i
+    m = get_graphs(d)
+
+    #print m
+    #for keys, values in m.items():
+        #print keys
+        #for a, b in values:
+            #print a
     #for a in group2(values, 3):
     #print  a[0][0]
 
