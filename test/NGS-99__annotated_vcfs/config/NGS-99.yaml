@@ -1,0 +1,93 @@
+details:
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed
+    variantcaller:  
+    - vardict 
+  analysis: variant2
+  description: Tissue-Resistant-1
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-1_ATCACG_L001_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-1_ATCACG_L001_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: Resistant-1
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed
+    variantcaller:  
+    - vardict
+  analysis: variant2
+  description: Tissue-Resistant-2
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-2_CGATGT_L001_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-2_CGATGT_L001_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: Resistant-2
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed
+    variantcaller:  
+    - vardict
+  analysis: variant2
+  description: Tissue-Resistant-4
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-4_TTAGGC_L001_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-4_TTAGGC_L001_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: Resistant-4
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    coverage_depth_max: 0
+    mark_duplicates: true
+    min_allele_fraction: 1
+    nomap_split_targets: 500
+    platform: illumina
+    quality_format: standard
+    realign: gatk
+    recalibrate: false
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/SureSelect_Human_AllExon_V5.bed
+    variantcaller:  
+    - vardict
+  analysis: variant2
+  description: Tissue-Resistant-5
+  files:
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-5_TGACCA_L002_R1_001.fastq.gz
+  - /ngs/oncology/datasets/translation/TS_0025_Platinum_Resistant_Ovarian/run_data/Tissue-Resistant-5_TGACCA_L002_R2_001.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: Resistant-5
+    phenotype: tumor
+fc_date: '2014-07-03'
+fc_name: NGS-99
+upload:
+  dir: ../final

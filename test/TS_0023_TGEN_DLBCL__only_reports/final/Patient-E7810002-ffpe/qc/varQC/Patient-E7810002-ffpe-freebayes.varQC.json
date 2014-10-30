@@ -1,0 +1,374 @@
+[
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 7533, 
+                "average": 7533.0, 
+                "cosmic": 7533, 
+                "dbsnp": 7533
+            }, 
+            "known": {
+                "1000genomes": 1067, 
+                "average": 1067.0, 
+                "cosmic": 1067, 
+                "dbsnp": 1067
+            }, 
+            "novel": {
+                "1000genomes": 6466, 
+                "average": 6466.0, 
+                "cosmic": 6466, 
+                "dbsnp": 6466
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Total variants evaluated", 
+            "name": "nEvalVariants", 
+            "quality": "More is better", 
+            "short_name": "Total", 
+            "unit": ""
+        }, 
+        "value": 7533
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 5708, 
+                "average": 5708.0, 
+                "cosmic": 5708, 
+                "dbsnp": 5708
+            }, 
+            "known": {
+                "1000genomes": 744, 
+                "average": 744.0, 
+                "cosmic": 744, 
+                "dbsnp": 744
+            }, 
+            "novel": {
+                "1000genomes": 4964, 
+                "average": 4964.0, 
+                "cosmic": 4964, 
+                "dbsnp": 4964
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "SNPs", 
+            "name": "nSNPs", 
+            "quality": "More is better", 
+            "short_name": "SNP", 
+            "unit": ""
+        }, 
+        "value": 5708
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }, 
+            "known": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }, 
+            "novel": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Insertions", 
+            "name": "nInsertions", 
+            "quality": "More is better", 
+            "short_name": "Ins", 
+            "unit": ""
+        }, 
+        "value": 0
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }, 
+            "known": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }, 
+            "novel": {
+                "1000genomes": 0, 
+                "average": 0.0, 
+                "cosmic": 0, 
+                "dbsnp": 0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Deletions", 
+            "name": "nDeletions", 
+            "quality": "More is better", 
+            "short_name": "Del", 
+            "unit": ""
+        }, 
+        "value": 0
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 104, 
+                "average": 417.3333333333333, 
+                "cosmic": 81, 
+                "dbsnp": 1067
+            }, 
+            "known": {
+                "1000genomes": 104, 
+                "average": 413.0, 
+                "cosmic": 68, 
+                "dbsnp": 1067
+            }, 
+            "novel": {
+                "1000genomes": 0, 
+                "average": 4.333333333333333, 
+                "cosmic": 13, 
+                "dbsnp": 0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Number of eval sites at comp sites (that is, sharing the same locus as a variant in the comp track, regardless of whether the alternate allele is the same)", 
+            "name": "nVariantsAtComp", 
+            "quality": "More is better", 
+            "short_name": "At comp", 
+            "unit": ""
+        }, 
+        "value": 81
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 1.38, 
+                "average": 5.539999999999999, 
+                "cosmic": 1.08, 
+                "dbsnp": 14.16
+            }, 
+            "known": {
+                "1000genomes": 9.75, 
+                "average": 38.70666666666667, 
+                "cosmic": 6.37, 
+                "dbsnp": 100.0
+            }, 
+            "novel": {
+                "1000genomes": 0.0, 
+                "average": 0.06666666666666667, 
+                "cosmic": 0.2, 
+                "dbsnp": 0.0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Percentage of eval sites at comp sites", 
+            "name": "compRate", 
+            "quality": "More is better", 
+            "short_name": "Comp rate", 
+            "unit": ""
+        }, 
+        "value": 1.08
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 103, 
+                "average": 287.0, 
+                "cosmic": 69, 
+                "dbsnp": 689
+            }, 
+            "known": {
+                "1000genomes": 103, 
+                "average": 283.6666666666667, 
+                "cosmic": 59, 
+                "dbsnp": 689
+            }, 
+            "novel": {
+                "1000genomes": 0, 
+                "average": 3.3333333333333335, 
+                "cosmic": 10, 
+                "dbsnp": 0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Number of concordant sites (that is, for the sites that share the same locus as a variant in the comp track, those that have the same alternate allele)", 
+            "name": "nConcordant", 
+            "quality": "More is better", 
+            "short_name": "Concord", 
+            "unit": ""
+        }, 
+        "value": 69
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 99.04, 
+                "average": 82.93333333333334, 
+                "cosmic": 85.19, 
+                "dbsnp": 64.57
+            }, 
+            "known": {
+                "1000genomes": 99.04, 
+                "average": 83.45666666666666, 
+                "cosmic": 86.76, 
+                "dbsnp": 64.57
+            }, 
+            "novel": {
+                "1000genomes": 0.0, 
+                "average": 25.64, 
+                "cosmic": 76.92, 
+                "dbsnp": 0.0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Concordance rate", 
+            "name": "concordantRate", 
+            "quality": "More is better", 
+            "short_name": "Conc rate", 
+            "unit": ""
+        }, 
+        "value": 85.19
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 2.4e-06, 
+                "average": 2.4e-06, 
+                "cosmic": 2.4e-06, 
+                "dbsnp": 2.4e-06
+            }, 
+            "known": {
+                "1000genomes": 3.4e-07, 
+                "average": 3.4e-07, 
+                "cosmic": 3.4e-07, 
+                "dbsnp": 3.4e-07
+            }, 
+            "novel": {
+                "1000genomes": 2.06e-06, 
+                "average": 2.06e-06, 
+                "cosmic": 2.06e-06, 
+                "dbsnp": 2.06e-06
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Variants per loci rate", 
+            "name": "variantRate", 
+            "quality": "More is better", 
+            "short_name": "Var/loci", 
+            "unit": ""
+        }, 
+        "value": 2.4e-06
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 416455.0, 
+                "average": 416455.0, 
+                "cosmic": 416455.0, 
+                "dbsnp": 416455.0
+            }, 
+            "known": {
+                "1000genomes": 2940169.0, 
+                "average": 2940169.0, 
+                "cosmic": 2940169.0, 
+                "dbsnp": 2940169.0
+            }, 
+            "novel": {
+                "1000genomes": 485178.0, 
+                "average": 485178.0, 
+                "cosmic": 485178.0, 
+                "dbsnp": 485178.0
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Bases per variant rate", 
+            "name": "basesPerVariant", 
+            "quality": "More is better", 
+            "short_name": "Bp/var", 
+            "unit": ""
+        }, 
+        "value": 416455.0
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 7.21, 
+                "average": 7.21, 
+                "cosmic": 7.21, 
+                "dbsnp": 7.21
+            }, 
+            "known": {
+                "1000genomes": 1.69, 
+                "average": 1.6900000000000002, 
+                "cosmic": 1.69, 
+                "dbsnp": 1.69
+            }, 
+            "novel": {
+                "1000genomes": 15.61, 
+                "average": 15.61, 
+                "cosmic": 15.61, 
+                "dbsnp": 15.61
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Heterozygosity to homozygosity ratio", 
+            "name": "hetHomRatio", 
+            "quality": "More is better", 
+            "short_name": "Het/hom", 
+            "unit": ""
+        }, 
+        "value": 7.21
+    }, 
+    {
+        "meta": {
+            "all": {
+                "1000genomes": 2.48, 
+                "average": 2.48, 
+                "cosmic": 2.48, 
+                "dbsnp": 2.48
+            }, 
+            "known": {
+                "1000genomes": 2.67, 
+                "average": 2.67, 
+                "cosmic": 2.67, 
+                "dbsnp": 2.67
+            }, 
+            "novel": {
+                "1000genomes": 2.45, 
+                "average": 2.45, 
+                "cosmic": 2.45, 
+                "dbsnp": 2.45
+            }
+        }, 
+        "metric": {
+            "common": false, 
+            "description": "Transition to transversion ratio", 
+            "name": "tiTvRatio", 
+            "quality": "More is better", 
+            "short_name": "Ti/Tv", 
+            "unit": ""
+        }, 
+        "value": 2.48
+    }
+]

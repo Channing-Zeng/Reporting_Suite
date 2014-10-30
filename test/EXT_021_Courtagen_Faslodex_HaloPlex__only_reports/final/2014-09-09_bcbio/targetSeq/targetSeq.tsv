@@ -1,0 +1,29 @@
+Sample	GPP16015	GPP16188	GPP17600	GPP17601
+Reads	6,696,595	8,855,781	11,106,240	10,812,265
+Mapped reads	5,858,729	8,727,579	10,811,115	9,294,656
+Percentage of mapped reads	87.49%	98.55%	97.34%	85.96%
+Unmapped reads	837,866	128,202	295,125	1,517,609
+Percentage of unmapped reads	12.51%	1.45%	2.66%	14.04%
+Covered bases in target	713,559	723,899	720,999	722,713
+Percentage of target covered by at least 1 read	97.90%	99.31%	98.92%	99.15%
+Reads mapped on target	4,662,731	8,082,963	10,028,901	8,298,628
+Percentage of reads mapped on target	79.59%	92.61%	92.76%	89.28%
+Reads mapped on padded target	4,662,731	8,082,963	10,028,901	8,298,628
+Percentage of reads mapped on padded target	79.59%	92.61%	92.76%	89.28%
+Read bases mapped on target	333951785.00	746303439.00	953845308.00	747021282.00
+Average target coverage depth	458.16	1023.89	1308.62	1024.87
+Std. dev. of target coverage depth	1345.11	2145.00	1258.90	1562.30
+Maximum target coverage depth	64,536	119,994	45,404	73,087
+Percentage of target within 20% of mean depth	10.50%	18.60%	20.24%	15.96%
+Part of target covered at least by 1x	97.90%	99.31%	98.92%	99.15%
+Part of target covered at least by 5x	95.49%	98.87%	98.53%	98.69%
+Part of target covered at least by 10x	92.86%	98.59%	98.33%	98.28%
+Part of target covered at least by 25x	86.46%	97.85%	97.83%	97.37%
+Part of target covered at least by 50x	78.18%	96.64%	97.18%	95.73%
+Part of target covered at least by 100x	65.29%	94.12%	95.75%	92.69%
+Part of target covered at least by 500x	23.23%	66.90%	78.74%	63.77%
+Part of target covered at least by 1000x	9.65%	35.80%	51.90%	35.22%
+Part of target covered at least by 5000x	0.66%	0.43%	1.35%	0.94%
+Part of target covered at least by 10000x	0.25%	0.25%	0.16%	0.16%
+Part of target covered at least by 50000x	0.01%	0.04%	0.0000%	0.02%
+Bases in target	728,892	728,892	728,892	728,892

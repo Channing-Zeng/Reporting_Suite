@@ -1,2 +1,0 @@
-TestSampleChrM_00
-TestSampleChrM_01
