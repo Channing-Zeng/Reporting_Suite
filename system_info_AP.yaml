@@ -18,7 +18,7 @@ resources:
 #  cov2cnv2:
 #    path: /ngs/RDI/SCRIPTS/cov2cnv2.pl
 
-   vcf_loader:
+  vcf_loader:
     path: external/mongo_loader/VCFStore.jar
 
 genomes:
