@@ -224,7 +224,7 @@ class BCBioRunner:
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
-            script='varfilter_all',
+            script='varfilter',
             dir_name=BCBioStructure.varfilter_dir,
             paramln=varfilter_paramline,
         )

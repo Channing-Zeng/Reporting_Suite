@@ -254,7 +254,6 @@ def finalize_one(cnf, bcbio_structure, sample, msg):
     info(sample.name + ':')
     msg.append(sample.name + ':')
 
-    # TODO: if sample is normal, suppress warning in verify_fpath
     for caller_name, caller in bcbio_structure.variant_callers.items():
         msg.append('  ' + caller_name)
         for fpath in [

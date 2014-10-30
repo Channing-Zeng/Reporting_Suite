@@ -329,8 +329,9 @@ class BCBioStructure:
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
                    [BCBioStructure.filt_maf_ending,
+                    BCBioStructure.filt_tsv_ending,
                     BCBioStructure.filt_vcf_ending,
-                    BCBioStructure.filt_tsv_ending]):
+                    BCBioStructure.filt_vcf_ending + '.idx']):
                 continue
 
             if 'vcf' in fname.split('.') and \
