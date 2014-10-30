@@ -500,21 +500,35 @@ def verify_module(name):
 
 
 def adjust_path(path):
-    if not path:
-        return None
-    return abspath(expanduser(remove_quotes(path)))
+    if path is None: return None
+
+    path = remove_quotes(path)
+    if path is None: return None
+
+    path = expanduser(path)
+    if path is None: return None
+
+    path = abspath(path)
+    if path is None: return None
+
+    return path
 
 
 code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
 
 def adjust_system_path(path):
-    if not path:
-        return None
-    path = expanduser(remove_quotes(path))
-    if path:
-        path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
-    if path:
-        path = abspath(path)
+    if path is None: return None
+
+    path = remove_quotes(path)
+    if path is None: return None
+
+    path = expanduser(path)
+    if path is None: return None
+
+    path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
+    if path is None: return None
+
+    path = abspath(path)
     return path
 
 
