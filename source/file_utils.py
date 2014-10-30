@@ -495,7 +495,7 @@ def verify_module(name):
     try:
         __import__(name)
         return True
-    except ImportError:
+    except:
         return False
 
 
