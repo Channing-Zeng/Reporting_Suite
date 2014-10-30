@@ -59,7 +59,7 @@ genomes:
     default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome-expanded.bed
 
     capture_panels:
-      agilent: //ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
+      agilent: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
 
 
 queue: batch.q

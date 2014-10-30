@@ -237,7 +237,8 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     to_exit = False
 
     for key in genome_cnf.keys():
-        genome_cnf[key] = adjust_system_path(genome_cnf[key])
+        if isinstance(genome_cnf[key], basestring):
+            genome_cnf[key] = adjust_system_path(genome_cnf[key])
 
     for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if key not in genome_cnf:
