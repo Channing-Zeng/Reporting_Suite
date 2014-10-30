@@ -19,7 +19,7 @@ resources:
 #    path: /ngs/RDI/SCRIPTS/cov2cnv2.pl
 
    vcf_loader:
-    path: /external/mongo_loader/VCFStore.jar
+    path: external/mongo_loader/VCFStore.jar
 
 genomes:
   hg19:

@@ -31,7 +31,7 @@ resources:
   igvtools:
     path: /usr/local/src/IGVTools/igvtools.jar
   vcf_loader:
-    path: /external/mongo_loader/VCFStore.jar
+    path: external/mongo_loader/VCFStore.jar
   cov2cnv2:
     path: /usr/local/src/Seq2C/cov2cnv2.pl
 
