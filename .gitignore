@@ -42,51 +42,37 @@ nosetests.xml
 test/run_info.yaml
 test/**/*work*
 test/**/*tmp*
+
 test/data/big
-test/results_big_vcf
-test/results_summary_targetcov_bk
-test/results_summary_targetcov_parallel
-test/results_anno
-test/results_qs_summary
-test/results_varfilter
-test/results_cov
-test/results_cov/
-test/results_anno
 
-test/bcbio/final/**/varAnnotate
-test/bcbio/final/**/qc/ngscat
-test/bcbio/final/**/qc/qualimap
-test/bcbio/final/**/qc/varQC
-test/bcbio/final/**/qc/varQC_postVarFilter
-test/bcbio/final/**/targetSeq
-test/bcbio/final/**/varFilter*
-test/bcbio/final/**/vardict
-test/bcbio/final/**/*-ready.bam.bai
-test/bcbio/final/*/*-ready.bam.bai
-test/bcbio/final/**/varQC
-test/bcbio/final/2014-07-03_bcbio
-test/bcbio/final_old
-test/bcbio.bak
+test/results_*
 
-test/NGS-99/final.bak
-test/NGS-99/final_old
-test/NGS-99/final/2014-07-03_NGS-99/log/
-test/bcbio/final/*
-test/bcbio/final/*
+# Bcbio tests
+test/**/vardict
+test/**/qc/ngscat
+test/**/qc/qualimap
+test/**/qc/varQC
+test/**/qc/varQC_postVarFilter
+test/**/targetSeq
+test/**/varQC
+test/**/varFilter
+test/**/*.anno.filt.*
+test/**/scripts/*.map
+test/**/2014-*
 
-test/NGS-99/final_old*
-test/NGS-99/final_bak*
-test/NGS-99/work
+# Reports tests
+test/EXT_021_Courtagen_Faslodex_HaloPlex__only_reports/final/2014-*
+test/NGS-99-update__only_reports/final/2014-*
+test/TS_0023_TGEN_DLBCL__only_reports/final/2014-*
 
-test/run_info.yaml
-test/run_info_all.yaml
+test/EXT_023_AZD4547_PDX_exome_ByoungChulCho
+test/NGS-99__*_annotated_vcfs
 
-test/NGS-99/final/2014-07-03_NGS-99/
-test/NGS-99
-test/NGS-99/final
+# Whole pipeline tests
+test/bcbio/**/varAnnotate
 
-test/EXT_021_Courtagen_Faslodex_HaloPlex/*
-test/EXT_021_Courtagen_Faslodex_HaloPlex/
-test/NGS-99-update-final/*
+
+
+
 
 external/snpEff/data
