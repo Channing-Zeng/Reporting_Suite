@@ -550,6 +550,8 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
         comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
 
+        print comb_maf_fpath_symlink
+        print comb_pass_maf_fpath_symlink
         if not exists(comb_maf_fpath_symlink) \
                 and not islink(comb_maf_fpath_symlink) \
                 and caller.combined_filt_maf_fpath != comb_maf_fpath_symlink:

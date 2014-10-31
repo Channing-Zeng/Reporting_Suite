@@ -126,9 +126,9 @@ my @maf_header = qw(
     CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene
     t_alt_count t_ref_count
     dbSNP_global_MAF Filter
-    Calculated_allele
+    Calc_allele_freq
     COSMIC_overlapping_mutations COSMIC_CDS_Change COSMIC_AA_Change CLNSIG
-    Var_Class
+    Class
 
     Num_samples Num_samples_with_the_same_variant Ave_AF_in_samples_with_the_same_variant
 
