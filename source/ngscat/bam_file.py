@@ -5,7 +5,7 @@ import sys
 import string
 import config
 from source.calling_process import call_check_output, call
-from source.file_utils import intermediate_fname
+from source.file_utils import intermediate_fname, tmpfile, verify_file
 from source.logger import info, err
 from source.tools_from_cnf import get_tool_cmdline
 from source.utils import human_sorted
@@ -43,6 +43,35 @@ def filter_unmapped_reads(cnf, bam_fpath):
     else:
         output_fpath = bam_fpath
     return output_fpath
+
+
+def process_pysam_bug(cnf, bam_fpath):  # actual for pysam v.0.7.0 and lower!
+    try:
+        bam_file = pysam.Samfile(bam_fpath, 'rb')
+        seq_headers = bam_file.header['SQ']  # exception may be raised here
+    except ValueError, exc:
+        if 'PG' in exc.message and 'PP' in exc.message:
+            output_fpath = intermediate_fname(cnf, bam_fpath, 'fixed_header')
+            cmdline = "%s view -H %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)  # get Header only
+            old_header_fpath = join(output_fpath + '.old_header')
+            new_header_fpath = join(output_fpath + '.new_header')
+            call(cnf, cmdline, old_header_fpath)
+            with open(old_header_fpath, 'r') as old_header_f:
+                with open(new_header_fpath, 'w') as new_header_f:
+                    for line in old_header_f.readlines():
+                        if line.startswith('@PG') and 'PP' in line:
+                            continue
+                        new_header_f.write(line)
+
+            cmdline = "%s reheader %s %s" % (get_tool_cmdline(cnf, 'samtools'), new_header_fpath, bam_fpath)
+            info("Fixing bam header to prevent the bug with pysam module (PP field of @PG line): " + cmdline)
+            call(cnf, cmdline, output_fpath)
+            if verify_file(old_header_fpath):
+                os.remove(old_header_fpath)
+            if verify_file(new_header_fpath):
+                os.remove(new_header_fpath)
+            return output_fpath
+    return bam_fpath
 # end of aux functions
 
 

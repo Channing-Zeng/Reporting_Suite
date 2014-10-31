@@ -24,7 +24,7 @@ from source.main import read_opts_and_cnfs, check_system_resources, load_genome_
 from source.config import Defaults
 from source.runner import run_one
 from source.ngscat import config, ngscat_main
-from source.ngscat.bam_file import filter_unmapped_reads
+from source.ngscat.bam_file import filter_unmapped_reads, process_pysam_bug
 
 
 def main():
@@ -129,7 +129,7 @@ def process_one(cnf):
     if 'extra_bam' in cnf:
         bams.append(cnf['extra_bam'])
 
-    filtered_bams = [filter_unmapped_reads(cnf, bam) for bam in bams]
+    filtered_bams = [process_pysam_bug(cnf, filter_unmapped_reads(cnf, bam)) for bam in bams]
 
     report_fpath = ngscat_main.ngscat(
         cnf, filtered_bams, cnf['bed'], cnf['output_dir'], cnf['genome'].get('seq'),
