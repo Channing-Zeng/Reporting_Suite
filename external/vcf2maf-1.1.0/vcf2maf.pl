@@ -337,6 +337,15 @@ while( my $line = $vcf_fh->getline ) {
 
     $maf_line{dbSNP_global_MAF} = $info{CAF};
     $maf_line{CLNSIG} = $info{CLNSIG} ? $info{CLNSIG} : '';
+    $maf_line{Class} = $info{Class} ? $info{Class} : '';
+    $maf_line{COSMIC_AA_Change} = $info{AA} ? $info{AA} : '';
+    $maf_line{COSMIC_CDS_Change} = $info{CDS} ? $info{CDS} : '';
+
+#    my ad_alt = 0;
+#    my dp = 0;
+#    $maf_line{t_alt_count} = $info{AD} ? $info{AD} : '';
+#    $maf_line{t_ref_count} = $info{AD} ? $info{AD} : '';
+#    $maf_line{Calc_allele_freq} = $info{FREQ} ? $info{FREQ} : (dp ? ad_alt / dp : '');
 
     # Cohort
     $maf_line{Num_samples} = $info{Num_samples} ? $info{Num_samples} : '';
@@ -359,13 +368,14 @@ while( my $line = $vcf_fh->getline ) {
 #    $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
 #    $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
 
+
 #    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
 #    Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
 #    Transcript_Strand Transcript_Exon Transcript_Position
 #
 #    Refseq_mRNA_Id Refseq_prot_Id COSMIC_overlapping_mutations ref_context gc_content
 #    CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene t_alt_count t_ref_count
-#    dbSNP_global_MAF Filter Calculated_allele COSMIC_CDS_Change COSMIC_AA_Change CLNSIG Var_Class
+#    dbSNP_global_MAF Filter Calculated_allele
 
 
 # TODO

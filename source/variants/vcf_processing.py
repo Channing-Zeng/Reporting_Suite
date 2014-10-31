@@ -19,6 +19,7 @@ from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
 from source.logger import step_greetings, info, critical, err
+from source.variants import Effect
 
 
 class Record(_Record):
@@ -38,7 +39,7 @@ class Record(_Record):
         if main_sample_index is not None:
             return self.samples[main_sample_index]
         try:
-            sample_index = [sname.lower() for sname in self._sample_indexes]\
+            sample_index = [sname.lower() for sname in self._sample_indexes] \
                             .index(self.sample_name_from_file.lower())
         except ValueError:
             return self.samples[0]
@@ -100,16 +101,69 @@ class Record(_Record):
         else:
             return default
 
-    def cls(self):
-        cls = 'Novel'
+    def cls(self, req_maf=None, max_frac_for_del=None, sample_name=''):
+        """
+        DBSNP:
+            if gmaf < req_maf, keep it
+            if dbSNP_del, keep even if gmaf > req_maf
+                and keep CLNSIG >= 5 always
+        Cosmic:
+            keep everything
+        """
+        _cls = 'Novel'
         if self.ID and 'COSM' in self.ID:
-            cls = 'COSMIC'
+            _cls = 'COSMIC'
         elif self.ID and self.ID.startswith('rs'):
             if self.check_clnsig() == 'significant':
-                cls = 'ClnSNP'
+                _cls = 'ClnSNP'
             else:
-                cls = 'dbSNP'
-        return cls
+                _cls = 'dbSNP'
+
+        if req_maf and 'CAF' in self.INFO:
+            _cls = self._get_class_based_on_caf(_cls, req_maf, sample_name)
+
+        if max_frac_for_del:
+            # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
+            # but not in ClnSNP or COSMIC.
+            for eff in map(Effect, self.INFO.get('EFF') or []):
+                if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and _cls == 'dbSNP':
+                    info('eff.efftype = ' + eff.efftype + ', eff.pos / int(eff.aal) = ' + str(eff.pos / int(eff.aal)))
+                    if eff.pos / int(eff.aal) < max_frac_for_del:
+                        _cls = 'dbSNP_del'
+
+        return _cls
+
+    def _get_class_based_on_caf(self, prev_cls, req_maf=None, sample_name=''):
+        vals = self.INFO['CAF']
+
+        cafs = [''.join(c for c in v if c not in '[]') for v in vals if v]
+        info('cafs = ' + str(cafs))
+        if len(cafs) == 0:
+            err('No correct CAFs: cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + self.get_variant() + ' in ' + sample_name)
+            return prev_cls
+
+        allele_cafs = [c for c in cafs[1:] if c and c != '.']
+        if len(allele_cafs) == 0:
+            err('No allelic CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + self.get_variant() + ' in ' + sample_name)
+            return prev_cls
+
+        try:
+            allele_cafs = map(float, allele_cafs)
+        except ValueError:
+            err('Could not parse CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + self.get_variant() + ' in ' + sample_name)
+            return prev_cls
+
+        min_allele_caf = min(allele_cafs)
+
+        # if there's MAF with frequency, it'll be considered
+        # dbSNP regardless of COSMIC
+        if req_maf is not None and min_allele_caf > req_maf:
+            info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class was ' + prev_cls + ', becomes dbSNP')
+            return 'dbSNP'
+
+        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + prev_cls)
+        return prev_cls
+
 
     def is_rejected(self):
         if self.FILTER:

@@ -24,7 +24,6 @@ steps:
 
 
 
-
 filter_reject: False  ## Before annotation and QC, filter variants
                       ## that set REJECT in the FILTER field
 

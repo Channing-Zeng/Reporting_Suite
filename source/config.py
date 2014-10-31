@@ -22,7 +22,6 @@ class Defaults:
     genome = 'hg19'
 
     output_dir = getcwd()
-    tmp_base_dir = getcwd()
 
     verbose = True
     threads = 1
@@ -40,7 +39,6 @@ class Defaults:
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
     bcbio_final_dir = getcwd()
-    qualimap = False    # 'True' adds 'QualiMap' to steps
     load_mongo = False  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh'
 
@@ -101,7 +99,9 @@ class Defaults:
         cancer=False,
     )
 
-    make_maf = True
+    @staticmethod
+    def generate_yaml():
+        pass
 
 
 class Config(object):
@@ -112,18 +112,9 @@ class Config(object):
 
         if sys_cnf and run_cnf:
 
-            self.genome = None
-
-            self.tmp_base_dir = None
-            self.tmp_dir = None
-            self.work_dir = None
-            self.output_dir = None
-            self.log = None
-            self.threads = None
-
-            self.overwrite = None
-            self.reuse_intermediate = None
-            self.keep_intermediate = None
+            # self.overwrite = None
+            # self.reuse_intermediate = None
+            # self.keep_intermediate = None
 
             sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
             loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
@@ -137,13 +128,12 @@ class Config(object):
             self.sys_cnf = sys_cnf_fpath
             self.run_cnf = run_cnf_fpath
 
-            if self.overwrite is not None:
+            if self.overwrite is not None:  # if specified
                 self.reuse_intermediate = not self.overwrite
             else:
                 self.overwrite = not self.reuse_intermediate
 
-            if not self.tmp_base_dir:
-                self.tmp_base_dir = self.work_dir
+            self.tmp_base_dir = self.work_dir
         else:
             for k, v in cmd_line_opts.items():
                 self[k] = v

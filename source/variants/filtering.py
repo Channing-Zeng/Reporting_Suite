@@ -12,7 +12,7 @@ from source.bcbio_structure import BCBioStructure
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, leave_main_sample, get_trasncripts_fpath, \
+from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
     get_main_sample_index
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
@@ -142,30 +142,27 @@ class VariantInfo:  # collects information (here, AFs) for all (chrom, pos, ref,
         return self._avg_af
 
 
-cnf_for_samples = dict()
-
-
 # @profile
 def process_vcf(vcf_fpath, fun, suffix, cnf=None, *args, **kwargs):
     return iterate_vcf(cnf, vcf_fpath, fun, suffix, cnf_=cnf, self_=filtering, *args, **kwargs)
 
 
 def rm_prev_round(vcf_fpath, sample_name):
-    return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev', cnf_for_samples[sample_name])
+    return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev', cnfs_for_sample_names[sample_name])
 
 
 def first_round(vcf_fpath, sample_name):
     variant_dict = dict()  # tuples of (chrom, pos, ref, alt)
     control_variants = set()  # variants from controls samples
     res = process_vcf(
-        vcf_fpath, proc_line_1st_round, 'r1', cnf_for_samples[sample_name],
+        vcf_fpath, proc_line_1st_round, 'r1', cnfs_for_sample_names[sample_name],
         variant_dict=variant_dict, control_vars=control_variants)
 
     return res, variant_dict, control_variants
 
 
 def second_round(vcf_fpath, sample_name):
-    cnf = cnf_for_samples[sample_name]
+    cnf = cnfs_for_sample_names[sample_name]
     main_sample_index = get_main_sample_index(cnf, vcf_fpath, sample_name)
     cnf.main_sample_index = main_sample_index
 
@@ -178,18 +175,18 @@ def second_round(vcf_fpath, sample_name):
 
 
 def impact_round(vcf_fpath, sample_name):
-    return process_vcf(vcf_fpath, proc_line_impact, 'impact', cnf_for_samples[sample_name])
+    return process_vcf(vcf_fpath, proc_line_impact, 'impact', cnfs_for_sample_names[sample_name])
 
 
 def one_per_line(vcf_fpath, sample_name):
-    return vcf_one_per_line(cnf_for_samples[sample_name], vcf_fpath)
+    return vcf_one_per_line(cnfs_for_sample_names[sample_name], vcf_fpath)
 
 
 class Filtering:
     cnf = None
     filt_cnf = None
 
-    def __init__(self, cnf, bcbio_structure, caller, cnf_for_samples):
+    def __init__(self, cnf, bcbio_structure, caller):
         Filtering.cnf = cnf
         Filtering.filt_cnf = Filter.filt_cnf = filt_cnf = cnf.variant_filtering.__dict__
 
@@ -216,7 +213,7 @@ class Filtering:
         self.min_freq_filters = dict()
         for sample in caller.samples:
             self.min_freq_filters[sample.name] = \
-                InfoFilter('min_freq', 'AF', cnf=cnf_for_samples[sample.name], required=False)
+                InfoFilter('min_freq', 'AF', cnf=cnfs_for_sample_names[sample.name], required=False)
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN', required=False),
@@ -233,6 +230,7 @@ class Filtering:
             if pstd is not None and bias is not None:
                 return not (pstd == 0 and bias[-1] != '0' and bias[-1] != '1')
             return True
+        self.dup_filter = Filter('DUP', dup_filter_check)
 
         def bias_filter_check(rec, cls, main_sample_index):  # Filter novel variants with strand bias.
             if not Filter.filt_cnf['bias'] is True:
@@ -245,12 +243,14 @@ class Filtering:
                 return True  # Variant has to have bias and with proper values
 
             return rec.af(main_sample_index) >= 0.3
+        self.bias_filter = CnfFilter('bias', bias_filter_check)
 
         def nonclnsnp_filter_check(rec, cls):
             if cls in ['COSMIC']:
                 return True
 
             return rec.check_clnsig() != 'not_significant'
+        self.nonclnsnp_filter = Filter('NonClnSNP', nonclnsnp_filter_check)
 
         def multi_filter_check(rec, var_n, frac, avg_af):
             if (rec.ID is None and      # reject if novel and present in [fraction] samples
@@ -260,24 +260,22 @@ class Filtering:
                 return False
             else:
                 return True
+        self.multi_filter = Filter('MULTI', multi_filter_check)
 
         def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
             if frac >= Filter.filt_cnf['max_ratio'] and rec.get_val('AF') < 0.3:
                 return False
             return True
-
-        # self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
-        self.control_filter = CnfFilter('control', lambda rec:
-            not (filt_cnf['control'] and rec.get_variant() in self.control_vars))
-        self.dup_filter = Filter('DUP', dup_filter_check)
-        self.bias_filter = CnfFilter('bias', bias_filter_check)
-        self.nonclnsnp_filter = Filter('NonClnSNP', nonclnsnp_filter_check)
-        self.multi_filter = Filter('MULTI', multi_filter_check)
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
 
+        # self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
+
+        def control_filter_check(rec):
+            return not (filt_cnf['control'] and rec.get_variant() in self.control_vars)
+        self.control_filter = CnfFilter('control', control_filter_check)
 
     # @profile
-    def run_filtering(self, sample_names, vcf_fpaths, n_jobs=1):
+    def run_filtering_steps_for_vcfs(self, sample_names, vcf_fpaths, n_jobs=1):
         step_greetings('Filtering')
 
         global filtering
@@ -445,62 +443,13 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         self_.control_filter.apply(rec)
 
-        # DBSNP:
-        #   if gmaf < req_maf, keep it
-        #   if dbSNP_del, keep even if gmaf > req_maf
-        #   and keep CLNSIG >= 5 always
-        # Cosmic:
-        #   keep everything
-
-        cls = rec.cls()
-        if 'CAF' in rec.INFO:
-            cls = process_cafs_for_dbsnp(rec, cls)
-
-        # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139) that is in dbSNP,
-        # but not in ClnSNP or COSMIC.
-        for eff in map(Effect, rec.INFO.get('EFF') or []):
-            if eff.efftype in ['STOP_GAINED', 'FRAME_SHIFT'] and cls == 'dbSNP':
-                info('eff.efftype = ' + eff.efftype + ', eff.pos / int(eff.aal) = ' + str(eff.pos / int(eff.aal)))
-                if eff.pos / int(eff.aal) < 0.95:
-                    cls = 'dbSNP_del'
+        cls = rec.cls(req_maf=Filtering.filt_cnf.get('maf'), max_frac_for_del=0.95, sample_name=sample_name)
+        rec.INFO['Class'] = cls
 
         self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
         self_.nonclnsnp_filter.apply(rec, cls=cls)
 
     return rec
-
-
-def process_cafs_for_dbsnp(rec, prev_cls):
-    vals = rec.INFO['CAF']
-
-    cafs = [''.join(c for c in v if c not in '[]') for v in vals if v]
-    info('cafs = ' + str(cafs))
-    if len(cafs) == 0:
-        err('No correct CAFs: cafs = ' + str(cafs) + ', vals = ' + str(vals) + ' for ' + rec.get_variant() + ' in ' + sample_name)
-        return prev_cls
-
-    allele_cafs = [c for c in cafs[1:] if c and c != '.']
-    if len(allele_cafs) == 0:
-        err('No allelic CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name)
-        return prev_cls
-
-    try:
-        allele_cafs = map(float, allele_cafs)
-    except ValueError:
-        err('Could not parse CAFs: cafs = ' + str(cafs) + ', allele_cafs = ' + str(allele_cafs) + ' for ' + rec.get_variant() + ' in ' + sample_name)
-        return prev_cls
-
-    min_allele_caf = min(allele_cafs)
-    req_maf = Filtering.filt_cnf.get('maf')
-
-    # if there's MAF with frequency, it'll be considered
-    # dbSNP regardless of COSMIC
-    if req_maf is not None and min_allele_caf > req_maf:
-        info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class was ' + prev_cls + ', becomes dbSNP')
-        return 'dbSNP'
-
-    info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + prev_cls)
-    return prev_cls
 
 
 def proc_line_impact(rec, cnf_, self_):
@@ -548,16 +497,6 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         err('No vcfs for ' + caller.name + '. Skipping.')
         return caller
 
-    global cnf_for_samples
-    for sample in caller.samples:
-        cnf_for_samples[sample.name] = cnf.copy()
-        cnf_for_samples[sample.name].name = sample.name
-
-    f = Filtering(cnf, bcbio_structure, caller, cnf_for_samples)
-
-    n_jobs = min(len(anno_vcf_fpaths), 20) if IN_PARALLEL else 1
-    filt_anno_vcf_fpaths = f.run_filtering(sample_names, anno_vcf_fpaths, n_jobs)
-
     global cnfs_for_sample_names
     info('*' * 70)
     info('Processed samples (' + str(len(sample_names)) + '):')
@@ -568,6 +507,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         if sample.min_af is not None:
             cnf_copy['variant_filtering']['min_freq'] = sample.min_af
         cnfs_for_sample_names[sample.name] = cnf_copy
+
+    n_jobs = min(len(anno_vcf_fpaths), 10) if IN_PARALLEL else 1
+
+    f = Filtering(cnf, bcbio_structure, caller)
+    filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_jobs)
 
     results = [r for r in Parallel(n_jobs) \
         (delayed(postprocess_vcf)
