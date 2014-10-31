@@ -21,6 +21,9 @@ from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_
 from source.logger import info
 
 
+# TODO:
+# add filters to VCF header
+
 class Filter:
     filt_cnf = None
     main_sample = None
@@ -163,7 +166,7 @@ def first_round(vcf_fpath, sample_name):
 
 def second_round(vcf_fpath, sample_name):
     cnf = cnfs_for_sample_names[sample_name]
-    main_sample_index = get_main_sample_index(cnf, vcf_fpath, sample_name)
+    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
     cnf.main_sample_index = main_sample_index
 
     #TODO: tmp

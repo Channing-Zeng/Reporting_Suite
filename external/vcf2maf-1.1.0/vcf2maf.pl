@@ -340,12 +340,14 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Class} = $info{Class} ? $info{Class} : '';
     $maf_line{COSMIC_AA_Change} = $info{AA} ? $info{AA} : '';
     $maf_line{COSMIC_CDS_Change} = $info{CDS} ? $info{CDS} : '';
+    $maf_line{COSMIC_overlapping_mutations} = $info{COSMIC_overlapping_mutations} ? $info{COSMIC_overlapping_mutations} : '';
 
-#    my ad_alt = 0;
-#    my dp = 0;
-#    $maf_line{t_alt_count} = $info{AD} ? $info{AD} : '';
-#    $maf_line{t_ref_count} = $info{AD} ? $info{AD} : '';
-#    $maf_line{Calc_allele_freq} = $info{FREQ} ? $info{FREQ} : (dp ? ad_alt / dp : '');
+    $maf_line{t_alt_count} = $info{t_alt_count} ? $info{t_alt_count} : '';
+    $maf_line{t_ref_count} = $info{t_ref_count} ? $info{t_ref_count} : '';
+    $maf_line{Calc_allele_freq} = $info{Calc_allele_freq} ? $info{Calc_allele_freq} : '';
+
+    $maf_line{gc_content} = $info{GC} ? $info{GC} : '';
+    $maf_line{ref_context} = ($info{LSEQ} && $info{RSEQ}) ? "$info{LSEQ}$ref$info{RSEQ}" : '';
 
     # Cohort
     $maf_line{Num_samples} = $info{Num_samples} ? $info{Num_samples} : '';
@@ -356,36 +358,31 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Strand_Bias} = $info{BIAS} ? $info{BIAS} : '';
     $maf_line{Position_mean} = $info{PMEAN} ? $info{PMEAN} : '';
     $maf_line{Position_std} = $info{PSTD} ? $info{PSTD} : '';
-    $maf_line{Base_quality_mean} = $info{QMEAN} ? $info{QMEAN} : '';
+    $maf_line{Base_quality_mean} = $info{QUAL} ? $info{QUAL} : ($info{QMEAN} ? $info{QMEAN} : '');
     $maf_line{Base_quality_std} = $info{QSTD} ? $info{QSTD} : '';
     $maf_line{Strand_bias_Fisher_pvalue} = $info{SBF} ? $info{SBF} : '';
     $maf_line{Strand_bias_odd_ratio} = $info{ODDRATIO} ? $info{ODDRATIO} : '';
-#    $maf_line{Mapping_quality_mean} = '';
-    $maf_line{Signal_to_noize} = $info{SB} ? $info{SB} : '';
+    $maf_line{Mapping_quality_mean} = $info{MQ} ? $info{MQ} : '';
+    $maf_line{Signal_to_noize} = $info{SN} ? $info{SN} : '';
     $maf_line{MSI} = $info{MSI} ? $info{MSI} : '';
-#    $maf_line{Good_amplicon} = '';
+    # $maf_line{Good_amplicon} = '';
     $maf_line{Total_amplicons} = $info{TLAMP} ? $info{TLAMP} : '';
-#    $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
-#    $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
-
-
-#    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
-#    Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
-#    Transcript_Strand Transcript_Exon Transcript_Position
-#
-#    Refseq_mRNA_Id Refseq_prot_Id COSMIC_overlapping_mutations ref_context gc_content
-#    CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene t_alt_count t_ref_count
-#    dbSNP_global_MAF Filter Calculated_allele
-
+    # $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
+    # $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
 
 # TODO
-#    $maf_line{cDNA_Change} = '';
-#    $maf_line{Codon_Change} = '';
-#    $maf_line{Protein_Change} = '';
-#    $maf_line{Refseq_mRNA_Id} = '';
-#    $maf_line{Refseq_prot_Id} = '';
-#    $maf_line{t_ref_count} = '';
-#    $maf_line{t_alt_count} = '';
+# General:
+#    cDNA_change
+#    Protein_Change
+#    Refseq_mRNA_Id
+#    Refseq_prot_Id
+#    CCLE_ONCOMAP_overlapping_mutations
+#    CCLE_ONCOMAP_total_mutations_in_gene
+
+# VarDict:
+#    Good_amplicon
+#    Failed_amplicons
+#    Amplicon_bias_frac
 
     foreach my $col ( @maf_header ) {
         $maf_fh->print( "\t" ) if ( $col ne $maf_header[0] );

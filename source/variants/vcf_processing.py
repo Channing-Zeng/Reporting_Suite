@@ -33,7 +33,7 @@ class Record(_Record):
         self._variant = None
         self._af = None
 
-    def _get_main_sample(self, main_sample_index=None):
+    def get_main_sample(self, main_sample_index=None):
         if len(self._sample_indexes) == 0:
             return None
         if main_sample_index is not None:
@@ -74,7 +74,7 @@ class Record(_Record):
                 except:
                     pass
         else:
-            main_sample = self._get_main_sample(main_sample_index)
+            main_sample = self.get_main_sample(main_sample_index)
             if main_sample:
                 sample_data = main_sample.data._asdict()
                 if key in sample_data:
@@ -163,7 +163,6 @@ class Record(_Record):
 
         info('min_allele_caf = ' + str(min_allele_caf) + ', req_maf = ' + str(req_maf) + ', class stays ' + prev_cls)
         return prev_cls
-
 
     def is_rejected(self):
         if self.FILTER:
@@ -399,6 +398,37 @@ def get_trasncripts_fpath(cnf):
     return cnf.transcripts_fpath
 
 
+def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
+    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
+
+    def proc_line(rec):
+        main_sample = rec.get_main_sample(main_sample_index)
+        if main_sample:
+            sample_data = main_sample.data._asdict()
+            ads = None
+            if 'AD' in sample_data:
+                ads = main_sample.AD
+                rec.INFO['t_ref_count'] = ads[0]
+                rec.INFO['t_alt_count'] = ads[1]
+            if 'FREQ' in sample_data:
+                rec.INFO['Calc_allele_freq'] = main_sample.FREQ
+            elif 'AF' in sample_data:
+                rec.INFO['Calc_allele_freq'] = main_sample.AF
+            elif ads and len(ads) >= 2 and 'DP' in sample_data:
+                rec.INFO['Calc_allele_freq'] = float(ads[1]) / main_sample.DP
+
+            for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
+                        'SBF', 'ODDRATIO', 'MQ', 'SN']:
+                if key in sample_data and key not in rec.info:
+                    rec.INFO[key] = sample_data[key]
+
+        if rec.ID:
+            rec.INFO['COSMIC_overlapping_mutations'] = ','.join(
+                id for id in rec.ID if 'COSM' in id)
+
+    return iterate_vcf(cnf, vcf_fpath, proc_line, 'maf')
+
+
 def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
                    bam_fpath=None, normal_sample_name=None):
     step_greetings('Converting to MAF')
@@ -412,6 +442,8 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
             info('Copying transcripts file ' + transcripts_fpath + ' to ' + transcripts_fpath_copy)
             shutil.copyfile(transcripts_fpath, transcripts_fpath_copy)
             transcripts_fpath = transcripts_fpath_copy
+
+    vcf_fpath = _prepare_fields_for_maf_converter(cnf, vcf_fpath, tumor_sample_name)
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
@@ -493,7 +525,7 @@ def read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def get_main_sample_index(cnf, vcf_fpath, samplename):
+def get_main_sample_index(vcf_fpath, samplename):
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
     if len(vcf_header_samples) == 0:
@@ -517,7 +549,7 @@ def get_main_sample_index(cnf, vcf_fpath, samplename):
 
 
 def leave_main_sample(cnf, vcf_fpath, samplename):
-    index = get_main_sample_index(cnf, vcf_fpath, samplename)
+    index = get_main_sample_index(vcf_fpath, samplename)
     if index is None:
         return vcf_fpath
 
