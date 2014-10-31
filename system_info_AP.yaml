@@ -17,13 +17,13 @@ resources:
     path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
 #  cov2cnv2:
 #    path: /ngs/RDI/SCRIPTS/cov2cnv2.pl
-
   vcf_loader:
     path: external/mongo_loader/VCFStore.jar
 
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
@@ -33,10 +33,13 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
 
-    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    snpeff_transcripts: /home/klpf990/transcripts.txt
+
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
 
-    default_bed: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+    capture_panels:
+      agilent: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AgilentSureSelectV4_51M.bed
+
 
 queue: ngs.q
 

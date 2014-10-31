@@ -122,12 +122,12 @@ my @maf_header = qw(
     Transcript_Strand Transcript_Exon Transcript_Position
 
     Refseq_mRNA_Id Refseq_prot_Id
-    COSMIC_overlapping_mutations
 
     CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene
     t_alt_count t_ref_count
     dbSNP_global_MAF Filter
-    Calculated_allele COSMIC_CDS_Change COSMIC_AA_Change CLNSIG
+    Calculated_allele
+    COSMIC_overlapping_mutations COSMIC_CDS_Change COSMIC_AA_Change CLNSIG
     Var_Class
 
     Num_samples Num_samples_with_the_same_variant Ave_AF_in_samples_with_the_same_variant

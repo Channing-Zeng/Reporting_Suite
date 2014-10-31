@@ -190,8 +190,6 @@ def main():
         description=description,
         extra_opts=extra_opts)
 
-    load_genome_resources(cnf,
-        required=['seq'])
     info('*' * 70)
     info()
 

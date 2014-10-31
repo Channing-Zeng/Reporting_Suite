@@ -239,6 +239,9 @@ def load_genome_resources(cnf, required=list(), optional=list()):
     for key in genome_cnf.keys():
         if isinstance(genome_cnf[key], basestring):
             genome_cnf[key] = adjust_system_path(genome_cnf[key])
+        elif key == 'capture_panels':
+            genome_cnf.capture_panel = genome_cnf[key]['agilent']
+            genome_cnf.capture_panel = adjust_system_path(genome_cnf.capture_panel)
 
     for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
         if key not in genome_cnf:

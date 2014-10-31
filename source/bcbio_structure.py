@@ -219,14 +219,14 @@ class BCBioStructure:
         self.variant_callers = OrderedDict()
 
         # Date dirpath is from bcbio and named after fc_name, not our own project name
-        info('fc_name: ' + bcbio_cnf.fc_name)
-        info('fc_date: ' + bcbio_cnf.fc_date)
+        # info('fc_name: ' + bcbio_cnf.fc_name)
+        # info('fc_date: ' + bcbio_cnf.fc_date)
         self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
         if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        bcbio_project_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir))))
-        bcbio_project_parent_dirname = basename(dirname(abspath(join(bcbio_final_dirpath, pardir, pardir))))
+        bcbio_project_dirname = basename(dirname(bcbio_final_dirpath))
+        bcbio_project_parent_dirname = basename(dirname(dirname(bcbio_final_dirpath)))
         self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
@@ -367,13 +367,9 @@ class BCBioStructure:
             sample.dirpath = None
             return sample
 
-        bed = adjust_path(sample_info['algorithm'].get('variant_regions'))
+        bed = adjust_path(self.cnf.genome.capture_panel)
         if verify_bed(bed):  # WGS, thus using default BED file
             sample.bed = bed
-        elif verify_file(self.cnf.genome.default_bed):
-            err('Notice: no BED file for ' + sample.name + ', using default BED file ' +
-                self.cnf.genome.default_bed)
-            sample.bed = self.cnf.genome.default_bed
         elif verify_file(self.cnf.genome.exons):
             err('Warning: no default amplicon BED file, using exons instead.')
             sample.bed = self.cnf.genome.exons

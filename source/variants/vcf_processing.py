@@ -19,7 +19,7 @@ from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
 from source.logger import step_greetings, info, critical, err
-from source.variants import Effect
+from source.variants.Effect import Effect
 
 
 class Record(_Record):
@@ -407,24 +407,26 @@ def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
             sample_data = main_sample.data._asdict()
             ads = None
             if 'AD' in sample_data:
-                ads = main_sample.AD
-                rec.INFO['t_ref_count'] = ads[0]
-                rec.INFO['t_alt_count'] = ads[1]
+                ads = sample_data['AD']
+                if ads:
+                    rec.INFO['t_ref_count'] = ads[0]
+                    rec.INFO['t_alt_count'] = ads[1]
             if 'FREQ' in sample_data:
-                rec.INFO['Calc_allele_freq'] = main_sample.FREQ
+                rec.INFO['Calc_allele_freq'] = sample_data['FREQ']
             elif 'AF' in sample_data:
-                rec.INFO['Calc_allele_freq'] = main_sample.AF
+                rec.INFO['Calc_allele_freq'] = sample_data['AF']
             elif ads and len(ads) >= 2 and 'DP' in sample_data:
-                rec.INFO['Calc_allele_freq'] = float(ads[1]) / main_sample.DP
+                rec.INFO['Calc_allele_freq'] = float(ads[1]) / sample_data['DP']
 
             for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
                         'SBF', 'ODDRATIO', 'MQ', 'SN']:
-                if key in sample_data and key not in rec.info:
+                if key in sample_data and key not in rec.INFO:
                     rec.INFO[key] = sample_data[key]
 
         if rec.ID:
             rec.INFO['COSMIC_overlapping_mutations'] = ','.join(
-                id for id in rec.ID if 'COSM' in id)
+                id for id in rec.ID.split(';') if 'COSM' in id) or None
+        return rec
 
     return iterate_vcf(cnf, vcf_fpath, proc_line, 'maf')
 
@@ -443,7 +445,9 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
             shutil.copyfile(transcripts_fpath, transcripts_fpath_copy)
             transcripts_fpath = transcripts_fpath_copy
 
+    info('Preparing VCF for MAF conversion...')
     vcf_fpath = _prepare_fields_for_maf_converter(cnf, vcf_fpath, tumor_sample_name)
+    info()
 
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 

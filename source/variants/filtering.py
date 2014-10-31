@@ -516,16 +516,21 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     f = Filtering(cnf, bcbio_structure, caller)
     filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_jobs)
 
+    samples = []
+    for sample_name in sample_names:
+        s = next((s for s in caller.samples if s.name == sample_name), None)
+        if s:
+            samples.append(s)
     results = [r for r in Parallel(n_jobs) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
              for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-             zip(caller.samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+             zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
          ) if r is not None and None not in r]
     info('Results: ' + str(len(results)))
     info('*' * 70)
 
-    for sample, [vcf, tsv, maf] in zip(caller.samples, results):
+    for sample, [vcf, tsv, maf] in zip(samples, results):
         info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
         # sample.filtered_vcf_by_callername[caller.name] = vcf
         # sample.filtered_tsv_by_callername[caller.name] = tsv
@@ -545,9 +550,14 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
         comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
 
-        if not exists(comb_maf_fpath_symlink):
+        if not exists(comb_maf_fpath_symlink) \
+                and not islink(comb_maf_fpath_symlink) \
+                and caller.combined_filt_maf_fpath != comb_maf_fpath_symlink:
             os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
-        if not exists(comb_pass_maf_fpath_symlink):
+
+        if not exists(comb_pass_maf_fpath_symlink) \
+                and not islink(comb_pass_maf_fpath_symlink) \
+                and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
             os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
 
     info('-' * 70)

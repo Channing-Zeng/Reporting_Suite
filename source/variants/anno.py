@@ -160,8 +160,9 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     if not db_path:
         db_path = vcf_conf.get('path')
         if not db_path:
-            critical('Please, privide a path to ' + dbname + ' in the run config '
-                                                             '("path:" field), or in the "genomes" section in the system config')
+            err('Please, privide a path to ' + dbname + ' in the run config '
+                '("path:" field), or in the "genomes" section in the system config')
+            return
         if not verify_file(db_path):
             exit()
 
@@ -254,11 +255,13 @@ def _snpeff(cnf, input_fpath):
     if cnf['snpeff'].get('cancer'):
         opts += ' -cancer '
 
-    custom_transcripts = cnf['snpeff'].get('only_transcripts')
-    if custom_transcripts:
-        if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
-            return None, None, None
-        opts += ' -onlyTr ' + custom_transcripts + ' '
+    custom_transcripts = None
+    if cnf['snpeff'].get('only_transcripts'):
+        custom_transcripts = cnf.genome.snpeff_transcripts
+        if custom_transcripts:
+            if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
+                return None, None, None
+            opts += ' -onlyTr ' + custom_transcripts + ' '
 
     if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
         opts += ' -hgvs '

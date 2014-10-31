@@ -17,7 +17,7 @@ address = None
 
 import socket
 hostname = socket.gethostname()
-is_local = 'local' in hostname
+is_local = 'local' in hostname or environ.get('PYTHONUNBUFFERED')
 
 smtp_host = None  # set up in source/config.py and system_info.yaml
 

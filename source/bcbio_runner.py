@@ -479,29 +479,29 @@ class BCBioRunner:
                    self.ngscat]) \
                     or self.vardict in self.vardict_steps:
                 if not sample.bam or not verify_bam(sample.bam):
-                    err('Cannot run coverage reports (targetcov, qualimap, ngscat, vardict) without BAM files.')
+                    err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
 
-            # TargetCov reports
-            if self.targetcov in self.steps:
-                info('Target coverage for "' + sample.name + '"')
-                self._submit_job(
-                    self.targetcov, sample.name,
-                    bam=sample.bam, bed=sample.bed, sample=sample,
-                    caller_names='', vcfs='')
+                # TargetCov reports
+                if self.targetcov in self.steps:
+                    info('Target coverage for "' + sample.name + '"')
+                    self._submit_job(
+                        self.targetcov, sample.name,
+                        bam=sample.bam, bed=sample.bed, sample=sample,
+                        caller_names='', vcfs='')
 
-            # ngsCAT reports
-            if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
-            else:
-                if self.ngscat in self.steps:
-                    self._submit_job(self.ngscat, sample.name, bam=sample.bam, bed=sample.bed, sample=sample)
+                # ngsCAT reports
+                if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
+                    err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
+                else:
+                    if self.ngscat in self.steps:
+                        self._submit_job(self.ngscat, sample.name, bam=sample.bam, bed=sample.bed, sample=sample)
 
-            # Qualimap
-            if self.qualimap in self.steps:
-                qualimap_gff = ''
-                if sample.bed:
-                    qualimap_gff = ' -gff ' + sample.bed + ' '
-                self._submit_job(self.qualimap, sample.name, bam=sample.bam, sample=sample, qualimap_gff=qualimap_gff)
+                # Qualimap
+                if self.qualimap in self.steps:
+                    qualimap_gff = ''
+                    if sample.bed:
+                        qualimap_gff = ' -gff ' + sample.bed + ' '
+                    self._submit_job(self.qualimap, sample.name, bam=sample.bam, sample=sample, qualimap_gff=qualimap_gff)
 
             # Processing VCFs: QC, annotation
             for caller in self.bcbio_structure.variant_callers.values():

@@ -53,8 +53,6 @@ variant_filtering:
   maf:                0.0025  # GMAF.   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
   signal_noise:       4       # SN.     Signal/noise value.
 
-  polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
-
 
 quality_control:
   databases: ['dbsnp', 'cosmic', '1000genomes']
@@ -147,7 +145,7 @@ clinvar:
 snpeff:
   clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
   cancer: False
-  only_transcripts: '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt'
+  only_transcripts: True       # If True, will be taken from the genome.snpeff_transcripts field in system_info
   extra_opts: ''
   ## no "annotations" section here, always applied all annotations
 

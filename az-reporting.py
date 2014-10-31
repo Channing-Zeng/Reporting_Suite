@@ -38,8 +38,6 @@ def main():
 
     check_system_resources(cnf, required=['qsub'], optional='transcripts_fpath')
 
-    load_genome_resources(cnf, required=['seq'])
-
     load_bcbio_cnf(cnf)
     info()
     info('*' * 70)

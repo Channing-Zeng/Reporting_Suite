@@ -6,9 +6,9 @@ from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath
 from os import getcwd
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
-from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, remove_quotes, adjust_system_path
+from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
 from source.config import Defaults, Config
-from source.main import check_keys, check_inputs, set_up_work_dir
+from source.main import check_keys, check_inputs, set_up_work_dir, load_genome_resources
 from source.logger import info, critical
 
 
@@ -105,6 +105,8 @@ def process_post_bcbio_args(parser):
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
     if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
         sys.exit(1)
+
+    load_genome_resources(cnf, required=['seq'])
 
     return cnf
 
