@@ -35,16 +35,21 @@ nosetests.xml
 .project
 .pydevproject
 
+# Idea
 .idea
+
+# OS X
 .DS_Store
 */.DS_Store
 
+# Extra
+external/snpEff/data
+
+# Tests
 test/run_info.yaml
 test/**/*work*
 test/**/*tmp*
-
 test/data/big
-
 test/results_*
 
 # Bcbio tests
@@ -59,20 +64,3 @@ test/**/varFilter
 test/**/*.anno.filt.*
 test/**/scripts/*.map
 test/**/2014-*
-
-# Reports tests
-test/EXT_021_Courtagen_Faslodex_HaloPlex__only_reports/final/2014-*
-test/NGS-99-update__only_reports/final/2014-*
-test/TS_0023_TGEN_DLBCL__only_reports/final/2014-*
-
-test/EXT_023_AZD4547_PDX_exome_ByoungChulCho
-test/NGS-99__*_annotated_vcfs
-
-# Whole pipeline tests
-test/bcbio/**/varAnnotate
-
-
-
-
-
-external/snpEff/data
