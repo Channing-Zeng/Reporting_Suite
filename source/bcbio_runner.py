@@ -533,6 +533,11 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varqc in self.steps])
 
+        # if self.cnf.threads is not None:
+        #     threads = self.cnf.threads
+        # else:
+        threads = min(len(self.bcbio_structure.batches), 10) + 1
+
         if self.varfilter_all in self.steps:
             self._submit_job(
                 self.varfilter_all,
@@ -542,7 +547,7 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varannotate in self.steps],
                 create_dir=False,
-                threads=min(len(self.bcbio_structure.batches), 20) + 1)
+                threads=threads)
 
         # TargetSeq reports
         if self.abnormal_regions in self.steps:
