@@ -405,18 +405,32 @@ def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
         main_sample = rec.get_main_sample(main_sample_index)
         if main_sample:
             sample_data = main_sample.data._asdict()
-            ads = None
+
+            t_ref_count = None
+            t_alt_count = None
             if 'AD' in sample_data:
                 ads = sample_data['AD']
                 if ads:
-                    rec.INFO['t_ref_count'] = ads[0]
-                    rec.INFO['t_alt_count'] = ads[1]
+                    if not hasattr(ads, "__getitem__"):
+                        t_ref_count = ads
+                        t_alt_count = None
+                    else:
+                        t_ref_count = ads[0]
+                        t_alt_count = ads[1]
+            rec.INFO['t_ref_count'] = t_ref_count
+            rec.INFO['t_alt_count'] = t_alt_count
+
+            # Mutect?
             if 'FREQ' in sample_data:
-                rec.INFO['Calc_allele_freq'] = sample_data['FREQ']
+                rec.INFO['calc_allele_freq'] = sample_data['FREQ']
+
+            # Vardict?
             elif 'AF' in sample_data:
-                rec.INFO['Calc_allele_freq'] = sample_data['AF']
-            elif ads and len(ads) >= 2 and 'DP' in sample_data:
-                rec.INFO['Calc_allele_freq'] = float(ads[1]) / sample_data['DP']
+                rec.INFO['calc_allele_freq'] = sample_data['AF']
+
+            # Freebayes or anything else.
+            elif t_alt_count and 'DP' in sample_data and sample_data['DP'] != 0:
+                rec.INFO['calc_allele_freq'] = float(t_alt_count) / sample_data['DP']
 
             for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
                         'SBF', 'ODDRATIO', 'MQ', 'SN']:
@@ -460,7 +474,7 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
     maf_fpath = join(cnf['work_dir'], fname + '.maf')
 
     perl = get_tool_cmdline(cnf, 'perl')
-    vcf2maf = join(dirname(realpath(__file__)), '../../external/vcf2maf-1.1.0/vcf2maf.pl')
+    vcf2maf = join(dirname(realpath(__file__)), 'vcf2maf.pl')
     cmdline = ('{perl} {vcf2maf} '
                '--input-snpeff {vcf_fpath} '
                '--bam-file {bam_fpath} '

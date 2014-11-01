@@ -165,7 +165,7 @@ class _vcf_metadata_parser(object):
                        match.group('type'), match.group('desc'))
 
         return (match.group('id'), form)
-    
+
     def read_contig(self, contig_string):
         '''Read a meta-contigrmation INFO line.'''
         match = self.contig_pattern.match(contig_string)
@@ -321,7 +321,7 @@ class Reader(object):
             elif line.startswith('##FORMAT'):
                 key, val = parser.read_format(line)
                 self.formats[key] = val
-            
+
             elif line.startswith('##contig'):
                 key, val = parser.read_contig(line)
                 self.contigs[key] = val

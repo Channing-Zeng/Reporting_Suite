@@ -432,17 +432,20 @@ def proc_line_2nd_round(rec, cnf_, self_):
         rec.INFO['Ave_AF_in_samples_with_the_same_variant'] = avg_af
 
         if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
-            info('Multi filter: vark = ' + rec.get_variant() +
-                 ', var_n = ' + str(var_n) + ', n_sample = ' +
-                 str(len(self_.sample_names)) + ', avg_af = ' + str(avg_af))
+            # info('Multi filter: vark = ' + rec.get_variant() +
+            #      ', var_n = ' + str(var_n) + ', n_sample = ' +
+            #      str(len(self_.sample_names)) + ', avg_af = ' + str(avg_af))
+            pass
 
         if not self_.dup_filter.apply(rec, main_sample_index=cnf_.main_sample_index):
-            info('Dup filter: variant = ' + rec.get_variant())
+            # info('Dup filter: variant = ' + rec.get_variant())
+            pass
 
         if rec.af(cnf_.main_sample_index) is not None:
             if not self_.max_rate_filter.apply(rec, frac=frac):
-                info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
-                     str(rec.af(cnf_.main_sample_index)))
+                # info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
+                #      str(rec.af(cnf_.main_sample_index)))
+                pass
 
         self_.control_filter.apply(rec)
 

@@ -117,16 +117,16 @@ my @maf_header = qw(
     Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score BAM_File Sequencer
     Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp
 
-    Effect Effect_Impact Functional_Class cDNA_change Codon_Change Amino_Acid_Change
+    Effect Effect_Impact Functional_Class cDNA_change Codon_Change__or__Distance_to_Transcript Amino_Acid_Change
     Amino_Acid_Length Gene_Name Transcript_BioType Gene_Coding Transcript_ID Exon_Number
     Transcript_Strand Transcript_Exon Transcript_Position
 
     Refseq_mRNA_Id Refseq_prot_Id
 
+    ref_context gc_context
     CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene
-    t_alt_count t_ref_count
+    t_ref_count t_alt_count calc_allele_freq
     dbSNP_global_MAF Filter
-    Calc_allele_freq
     COSMIC_overlapping_mutations COSMIC_CDS_Change COSMIC_AA_Change CLNSIG
     Class
 
@@ -188,7 +188,7 @@ my @maf_header = qw(
 
 
 my @snpeff_cols = qw(
-    Effect Effect_Impact Functional_Class Codon_Change Amino_Acid_Change Amino_Acid_Length Gene_Name
+    Effect Effect_Impact Functional_Class Codon_Change__or__Distance_to_Transcript Amino_Acid_Change Amino_Acid_Length Gene_Name
     Transcript_BioType Gene_Coding Transcript_ID Exon_Rank Genotype_Number Warnings Errors );
 
 # Parse through each variant in the annotated VCF, pull out CSQ/EFF from the INFO column, and choose
@@ -249,7 +249,7 @@ while( my $line = $vcf_fh->getline ) {
     # INFO:EFF is a comma-delimited list of snpEff effects, with pipe-delim details per effect
     # But note the parentheses, the Effect defined separately, and the last two columns being optional
     # Only AA lengths for coding transcripts are provided. So we're SOL for non-coding transcripts
-    # EFF = Effect ( Effect_Impact | Functional_Class | Codon_Change | Amino_Acid_Change | Amino_Acid_Length | Gene_Name | Transcript_BioType | Gene_Coding | Transcript_ID | Exon_Rank  | Genotype_Number [ | ERRORS | WARNINGS ] ) , ...
+    # EFF = Effect ( Effect_Impact | Functional_Class | Codon_Change__or__Distance_to_Transcript | Amino_Acid_Change | Amino_Acid_Length | Gene_Name | Transcript_BioType | Gene_Coding | Transcript_ID | Exon_Rank  | Genotype_Number [ | ERRORS | WARNINGS ] ) , ...
     if( $info{EFF} ) {
 
         foreach my $eff_line ( split( /,/, $info{EFF} )) {
@@ -336,17 +336,17 @@ while( my $line = $vcf_fh->getline ) {
     }
 
     $maf_line{dbSNP_global_MAF} = $info{CAF};
-    $maf_line{CLNSIG} = $info{CLNSIG} ? $info{CLNSIG} : '';
-    $maf_line{Class} = $info{Class} ? $info{Class} : '';
+    $maf_line{CLNSIG} = exists $info{CLNSIG} ? $info{CLNSIG} : '';
+    $maf_line{Class} = exists $info{Class} ? $info{Class} : '';
     $maf_line{COSMIC_AA_Change} = $info{AA} ? $info{AA} : '';
     $maf_line{COSMIC_CDS_Change} = $info{CDS} ? $info{CDS} : '';
     $maf_line{COSMIC_overlapping_mutations} = $info{COSMIC_overlapping_mutations} ? $info{COSMIC_overlapping_mutations} : '';
 
-    $maf_line{t_alt_count} = $info{t_alt_count} ? $info{t_alt_count} : '';
-    $maf_line{t_ref_count} = $info{t_ref_count} ? $info{t_ref_count} : '';
-    $maf_line{Calc_allele_freq} = $info{Calc_allele_freq} ? $info{Calc_allele_freq} : '';
+    $maf_line{t_alt_count} = exists $info{t_alt_count} ? $info{t_alt_count} : '';
+    $maf_line{t_ref_count} = exists $info{t_ref_count} ? $info{t_ref_count} : '';
+    $maf_line{calc_allele_freq} = exists $info{calc_allele_freq} ? $info{calc_allele_freq} : '';
 
-    $maf_line{gc_content} = $info{GC} ? $info{GC} : '';
+    $maf_line{gc_content} = exists $info{GC} ? $info{GC} : '';
     $maf_line{ref_context} = ($info{LSEQ} && $info{RSEQ}) ? "$info{LSEQ}$ref$info{RSEQ}" : '';
 
     # Cohort
