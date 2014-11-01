@@ -154,6 +154,7 @@ class Record(_Record):
             return prev_cls
 
         min_allele_caf = min(allele_cafs)
+        self.INFO['dbSNP_global_MAF'] = min_allele_caf
 
         # if there's MAF with frequency, it'll be considered
         # dbSNP regardless of COSMIC

@@ -317,11 +317,11 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{Match_Norm_Seq_Allele1} = '.'; #$normal_a1;
     $maf_line{Match_Norm_Seq_Allele2} = '.'; #$normal_a2;
     $maf_line{BAM_File} = $bam_file;
-    $maf_line{HGVSc} = ( $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
-    $maf_line{HGVSp} = ( $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
+    $maf_line{HGVSc} = ( exists $maf_effect->{HGVSc} ? $maf_effect->{HGVSc} : '' );
+    $maf_line{HGVSp} = ( exists $maf_effect->{HGVSp} ? $maf_effect->{HGVSp} : '' );
 
     my $transcriptId = ( $maf_effect->{RefSeq} ? $maf_effect->{RefSeq} : ( $maf_effect->{Transcript_ID} ? $maf_effect->{Transcript_ID} : '' ));
-    my $exonNumber = ( $maf_effect->{EXON} ? $maf_effect->{EXON} : ( $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
+    my $exonNumber = ( exists $maf_effect->{EXON} ? $maf_effect->{EXON} : ( exists $maf_effect->{Exon_Rank} ? $maf_effect->{Exon_Rank} : '' ));
     $maf_line{Transcript_ID} = $transcriptId;
     $maf_line{Exon_Number} = $exonNumber;
 
@@ -335,9 +335,9 @@ while( my $line = $vcf_fh->getline ) {
         $maf_line{Transcript_Exon    } = $trExonById  {( $transcriptId, $exonNumber )} ? $trExonById  {( $transcriptId, $exonNumber )} : '';
     }
 
-    $maf_line{dbSNP_global_MAF} = $info{CAF};
+    $maf_line{dbSNP_global_MAF} = exists $info{dbSNP_global_MAF} ? $info{dbSNP_global_MAF} : '';
     $maf_line{CLNSIG} = exists $info{CLNSIG} ? $info{CLNSIG} : '';
-    $maf_line{Class} = exists $info{Class} ? $info{Class} : '';
+    $maf_line{Class} = $info{Class} ? $info{Class} : '';
     $maf_line{COSMIC_AA_Change} = $info{AA} ? $info{AA} : '';
     $maf_line{COSMIC_CDS_Change} = $info{CDS} ? $info{CDS} : '';
     $maf_line{COSMIC_overlapping_mutations} = $info{COSMIC_overlapping_mutations} ? $info{COSMIC_overlapping_mutations} : '';
@@ -350,25 +350,25 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{ref_context} = ($info{LSEQ} && $info{RSEQ}) ? "$info{LSEQ}$ref$info{RSEQ}" : '';
 
     # Cohort
-    $maf_line{Num_samples} = $info{Num_samples} ? $info{Num_samples} : '';
-    $maf_line{Num_samples_with_the_same_variant} = $info{Num_samples_with_the_same_variant} ? $info{Num_samples_with_the_same_variant} : '';
-    $maf_line{Ave_AF_in_samples_with_the_same_variant} = $info{Ave_AF_in_samples_with_the_same_variant} ? $info{Ave_AF_in_samples_with_the_same_variant} : '';
+    $maf_line{Num_samples} = exists $info{Num_samples} ? $info{Num_samples} : '';
+    $maf_line{Num_samples_with_the_same_variant} = exists $info{Num_samples_with_the_same_variant} ? $info{Num_samples_with_the_same_variant} : '';
+    $maf_line{Ave_AF_in_samples_with_the_same_variant} = exists $info{Ave_AF_in_samples_with_the_same_variant} ? $info{Ave_AF_in_samples_with_the_same_variant} : '';
 
     # Vardict
-    $maf_line{Strand_Bias} = $info{BIAS} ? $info{BIAS} : '';
-    $maf_line{Position_mean} = $info{PMEAN} ? $info{PMEAN} : '';
-    $maf_line{Position_std} = $info{PSTD} ? $info{PSTD} : '';
-    $maf_line{Base_quality_mean} = $info{QUAL} ? $info{QUAL} : ($info{QMEAN} ? $info{QMEAN} : '');
-    $maf_line{Base_quality_std} = $info{QSTD} ? $info{QSTD} : '';
-    $maf_line{Strand_bias_Fisher_pvalue} = $info{SBF} ? $info{SBF} : '';
-    $maf_line{Strand_bias_odd_ratio} = $info{ODDRATIO} ? $info{ODDRATIO} : '';
-    $maf_line{Mapping_quality_mean} = $info{MQ} ? $info{MQ} : '';
-    $maf_line{Signal_to_noize} = $info{SN} ? $info{SN} : '';
-    $maf_line{MSI} = $info{MSI} ? $info{MSI} : '';
-    # $maf_line{Good_amplicon} = '';
-    $maf_line{Total_amplicons} = $info{TLAMP} ? $info{TLAMP} : '';
-    # $maf_line{Failed_amplicons} = $info{Position_mean} ? $info{Position_mean} : '';
-    # $maf_line{Amplicon_bias_frac} = $info{Position_mean} ? $info{Position_mean} : '';
+    $maf_line{Strand_Bias} = exists $info{BIAS} ? $info{BIAS} : '';
+    $maf_line{Position_mean} = exists $info{PMEAN} ? $info{PMEAN} : '';
+    $maf_line{Position_std} = exists $info{PSTD} ? $info{PSTD} : '';
+    $maf_line{Base_quality_mean} = exists $info{QUAL} ? $info{QUAL} : ($info{QMEAN} ? $info{QMEAN} : '');
+    $maf_line{Base_quality_std} = exists $info{QSTD} ? $info{QSTD} : '';
+    $maf_line{Strand_bias_Fisher_pvalue} = exists $info{SBF} ? $info{SBF} : '';
+    $maf_line{Strand_bias_odd_ratio} = exists $info{ODDRATIO} ? $info{ODDRATIO} : '';
+    $maf_line{Mapping_quality_mean} = exists $info{MQ} ? $info{MQ} : '';
+    $maf_line{Signal_to_noize} = exists $info{SN} ? $info{SN} : '';
+    $maf_line{MSI} = exists $info{MSI} ? $info{MSI} : '';
+    # $maf_line{Good_amplicon} = exists $info{} ? $info{} : '';
+    $maf_line{Total_amplicons} = exists $info{TLAMP} ? $info{TLAMP} : '';
+    # $maf_line{Failed_amplicons} = exists $info{} ? $info{} : '';
+    # $maf_line{Amplicon_bias_frac} = exists $info{} ? $info{} : '';
 
 # TODO
 # General:
@@ -510,7 +510,9 @@ sub GetBiotypePriority {
 
 # Converts Sequence Ontology variant types to MAF variant classifications
 sub GetVariantClassification {
-    my ( $effect, $var_type ) = @_;
+    my $effect;
+    my $var_type;
+    ( $effect, $var_type ) = @_;
     return "Splice_Site" if( $effect =~ /^(splice_acceptor_variant|splice_donor_variant|transcript_ablation)$/ );
     return "Nonsense_Mutation" if( $effect eq 'stop_gained' );
     return "Frame_Shift_Del" if ( $effect eq 'frameshift_variant' and $var_type eq 'DEL' );
