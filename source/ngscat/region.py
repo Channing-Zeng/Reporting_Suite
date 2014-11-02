@@ -48,7 +48,7 @@ class region():
         elif other.start <= self.start and other.end > self.start and other.end < self.end:
             return 2
 
-        elif other.start > self.start and other.end < self.end:
+        elif other.start > self.start and other.end <= self.end:
             return 3
 
         elif other.start <= self.start and other.end >= self.end:
