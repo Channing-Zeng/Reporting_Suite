@@ -173,6 +173,8 @@ def second_round(vcf_fpath, sample_name):
     res = _snpsift_annotate(cnf, cnf.get('clinvar'), 'clinvar', vcf_fpath)
     if not res:
         err('Could not annotate with clinvar.')
+    else:
+        vcf_fpath = res
 
     return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf)
 
