@@ -111,7 +111,7 @@ class EffectFilter(CnfFilter):  # cnf filter, but compare with value from EFF
     def __init__(self, cnf_key, *args, **kwargs):
         def check(rec):
             if 'EFF' not in rec.INFO:
-                err('Warning: EFF field is missing for variant ' + str(rec.get_variant()))
+                # err('Warning: EFF field is missing for variant ' + str(rec.get_variant()))
                 return False
             else:
                 return any(eff.impact.upper() in self.important_impacts

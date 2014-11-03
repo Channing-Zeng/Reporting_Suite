@@ -20,8 +20,6 @@ from source.targetcov.copy_number import cnv_reports
 def main():
     cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.seq2c_name, BCBioStructure.cnv_summary_dir)
 
-    load_genome_resources(cnf)
-
     cnv_reports(cnf, bcbio_structure)
 
 
