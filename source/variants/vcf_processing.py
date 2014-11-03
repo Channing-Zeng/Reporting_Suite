@@ -384,7 +384,7 @@ def get_trasncripts_fpath(cnf):
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
     db_path = cnf['genome'].get('snpeff')
     if db_path:
-        db_path_cmdline = ' -dataDir {db_path} '
+        db_path_cmdline = ' -dataDir ' + db_path
     else:
         db_path_cmdline = ''
         # err('Please, provide a path to SnpEff data in '
