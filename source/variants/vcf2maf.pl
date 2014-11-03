@@ -123,7 +123,7 @@ my @maf_header = qw(
 
     Refseq_mRNA_Id Refseq_prot_Id
 
-    ref_context gc_context
+    LSEQ RSEQ ref_context gc_content
     CCLE_ONCOMAP_overlapping_mutations CCLE_ONCOMAP_total_mutations_in_gene
     t_ref_count t_alt_count calc_allele_freq
     dbSNP_global_MAF Filter
@@ -346,8 +346,10 @@ while( my $line = $vcf_fh->getline ) {
     $maf_line{t_ref_count} = exists $info{t_ref_count} ? $info{t_ref_count} : '';
     $maf_line{calc_allele_freq} = exists $info{calc_allele_freq} ? $info{calc_allele_freq} : '';
 
-    $maf_line{gc_content} = exists $info{GC} ? $info{GC} : '';
+    $maf_line{LSEQ} = $info{LSEQ} ? $info{LSEQ} : '';
+    $maf_line{RSEQ} = $info{RSEQ} ? $info{RSEQ} : '';
     $maf_line{ref_context} = ($info{LSEQ} && $info{RSEQ}) ? "$info{LSEQ}$ref$info{RSEQ}" : '';
+    $maf_line{gc_content} = exists $info{GC} ? $info{GC} : '';
 
     # Cohort
     $maf_line{Num_samples} = exists $info{Num_samples} ? $info{Num_samples} : '';
