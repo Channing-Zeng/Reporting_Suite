@@ -26,89 +26,30 @@ def add_post_bcbio_args(parser):
 
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
-    opt_dict = opts.__dict__
 
     dir_arg = args[0] if len(args) > 0 else getcwd()
     dir_arg = adjust_path(dir_arg)
     if not verify_dir(dir_arg):
         sys.exit(1)
-    if isdir(join(dir_arg, 'final')):
-        bcbio_final_dir = join(dir_arg, 'final')
-    else:
-        bcbio_final_dir = dir_arg
 
-    info('BCBio "final" dir: ' + bcbio_final_dir)
+    bcbio_project_dirpath, final_dirpath, config_dirpath = _set_bcbio_dirpath(dir_arg)
 
-    config_dirpath = abspath(join(bcbio_final_dir, pardir, 'config'))
-    if not verify_dir(config_dirpath):
-        critical('No config directory ' + dirname(config_dirpath) + ', check if you provided a correct path ' +
-                 'to the bcbio directory. \nIt can be provided by the first argument for the script, nor the default one' +
-                 'is the current working directory (' + bcbio_final_dir + ')')
+    _set_sys_config(opts)
 
-    import socket
-    hostname = socket.gethostname()
-    info('hostname: ' + hostname)
+    _set_run_cnf(config_dirpath, opts)
 
-    opts.sys_cnf = adjust_path(opts.sys_cnf)
-    if opts.sys_cnf:
-        if not verify_file(opts.sys_cnf):
-            sys.exit(1)
-    else:
-        opts.sys_cnf = Defaults.sys_cnfs['us']
-        if 'ukap' in hostname:
-            opts.sys_cnf = Defaults.sys_cnfs['uk']
-        elif 'local' in hostname:
-            opts.sys_cnf = Defaults.sys_cnfs['local']
-        elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
-            opts.sys_cnf = Defaults.sys_cnfs['us']
-    info('Using ' + opts.sys_cnf)
-
-    for file_basename, cnf_name in zip(['run'], ['run']):
-        provided_cnf_fpath = adjust_path(opt_dict.get(cnf_name + '_cnf'))
-        project_cnf_fpath = adjust_path(join(config_dirpath, file_basename + '_info.yaml'))
-
-        if provided_cnf_fpath:
-            if not verify_file(provided_cnf_fpath):
-                sys.exit(1)
-            if provided_cnf_fpath != project_cnf_fpath:
-                info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
-                if isfile(project_cnf_fpath):
-                    try:
-                        os.remove(project_cnf_fpath)
-                    except OSError:
-                        pass
-                if not isfile(project_cnf_fpath):
-                    file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
-
-        else:  # No configs provided in command line options
-            if isfile(project_cnf_fpath) and verify_file(project_cnf_fpath):
-                provided_cnf_fpath = project_cnf_fpath
-            else:
-                provided_cnf_fpath = Defaults.__dict__[cnf_name + '_cnf']
-                if provided_cnf_fpath != project_cnf_fpath:
-                    info('Using ' + provided_cnf_fpath + ', coping to ' + project_cnf_fpath)
-                    if isfile(project_cnf_fpath):
-                        try:
-                            os.remove(project_cnf_fpath)
-                        except OSError:
-                            pass
-                    if not isfile(project_cnf_fpath):
-                        file_util.copy_file(provided_cnf_fpath, project_cnf_fpath, preserve_times=False)
-                # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
-        opt_dict[cnf_name + '_cnf'] = project_cnf_fpath
-
-    info()
-    cnf = Config(opt_dict, opt_dict['sys_cnf'], opt_dict['run_cnf'])
-    cnf.bcbio_final_dir = bcbio_final_dir
+    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-    if not check_inputs(cnf, file_keys=['qsub_runner'], dir_keys=['bcbio_final_dir']):
+    if not check_inputs(cnf, file_keys=['qsub_runner']):
         sys.exit(1)
 
     load_genome_resources(cnf, required=['seq'])
 
-    return cnf
+    bcbio_cnf = load_bcbio_cnf(cnf, config_dirpath)
+
+    return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
 
 
 def summary_script_proc_params(name, dir, description=None, extra_opts=None):
@@ -122,10 +63,9 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=None):
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
-    cnf = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)
 
-    load_bcbio_cnf(cnf)
-    bcbio_structure = BCBioStructure(cnf, cnf.bcbio_final_dir, cnf.bcbio_cnf, cnf.name)
+    bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
 
     cnf.work_dir = bcbio_structure.work_dir
     set_up_work_dir(cnf)
@@ -141,5 +81,82 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=None):
 
     return cnf, bcbio_structure
 
+
+def _set_bcbio_dirpath(dir_arg):
+    if isdir(join(dir_arg, 'config')):
+        bcbio_project_dirpath = dir_arg
+        final_dirpath = None
+        config_dirpath = join(bcbio_project_dirpath, 'config')
+
+    elif isdir(abspath(join(dir_arg, pardir, 'config'))):
+        bcbio_project_dirpath = abspath(join(dir_arg, pardir))
+        final_dirpath = dir_arg
+        config_dirpath = join(bcbio_project_dirpath, 'config')
+
+    else:
+        critical(
+            'No config directory ' + join(dir_arg, 'config') + ' or ' + abspath(join(dir_arg, pardir, 'config')) +
+            ', check if you provided a correct path to the bcbio directory.'
+            '\nIt can be provided by the first argument for the script, or by changing to it.')
+
+    info('BCBio project directory: ' + bcbio_project_dirpath)
+    if final_dirpath: info('final directory: ' + final_dirpath)
+    info('Config directory: ' + config_dirpath)
+    return bcbio_project_dirpath, final_dirpath, config_dirpath
+
+
+def _set_sys_config(opts):
+    opts.sys_cnf = adjust_path(opts.sys_cnf)
+    if opts.sys_cnf:
+        if not verify_file(opts.sys_cnf):
+            sys.exit(1)
+    else:
+        import socket
+        hostname = socket.gethostname()
+        info('hostname: ' + hostname)
+
+        opts.sys_cnf = Defaults.sys_cnfs['us']
+        if 'ukap' in hostname:
+            opts.sys_cnf = Defaults.sys_cnfs['uk']
+        elif 'local' in hostname:
+            opts.sys_cnf = Defaults.sys_cnfs['local']
+        elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+            opts.sys_cnf = Defaults.sys_cnfs['us']
+    info('Using ' + opts.sys_cnf)
+
+
+def _set_run_cnf(config_dirpath, opts):
+    provided_run_cnf_fpath = adjust_path(opts.run_cnf)
+    project_run_cnf_fpath = adjust_path(join(config_dirpath, 'run_info.yaml'))
+    if provided_run_cnf_fpath:
+        if not verify_file(provided_run_cnf_fpath):
+            sys.exit(1)
+        if provided_run_cnf_fpath != project_run_cnf_fpath:
+            info('Using ' + provided_run_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
+            if isfile(project_run_cnf_fpath):
+                try:
+                    os.remove(project_run_cnf_fpath)
+                except OSError:
+                    pass
+            if not isfile(project_run_cnf_fpath):
+                file_util.copy_file(provided_run_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+
+    else:  # No configs provided in command line options
+        if isfile(project_run_cnf_fpath) and verify_file(project_run_cnf_fpath):
+            provided_run_cnf_fpath = project_run_cnf_fpath
+        else:
+            provided_run_cnf_fpath = Defaults.run_cnf
+            if provided_run_cnf_fpath != project_run_cnf_fpath:
+                info('Using ' + provided_run_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
+                if isfile(project_run_cnf_fpath):
+                    try:
+                        os.remove(project_run_cnf_fpath)
+                    except OSError:
+                        pass
+                if not isfile(project_run_cnf_fpath):
+                    file_util.copy_file(provided_run_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+                    # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
+    opts.run_cnf = project_run_cnf_fpath
+    info()
 
 

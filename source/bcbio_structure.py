@@ -7,7 +7,7 @@ from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
 import re
 from source import logger
-from source.logger import info, err, critical
+from source.logger import info, err, critical, warn
 from source.calling_process import call
 from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes
@@ -128,8 +128,8 @@ class VariantCaller:
     def find_filt_maf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_maf_ending)
 
-    def find_fpaths_by_sample(self, dirname, name, ext):
-        return self._find_files_by_sample(dirname, '.' + name + '.' + ext)
+    def find_fpaths_by_sample(self, dir_name, name, ext):
+        return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
 
     def find_anno_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
@@ -140,14 +140,14 @@ class VariantCaller:
     def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
-    def _find_files_by_sample(self, dirname, ending):
+    def _find_files_by_sample(self, dir_name, ending):
         files_by_sample = OrderedDict()
 
         for s in self.samples:
             fpath = join(
                 self.bcbio_structure.final_dirpath,
                 s.name,
-                dirname,
+                dir_name,
                 s.name + '-' + self.suf + ending)
 
             if isfile(fpath):
@@ -210,23 +210,23 @@ class BCBioStructure:
     filt_maf_ending  = '.anno.filt.maf'
     var_dir          = 'var'
 
-    def __init__(self, cnf, bcbio_final_dirpath, bcbio_cnf, proc_name=None):
-        self.final_dirpath = bcbio_final_dirpath = adjust_path(bcbio_final_dirpath)
-        self.bcbio_cnf = bcbio_cnf
+    def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
+        self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
+
+        self.bcbio_cnf = cnf.bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
         self.samples = []
         self.variant_callers = OrderedDict()
 
         # Date dirpath is from bcbio and named after fc_name, not our own project name
-        # info('fc_name: ' + bcbio_cnf.fc_name)
-        # info('fc_date: ' + bcbio_cnf.fc_date)
-        self.date_dirpath = join(bcbio_final_dirpath, bcbio_cnf.fc_date + '_' + bcbio_cnf.fc_name)
-        if not verify_dir(self.date_dirpath): err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
+        self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + bcbio_cnf['fc_name'])
+        if not verify_dir(self.date_dirpath):
+            err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        bcbio_project_dirname = basename(dirname(bcbio_final_dirpath))
-        bcbio_project_parent_dirname = basename(dirname(dirname(bcbio_final_dirpath)))
+        bcbio_project_dirname = basename(dirname(self.final_dirpath))
+        bcbio_project_parent_dirname = basename(dirname(dirname(self.final_dirpath)))
         self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
@@ -258,7 +258,7 @@ class BCBioStructure:
         info()
         info('-' * 70)
 
-        for sample in [self._read_sample_details(sample_info) for sample_info in self.bcbio_cnf.details]:
+        for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
             if sample.dirpath is None:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
             else:
@@ -367,27 +367,9 @@ class BCBioStructure:
             sample.dirpath = None
             return sample
 
-        bed = adjust_path(self.cnf.genome.capture_panel)
-        if verify_bed(bed):  # WGS, thus using default BED file
-            sample.bed = bed
-        elif verify_file(self.cnf.genome.exons):
-            err('Warning: no default amplicon BED file, using exons instead.')
-            sample.bed = self.cnf.genome.exons
-        else:
-            err('No BED file for sample, no default BED file and exons (or cannot read them)'
-                ' - skipping targetSeq reproting.')
-            sample.bed = None
+        self._set_bed_file(sample, sample_info)
 
-        info('BED file for ' + sample.name + ': ' + sample.bed) if sample.bed else err('No BED file for ' + sample.name)
-
-        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
-        if verify_bam(bam):
-            sample.bam = bam
-            info('BAM file for ' + sample.name + ': ' + sample.bam)
-            index_bam(self.cnf, bam)
-        else:
-            sample.bam = None
-            err('No BAM file for ' + sample.name)
+        self._set_bam_file(sample)
 
         if 'min_allele_fraction' in sample_info['algorithm']:
             sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
@@ -425,34 +407,9 @@ class BCBioStructure:
             if not caller:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
 
-            vcf_fname = sample.name + '-' + caller_name + '.vcf'
-            vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
-            if not isfile(vcf_fpath):  # not in var, looking in sample dir
-                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-            _ungzip_if_needed(self.cnf, vcf_fpath)
-
-            if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
-                err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
-                to_exit = True
-                vcf_fpath = None
-
-            if not isfile(vcf_fpath):
-                if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
-                    err('Warning: Phenotype is ' + str(sample.phenotype) + ', and no VCF file.')
-                vcf_fpath = None
-
-            if vcf_fpath:
-                info(vcf_fpath)
+            to_exit, vcf_fpath = self._set_vcf_file(caller_name, sample, to_exit)
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_callername[caller_name] = vcf_fpath
-
-            # for fpath in [sample.find_filt_vcf_by_callername(caller_name),
-            #               sample.find_filt_tsv_by_callername(caller_name),
-            #               sample.find_filt_maf_by_callername(caller_name)]:
-            #
-            #     fpath = join(sample.dirpath, sample.name + '-' + caller_name + ending)
-            #     if islink(fpath) or (isfile(fpath) and verify_file(fpath)):
-            #         dic[caller_name] = fpath
 
         if to_exit:
             sys.exit(1)
@@ -460,6 +417,71 @@ class BCBioStructure:
         info()
         return sample
 
+    def _set_final_dir(self, bcbio_cnf, bcbio_project_dirpath, final_dirpath=None):
+        if final_dirpath:
+            self.final_dirpath = final_dirpath
+        elif 'upload' in bcbio_cnf and 'dir' in bcbio_cnf['upload']:
+            final_dirname = bcbio_cnf['upload']['dir']
+            self.final_dirpath = adjust_path(join(bcbio_project_dirpath, 'config', final_dirname))
+            if not verify_dir(self.final_dirpath, 'upload directory specified in the bcbio config'):
+                sys.exit(1)
+        else:
+            self.final_dirpath = join(bcbio_project_dirpath, 'final')
+            if not verify_dir(self.final_dirpath):
+                critical('If final directory it is not named "final", please, specify it in the bcbio config.')
+        info('Final dirpath: ' + self.final_dirpath)
+
+    def _set_bed_file(self, sample, sample_info):
+        bed = None
+        if self.cnf.bed:  # Custom BED provided in command line?
+            bed = adjust_path(self.cnf.bed)
+            if not verify_bed(bed):
+                sys.exit(1)
+        elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
+            bed = adjust_path(sample_info['algorithm']['variant_regions'])
+            if not verify_bed(bed):
+                sys.exit(1)
+        elif self.cnf.genome.exons:
+            warn('Warning: no amplicon BED file provided, using exons instead.')
+            bed = self.cnf.genome.exons
+            if not verify_bed(bed):
+                sys.exit(1)
+        else:
+            err('No BED file for sample, no default BED file and exons (or cannot read them)'
+                ' - skipping targetSeq reproting.')
+        sample.bed = bed
+        if sample.bed:
+            info('BED file for ' + sample.name + ': ' + sample.bed)
+        else:
+            err('No BED file for ' + sample.name)
+
+    def _set_bam_file(self, sample):
+        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
+        if verify_bam(bam):
+            sample.bam = bam
+            info('BAM file for ' + sample.name + ': ' + sample.bam)
+            index_bam(self.cnf, bam)
+        else:
+            sample.bam = None
+            err('No BAM file for ' + sample.name)
+
+    def _set_vcf_file(self, caller_name, sample, to_exit):
+        vcf_fname = sample.name + '-' + caller_name + '.vcf'
+        vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+        if not isfile(vcf_fpath):  # not in var, looking in sample dir
+            vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
+        _ungzip_if_needed(self.cnf, vcf_fpath)
+        if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
+            err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
+            to_exit = True
+            vcf_fpath = None
+        if not isfile(vcf_fpath):
+            if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
+                err('Warning: Phenotype is ' + str(sample.phenotype) + ', and no VCF file.')
+            vcf_fpath = None
+        if vcf_fpath:
+            info(vcf_fpath)
+        return to_exit, vcf_fpath
 
     def find_gene_reports_by_sample(self):
         return dict((sname, verify_file(fpath))
@@ -576,10 +598,9 @@ class BCBioStructure:
                 shutil.rmtree(dirpath)
 
 
-def load_bcbio_cnf(cnf):
-    bcbio_config_dirpath = join(cnf.bcbio_final_dir, pardir, 'config')
-    yaml_files = [join(bcbio_config_dirpath, fname)
-                  for fname in listdir(bcbio_config_dirpath)
+def load_bcbio_cnf(cnf, config_dirpath):
+    yaml_files = [join(config_dirpath, fname)
+                  for fname in listdir(config_dirpath)
                   if fname.endswith('.yaml')]
 
     if len(yaml_files) == 0:
@@ -591,7 +612,7 @@ def load_bcbio_cnf(cnf):
 
     yaml_fpath = config_fpaths[0]
     if len(config_fpaths) > 1:
-        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in cnf.bcbio_final_dir]
+        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in config_dirpath]
         if len(some_yaml_files) == 0:
             critical('More than one YAML file in the config directory ' + ' '.join(config_fpaths) +
                      ', and no YAML file named after the project.')
@@ -601,7 +622,7 @@ def load_bcbio_cnf(cnf):
 
     info('Using bcbio YAML config ' + yaml_file)
 
-    cnf.bcbio_cnf = load_yaml_config(yaml_file)
+    return load_yaml_config(yaml_file)
 
 
 def _normalize(name):

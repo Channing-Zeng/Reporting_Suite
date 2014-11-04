@@ -137,7 +137,6 @@ my @maf_header = qw(
     Failed_amplicons Amplicon_bias_frac
 );
 
-
     # I added
     # - cohort filtering
     # - VarDict specific fields
