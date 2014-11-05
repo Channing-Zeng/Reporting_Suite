@@ -221,6 +221,7 @@ tsv_fields:
 #- GEN[*].EC                     : ExpAlleleCounts
 - GEN[*].AD                     : AllelicDepths
 - GEN[*].FREQ                   : FREQ
+- AB                            : Freebayes_AF
 - GEN[*].AF                     : AF
 - GEN[*].AO                     : AlleleObservationCount
 - GEN[*].QA                     : QualitySumForAltObservations

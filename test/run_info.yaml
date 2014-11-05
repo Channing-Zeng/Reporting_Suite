@@ -158,12 +158,24 @@ tsv_fields:
 - "EFF[*].FUNCLASS"             : FunctionalClass
 - "EFF[*].CODING"               : CodingRegion
 - "EFF[*].GENE"                 : Gene
+- dbNSFP_Ensembl_geneid         : EnsemblGeneID
+- dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
+- dbNSFP_Uniprot_acc            : UniportAccNumber
 - "EFF[*].CODON"                : Codon
 - "EFF[*].AA"                   : AminoAcid
 - "EFF[*].AA_LEN"               : AminoAcidLength
+- "EFF[*].AA"                   : AminoAcid
+- "EFF[*].AA_LEN"               : AminoAcidLength
+- "EFF[*].TRID"                 : TranscriptID
+- "EFF[*].BIOTYPE"              : TranscriptBioType
+- "EFF[*].RANK"                 : Exon_Rank
 - CNT                           : CountInCosmic
 - AA                            : AminoAcidInCosmic
 - CDS                           : CDSInCosmic
+- om_Cancer                     : OncomineCancer
+- om_PATIENT                    : OncominePatient
+- om_MutClass                   : OncomineMutClass
+- om_MutClassPC                 : OncomineMutClassPC
 - "EFF[*].RANK"                 : Rank
 - BaseQRankSum                  : BaseQailityRankSum
 - FS                            : FischerScore
@@ -176,69 +188,67 @@ tsv_fields:
 - QD                            : QualityByDepth
 - ReadPosRankSum                : ReadPosRankSum
 
-## FORMAT fields for the sample
-#- GEN[*].GT: Genotype #gt_GT                         : Genotype
-#- gt_FT                        : GenotypeWasCalled
-#- gt_GL                        : GenotypeLikelihoods
-#- gt_GLE                       : GenotypeLikelihoodsOfHeterogeneousPloidy
-#- gt_GP                        : GenotypePosteriorProbs_PhredScaled
-#- gt_GQ                        : ConditionalGenotypeQuality
-#- gt_HQ                        : HaplotypeQualities
-#- gt_PS                        : PhaseSet
-#- gt_PQ                        : PhasingQuality       # phred-scaled probability
-#                                                      # that alleles are ordered
-#                                                      # incorrectly in a heterozygote
-#- GEN[*].AD                  : AllelicDepths_Alt
-##- GEN[*].AD[1]                  : AllelicDepths_Ref
+## FORMAT fields for the sample  # * will be replaced with the tumor sample ID
+- GEN[*].GT                     : Genotype
+#- GEN[*].FT                     : GenotypeWasCalled
+#- GEN[*].GL                     : GenotypeLikelihoods
+#- GEN[*].GLE                    : GenotypeLikelihoodsOfHeterogeneousPloidy
+- GEN[*].PL                     : GenotypeLikelihoods
+#- GEN[*].GP                     : GenotypePosteriorProbs_PhredScaled
+- GEN[*].GQ                     : ConditionalGenotypeQuality
+#- GEN[*].HQ                     : HaplotypeQualities
+#- GEN[*].PS                     : PhaseSet
+#- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #- GEN[*].EC                     : ExpAlleleCounts
-#- GEN[*].PL[0]                   : GenotypeLikelihoods_AA
-#- GEN[*].PL[1]                   : GenotypeLikelihoods_AB
-#- GEN[*].PL[2]                   : GenotypeLikelihoods_BB
+- GEN[*].AD                     : AllelicDepths
+- GEN[*].FREQ                   : Mutect_AF
+- AB                            : Freebayes_AF
+- GEN[*].AF                     : AF
+- GEN[*].AO                     : AlleleObservationCount
+- GEN[*].QA                     : QualitySumForAltObservations
+- GEN[*].QR                     : QualitySumForRefObservations
+- GEN[*].RO                     : RefAlleleObservationCount
 
-
-## FORMAT fields for the sample
-# - GEN[*].GT                     : Genotype
-# #- GEN[*].FT                     : GenotypeWasCalled
-# #- GEN[*].GL                     : GenotypeLikelihoods
-# #- GEN[*].GLE                    : GenotypeLikelihoodsOfHeterogeneousPloidy
-# - GEN[*].PL                  : GenotypeLikelihoods
-# #- GEN[*].PL[1]                  : GenotypeLikelihoods_AB
-# #- GEN[*].PL[2]                  : GenotypeLikelihoods_BB
-# #- GEN[*].GP                     : GenotypePosteriorProbs_PhredScaled
-# - GEN[*].GQ                     : ConditionalGenotypeQuality
-# #- GEN[*].HQ                     : HaplotypeQualities
-# #- GEN[*].PS                     : PhaseSet
-# #- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-# #- GEN[*].EC                     : ExpAlleleCounts
-# - GEN[*].AD                     : AllelicDepths
-# - GEN[*].AO                     : AlleleObservationCount
-# - GEN[*].QA                     : QualitySumForAltObservations
-# - GEN[*].QR                     : QualitySumForRefObservations
-# - GEN[*].RO                     : RefAlleleObservationCount
-
-# dbsnp
+## dbsnp
 - SAO                           : VariantAlleleOrigin
 - AB                            : AlleleBalanceAtHeterozygousSites  # from GATK
 - VC                            : VariationClass
 - TYPE                          : AlleleType
 - PM                            : VariantIsPrecious
-#- MUT                           : CitedMutation
+# - MUT                         : CitedMutation
 - HD                            : PresentInDBGap
 - KGPROD                        : Has1000GenomeSubmission
 - PH3                           : HapMapValidated
 - OM                            : InOMIM
+- CAF                           : PerAlleleFrequencies  # An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter
 - COMMON                        : CommonVariant
 - CLNSIG                        : ClinicalSignificance
 - G5                            : 5%MAFinPopulationsCAF
-#- MAF                           : GlobalMinorAlleleFrequency
-#- CDA                           : InClinicalDiagnosticAssay
+# - MAF                         : GlobalMinorAlleleFrequency
+# - CDA                         : InClinicalDiagnosticAssay
+- dbNSFP_SIFT_score             : SiftScore
+- dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
+- dbNSFP_Polyphen2_HVAR_pred    : PolyPhen2Prediction
+- dbNSFP_LRT_score              : LrtScore
+- dbNSFP_LRT_pred               : LrtPrediction
+- dbNSFP_MutationTaster_score   : MutationTasterScore
+- dbNSFP_MutationTaster_pred    : MutationTasterPrediction
+- dbNSFP_MutationAssessor_score : MutationAssessorScore
+- dbNSFP_MutationAssessor_pred  : MutationAssessorPrediction
+- dbNSFP_FATHMM_score           : FATHMMScore
+- dbNSFP_1000Gp1_AC             : 1000GenomesAlleleCount
+- dbNSFP_1000Gp1_AF             : 1000GenomesAlleleFrequency
+- dbNSFP_ESP6500_AA_AF          : ESP6500AfricanAmericanAlleleFrequency
+- dbNSFP_ESP6500_EA_AF          : ESP6500EuropeanAmericanAlleleFrequency
+- cpgIslandExt                  : CPGIsland
+- genomicSuperDups              : GenomicDuplication
+- rptmk                         : KnownRepeat
+- dgvMerged                     : KnownCopyNumber
 - set                           : SourceVCF_forMergedRecInCombineVariants
-- analysis_blocks               : analysis_blocks
 
 
 verbose: True
 keep_intermediate: True
 reuse_intermediate: False
 
-make_maf: True
 no_correct_vcf: True

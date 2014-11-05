@@ -219,7 +219,8 @@ tsv_fields:
 #- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
 #- GEN[*].EC                     : ExpAlleleCounts
 - GEN[*].AD                     : AllelicDepths
-- GEN[*].FREQ                   : FREQ
+- GEN[*].FREQ                   : Mutect_AF
+- AB                            : Freebayes_AF
 - GEN[*].AF                     : AF
 - GEN[*].AO                     : AlleleObservationCount
 - GEN[*].QA                     : QualitySumForAltObservations
