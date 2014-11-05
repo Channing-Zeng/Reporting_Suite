@@ -345,7 +345,7 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, suf)
         qsub = get_tool_cmdline(self.cnf, 'qsub')
-        threads = str(threads or self.cnf.threads)
+        threads = str(threads or self.cnf.threads or 1)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         qsub_cmdline = (
