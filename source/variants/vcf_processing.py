@@ -69,9 +69,9 @@ class Record(_Record):
         ads = self.get_val('AD', main_sample_index)
         if ads:
             try:
-                self.INFO['t_ref_count'], self.INFO['t_alf_count'] = ads[0], ads[1]
+                self.INFO['t_ref_count'], self.INFO['t_alt_count'] = ads[0], ads[1]
             except:
-                self.INFO['t_ref_count'], self.INFO['t_alf_count'] = ads, None
+                self.INFO['t_ref_count'], self.INFO['t_alt_count'] = ads, None
 
         if caller_name == 'vardict':
             self._af = self.get_val('AF', main_sample_index)
