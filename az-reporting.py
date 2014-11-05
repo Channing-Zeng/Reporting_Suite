@@ -31,8 +31,7 @@ def main():
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
-    parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
-
+    
     cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)
 
     if cnf.steps and cnf.load_mongo and 'MongoLoader' not in cnf.steps:

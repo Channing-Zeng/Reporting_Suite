@@ -112,8 +112,9 @@ def format_decimal(name, value, unit=''):
         return '{name}: -'.format(**locals())
 
 
-def mean(ints):
-    return float(sum(ints)) / len(ints) if len(ints) > 0 else float('nan')
+def mean(values):
+    print values
+    return float(sum(values)) / len(values) if len(values) > 0 else float('nan')
 
 
 def median(values):

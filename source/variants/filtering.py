@@ -217,8 +217,13 @@ class Filtering:
 
         self.min_freq_filters = dict()
         for sample in caller.samples:
-            self.min_freq_filters[sample.name] = \
-                InfoFilter('min_freq', 'AF', cnf=cnfs_for_sample_names[sample.name], required=False)
+            def min_freq_filter_check(rec):
+                af = rec.get_af(cnf.main_sample_index, caller.name)
+                if af and af < Filter.filt_cnf['min_freq']:
+                    return False
+                return True
+            self.min_freq_filters[sample.name] = CnfFilter('min_freq', min_freq_filter_check,
+                 cnfs_for_sample_names[sample.name], required=True)
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN', required=False),
@@ -229,7 +234,7 @@ class Filtering:
 
         def dup_filter_check(rec, main_sample_index):
             pstd = rec.get_val('PSTD')
-            bias = rec.bias(main_sample_index)
+            bias = rec.get_bias(main_sample_index)
 
             # all variants from one position in reads
             if pstd is not None and bias is not None:
@@ -237,17 +242,17 @@ class Filtering:
             return True
         self.dup_filter = Filter('DUP', dup_filter_check)
 
-        def bias_filter_check(rec, cls, main_sample_index):  # Filter novel variants with strand bias.
+        def bias_filter_check(rec, cls, main_sample_index, caller_name):  # Filter novel variants with strand bias.
             if not Filter.filt_cnf['bias'] is True:
                 return True  # I we don't need to check bias, just keep the variant
 
             if not cls in ['Novel', 'dbSNP']:
                 return True  # Check only for novel and dnSNP
 
-            if not (rec.bias(main_sample_index) and rec.bias(main_sample_index) in ['2:1', '2:0']):
+            if not (rec.get_bias(main_sample_index) and rec.get_bias(main_sample_index) in ['2:1', '2:0']):
                 return True  # Variant has to have bias and with proper values
 
-            return rec.af(main_sample_index) >= 0.3
+            return rec.get_af(main_sample_index, caller_name) >= 0.3
         self.bias_filter = CnfFilter('bias', bias_filter_check)
 
         def nonclnsnp_filter_check(rec, cls):
@@ -394,7 +399,7 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
     min_freq_filter.apply(rec)
 
     if samplename and self_.control and samplename == self_.control:
-        if not rec.is_rejected() and rec.cls() == 'Novel':
+        if not rec.is_rejected() and rec.get_cls() == 'Novel':
             # So that any novel variants showed up in control won't be filtered:
             control_vars.add(var_str)
 
@@ -403,7 +408,8 @@ def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
         if 'undetermined' not in samplename.lower() or Filtering.filt_cnf['count_undetermined']:
             if var_str not in variant_dict:
                 variant_dict[var_str] = VariantInfo(var_str)
-            variant_dict[var_str].afs.append(rec.get_val('AF', .0))
+            af = rec.get_af(cnf_.main_sample_index, self_.caller.name)
+            variant_dict[var_str].afs.append(af or .0)
         else:
             if not self_.undet_sample_filter.apply(rec):
                 err('Undetermined sample for rec ' + rec.get_variant() + ', sample ' + str(samplename))
@@ -443,7 +449,7 @@ def proc_line_2nd_round(rec, cnf_, self_):
             # info('Dup filter: variant = ' + rec.get_variant())
             pass
 
-        if rec.af(cnf_.main_sample_index) is not None:
+        if rec.get_af(cnf_.main_sample_index, self_.caller.name) is not None:
             if not self_.max_rate_filter.apply(rec, frac=frac):
                 # info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
                 #      str(rec.af(cnf_.main_sample_index)))
@@ -451,10 +457,14 @@ def proc_line_2nd_round(rec, cnf_, self_):
 
         self_.control_filter.apply(rec)
 
-        cls = rec.cls(req_maf=Filtering.filt_cnf.get('maf'), max_frac_for_del=0.95, sample_name=sample_name)
+        cls = rec.get_cls(req_maf=Filtering.filt_cnf.get('maf'), max_frac_for_del=0.95, sample_name=sample_name)
         rec.INFO['Class'] = cls
 
-        self_.bias_filter.apply(rec, cls=cls, main_sample_index=cnf_.main_sample_index)  # dbSNP, Novel, and bias satisfied - keep
+        self_.bias_filter.apply(
+            rec,
+            cls=cls,
+            main_sample_index=cnf_.main_sample_index,
+            caller_name=self_.caller.name)  # dbSNP, Novel, and bias satisfied - keep
         self_.nonclnsnp_filter.apply(rec, cls=cls)
 
     return rec
@@ -516,17 +526,18 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             cnf_copy['variant_filtering']['min_freq'] = sample.min_af
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    n_jobs = min(len(anno_vcf_fpaths), 10) if IN_PARALLEL else 1
+    n_threads = cnf.threads if IN_PARALLEL else 1
+    info('Number of threads for filtering: ' + str(n_threads))
 
     f = Filtering(cnf, bcbio_structure, caller)
-    filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_jobs)
+    filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
 
     samples = []
     for sample_name in sample_names:
         s = next((s for s in caller.samples if s.name == sample_name), None)
         if s:
             samples.append(s)
-    results = [r for r in Parallel(n_jobs) \
+    results = [r for r in Parallel(n_threads) \
         (delayed(postprocess_vcf)
          (sample, anno_vcf_fpath, work_filt_vcf_fpath)
              for sample, anno_vcf_fpath, work_filt_vcf_fpath in

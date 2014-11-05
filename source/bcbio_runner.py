@@ -70,7 +70,6 @@ class BCBioRunner:
 
         self.run_id = self.__generate_run_id(bcbio_structure)
 
-        self.threads = str(self.cnf.threads)
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.steps = Steps()
@@ -126,12 +125,15 @@ class BCBioRunner:
 
     def _set_up_steps(self, cnf, run_id):
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
-        if self.cnf.email:
+        if cnf.email:
             cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ' '
         overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite) or ''
+        summaries_cmdline_params = ''
+        if cnf.bed:
+            summaries_cmdline_params += ' --bed ' + cnf.bed
 
         # Params for those who doesn't call bcbio_structure
-        spec_params = cnfs_line + ' -t ' + str(self.threads) + ' ' + overwrite_line + ' ' \
+        spec_params = cnfs_line + ' -t ' + str(cnf.threads or 1) + ' ' + overwrite_line + ' ' \
                       '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
                       '--project-name ' + self.bcbio_structure.project_name + ' ' \
 
@@ -194,7 +196,7 @@ class BCBioRunner:
             name='QualiMap', short_name='qm',
             script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
-            paramln=' bamqc -nt ' + self.threads + ' --java-mem-size=24G -nr 5000 '
+            paramln=' bamqc -nt ' + str(cnf.threads or 1) + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
         )
         #############
@@ -204,7 +206,7 @@ class BCBioRunner:
             interpreter='python',
             script='varqc_summary',
             dir_name=BCBioStructure.varqc_summary_dir,
-            paramln=cnfs_line + ' ' + self.final_dir
+            paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.varqc_after_summary = Step(cnf, run_id,
             name='VarQC_postVarFilter_summary', short_name='vqas',
@@ -213,20 +215,23 @@ class BCBioRunner:
             dir_name=BCBioStructure.varqc_after_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir +
                     ' --name ' + BCBioStructure.varqc_after_name +
-                    ' --dir ' + BCBioStructure.varqc_after_dir
+                    ' --dir ' + BCBioStructure.varqc_after_dir +
+                    ' ' + summaries_cmdline_params
         )
-        varfilter_paramline = spec_params + ' ' + self.final_dir
+        varfilter_paramline = spec_params + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         if cnf.datahub_path:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
         if self.cnf.transcripts_fpath:
             varfilter_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
+        self.varfilter_threads = self.cnf.threads or min(len(self.bcbio_structure.batches), 10) + 1
+        varfilter_paramline += ' -t ' + str(self.varfilter_threads)
 
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
             script='varfilter',
             dir_name=BCBioStructure.varfilter_dir,
-            paramln=varfilter_paramline,
+            paramln=varfilter_paramline
         )
 
         self.mongo_loader = Step(cnf, run_id,
@@ -241,7 +246,7 @@ class BCBioRunner:
             interpreter='python',
             script='seq2c',
             dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=cnfs_line + ' ' + self.final_dir
+            paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.targqc_summary = Step(
             cnf, run_id,
@@ -249,7 +254,7 @@ class BCBioRunner:
             interpreter='python',
             script='targqc_summary',
             dir_name=BCBioStructure.targqc_summary_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
+            paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
 
         )
         self.fastqc_summary = Step(
@@ -258,14 +263,14 @@ class BCBioRunner:
             interpreter='python',
             script='fastqc_summary',
             dir_name=BCBioStructure.fastqc_summary_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
+            paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.combined_report = Step(cnf, run_id,
             name='Combined_report', short_name='cr',
             interpreter='python',
             script='combined_report',
             dir_name=BCBioStructure.combined_report_dir,
-            paramln=cnfs_line + ' \'' + self.final_dir + '\''
+            paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
 
         af_thr = str(cnf.variant_filtering.min_freq)
@@ -308,7 +313,7 @@ class BCBioRunner:
 
 
     def _submit_job(self, step, sample_name='', suf=None, create_dir=True,
-                   out_fpath=None, wait_for_steps=None, threads=None, **kwargs):
+                    out_fpath=None, wait_for_steps=None, threads=None, **kwargs):
 
         output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
         if output_dirpath and not isdir(output_dirpath) and create_dir:
@@ -340,7 +345,7 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, suf)
         qsub = get_tool_cmdline(self.cnf, 'qsub')
-        threads = str(threads or self.threads)
+        threads = str(threads or self.cnf.threads)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         qsub_cmdline = (
@@ -533,11 +538,6 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varqc in self.steps])
 
-        # if self.cnf.threads is not None:
-        #     threads = self.cnf.threads
-        # else:
-        threads = min(len(self.bcbio_structure.batches), 10) + 1
-
         if self.varfilter_all in self.steps:
             self._submit_job(
                 self.varfilter_all,
@@ -547,7 +547,7 @@ class BCBioRunner:
                     for s in v.samples
                     if self.varannotate in self.steps],
                 create_dir=False,
-                threads=threads)
+                threads=self.varfilter_threads)
 
         # TargetSeq reports
         if self.abnormal_regions in self.steps:

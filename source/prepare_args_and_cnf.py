@@ -22,6 +22,7 @@ def add_post_bcbio_args(parser):
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
     parser.add_option('--project-name', '--project', dest='project_name')
     parser.add_option('--email', dest='email')
+    parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
 
 
 def process_post_bcbio_args(parser):

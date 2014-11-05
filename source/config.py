@@ -24,7 +24,7 @@ class Defaults:
     output_dir = getcwd()
 
     verbose = True
-    threads = 1
+    threads = None
     overwrite = None
     reuse_intermediate = True
     keep_intermediate = True
@@ -38,7 +38,6 @@ class Defaults:
     sys_cnf = sys_cnfs['us']
     run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
 
-    bcbio_final_dir = getcwd()
     load_mongo = False  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh'
 

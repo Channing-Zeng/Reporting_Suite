@@ -18,7 +18,7 @@ from source.file_utils import iterate_file, verify_file, intermediate_fname, con
 from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
-from source.logger import step_greetings, info, critical, err
+from source.logger import step_greetings, info, critical, err, warn
 from source.variants.Effect import Effect
 
 
@@ -32,6 +32,8 @@ class Record(_Record):
         self._bias = None
         self._variant = None
         self._af = None
+        self._t_ref_count = None
+        self._t_alt_count = None
 
     def get_main_sample(self, main_sample_index=None):
         if len(self._sample_indexes) == 0:
@@ -46,7 +48,7 @@ class Record(_Record):
         else:
             return self.samples[sample_index]
 
-    def bias(self, main_sample_index):
+    def get_bias(self, main_sample_index):
         if self._bias is None:
             bias_ = self.get_val('BIAS', main_sample_index)
             if bias_ is not None:
@@ -60,10 +62,35 @@ class Record(_Record):
             self._bias = bias_
         return self._bias
 
-    def af(self, main_sample_index):
-        if self._af is None:
+    def get_af(self, main_sample_index, caller_name):
+        if self._af is not None:
+            return self._af
+
+        ads = self.get_val('AD', main_sample_index)
+        if ads:
+            try:
+                self.INFO['t_ref_count'], self.INFO['t_alf_count'] = ads[0], ads[1]
+            except:
+                self.INFO['t_ref_count'], self.INFO['t_alf_count'] = ads, None
+
+        if caller_name == 'vardict':
             self._af = self.get_val('AF', main_sample_index)
+
+        elif caller_name == 'mutect':
+            self._af = self.get_val('FREQ', main_sample_index)
+
+        elif caller_name == 'freebayes':
+            self._af = self.get_val('AB', main_sample_index)
+
+        else:
+            t_alt_count = self.INFO.get('t_alt_count')
+            dp = self.get_val('DP', main_sample_index=main_sample_index)
+            if t_alt_count is not None and dp:
+                self._af = float(t_alt_count) / dp
+
+        self.INFO['calc_allele_freq'] = self._af
         return self._af
+
 
     def get_val(self, key, default=None, main_sample_index=None):
         if key in self.INFO:
@@ -101,7 +128,7 @@ class Record(_Record):
         else:
             return default
 
-    def cls(self, req_maf=None, max_frac_for_del=None, sample_name=''):
+    def get_cls(self, req_maf=None, max_frac_for_del=None, sample_name=''):
         """
         DBSNP:
             if gmaf < req_maf, keep it
@@ -407,32 +434,6 @@ def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
         if main_sample:
             sample_data = main_sample.data._asdict()
 
-            t_ref_count = None
-            t_alt_count = None
-            if 'AD' in sample_data:
-                ads = sample_data['AD']
-                if ads:
-                    if not hasattr(ads, "__getitem__"):
-                        t_ref_count = ads
-                        t_alt_count = None
-                    else:
-                        t_ref_count = ads[0]
-                        t_alt_count = ads[1]
-            rec.INFO['t_ref_count'] = t_ref_count
-            rec.INFO['t_alt_count'] = t_alt_count
-
-            # Mutect?
-            if 'FREQ' in sample_data:
-                rec.INFO['calc_allele_freq'] = sample_data['FREQ']
-
-            # Vardict?
-            elif 'AF' in sample_data:
-                rec.INFO['calc_allele_freq'] = sample_data['AF']
-
-            # Freebayes or anything else.
-            elif t_alt_count and 'DP' in sample_data and sample_data['DP'] != 0:
-                rec.INFO['calc_allele_freq'] = float(t_alt_count) / sample_data['DP']
-
             for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
                         'SBF', 'ODDRATIO', 'MQ', 'SN']:
                 if key in sample_data and key not in rec.INFO:
@@ -489,7 +490,7 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
         return None
 
     if verify_file(maf_fpath, 'MAF'):
-        info('MAF file saved to ' + maf_fpath)
+        warn('MAF file saved to ' + maf_fpath)
     else:
         err('Converting to MAF didn\'t generate output file ' + maf_fpath)
         final_maf_fpath = None
