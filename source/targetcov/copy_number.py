@@ -2,7 +2,7 @@
 import math
 from collections import defaultdict, OrderedDict
 import os
-from os.path import join
+from os.path import join, splitext
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
@@ -134,8 +134,14 @@ def __new_seq2c(cnf, mapped_reads_by_sample, cov_info, output_fpath):
 
     lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
     if not lr2gene: sys.exit(1)
+    # cov2lr.pl -a $CONS read_stats.txt cov.txt | lr2gene.pl $OPT $SEQ2COPT > seq2c_results.txt
 
-    cmdline = '{cov2lr} {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
+    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
+    cmdline = '{cov2lr} -a {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
+    if not call(cnf, cmdline, cov2lr_output):
+        return None
+
+    cmdline = '{lr2gene} {cov2lr_output}'.format(**locals())
     if call(cnf, cmdline, output_fpath):
         return output_fpath
 
