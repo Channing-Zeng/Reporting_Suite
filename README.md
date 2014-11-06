@@ -1,12 +1,113 @@
-AZ pipeline for postprocessing BCBio (bcbio-nextgen.readthedocs.org) WGS and WES analysis results.
+AZ pipeline for post-processing the [bcbio-nextgen] analysis results.
+
 
 Includes:
 - variant annotation,
 - variant quality control,
 - variant filtration,
-- amplicon and exon coverage statistics using built-in means and also ngsCAT (http://www.bioinfomgp.org/ngscat),
-- integrated Qualimap for alignment quality control (http://qualimap.bioinfo.cipf.es),
+- amplicon and exon coverage statistics using built-in means and [ngsCAT],
+- integrated [Qualimap] for alignment quality control,
 - CNV caller Seq2C.
 
-Main running script: 
-az-reporting.py [path to BCBio final directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml]
+<br>
+####Usage
+```
+az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml] [--bed target.bed]
+```
+
+Instead of specifying the first argument, you can change to bcbio-nextgen project directory:
+
+```
+cd /path/to/a/bcbio/directory
+az-reporting.py
+```
+
+The tool reads the bcbio-nextgen YAML configuration file inside the ```config``` directory in order to extract the information on samples, batches, variant callers, and final directory name.
+
+<br>
+####SGE
+
+The pipeline uses qsub to submit jobs. The qsub command line template is the following:
+
+```
+qsub -pe smp [threads] -S /bin/bash -q batch.q -j n -o [OUT] -e [LOG] -N [NAME] runner_Waltham.sh "[cmdline]"
+```
+
+<br>
+####Configuration files
+The tool also can be provided with its own configuration file to tune up the post-processing steps and parameters on variant annotation, filtration, etc. Default run config is ```run_info.yaml```, and it gets copied to the ```config``` directory with the first launch. You can edit it later and restart the pipeline with different parameters; or you provide your own configuration file with ```--run-cnf``` option.
+
+The tool also uses system configuration file with the paths to external tools, reference data. You can make you own system config based on one of the predefined AstraZeneca YAMLs (```system_info_Waltham.yaml``` or ```system_info_AP.yaml```) and provide it with the ```--sys-cnf``` option.
+
+<br>
+####Email notification&nbsp;\[Temporary disabled. Ask Vlad if you need it.\]
+You can provide your email-address with the ```--email``` option, e.g.:
+
+```
+az-reporting.py --email Vlad.Saveliev@astrazeneca.com
+```
+
+After all the jobs to GRID are submitted, the tool sends an email with the lsit of log files to track the jobs. When all jobs are finished, one more email is sent.
+The default SMTP server address is ```localhost``` and can be modified in the bottom of the system_info config file.
+
+<br>
+####Altering the step list
+For each sample in the list, the tools runs the following steps:
+- [VarAnnotate]
+- [VarQC]
+- [VarFilter]
+- VarQC_postVarFilter (VarQC for the variants passed filters)
+- [TargetCov]
+- [Seq2C] (copy number estimates)
+- [ngsCAT]
+- [QualiMap]
+- MongoLoader (disabled by default, turned on with the \--load-mongo option)
+- AbnormalCovReport (disabled by default)
+
+Afterwards, the tool generates project-level summary reports located in a ```final/YYYY-MM-DD/qc``` directory:
+- VarQC summary (based on VarQC),
+- TargQC summary (based on TargetCov, ngsCAT and QualiMap)
+- Fastqc summary (based on individual Fastqc reports from the bcbio run)
+- CombinedReport (single project-level summary for all samples and all summary reports)
+
+The step list is customisable at ```run_info.yaml```. For example,
+```
+steps:
+#- VarAnnotate
+#- VarQC
+#- VarFilter
+#- VarQC_postVarFilter
+#- TargetCov
+#- Seq2C
+- ngsCAT
+#- QualiMap
+#- MongoLoader
+#- AbnormalCovReport
+```
+
+will run only ngsCAT for each sample, and afterwards generate summary.
+
+<br>
+The ```--load-mongo``` option adds the MongoLoader step - in Waltham, it loads final filtered variants into Mongo database:
+
+```
+az-reporting.py --load-mongo
+```
+
+<br>
+####Custom BED file
+
+You can specify a custom BED file for target QC (TargetCov, ngsCAT, QualiMap), and Seq2C:
+
+````
+az-reporting.py --bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
+````
+
+[bcbio-nextgen]:bcbio-nextgen.readthedocs.org
+[ngsCAT]:www.bioinfomgp.org/ngscat
+[Qualimap]:qualimap.bioinfo.cipf.es
+[VarAnnotate]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+Annotation
+[VarQC]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+QC
+[VarFilter]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+Filtration
+[TargetCov]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Targeted+Reseq+Reports
+[Seq2C]:http://wiki.rd.astrazeneca.net/display/caninfra/Seq2C+for+copy+number+analysis
