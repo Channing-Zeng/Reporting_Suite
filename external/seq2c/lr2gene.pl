@@ -3,7 +3,7 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Statistics::Basic qw(mean median min max mad sum);
+use Stat::Basic;
 use Statistics::TTest;
 use Getopt::Std;
 use strict;
@@ -28,6 +28,8 @@ my $MINBPEXONS = defined($opt_e) ? $opt_e : 8;
 my $MINSEGS = $opt_s ? $opt_s : 1;
 #print join("\t", qw(Sample Gene Chr Start Stop Length Log2Ratio Significance Breakpoint Type Aff_segs Total_segs Aff_segs_lr)), "\n";
 my %g2amp;
+my $stat = new Stat::Basic;
+my $ttest = new Statistics::TTest;
 my %loc;
 while( <> ) {
     s/\r//g;
@@ -48,7 +50,7 @@ while(my ($s, $v) = each %g2amp) {
     while(my ($g, $vv) = each %$v) {
 	my @segs = sort { $a->[3] <=> $b->[3] } @$vv;
 	my @lr = map { $opt_c ? $_->[11] : $_->[10]; } @segs;
-	my $lr = @lr > 1 ? median(\@lr) : $lr[0];
+	my $lr = @lr > 1 ? $stat->median(\@lr) : $lr[0];
 	my ($sig, $bp, $type, $affected, $total, $siglr, $sigseg, $sigdiff) = checkBP(\@segs);
 	if ($sig eq "-1") {
 	    if ( $lr >= $AMP ) {
@@ -90,8 +92,8 @@ sub checkBP {
     for(my $i = 0; $i < @a; $i++) {
         $a[$i]->[2] = $i+1;
     }
-    my $max = max(\@lr);
-    my $min = min(\@lr);
+    my $max = $stat->max(\@lr);
+    my $min = $stat->min(\@lr);
     my $mid = ($max + $min)/2;
     #print STDERR join(" ", (map { $stat->prctile(\@lr, $_); } (20, 40, 60, 80))), "\n";
     my @bps = getBPS(\@lr);
@@ -116,8 +118,8 @@ sub checkBP {
 	}
 	my $upseg = join(",", @upseg);
 	my $bmseg = join(",", @bmseg);
-	my $lrupm = median(\@lrup);
-	my $lrbmm = median(\@lrbm);
+	my $lrupm = $stat->median(\@lrup);
+	my $lrbmm = $stat->median(\@lrbm);
 	my $cn = $lrbmm < -0.35 ? "Del" : ($lrupm > 0.35 && abs($lrbmm) < abs($lrupm) ? "Amp" : "NA");
 	next if ($cn eq "NA");
 	my @calls = ();
@@ -175,8 +177,8 @@ sub getCalls {
     my @ti1 = map { $_->[2]; } @$ref1;
     my @tlr2 = map { $_->[1]; } @$ref2;
     my @ti2 = map { $_->[2]; } @$ref2;
-    my $mean1 = sprintf("%.3g", mean(\@tlr1));
-    my $mean2 = sprintf("%.3g", mean(\@tlr2));
+    my $mean1 = sprintf("%.3g", $stat->mean(\@tlr1));
+    my $mean2 = sprintf("%.3g", $stat->mean(\@tlr2));
     my $cn = "NA";
     my $segs = "";
     my $mean;
@@ -222,8 +224,8 @@ sub findBP {
     for(my $i = $MINBPEXONS; $i < @$lr - $MINBPEXONS; $i++) {
         my @x = sort { $a <=> $b } (map { $lr->[$_]; } (0 .. ($i-1)));
         my @y = sort { $a <=> $b } (map { $lr->[$_]; } ($i .. (@$lr-1)));
-	my $bpleft = mean(\@x);
-	my $bpright = mean(\@y);
+	my $bpleft = $stat->mean(\@x);
+	my $bpright = $stat->mean(\@y);
 	next if ( $bpleft > $bpright && $x[1] < $y[$#y-1] );
 	next if ( $bpleft < $bpright && $y[1] < $x[$#x-1] );
 	$ttest->load_data(\@x, \@y);
@@ -255,26 +257,26 @@ sub isSig {
 	my $p = $ttest->{ t_prob };
 	my $diff = $ttest->mean_difference();
 	print STDERR "p: $p $diff ", @x+0, "\n" if ( $opt_y );
-	return (sprintf("%.3g", $p), abs($diff)) if ( ($p < $PVALUE && abs($diff) >= $MINDIFF ) || ($p < 0.001 && abs($diff) >= $MINDIFF && (abs(mean(\@x)) > 0.80 || abs(mean(\@y)) > 0.80 )) );
+	return (sprintf("%.3g", $p), abs($diff)) if ( ($p < $PVALUE && abs($diff) >= $MINDIFF ) || ($p < 0.001 && abs($diff) >= $MINDIFF && (abs($stat->mean(\@x)) > 0.80 || abs($stat->mean(\@y)) > 0.80 )) );
     } elsif( @$a >= $MINSEGS && @$b >= 3 ) {
-	my $med = median(\@y);
-	my $mad = mad(\@y, 1);
+	my $med = $stat->median(\@y);
+	my $mad = $stat->mad(\@y, 1);
 	$mad += 0.1 unless($mad);
 	my @t = map { ($_->[1]-$med)/$mad; } @$a;
-	my $mean = mean(\@t);
-	my $sum = sum(\@t);
-	my $diff = abs(mean(\@x)-mean(\@y));
+	my $mean = $stat->mean(\@t);
+	my $sum = $stat->sum(\@t);
+	my $diff = abs($stat->mean(\@x)-$stat->mean(\@y));
 	print STDERR "MAD: $mean $diff\n" if ( $opt_y );
 	return (sprintf("%.2g", abs($mean)), $diff) if ( abs($sum) > $MINMAD && $diff > $EXONDIFF ); # || abs($stat->mean(\@x)-$stat->mean(\@y)) > 1.0 );
     } elsif( @$b >= $MINSEGS && @$a >= 3 ) {
-	my $med = median(\@x);
-	my $mad = mad(\@x, 1);
+	my $med = $stat->median(\@x);
+	my $mad = $stat->mad(\@x, 1);
 	#print STDERR join("\t", @x, $mad), "\n" unless($mad);
 	$mad += 0.1 unless($mad);
 	my @t = map { ($_->[1]-$med)/$mad; } @$b;
-	my $mean = mean(\@t);
-	my $sum = sum(\@t);
-	my $diff = abs(mean(\@x)-mean(\@y));
+	my $mean = $stat->mean(\@t);
+	my $sum = $stat->sum(\@t);
+	my $diff = abs($stat->mean(\@x)-$stat->mean(\@y));
 	print STDERR "MAD: '@t' $mean $diff\n" if ( $opt_y );
 	return (sprintf("%.2g", abs($mean)), $diff) if ( abs($sum) > $MINMAD && $diff > $EXONDIFF ); # || abs($stat->mean(\@x)-$stat->mean(\@y)) > 1.0 );
     }

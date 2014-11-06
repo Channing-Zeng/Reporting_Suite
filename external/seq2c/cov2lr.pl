@@ -3,8 +3,7 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use lib "$FindBin::Bin/../ext_modules/perl_modules/";
-use Statistics::Basic qw(mean median);
+use Stat::Basic;
 use Statistics::TTest;
 use Getopt::Std;
 use strict;
@@ -28,7 +27,8 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $meanreads = mean(\@cnt);
+my $stat = new Stat::Basic;
+my $meanreads = $stat->mean(\@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
     $factor{ $k } = $meanreads/$v;
@@ -67,7 +67,7 @@ while(my($k, $v) = each %data) {
 }
 
 my @samples = keys %samples;
-my $meddepth = median(\@depth);
+my $meddepth = $stat->median(\@depth);
 
 # remove genes/amplicons that failed
 my %bad;
@@ -81,13 +81,13 @@ while(my($k, $v) = each %data) {
         push(@gooddepth, @tmp);
     }
 }
-$meddepth = median(\@gooddepth); # re-adjust median depth using only those from good amplicons/genes
+$meddepth = $stat->median(\@gooddepth); # re-adjust median depth using only those from good amplicons/genes
 
 my %factor2;  # Gene/amplicon factor
 while( my ($k, $v) = each %norm1) {
     next if ( $bad{ $k } );
     my @t = values %$v;
-    $factor2{ $k } = median(\@t) ? $meddepth/median(\@t) : 0;
+    $factor2{ $k } = $stat->median(\@t) ? $meddepth/$stat->median(\@t) : 0;
 }
 
 my %samplemedian;
@@ -97,7 +97,7 @@ foreach my $s (@samples) {
 	next if ( $bad{ $k } ); # ignore failed genes/amplicons
         push( @tmp, $v->{ $s } );
     }
-    $samplemedian{ $s } = median( \@tmp );
+    $samplemedian{ $s } = $stat->median( \@tmp );
 }
 
 while( my ($k, $v) = each %norm1) {
@@ -119,7 +119,7 @@ while( my ($k, $v) = each %norm2) {
 	if ( $opt_c ) {
 	    my @controls = split(/:/, $opt_c);
 	    my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-	    my $cntl_ave = mean( \@tcntl );
+	    my $cntl_ave = $stat->mean( \@tcntl );
 	    $str .= "\t" .  sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
 	}
 	my @a = split(/\t/, $str);
