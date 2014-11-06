@@ -35,7 +35,7 @@ def cnv_reports(cnf, bcbio_structure):
             cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
 
     info('Calculating normalized coverages for CNV...')
-    cnv_gene_ampl_report_fpath, cnv_ampl_report_fpath = _summarize_copy_number(cnf, bcbio_structure,
+    cnv_gene_ampl_report_fpath, cnv_ampl_report_fpath = _seq2c(cnf, bcbio_structure,
         gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
 
     info()
@@ -57,7 +57,7 @@ def cnv_reports(cnf, bcbio_structure):
     return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
 
 
-def _get_lines_by_region_type(report_fpath, region_type):
+def _get_tokens_by_region_type(report_fpath, region_type):
     gene_summary_lines = []
 
     with open(report_fpath, 'r') as f:
@@ -80,23 +80,30 @@ def _get_lines_by_region_type(report_fpath, region_type):
     return gene_summary_lines
 
 
-def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample):
+def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample):
+    """
+    Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
+    is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
+    """
+
     amplicon_summary_lines = []
-    gene_amplicon_summary_lines = []
+    coverage_info = []
     mapped_reads_by_sample = OrderedDict()
 
     for sample_name, gene_report_fpath in gene_reports_by_sample.items():
         json_fpath = report_fpath_by_sample[sample_name]
 
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
-        gene_amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Gene-Amplicon')
+        for tokens in _get_tokens_by_region_type(gene_report_fpath, 'Gene-Amplicon'):
+            sample, chrom, s, e, gene, tag, size, cov = tokens
+            s, e, size, cov = [''.join(c for c in l if c.isdigit()) for l in [s, e, size, cov]]
+            reordered = sample, gene, chrom, s, e, tag, size, cov
+            coverage_info.append(reordered)
 
         with open(json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
-        sample = next((sample for sample in bcbio_structure.samples
-                       if sample.name == sample_name), None)
-        if not sample:
-            continue
+        sample = next((s for s in bcbio_structure.samples if s.name == sample_name), None)
+        if not sample: continue
         cov_report = SampleReport.load(data, sample, bcbio_structure)
 
         mapped_reads_by_sample[sample_name] = int(next(
@@ -106,8 +113,9 @@ def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_
     # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)
 
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-    cnv_gene_ampl_report_fpath = \
-        run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_amplicon_summary_lines, cnv_gene_ampl_report_fpath)
+
+    cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
+    # cnv_gene_ampl_report_fpath = __new_seq2c(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
 
     # cnv_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons.tsv')
     # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
@@ -117,32 +125,42 @@ def _summarize_copy_number(cnf, bcbio_structure, gene_reports_by_sample, report_
     return [cnv_gene_ampl_report_fpath, None]
 
 
-def run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, gene_summary_lines, output_fpath):
-    """
-    Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
-    is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
-    """
+def __new_seq2c(cnf, mapped_reads_by_sample, cov_info, output_fpath):
+    mapped_read_fpath, gene_depths_fpath = __write_mapped_reads_and_cov(cnf.work_dir, mapped_reads_by_sample, cov_info)
 
-    mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
+    # seq2c_cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c_cov2lr')
+    lr2gene = get_script_cmdline(cnf, 'perl', 'lr2gene')
+    if not lr2gene:
+        sys.exit(1)
+
+    cmdline = '{lr2gene} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
+    if call(cnf, cmdline, output_fpath):
+        return output_fpath
+
+
+def __cov2cnv2(cnf, mapped_reads_by_sample, cov_info, output_fpath):
+    mapped_read_fpath, gene_depths_fpath = __write_mapped_reads_and_cov(cnf.work_dir, mapped_reads_by_sample, cov_info)
+
+    cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
+    if not cov2cnv2: sys.exit(1)
+    cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
+    if call(cnf, cmdline, output_fpath):
+        return output_fpath
+
+
+def __write_mapped_reads_and_cov(work_dir, mapped_reads_by_sample, cov_info):
+    mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
     with open(mapped_read_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
             f.write(sample_name + '\t' + str(mapped_reads) + '\n')
 
-    gene_depths_fpaths = join(cnf.work_dir, 'gene_depths.txt')
-    with open(gene_depths_fpaths, 'w') as f:
-        for tokens in gene_summary_lines:
-            sample, chrom, s, e, gene, tag, size, cov = tokens
-            s, e, size, cov = [''.join(c for c in l if c.isdigit()) for l in [s, e, size, cov]]
-            reordered = sample, gene, chrom, s, e, tag, size, cov
-            f.write('\t'.join(reordered) + '\n')
+    gene_depths_fpath = join(work_dir, 'gene_depths.txt')
+    with open(gene_depths_fpath, 'w') as f:
+        for tokens in cov_info:
+            f.write('\t'.join(tokens) + '\n')
 
-    os.environ['PERL5LIB'] = '/group/cancer_informatics/tools_resources/NGS/lib/perl5' + \
-        (':' + os.environ['PERL5LIB'] if 'PERL5LIB' in os.environ else '')
-    cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
-    if not cov2cnv2: sys.exit(1)
-    cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
-    if call(cnf, cmdline, output_fpath):
-        return output_fpath
+    return mapped_read_fpath, gene_depths_fpath
+
 
 
 # def save_results_separate_for_samples(results):
