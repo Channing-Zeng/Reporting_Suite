@@ -3,6 +3,8 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
+use FindBin;
+use lib "$FindBin::Bin/../../ext_modules/perl_modules/";
 use Stat::Basic;
 use Statistics::TTest;
 use Getopt::Std;
@@ -59,10 +61,10 @@ while( <> ) {
 
 while(my($k, $v) = each %data) {
     while( my($sample, $dv) = each %$v ) {
-	$raw{ $k }->{ $sample } = $dv->{cov};
-	$norm1{ $k }->{ $sample } = sprintf("%.2f", $raw{ $k }->{ $sample }*$factor{ $sample });
-	$samples{ $sample } = 1;
-	push(@depth, $norm1{ $k }->{ $sample } );
+        $raw{ $k }->{ $sample } = $dv->{cov};
+        $norm1{ $k }->{ $sample } = sprintf("%.2f", $raw{ $k }->{ $sample }*$factor{ $sample });
+        $samples{ $sample } = 1;
+        push(@depth, $norm1{ $k }->{ $sample } );
     }
 }
 
@@ -94,7 +96,7 @@ my %samplemedian;
 foreach my $s (@samples) {
     my @tmp = ();
     while( my ($k, $v) = each %norm1 ) {
-	next if ( $bad{ $k } ); # ignore failed genes/amplicons
+        next if ( $bad{ $k } ); # ignore failed genes/amplicons
         push( @tmp, $v->{ $s } );
     }
     $samplemedian{ $s } = $stat->median( \@tmp );
@@ -103,9 +105,9 @@ foreach my $s (@samples) {
 while( my ($k, $v) = each %norm1) {
     next if ( $bad{ $k } );
     foreach my $s (@samples) {
-	$norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
+        $norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
         $norm2{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
-	print STDERR "$s\n" unless( $samplemedian{ $s } );
+        print STDERR "$s\n" unless( $samplemedian{ $s } );
         $norm3{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
     }
 }
@@ -114,17 +116,17 @@ my %g2amp;
 while( my ($k, $v) = each %norm2) {
     next if ($bad{ $k });
     while( my ($s, $d) = each %$v ) {
-	my $t = $opt_a ? $k : "$k\t$loc{$k}->{chr}\t$loc{$k}->{start}\t$loc{$k}->{end}\t$data{$k}->{$s}->{len}";
+        my $t = $opt_a ? $k : "$k\t$loc{$k}->{chr}\t$loc{$k}->{start}\t$loc{$k}->{end}\t$data{$k}->{$s}->{len}";
         my $str = join("\t", $s, $t, $raw{ $k }->{ $s }, $norm1{ $k }->{ $s }, $norm1b{ $k }->{ $s }, $d, $norm3{ $k }->{ $s });
-	if ( $opt_c ) {
-	    my @controls = split(/:/, $opt_c);
-	    my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-	    my $cntl_ave = $stat->mean( \@tcntl );
-	    $str .= "\t" .  sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
-	}
-	my @a = split(/\t/, $str);
-	push(@{ $g2amp{ $s }->{ $a[1] } }, \@a);
-	print "$str\n";
+        if ( $opt_c ) {
+            my @controls = split(/:/, $opt_c);
+            my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
+            my $cntl_ave = $stat->mean( \@tcntl );
+            $str .= "\t" .  sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
+        }
+        my @a = split(/\t/, $str);
+        push(@{ $g2amp{ $s }->{ $a[1] } }, \@a);
+        print "$str\n";
     }
 }
 

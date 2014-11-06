@@ -48,7 +48,7 @@ def get_system_path(cnf, interpreter, name_in_sys_cnf=None,
 
     # IN PATH?
     tool_path = which(name_in_sys_cnf)
-    if exists(tool_path):
+    if tool_path and exists(tool_path):
         return verify_obj_by_path(tool_path, name_in_sys_cnf)
 
 

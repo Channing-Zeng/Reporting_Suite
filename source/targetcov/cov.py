@@ -314,7 +314,8 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
     info()
     info('Groupping amplicons by genes...')
     i = 0
-    with open(genes_ovelaps_with_amplicons_fpath) as f:
+    amplicons_fpath = join(cnf.work_dir, sample.name + '_amplicons.bed')
+    with open(genes_ovelaps_with_amplicons_fpath) as f, open(amplicons_fpath, 'w') as out:
         for line in f:
             a_chr, a_start, a_end, _, _, \
             g_chr, g_start, g_end, g_gene_name, _, \
@@ -324,11 +325,13 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
                 gene = genes_by_name[g_gene_name]
                 amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
                 gene.add_amplicon(amplicon)
+                out.write('\t'.join((a_chr, a_start, a_end, g_gene_name)) + '\n')
 
             if i and i % 100000 == 0:
                 info('  Processed {0:,} regions, current gene {1}'.format(i, g_gene_name))
             i += 1
     info('  Processed {0:,} regions.'.format(i))
+    info('Saved amplicons to ' + amplicons_fpath)
 
     # if exon_gene_summary.intersect(amplicon):
     #     # if amplicon.gene_name and exon_gene.gene_name != amplicon.gene_name:

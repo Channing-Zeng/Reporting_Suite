@@ -96,9 +96,10 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
         for tokens in _get_tokens_by_region_type(gene_report_fpath, 'Gene-Amplicon'):
             sample, chrom, s, e, gene, tag, size, cov = tokens
-            s, e, size, cov = [''.join(c for c in l if c.isdigit()) for l in [s, e, size, cov]]
-            reordered = sample, gene, chrom, s, e, tag, size, cov
-            coverage_info.append(reordered)
+            s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
+            if float(cov) != 0:
+                reordered = sample, gene, chrom, s, e, tag, size, cov
+                coverage_info.append(reordered)
 
         with open(json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)

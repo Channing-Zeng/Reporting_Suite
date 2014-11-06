@@ -5,7 +5,7 @@ steps:
 # - VarQC
 # - VarFilter
 # - VarQC_postVarFilter
-- TargetCov
+# - TargetCov
 - Seq2C
 # - ngsCAT
 # - QualiMap
