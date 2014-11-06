@@ -11,7 +11,7 @@ from source.file_utils import add_suffix, verify_file
 from source.logger import info, err
 from source.reporting import Metric, MetricStorage, ReportSection, Record, SquareSampleReport
 from source.targetcov.Region import Region, _proc_regions, save_regions_to_bed
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.utils import median
 
 
@@ -297,7 +297,7 @@ def _find_missed_variants(cnf, vcf_db, caller_name, input_vcf_fpath, report_base
     missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '_missed.vcf')
     annotated_regions_bed_fpath = join(cnf.work_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '.bed')
 
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
 
     db_vcf_fpath = vcf_db.vcf_fpath
     # Take variants from DB VCF that lie in BED

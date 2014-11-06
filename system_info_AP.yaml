@@ -15,8 +15,6 @@ resources:
     path: /home/klpf990/qualimap/qualimap
   python:
     path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
-#  cov2cnv2:
-#    path: /ngs/RDI/SCRIPTS/cov2cnv2.pl
   vcf_loader:
     path: external/mongo_loader/VCFStore.jar
 

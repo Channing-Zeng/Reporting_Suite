@@ -4,7 +4,7 @@ import re
 from collections import OrderedDict
 from os.path import join, basename
 from source.calling_process import call_subprocess
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
 from source.file_utils import file_exists, verify_file
 

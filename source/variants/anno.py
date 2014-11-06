@@ -6,7 +6,7 @@ from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
 from source.logger import step_greetings, critical, info, err
 from source.targetcov.bam_file import index_bam
-from source.tools_from_cnf import get_tool_cmdline, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
+from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_main_sample
@@ -292,7 +292,7 @@ def _tracks(cnf, track_path, input_fpath):
 
     step_greetings('Intersecting with ' + field_name)
 
-    toolpath = get_tool_cmdline(cnf, 'vcfannotate')
+    toolpath = get_system_path(cnf, 'vcfannotate')
     if not toolpath:
         err('WARNING: Skipping annotation with tracks: vcfannotate '
             'executable not found, you probably need to specify path in system_config, or '

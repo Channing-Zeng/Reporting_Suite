@@ -15,7 +15,7 @@ from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
-from source.tools_from_cnf import get_java_tool_cmdline, get_tool_cmdline
+from source.tools_from_cnf import get_java_tool_cmdline, get_system_path
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
 from source.logger import step_greetings, info, critical, err, warn
@@ -475,7 +475,7 @@ def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
     fname, _ = splitext_plus(basename(vcf_fpath))
     maf_fpath = join(cnf['work_dir'], fname + '.maf')
 
-    perl = get_tool_cmdline(cnf, 'perl')
+    perl = get_system_path(cnf, 'perl')
     vcf2maf = join(dirname(realpath(__file__)), 'vcf2maf.pl')
     cmdline = ('{perl} {vcf2maf} '
                '--input-snpeff {vcf_fpath} '
@@ -521,7 +521,7 @@ def vcf_one_per_line(cnf, vcf_fpath):
         exit('Perl executable required, maybe you need to run "module load perl"?')
 
     src_fpath = join(dirname(realpath(__file__)))
-    perl = get_tool_cmdline(cnf, 'perl')
+    perl = get_system_path(cnf, 'perl')
     external_fpath = join(src_fpath, pardir, pardir, 'external')
     vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
     oneperline_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'opl')
@@ -684,7 +684,7 @@ def remove_prev_eff_annotation(cnf, input_fpath):
 
 
 def igvtools_index(cnf, vcf_fpath):
-    igvtools = get_tool_cmdline(cnf, 'igvtools')
+    igvtools = get_system_path(cnf, 'igvtools')
     if not igvtools:
         err('Warning: no igvtools found, cannot index VCF.')
         return None
@@ -702,8 +702,8 @@ def igvtools_index(cnf, vcf_fpath):
 
 
 def tabix_vcf(cnf, vcf_fpath):
-    bgzip = get_tool_cmdline(cnf, 'bgzip')
-    tabix = get_tool_cmdline(cnf, 'tabix')
+    bgzip = get_system_path(cnf, 'bgzip')
+    tabix = get_system_path(cnf, 'tabix')
 
     gzipped_fpath = join(vcf_fpath + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'

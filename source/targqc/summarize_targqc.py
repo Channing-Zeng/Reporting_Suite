@@ -7,7 +7,7 @@ from source.logger import step_greetings, info, send_email, critical, warn
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
-from source.tools_from_cnf import get_tool_cmdline, get_qualimap_type
+from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 
@@ -144,7 +144,7 @@ def summary_reports(cnf, bcbio_structure):
 
     # Qualimap2 run for multi-sample plots
     if len(qualimap_htmls_by_sample):
-        qualimap = get_tool_cmdline(cnf, interpreter=None, tool_name='qualimap2')
+        qualimap = get_system_path(cnf, interpreter=None, name_in_sys_cnf='qualimap2')
         if qualimap is not None and get_qualimap_type(qualimap) == "full":
             qualimap_output_dir = join(cnf.output_dir, 'qualimap_multi_bamqc')
             plots_dirpath = join(cnf.output_dir, 'plots')

@@ -41,10 +41,6 @@ resources:
     path: external/mongo_loader/VCFStore.jar
 #  cov2cnv2:
 #    path: /group/cancer_informatics/tools_resources/NGS/bin/cov2cnv2.pl
-  seq2c_cov2lr:
-    path: external/seq2c/cov2lr.pl
-  seq2c_lr2gene:
-    path: external/seq2c/lr2gene.pl
 
 genomes:
   hg19:

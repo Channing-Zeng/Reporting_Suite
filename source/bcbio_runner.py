@@ -8,7 +8,7 @@ from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
@@ -147,14 +147,14 @@ class BCBioRunner:
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
             interpreter='python',
-            script='varannotate',
+            script='varannotate.py',
             dir_name=BCBioStructure.varannotate_dir,
             paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
             interpreter='python',
-            script='varqc',
+            script='varqc.py',
             dir_name=BCBioStructure.varqc_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\''
@@ -162,7 +162,7 @@ class BCBioRunner:
         self.varqc_after = Step(cnf, run_id,
             name='VarQC_postVarFilter', short_name='vqa',
             interpreter='python',
-            script='varqc',
+            script='varqc.py',
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}\' ' +
@@ -171,7 +171,7 @@ class BCBioRunner:
         self.targetcov = Step(cnf, run_id,
             name='TargetCov', short_name='tc',
             interpreter='python',
-            script='targetcov',
+            script='targetcov.py',
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
@@ -179,7 +179,7 @@ class BCBioRunner:
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
-            script='abnormal_regions',
+            script='abnormal_regions.py',
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' -o \'{output_dir}\' {caller_names} {vcfs} '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
@@ -187,14 +187,14 @@ class BCBioRunner:
         self.ngscat = Step(cnf, run_id,
             name='ngsCAT', short_name='nc',
             interpreter='python',
-            script='ngscat',
+            script='ngscat.py',
             dir_name=BCBioStructure.ngscat_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
         self.qualimap = Step(cnf, run_id,
             name='QualiMap', short_name='qm',
-            script='qualimap',
+            script='qualimap.py',
             dir_name=BCBioStructure.qualimap_dir,
             paramln=' bamqc -nt ' + str(cnf.threads or 1) + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
@@ -204,14 +204,14 @@ class BCBioRunner:
         self.varqc_summary = Step(cnf, run_id,
             name='VarQC_summary', short_name='vqs',
             interpreter='python',
-            script='varqc_summary',
+            script='varqc_summary.py',
             dir_name=BCBioStructure.varqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.varqc_after_summary = Step(cnf, run_id,
             name='VarQC_postVarFilter_summary', short_name='vqas',
             interpreter='python',
-            script='varqc_summary',
+            script='varqc_summary.py',
             dir_name=BCBioStructure.varqc_after_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir +
                     ' --name ' + BCBioStructure.varqc_after_name +
@@ -229,7 +229,7 @@ class BCBioRunner:
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
-            script='varfilter',
+            script='varfilter.py',
             dir_name=BCBioStructure.varfilter_dir,
             paramln=varfilter_paramline
         )
@@ -244,7 +244,7 @@ class BCBioRunner:
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
-            script='seq2c',
+            script='seq2c.py',
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
@@ -252,7 +252,7 @@ class BCBioRunner:
             cnf, run_id,
             name='TargQC_summary', short_name='targqc',
             interpreter='python',
-            script='targqc_summary',
+            script='targqc_summary.py',
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
 
@@ -261,14 +261,14 @@ class BCBioRunner:
             cnf, run_id,
             name='FastQC_summary', short_name='fastqc',
             interpreter='python',
-            script='fastqc_summary',
+            script='fastqc_summary.py',
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.combined_report = Step(cnf, run_id,
             name='Combined_report', short_name='cr',
             interpreter='python',
-            script='combined_report',
+            script='combined_report.py',
             dir_name=BCBioStructure.combined_report_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
@@ -337,14 +337,14 @@ class BCBioRunner:
         safe_mkdir(dirname(log_fpath))
         safe_mkdir(dirname(out_fpath))
 
-        tool_cmdline = get_tool_cmdline(self.cnf, step.interpreter, step.script)
+        tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script)
         if not tool_cmdline: sys.exit(1)
         params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
         cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, suf)
-        qsub = get_tool_cmdline(self.cnf, 'qsub')
+        qsub = get_system_path(self.cnf, 'qsub')
         threads = str(threads or self.cnf.threads or 1)
         queue = self.cnf.queue
         runner_script = self.qsub_runner

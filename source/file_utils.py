@@ -490,7 +490,6 @@ def dictapply(d, fn):
     return d
 
 
-
 def verify_module(name):
     try:
         __import__(name)
@@ -573,6 +572,15 @@ def file_exists(fpath):
     """Check if a file exists and is non-empty.
     """
     return fpath and exists(adjust_path(fpath)) and getsize(adjust_path(fpath)) > 0
+
+
+def verify_obj_by_path(path, description=''):
+    if isfile(path):
+        return verify_file(path, description)
+    elif isdir(path):
+        return verify_dir(path, description)
+    else:
+        return None
 
 
 def verify_file(fpath, description=''):

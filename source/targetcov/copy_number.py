@@ -114,8 +114,8 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
 
-    cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
-    # cnv_gene_ampl_report_fpath = __new_seq2c(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
+    # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
+    cnv_gene_ampl_report_fpath = __new_seq2c(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
 
     # cnv_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons.tsv')
     # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
@@ -128,12 +128,13 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 def __new_seq2c(cnf, mapped_reads_by_sample, cov_info, output_fpath):
     mapped_read_fpath, gene_depths_fpath = __write_mapped_reads_and_cov(cnf.work_dir, mapped_reads_by_sample, cov_info)
 
-    # seq2c_cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c_cov2lr')
-    lr2gene = get_script_cmdline(cnf, 'perl', 'lr2gene')
-    if not lr2gene:
-        sys.exit(1)
+    cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
+    if not cov2lr: sys.exit(1)
 
-    cmdline = '{lr2gene} {mapped_read_fpath} {gene_depths_fpaths}'.format(**locals())
+    lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
+    if not lr2gene: sys.exit(1)
+
+    cmdline = '{cov2lr} {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
     if call(cnf, cmdline, output_fpath):
         return output_fpath
 

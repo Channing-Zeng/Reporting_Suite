@@ -3,7 +3,7 @@ import region
 from os.path import expanduser
 from source.calling_process import call
 from source.file_utils import verify_file, intermediate_fname, adjust_path
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists
 from source.logger import err
 from source.utils import get_chr_lengths
@@ -399,7 +399,7 @@ class BedFile:
         if file_exists(output_fpath) and not overwrite:
             #info(output_fpath + ' exists, reusing!')
             return BedFile(output_fpath)
-        cmdline = "%s sort -i %s" % (get_tool_cmdline(cnf, 'bedtools'), self.filename)
+        cmdline = "%s sort -i %s" % (get_system_path(cnf, 'bedtools'), self.filename)
         call(cnf, cmdline, output_fpath, overwrite=overwrite)
         return BedFile(output_fpath)
 

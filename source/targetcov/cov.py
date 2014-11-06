@@ -16,7 +16,7 @@ from source.ngscat.bed_file import verify_bed
 from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
     write_tsv_rows, Record, SquareSampleReport
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath, median
 
 
@@ -306,7 +306,7 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
 
     info('Finding amplicons overlaps with genes...')
     genes_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_genes_ovelaps_with_amplicons.bed')
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} intersect -wao -a {ampli_bed_fpath} -b {genes_bed_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=genes_ovelaps_with_amplicons_fpath)
     info()
@@ -493,7 +493,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
     regions, max_depth, total_bed_size = [], 0, 0
 
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
     bedcov_output = join(cnf.work_dir,
                          splitext_plus(basename(bed))[0] + '_' +
@@ -552,7 +552,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
 
 def sort_bed(cnf, bed_fpath):
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
     call(cnf, cmdline, output_fpath)
@@ -563,7 +563,7 @@ def intersect_bed(cnf, bed1, bed2):
     bed1_fname, _ = splitext_plus(basename(bed1))
     bed2_fname, _ = splitext_plus(basename(bed2))
     output_fpath = join(cnf['work_dir'], bed1_fname + '__' + bed2_fname + '.bed')
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} intersect -u -a {bed1} -b {bed2}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     return output_fpath
@@ -571,7 +571,7 @@ def intersect_bed(cnf, bed1, bed2):
 
 #TODO: works slow.
 def number_of_mapped_reads(cnf, bam):
-    samtools = get_tool_cmdline(cnf, 'samtools')
+    samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_mapped_reads')
     cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
@@ -580,7 +580,7 @@ def number_of_mapped_reads(cnf, bam):
 
 #TODO: works slow.
 def number_of_unmapped_reads(cnf, bam):
-    samtools = get_tool_cmdline(cnf, 'samtools')
+    samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_unmapped_reads')
     cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
@@ -589,7 +589,7 @@ def number_of_unmapped_reads(cnf, bam):
 
 #TODO: works slow.
 def number_of_reads(cnf, bam):
-    samtools = get_tool_cmdline(cnf, 'samtools')
+    samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_reads')
     cmdline = '{samtools} view -c {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
@@ -599,7 +599,7 @@ def number_of_reads(cnf, bam):
 
 #TODO: works slow.
 def number_mapped_reads_on_target(cnf, bed, bam):
-    samtools = get_tool_cmdline(cnf, 'samtools')
+    samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_mapped_reads_target')
     cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
@@ -608,7 +608,7 @@ def number_mapped_reads_on_target(cnf, bed, bam):
 
 #TODO: works slow.
 def number_bases_in_aligned_reads(cnf, bam):
-    samtools = get_tool_cmdline(cnf, 'samtools')
+    samtools = get_system_path(cnf, 'samtools')
     cmdline = '{samtools} depth {bam}'.format(**locals())
     proc = call_pipe(cnf, cmdline)
     count = 0
@@ -621,7 +621,7 @@ def number_bases_in_aligned_reads(cnf, bam):
 
 
 def get_padded_bed_file(cnf, bed, genome, padding):
-    bedtools = get_tool_cmdline(cnf, 'bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} slop -i {bed} -g {genome} -b {padding}'.format(**locals())
     output_fpath = intermediate_fname(cnf, bed, 'padded')
     call(cnf, cmdline, output_fpath)

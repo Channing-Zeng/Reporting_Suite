@@ -13,7 +13,7 @@ from source.config import load_yaml_config
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes
 from source.ngscat.bed_file import verify_bed, verify_bam
 from source.targetcov.bam_file import index_bam
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
 
@@ -634,7 +634,7 @@ def _ungzip_if_needed(cnf, fpath):
         fpath = fpath[:-3]
     if not file_exists(fpath) and file_exists(fpath + '.gz'):
         gz_fpath = fpath + '.gz'
-        gunzip = get_tool_cmdline(cnf, 'gunzip')
+        gunzip = get_system_path(cnf, 'gunzip')
         cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
         res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
         info()

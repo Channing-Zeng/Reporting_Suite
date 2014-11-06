@@ -7,7 +7,7 @@ import config
 from source.calling_process import call_check_output, call
 from source.file_utils import intermediate_fname, tmpfile, verify_file
 from source.logger import info, err
-from source.tools_from_cnf import get_tool_cmdline
+from source.tools_from_cnf import get_system_path
 from source.utils import human_sorted
 
 try:
@@ -26,7 +26,7 @@ import bed_file
 
 # aux function
 def bam_has_unmapped_reads(cnf, bam_fpath):
-    command = "%s view -cf 4 %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)
+    command = "%s view -cf 4 %s" % (get_system_path(cnf, 'samtools'), bam_fpath)
     info("Checking whether bam has unmapped reads:" + command)
     num_unmapped_reads = int(call_check_output(cnf, command))
     if num_unmapped_reads == 0:
@@ -37,7 +37,7 @@ def bam_has_unmapped_reads(cnf, bam_fpath):
 def filter_unmapped_reads(cnf, bam_fpath):
     if bam_has_unmapped_reads(cnf, bam_fpath):
         output_fpath = intermediate_fname(cnf, bam_fpath, 'mapped')
-        cmdline = "%s view -b -F 4 %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)
+        cmdline = "%s view -b -F 4 %s" % (get_system_path(cnf, 'samtools'), bam_fpath)
         info("Filtering unmapped reads from input bam: " + cmdline)
         call(cnf, cmdline, output_fpath)
     else:
@@ -52,7 +52,7 @@ def process_pysam_bug(cnf, bam_fpath):  # actual for pysam v.0.7.0 and lower!
     except ValueError, exc:
         if 'PG' in exc.message and 'PP' in exc.message:
             output_fpath = intermediate_fname(cnf, bam_fpath, 'fixed_header')
-            cmdline = "%s view -H %s" % (get_tool_cmdline(cnf, 'samtools'), bam_fpath)  # get Header only
+            cmdline = "%s view -H %s" % (get_system_path(cnf, 'samtools'), bam_fpath)  # get Header only
             old_header_fpath = join(output_fpath + '.old_header')
             new_header_fpath = join(output_fpath + '.new_header')
             call(cnf, cmdline, old_header_fpath)
@@ -63,7 +63,7 @@ def process_pysam_bug(cnf, bam_fpath):  # actual for pysam v.0.7.0 and lower!
                             continue
                         new_header_f.write(line)
 
-            cmdline = "%s reheader %s %s" % (get_tool_cmdline(cnf, 'samtools'), new_header_fpath, bam_fpath)
+            cmdline = "%s reheader %s %s" % (get_system_path(cnf, 'samtools'), new_header_fpath, bam_fpath)
             info("Fixing bam header to prevent the bug with pysam module (PP field of @PG line): " + cmdline)
             call(cnf, cmdline, output_fpath)
             if verify_file(old_header_fpath):
