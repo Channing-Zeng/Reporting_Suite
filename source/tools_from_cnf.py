@@ -71,9 +71,10 @@ def get_java_tool_cmdline(cnf, script,
     else:
         jvm_opts = ['']
 
-    return get_script_cmdline(cnf, 'java', script,
-                              (' '.join(jvm_opts) + ' -jar'),
-                              extra_warning='', suppress_warn=False)
+    return get_script_cmdline(
+        cnf, 'java', script,
+        interpreter_params=(' '.join(jvm_opts) + ' -jar'),
+        extra_warning='', suppress_warn=False)
 
 
 def get_script_cmdline(cnf, interpreter, name_in_sys_cnf, script_fname=None, interpreter_params='',
