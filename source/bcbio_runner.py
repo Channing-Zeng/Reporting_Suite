@@ -194,7 +194,7 @@ class BCBioRunner:
         )
         self.qualimap = Step(cnf, run_id,
             name='QualiMap', short_name='qm',
-            script='qualimap.py',
+            script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
             paramln=' bamqc -nt ' + str(cnf.threads or 1) + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
