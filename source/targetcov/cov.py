@@ -1,23 +1,18 @@
 # coding=utf-8
-from collections import OrderedDict
-import copy
-from itertools import izip, chain, repeat
-import os
-from os.path import join, basename, isfile, splitext
-import shutil
+from collections import OrderedDict, defaultdict
+from os.path import join, basename
 import sys
-from ext_modules import vcf_parser
-from source.bcbio_structure import BCBioStructure, Sample
-from source.calling_process import call, call_check_output, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus, add_suffix, verify_file, file_exists
+import traceback
+from source.bcbio_structure import BCBioStructure
+from source.calling_process import call, call_pipe
+from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists
 
 from source.logger import step_greetings, critical, info, err
-from source.ngscat.bed_file import verify_bed
-from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
-    write_tsv_rows, Record, SquareSampleReport
+from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, \
+    write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import get_chr_len_fpath, median
+from source.utils import get_chr_len_fpath
 
 
 def make_targetseq_reports(cnf, sample):
@@ -25,6 +20,10 @@ def make_targetseq_reports(cnf, sample):
         if not sample.bam: err(sample.name + ': BAM file is required.')
         if not sample.bed: err(sample.name + ': BED file is required.')
         sys.exit(1)
+
+    info()
+    info('Fixing amplicon gene names...')
+    sample.bed = __fix_amplicons_gene_names(cnf, sample.bed)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -107,6 +106,9 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
 
     # log('Annotating amplicons...')
     # annotate_amplicons(amplicons, genes_bed)
+
+    info('Choosing unique exons.')
+    exons_bed = __unique_exons(cnf, exons_bed)
 
     info('Sorting exons BED file.')
     exons_bed = sort_bed(cnf, exons_bed)
@@ -476,36 +478,41 @@ def _make_flat_region_report(regions, depth_threshs):
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
 
-        row = [
-            region.sample_name,
-            region.chrom,
-            '{:,}'.format(region.start),
-            '{:,}'.format(region.end),
-            region.gene_name,
-            str(region.exon_num) if region.exon_num else '.',
-            region.strand if region.strand else '.',
-            region.feature,
-            '{:,}'.format(region.get_size()),
-            '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',
-            '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
-            '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
+        try:
+            row = [
+                region.sample_name,
+                region.chrom,
+                '{:,}'.format(region.start),
+                '{:,}'.format(region.end),
+                region.gene_name,
+                str(region.exon_num) if region.exon_num else '.',
+                region.strand if region.strand else '.',
+                region.feature,
+                '{:,}'.format(region.get_size()),
+                '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',
+                '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
+                '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
+        except:
+            err('Err in region ' + ' '.join(map(str, [region.sample_name, region.chrom, region.start,
+                                                      region.end, region.gene_name, region.exon_num])))
+            traceback.print_exc()
+        else:
+            for thresh in depth_threshs:
+                bases = region.bases_within_threshs.get(thresh)
+                if bases is None:
+                    percent_str = '.'
+                elif int(region.get_size()) == 0:
+                    percent_str = '-'
+                else:
+                    percent = 100.0 * bases / region.get_size()
+                    percent_str = '{0:.2f}%'.format(percent)
+                    if percent > 100:
+                        err('Percent = ' + percent_str + ', bases = ' + str(bases) +
+                            ', size = ' + str(region.get_size()) +
+                            ', start = ' + str(region.start) + ', end = ' + str(region.end))
+                row.append(percent_str)
 
-        for thresh in depth_threshs:
-            bases = region.bases_within_threshs.get(thresh)
-            if bases is None:
-                percent_str = '.'
-            elif int(region.get_size()) == 0:
-                percent_str = '-'
-            else:
-                percent = 100.0 * bases / region.get_size()
-                percent_str = '{0:.2f}%'.format(percent)
-                if percent > 100:
-                    err('Percent = ' + percent_str + ', bases = ' + str(bases) +
-                        ', size = ' + str(region.get_size()) +
-                        ', start = ' + str(region.start) + ', end = ' + str(region.end))
-            row.append(percent_str)
-
-        all_rows.append(row)
+            all_rows.append(row)
         # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
     info('Processed {0:,} regions.'.format(i))
     return all_rows
@@ -523,8 +530,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
     bedcov_output = join(cnf.work_dir,
-                         splitext_plus(basename(bed))[0] + '_' +
-                         splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
+        splitext_plus(basename(bed))[0] + '_' +
+        splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
     if reuse and file_exists(bedcov_output) and verify_file(bedcov_output):
         pass
     else:
@@ -578,12 +585,67 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return regions[:-1], regions[-1], max_depth, total_bed_size
 
 
+def __fix_amplicons_gene_names(cnf, amplicons_fpath):
+    output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixed_gene_names')
+
+    with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
+        for line in f:
+            if not line.strip() or line.startswith('#'):
+                out.write(line)
+            ts = line.split()
+            if len(ts) < 4 or ':' not in ts[3]:
+                out.write(line)
+            else:
+                ts = ts[:4] + ts[4].split(':')[-1] + ts[5:]
+                out.write('\t'.join(ts) + '\n')
+
+    info('Saved to ' + output_fpath)
+    return output_fpath
+
+
 def sort_bed(cnf, bed_fpath):
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
     call(cnf, cmdline, output_fpath)
     return output_fpath
+
+
+def __unique_exons(cnf, exons_bed_fpath):
+    unique_exons_dict = OrderedDict()
+
+    with open(exons_bed_fpath) as f:
+        for line in f:
+            if not line.strip() or line.startswith('#'):
+                continue
+
+            ts = line.split()
+
+            if len(ts) < 4:
+                pass
+
+            elif len(ts) < 5:
+                chrom, start, end, gene = ts
+                unique_exons_dict[(gene, '')] = ts
+
+            else:
+                chrom, start, end, gene, exon_num = ts[:5]
+                prev_ts = unique_exons_dict.get((gene, exon_num))
+                if not prev_ts:
+                    unique_exons_dict[(gene, exon_num)] = ts
+                else:
+                    size = int(ts[2]) - int(ts[1])
+                    prev_size = int(prev_ts[2]) - int(prev_ts[1])
+                    if size > prev_size:
+                        unique_exons_dict[(gene, exon_num)] = ts
+
+    unique_bed_fpath = intermediate_fname(cnf, exons_bed_fpath, 'unique')
+    with open(unique_bed_fpath, 'w') as f:
+        for ts in unique_exons_dict.values():
+            f.write('\t'.join(ts) + '\n')
+
+    info('Saved to ' + unique_bed_fpath)
+    return unique_bed_fpath
 
 
 def intersect_bed(cnf, bed1, bed2):

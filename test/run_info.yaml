@@ -1,12 +1,14 @@
+project: test
+
 genome: hg19
 
 steps:
-# - VarAnnotate
+- VarAnnotate
 # - VarQC
 # - VarFilter
 # - VarQC_postVarFilter
-- TargetCov
-- Seq2C
+# - TargetCov
+# - Seq2C
 # - ngsCAT
 # - QualiMap
 #- MongoLoader

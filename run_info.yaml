@@ -143,9 +143,9 @@ clinvar:
   - CLNSIG  # Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other
 
 snpeff:
-  clinical_reporting: False    ## Canonical transcripts + output in HGVS notation
+  clinical_reporting: True     ## Canonical transcripts + output in HGVS notation
   cancer: False
-  only_transcripts: True       # If True, will be taken from the genome.snpeff_transcripts field in system_info
+  # only_transcripts: True       # If True, will be taken from the genome.snpeff_transcripts field in system_info
   extra_opts: ''
   ## no "annotations" section here, always applied all annotations
 
