@@ -203,6 +203,7 @@ class BCBioStructure:
     detail_highcov_gene_report_baseending = '.details.high_cov.gene'
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     detail_gene_report_tsv_ending = detail_gene_report_baseending + '.tsv'
+    seq2c_seq2cov_ending   = 'seq2c_seq2cov.txt'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'

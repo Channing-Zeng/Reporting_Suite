@@ -3,7 +3,7 @@ from collections import OrderedDict
 import copy
 from itertools import izip, chain, repeat
 import os
-from os.path import join, basename, isfile
+from os.path import join, basename, isfile, splitext
 import shutil
 import sys
 from ext_modules import vcf_parser
@@ -16,7 +16,7 @@ from source.ngscat.bed_file import verify_bed
 from source.reporting import Metric, SampleReport, FullReport, MetricStorage, ReportSection, write_txt_rows, \
     write_tsv_rows, Record, SquareSampleReport
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
-from source.tools_from_cnf import get_system_path
+from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath, median
 
 
@@ -41,7 +41,31 @@ def make_targetseq_reports(cnf, sample):
 
     per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
 
+    seq2c_seq2cov(cnf, sample)
+
     return general_rep_fpath, per_gene_rep_fpath
+
+
+def seq2c_seq2cov(cnf, sample):
+    info('Running seq2cov.pl for ' + sample.name)
+
+    # sea2cov.pl
+    seq2cov = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='seq2cov.pl')
+    if not seq2cov: sys.exit(1)
+
+    seq2c_output = join(
+        cnf.output_dir,
+        sample.name + '.' + \
+        BCBioStructure.targetseq_name + \
+        BCBioStructure.seq2c_seq2cov_ending)
+    sample_name = sample.name
+    bam = sample.bam
+    bed = sample.bed
+    cmdline = '{seq2cov} -b {bam} -N {sample_name} {bed}'.format(**locals())
+    res = call(cnf, cmdline, seq2c_output)
+    if not res:
+        err('Could not run seq2cov.pl for ' + sample.name)
+        return None
 
 
 def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size):

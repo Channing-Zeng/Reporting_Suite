@@ -1,7 +1,7 @@
 from itertools import repeat, izip
 from os.path import join
 
-from source.targetcov.copy_number import run_copy_number
+from source.targetcov.copy_number import my_copy_number
 
 
 _BCBIO_DIR = "test/bcbio_test_dir/"
@@ -15,7 +15,7 @@ def summarize_copy_number(report_summary_fpath, fpath_cov):
 
     cov_by_sample = _get_lines_from_mapped_reads(fpath_cov)
 
-    report_data = run_copy_number(cov_by_sample, gene_summary_lines)
+    report_data = my_copy_number(cov_by_sample, gene_summary_lines)
 
     return report_data
 

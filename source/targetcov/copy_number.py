@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from genericpath import isfile
 import math
 from collections import defaultdict, OrderedDict
 import os
@@ -35,26 +36,26 @@ def cnv_reports(cnf, bcbio_structure):
             cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
 
     info('Calculating normalized coverages for CNV...')
-    cnv_gene_ampl_report_fpath, cnv_ampl_report_fpath = _seq2c(cnf, bcbio_structure,
+    cnv_report_fpath, cnv_report_fpath__mine = _seq2c(cnf, bcbio_structure,
         gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
 
     info()
     info('*' * 70)
     msg = 'Seq2C was not generated.'
-    if cnv_ampl_report_fpath or cnv_gene_ampl_report_fpath:
+    if cnv_report_fpath or cnv_report_fpath__mine:
         info('Seq2C:')
         msg = 'Seq2C:'
-        if cnv_ampl_report_fpath:
-            info('  Amplicon level:      ' + cnv_ampl_report_fpath)
-            msg += '\n  Amplicon level:      ' + cnv_ampl_report_fpath
-        if cnv_gene_ampl_report_fpath:
-            info('  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath)
-            msg += '\n  Gene-Amplicon level: ' + cnv_gene_ampl_report_fpath
+        if cnv_report_fpath:
+            info('   ' + cnv_report_fpath)
+            msg += '\n   ' + cnv_report_fpath
+        if cnv_report_fpath__mine:
+            info('  Mine:: ' + cnv_report_fpath__mine)
+            msg += '\n  Mine: ' + cnv_report_fpath__mine
 
     # if msg:
         # send_email(msg)
 
-    return [cnv_ampl_report_fpath, cnv_gene_ampl_report_fpath]
+    return [cnv_report_fpath, cnv_report_fpath__mine]
 
 
 def _get_tokens_by_region_type(report_fpath, region_type):
@@ -86,7 +87,97 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
 
-    amplicon_summary_lines = []
+    read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(
+        cnf, bcbio_structure.samples)
+    info()
+
+    # if not read_stats_fpath or not combined_gene_depths_fpath:
+    # info('No read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
+    info('Getting old way reads and cov stats, but with amplicons')
+    read_stats_fpath__mine, combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(
+        cnf.work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample)
+    info()
+
+    cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
+    cnv_gene_ampl_report_fpath__mine = join(cnf.output_dir, BCBioStructure.seq2c_name + '.mine.tsv')
+
+    # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
+    cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
+    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
+
+    # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
+
+    # save_results_separate_for_samples(results)
+
+    return [cnv_gene_ampl_report_fpath, cnv_gene_ampl_report_fpath__mine]
+
+
+def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
+    cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
+    if not cov2lr: sys.exit(1)
+    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
+    cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
+    if not call(cnf, cmdline, cov2lr_output): return None
+    info()
+
+    lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
+    if not lr2gene: sys.exit(1)
+    cmdline = '{lr2gene} {cov2lr_output}'.format(**locals())
+    res = call(cnf, cmdline, output_fpath)
+    info()
+    return res
+
+# def __cov2cnv2(cnf, mapped_reads_by_sample, cov_info, output_fpath):
+#     mapped_read_fpath, gene_depths_fpath = __get_mapped_reads_and_cov(
+#         cnf.work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample)
+#
+#     cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
+#     if not cov2cnv2: sys.exit(1)
+#     cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
+#     if call(cnf, cmdline, output_fpath):
+#         return output_fpath
+
+
+def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
+    # GENE DEPTHS
+    info()
+    info('Combining gene depths...')
+    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
+
+    with open(combined_gene_depths_fpath, 'w') as out:
+        for sample in samples:
+            seq2c_output = join(
+                sample.dirpath,
+                BCBioStructure.targetseq_dir,
+                sample.name + '.' + \
+                BCBioStructure.targetseq_name + \
+                BCBioStructure.seq2c_seq2cov_ending)
+            if not isfile(seq2c_output):
+                return None, None
+            with open(seq2c_output) as inp:
+                out.write(inp.read())
+
+    info('Saved to ' + combined_gene_depths_fpath)
+    info()
+
+    # READ STATS
+    info('Getting read counts...')
+    bam2reads = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='bam2reads.pl')
+    if not bam2reads: sys.exit(1)
+
+    bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
+    with open(bam2reads_list_of_bams_fpath, 'w') as f:
+        for sample in samples:
+            f.write(sample.name + '\t' + sample.bam + '\n')
+
+    read_stats_fpath = join(cnf.work_dir, 'seq2c_read_stats.txt')
+    cmdline = '{bam2reads} {bam2reads_list_of_bams_fpath}'.format(**locals())
+    if not call(cnf, cmdline, read_stats_fpath): return None, None
+
+    return read_stats_fpath, combined_gene_depths_fpath
+
+
+def __get_mapped_reads_and_cov(work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample):
     coverage_info = []
     mapped_reads_by_sample = OrderedDict()
 
@@ -94,7 +185,7 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
         json_fpath = report_fpath_by_sample[sample_name]
 
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
-        for tokens in _get_tokens_by_region_type(gene_report_fpath, 'Gene-Amplicon'):
+        for tokens in _get_tokens_by_region_type(gene_report_fpath, 'Amplicon'):
             sample, chrom, s, e, gene, tag, size, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
             if float(cov) != 0:
@@ -111,52 +202,7 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
             rec.value for rec in cov_report.records
             if rec.metric.name == 'Mapped reads'))
 
-    # results = run_copy_number(mapped_reads_by_sample, gene_summary_lines)
-
-    cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-
-    # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
-    cnv_gene_ampl_report_fpath = __new_seq2c(cnf, mapped_reads_by_sample, coverage_info, cnv_gene_ampl_report_fpath)
-
-    # cnv_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '_amplicons.tsv')
-    # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
-
-    # save_results_separate_for_samples(results)
-
-    return [cnv_gene_ampl_report_fpath, None]
-
-
-def __new_seq2c(cnf, mapped_reads_by_sample, cov_info, output_fpath):
-    mapped_read_fpath, gene_depths_fpath = __write_mapped_reads_and_cov(cnf.work_dir, mapped_reads_by_sample, cov_info)
-
-    cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
-    if not cov2lr: sys.exit(1)
-
-    lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
-    if not lr2gene: sys.exit(1)
-    # cov2lr.pl -a $CONS read_stats.txt cov.txt | lr2gene.pl $OPT $SEQ2COPT > seq2c_results.txt
-
-    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
-    cmdline = '{cov2lr} -a {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
-    if not call(cnf, cmdline, cov2lr_output):
-        return None
-
-    cmdline = '{lr2gene} {cov2lr_output}'.format(**locals())
-    if call(cnf, cmdline, output_fpath):
-        return output_fpath
-
-
-def __cov2cnv2(cnf, mapped_reads_by_sample, cov_info, output_fpath):
-    mapped_read_fpath, gene_depths_fpath = __write_mapped_reads_and_cov(cnf.work_dir, mapped_reads_by_sample, cov_info)
-
-    cov2cnv2 = get_script_cmdline(cnf, 'perl', 'cov2cnv2')
-    if not cov2cnv2: sys.exit(1)
-    cmdline = '{cov2cnv2} {mapped_read_fpath} {gene_depths_fpath}'.format(**locals())
-    if call(cnf, cmdline, output_fpath):
-        return output_fpath
-
-
-def __write_mapped_reads_and_cov(work_dir, mapped_reads_by_sample, cov_info):
+    # Writing results
     mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
     with open(mapped_read_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
@@ -164,7 +210,7 @@ def __write_mapped_reads_and_cov(work_dir, mapped_reads_by_sample, cov_info):
 
     gene_depths_fpath = join(work_dir, 'gene_depths.txt')
     with open(gene_depths_fpath, 'w') as f:
-        for tokens in cov_info:
+        for tokens in coverage_info:
             f.write('\t'.join(tokens) + '\n')
 
     return mapped_read_fpath, gene_depths_fpath
@@ -215,7 +261,7 @@ def __proc_sample(sample, norm_depths_by_sample, factors_by_gene, med_depth, med
     return norm_depths_by_gene, norm2, norm3
 
 
-def run_copy_number(mapped_reads_by_sample, gene_depth):
+def my_copy_number(mapped_reads_by_sample, gene_depth):
     mapped_reads_by_sample = {k: v for k, v in mapped_reads_by_sample.items() if 'Undetermined' not in k}
 
     info('Parsing rows...')
