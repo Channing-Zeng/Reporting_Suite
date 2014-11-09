@@ -119,6 +119,9 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     info()
 
     gene_names = _get_gene_names(overlapped_exons_bed)
+    if not gene_names:
+        err('No exons overlap amplicons from the panel.')
+        return None
 
     info('Adding other exons for the genes of overlapped exons.')
     all_interesting_exons_bed = _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed)
@@ -348,6 +351,9 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
             overlap_size = line.split('\t')
 
             if g_gene_name != '.':
+                if g_gene_name not in genes_by_name:
+                    err(g_gene_name + ' not in genes_by_name from exons')
+                    continue
                 gene = genes_by_name[g_gene_name]
                 amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
                 gene.add_amplicon(amplicon)
@@ -596,7 +602,7 @@ def __fix_amplicons_gene_names(cnf, amplicons_fpath):
             if len(ts) < 4 or ':' not in ts[3]:
                 out.write(line)
             else:
-                ts = ts[:4] + ts[4].split(':')[-1] + ts[5:]
+                ts = ts[:4] + [ts[4].split(':')[-1]] + ts[5:]
                 out.write('\t'.join(ts) + '\n')
 
     info('Saved to ' + output_fpath)

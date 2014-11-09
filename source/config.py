@@ -25,8 +25,7 @@ class Defaults:
 
     verbose = True
     threads = None
-    overwrite = None
-    reuse_intermediate = True
+    reuse_intermediate = False
     keep_intermediate = True
 
     sys_cnfs = dict(
@@ -111,10 +110,6 @@ class Config(object):
 
         if sys_cnf and run_cnf:
 
-            # self.overwrite = None
-            # self.reuse_intermediate = None
-            # self.keep_intermediate = None
-
             sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
             loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
             for k, v in loaded_dict.items():
@@ -127,10 +122,10 @@ class Config(object):
             self.sys_cnf = sys_cnf_fpath
             self.run_cnf = run_cnf_fpath
 
-            if self.overwrite is not None:  # if specified
-                self.reuse_intermediate = not self.overwrite
-            else:
-                self.overwrite = not self.reuse_intermediate
+            # if self.overwrite is not None:  # if specified
+            #     self.reuse_intermediate = not self.overwrite
+            # else:
+            #     self.overwrite = not self.reuse_intermediate
 
             self.tmp_base_dir = self.work_dir
         else:

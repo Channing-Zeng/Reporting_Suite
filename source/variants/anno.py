@@ -408,13 +408,13 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
 
 def _add_annotation(cnf, input_fpath, key, value):
-    step_greetings('Filtering malformed fields...')
+    step_greetings('Adding annotation...')
 
     def proc_rec(rec):
         rec.INFO[key] = value
         return rec
 
-    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'plus')
     return output_fpath
 
 
@@ -450,6 +450,6 @@ def _filter_malformed_fields(cnf, input_fpath):
         return line
 
     output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
-    output_fpath_2 = iterate_file(cnf, input_fpath, proc_line, 'corr_old')
+    # output_fpath_2 = iterate_file(cnf, input_fpath, proc_line, 'corr_old')
 
     return output_fpath

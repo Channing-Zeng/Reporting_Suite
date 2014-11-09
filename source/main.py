@@ -45,20 +45,15 @@ def read_opts_and_cnfs(extra_opts,
              type='int',
              help='number of threads')
          ),
-        (['-w', '--overwrite'], dict(
-             dest='overwrite',
-             help='do not reuse intermediate files from previous run',
-             action='store_true')
-         ),
         (['--clean'], dict(
              dest='keep_intermediate',
              help='do not store work directory',
              action='store_false')
          ),
         (['--reuse'], dict(
-             dest='overwrite',
-             help='reuse intermediate files from previous run',
-             action='store_false')
+             dest='reuse_intermediate',
+             help='reuse intermediate non-empty files in the work dir from previous run',
+             action='store_true')
          ),
         (['--sys-cnf'], dict(
              dest='sys_cnf',

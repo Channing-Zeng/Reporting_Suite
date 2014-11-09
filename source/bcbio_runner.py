@@ -127,15 +127,16 @@ class BCBioRunner:
         cnfs_line = ' --sys-cnf \'' + self.cnf.sys_cnf + '\' --run-cnf \'' + self.cnf.run_cnf + '\''
         if cnf.email:
             cnfs_line += ' --email ' + remove_quotes(self.cnf.email) + ' '
-        overwrite_line = {True: '-w', False: '--reuse'}.get(cnf.overwrite) or ''
         summaries_cmdline_params = ''
         if cnf.bed:
             summaries_cmdline_params += ' --bed ' + cnf.bed
 
         # Params for those who doesn't call bcbio_structure
-        spec_params = cnfs_line + ' -t ' + str(cnf.threads or 1) + ' ' + overwrite_line + ' ' \
-                      '--log-dir ' + self.bcbio_structure.log_dirpath + ' ' \
-                      '--project-name ' + self.bcbio_structure.project_name + ' ' \
+        spec_params = cnfs_line + \
+                      ' -t ' + str(cnf.threads or 1) + \
+                     (' --reuse ' if cnf.reuse_intermediate else '') + \
+                      ' --log-dir ' + self.bcbio_structure.log_dirpath + \
+                      ' --project-name ' + self.bcbio_structure.project_name + ' '
 
         anno_paramline = spec_params + ('' +
              ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
