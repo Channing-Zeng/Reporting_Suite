@@ -22,6 +22,10 @@ def make_targetseq_reports(cnf, sample):
         sys.exit(1)
 
     info()
+    info('Sorting amplicons BED file.')
+    sample.bed = sort_bed(cnf, sample.bed)
+
+    info()
     info('Fixing amplicon gene names...')
     sample.bed = __fix_amplicons_gene_names(cnf, sample.bed)
 
@@ -595,10 +599,19 @@ def __fix_amplicons_gene_names(cnf, amplicons_fpath):
     output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixed_gene_names')
 
     with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
+        prev_end = None
+
         for line in f:
             if not line.strip() or line.startswith('#'):
                 out.write(line)
             ts = line.split()
+
+            if prev_end is not None:
+                cur_start = int(ts[1])
+                if prev_end > cur_start:
+                    err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
+            prev_end = int(ts[2])
+
             if len(ts) < 4 or ':' not in ts[3]:
                 out.write(line)
             else:
