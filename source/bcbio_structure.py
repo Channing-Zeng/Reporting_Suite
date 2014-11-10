@@ -461,7 +461,6 @@ class BCBioStructure:
         if verify_bam(bam):
             sample.bam = bam
             info('BAM file for ' + sample.name + ': ' + sample.bam)
-            index_bam(self.cnf, bam)
         else:
             sample.bam = None
             err('No BAM file for ' + sample.name)

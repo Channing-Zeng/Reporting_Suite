@@ -1,6 +1,6 @@
 # coding=utf-8
 from collections import OrderedDict, defaultdict
-from os.path import join, basename
+from os.path import join, basename, isfile
 import sys
 import traceback
 from source.bcbio_structure import BCBioStructure
@@ -11,6 +11,7 @@ from source.logger import step_greetings, critical, info, err
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, \
     write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
+from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
@@ -22,6 +23,10 @@ def make_targetseq_reports(cnf, sample):
         sys.exit(1)
 
     info()
+    if not isfile(sample.bam + '.bai'):
+        info('Indexing bam ' + sample.bam)
+        index_bam(cnf, sample.bam)
+
     info('Sorting amplicons BED file.')
     sample.bed = sort_bed(cnf, sample.bed)
 

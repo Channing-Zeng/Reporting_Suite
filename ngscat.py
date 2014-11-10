@@ -1,13 +1,14 @@
 #!/usr/bin/python
 import sys
 from source.bcbio_structure import BCBioStructure
+from source.targetcov.bam_file import index_bam
 
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
              (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
 
-from os.path import abspath, dirname, realpath, pardir, join, basename
+from os.path import abspath, dirname, realpath, pardir, join, basename, isfile
 from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
@@ -128,6 +129,11 @@ def process_one(cnf):
     bams = [cnf['bam']]
     if 'extra_bam' in cnf:
         bams.append(cnf['extra_bam'])
+
+    for bam in bams:
+        if not isfile(bam + '.bai'):
+            info('Indexing bam ' + bam)
+            index_bam(cnf, bam)
 
     filtered_bams = [process_pysam_bug(cnf, filter_unmapped_reads(cnf, bam)) for bam in bams]
 
