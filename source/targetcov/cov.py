@@ -36,17 +36,17 @@ def make_targetseq_reports(cnf, sample):
     info()
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
 
-    info()
-    amplicons_dict = dict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
-    for ampl in amplicons_dict.values():
-        ampl.feature = 'Amplicon'
-        ampl.sample_name = sample.name
+    # info()
+    # amplicons_dict = dict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
+    # for ampl in amplicons_dict.values():
+    #     ampl.feature = 'Amplicon'
+    #     ampl.sample_name = sample.name
+    #
+    # per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
+    #
+    # seq2c_seq2cov(cnf, sample)
 
-    per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
-
-    seq2c_seq2cov(cnf, sample)
-
-    return general_rep_fpath, per_gene_rep_fpath
+    return general_rep_fpath, None
 
 
 def seq2c_seq2cov(cnf, sample):
