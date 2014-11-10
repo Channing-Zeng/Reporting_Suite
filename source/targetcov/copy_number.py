@@ -113,15 +113,15 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 
 
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
-    cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
-    if not cov2lr: sys.exit(1)
-    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
-    cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
-    call(cnf, cmdline, cov2lr_output, exit_on_error=False)
-    info()
-
-    if not verify_file(cov2lr_output):
-        return None
+    # cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
+    # if not cov2lr: sys.exit(1)
+    # cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
+    # cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
+    # call(cnf, cmdline, cov2lr_output, exit_on_error=False)
+    # info()
+    #
+    # if not verify_file(cov2lr_output):
+    #     return None
 
     lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
     if not lr2gene: sys.exit(1)
