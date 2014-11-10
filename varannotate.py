@@ -51,7 +51,7 @@ def main(args):
         proc_name=BCBioStructure.varannotate_name)
 
     check_system_resources(cnf,
-        required=['java', 'perl', 'gatk', 'snpeff', 'snpsift'],
+        required=['java', 'perl', 'snpeff', 'snpsift'],
         optional=['transcripts_fpath'])
 
     load_genome_resources(cnf,
