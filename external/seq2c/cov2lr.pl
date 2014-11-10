@@ -89,7 +89,7 @@ my %factor2;  # Gene/amplicon factor
 while( my ($k, $v) = each %norm1) {
     next if ( $bad{ $k } );
     my @t = values %$v;
-    $factor2{ $k } = $stat->median(\@t) ? $meddepth/$stat->median(\@t) : 0;
+    $factor2{ $k } = $stat->median(\@t) != 0 ? $meddepth/$stat->median(\@t) : 0;
 }
 
 my %samplemedian;
@@ -106,9 +106,9 @@ while( my ($k, $v) = each %norm1) {
     next if ( $bad{ $k } );
     foreach my $s (@samples) {
         $norm1b{ $k }->{ $s } = sprintf("%.2f", $v->{$s} * $factor2{ $k }+0.1);
-        $norm2{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
+        $norm2{ $k }->{ $s } = $meddepth != 0 ? sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2)) : "-";
         print STDERR "$s\n" unless( $samplemedian{ $s } );
-        $norm3{ $k }->{ $s } = sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
+        $norm3{ $k }->{ $s } = $samplemedian{ $s } != 0 ? sprintf("%.2f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2)) : "-";
     }
 }
 
@@ -122,7 +122,7 @@ while( my ($k, $v) = each %norm2) {
             my @controls = split(/:/, $opt_c);
             my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
             my $cntl_ave = $stat->mean( \@tcntl );
-            $str .= "\t" .  sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
+            $str .= "\t" .  ($cntl_ave != 0 ? sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2)) : "-");
         }
         my @a = split(/\t/, $str);
         push(@{ $g2amp{ $s }->{ $a[1] } }, \@a);
