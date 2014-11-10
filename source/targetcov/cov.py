@@ -49,7 +49,7 @@ def make_targetseq_reports(cnf, sample):
 
     per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
 
-    # seq2c_seq2cov(cnf, sample)
+    seq2c_seq2cov(cnf, sample)
 
     return general_rep_fpath, per_gene_rep_fpath
 

@@ -457,7 +457,7 @@ class BCBioStructure:
             err('No BED file for ' + sample.name)
 
     def _set_bam_file(self, sample):
-        bam = adjust_path(join(sample.dirpath, sample.name + '.bam'))
+        bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
         if verify_bam(bam):
             sample.bam = bam
             info('BAM file for ' + sample.name + ': ' + sample.bam)
