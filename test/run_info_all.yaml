@@ -2,21 +2,21 @@ genome: hg19
 
 steps:
 - VarAnnotate
-- VarQC
-- VarQC_summary
-- VarFilter
-- VarQC_postVarFilter
-- VarQC_postVarFilter_summary
-- TargetCov
-- Seq2C
-- TargetCov_Summary
-- ngsCAT
-- ngsCAT_summary
-- QualiMap
-- QualiMap_summary
-- TargQC_summary
-- FastQC_summary
-- Combined_report
+#- VarQC
+#- VarQC_summary
+#- VarFilter
+#- VarQC_postVarFilter
+#- VarQC_postVarFilter_summary
+#- TargetCov
+#- Seq2C
+#- TargetCov_Summary
+#- ngsCAT
+#- ngsCAT_summary
+#- QualiMap
+#- QualiMap_summary
+#- TargQC_summary
+#- FastQC_summary
+#- Combined_report
 #- MongoLoader
 #- AbnormalCovReport
 
@@ -142,6 +142,9 @@ snpeff:
   cancer: False
   # only_transcripts: '/ngs/PHB/analysis/tBRCA_Qiagen_GRPanel_StMarys_2013/ensemble-variant/variants/transcripts.txt'
   extra_opts: ''
+
+mongo:
+  all-annotations: True
 
 #tracks:
 #- /Users/vladsaveliev/vagrant/bcbio-nextgen/tests/test_automated_output/analysis_blocks.bed

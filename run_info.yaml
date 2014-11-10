@@ -149,8 +149,8 @@ snpeff:
   extra_opts: ''
   ## no "annotations" section here, always applied all annotations
 
-#mongo:
-  #all-annotations: True
+mongo:
+  all-annotations: True
 
 tracks:
 - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island

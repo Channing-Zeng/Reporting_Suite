@@ -1,7 +1,7 @@
 resources:
-  gatk:
-    jvm_opts: ["-Xms750m", "-Xmx2500m"]
-    path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
+  #gatk:
+    #jvm_opts: ["-Xms750m", "-Xmx2500m"]
+    #path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
     # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
@@ -9,18 +9,20 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: external/snpEff/SnpSift.jar
-  bcftools:
-    path: ~/bin/bcftools/bcftools
-  plot_vcfstats:
-    path: ~/bin/bcftools/plot-vcfstats
+  #bcftools:
+    #path: ~/bin/bcftools/bcftools
+  #plot_vcfstats:
+    #path: ~/bin/bcftools/plot-vcfstats
   qsub:
-    path: ~/vagrant/reporting_suite/tools/qsub.sh
+    path: tools/qsub.sh
   vardict_pl:
     path: ~/vagrant/VarDict/vardict.pl
   testsomatic_r:
     path: ~/vagrant/VarDict/testsomatic.R
   var2vcf_somatic_pl:
     path: ~/vagrant/VarDict/var2vcf_somatic.pl
+  vcf_loader:
+    path: external/mongo_loader/VCFStore.jar
 
 genomes:
   hg19:
@@ -39,6 +41,6 @@ genomes:
 
 queue: ngs.q
 
-qsub_runner: ~/vagrant/reporting_suite/test/qsub_runner_local.sh
+qsub_runner: test/qsub_runner_local.sh
 
 smtp_host: 'localhost'
