@@ -9,6 +9,8 @@ from joblib import Parallel, delayed
 ##from memory_profiler import profile
 
 from source.bcbio_structure import BCBioStructure
+from source.calling_process import call
+from source.tools_from_cnf import get_script_cmdline
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
@@ -529,6 +531,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     n_threads = cnf.threads if IN_PARALLEL else 1
     info('Number of threads for filtering: ' + str(n_threads))
 
+
+    # caller.combined_filt_maf_fpath = run_vcf2txt_paired(cnf, caller.name, anno_vcf_fpaths)
+    info('-' * 70)
+    info()
+
     f = Filtering(cnf, bcbio_structure, caller)
     filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
 
@@ -559,24 +566,24 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             caller.find_filt_maf_by_sample().values(),
             join(bcbio_structure.var_dirpath, caller.name))
 
-    if caller.combined_filt_maf_fpath and caller.combined_filt_pass_maf_fpath:
+    if caller.combined_filt_maf_fpath:
         comb_basefname = basename(caller.combined_filt_maf_fpath)
-        pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
+        # pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
 
         comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
-        comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
+        # comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
 
         print comb_maf_fpath_symlink
-        print comb_pass_maf_fpath_symlink
+        # print comb_pass_maf_fpath_symlink
         if not exists(comb_maf_fpath_symlink) \
                 and not islink(comb_maf_fpath_symlink) \
                 and caller.combined_filt_maf_fpath != comb_maf_fpath_symlink:
             os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
 
-        if not exists(comb_pass_maf_fpath_symlink) \
-                and not islink(comb_pass_maf_fpath_symlink) \
-                and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
-            os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
+        # if not exists(comb_pass_maf_fpath_symlink) \
+        #         and not islink(comb_pass_maf_fpath_symlink) \
+        #         and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
+        #     os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
 
     info('-' * 70)
     info()
@@ -585,8 +592,8 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
 
 def combine_mafs(cnf, maf_fpaths, output_basename):
-    output_fpath = output_basename + '.maf'
-    output_pass_fpath = output_basename + '.pass.maf'
+    output_fpath = output_basename + '.orig.maf'
+    output_pass_fpath = output_basename + '.pass.orig.maf'
 
     if isfile(output_fpath): os.remove(output_fpath)
     if isfile(output_pass_fpath): os.remove(output_pass_fpath)
@@ -609,6 +616,18 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
                     if '\tInvalid\t' not in line:
                         out_pass.write(line)
     return output_fpath, output_pass_fpath
+
+
+def run_vcf2txt_paired(cnf, caller_name, anno_vcf_fpaths):
+    # combine vcfs
+    combined_vcf_fpath = None
+    final_maf_fpath = join(cnf.output_dir, caller_name + '.maf')
+
+    vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt_paired.pl')
+    if not vcf2txt: sys.exit(1)
+    cmdline = '{vcf2txt} {combined_vcf_fpath}'.format(**locals())
+    res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
+    return res
 
 
 def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
