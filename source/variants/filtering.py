@@ -10,12 +10,12 @@ from joblib import Parallel, delayed
 
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.tools_from_cnf import get_script_cmdline
+from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
-    get_main_sample_index
+    get_main_sample_index, tabix_vcf
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -528,43 +528,47 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             cnf_copy['variant_filtering']['min_freq'] = sample.min_af
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    n_threads = cnf.threads if IN_PARALLEL else 1
+    # n_threads = cnf.threads if cnf.threads and IN_PARALLEL else min(10, len(anno_vcf_fpaths) + 1)
+    n_threads = 1
     info('Number of threads for filtering: ' + str(n_threads))
 
+    Parallel(n_threads) \
+        (delayed(tabix_vcf)(cnf, anno_vcf_fpath)
+        for anno_vcf_fpath in anno_vcf_fpaths)
 
-    # caller.combined_filt_maf_fpath = run_vcf2txt_paired(cnf, caller.name, anno_vcf_fpaths)
+    caller.combined_filt_maf_fpath = run_vcf2txt_paired(cnf, caller.name, anno_vcf_fpaths)
     info('-' * 70)
     info()
 
-    f = Filtering(cnf, bcbio_structure, caller)
-    filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
-
-    samples = []
-    for sample_name in sample_names:
-        s = next((s for s in caller.samples if s.name == sample_name), None)
-        if s:
-            samples.append(s)
-    results = [r for r in Parallel(n_threads) \
-        (delayed(postprocess_vcf)
-         (sample, anno_vcf_fpath, work_filt_vcf_fpath)
-             for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-             zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
-         ) if r is not None and None not in r]
-    info('Results: ' + str(len(results)))
-    info('*' * 70)
-
-    for sample, [vcf, tsv, maf] in zip(samples, results):
-        info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
-        # sample.filtered_vcf_by_callername[caller.name] = vcf
-        # sample.filtered_tsv_by_callername[caller.name] = tsv
-        # sample.filtered_maf_by_callername[caller.name] = maf
-
-    caller.combined_filt_maf_fpath, \
-    caller.combined_filt_pass_maf_fpath = \
-        combine_mafs(
-            cnf,
-            caller.find_filt_maf_by_sample().values(),
-            join(bcbio_structure.var_dirpath, caller.name))
+    # f = Filtering(cnf, bcbio_structure, caller)
+    # filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
+    #
+    # samples = []
+    # for sample_name in sample_names:
+    #     s = next((s for s in caller.samples if s.name == sample_name), None)
+    #     if s:
+    #         samples.append(s)
+    # results = [r for r in Parallel(n_threads) \
+    #     (delayed(postprocess_vcf)
+    #      (sample, anno_vcf_fpath, work_filt_vcf_fpath)
+    #          for sample, anno_vcf_fpath, work_filt_vcf_fpath in
+    #          zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+    #      ) if r is not None and None not in r]
+    # info('Results: ' + str(len(results)))
+    # info('*' * 70)
+    #
+    # for sample, [vcf, tsv, maf] in zip(samples, results):
+    #     info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
+    #     # sample.filtered_vcf_by_callername[caller.name] = vcf
+    #     # sample.filtered_tsv_by_callername[caller.name] = tsv
+    #     # sample.filtered_maf_by_callername[caller.name] = maf
+    #
+    # caller.combined_filt_maf_fpath, \
+    # caller.combined_filt_pass_maf_fpath = \
+    #     combine_mafs(
+    #         cnf,
+    #         caller.find_filt_maf_by_sample().values(),
+    #         join(bcbio_structure.var_dirpath, caller.name))
 
     if caller.combined_filt_maf_fpath:
         comb_basefname = basename(caller.combined_filt_maf_fpath)
@@ -619,8 +623,15 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
 
 
 def run_vcf2txt_paired(cnf, caller_name, anno_vcf_fpaths):
-    # combine vcfs
-    combined_vcf_fpath = None
+    vcf_merge = get_system_path(cnf, 'vcf_merge')
+    if not vcf_merge:
+        err('No vcf_merge in path')
+    cmdline = '{vcf_merge} ' + ' '.join(anno_vcf_fpaths)
+    combined_vcf_fpath = join(cnf.output_dir, caller_name + '.vcf')
+    res = call(cnf, cmdline, combined_vcf_fpath, exit_on_error=False)
+    if not res:
+        return None
+
     final_maf_fpath = join(cnf.output_dir, caller_name + '.maf')
 
     vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt_paired.pl')

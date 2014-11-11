@@ -37,6 +37,8 @@ resources:
     path: /gpfs/group/ngs/src/vardict/var2vcf_somatic.pl
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
+  vcf_merge:
+    path: /opt/az/local/vcftools/vcftools_0.1.11/bin/vcf-merge
   vcf_loader:
     path: external/mongo_loader/VCFStore.jar
 #  cov2cnv2:
