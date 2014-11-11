@@ -131,7 +131,7 @@ class VariantCaller:
     def find_fpaths_by_sample(self, dir_name, name, ext):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
 
-    def find_anno_vcf_by_sample(self):
+    def find_anno_vcf_by_sample(self, optional_ext='.gz'):
         return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
     def get_filt_vcf_by_sample(self):

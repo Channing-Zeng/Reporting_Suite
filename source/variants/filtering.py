@@ -290,46 +290,48 @@ class Filtering:
     def run_filtering_steps_for_vcfs(self, sample_names, vcf_fpaths, n_jobs=1):
         step_greetings('Filtering')
 
-        global filtering
-        filtering = self
-
-        info('Fixing previous . values to PASS')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(rm_prev_round)(vcf_fpath, s)
-                                             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        info('First round')
-        results = Parallel(n_jobs=n_jobs)(delayed(first_round)(vcf_fpath, s)
-                                          for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
-        variants_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'variants.txt')
-
-        if not [all([variant_dict, control_vars]) for (_, variant_dict, control_vars) in results]:
-            info('Skipped first round, restoring varks and controls vars.')
-            if not verify_file(control_vars_dump_fpath) or not verify_file(variants_dump_fpath):
-                critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
-
-            with open(control_vars_dump_fpath) as f:
-                info('Loading control vars...')
-                self.control_vars = pickle.load(f)
-                info('Loaded control vars: ' + str(len(self.control_vars)))
-
-            with open(variants_dump_fpath) as f:
-                info('Loading varks...')
-                self.variant_dict = pickle.load(f)
-                info('Loaded varks: ' + str(len(self.variant_dict)))
-
-        else:
-            for vcf_fpath, variant_dict, control_vars in results:
-                for var_str, variant_info in variant_dict.items():
-                    if var_str not in self.variant_dict:
-                        self.variant_dict[var_str] = variant_info
-                    else:
-                        self.variant_dict[var_str].afs.extend(variant_info.afs)
-
-                self.control_vars.update(control_vars)
+        # global filtering
+        # filtering = self
+        #
+        # info('Fixing previous . values to PASS')
+        # vcf_fpaths = Parallel(n_jobs=n_jobs)(
+        #     delayed(rm_prev_round)(vcf_fpath, s)
+        #     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        # info()
+        #
+        # info('First round')
+        # results = Parallel(n_jobs=n_jobs)(
+        #     delayed(first_round)(vcf_fpath, s)
+        #     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        # info()
+        #
+        # control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
+        # variants_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'variants.txt')
+        #
+        # if not [all([variant_dict, control_vars]) for (_, variant_dict, control_vars) in results]:
+        #     info('Skipped first round, restoring varks and controls vars.')
+        #     if not verify_file(control_vars_dump_fpath) or not verify_file(variants_dump_fpath):
+        #         critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
+        #
+        #     with open(control_vars_dump_fpath) as f:
+        #         info('Loading control vars...')
+        #         self.control_vars = pickle.load(f)
+        #         info('Loaded control vars: ' + str(len(self.control_vars)))
+        #
+        #     with open(variants_dump_fpath) as f:
+        #         info('Loading varks...')
+        #         self.variant_dict = pickle.load(f)
+        #         info('Loaded varks: ' + str(len(self.variant_dict)))
+        #
+        # else:
+        #     for vcf_fpath, variant_dict, control_vars in results:
+        #         for var_str, variant_info in variant_dict.items():
+        #             if var_str not in self.variant_dict:
+        #                 self.variant_dict[var_str] = variant_info
+        #             else:
+        #                 self.variant_dict[var_str].afs.extend(variant_info.afs)
+        #
+        #         self.control_vars.update(control_vars)
 
             # if isfile(varks_dump_fpath):
             #     try:
@@ -340,28 +342,28 @@ class Filtering:
             #     except:
             #         pass
 
-            with open(control_vars_dump_fpath, 'w') as f:
-                info('Saving control vars...')
-                pickle.dump(self.control_vars, f)
-                info('Saved control vars: ' + str(len(self.control_vars)))
-            with open(variants_dump_fpath, 'w') as f:
-                info('Saving varks...')
-                pickle.dump(self.variant_dict, f)
-                info('Saved varks: ' + str(len(self.variant_dict)))
-
-        vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
-        filtering = self
-        info()
-
-        info('One effect per line')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, s)
-                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        info('Second round')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, s)
-                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
+        #     with open(control_vars_dump_fpath, 'w') as f:
+        #         info('Saving control vars...')
+        #         pickle.dump(self.control_vars, f)
+        #         info('Saved control vars: ' + str(len(self.control_vars)))
+        #     with open(variants_dump_fpath, 'w') as f:
+        #         info('Saving varks...')
+        #         pickle.dump(self.variant_dict, f)
+        #         info('Saved varks: ' + str(len(self.variant_dict)))
+        #
+        # vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
+        # filtering = self
+        # info()
+        #
+        # info('One effect per line')
+        # vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, s)
+        #              for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        # info()
+        #
+        # info('Second round')
+        # vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, s)
+        #              for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+        # info()
 
         info('Filtering by impact')
         vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath, s)
@@ -531,6 +533,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     # n_threads = cnf.threads if cnf.threads and IN_PARALLEL else min(10, len(anno_vcf_fpaths) + 1)
     n_threads = 1
     info('Number of threads for filtering: ' + str(n_threads))
+
+    info('Filtering by impact')
+    vcf_fpaths = Parallel(n_jobs=n_threads)
+       (delayed(impact_round)(vcf_fpath, s)
+        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+    info()
 
     Parallel(n_threads) \
         (delayed(tabix_vcf)(cnf, anno_vcf_fpath)
