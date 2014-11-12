@@ -84,6 +84,8 @@ def summary_script_proc_params(name, dir, description=None, extra_opts=None):
 
 
 def _set_bcbio_dirpath(dir_arg):
+    final_dirpath, bcbio_project_dirpath, config_dirpath = None, None, None
+
     if isdir(join(dir_arg, 'config')):
         bcbio_project_dirpath = dir_arg
         final_dirpath = None

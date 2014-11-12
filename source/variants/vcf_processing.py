@@ -705,9 +705,6 @@ def tabix_vcf(cnf, vcf_fpath):
     bgzip = get_system_path(cnf, 'bgzip')
     tabix = get_system_path(cnf, 'tabix')
 
-    gzipped_fpath = join(vcf_fpath + '.gz')
-    tbi_fpath = gzipped_fpath + '.tbi'
-
     if not bgzip:
         err('Cannot index VCF because bgzip is not found in PATH or '  + cnf.sys_cnf)
     if not tabix:
@@ -715,12 +712,18 @@ def tabix_vcf(cnf, vcf_fpath):
     if not bgzip and not tabix:
         return None, None
 
+    gzipped_fpath = join(vcf_fpath + '.gz')
+    tbi_fpath = gzipped_fpath + '.tbi'
+
+    if isfile(gzipped_fpath): os.remove(gzipped_fpath)
+    if isfile(tbi_fpath): os.remove(tbi_fpath)
+
     info('BGzipping VCF')
-    cmdline = '{bgzip} -c {vcf_fpath}'.format(**locals())
-    call(cnf, cmdline, gzipped_fpath, overwrite=True)
+    cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
+    call(cnf, cmdline, None)
 
     info('Tabixing VCF')
-    cmdline = '{tabix} -f -p vcf {gzipped_fpath}'.format(**locals())
-    call(cnf, cmdline, tbi_fpath, overwrite=True)
+    cmdline = '{tabix} {gzipped_fpath}'.format(**locals())
+    call(cnf, cmdline)
 
     return gzipped_fpath, tbi_fpath

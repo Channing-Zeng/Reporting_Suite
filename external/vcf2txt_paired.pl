@@ -1,6 +1,8 @@
 #!/bin/env perl
 
-use lib '/users/kdld047/lib/perl5';
+use FindBin;
+use lib "$FindBin::Bin/../../ext_modules/perl_modules/";
+#use lib '/users/kdld047/lib/perl5';
 use Getopt::Std;
 use Stat::Basic;
 use warnings;

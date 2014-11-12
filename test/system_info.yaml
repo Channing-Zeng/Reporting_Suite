@@ -1,7 +1,7 @@
 resources:
-  #gatk:
-    #jvm_opts: ["-Xms750m", "-Xmx2500m"]
-    #path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
+  gatk:
+    jvm_opts: ["-Xms750m", "-Xmx2500m"]
+    path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
     # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
@@ -23,6 +23,8 @@ resources:
     path: ~/vagrant/VarDict/var2vcf_somatic.pl
   vcf_loader:
     path: external/mongo_loader/VCFStore.jar
+  vcf_merge:
+    path: /usr/local/bin/vcf-merge
 
 genomes:
   hg19:

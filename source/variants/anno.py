@@ -1,18 +1,20 @@
 import shutil
 import os
 from os.path import splitext, basename, join, dirname, realpath, isfile, islink
+import socket
 
 from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
-from source.logger import step_greetings, critical, info, err
+from source.logger import step_greetings, critical, info, err, warn
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_main_sample
+from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_main_sample, \
+    igvtools_index, tabix_vcf
 
 
-def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None):
+def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
@@ -76,57 +78,52 @@ def run_annotators(cnf, vcf_fpath, bam_fpath, samplename, transcript_fpath=None)
             vcf_fpath = res
             annotated = True
 
-    if annotated:
-        # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
+    if not annotated:
+        warn('Warning: No annotations were applied to ' + original_vcf + '..')
 
-        if not cnf.get('no_correct_vcf'):
-            vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
+    return annotated, vcf_fpath
 
-        info('Adding SAMPLE=' + samplename + ' annotation...')
-        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
 
-        final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
-        vcf_basename = splitext(final_vcf_fname)[0]
-        final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
-        final_tsv_fpath = join(cnf['output_dir'], vcf_basename + '.tsv')
-        final_maf_fpath = join(cnf['output_dir'], vcf_basename + '.maf')
+def finialize_annotate_file(cnf, vcf_fpath, samplename):
+    # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
-        # Moving final VCF
-        if isfile(final_vcf_fpath):
-            os.remove(final_vcf_fpath)
-        shutil.copy(vcf_fpath, final_vcf_fpath)
+    if not cnf.get('no_correct_vcf'):
+        vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
-        # Converting to TSV
-        if 'tsv_fields' in cnf:
-            tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
-            if not tsv_fpath:
-                critical('TSV convertion didn\'t work')
+    info('Adding SAMPLE=' + samplename + ' annotation...')
+    vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
 
-            if isfile(final_tsv_fpath):
-                os.remove(final_tsv_fpath)
-            shutil.copy(tsv_fpath, final_tsv_fpath)
-        else:
-            final_tsv_fpath = None
+    final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
+    vcf_basename = splitext(final_vcf_fname)[0]
+    final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
+    final_tsv_fpath = join(cnf['output_dir'], vcf_basename + '.tsv')
 
-        # Converting to MAF
-        if cnf.make_maf:
-            maf_fpath = convert_to_maf(
-                cnf, vcf_fpath,
-                bam_fpath=cnf.bam,
-                tumor_sample_name=cnf.name,
-                transcripts_fpath=cnf.transcripts_fpath,
-                normal_sample_name=cnf.match_normal_normal_name)
+    # Moving final VCF
+    if isfile(final_vcf_fpath):
+        os.remove(final_vcf_fpath)
+    shutil.copy(vcf_fpath, final_vcf_fpath)
 
-            if isfile(final_maf_fpath):
-                os.remove(final_maf_fpath)
-            shutil.copy(maf_fpath, final_maf_fpath)
-        else:
-            final_maf_fpath = None
+    # Indexing
+    info()
+    info('Indexing with IGV ' + final_vcf_fpath)
+    igvtools_index(cnf, final_vcf_fpath)
+    info()
+    info('Indexing with tabix ' + final_vcf_fpath)
+    tabix_vcf(cnf, final_vcf_fpath)
 
-        return final_vcf_fpath, final_tsv_fpath, final_maf_fpath
+    # Converting to TSV
+    if 'tsv_fields' in cnf:
+        tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
+        if not tsv_fpath:
+            critical('TSV convertion didn\'t work')
+
+        if isfile(final_tsv_fpath):
+            os.remove(final_tsv_fpath)
+        shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
-        err('Warning: No annotations were applied to ' + original_vcf + '..')
-        return None, None, None
+        final_tsv_fpath = None
+
+    return final_vcf_fpath, final_tsv_fpath
 
 
 def _mongo(cnf, input_fpath):
@@ -361,7 +358,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
     cmdline = ('{gatk} -R {ref_fpath} -T VariantAnnotator'
                ' --variant {input_fpath} -o {output_fpath}').format(**locals())
-    if bam_fpath:
+    if bam_fpath and 'local' not in socket.gethostname():
         cmdline += ' -I ' + bam_fpath
 
     gatk_annos_dict = {
@@ -419,7 +416,7 @@ def _add_annotation(cnf, input_fpath, key, value):
 
 
 def _filter_malformed_fields(cnf, input_fpath):
-    step_greetings('Filtering malformed fields...')
+    step_greetings('Correcting malformed fields...')
 
     def proc_rec(rec):
         for k, v in rec.INFO.items():
@@ -431,25 +428,31 @@ def _filter_malformed_fields(cnf, input_fpath):
         return rec
 
     def proc_line(line, i):
-        if not line.startswith('#'):
-            if ',.' in line or '.,' in line:
-                fields = line.split('\t')
-                info_line = fields[7]
-                info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                new_info_pairs = []
-                for p in info_pairs:
-                    if len(p) == 2:
-                        if p[1].endswith(',.'):
-                            p[1] = p[1][:-2]
-                        if p[1].startswith('.,'):
-                            p[1] = p[1][2:]
-                        new_info_pairs.append('='.join(p))
-                info_line = ';'.join(new_info_pairs)
-                fields = fields[:7] + [info_line] + fields[8:]
-                return '\t'.join(fields)
+        if line.startswith('#'):
+            return line.replace("\' \">", "\'\">")  # For vcf-merge
         return line
 
+        # else:
+            # if ',.' in line or '.,' in line:
+            #     fields = line.split('\t')
+            #     info_line = fields[7]
+            #     info_pairs = [attr.split('=') for attr in info_line.split(';')]
+            #     new_info_pairs = []
+            #     for p in info_pairs:
+            #         if len(p) == 2:
+            #             if p[1].endswith(',.'):
+            #                 p[1] = p[1][:-2]
+            #             if p[1].startswith('.,'):
+            #                 p[1] = p[1][2:]
+            #             new_info_pairs.append('='.join(p))
+            #     info_line = ';'.join(new_info_pairs)
+            #     fields = fields[:7] + [info_line] + fields[8:]
+            #     return '\t'.join(fields)
+
+    info('Correcting INFO fields...')
     output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
-    # output_fpath_2 = iterate_file(cnf, input_fpath, proc_line, 'corr_old')
+    info('')
+    info('Correcting headers for vcf-merge...')
+    output_fpath = iterate_file(cnf, output_fpath, proc_line, 'corr_headr')
 
     return output_fpath

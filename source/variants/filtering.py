@@ -4,9 +4,10 @@ import shutil
 import pickle
 import operator
 
-from os.path import basename, join, isfile, dirname, splitext, islink
+from os.path import basename, join, isfile, dirname, splitext, islink, pardir, abspath
 from joblib import Parallel, delayed
 ##from memory_profiler import profile
+import sys
 
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
@@ -507,11 +508,11 @@ cnfs_for_sample_names = dict()
 
 # @profile
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
-    IN_PARALLEL = True
+    IN_PARALLEL = False
 
     info('Running for ' + caller.name)
 
-    anno_vcf_by_sample = caller.find_anno_vcf_by_sample()
+    anno_vcf_by_sample = caller.find_anno_vcf_by_sample(optional_ext='.gz')
     sample_names = anno_vcf_by_sample.keys()
     anno_vcf_fpaths = anno_vcf_by_sample.values()
 
@@ -530,23 +531,26 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             cnf_copy['variant_filtering']['min_freq'] = sample.min_af
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    # n_threads = cnf.threads if cnf.threads and IN_PARALLEL else min(10, len(anno_vcf_fpaths) + 1)
-    n_threads = 1
+    n_threads = cnf.threads if cnf.threads and IN_PARALLEL else min(10, len(anno_vcf_fpaths) + 1)
     info('Number of threads for filtering: ' + str(n_threads))
 
-    info('Filtering by impact')
-    vcf_fpaths = Parallel(n_jobs=n_threads)
-       (delayed(impact_round)(vcf_fpath, s)
-        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-    info()
+    combined_vcf_fpath = join(cnf.output_dir, caller.name + '.vcf')
+    merge_vcfs(cnf, anno_vcf_fpaths, combined_vcf_fpath)
 
-    Parallel(n_threads) \
-        (delayed(tabix_vcf)(cnf, anno_vcf_fpath)
-        for anno_vcf_fpath in anno_vcf_fpaths)
+    caller.combined_filt_maf_fpath = join(cnf.output_dir, caller.name + '.maf')
+    run_vcf2txt_paired(cnf, combined_vcf_fpath, caller.combined_filt_maf_fpath)
 
-    caller.combined_filt_maf_fpath = run_vcf2txt_paired(cnf, caller.name, anno_vcf_fpaths)
     info('-' * 70)
     info()
+
+    # split and convert back to VCF
+    # vcf_fpaths =
+
+    # info('Filtering by impact')
+    # vcf_fpaths = Parallel(n_jobs=n_threads) \
+    #    (delayed(impact_round)(vcf_fpath, s)
+    #     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+    # info()
 
     # f = Filtering(cnf, bcbio_structure, caller)
     # filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
@@ -564,12 +568,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     #      ) if r is not None and None not in r]
     # info('Results: ' + str(len(results)))
     # info('*' * 70)
-    #
+
     # for sample, [vcf, tsv, maf] in zip(samples, results):
     #     info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
-    #     # sample.filtered_vcf_by_callername[caller.name] = vcf
-    #     # sample.filtered_tsv_by_callername[caller.name] = tsv
-    #     # sample.filtered_maf_by_callername[caller.name] = maf
+        # sample.filtered_vcf_by_callername[caller.name] = vcf
+        # sample.filtered_tsv_by_callername[caller.name] = tsv
+        # sample.filtered_maf_by_callername[caller.name] = maf
     #
     # caller.combined_filt_maf_fpath, \
     # caller.combined_filt_pass_maf_fpath = \
@@ -603,6 +607,22 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     return caller
 
 
+def merge_vcfs(cnf, vcf_fpaths, combined_vcf_fpath):
+    info()
+    info('Merging VCFs...')
+
+    vcf_merge = get_system_path(cnf, 'vcf_merge')
+    if vcf_merge is None:
+        critical('No vcf_merge in path')
+    cmdline = vcf_merge + ' ' + ' '.join(vcf_fpaths)
+    perl_module_dirpath = abspath(join(dirname(__file__), pardir, pardir, 'ext_modules', 'perl_modules'))
+    os.environ['PERL5LIB'] = perl_module_dirpath
+
+    res = call(cnf, cmdline, combined_vcf_fpath, exit_on_error=False)
+    if not res:
+        return None
+
+
 def combine_mafs(cnf, maf_fpaths, output_basename):
     output_fpath = output_basename + '.orig.maf'
     output_pass_fpath = output_basename + '.pass.orig.maf'
@@ -630,20 +650,13 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
     return output_fpath, output_pass_fpath
 
 
-def run_vcf2txt_paired(cnf, caller_name, anno_vcf_fpaths):
-    vcf_merge = get_system_path(cnf, 'vcf_merge')
-    if not vcf_merge:
-        err('No vcf_merge in path')
-    cmdline = '{vcf_merge} ' + ' '.join(anno_vcf_fpaths)
-    combined_vcf_fpath = join(cnf.output_dir, caller_name + '.vcf')
-    res = call(cnf, cmdline, combined_vcf_fpath, exit_on_error=False)
-    if not res:
-        return None
-
-    final_maf_fpath = join(cnf.output_dir, caller_name + '.maf')
+def run_vcf2txt_paired(cnf, combined_vcf_fpath, final_maf_fpath):
+    info()
+    info('Running VarDict vcf2txt_paired.pl...')
 
     vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt_paired.pl')
-    if not vcf2txt: sys.exit(1)
+    if not vcf2txt:
+        sys.exit(1)
     cmdline = '{vcf2txt} {combined_vcf_fpath}'.format(**locals())
     res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
     return res

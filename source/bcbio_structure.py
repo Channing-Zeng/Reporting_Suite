@@ -132,7 +132,7 @@ class VariantCaller:
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
 
     def find_anno_vcf_by_sample(self, optional_ext='.gz'):
-        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
+        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending, optional_ext='.gz')
 
     def get_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
@@ -140,7 +140,7 @@ class VariantCaller:
     def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
-    def _find_files_by_sample(self, dir_name, ending):
+    def _find_files_by_sample(self, dir_name, ending, optional_ext='.gz'):
         files_by_sample = OrderedDict()
 
         for s in self.samples:
@@ -153,8 +153,13 @@ class VariantCaller:
             if isfile(fpath):
                 if verify_file(fpath):
                     files_by_sample[s.name] = fpath
-            elif s.phenotype != 'normal':
-                info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
+            else:
+                fpath += optional_ext
+                if isfile(fpath):
+                    if verify_file(fpath):
+                        files_by_sample[s.name] = fpath
+                elif s.phenotype != 'normal':
+                    info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
         return files_by_sample
 

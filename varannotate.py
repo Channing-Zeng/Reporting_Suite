@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-from source.bcbio_structure import BCBioStructure, Sample
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -12,11 +11,12 @@ source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
 import shutil
+from source.bcbio_structure import BCBioStructure, Sample
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, \
-     iterate_vcf, tabix_vcf, igvtools_index, get_trasncripts_fpath, fix_chromosome_names
+     get_trasncripts_fpath, fix_chromosome_names
 from source.runner import run_one
-from source.variants.anno import run_annotators
+from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
 from source.logger import err, send_email
 
@@ -92,17 +92,14 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         sample.vcf = extract_sample(cnf, sample.vcf, sample.name)
 
-    anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath = run_annotators(
-        cnf, sample.vcf, sample.bam, sample.name, cnf.transcript_fpath)
+    annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
 
-    info()
-    info('Indexing ' + anno_vcf_fpath)
-    igvtools_index(cnf, anno_vcf_fpath)
+    anno_vcf_fpath, anno_tsv_fpath = finialize_annotate_file(cnf, anno_vcf_fpath, sample.name)
 
-    return anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath
+    return anno_vcf_fpath, anno_tsv_fpath
 
 
-def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath):
+def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath):
     msg = ['Annoatation finished for ' + cnf.name + ':']
     if anno_vcf_fpath:
         msg.append('VCF: ' + anno_vcf_fpath)
@@ -110,9 +107,6 @@ def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath, anno_maf_fpath):
     if anno_tsv_fpath:
         msg.append('TSV: ' + anno_tsv_fpath)
         info('Saved final TSV to ' + anno_tsv_fpath)
-    if anno_maf_fpath:
-        msg.append('MAF: ' + anno_maf_fpath)
-        info('Saved final MAF to ' + anno_maf_fpath)
 
     # send_email('\n'.join(msg))
 
