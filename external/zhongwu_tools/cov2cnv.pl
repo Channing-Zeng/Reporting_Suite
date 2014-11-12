@@ -3,7 +3,7 @@
 # Normalize the coverage from targeted sequencing to CNV log2 ratio.  The algorithm assumes the medium 
 # is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
 
-use Stats::Basic;
+use Stat::Basic;
 use Getopt::Std;
 use strict;
 
@@ -24,7 +24,7 @@ while(<CNT>) {
     push(@cnt, $a[1]);
 }
 close(CNT);
-my $stat = new Stats::Basic;
+my $stat = new Stat::Basic;
 my $meanreads = $stat->mean(\@cnt);
 my %factor; # to adjust sequencing coverage
 while(my ($k, $v) = each %cnt) {
@@ -68,11 +68,10 @@ foreach my $s (@samples) {
 
 while( my ($k, $v) = each %norm1) {
     foreach my $s (@samples) {
-	    $norm1b{ $k }->{ $s } = $v->{$s} * $factor2{ $k }+0.1;
-        print "$k : $v->{$s} : $factor2{ $k } : $norm1b{ $k }->{ $s }";
+	$norm1b{ $k }->{ $s } = $v->{$s} * $factor2{ $k }+0.1;
         $norm2{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$meddepth)/log(2));
         $norm3{ $k }->{ $s } = sprintf("%.3f", log(($v->{$s} * $factor2{ $k }+0.1)/$samplemedian{ $s })/log(2));
-	    #$v->{$s} = log($v->{$s}/$meddepth)/log(2);
+	#$v->{$s} = log($v->{$s}/$meddepth)/log(2);
     }
 }
 
@@ -82,13 +81,13 @@ print "\n";
 while( my ($k, $v) = each %norm2) {
     while( my ($s, $d) = each %$v ) {
         print join("\t", $s, $k, $raw{ $k }->{ $s }, $norm1{ $k }->{ $s }, $norm1b{ $k }->{ $s }, $d, $norm3{ $k }->{ $s });
-        if ( $opt_c ) {
-            my @controls = split(/:/, $opt_c);
-            my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
-            my $cntl_ave = $stat->mean( \@tcntl );
-            print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
-            #print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$norm1b{ $k }->{ $opt_c })/log(2));
-        }
-        print "\n";
+	if ( $opt_c ) {
+	    my @controls = split(/:/, $opt_c);
+	    my @tcntl = map { $norm1b{ $k }->{ $_ } } @controls;
+	    my $cntl_ave = $stat->mean( \@tcntl );
+	    print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$cntl_ave)/log(2));
+	    #print "\t", sprintf("%.3f", log($norm1b{ $k }->{ $s }/$norm1b{ $k }->{ $opt_c })/log(2));
+	}
+	print "\n";
     }
 }

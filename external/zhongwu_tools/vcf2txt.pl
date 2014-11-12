@@ -40,16 +40,8 @@ while( <> ) {
     $a[7] .= ";";
     my %d;
     while( $a[7] =~ /([^=;]+)=([^=]+);/g ) {
-        $d{ $1 } = $2;
+	$d{ $1 } = $2;
     }
-    my @sample_keys = split(/:/, $a[8]);
-    my @sample_vals = split(/:/, $a[9]);
-    foreach $i (0 .. $#sample_keys) {
-       $key = $sample_keys[$i];
-       $val = $sample_vals[$i];
-       $d{ $key } = $val;
-    }
-
     $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
     my @effs = split(/,/, $d{ EFF });
@@ -58,30 +50,30 @@ while( <> ) {
     next if ( $FILPMEAN && $d{ PMEAN } < $FILPMEAN );
     next if ( $FILQMEAN && $d{ QUAL } < $FILQMEAN );
     if ( $control && $control eq $d{ SAMPLE } ) {
-        my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
-        my $pass = "TRUE";
-        #$pass = "FALSE" unless ( $d{PSTD} > 0 );
-        $pass = "FALSE" if ($qmean < $MINQMEAN );
-        $pass = "FALSE" if ($pmean < $MINPMEAN );
-        $pass = "FALSE" if ( $d{AF} < $MINFREQ );
-        $pass = "FALSE" if ( $d{MQ} < $MINMQ );
-        $pass = "FALSE" if ( $d{SN} < $SN );
-        $pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
-	    my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
+	my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
+	my $pass = "TRUE";
+	#$pass = "FALSE" unless ( $d{PSTD} > 0 );
+	$pass = "FALSE" if ($qmean < $MINQMEAN );
+	$pass = "FALSE" if ($pmean < $MINPMEAN );
+	$pass = "FALSE" if ( $d{AF} < $MINFREQ );
+	$pass = "FALSE" if ( $d{MQ} < $MINMQ );
+	$pass = "FALSE" if ( $d{SN} < $SN );
+	$pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
+	my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
         #$CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && ($class ne "dbSNP" && $class ne "ClnSNP"));  # so that any novel or COSMIC variants showed up in control won't be filtered
         $CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && $class eq "Novel");  # so that any novel or COSMIC variants showed up in control won't be filtered
     }
     unless( $opt_u && $d{ SAMPLE } =~ /Undetermined/i ) { # Undetermined won't count toward samples
-        $sample{ $d{ SAMPLE } } = 1;
-        push( @{ $var{ $vark } }, $d{ AF } );
+	$sample{ $d{ SAMPLE } } = 1;
+	push( @{ $var{ $vark } }, $d{ AF } );
     }
     foreach my $eff (@effs) {
         $eff =~ s/\)$//;
-        my @e = split(/\|/, $eff, -1);
-        my ($type, $effect) = split(/\(/, $e[0]);
-        my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
-        my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
-	    push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
+	my @e = split(/\|/, $eff, -1);
+	my ($type, $effect) = split(/\(/, $e[0]);
+	my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } @columns;
+	my @tmp2= map { defined($_) ? $_ : ""; } @e[1..9];
+	push(@data, [$d{ SAMPLE }, @a[0..4], $type, $effect, @tmp2, @tmp]);
     }
 }
 
@@ -92,11 +84,7 @@ foreach my $d (@data) {
     next unless( $var{ $vark } ); # Likely just in Undetermined.
     my ($pmean, $qmean) = @$d[23,25];
     my $varn = @{ $var{ $vark } } + 0;
-    my $n = 0 + $var{ $vark };
-    my $ave_af = 0;
-    if ( $n > 0 ) {
-        $ave_af = $stat->mean( $var{ $vark } );
-    }
+    my $ave_af = $stat->mean( $var{ $vark } );
     my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
     #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
     $pass = "DUP" if ( $d->[24] ==  0 && $d->[22] !~ /1$/ && $d->[22] !~ /0$/ ); # all variants from one position in reads
@@ -109,12 +97,11 @@ foreach my $d (@data) {
     $pass = "MINVD" if ( $d->[29] && $d->[29] < $MINVD );
     my $class = $d->[3] =~ /COSM/ ? "COSMIC" : ($d->[3] =~ /^rs/ ? (checkCLNSIG($d->[30]) == 1 ? "ClnSNP" : "dbSNP") : "Novel");
     $class = "dbSNP" if ( $d->[28] && $d->[28] > $MAF ); # if there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC
-    # look at dbsnp, if it is very low MAF, keep it,
 
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
     if ( ($d->[6] eq "STOP_GAINED" || $d->[6] eq "FRAME_SHIFT") && $class eq "dbSNP" ) {
-        my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
-        $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
+	my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
+	$class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
     }
 
     $pass = "CNTL" if ( $control && $CONTROL{ $vark } );
@@ -129,7 +116,7 @@ sub checkCLNSIG {
     my @cs = split(/\||,/, $clnsig );
     foreach my $cs (@cs) {
         return 1 if ( $cs > 3 && $cs < 7 );
-	    return 1 if ( $cs == 255 );
+	return 1 if ( $cs == 255 );
     }
     return -1;
 }

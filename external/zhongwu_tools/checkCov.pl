@@ -49,9 +49,9 @@ while( <> ) {
 	$e += $SPLICE unless ( $e == $cdse );
 	$s += 1 if ( $opt_z );
 	push(@CDS, [$s, $e]);
-        for(my $i = $s; $i <= $e; $i++) {
-            push(@pos, $i);
-        }
+	for(my $i = $s; $i <= $e; $i++) {
+	    push(@pos, $i);
+	}
     }
     push( @{ $regions{ $gene }->{ CDS } }, @CDS);
     push( @{ $regions{ $gene }->{ POS } }, @pos);
@@ -141,9 +141,9 @@ while( my ($gene, $r) = each %regions ) {
 	    $etotal += $cov;
 	    for(my $i = 0; $i < @depths; $i++) {
 	        if ( $cov < $depths[$i] ) {
-                $covs[$i]++;
-                $ecovs[$i]++;
-            }
+		    $covs[$i]++;
+		    $ecovs[$i]++;
+		}
 	    }
 	}
 	print STDERR "Coverage should be equal $etotal and $exoncov[$EXN] for $chr $START $END\n" unless( $etotal == $exoncov[$EXN] );
