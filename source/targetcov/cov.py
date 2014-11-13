@@ -27,45 +27,55 @@ def make_targetseq_reports(cnf, sample):
         info('Indexing bam ' + sample.bam)
         index_bam(cnf, sample.bam)
 
+    amplicons_bed = sample.bed
+
     info('Sorting amplicons BED file.')
-    sample.bed = sort_bed(cnf, sample.bed)
+    amplicons_bed = sort_bed(cnf, amplicons_bed)
 
     info()
     info('Unique amplicons...')
-    sample.bed = _unique_bed_lines(cnf, sample.bed)
+    amplicons_bed = _unique_bed_lines(cnf, amplicons_bed)
 
     info()
     info('Fixing amplicon gene names if there are...')
-    sample.bed = _fix_amplicons_gene_names(cnf, sample.bed)
+    amplicons_bed = _fix_amplicons_gene_names(cnf, amplicons_bed)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.name, sample.bam, sample.bed)
+    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(
+        cnf, sample.name, sample.bam, amplicons_bed)
 
     info()
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
 
     info()
-    amplicons_dict = OrderedDict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
-    for ampl in amplicons_dict.values():
+    # amplicons_dict = OrderedDict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
+    for ampl in amplicons:
         ampl.feature = 'Amplicon'
         ampl.sample_name = sample.name
 
-    per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
+    per_gene_rep_fpath, genes_by_name = make_and_save_region_report(cnf, sample, amplicons, amplicons_bed)
+
+    amplicons = []
+    for gene in genes_by_name.values():
+        amplicons.extend(gene.get_amplicons())
+
+    # info()
+    # info('Sorting amplicons')
+    # amplicons = sorted((a for a in amplicons if a.gene_name), key=Region.get_order_key)
 
     info()
     info('Saving only amplicons overlapped with exons, updated with a gene name')
-    amplicons = sorted((a for a in amplicons_dict.values() if a.gene_name), key=Region.get_order_key)
-    sample.bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names', save_feature=False)
-
+    amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
+                                        save_original_fields=True)
     info()
     info('Running seq2cov.pl for ' + sample.name)
-    seq2c_seq2cov(cnf, sample)
+    seq2c_seq2cov(cnf, sample, amplicons_bed)
 
     return general_rep_fpath, per_gene_rep_fpath
 
 
-def seq2c_seq2cov(cnf, sample):
+def seq2c_seq2cov(cnf, sample, amplicons_bed):
     seq2cov = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='seq2cov.pl')
     if not seq2cov: sys.exit(1)
 
@@ -76,8 +86,7 @@ def seq2c_seq2cov(cnf, sample):
         BCBioStructure.seq2c_seq2cov_ending)
     sample_name = sample.name
     bam = sample.bam
-    bed = sample.bed
-    cmdline = '{seq2cov} -z -b {bam} -N {sample_name} {bed}'.format(**locals())
+    cmdline = '{seq2cov} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
     res = call(cnf, cmdline, seq2c_output)
     if not res:
         err('Could not run seq2cov.pl for ' + sample.name)
@@ -113,10 +122,10 @@ def _get_gene_names(exons_bed, gene_index=3):
     return gene_names
 
 
-def make_and_save_region_report(cnf, sample, amplicons_dict):
+def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
     step_greetings('Analysing regions.')
 
-    exons_bed = cnf['genome']['exons']
+    exons_bed = cnf.genome.exons
     if not exons_bed:
         err('Warning: no genes or exons specified for the genome in system config, cannot make per-exon report.')
         return None
@@ -124,15 +133,15 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     # log('Annotating amplicons...')
     # annotate_amplicons(amplicons, genes_bed)
 
-    info('Choosing unique exons.')
-    exons_bed = _unique_longest_exons(cnf, exons_bed)
+    # info('Choosing unique exons.')
+    # exons_bed = _unique_longest_exons(cnf, exons_bed)
 
     info('Sorting exons BED file.')
     exons_bed = sort_bed(cnf, exons_bed)
     info()
 
     info('Getting the exons that overlap amplicons.')
-    overlapped_exons_bed = intersect_bed(cnf, exons_bed, sample.bed)
+    overlapped_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
     info()
 
     gene_names = _get_gene_names(overlapped_exons_bed)
@@ -157,15 +166,18 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
 
     info()
     info('Sorting genes...')
-    genes_sorted = sorted(genes_by_name.values(), key=lambda r: (r.chrom, r.get_start(), r.get_end()))
+    genes_sorted = sorted(genes_by_name.values(), key=lambda r: (
+        r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name))
 
-    _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted)
+    info()
+    info('Finding amplicons overlaps with exons, adding gene names to amplicons and adding them to genes...')
+    _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name, genes_sorted)
 
     info()
     info('Building region coverage report.')
     gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes_sorted)
 
-    return gene_report_fpath
+    return gene_report_fpath, genes_by_name
 
 
 def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
@@ -343,43 +355,53 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes_sort
     return tsv_rep_fpath
 
 
-def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted):
-    genes_bed_fpath = save_regions_to_bed(cnf, genes_sorted, sample.name + '_genes_by_name')
-    ampli_bed_fpath = save_regions_to_bed(cnf, amplicons_dict.values(), sample.name + '_amplicons_by_name')
-
-    info('Finding amplicons overlaps with genes...')
-    genes_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_genes_ovelaps_with_amplicons.bed')
+def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name, genes_sorted):
+    exons_bed_fpath = save_regions_to_bed(cnf, exons, sample.name + '_exons_by_gene_name')
+    ampli_bed_fpath = save_regions_to_bed(cnf, amplicons, sample.name + '_amplicons_by_gene_name')
+    exons_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_exons_amplicons_ovelaps.bed')
     bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} intersect -wao -a {ampli_bed_fpath} -b {genes_bed_fpath}'.format(**locals())
-    call(cnf, cmdline, output_fpath=genes_ovelaps_with_amplicons_fpath)
+    cmdline = '{bedtools} intersect -wao -a {ampli_bed_fpath} -b {exons_bed_fpath}'.format(**locals())
+    call(cnf, cmdline, output_fpath=exons_ovelaps_with_amplicons_fpath)
     info()
+
+    amplicons_by_site = defaultdict(list)
+    for a in amplicons:
+        amplicons_by_site[(a.chrom, a.get_start(), a.get_end())].append(a)
 
     info()
     info('Groupping amplicons by genes...')
     i = 0
-    amplicons_fpath = join(cnf.work_dir, sample.name + '_amplicons.bed')
-    with open(genes_ovelaps_with_amplicons_fpath) as f, open(amplicons_fpath, 'w') as out:
+    with open(exons_ovelaps_with_amplicons_fpath) as f:
         for line in f:
-            a_chr, a_start, a_end, a_gene_name, a_feature, \
-            g_chr, g_start, g_end, g_gene_name, g_feature, \
+            a_chrom, a_start, a_end, a_gene_name, a_feature, \
+            e_chrom, e_start, e_end, e_gene_name, e_feature, \
             overlap_size = line.split('\t')
 
-            if g_gene_name != '.':
-                if g_gene_name not in genes_by_name:
-                    err(g_gene_name + ' not in genes_by_name from exons')
-                    continue
-                if a_gene_name != '.' and a_gene_name != g_gene_name:
-                    err('Amplicon gene name != exon gene name for line: ' + line.strip())
-                gene = genes_by_name[g_gene_name]
-                amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
-                gene.add_amplicon(amplicon)
-                out.write('\t'.join((a_chr, a_start, a_end, g_gene_name)) + '\n')
+            if e_gene_name != '.' or a_gene_name != '.':
+                gene_name = None
+
+                if e_gene_name != '.':  # hit
+                    if a_gene_name != '.' and a_gene_name != e_gene_name:
+                        err('Amplicon gene name != exon gene name for line: ' + line.strip())
+                    if e_gene_name not in genes_by_name:
+                        err(e_gene_name + ' from exons not in genes_by_name from exons')
+                        continue
+                    gene_name = e_gene_name
+
+                else:  # not hit, but a_gene_name != '.', so amplicons gene names provided
+                    if a_gene_name not in genes_by_name:
+                        err(a_gene_name + ' from amplicons not in genes_by_name from exons')
+                        continue
+                    gene_name = a_gene_name
+
+                gene = genes_by_name[gene_name]
+                for a in amplicons_by_site[(a_chrom, int(a_start), int(a_end))]:
+                    gene.add_amplicon(a)
 
             if i and i % 10000 == 0:
-                info('  Processed {0:,} regions, current gene {1}'.format(i, g_gene_name))
+                info('  Processed {0:,} regions, current gene {1}'.format(i, e_gene_name))
             i += 1
     info('  Processed {0:,} regions.'.format(i))
-    info('Saved amplicons to ' + amplicons_fpath)
 
     # if exon_gene_summary.intersect(amplicon):
     #     # if amplicon.gene_name and exon_gene.gene_name != amplicon.gene_name:
@@ -395,8 +417,6 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
     #     # amplicon_copy = copy.copy(amplicon)
     #     amplicon_gene_summary.add_subregion(amplicon)
     #     # amplicon_copy.gene_name = amplicon_gene_summary.gene_name
-
-    return genes_by_name
 
 
 def _get_exons_combined_by_genes(subregions):
@@ -416,7 +436,7 @@ def _get_exons_combined_by_genes(subregions):
         gene = gene_summaries_by_name.get(exon.gene_name)
         if gene is None:
             gene = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
-                            chrom=exon.chrom, feature='Gene-Exon')
+                            feature='Gene-Exon', chrom=exon.chrom)
             gene_summaries_by_name[exon.gene_name] = gene
         gene.add_exon(exon)
 

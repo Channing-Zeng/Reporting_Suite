@@ -4,27 +4,57 @@ import math
 import os
 from os.path import isfile, join
 import sys
+from types import NotImplementedType
 from source.logger import info
 from source.ngscat.bed_file import verify_bed
 
 
-class Region:
+class AbstractRegion:
+    def __init__(self, sample_name, gene_name, feature, chrom):
+        self.sample_name = sample_name
+        self.gene_name = gene_name
+        self.feature = feature
+        self.chrom = chrom
+
+    def get_chrom_num(self):
+        digits = [c for c in self.chrom if c.isdigit()]
+        if digits:
+            return int(''.join(digits))
+        if 'M' in self.chrom:
+            return 0
+        if 'X' in self.chrom:
+            return 23
+        if 'Y' in self.chrom:
+            return 24
+        else:
+            return 25
+
+    def get_order_key(r):
+        return r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name
+
+    def get_start(self):
+        assert False, 'Not implemented'
+
+    def get_end(self):
+        assert False, 'Not implemented'
+
+
+class Region(AbstractRegion):
     def __init__(self, sample_name=None, chrom=None, start=None, end=None,
                  gene_name=None, exon_num=None, strand=None, feature=None, size=None, avg_depth=None,
                  std_dev=None, percent_within_normal=None, extra_fields=list(), bases_by_depth=None):
-        self.sample_name = sample_name
-        self.chrom = chrom
-        self.start = start
-        self.end = end
-        self.size = size
+
+        AbstractRegion.__init__(self, sample_name, gene_name, feature, chrom)
+
+        self.start = start  # int
+        self.end = end      # int
+        self.size = size    # int
         self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
         self.bases_by_depth = bases_by_depth or defaultdict(int)
 
-        self.gene_name = gene_name
         self.exon_num = exon_num
         self.strand = strand
 
-        self.feature = feature
         self.avg_depth = avg_depth
         self.std_dev = std_dev
         self.percent_within_normal = percent_within_normal
@@ -33,6 +63,19 @@ class Region:
         self.var_num = None
         self.bases_within_threshs = None
         self.percent_within_threshs = defaultdict(float)
+
+    def get_chrom_num(self):
+        digits = [c for c in self.chrom if c.isdigit()]
+        if digits:
+            return int(''.join(digits))
+        if 'M' in self.chrom:
+            return 0
+        if 'X' in self.chrom:
+            return 23
+        if 'Y' in self.chrom:
+            return 24
+        else:
+            return 25
 
     def get_start(self):
         return self.start
@@ -124,22 +167,18 @@ class Region:
                 self.start < reg2.start < self.end)
 
     def get_order_key(r):
-        chr_n = int(''.join(c for c in r.chrom if c.isdigit()))
-        return chr_n, r.start, r.end, r.gene_name
+        return r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name
 
 
-class GeneInfo:
+class GeneInfo(AbstractRegion):
     """ Collects subregions.
         - Knows it's sample, gene and chromosome.
         - Stores feature-specific subregions, start, end, size and based_by_depth which get recalculated
           on each new subregion.
         - Not a Region, so does not support sum_up, but returns Region object for a given feature.
     """
-    def __init__(self, sample_name, gene_name, chrom, feature):
-        self.sample_name = sample_name
-        self.gene_name = gene_name
-        self.feature = feature
-        self.chrom = chrom
+    def __init__(self, sample_name, gene_name, feature, chrom):
+        AbstractRegion.__init__(self, sample_name, gene_name, feature, chrom)
 
         self.subregions_by_feature = dict((f,
              dict(
@@ -229,7 +268,7 @@ def _proc_regions(regions, fn, *args, **kwargs):
         info('Processed {0:,} regions.'.format(i))
 
 
-def save_regions_to_bed(cnf, regions, f_basename, save_feature=True):
+def save_regions_to_bed(cnf, regions, f_basename, save_original_fields=False):
     bed_fpath = join(cnf.work_dir, f_basename + '.bed')
     info('Writing regions to ' + bed_fpath)
 
@@ -244,7 +283,9 @@ def save_regions_to_bed(cnf, regions, f_basename, save_feature=True):
     with open(bed_fpath, 'w') as f:
         for r in regions:
             ts = [r.chrom, str(r.get_start()), str(r.get_end()), r.gene_name or '.']
-            if save_feature:
+            if save_original_fields:
+                ts.extend(r.extra_fields)
+            else:
                 ts.append(r.feature or '.')
             f.write('\t'.join(ts) + '\n')
 

@@ -113,15 +113,15 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 
 
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
-    # cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
-    # if not cov2lr: sys.exit(1)
-    # cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
-    # cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
-    # call(cnf, cmdline, cov2lr_output, exit_on_error=False)
-    # info()
-    #
-    # if not verify_file(cov2lr_output):
-    #     return None
+    cov2lr = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='cov2lr.pl')
+    if not cov2lr: sys.exit(1)
+    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
+    cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
+    call(cnf, cmdline, cov2lr_output, exit_on_error=False)
+    info()
+
+    if not verify_file(cov2lr_output):
+        return None
 
     lr2gene = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='lr2gene.pl')
     if not lr2gene: sys.exit(1)
@@ -149,20 +149,25 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
     # GENE DEPTHS
     info()
     info('Combining gene depths...')
-    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
 
+    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
     with open(combined_gene_depths_fpath, 'w') as out:
-        for sample in samples:
+        for i, sample in enumerate(samples):
             seq2c_output = join(
                 sample.dirpath,
                 BCBioStructure.targetseq_dir,
                 sample.name + '.' + \
-                BCBioStructure.targetseq_name + \
+                BCBioStructure.targetseq_name + '_' + \
                 BCBioStructure.seq2c_seq2cov_ending)
             if not isfile(seq2c_output):
                 return None, None
             with open(seq2c_output) as inp:
-                out.write(inp.read())
+                for l in inp:
+                    if l.startswith('Sample\tGene\tChr\t'):
+                        if i == 0:
+                            out.write(l)
+                    else:
+                        out.write(l)
 
     info('Saved to ' + combined_gene_depths_fpath)
     info()
