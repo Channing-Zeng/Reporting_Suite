@@ -31,8 +31,12 @@ def make_targetseq_reports(cnf, sample):
     sample.bed = sort_bed(cnf, sample.bed)
 
     info()
+    info('Unique amplicons...')
+    sample.bed = _unique_bed_lines(cnf, sample.bed)
+
+    info()
     info('Fixing amplicon gene names if there are...')
-    sample.bed = __fix_amplicons_gene_names(cnf, sample.bed)
+    sample.bed = _fix_amplicons_gene_names(cnf, sample.bed)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -42,7 +46,7 @@ def make_targetseq_reports(cnf, sample):
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
 
     info()
-    amplicons_dict = dict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
+    amplicons_dict = OrderedDict(((r.chrom, r.start, r.end), r) for r in amplicons)  # Removing duplactes
     for ampl in amplicons_dict.values():
         ampl.feature = 'Amplicon'
         ampl.sample_name = sample.name
@@ -121,7 +125,7 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     # annotate_amplicons(amplicons, genes_bed)
 
     info('Choosing unique exons.')
-    exons_bed = __unique_exons(cnf, exons_bed)
+    exons_bed = _unique_longest_exons(cnf, exons_bed)
 
     info('Sorting exons BED file.')
     exons_bed = sort_bed(cnf, exons_bed)
@@ -340,11 +344,8 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes_sort
 
 
 def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted):
-    info('Sorting amlicons...')
-    amplicons_sorted = sorted(amplicons_dict.values(), key=lambda r: (r.chrom, r.start, r.end))
-
     genes_bed_fpath = save_regions_to_bed(cnf, genes_sorted, sample.name + '_genes_by_name')
-    ampli_bed_fpath = save_regions_to_bed(cnf, amplicons_sorted, sample.name + '_amplicons_by_name')
+    ampli_bed_fpath = save_regions_to_bed(cnf, amplicons_dict.values(), sample.name + '_amplicons_by_name')
 
     info('Finding amplicons overlaps with genes...')
     genes_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_genes_ovelaps_with_amplicons.bed')
@@ -588,7 +589,9 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
             line_region_key_tokens = (sample_name, chrom, start, end, extra_fields)
 
-            if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
+            if regions == [] or hash(line_region_key_tokens) != \
+                    hash((regions[-1].sample_name, regions[-1].chrom,
+                          regions[-1].start, regions[-1].end, regions[-1].extra_fields)):
                 region = Region(
                     sample_name=sample_name, chrom=chrom,
                     start=start, end=end, size=region_size, gene_name=gene_name,
@@ -608,8 +611,23 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return regions[:-1], regions[-1], max_depth, total_bed_size
 
 
-def __fix_amplicons_gene_names(cnf, amplicons_fpath):
-    output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixed_gene_names')
+def _unique_bed_lines(cnf, bed_fpath):
+    output_fpath = intermediate_fname(cnf, bed_fpath, 'uniq')
+
+    with open(bed_fpath) as f, open(output_fpath, 'w') as out:
+        prev_line = None
+        for line in f:
+            if prev_line is not None and line == prev_line:
+                continue
+            prev_line = line
+            out.write(line)
+
+    info('Saved to ' + output_fpath)
+    return output_fpath
+
+
+def _fix_amplicons_gene_names(cnf, amplicons_fpath):
+    output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixedgenenames')
 
     with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
         prev_end = None
@@ -617,6 +635,8 @@ def __fix_amplicons_gene_names(cnf, amplicons_fpath):
         for line in f:
             if not line.strip() or line.startswith('#'):
                 out.write(line)
+                continue
+
             ts = line.split()
 
             if prev_end is not None:
@@ -643,7 +663,7 @@ def sort_bed(cnf, bed_fpath):
     return output_fpath
 
 
-def __unique_exons(cnf, exons_bed_fpath):
+def _unique_longest_exons(cnf, exons_bed_fpath):
     unique_exons_dict = OrderedDict()
 
     with open(exons_bed_fpath) as f:
@@ -671,7 +691,7 @@ def __unique_exons(cnf, exons_bed_fpath):
                     if size > prev_size:
                         unique_exons_dict[(gene, exon_num)] = ts
 
-    unique_bed_fpath = intermediate_fname(cnf, exons_bed_fpath, 'unique')
+    unique_bed_fpath = intermediate_fname(cnf, exons_bed_fpath, 'uniq')
     with open(unique_bed_fpath, 'w') as f:
         for ts in unique_exons_dict.values():
             f.write('\t'.join(ts) + '\n')
@@ -694,8 +714,9 @@ def intersect_bed(cnf, bed1, bed2):
 def number_of_mapped_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_mapped_reads')
-    cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
 
@@ -703,8 +724,9 @@ def number_of_mapped_reads(cnf, bam):
 def number_of_unmapped_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_unmapped_reads')
-    cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
 
@@ -712,8 +734,9 @@ def number_of_unmapped_reads(cnf, bam):
 def number_of_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_reads')
-    cmdline = '{samtools} view -c {bam}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
 
@@ -722,6 +745,9 @@ def number_of_reads(cnf, bam):
 def number_mapped_reads_on_target(cnf, bed, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_mapped_reads_target')
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
     cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:

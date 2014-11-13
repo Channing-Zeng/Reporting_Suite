@@ -31,7 +31,7 @@ class Region:
 
         self.missed_by_db = dict()
         self.var_num = None
-        self.bases_within_threshs = OrderedDict()
+        self.bases_within_threshs = None
         self.percent_within_threshs = defaultdict(float)
 
     def get_start(self):
