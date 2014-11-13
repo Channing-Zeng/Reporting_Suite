@@ -31,7 +31,7 @@ def make_targetseq_reports(cnf, sample):
     sample.bed = sort_bed(cnf, sample.bed)
 
     info()
-    info('Fixing amplicon gene names...')
+    info('Fixing amplicon gene names if there are...')
     sample.bed = __fix_amplicons_gene_names(cnf, sample.bed)
 
     info()
@@ -48,6 +48,10 @@ def make_targetseq_reports(cnf, sample):
         ampl.sample_name = sample.name
 
     per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
+
+    info('Saving amplicons updated with a gene name')
+    amplicons = sorted(amplicons_dict.values(), key=Region.get_order_key)
+    sample.bed = save_regions_to_bed(cnf, amplicons, 'amplicons_with_gene_names', save_feature=False)
 
     seq2c_seq2cov(cnf, sample)
 
@@ -69,7 +73,7 @@ def seq2c_seq2cov(cnf, sample):
     sample_name = sample.name
     bam = sample.bam
     bed = sample.bed
-    cmdline = '{seq2cov} -b {bam} -N {sample_name} {bed}'.format(**locals())
+    cmdline = '{seq2cov} -z -b {bam} -N {sample_name} {bed}'.format(**locals())
     res = call(cnf, cmdline, seq2c_output)
     if not res:
         err('Could not run seq2cov.pl for ' + sample.name)
@@ -140,9 +144,8 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
     exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, all_interesting_exons_bed)
     for exon in exons:
         exon.sample_name = sample.name
-        exon.gene_name = exon.extra_fields[0]
-        exon.exon_num = exon.extra_fields[1]
-        exon.strand = exon.extra_fields[2]
+        exon.exon_num = exon.extra_fields[0]
+        exon.strand = exon.extra_fields[1]
         exon.feature = 'Exon'
 
     info('Groupping exons by gene...')
@@ -355,20 +358,22 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
     amplicons_fpath = join(cnf.work_dir, sample.name + '_amplicons.bed')
     with open(genes_ovelaps_with_amplicons_fpath) as f, open(amplicons_fpath, 'w') as out:
         for line in f:
-            a_chr, a_start, a_end, _, _, \
-            g_chr, g_start, g_end, g_gene_name, _, \
+            a_chr, a_start, a_end, a_gene_name, a_feature, \
+            g_chr, g_start, g_end, g_gene_name, g_feature, \
             overlap_size = line.split('\t')
 
             if g_gene_name != '.':
                 if g_gene_name not in genes_by_name:
                     err(g_gene_name + ' not in genes_by_name from exons')
                     continue
+                if a_gene_name != g_gene_name:
+                    err('Amplicon gene name != exon gene name for line: ' + line.strip())
                 gene = genes_by_name[g_gene_name]
                 amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]
                 gene.add_amplicon(amplicon)
                 out.write('\t'.join((a_chr, a_start, a_end, g_gene_name)) + '\n')
 
-            if i and i % 100000 == 0:
+            if i and i % 10000 == 0:
                 info('  Processed {0:,} regions, current gene {1}'.format(i, g_gene_name))
             i += 1
     info('  Processed {0:,} regions.'.format(i))
@@ -554,6 +559,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
     _total_regions_count = 0
 
+    info('Anylising bedcoverage output...')
     with open(bedcov_output) as f:
         for next_line in f:
             if not next_line.strip() or next_line.startswith('#'):
@@ -561,7 +567,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
             line_tokens = next_line.strip().split()
             chrom = line_tokens[0]
-            start, end = None, None
+            start, end, gene_name = None, None, None
             try:
                 depth, bases, region_size = map(int, line_tokens[-4:-1])
             except:
@@ -575,16 +581,17 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
             else:
                 start, end = map(int, line_tokens[1:3])
                 extra_fields = tuple(line_tokens[3:-4])
+                if extra_fields:
+                    gene_name = extra_fields[0]
+                    extra_fields = extra_fields[1:]
 
             line_region_key_tokens = (sample_name, chrom, start, end, extra_fields)
 
             if regions == [] or hash(line_region_key_tokens) != regions[-1].key():
                 region = Region(
                     sample_name=sample_name, chrom=chrom,
-                    start=start, end=end, size=region_size,
+                    start=start, end=end, size=region_size, gene_name=gene_name,
                     extra_fields=extra_fields)
-                if extra_fields:
-                    region.gene_name = extra_fields[0]
                 regions.append(region)
 
                 _total_regions_count += 1
@@ -620,7 +627,7 @@ def __fix_amplicons_gene_names(cnf, amplicons_fpath):
             if len(ts) < 4 or ':' not in ts[3]:
                 out.write(line)
             else:
-                ts = ts[:4] + [ts[4].split(':')[-1]] + ts[5:]
+                ts = ts[:3] + [ts[3].split(':')[-1]] + ts[4:]
                 out.write('\t'.join(ts) + '\n')
 
     info('Saved to ' + output_fpath)
