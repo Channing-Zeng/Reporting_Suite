@@ -125,7 +125,7 @@ class Region:
 
     def get_order_key(r):
         chr_n = int(''.join(c for c in r.chrom if c.isdigit()))
-        return chr_n, r.start, r.end
+        return chr_n, r.start, r.end, r.gene_name
 
 
 class GeneInfo:
@@ -190,7 +190,7 @@ class GeneInfo:
         self._add_subregion(exon, 'Exon')
 
     def add_amplicon(self, amplicon):
-        amplicon = copy.copy(amplicon)
+        # amplicon = copy.copy(amplicon)
         amplicon.gene_name = amplicon.gene_name or self.gene_name
         self._add_subregion(amplicon, 'Amplicon')
 
@@ -231,8 +231,7 @@ def _proc_regions(regions, fn, *args, **kwargs):
 
 def save_regions_to_bed(cnf, regions, f_basename, save_feature=True):
     bed_fpath = join(cnf.work_dir, f_basename + '.bed')
-    info()
-    info('Saving regions to ' + bed_fpath)
+    info('Writing regions to ' + bed_fpath)
 
     if isfile(bed_fpath):
         if cnf.reuse_intermediate:

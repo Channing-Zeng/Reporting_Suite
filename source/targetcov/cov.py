@@ -49,19 +49,19 @@ def make_targetseq_reports(cnf, sample):
 
     per_gene_rep_fpath = make_and_save_region_report(cnf, sample, amplicons_dict)
 
-    info('Saving amplicons updated with a gene name')
-    amplicons = sorted(amplicons_dict.values(), key=Region.get_order_key)
-    sample.bed = save_regions_to_bed(cnf, amplicons, 'amplicons_with_gene_names', save_feature=False)
+    info()
+    info('Saving only amplicons overlapped with exons, updated with a gene name')
+    amplicons = sorted((a for a in amplicons_dict.values() if a.gene_name), key=Region.get_order_key)
+    sample.bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names', save_feature=False)
 
+    info()
+    info('Running seq2cov.pl for ' + sample.name)
     seq2c_seq2cov(cnf, sample)
 
     return general_rep_fpath, per_gene_rep_fpath
 
 
 def seq2c_seq2cov(cnf, sample):
-    info('Running seq2cov.pl for ' + sample.name)
-
-    # sea2cov.pl
     seq2cov = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='seq2cov.pl')
     if not seq2cov: sys.exit(1)
 
@@ -150,13 +150,14 @@ def make_and_save_region_report(cnf, sample, amplicons_dict):
 
     info('Groupping exons by gene...')
     genes_by_name = _get_exons_combined_by_genes(exons)
-    info()
 
+    info()
     info('Sorting genes...')
     genes_sorted = sorted(genes_by_name.values(), key=lambda r: (r.chrom, r.get_start(), r.get_end()))
-    _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted)
-    info()
 
+    _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, genes_sorted)
+
+    info()
     info('Building region coverage report.')
     gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes_sorted)
 
@@ -366,7 +367,7 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons_dict, genes_by_name, gene
                 if g_gene_name not in genes_by_name:
                     err(g_gene_name + ' not in genes_by_name from exons')
                     continue
-                if a_gene_name != g_gene_name:
+                if a_gene_name != '.' and a_gene_name != g_gene_name:
                     err('Amplicon gene name != exon gene name for line: ' + line.strip())
                 gene = genes_by_name[g_gene_name]
                 amplicon = amplicons_dict[(a_chr, int(a_start), int(a_end))]

@@ -49,8 +49,8 @@ def cnv_reports(cnf, bcbio_structure):
             info('   ' + cnv_report_fpath)
             msg += '\n   ' + cnv_report_fpath
         if cnv_report_fpath__mine:
-            info('  Mine:: ' + cnv_report_fpath__mine)
-            msg += '\n  Mine: ' + cnv_report_fpath__mine
+            info('   Mine: ' + cnv_report_fpath__mine)
+            msg += '\n   Mine: ' + cnv_report_fpath__mine
 
     # if msg:
         # send_email(msg)
