@@ -68,7 +68,7 @@ def seq2c_seq2cov(cnf, sample):
     seq2c_output = join(
         cnf.output_dir,
         sample.name + '.' + \
-        BCBioStructure.targetseq_name + \
+        BCBioStructure.targetseq_name + '_' + \
         BCBioStructure.seq2c_seq2cov_ending)
     sample_name = sample.name
     bam = sample.bam

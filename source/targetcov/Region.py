@@ -123,6 +123,10 @@ class Region:
                (reg2.start < self.start < reg2.end or
                 self.start < reg2.start < self.end)
 
+    def get_order_key(r):
+        chr_n = int(''.join(c for c in r.chrom if c.isdigit()))
+        return chr_n, r.start, r.end
+
 
 class GeneInfo:
     """ Collects subregions.
@@ -187,7 +191,7 @@ class GeneInfo:
 
     def add_amplicon(self, amplicon):
         amplicon = copy.copy(amplicon)
-        amplicon.gene_name = self.gene_name
+        amplicon.gene_name = amplicon.gene_name or self.gene_name
         self._add_subregion(amplicon, 'Amplicon')
 
     def get_summary_region(self, regions, feature, depth_thresholds):
@@ -225,7 +229,7 @@ def _proc_regions(regions, fn, *args, **kwargs):
         info('Processed {0:,} regions.'.format(i))
 
 
-def save_regions_to_bed(cnf, regions, f_basename):
+def save_regions_to_bed(cnf, regions, f_basename, save_feature=True):
     bed_fpath = join(cnf.work_dir, f_basename + '.bed')
     info()
     info('Saving regions to ' + bed_fpath)
@@ -240,7 +244,10 @@ def save_regions_to_bed(cnf, regions, f_basename):
 
     with open(bed_fpath, 'w') as f:
         for r in regions:
-            f.write('\t'.join(map(str, [r.chrom, r.get_start(), r.get_end(), r.gene_name, r.feature])) + '\n')
+            ts = [r.chrom, str(r.get_start()), str(r.get_end()), r.gene_name or '.']
+            if save_feature:
+                ts.append(r.feature or '.')
+            f.write('\t'.join(ts) + '\n')
 
                 # r.size, r.avg_depth, r.std_dev, r.percent_within_normal
             # f.write('\t'.join([

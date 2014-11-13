@@ -41,8 +41,6 @@ while( <> ) {
     } else {
         ($c_col, $S_col, $E_col, $g_col, $s_col, $e_col) = (0, 1, 2, 3, 1, 2) if ( (! $opt_c) && @A == 4 && $A[1] =~ /^\d+$/ && $A[2] =~ /^\d+$/ && $A[1] <= $A[2] );
         my ($chr, $cdss, $cdse, $gene) = @A[$c_col,$S_col,$E_col,$g_col];
-#        $gene = @A
-
         my @starts = split(/,/, $A[$s_col]);
         my @ends = split(/,/, $A[$e_col]);
         my @CDS = ();

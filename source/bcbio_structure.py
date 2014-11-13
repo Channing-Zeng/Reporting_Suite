@@ -131,8 +131,8 @@ class VariantCaller:
     def find_fpaths_by_sample(self, dir_name, name, ext):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
 
-    def find_anno_vcf_by_sample(self, optional_ext='.gz'):
-        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending, optional_ext='.gz')
+    def find_anno_vcf_by_sample(self, optional_ext=None):
+        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending, optional_ext=optional_ext)
 
     def get_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
@@ -140,7 +140,7 @@ class VariantCaller:
     def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
-    def _find_files_by_sample(self, dir_name, ending, optional_ext='.gz'):
+    def _find_files_by_sample(self, dir_name, ending, optional_ext=None):
         files_by_sample = OrderedDict()
 
         for s in self.samples:
@@ -154,10 +154,11 @@ class VariantCaller:
                 if verify_file(fpath):
                     files_by_sample[s.name] = fpath
             else:
-                fpath += optional_ext
-                if isfile(fpath):
-                    if verify_file(fpath):
-                        files_by_sample[s.name] = fpath
+                if optional_ext:
+                    fpath += optional_ext
+                    if isfile(fpath):
+                        if verify_file(fpath):
+                            files_by_sample[s.name] = fpath
                 elif s.phenotype != 'normal':
                     info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
@@ -475,7 +476,7 @@ class BCBioStructure:
         vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
         if not isfile(vcf_fpath):  # not in var, looking in sample dir
             vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-        _ungzip_if_needed(self.cnf, vcf_fpath)
+        # _ungzip_if_needed(self.cnf, vcf_fpath)
         if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
             err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
             to_exit = True
