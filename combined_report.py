@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
              '(you are running %d.%d.%d)' %
@@ -24,8 +23,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.combined_report_name,
-                                                      BCBioStructure.combined_report_dir)
+    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.combined_report_name)
 
     make_combined_report(cnf, bcbio_structure)
 
@@ -113,8 +111,8 @@ def make_combined_report(cnf, bcbio_structure):
                                            metric_storage=metric_storage))
     full_report = FullReport(cnf.name, sample_reports, metric_storage=metric_storage)
     final_summary_report_fpath = full_report.save_html(
-        cnf.output_dir, bcbio_structure.combined_report_name, 'Combined report for ' +
-                                                              bcbio_structure.project_name)
+        cnf.output_dir, bcbio_structure.project_name,
+        'Combined report for ' + bcbio_structure.project_name)
 
     info()
     info('*' * 70)

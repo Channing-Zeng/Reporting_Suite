@@ -118,7 +118,7 @@ get_metric_name_html = (metric, use_full_name=false) ->
     if metric.short_name and not use_full_name
         metricName = metric.short_name
         description = metric.description or metric.name
-        return "<a class=\"tooltip-link\" rel=\"tooltip\" title=\"#{description}\">#{metricName}</a>"
+        return "<a class=\"metric_name\" rel=\"tooltip\" title=\"#{description}\">#{metricName}</a>"
     else
         return metric.name
 
@@ -299,11 +299,13 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     sample_reports_length = if report.hasOwnProperty('sample_reports') then report.sample_reports.length else 1
     for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
         line_caption = sampleReport.display_name  # sample name
-        if line_caption.length > 30
-            line_caption = "<span title=\"#{line_caption}\">#{line_caption.trunc(80)}</span>"
+        max_sample_name_len = 50
+        if line_caption.length > max_sample_name_len
+            line_caption = "<span title=\"#{line_caption}\">#{line_caption.substring(0, max_sample_name_len)}...</span>"
 
-        table += "\n<tr>
-            <td class=\"left_column_td\" data-sortAs=#{sample_reports_length - i}>"
+        second_row_td = if i == 0 then "second_row_tr" else ""
+        table += "\n<tr class=\"#{second_row_td}\">
+            <td class=\"left_column_td td}\" data-sortAs=#{sample_reports_length - i}>"
         if sample_reports_length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
@@ -340,7 +342,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
 
             table += "<td metric=\"#{metric.name}\"
                           style=\"background-color: #{rec.color}; color: #{rec.text_color}\"
-                          class='number'
+                          class='number td'
                           quality=\"#{metric.quality}\""
             if rec.num?
                 table += " number=\"#{rec.value}\" data-sortAs=#{rec.value}>"

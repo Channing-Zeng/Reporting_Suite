@@ -53,7 +53,7 @@ def process_post_bcbio_args(parser):
     return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
 
 
-def summary_script_proc_params(name, dir, description=None, extra_opts=None):
+def summary_script_proc_params(name, dir=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)

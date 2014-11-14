@@ -202,7 +202,7 @@ class BCBioStructure:
     targqc_summary_dir                         = join('qc', targqc_name)
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
     seq2c_name       = 'Seq2C'
-    combined_report_name = combined_report_dir = 'combined_report'
+    combined_report_name = 'combined_report'
     detail_gene_report_baseending = '.details.gene'
     detail_sorted_gene_report_baseending = '.sorted.details.gene'
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'

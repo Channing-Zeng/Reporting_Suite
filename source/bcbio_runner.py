@@ -270,7 +270,7 @@ class BCBioRunner:
             name='Combined_report', short_name='cr',
             interpreter='python',
             script='combined_report.py',
-            dir_name=BCBioStructure.combined_report_dir,
+            dir_name=self.bcbio_structure.date_dirpath,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
 
