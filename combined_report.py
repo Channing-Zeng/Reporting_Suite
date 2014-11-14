@@ -43,7 +43,9 @@ def make_combined_report(cnf, bcbio_structure):
             general_section.add_metric(cur_metric)
             general_records.append(Record(metric=cur_metric,
                                           value=cur_metric.name,
-                                          html_fpath=_convert_to_relpath(cnf, summary_report_fpath)))
+                                          html_fpath=_convert_to_relpath(
+                                   cnf, summary_report_fpath,
+                                   bcbio_structure.date_dirpath)))
 
     # individual reports
     individual_reports_section = ReportSection('individual_reports', '', [])
@@ -93,10 +95,12 @@ def make_combined_report(cnf, bcbio_structure):
             individual_reports_section.add_metric(cur_metric)
             for sample in bcbio_structure.samples:
                 if sample.name in htmls_by_sample:
-                    sample_reports_records[sample.name].append(Record(metric=cur_metric,
-                                                                      value=cur_metric.name,
-                                                                      html_fpath=_convert_to_relpath(cnf,
-                                                                                 htmls_by_sample[sample.name])))
+                    sample_reports_records[sample.name].append(Record(
+                        metric=cur_metric,
+                        value=cur_metric.name,
+                        html_fpath=_convert_to_relpath(cnf,
+                                   htmls_by_sample[sample.name],
+                                   bcbio_structure.date_dirpath)))
                 else:
                     sample_reports_records[sample.name].append(Record(metric=cur_metric,
                                                                       value=None,
@@ -122,12 +126,12 @@ def make_combined_report(cnf, bcbio_structure):
                '\n  ' + final_summary_report_fpath)
 
 
-def _convert_to_relpath(cnf, value):
+def _convert_to_relpath(cnf, value, base_dirpath):
     if isinstance(value, str):
-        return relpath(value, cnf.output_dir)
+        return relpath(value, base_dirpath)
     elif isinstance(value, dict):
         for k in value.keys():
-            value[k] = relpath(value[k], cnf.output_dir)
+            value[k] = relpath(value[k], base_dirpath)
         return value
     else:
         return value
