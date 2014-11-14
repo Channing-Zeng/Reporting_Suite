@@ -18,6 +18,7 @@ record =
     metric: null
     value: ''
     meta: null
+    html_fpath: ''
 
 metric =
     name: ''
@@ -31,15 +32,32 @@ metric =
 
 DRAGGABLE_COLUMNS = false
 
-RED_HUE = 0
-GREEN_HUE = 120
+
+################
+# Color heat map
 BLUE_HUE = 240
-GREEN_HSL = 'hsl(' + GREEN_HUE + ', 80%, 40%)'
-CSS_PROP_TO_COLOR = 'background-color'  # color
+BLUE_OUTER_BRT = 55
+BLUE_INNER_BRT = 65
+
+GREEN_HUE = 120
+GREEN_OUTER_BRT = 50
+GREEN_INNER_BRT = 60
+
+RED_HUE = 0
+RED_OUTER_BRT = 50
+RED_INNER_BRT = 60
+
+MIN_NORMAL_BRT = 80
+MEDIAN_BRT = 100  # just white.
+
 get_color = (hue, lightness) ->
     lightness = if lightness? then lightness else 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
-    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
+    [r, g, b] = hslToRgb(hue / 360, 0.8, lightness / 100)
+    return '#' + r.toString(16) + g.toString(16) + b.toString(16)
+#    return 'hsl(' + hue + ', 80%, ' + lightness + '%)'
+
+################
 
 
 check_all_values_equal = (vals) ->
@@ -105,30 +123,29 @@ get_metric_name_html = (metric, use_full_name=false) ->
         return metric.name
 
 
-calc_records_cell_contents = (records, font) ->
-    for rec in records
-        value = rec.value
-        num_html = ''
+calc_record_cell_contents = (rec, font) ->
+    value = rec.value
+    num_html = ''
 
-        if not value? or value == ''
-            rec.cell_contents = '-'
+    if not value? or value == ''
+        rec.cell_contents = '-'
 
+    else
+        if typeof value == 'number'
+            rec.num = value
+            rec.cell_contents = toPrettyString value, rec.metric.unit
+            num_html = toPrettyString value
+
+        else if /^-?.?[0-9]/.test(value)
+            result = /([0-9\.]+)(.*)/.exec value
+            rec.num = parseFloat result[1]
+            rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
+            num_html = toPrettyString(rec.num)
         else
-            if typeof value == 'number'
-                rec.num = value
-                rec.cell_contents = toPrettyString value, rec.metric.unit
-                num_html = toPrettyString value
+            rec.cell_contents = value
 
-            else if /^-?.?[0-9]/.test(value)
-                result = /([0-9\.]+)(.*)/.exec value
-                rec.num = parseFloat result[1]
-                rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]
-                num_html = toPrettyString(rec.num)
-            else
-                rec.cell_contents = value
-
-        # Max frac width of column
-        rec.frac_width = $.fn.intPartTextWidth num_html, font
+    # Max frac width of column
+    rec.frac_width = $.fn.intPartTextWidth num_html, font
 
 
 mean = (a, b) -> (a + b) / 2
@@ -138,67 +155,110 @@ calc_cell_contents = (report, section, font) ->
     max_frac_widths_by_metric = {}
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
-    for sampleReport in report.sample_reports
-        calc_records_cell_contents sampleReport.records, font
-        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
-            if not (rec.metric.name of max_frac_widths_by_metric)
-                max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
-            else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
-                max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+    if not report.type? or report.type == 'FullReport' or report.type == 'SquareSampleReport'
+        for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
+            for rec in sampleReport.records
+                calc_record_cell_contents rec, font
 
+            for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
+                if not (rec.metric.name of max_frac_widths_by_metric)
+                    max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+                else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
+                    max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+
+                if rec.num?
+                    rec.metric.values = [] if not rec.metric.values?
+                    rec.metric.values.push rec.num
+
+    else if report.type == 'SampleReport'
+        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
             if rec.num?
                 rec.metric.values = [] if not rec.metric.values?
                 rec.metric.values.push rec.num
+
+#    else if report.type == 'SquareSampleReport'
+#        sampleReport = report
+#
+#        calc_records_cell_contents sampleReport.records, font
+#        for val in  rec in sampleReport.records when rec.metric.name of section.metrics_by_name
+#            if not (rec.metric.name of max_frac_widths_by_metric)
+#                max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+#            else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
+#                max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+#
+#            if rec.num?
+#                rec.metric.values = [] if not rec.metric.values?
+#                rec.metric.values.push rec.num
+
 
     for metric in section.metrics when metric.values?
         vals = metric.values.slice().sort((a, b) -> a - b)
         l = vals.length
 
         metric.min = vals[0]
-        metric.max = vals[vals.length - 1]
+        metric.max = vals[l - 1]
         metric.med = if l % 2 != 0 then vals[(l - 1) / 2] else mean(vals[l / 2], vals[(l / 2) - 1])
-        metric.q1 = vals[Math.floor((l - 1) / 4)]
-        metric.q3 = vals[Math.floor((l - 1) * 3 / 4)]
-        metric.d = metric.q3 - metric.q1
+        q1 = vals[Math.floor((l - 1) / 4)]
+        q3 = vals[Math.floor((l - 1) * 3 / 4)]
+
+        d = q3 - q1
+        metric.low_outer_fence = q1 - 3   * d
+        metric.low_inner_fence = q1 - 1.5 * d
+        metric.top_inner_fence = q3 + 1.5 * d
+        metric.top_outer_fence = q3 + 3   * d
 
     # Second round: setting shift and color properties based on max/min widths and vals
-    for sampleReport in report.sample_reports
+    for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
         for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
             # Padding based on frac width
             if rec.frac_width?
                 rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
 
-                if rec.right_shift != 0
-                    a = 0
-
             metric = rec.metric
 
             # Color heatmap
             if rec.num?
-                max_bri = 0
-                min_bri = 100
-#                if metric.quality == 'Less is better'
+                [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
+                [low_hue, inner_low_brt, outer_low_brt] = [RED_HUE, RED_INNER_BRT, RED_OUTER_BRT]
+
+                if metric.quality == 'Less is better'  # then swap colors
+                    [top_hue, low_hue] = [low_hue, top_hue]
+                    [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
+                    [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
 
                 if metric.min == metric.max
                     metric.all_values_equal = true
-                    # rec.color = get_color GREEN_HUE
                 else
                     metric.all_values_equal = false
 
-                    if rec.num < metric.q1 - 3 * metric.d
-                        rec.color = get_color BLUE_HUE, 30
-                    else if rec.num < metric.q1 - 1.5 * metric.d
-                        rec.color = get_color BLUE_HUE, 60
+                    rec.text_color = 'black'
 
-                    else if rec.num > metric.q3 + 1.5 * metric.d
-                        rec.color = '#88FFFF'
-                    else if rec.num > metric.q3 + 3 * metric.d
-                        rec.color = '#55FFFF'
+                    # Low outliers
+                    if rec.num < rec.metric.low_outer_fence
+                        rec.color = get_color low_hue, outer_low_brt
+                        rec.text_color = 'white'
 
-#                    k = ()
-#                    k = (maxHue - minHue) / (metric.max - metric.min)
-#                    hue = Math.round minHue + (rec.num - metric.min) * k
-#                    rec.color = get_color hue
+                    else if rec.num < rec.metric.low_inner_fence
+                        rec.color = get_color low_hue, inner_low_brt
+
+                    # Normal values
+                    else if rec.num < metric.med
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (metric.med - rec.metric.low_inner_fence)
+                        brt = Math.round MEDIAN_BRT - (metric.med - rec.num) * k
+                        rec.color = get_color low_hue, brt
+
+                    # High outliers
+                    else if rec.num > rec.metric.top_inner_fence
+                        rec.color = get_color top_hue, inner_top_brt
+
+                    else if rec.num > rec.metric.top_outer_fence
+                        rec.color = get_color top_hue, outer_top_brt
+                        rec.text_color = 'white'
+
+                    else if rec.num > metric.med
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
+                        brt = Math.round MEDIAN_BRT - (rec.num - metric.med) * k
+                        rec.color = get_color top_hue, brt
     return report
 
 
@@ -229,24 +289,38 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
         sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
-        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} position='#{pos}'>
+        direction = if metric.quality == 'Less is better' then 'ascending' else 'descending'
+        table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction}position='#{pos}'>
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
 
     i = 0
-    for sampleReport in report.sample_reports
+    sample_reports_length = if report.hasOwnProperty('sample_reports') then report.sample_reports.length else 1
+    for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
         line_caption = sampleReport.display_name  # sample name
         if line_caption.length > 30
             line_caption = "<span title=\"#{line_caption}\">#{line_caption.trunc(80)}</span>"
 
         table += "\n<tr>
-            <td class=\"left_column_td\" data-sortAs=#{report.sample_reports.length - i}>"
-        if report.sample_reports.length == 1
+            <td class=\"left_column_td\" data-sortAs=#{sample_reports_length - i}>"
+        if sample_reports_length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
             if sampleReport.html_fpath?
-                table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+                if typeof sampleReport.html_fpath is 'string'
+                    table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
+                else  # several links for one sample are possible multi-reports (e.g. TargQC)
+                    if (k for own k of sampleReport.html_fpath).length == 0
+                        table += "<span class=\"sample_name\"\">#{line_caption}</span>"
+                    else
+                        links = ""
+                        for report_name, html_fpath of sampleReport.html_fpath
+                            if links.length != 0
+                              links += ", "
+                            links += "<a href=\"#{html_fpath}\">#{report_name}</a>"
+                        table += "<span class=\"sample_name\"\">#{line_caption} (#{links})</span>"
+                # table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
             else
                 table += "<span class=\"sample_name\"\">#{line_caption}</span>"
 
@@ -265,7 +339,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 continue
 
             table += "<td metric=\"#{metric.name}\"
-                          style=\"#{CSS_PROP_TO_COLOR}: #{rec.color}\"
+                          style=\"background-color: #{rec.color}; color: #{rec.text_color}\"
                           class='number'
                           quality=\"#{metric.quality}\""
             if rec.num?
@@ -278,13 +352,32 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
             else
                 padding = ""
 
-            table += "<a style=\"#{padding}\"
-                          #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
-                      </a>
-                    </td>"
+            if rec.html_fpath?
+                if typeof rec.html_fpath is 'string'
+                    table += "<a href=\"#{rec.html_fpath}\">#{rec.cell_contents}
+                            </a>
+                          </td>"
+                else  # varQC -- several variant callers for one sample are possible
+                    if (k for own k of rec.html_fpath).length == 0
+                        rec.value = null
+                        calc_record_cell_contents rec, $('#report').css 'font'
+                        table += "#{rec.cell_contents}</td>"
+                    else
+                        caller_links = ""
+                        for caller, html_fpath of rec.html_fpath
+                            if caller_links.length != 0
+                              caller_links += ", "
+                            caller_links += "<a href=\"#{html_fpath}\">#{caller}</a>"
+                        table += "#{rec.cell_contents} (#{caller_links})</td>"
+            else
+                table += "<a style=\"#{padding}\"
+                              #{get_meta_tag_contents(rec)}>#{rec.cell_contents}
+                            </a>
+                          </td>"
         table += "</tr>"
         i += 1
     table += "\n</table>\n"
+    table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table
 
@@ -293,39 +386,45 @@ reporting.buildCommonRecords = (common_records) ->
     if common_records.length == 0
         return
 
-    calc_records_cell_contents common_records, $('#report').css 'font'
+    for rec in common_records
+        calc_record_cell_contents rec, $('#report').css 'font'
 
     table = "<table cellspacing=\"0\" class=\"common_table\" id=\"common_table\">"
     for rec in common_records
-        table += "\n<tr><td>
-                <span class='metric_name'>#{get_metric_name_html(rec.metric, use_full_name=true)}:</span>
-                #{rec.cell_contents}
-              </td></tr>"
+        table += "\n<tr><td>"
+        if rec.html_fpath?
+            table += "<a href=\"#{rec.html_fpath}\">
+                         #{rec.cell_contents}</a>"
+        else
+            table += "<span class='metric_name'>#{get_metric_name_html(rec.metric, use_full_name=true)}:</span>
+                          #{rec.cell_contents}"
+        table += "</td></tr>"
     table += "\n</table>\n"
+    table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table
 
 
-set_legend = ->
-    legend = '<span>'
-    step = 6
-    for hue in [RED_HUE..GREEN_HUE] by step
-        legend += "<span style=\"#{CSS_PROP_TO_COLOR}: #{get_color hue}\">"
-
-        switch hue
-            when RED_HUE              then legend += 'w'
-            when RED_HUE   +     step then legend += 'o'
-            when RED_HUE   + 2 * step then legend += 'r'
-            when RED_HUE   + 3 * step then legend += 's'
-            when RED_HUE   + 4 * step then legend += 't'
-            when GREEN_HUE - 3 * step then legend += 'b'
-            when GREEN_HUE - 2 * step then legend += 'e'
-            when GREEN_HUE -     step then legend += 's'
-            when GREEN_HUE            then legend += 't'
-            else                           legend += '.'
-        legend += "</span>"
-    legend += "</span>"
-    $('#report_legend').append legend
+#set_legend = ->
+#    legend = '<span>'
+#    step = 6
+#    for hue in [RED_HUE..GREEN_HUE] by step
+#        legend += "<span style=\"background-color: #{get_color hue}\">"
+#
+#        switch hue
+#            when RED_HUE              then legend += 'w'
+#            when RED_HUE   +     step then legend += 'o'
+#            when RED_HUE   + 2 * step then legend += 'r'
+#            when RED_HUE   + 3 * step then legend += 's'
+#            when RED_HUE   + 4 * step then legend += 't'
+#            when GREEN_HUE - 3 * step then legend += 'b'
+#            when GREEN_HUE - 2 * step then legend += 'e'
+#            when GREEN_HUE -     step then legend += 's'
+#            when GREEN_HUE            then legend += 't'
+#            else                           legend += '.'
+#        legend += "</span>"
+#    legend += "</span>"
+#    $('#report_legend').append legend
 
 
 $.fn._splitDot_partTextWidth = (html, font, part_type) ->  # part_type = 'int'|'frac'
@@ -367,7 +466,6 @@ $.fn.textWidth = (text, font) ->
 
 String.prototype.trunc = (n) ->
     this.substr(0, n - 1) + (this.length > n ? '&hellip;': '')
-
 
 
 #postprocess_cells = ->

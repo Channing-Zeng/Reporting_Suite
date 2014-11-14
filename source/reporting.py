@@ -286,11 +286,11 @@ class FullReport(Report):
         return common_records
 
     def flatten(self, sections=None):
-        rows = [['Sample'] + [rep.display_name for rep in self.sample_reports]]
-
         if len(self.sample_reports) == 0:
             err('No sample reports found: summary will not be produced.')
             return []
+
+        rows = [['Sample'] + [rep.display_name for rep in self.sample_reports]]
 
         for metric in self.metric_storage.get_metrics(sections):
             row = [metric.name]
@@ -327,6 +327,10 @@ class FullReport(Report):
             self.save_html(output_dirpath, base_fname, caption)
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+        if len(self.sample_reports) == 0:
+            err('No sample reports found: HTML summary will not be made.')
+            return None
+
         return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='FullReport')
 
     def __repr__(self):

@@ -272,8 +272,8 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
 
     v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
-    info('Getting number of mapped reads on target...')
 
+    info('Getting number of mapped reads on target...')
     v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, sample.bam)
     report.add_record('Reads mapped on target', v_mapped_reads_on_target)
 

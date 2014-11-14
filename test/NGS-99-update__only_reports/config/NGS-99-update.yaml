@@ -14,7 +14,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -43,7 +42,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -72,7 +70,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -101,7 +98,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -130,7 +126,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -159,7 +154,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -188,7 +182,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -217,7 +210,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -246,7 +238,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -275,7 +266,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -304,7 +294,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -333,7 +322,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -362,7 +350,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -391,7 +378,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -420,7 +406,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -449,7 +434,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -478,7 +462,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -507,7 +490,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -536,7 +518,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -565,7 +546,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -594,7 +574,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -623,7 +602,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -652,7 +630,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -681,7 +658,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -710,7 +686,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -739,7 +714,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -768,7 +742,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -797,7 +770,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -826,7 +798,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -855,7 +826,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -884,7 +854,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -913,7 +882,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -942,7 +910,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -971,7 +938,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -1000,7 +966,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes
@@ -1029,7 +994,6 @@ details:
     svcaller:
     - cn.mops
     - lumpy
-    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     variantcaller:
     - mutect
     - freebayes

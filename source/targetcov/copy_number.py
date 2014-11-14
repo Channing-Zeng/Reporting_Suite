@@ -201,7 +201,7 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure, report_fpath_by_sample
             sample, chrom, s, e, gene, tag, size, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
             if float(cov) != 0:
-                reordered = sample, gene, chrom, s, e, tag, size, cov
+                reordered = sample, gene, chrom, s, e, 'Whole-Gene' if tag == 'Gene-Amplicon' else tag, size, cov
                 coverage_info.append(reordered)
 
         with open(json_fpath) as f:

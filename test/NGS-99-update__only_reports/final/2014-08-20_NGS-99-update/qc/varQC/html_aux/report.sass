@@ -6,25 +6,41 @@
     //float: left
     font-size: 1em
 
-    .common_table
+    table.common_table
         padding-right: 50px !important
-        margin-bottom: 30px
+        //margin-bottom: 30px
 
         span.metric_name
             font-weight: bold
 
-    .report_table
+    table.report_table
         padding-right: 50px !important
-        margin-bottom: 30px
+        //margin-bottom: 30px
+        border-width: 0
+        border-spacing: 0
+        border-collapse: collapse
 
         td, th
             margin: 0
-            padding: 2px 2px 0 4px
+            //padding-right: 2px
+            //padding-left: 4px
+            //padding: 2px 2px 0 4px
             //min-width: 100px
             //max-width: 200px
+            padding-top: 0
             white-space: nowrap
             text-align: left
-            //a
+            //margin-top: 3px
+            a
+                //margin-top: 2px
+                //margin-left: -4px
+                //margin-right: -4px
+                //margin-bottom: 0
+                padding-top: 1px
+                padding-bottom: 1px
+                padding-left: 2px
+                padding-right: 2px
+                //padding: 0 2px 1px 2px
                 //display: inline-block
                 //height: 100%
                 //width: 100%
@@ -74,7 +90,15 @@ table.moving_table
     background-color: white
     z-index: 3 !important
 
+    border-width: 0
+    border-spacing: 0
+    border-collapse: collapse
+
 table.draggable
+    border-width: 0
+    border-spacing: 0
+    border-collapse: collapse
+
     .drag_handle
         padding: 2px 0px 0 0px
         margin: 0 0px 0 1px
