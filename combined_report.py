@@ -111,7 +111,7 @@ def make_combined_report(cnf, bcbio_structure):
                                            metric_storage=metric_storage))
     full_report = FullReport(cnf.name, sample_reports, metric_storage=metric_storage)
     final_summary_report_fpath = full_report.save_html(
-        cnf.output_dir, bcbio_structure.project_name,
+        bcbio_structure.date_dirpath, bcbio_structure.project_name,
         'Combined report for ' + bcbio_structure.project_name)
 
     info()
