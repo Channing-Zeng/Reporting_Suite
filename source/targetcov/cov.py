@@ -607,15 +607,16 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                     gene_name = extra_fields[0]
                     extra_fields = extra_fields[1:]
 
-            line_region_key_tokens = (sample_name, chrom, start, end, extra_fields)
+            line_region_key_tokens = (sample_name, chrom, start, end, gene_name, extra_fields)
 
             if regions == [] or hash(line_region_key_tokens) != \
                     hash((regions[-1].sample_name, regions[-1].chrom,
-                          regions[-1].start, regions[-1].end, regions[-1].extra_fields)):
+                          regions[-1].start, regions[-1].end,
+                          regions[-1].gene_name, regions[-1].extra_fields)):
                 region = Region(
                     sample_name=sample_name, chrom=chrom,
-                    start=start, end=end, size=region_size, gene_name=gene_name,
-                    extra_fields=extra_fields)
+                    start=start, end=end, size=region_size,
+                    gene_name=gene_name, extra_fields=extra_fields)
                 regions.append(region)
 
                 _total_regions_count += 1
