@@ -14,13 +14,14 @@
     #report table.report_table td, #report table.report_table th {
       margin: 0;
       padding-top: 1px;
+      padding-left: 4px;
       padding-bottom: 0;
       white-space: nowrap;
       text-align: left; }
       #report table.report_table td a, #report table.report_table th a {
         padding-top: 1px;
         padding-bottom: 0px;
-        padding-left: 5px;
+        padding-left: 1px;
         padding-right: 1px; }
     #report table.report_table tr.top_row_tr + tr td {
       border-top: 1px solid #bbb; }
