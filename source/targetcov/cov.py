@@ -33,12 +33,12 @@ def make_targetseq_reports(cnf, sample):
     amplicons_bed = sort_bed(cnf, amplicons_bed)
 
     info()
-    info('Unique amplicons...')
-    amplicons_bed = _unique_bed_lines(cnf, amplicons_bed)
-
-    info()
     info('Fixing amplicon gene names if there are...')
     amplicons_bed = _fix_amplicons_gene_names(cnf, amplicons_bed)
+
+    info()
+    info('Unique amplicons...')
+    amplicons_bed = _unique_bed_lines(cnf, amplicons_bed)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -133,24 +133,24 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
     # log('Annotating amplicons...')
     # annotate_amplicons(amplicons, genes_bed)
 
-    # info('Choosing unique exons.')
-    # exons_bed = _unique_longest_exons(cnf, exons_bed)
+    info('Choosing unique exons.')
+    exons_bed = _unique_bed_lines(cnf, exons_bed)
 
     info('Sorting exons BED file.')
     exons_bed = sort_bed(cnf, exons_bed)
     info()
 
     info('Getting the exons that overlap amplicons.')
-    overlapped_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
+    roi_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
     info()
 
-    gene_names = _get_gene_names(overlapped_exons_bed)
+    gene_names = _get_gene_names(roi_exons_bed)
     if not gene_names:
         err('No exons overlap amplicons from the panel.')
         return None
 
     info('Adding other exons for the genes of overlapped exons.')
-    all_interesting_exons_bed = _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed)
+    all_interesting_exons_bed = _add_other_exon_of_genes(cnf, gene_names, exons_bed, roi_exons_bed)
     info()
 
     info('Calculating coverage statistics for exons of the genes ovelapping with the input regions...')
@@ -161,23 +161,32 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
         exon.strand = exon.extra_fields[1]
         exon.feature = 'Exon'
 
-    info('Groupping exons by gene...')
-    genes_by_name = _get_exons_combined_by_genes(exons)
+    info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
+    gene_infos_by_name = _get_exons_combined_by_genes(exons)
 
     info()
-    info('Sorting genes...')
-    genes_sorted = sorted(genes_by_name.values(), key=lambda r: (
-        r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name))
+    info('Finding amplicons overlaps with exons, adding gene names to amplicons and adding amplicons to genes...')
+    _combine_amplicons_by_genes(cnf, sample, amplicons, exons, gene_infos_by_name)
+
+    non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
 
     info()
-    info('Finding amplicons overlaps with exons, adding gene names to amplicons and adding them to genes...')
-    _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name, genes_sorted)
+    non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
+    info()
+    info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
+    non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
+    genes = []
+    for non_overlapping_exon in non_overlapping_exons_2:
+        gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
+        for d, bs in non_overlapping_exon.bases_by_depth.items():
+            gene_info.bases_by_depth[d] += bs
+        genes.append(gene_info)
 
     info()
     info('Building region coverage report.')
-    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes_sorted)
+    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
 
-    return gene_report_fpath, genes_by_name
+    return gene_report_fpath, gene_infos_by_name
 
 
 def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
@@ -306,19 +315,18 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
     return report
 
 
-def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes_sorted):
+def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
     final_regions = []
     info('Combining all regions for final report...')
     i = 0
-    for gene in genes_sorted:
+    for gene in genes:
         if i and i % 100000 == 0:
             info('Processed {0:,} genes, current gene {1}'.format(i, gene.gene_name))
         i += 1
 
-        final_regions.extend(gene.get_exons())
-        final_regions.append(gene.get_summary_region(gene.get_exons(), 'Exon', cnf.coverage_reports.depth_thresholds))
         final_regions.extend(gene.get_amplicons())
-        final_regions.append(gene.get_summary_region(gene.get_amplicons(), 'Amplicon', cnf.coverage_reports.depth_thresholds))
+        final_regions.extend(gene.get_exons())
+        final_regions.append(gene)
     info('Processed {0:,} genes.'.format(i))
 
     info()
@@ -355,7 +363,7 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes_sort
     return tsv_rep_fpath
 
 
-def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name, genes_sorted):
+def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
     exons_bed_fpath = save_regions_to_bed(cnf, exons, sample.name + '_exons_by_gene_name')
     ampli_bed_fpath = save_regions_to_bed(cnf, amplicons, sample.name + '_amplicons_by_gene_name')
     exons_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_exons_amplicons_ovelaps.bed')
@@ -419,11 +427,11 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name, ge
     #     # amplicon_copy.gene_name = amplicon_gene_summary.gene_name
 
 
-def _get_exons_combined_by_genes(subregions):
-    gene_summaries_by_name = dict()
+def _get_exons_combined_by_genes(exons):
+    genes_by_name = OrderedDict()
 
     i = 0
-    for exon in subregions:
+    for exon in exons:
         if not exon.gene_name:
             info()
             err('  No gene name info in the record: ' + str(exon) + '. Skipping.')
@@ -433,15 +441,15 @@ def _get_exons_combined_by_genes(subregions):
             info('  Processed {0:,} exons, current gene {1}'.format(i, exon.gene_name))
         i += 1
 
-        gene = gene_summaries_by_name.get(exon.gene_name)
+        gene = genes_by_name.get(exon.gene_name)
         if gene is None:
             gene = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
-                            feature='Gene-Exon', chrom=exon.chrom)
-            gene_summaries_by_name[exon.gene_name] = gene
+                            chrom=exon.chrom, strand=exon.strand)
+            genes_by_name[exon.gene_name] = gene
         gene.add_exon(exon)
 
     info('  Processed {0:,} exons.'.format(i))
-    return gene_summaries_by_name
+    return genes_by_name
 
 
 # def _make_region_report(sample, regions, depth_threshs):
@@ -629,7 +637,11 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     if _total_regions_count % 100000 != 0:
         info('  Processed {0:,} regions'.format(_total_regions_count))
 
-    return regions[:-1], regions[-1], max_depth, total_bed_size
+    total_region = regions[-1]
+    info('Sorting genes...')
+    regions = sorted(regions[:-1], key=Region.get_order_key)
+
+    return regions, total_region, max_depth, total_bed_size
 
 
 def _unique_bed_lines(cnf, bed_fpath):
@@ -659,6 +671,7 @@ def _fix_amplicons_gene_names(cnf, amplicons_fpath):
                 continue
 
             ts = line.split()
+            assert len(ts) >= 3
 
             if prev_end is not None:
                 cur_start = int(ts[1])
@@ -666,11 +679,14 @@ def _fix_amplicons_gene_names(cnf, amplicons_fpath):
                     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
             prev_end = int(ts[2])
 
-            if len(ts) < 4 or ':' not in ts[3]:
-                out.write(line)
-            else:
-                ts = ts[:3] + [ts[3].split(':')[-1]] + ts[4:]
-                out.write('\t'.join(ts) + '\n')
+            if len(ts) >= 4:
+                if ':' in ts[3]:
+                    ts[3] = ts[3].split(':')[-1]
+                if len(ts) < 8:
+                    ts = ts[:4]
+                if len(ts) > 8:
+                    ts = ts[:8]
+            out.write('\t'.join(ts) + '\n')
 
     info('Saved to ' + output_fpath)
     return output_fpath

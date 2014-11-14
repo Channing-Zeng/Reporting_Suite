@@ -58,25 +58,18 @@ def cnv_reports(cnf, bcbio_structure):
     return [cnv_report_fpath, cnv_report_fpath__mine]
 
 
-def _get_tokens_by_region_type(report_fpath, region_type):
+def _get_whole_genes_and_amlicons(report_fpath):
     gene_summary_lines = []
 
     with open(report_fpath, 'r') as f:
-        new_format = False
         for i, line in enumerate(f):
-            if i == 0 and 'Exon' in line:
-                new_format = True
-
-            if region_type in line:
+            if 'Amplicon' in line or 'Whole-Gene' in line:
                 ts = line.split('\t')
-                if new_format:
-                    ts = ts[:5] + ts[7:10]  # Skipping Exon, Strand
-                else:
-                    ts = ts[:8]
+                ts = ts[:5] + ts[7:10]  # Skipping Exon, Strand
                 gene_summary_lines.append(ts)
 
     if not gene_summary_lines:
-        critical('Regions of type ' + region_type + ' not found in ' + report_fpath)
+        critical('No Amplicon or Whole-Gene is not found in ' + report_fpath)
 
     return gene_summary_lines
 
@@ -197,11 +190,11 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure, report_fpath_by_sample
         json_fpath = report_fpath_by_sample[sample_name]
 
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
-        for tokens in _get_tokens_by_region_type(gene_report_fpath, 'Amplicon'):
+        for tokens in _get_whole_genes_and_amlicons(gene_report_fpath):
             sample, chrom, s, e, gene, tag, size, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
             if float(cov) != 0:
-                reordered = sample, gene, chrom, s, e, 'Whole-Gene' if tag == 'Gene-Amplicon' else tag, size, cov
+                reordered = sample, gene, chrom, s, e, tag, size, cov
                 coverage_info.append(reordered)
 
         with open(json_fpath) as f:

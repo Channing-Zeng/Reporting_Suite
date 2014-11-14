@@ -222,7 +222,7 @@ class Filtering:
         for sample in caller.samples:
             def min_freq_filter_check(rec):
                 af = rec.get_af(cnf.main_sample_index, caller.name)
-                if af and af < Filter.filt_cnf['min_freq']:
+                if af and af < sample.min_af:
                     return False
                 return True
             self.min_freq_filters[sample.name] = CnfFilter('min_freq', min_freq_filter_check,
@@ -527,8 +527,10 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         info(sample.name)
         cnf_copy = cnf.copy()
         cnf_copy['name'] = sample.name
-        if sample.min_af is not None:
-            cnf_copy['variant_filtering']['min_freq'] = sample.min_af
+        if cnf_copy['variant_filtering'].get('min_freq') is not None:
+            sample.min_af = cnf_copy['variant_filtering']['min_freq']
+        elif sample.min_af is None:
+            sample.min_af = 0
         cnfs_for_sample_names[sample.name] = cnf_copy
 
     n_threads = cnf.threads if cnf.threads and IN_PARALLEL else min(10, len(anno_vcf_fpaths) + 1)
