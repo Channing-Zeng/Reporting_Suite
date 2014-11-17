@@ -76,7 +76,7 @@ def make_targetseq_reports(cnf, sample):
 
 
 def seq2c_seq2cov(cnf, sample, amplicons_bed):
-    seq2cov = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='seq2cov.pl')
+    seq2cov = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'seq2cov.pl'))
     if not seq2cov: sys.exit(1)
 
     seq2c_output = join(
@@ -748,26 +748,6 @@ def intersect_bed(cnf, bed1, bed2):
 
 
 #TODO: works slow.
-def number_of_mapped_reads(cnf, bam):
-    samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, 'num_mapped_reads')
-    if not isfile(output_fpath):  # TODO: tmp
-        cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
-        call(cnf, cmdline, output_fpath)
-    with open(output_fpath) as f:
-        return int(f.read().strip())
-
-#TODO: works slow.
-def number_of_unmapped_reads(cnf, bam):
-    samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, 'num_unmapped_reads')
-    if not isfile(output_fpath):  # TODO: tmp
-        cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
-        call(cnf, cmdline, output_fpath)
-    with open(output_fpath) as f:
-        return int(f.read().strip())
-
-#TODO: works slow.
 def number_of_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_reads')
@@ -779,16 +759,37 @@ def number_of_reads(cnf, bam):
 
 
 #TODO: works slow.
+def number_of_mapped_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_mapped_reads')
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+#TODO: works slow.
+def number_of_unmapped_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, 'num_unmapped_reads')
+    if not isfile(output_fpath):  # TODO: tmp
+        cmdline = '{samtools} view -c -f 4 {bam}'.format(**locals())
+        call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+#TODO: works slow.
 def number_mapped_reads_on_target(cnf, bed, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, 'num_mapped_reads_target')
     if not isfile(output_fpath):  # TODO: tmp
-        cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
+        cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
         call(cnf, cmdline, output_fpath)
-    cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
+
 
 #TODO: works slow.
 def number_bases_in_aligned_reads(cnf, bam):

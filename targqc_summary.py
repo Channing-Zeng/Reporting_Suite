@@ -11,7 +11,7 @@ from site import addsitedir
 source_dir = abspath(dirname(realpath(__file__)))
 addsitedir(join(source_dir, 'ext_modules'))
 
-from source.targqc.summarize_targqc import summary_reports
+from source.targetcov.summarize_targqc import summary_reports
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
 from source.logger import info

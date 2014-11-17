@@ -167,7 +167,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
 
     # READ STATS
     info('Getting read counts...')
-    bam2reads = get_script_cmdline(cnf, 'perl', 'seq2c', script_fname='bam2reads.pl')
+    bam2reads = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'bam2reads.pl'))
     if not bam2reads: sys.exit(1)
 
     bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
