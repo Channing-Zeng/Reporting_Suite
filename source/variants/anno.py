@@ -123,7 +123,7 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename):
     else:
         final_tsv_fpath = None
 
-    return final_vcf_fpath, final_tsv_fpath
+    return final_vcf_fpath + '.gz', final_tsv_fpath
 
 
 def _mongo(cnf, input_fpath):

@@ -9,10 +9,6 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: external/snpEff/SnpSift.jar
-  #bcftools:
-    #path: ~/bin/bcftools/bcftools
-  #plot_vcfstats:
-    #path: ~/bin/bcftools/plot-vcfstats
   qsub:
     path: tools/qsub.sh
   vardict_pl:
@@ -21,8 +17,6 @@ resources:
     path: ~/vagrant/VarDict/testsomatic.R
   var2vcf_somatic_pl:
     path: ~/vagrant/VarDict/var2vcf_somatic.pl
-  vcf_loader:
-    path: external/mongo_loader/VCFStore.jar
   vcf_merge:
     path: /usr/local/bin/vcf-merge
 

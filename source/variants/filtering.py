@@ -537,7 +537,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Number of threads for filtering: ' + str(n_threads))
 
     combined_vcf_fpath = join(cnf.output_dir, caller.name + '.vcf')
-    merge_vcfs(cnf, anno_vcf_fpaths, combined_vcf_fpath)
+    merge_vcfs(cnf, anno_vcf_by_sample, combined_vcf_fpath)
 
     caller.combined_filt_maf_fpath = join(cnf.output_dir, caller.name + '.maf')
     run_vcf2txt_paired(cnf, combined_vcf_fpath, caller.combined_filt_maf_fpath)
@@ -609,14 +609,14 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     return caller
 
 
-def merge_vcfs(cnf, vcf_fpaths, combined_vcf_fpath):
+def merge_vcfs(cnf, anno_vcf_by_sample, combined_vcf_fpath):
     info()
     info('Merging VCFs...')
 
-    vcf_merge = get_system_path(cnf, 'vcf_merge')
+    vcf_merge = get_system_path(cnf, join('external', 'vcftools', 'bin', 'vcf-merge'))
     if vcf_merge is None:
         critical('No vcf_merge in path')
-    cmdline = vcf_merge + ' ' + ' '.join(vcf_fpaths)
+    cmdline = vcf_merge + ' ' + ' '.join(anno_vcf_by_sample.values())
     perl_module_dirpath = abspath(join(dirname(__file__), pardir, pardir, 'ext_modules', 'perl_modules'))
     os.environ['PERL5LIB'] = perl_module_dirpath
 
@@ -656,7 +656,7 @@ def run_vcf2txt_paired(cnf, combined_vcf_fpath, final_maf_fpath):
     info()
     info('Running VarDict vcf2txt_paired.pl...')
 
-    vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt_paired.pl')
+    vcf2txt = get_script_cmdline(cnf, 'perl', 'external/vcf2txt_paired.pl')
     if not vcf2txt:
         sys.exit(1)
     cmdline = '{vcf2txt} {combined_vcf_fpath}'.format(**locals())

@@ -15,7 +15,7 @@ from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
-from source.tools_from_cnf import get_java_tool_cmdline, get_system_path
+from source.tools_from_cnf import get_java_tool_cmdline, get_system_path, get_script_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
 from source.logger import step_greetings, info, critical, err, warn
@@ -517,15 +517,8 @@ def fix_chromosome_names(cnf, vcf_fpath):
 def vcf_one_per_line(cnf, vcf_fpath):
     info('Converting VCF to one-effect-per-line...')
 
-    if not which('perl'):
-        exit('Perl executable required, maybe you need to run "module load perl"?')
-
-    src_fpath = join(dirname(realpath(__file__)))
-    perl = get_system_path(cnf, 'perl')
-    external_fpath = join(src_fpath, pardir, pardir, 'external')
-    vcfoneperline_cmline = perl + ' ' + join(external_fpath, 'vcfOnePerLine.pl')
     oneperline_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'opl')
-
+    vcfoneperline_cmline = get_script_cmdline(cnf, 'perl', join('external', 'vcfOnePerLine.pl'))
     call(cnf, vcfoneperline_cmline, oneperline_vcf_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
     info()
 

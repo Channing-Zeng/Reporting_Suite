@@ -144,7 +144,7 @@ def summary_reports(cnf, bcbio_structure):
 
     # Qualimap2 run for multi-sample plots
     if len(qualimap_htmls_by_sample):
-        qualimap = get_system_path(cnf, interpreter=None, name_in_sys_cnf='qualimap2')
+        qualimap = get_system_path(cnf, interpreter=None, name='qualimap2')
         if qualimap is not None and get_qualimap_type(qualimap) == "full":
             qualimap_output_dir = join(cnf.output_dir, 'qualimap_multi_bamqc')
             plots_dirpath = join(cnf.output_dir, 'plots')
