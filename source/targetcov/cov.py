@@ -654,7 +654,7 @@ def _unique_bed_lines(cnf, bed_fpath):
             if prev_line is not None and line == prev_line:
                 continue
             prev_line = line
-            out.write(line)
+            out.write(line + '\n')
 
     info('Saved to ' + output_fpath)
     return output_fpath
