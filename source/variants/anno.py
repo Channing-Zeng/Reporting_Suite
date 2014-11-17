@@ -130,7 +130,7 @@ def _mongo(cnf, input_fpath):
     if 'mongo' not in cnf:
         return None
 
-    executable = get_java_tool_cmdline(cnf, 'vcf_loader')
+    executable = get_java_tool_cmdline(cnf, 'external/mongo_loader/VCFStore.jar')
     output_fpath = intermediate_fname(cnf, input_fpath, 'mongo')
     project_name = cnf.get("project_name")
 

@@ -305,7 +305,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
 
         second_row_td = if i == 0 then "second_row_tr" else ""
         table += "\n<tr class=\"#{second_row_td}\">
-            <td class=\"left_column_td td}\" data-sortAs=#{sample_reports_length - i}>"
+            <td class=\"left_column_td td\" data-sortAs=#{sample_reports_length - i}>"
         if sample_reports_length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"
         else
@@ -342,12 +342,12 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
 
             table += "<td metric=\"#{metric.name}\"
                           style=\"background-color: #{rec.color}; color: #{rec.text_color}\"
-                          class='number td'
-                          quality=\"#{metric.quality}\""
+                          quality=\"#{metric.quality}\"
+                          class='td "
             if rec.num?
-                table += " number=\"#{rec.value}\" data-sortAs=#{rec.value}>"
+                table += " number' number=\"#{rec.value}\" data-sortAs=#{rec.value}>"
             else
-                table += ">"
+                table += "'>"
 
             if rec.right_shift?
                 padding = "margin-left: #{rec.right_shift}px; margin-right: -#{rec.right_shift}px;"

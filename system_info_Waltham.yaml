@@ -16,10 +16,10 @@ resources:
     path: /group/ngs/src/qualimap_v2.0/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
-#    path: /group/cancer_informatics/tools_resources/NGS/bin/samtools
+    # path: /group/cancer_informatics/tools_resources/NGS/bin/samtools
   bedtools:
     path: /group/ngs/src/bedtools/bin/bedtools
-#    path: /opt/az/local/bedtools/bedtools2-2.21.0/bin/bedtools
+    # path: /opt/az/local/bedtools/bedtools2-2.21.0/bin/bedtools
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   perl:
@@ -28,7 +28,7 @@ resources:
     path: /usr/bin/java
   python:
     path: /opt/az/local/psf/python/64_2.7.3/python
-#    path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
+    # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   vardict_pl:
     path: /gpfs/group/ngs/src/vardict/vardict
   testsomatic_r:
@@ -39,10 +39,6 @@ resources:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
   vcf_merge:
     path: /opt/az/local/vcftools/vcftools_0.1.11/bin/vcf-merge
-  vcf_loader:
-    path: external/mongo_loader/VCFStore.jar
-#  cov2cnv2:
-#    path: /group/cancer_informatics/tools_resources/NGS/bin/cov2cnv2.pl
 
 genomes:
   hg19:
@@ -55,14 +51,11 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
-    snpeff: /users/klpf990/snpeff/data  # data dir path
 
+    snpeff: /users/klpf990/snpeff/data  # data dir path
     snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
-
-    capture_panels:
-      agilent: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
 
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
 

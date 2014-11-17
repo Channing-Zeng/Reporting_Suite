@@ -381,7 +381,7 @@
         line_caption = "<span title=\"" + line_caption + "\">" + (line_caption.substring(0, max_sample_name_len)) + "...</span>";
       }
       second_row_td = i === 0 ? "second_row_tr" : "";
-      table += "\n<tr class=\"" + second_row_td + "\"> <td class=\"left_column_td td}\" data-sortAs=" + (sample_reports_length - i) + ">";
+      table += "\n<tr class=\"" + second_row_td + "\"> <td class=\"left_column_td td\" data-sortAs=" + (sample_reports_length - i) + ">";
       if (sample_reports_length === 1) {
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {
@@ -434,11 +434,11 @@
           table += "<td></td>";
           continue;
         }
-        table += "<td metric=\"" + metric.name + "\" style=\"background-color: " + rec.color + "; color: " + rec.text_color + "\" class='number td' quality=\"" + metric.quality + "\"";
+        table += "<td metric=\"" + metric.name + "\" style=\"background-color: " + rec.color + "; color: " + rec.text_color + "\" quality=\"" + metric.quality + "\" class='td ";
         if (rec.num != null) {
-          table += " number=\"" + rec.value + "\" data-sortAs=" + rec.value + ">";
+          table += " number' number=\"" + rec.value + "\" data-sortAs=" + rec.value + ">";
         } else {
-          table += ">";
+          table += "'>";
         }
         if (rec.right_shift != null) {
           padding = "margin-left: " + rec.right_shift + "px; margin-right: -" + rec.right_shift + "px;";

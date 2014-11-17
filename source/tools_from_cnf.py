@@ -61,15 +61,14 @@ def get_system_path(cnf, interpreter, name_in_sys_cnf=None,
     return None
 
 
-def get_java_tool_cmdline(cnf, script,
-         extra_warning='', suppress_warn=False):
+def get_java_tool_cmdline(cnf, script, extra_warning='', suppress_warn=False):
 
     if (cnf.resources and
         script in cnf.resources and
         'jvm_opts' in cnf.resources[script]):
         jvm_opts = cnf.resources[script]['jvm_opts']
     else:
-        jvm_opts = ['']
+        jvm_opts = ['-Xms750m', '-Xmx3g']
 
     return get_script_cmdline(
         cnf, 'java', script,
@@ -77,8 +76,8 @@ def get_java_tool_cmdline(cnf, script,
         extra_warning='', suppress_warn=False)
 
 
-def get_script_cmdline(cnf, interpreter, name_in_sys_cnf, script_fname=None, interpreter_params='',
-                       extra_warning='', suppress_warn=False):
+def get_script_cmdline(cnf, interpreter, name_in_sys_cnf, script_fname=None,
+                       interpreter_params='', extra_warning='', suppress_warn=False):
     interp_path = get_system_path(cnf, interpreter)
     if not interp_path:
         return None

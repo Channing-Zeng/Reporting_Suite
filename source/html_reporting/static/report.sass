@@ -18,24 +18,28 @@
         border-width: 0
         border-spacing: 0
         border-collapse: collapse
+        *
+            border-spacing: 0
+            border-collapse: collapse
 
         td, th
             white-space: nowrap
             text-align: left
+            padding: 2px 3px 2px 3px
 
-        td.number, th
+        td.number
+            padding-top: 0
+            padding-bottom: 0
             a
-                padding-top: 1px
-                padding-left: 5px
-                padding-right: 1px
+                padding-top: 2px
+                padding-bottom: 2px
 
         tr.top_row_tr + tr
             td
                 border-top: 1px solid #bbb
 
         td.left_column_td, th.left_column_td
-            padding-top: 2px
-            padding-bottom: 1px
+            padding-left: 0 !important
             a
                 padding-left: 0 !important
 
@@ -45,22 +49,16 @@
 
         td.number
             text-align: left
-        td.number>span
-            padding-right: 4px
 
         tr.top_row_tr, tr.group_header
             td, th
                 font-weight: bold
-                border-bottom: 1px solid #bbb
+                //border-bottom: 1px solid #bbb
 
         tr.group_header
             td, th
                 height: 20px
                 vertical-align: bottom
-
-        tr
-            td:first-child, th:first-child
-                padding-left: 0
 
         tr.row_hidden, tr.group_empty
             display: none
