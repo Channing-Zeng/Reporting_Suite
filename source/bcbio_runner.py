@@ -82,11 +82,11 @@ class BCBioRunner:
         contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
 
         self.steps.extend([
-            # self.varqc_summary,
-            # self.varqc_after_summary,
-            # self.fastqc_summary,
-            # self.targqc_summary,
-            # self.combined_report,
+            self.varqc_summary,
+            self.varqc_after_summary,
+            self.fastqc_summary,
+            self.targqc_summary,
+            self.combined_report,
         ])
 
         self.steps.extend(
