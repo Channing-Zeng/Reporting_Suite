@@ -134,7 +134,7 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
     # annotate_amplicons(amplicons, genes_bed)
 
     info('Choosing unique exons.')
-    exons_bed = _unique_bed_lines(cnf, exons_bed)
+    exons_bed = _unique_longest_exons(cnf, exons_bed)
 
     info('Sorting exons BED file.')
     exons_bed = sort_bed(cnf, exons_bed)
@@ -650,6 +650,7 @@ def _unique_bed_lines(cnf, bed_fpath):
     with open(bed_fpath) as f, open(output_fpath, 'w') as out:
         prev_line = None
         for line in f:
+            line = line.strip()
             if prev_line is not None and line == prev_line:
                 continue
             prev_line = line
