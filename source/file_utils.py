@@ -692,6 +692,8 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
                  overwrite=False, reuse_intermediate=True):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
 
     if islink(output_fpath):
         os.unlink(output_fpath)
