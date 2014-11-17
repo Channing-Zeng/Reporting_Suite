@@ -15,8 +15,6 @@ resources:
     path: /home/klpf990/qualimap/qualimap
   python:
     path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
-  vcf_loader:
-    path: external/mongo_loader/VCFStore.jar
 
 genomes:
   hg19:
@@ -27,16 +25,13 @@ genomes:
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/mutation_details.vcf
     dbnsfp: /home/klpf990/dbNSFP2.3.txt.gz
-    snpeff: /home/klpf990/snpeff/data  # data dir path
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
 
-    snpeff_transcripts: /home/klpf990/transcripts.txt
+    snpeff: /home/klpf990/snpeff/data  # data dir path
+    snpeff_transcripts: /home/klpf990/transcripts.txt  # used if -canon is not set for snpEff
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_exons_modif_canonil.sorted.bed
-
-    capture_panels:
-      agilent: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AgilentSureSelectV4_51M.bed
 
 
 queue: ngs.q

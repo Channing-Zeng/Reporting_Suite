@@ -2,6 +2,7 @@ resources:
   gatk:
     jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
+    options: ["-U", "ALLOW_N_CIGAR_READS"]
     # path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
     # path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
@@ -29,12 +30,6 @@ resources:
   python:
     path: /opt/az/local/psf/python/64_2.7.3/python
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
-  vardict_pl:
-    path: /gpfs/group/ngs/src/vardict/vardict
-  testsomatic_r:
-    path: /gpfs/group/ngs/src/vardict/testsomatic.R
-  var2vcf_somatic_pl:
-    path: /gpfs/group/ngs/src/vardict/var2vcf_somatic.pl
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
 
@@ -51,7 +46,7 @@ genomes:
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
 
     snpeff: /users/klpf990/snpeff/data  # data dir path
-    snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt
+    snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
 
