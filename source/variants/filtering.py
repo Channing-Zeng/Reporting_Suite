@@ -572,11 +572,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Results: ' + str(len(results)))
     info('*' * 70)
 
-    for sample, [vcf, tsv, maf] in zip(samples, results):
-        info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
-        sample.filtered_vcf_by_callername[caller.name] = vcf
-        sample.filtered_tsv_by_callername[caller.name] = tsv
-        sample.filtered_maf_by_callername[caller.name] = maf
+    # for sample, [vcf, tsv, maf] in zip(samples, results):
+    #     info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
+    #     sample.filtered_vcf_by_callername[caller.name] = vcf
+    #     sample.filtered_tsv_by_callername[caller.name] = tsv
+    #     sample.filtered_maf_by_callername[caller.name] = maf
 
     caller.combined_filt_maf_fpath, \
     caller.combined_filt_pass_maf_fpath = \
