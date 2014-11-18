@@ -53,14 +53,14 @@ def process_post_bcbio_args(parser):
     return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
 
 
-def summary_script_proc_params(name, dir=None, description=None, extra_opts=None):
+def summary_script_proc_params(name, dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
-    parser.add_option('--dir', dest='dir', default=dir)  # to distinguish VarQC_summary and VarQC_after_summary
-    parser.add_option('--name', dest='name', default=name)  # proc name
+    parser.add_option('--dir', dest='dir_name', default=dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
+    parser.add_option('--name', dest='name', default=name, help='Procedure name')
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
@@ -68,14 +68,9 @@ def summary_script_proc_params(name, dir=None, description=None, extra_opts=None
 
     bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
 
+    cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
     cnf.work_dir = bcbio_structure.work_dir
     set_up_work_dir(cnf)
-    if cnf.dir:
-        cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir)
-        if not isdir(join(cnf.output_dir, pardir)):
-            safe_mkdir(join(cnf.output_dir, pardir))
-        if not isdir(cnf.output_dir):
-            safe_mkdir(cnf.output_dir)
 
     info('*' * 70)
     info()

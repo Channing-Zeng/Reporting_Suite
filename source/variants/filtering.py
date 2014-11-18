@@ -149,7 +149,6 @@ class VariantInfo:  # collects information (here, AFs) for all (chrom, pos, ref,
         return self._avg_af
 
 
-# @profile
 def process_vcf(vcf_fpath, fun, suffix, cnf=None, *args, **kwargs):
     return iterate_vcf(cnf, vcf_fpath, fun, suffix, cnf_=cnf, self_=filtering, *args, **kwargs)
 
@@ -288,7 +287,7 @@ class Filtering:
             return not (filt_cnf['control'] and rec.get_variant() in self.control_vars)
         self.control_filter = CnfFilter('control', control_filter_check)
 
-    def run_filtering_steps_for_vcfs(self, vcf_fpaths, sample_names, n_threads=1):
+    def run_regengineered_filtering(self, vcf_fpaths, sample_names, n_threads=1):
         step_greetings('Filtering')
 
         global filtering
@@ -496,18 +495,14 @@ cnfs_for_sample_names = dict()
 def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
     info()
     info('Keeping only first sample info in VCFs...')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(
-        delayed(leave_main_sample)(cnf, vcf_fpath, s)
-        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
 
     info()
     info('Indexing with tabix ')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(
-        delayed(tabix_vcf)(cnf, vcf_fpath)
-        for vcf_fpath in vcf_fpaths)
-    info()
+    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(tabix_vcf)(cnf, vcf_fpath) for vcf_fpath in vcf_fpaths)
 
-    combined_vcf_fpath = join(cnf.output_dir, caller.name + '.vcf')
+    safe_mkdir(bcbio_structure.var_dirpath)
+    combined_vcf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.vcf')
 
     info()
     info('Merging VCFs...')
@@ -522,36 +517,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
     return vcf_fpaths
 
 
-def filter_intrinsic(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    global cnfs_for_sample_names
-
-    info('*' * 70)
-    info('Samples (total ' + str(len(vcf_fpaths)) + '):')
-
-    # Set up cnfs for each sample
-    for sample in caller.samples:
-        info(sample.name)
-        cnf_copy = cnf.copy()
-        cnf_copy['name'] = sample.name
-        if cnf_copy['variant_filtering'].get('min_freq') is not None:
-            sample.min_af = cnf_copy['variant_filtering']['min_freq']
-        elif sample.min_af is None:
-            sample.min_af = 0
-        cnfs_for_sample_names[sample.name] = cnf_copy
-
-    f = Filtering(cnf, bcbio_structure, caller)
-    vcf_fpaths = f.run_filtering_steps_for_vcfs(vcf_fpaths, sample_names, n_threads)
-    return vcf_fpaths
-
-
-def finish_filtering(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    info('Filtering by impact')
-
-    vcf_fpaths = Parallel(n_jobs=n_threads) \
-       (delayed(impact_round)(vcf_fpath, s)
-        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-    info()
-
+def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
     samples = []
     for sample_name in sample_names:
         s = next((s for s in caller.samples if s.name == sample_name), None)
@@ -607,6 +573,21 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         err('No vcfs for ' + caller.name + '. Skipping.')
         return caller
 
+    info('*' * 70)
+    info('Samples (total ' + str(len(vcf_by_sample)) + '):')
+
+    # Set up cnfs for each sample
+    global cnfs_for_sample_names
+    for sample in caller.samples:
+        info(sample.name)
+        cnf_copy = cnf.copy()
+        cnf_copy['name'] = sample.name
+        if cnf_copy['variant_filtering'].get('min_freq') is not None:
+            sample.min_af = cnf_copy['variant_filtering']['min_freq']
+        elif sample.min_af is None:
+            sample.min_af = 0
+        cnfs_for_sample_names[sample.name] = cnf_copy
+
     n_threads = cnf.threads if cnf.threads else min(10, len(vcf_by_sample) + 1)
     if not IN_PARALLEL: n_threads = 1
     info('Number of threads for filtering: ' + str(n_threads))
@@ -614,16 +595,23 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     vcf_fpaths = vcf_by_sample.values()
     sample_names = vcf_by_sample.keys()
 
-    vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    global filtering
+    filtering = Filtering(cnf, bcbio_structure, caller)
 
-    finish_filtering(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
+    info('Filtering by impact')
+    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(impact_round)(vcf_fpath, s) for vcf_fpath, s in zip(vcf_fpaths, sample_names))
 
-    info('-' * 70)
     info()
+    info('-' * 70)
+    info('Filtering using vcf2txt_paired...')
+    vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
 
-    vcf_by_sample = OrderedDict(vcf_by_sample.items()[:])
-    vcf_fpaths__intrinsic = filter_intrinsic(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
-    #finish_filtering(cnf, bcbio_structure, vcf_by_sample__intrinsic, sample_names, caller, n_threads)
+    info()
+    info('-' * 70)
+    info('Filtering using reengineered stuff...')
+    vcf_fpaths__intrinsic = filtering.run_regengineered_filtering(vcf_fpaths, sample_names, n_threads)
+    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__intrinsic, sample_names, caller, n_threads)
 
     info('-' * 70)
     info()

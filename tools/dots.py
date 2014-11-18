@@ -4,19 +4,18 @@
 import sys
 
 
-def dots_to_empty_cells(tsv_fpath):
+def dots_to_empty_cells():
     """Put dots instead of empty cells in order to view TSV with column -t
     """
-    with open(tsv_fpath) as inp:
-        for l in inp:
-            while '\t\t' in l:
-                l = l.replace('\t\t', '\t.\t')
-            sys.stdout.write(l)
+    for l in sys.stdin:
+        while '\t\t' in l:
+            l = l.replace('\t\t', '\t.\t')
+        sys.stdout.write(l)
 
 
-def main(args):
-    dots_to_empty_cells(args[0])
+def main():
+    dots_to_empty_cells()
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

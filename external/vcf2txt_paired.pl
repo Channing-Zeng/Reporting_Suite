@@ -109,8 +109,8 @@ foreach my $d (@data) {
     $pass = "PMEAN" if ($pmean ne "" and $pmean < $MINPMEAN );
     $pass = "MQ" if ( $d->[33] ne "" and $d->[33] < $MINMQ );
     $pass = "SN" if ( $d->[34] ne "" and $d->[34] < $SN );
-    $pass = "MINFREQ" if ( $d->[21] < $MINFREQ );
-    $pass = "MINVD" if ( $d->[29] && $d->[29] < $MINVD );
+    $pass = "MINFREQ" if ( $d->[21] ne "" and $d->[21] < $MINFREQ );
+    $pass = "MINVD" if ( $d->[29] ne "" and $d->[29] && $d->[29] < $MINVD );
     my $class = $d->[3] =~ /COSM/ ? "COSMIC" : ($d->[3] =~ /^rs/ ? (checkCLNSIG($d->[30]) == 1 ? "ClnSNP" : "dbSNP") : "Novel");
 
     # Rescue deleterious dbSNP, such as rs80357372 (BRCA1 Q139* that is in dbSNP, but not in ClnSNP or COSMIC
@@ -118,7 +118,7 @@ foreach my $d (@data) {
         my $pos = $1 if ( $d->[10] =~ /(\d+)/ );
         $class = "dbSNP_del" if ( $pos/$d->[11] < 0.95 );
     }
-	
+
     $class = "dbSNP" if ( $d->[28] && $d->[28] > $MAF ); # if there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC
     $pass = "CNTL" if ( $control && $CONTROL{ $vark } );
     $pass = "BIAS" if ( $opt_b && ($class eq "Novel"||$class eq "dbSNP") && ($d->[22] eq "2;1" || $d->[22] eq "2;0") && $d->[21] < 0.3 ); # Filter novel variants with strand bias.

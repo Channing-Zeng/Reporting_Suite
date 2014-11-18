@@ -186,7 +186,6 @@ def main():
 
     cnf, bcbio_structure = summary_script_proc_params(
         BCBioStructure.varfilter_name,
-        dir=None,
         description=description,
         extra_opts=extra_opts)
 

@@ -1,4 +1,5 @@
 #!/bin/bash
+[ $# -ge 1 -a -f "$1" ] && input="$1" || input="-"
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-$DIR/dots.py $1 | column -t -s $'\t' | less -S
+PY_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cat $input | $PY_DIR/dots.py | column -t -s $'\t' | less -S
