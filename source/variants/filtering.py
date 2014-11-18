@@ -601,11 +601,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Filtering by impact')
     vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(impact_round)(vcf_fpath, s) for vcf_fpath, s in zip(vcf_fpaths, sample_names))
 
-    info()
-    info('-' * 70)
-    info('Filtering using vcf2txt_paired...')
-    vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
-    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
+    # info()
+    # info('-' * 70)
+    # info('Filtering using vcf2txt_paired...')
+    # vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
 
     info()
     info('-' * 70)
