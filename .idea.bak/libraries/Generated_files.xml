@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="Generated files" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/source/html_reporting/static/scripts/build_total_report.js" />
+        <item url="file://$PROJECT_DIR$/source/html_reporting/static/scripts/build_report.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/source/html_reporting/static/scripts/build_total_report.js" />
+      <root url="file://$PROJECT_DIR$/source/html_reporting/static/scripts/build_report.js" />
+      <root url="file://$PROJECT_DIR$/source/html_reporting/static/table_sorter/tsort.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>

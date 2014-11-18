@@ -141,7 +141,7 @@ class BCBioRunner:
         anno_paramline = spec_params + ('' +
              ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
              '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
-             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}\' ')
+             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
         # if self.cnf.transcripts_fpath:
         #     anno_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
 
@@ -158,7 +158,7 @@ class BCBioRunner:
             script='varqc.py',
             dir_name=BCBioStructure.varqc_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}\''
+                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\''
         )
         self.varqc_after = Step(cnf, run_id,
             name='VarQC_postVarFilter', short_name='vqa',
@@ -166,7 +166,7 @@ class BCBioRunner:
             script='varqc.py',
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}\' ' +
+                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
         self.targetcov = Step(cnf, run_id,

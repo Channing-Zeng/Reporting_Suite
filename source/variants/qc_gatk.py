@@ -66,7 +66,7 @@ def gatk_qc(cnf, vcf_fpath):
     gatk = get_gatk_cmdline(cnf)
 
     ref_fpath = cnf.genome['seq']
-    report_fpath = join(cnf.work_dir, cnf.name + '_gatk.report')
+    report_fpath = join(cnf.work_dir, cnf.name + '-' + cnf.caller + '_gatk.report')
 
     cmdline = ('{gatk} -R {ref_fpath} -T VariantEval '
                '--eval:tmp {vcf_fpath} -o {report_fpath}'
