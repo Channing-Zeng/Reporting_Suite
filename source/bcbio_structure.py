@@ -34,6 +34,12 @@ class Sample:
         self.normal_match = None
         self.min_af = None
 
+    def annotated_vcfs_dirpath(self):
+        return join(self.dirpath, BCBioStructure.varannotate_dir)
+
+    def get_filtered_vcfs_dirpath(self):
+        return join(self.dirpath, BCBioStructure.varfilter_dir)
+
     # def get_filtered_vcf_fpath_by_callername(callername):
     #     fpath = join(
     #         self.bcbio_structure.final_dirpath,
@@ -44,7 +50,6 @@ class Sample:
     #
     # def find_filtered_vcf_by_callername(callername):
     #     return
-
 
     def find_vcf_fpath_by_callername(self, callername):
         return verify_file(self.get_vcf_fpath_by_callername(callername))

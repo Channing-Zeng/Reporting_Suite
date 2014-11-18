@@ -1,5 +1,6 @@
 import textwrap
 from os.path import join
+from source.file_utils import open_gzipsafe
 
 from source.utils import human_sorted, get_chr_lengths
 from source.logger import step_greetings, info
@@ -31,7 +32,7 @@ def draw_plots(cnf, vcf_fpath):
 
 
 def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
-    reader = vcf.Reader(open(vcf_fpath, 'r'))
+    reader = vcf.Reader(open_gzipsafe(vcf_fpath, 'r'))
 
     variants_distribution = dict()
     for chr_name, chr_length in chr_lengths.items():

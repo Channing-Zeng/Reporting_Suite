@@ -705,7 +705,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
         info('Writing to ' + output_fpath)
 
     with file_transaction(cnf, output_fpath) as tx_fpath:
-        with open(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
+        with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
             convert_file_fn(inp_f, out_f)
 
     if overwrite:

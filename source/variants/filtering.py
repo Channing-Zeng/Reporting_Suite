@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from genericpath import isdir, exists
 import os
 import shutil
@@ -16,7 +17,7 @@ from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
-    get_main_sample_index, tabix_vcf
+    get_main_sample_index, tabix_vcf, vcf_merge, leave_main_sample
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -287,21 +288,20 @@ class Filtering:
             return not (filt_cnf['control'] and rec.get_variant() in self.control_vars)
         self.control_filter = CnfFilter('control', control_filter_check)
 
-    # @profile
-    def run_filtering_steps_for_vcfs(self, sample_names, vcf_fpaths, n_jobs=1):
+    def run_filtering_steps_for_vcfs(self, vcf_fpaths, sample_names, n_threads=1):
         step_greetings('Filtering')
 
         global filtering
         filtering = self
 
         info('Fixing previous . values to PASS')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(
+        vcf_fpaths = Parallel(n_jobs=n_threads)(
             delayed(rm_prev_round)(vcf_fpath, s)
             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('First round')
-        results = Parallel(n_jobs=n_jobs)(
+        results = Parallel(n_jobs=n_threads)(
             delayed(first_round)(vcf_fpath, s)
             for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
@@ -334,19 +334,11 @@ class Filtering:
 
                 self.control_vars.update(control_vars)
 
-            # if isfile(varks_dump_fpath):
-            #     try:
-            #         with open(varks_dump_fpath) as f:
-            #             varks_2 = pickle.load(f)
-            #         print 'Varks restored (to check): len=', str(len(varks_2.keys()))
-            #         print 'Varks new                : len=', str(len(self.varks.keys()))
-            #     except:
-            #         pass
-
             with open(control_vars_dump_fpath, 'w') as f:
                 info('Saving control vars...')
                 pickle.dump(self.control_vars, f)
                 info('Saved control vars: ' + str(len(self.control_vars)))
+
             with open(variants_dump_fpath, 'w') as f:
                 info('Saving varks...')
                 pickle.dump(self.variant_dict, f)
@@ -357,17 +349,12 @@ class Filtering:
         info()
 
         info('One effect per line')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(one_per_line)(vcf_fpath, s)
+        vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(one_per_line)(vcf_fpath, s)
                      for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
         info('Second round')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(second_round)(vcf_fpath, s)
-                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        info('Filtering by impact')
-        vcf_fpaths = Parallel(n_jobs=n_jobs)(delayed(impact_round)(vcf_fpath, s)
+        vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(second_round)(vcf_fpath, s)
                      for vcf_fpath, s in zip(vcf_fpaths, sample_names))
         info()
 
@@ -506,23 +493,42 @@ def proc_line_polymorphic(rec, cnf_, self_):
 cnfs_for_sample_names = dict()
 
 
-# @profile
-def filter_for_variant_caller(caller, cnf, bcbio_structure):
-    IN_PARALLEL = True
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
+    info()
+    info('Keeping only first sample info in VCFs...')
+    vcf_fpaths = Parallel(n_jobs=n_threads)(
+        delayed(leave_main_sample)(cnf, vcf_fpath, s)
+        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
 
-    info('Running for ' + caller.name)
+    info()
+    info('Indexing with tabix ')
+    vcf_fpaths = Parallel(n_jobs=n_threads)(
+        delayed(tabix_vcf)(cnf, vcf_fpath)
+        for vcf_fpath in vcf_fpaths)
+    info()
 
-    anno_vcf_by_sample = caller.find_anno_vcf_by_sample(optional_ext='.gz')
-    sample_names = anno_vcf_by_sample.keys()
-    anno_vcf_fpaths = anno_vcf_by_sample.values()
+    combined_vcf_fpath = join(cnf.output_dir, caller.name + '.vcf')
 
-    if len(anno_vcf_fpaths) == 0:
-        err('No vcfs for ' + caller.name + '. Skipping.')
-        return caller
+    info()
+    info('Merging VCFs...')
+    vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath)
 
+    caller.combined_vardict_filt_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.maf')
+    run_vcf2txt_paired(cnf, combined_vcf_fpath, caller.combined_vardict_filt_maf_fpath)
+
+    # split and convert back to VCF
+    vcf_fpaths = []
+
+    return vcf_fpaths
+
+
+def filter_intrinsic(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
     global cnfs_for_sample_names
+
     info('*' * 70)
-    info('Processed samples (' + str(len(sample_names)) + '):')
+    info('Samples (total ' + str(len(vcf_fpaths)) + '):')
+
+    # Set up cnfs for each sample
     for sample in caller.samples:
         info(sample.name)
         cnf_copy = cnf.copy()
@@ -533,30 +539,18 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             sample.min_af = 0
         cnfs_for_sample_names[sample.name] = cnf_copy
 
-    n_threads = cnf.threads if cnf.threads else min(10, len(anno_vcf_fpaths) + 1)
-    if not IN_PARALLEL: n_threads = 1
-    info('Number of threads for filtering: ' + str(n_threads))
-
-    # combined_vcf_fpath = join(cnf.output_dir, caller.name + '.vcf')
-    # merge_vcfs(cnf, anno_vcf_by_sample, combined_vcf_fpath)
-    #
-    # caller.combined_filt_maf_fpath = join(cnf.output_dir, caller.name + '.maf')
-    # run_vcf2txt_paired(cnf, combined_vcf_fpath, caller.combined_filt_maf_fpath)
-    #
-    # info('-' * 70)
-    # info()
-
-    # split and convert back to VCF
-    # vcf_fpaths =
-
     f = Filtering(cnf, bcbio_structure, caller)
-    filt_anno_vcf_fpaths = f.run_filtering_steps_for_vcfs(sample_names, anno_vcf_fpaths, n_threads)
+    vcf_fpaths = f.run_filtering_steps_for_vcfs(vcf_fpaths, sample_names, n_threads)
+    return vcf_fpaths
 
-    # info('Filtering by impact')
-    # filt_anno_vcf_fpaths = Parallel(n_jobs=n_threads) \
-    #    (delayed(impact_round)(vcf_fpath, s)
-    #     for vcf_fpath, s in zip(filt_anno_vcf_fpaths, sample_names))
-    # info()
+
+def finish_filtering(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
+    info('Filtering by impact')
+
+    vcf_fpaths = Parallel(n_jobs=n_threads) \
+       (delayed(impact_round)(vcf_fpath, s)
+        for vcf_fpath, s in zip(vcf_fpaths, sample_names))
+    info()
 
     samples = []
     for sample_name in sample_names:
@@ -565,18 +559,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
             samples.append(s)
     results = [r for r in Parallel(n_threads) \
         (delayed(postprocess_vcf)
-         (sample, anno_vcf_fpath, work_filt_vcf_fpath)
-             for sample, anno_vcf_fpath, work_filt_vcf_fpath in
-             zip(samples, anno_vcf_fpaths, filt_anno_vcf_fpaths)
+         (sample, caller.name, work_filt_vcf_fpath)
+             for sample, work_filt_vcf_fpath in
+             zip(samples, vcf_fpaths)
          ) if r is not None and None not in r]
     info('Results: ' + str(len(results)))
     info('*' * 70)
-
-    # for sample, [vcf, tsv, maf] in zip(samples, results):
-    #     info('Sample ' + sample.name + ': ' + vcf + ', ' + tsv + ', ' + maf)
-    #     sample.filtered_vcf_by_callername[caller.name] = vcf
-    #     sample.filtered_tsv_by_callername[caller.name] = tsv
-    #     sample.filtered_maf_by_callername[caller.name] = maf
 
     caller.combined_filt_maf_fpath, \
     caller.combined_filt_pass_maf_fpath = \
@@ -607,28 +595,45 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('-' * 70)
     info()
 
+
+def filter_for_variant_caller(caller, cnf, bcbio_structure):
+    IN_PARALLEL = False
+
+    info('Running for ' + caller.name)
+
+    vcf_by_sample = caller.find_anno_vcf_by_sample(optional_ext='.gz')
+
+    if len(vcf_by_sample) == 0:
+        err('No vcfs for ' + caller.name + '. Skipping.')
+        return caller
+
+    n_threads = cnf.threads if cnf.threads else min(10, len(vcf_by_sample) + 1)
+    if not IN_PARALLEL: n_threads = 1
+    info('Number of threads for filtering: ' + str(n_threads))
+
+    vcf_fpaths = vcf_by_sample.values()
+    sample_names = vcf_by_sample.keys()
+
+    vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+
+    finish_filtering(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
+
+    info('-' * 70)
+    info()
+
+    vcf_by_sample = OrderedDict(vcf_by_sample.items()[:])
+    vcf_fpaths__intrinsic = filter_intrinsic(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    #finish_filtering(cnf, bcbio_structure, vcf_by_sample__intrinsic, sample_names, caller, n_threads)
+
+    info('-' * 70)
+    info()
+
     return caller
 
 
-def merge_vcfs(cnf, anno_vcf_by_sample, combined_vcf_fpath):
-    info()
-    info('Merging VCFs...')
-
-    vcf_merge = get_system_path(cnf, join('external', 'vcftools', 'bin', 'vcf-merge'))
-    if vcf_merge is None:
-        critical('No vcf_merge in path')
-    cmdline = vcf_merge + ' ' + ' '.join(anno_vcf_by_sample.values())
-    perl_module_dirpath = abspath(join(dirname(__file__), pardir, pardir, 'ext_modules', 'perl_modules'))
-    os.environ['PERL5LIB'] = perl_module_dirpath
-
-    res = call(cnf, cmdline, combined_vcf_fpath, exit_on_error=False)
-    if not res:
-        return None
-
-
 def combine_mafs(cnf, maf_fpaths, output_basename):
-    output_fpath = output_basename + '.orig.maf'
-    output_pass_fpath = output_basename + '.pass.orig.maf'
+    output_fpath = output_basename + '.maf'
+    output_pass_fpath = output_basename + '.pass.maf'
 
     if isfile(output_fpath): os.remove(output_fpath)
     if isfile(output_pass_fpath): os.remove(output_pass_fpath)
@@ -657,7 +662,7 @@ def run_vcf2txt_paired(cnf, combined_vcf_fpath, final_maf_fpath):
     info()
     info('Running VarDict vcf2txt_paired.pl...')
 
-    vcf2txt = get_script_cmdline(cnf, 'perl', 'external/vcf2txt_paired.pl')
+    vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
     if not vcf2txt:
         sys.exit(1)
     cmdline = '{vcf2txt} {combined_vcf_fpath}'.format(**locals())
@@ -665,12 +670,9 @@ def run_vcf2txt_paired(cnf, combined_vcf_fpath, final_maf_fpath):
     return res
 
 
-def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
-    if not original_anno_vcf_fpath or not work_filt_vcf_fpath:
-        if not original_anno_vcf_fpath:
-            err(sample.name + ': original_anno_vcf_fpath is None')
-        if not work_filt_vcf_fpath:
-            err(sample.name + ': work_filt_vcf_fpath is None')
+def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
+    if not work_filt_vcf_fpath:
+        err(sample.name + ': work_filt_vcf_fpath is None')
         return None, None, None
 
     cnf = cnfs_for_sample_names.get(sample.name)
@@ -679,8 +681,8 @@ def postprocess_vcf(sample, original_anno_vcf_fpath, work_filt_vcf_fpath):
         return None, None, None
     # work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
 
-    final_vcf_fpath = add_suffix(original_anno_vcf_fpath, 'filt').replace('varAnnotate', 'varFilter')
-    safe_mkdir(dirname(final_vcf_fpath))
+    safe_mkdir(sample.get_filtered_vcfs_dirpath())
+    final_vcf_fpath = join(sample.get_filtered_vcfs_dirpath(), sample.name + '-' + caller_name + '.anno.filt.vcf')
 
     file_basefpath = splitext(final_vcf_fpath)[0]
     final_vcf_fpath = file_basefpath + '.vcf'

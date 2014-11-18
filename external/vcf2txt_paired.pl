@@ -1,7 +1,7 @@
 #!/bin/env perl
 
 use FindBin;
-use lib "$FindBin::Bin/../../ext_modules/perl_modules/";
+use lib "$FindBin::Bin/../ext_modules/perl_modules/";
 #use lib '/users/kdld047/lib/perl5';
 use Getopt::Std;
 use Stat::Basic;
@@ -103,12 +103,12 @@ foreach my $d (@data) {
     my $ave_af = $stat->mean( $var{ $vark } );
     my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
     #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
-    $pass = "DUP" if ( $d->[24] ==  0 && $d->[22] !~ /1$/ && $d->[22] !~ /0$/ ); # all variants from one position in reads
+    $pass = "DUP" if ( $d->[24] ne "" and $d->[24] ==  0 && $d->[22] !~ /1$/ && $d->[22] !~ /0$/ ); # all variants from one position in reads
     $pass = "MAXRATE" if ( $varn/$sam_n >= $MAXRATIO && $d->[21] < 0.3 ); # present in $MAXRATIO samples, regardless of frequency
-    $pass = "QMEAN" if ($qmean < $MINQMEAN );
-    $pass = "PMEAN" if ($pmean < $MINPMEAN );
-    $pass = "MQ" if ( $d->[33] < $MINMQ );
-    $pass = "SN" if ( $d->[34] < $SN );
+    $pass = "QMEAN" if ($qmean ne "" and $qmean < $MINQMEAN );
+    $pass = "PMEAN" if ($pmean ne "" and $pmean < $MINPMEAN );
+    $pass = "MQ" if ( $d->[33] ne "" and $d->[33] < $MINMQ );
+    $pass = "SN" if ( $d->[34] ne "" and $d->[34] < $SN );
     $pass = "MINFREQ" if ( $d->[21] < $MINFREQ );
     $pass = "MINVD" if ( $d->[29] && $d->[29] < $MINVD );
     my $class = $d->[3] =~ /COSM/ ? "COSMIC" : ($d->[3] =~ /^rs/ ? (checkCLNSIG($d->[30]) == 1 ? "ClnSNP" : "dbSNP") : "Novel");

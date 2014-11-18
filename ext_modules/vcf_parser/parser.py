@@ -256,10 +256,11 @@ class Reader(object):
             compressed = compressed or filename.endswith('.gz')
             self._reader = open(filename, 'rb' if compressed else 'rt')
         self.filename = filename
-        if compressed:
-            self._reader = gzip.GzipFile(fileobj=self._reader)
-            if sys.version > '3':
-                self._reader = codecs.getreader('ascii')(self._reader)
+        # Next 4 lines commented by Vlad
+        # if compressed:
+            # self._reader = gzip.GzipFile(fileobj=self._reader)
+            # if sys.version > '3':
+            #     self._reader = codecs.getreader('ascii')(self._reader)
 
         if strict_whitespace:
             self._separator = '\t'

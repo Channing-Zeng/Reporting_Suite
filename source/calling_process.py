@@ -117,8 +117,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 clean()
                 return res
 
-            proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
-                                    stdin=open(stdin_fpath) if stdin_fpath else None)
+            proc = subprocess.Popen(
+                cmdl, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin_fpath) if stdin_fpath else None)
             stderr_dump = ''
 
             if return_proc:

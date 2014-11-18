@@ -4,7 +4,7 @@ import os
 import sys
 import shutil
 
-from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir
+from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir, abspath
 from collections import OrderedDict
 ##from memory_profiler import profile
 
@@ -258,12 +258,12 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
         bunch = []
         info('Written lines: ' + str(written_records))
 
-    return convert_file(cnf, input_fpath, _convert_vcf,
-                        suffix, overwrite, reuse_intermediate)
+    return convert_file(
+        cnf, input_fpath, _convert_vcf, suffix, overwrite, reuse_intermediate)
 
 
 def vcf_is_empty(cnf, vcf_fpath):
-    with open(vcf_fpath) as vcf:
+    with open_gzipsafe(vcf_fpath) as vcf:
         reader = vcf_parser.Reader(vcf)
         for rec in reader:
             return False
@@ -338,7 +338,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
         work_vcf = join(one_item_cnf['work_dir'], basename(one_item_cnf['vcf']))
         check_file_changed(one_item_cnf, one_item_cnf['vcf'], work_vcf)
         if not one_item_cnf.get('reuse_intermediate'):
-            with open_gzipsafe(one_item_cnf['vcf']) as inp, open(work_vcf, 'w') as out:
+            with open_gzipsafe(one_item_cnf['vcf']) as inp, open_gzipsafe(work_vcf, 'w') as out:
                 out.write(inp.read())
         one_item_cnf['vcf'] = work_vcf
 
@@ -529,7 +529,7 @@ def vcf_one_per_line(cnf, vcf_fpath):
 
 def read_sample_names_from_vcf(vcf_fpath):
     basic_fields = next(
-        (l.strip()[1:].split() for l in open(vcf_fpath)
+        (l.strip()[1:].split() for l in open_gzipsafe(vcf_fpath)
         if l.strip().startswith('#CHROM')), None)
     if not basic_fields:
         critical('Error: no VCF header in ' + vcf_fpath)
@@ -719,4 +719,18 @@ def tabix_vcf(cnf, vcf_fpath):
     cmdline = '{tabix} {gzipped_fpath}'.format(**locals())
     call(cnf, cmdline)
 
-    return gzipped_fpath, tbi_fpath
+    return gzipped_fpath
+
+
+def vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath):
+    vcf_merge_cmdline = get_system_path(cnf, join('external', 'vcftools', 'scripts', 'vcf-merge'))
+    if vcf_merge_cmdline is None:
+        critical('No vcf_merge in path')
+
+    cmdline = vcf_merge_cmdline + ' ' + ' '.join(vcf_fpaths)
+    perl_module_dirpath = abspath(join(dirname(__file__), pardir, pardir, 'ext_modules', 'perl_modules'))
+    os.environ['PERL5LIB'] = perl_module_dirpath
+
+    res = call(cnf, cmdline, combined_vcf_fpath, exit_on_error=False)
+    if not res:
+        return None
