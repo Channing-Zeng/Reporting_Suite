@@ -29,7 +29,7 @@ filter_reject: False  ## Before annotation and QC, filter variants
 variant_filtering:
   impact:             'MODERATE|HIGH'
 
-  filt_depth:         10       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+  filt_depth:         5       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
   filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
   filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
@@ -48,7 +48,7 @@ variant_filtering:
   min_p_mean:         5       # QUAL.   The minimum mean position in reads for variants.
   min_q_mean:         25      # PMEAN.  The minimum mean base quality phred score for variant.
   mean_mq:            20      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
-  mean_vd:            20      # VD.     The filtering variant depth. Variants with depth < [mean_vd] will be considered false positive.
+  mean_vd:            3      # VD.     The filtering variant depth. Variants with depth < [mean_vd] will be considered false positive.
   maf:                0.0025  # GMAF.   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
   signal_noise:       4       # SN.     Signal/noise value.
 

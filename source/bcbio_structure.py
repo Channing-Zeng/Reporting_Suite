@@ -419,7 +419,7 @@ class BCBioStructure:
             if not caller:
                 self.variant_callers[caller_name] = VariantCaller(self, caller_name)
 
-            to_exit, vcf_fpath = self._set_vcf_file(caller_name, sample, to_exit)
+            vcf_fpath = self._set_vcf_file(caller_name, sample)
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_callername[caller_name] = vcf_fpath
 
@@ -476,23 +476,31 @@ class BCBioStructure:
             sample.bam = None
             err('No BAM file for ' + sample.name)
 
-    def _set_vcf_file(self, caller_name, sample, to_exit):
+    def _set_vcf_file(self, caller_name, sample):
         vcf_fname = sample.name + '-' + caller_name + '.vcf'
+
         vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
-        if not isfile(vcf_fpath):  # not in var, looking in sample dir
-            vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-        # _ungzip_if_needed(self.cnf, vcf_fpath)
-        if isfile(vcf_fpath) and not verify_file(vcf_fpath):  # bad file, error :(
-            err('Error: Phenotype is ' + str(sample.phenotype) + ', and VCF file is empty.')
-            to_exit = True
-            vcf_fpath = None
         if not isfile(vcf_fpath):
-            if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
-                err('Warning: Phenotype is ' + str(sample.phenotype) + ', and no VCF file.')
-            vcf_fpath = None
-        if vcf_fpath:
-            info(vcf_fpath)
-        return to_exit, vcf_fpath
+            vcf_fpath = vcf_fpath + '.gz'
+            if not isfile(vcf_fpath):
+                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
+                if not isfile(vcf_fpath):
+                    vcf_fpath = vcf_fpath + '.gz'
+                    if not isfile(vcf_fpath):
+                        if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
+                            err('Error: Phenotype is ' + str(sample.phenotype) + ', and no VCF file '
+                                'for ' + sample.name + ', ' + caller_name)
+                        else:
+                            warn('Notice: no VCF file for ' + sample.name + ', ' + caller_name +
+                                ', phenotype ' + str(sample.phenotype))
+                        return None
+
+        if not verify_file(vcf_fpath):  # bad file, error :(
+            err('Error: ' + vcf_fpath + ' is empty. Phenotype is ' + str(sample.phenotype))
+            return None
+
+        info(vcf_fpath)
+        return vcf_fpath
 
     def find_gene_reports_by_sample(self):
         return dict((sname, verify_file(fpath))
