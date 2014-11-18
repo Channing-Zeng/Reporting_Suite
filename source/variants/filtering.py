@@ -676,7 +676,8 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
     final_vcf_fpath = file_basefpath + '.vcf'
     final_tsv_fpath = file_basefpath + '.tsv'
     final_maf_fpath = file_basefpath + '.maf'
-    final_pass_vcf_fpath = join(dirname(final_vcf_fpath), sample.name + BCBioStructure.pass_filt_vcf_ending)  # for futrher processing
+    final_pass_vcf_fpath = join(dirname(final_vcf_fpath), sample.name + '-' + caller_name + \
+        BCBioStructure.pass_filt_vcf_ending)  # for futrher processing
 
     BCBioStructure.move_vcfs_to_var(sample)
 
