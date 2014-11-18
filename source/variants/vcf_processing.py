@@ -703,7 +703,7 @@ def tabix_vcf(cnf, vcf_fpath):
     if not tabix:
         err('Cannot index VCF because tabix is not found in PATH or '  + cnf.sys_cnf)
     if not bgzip and not tabix:
-        return None, None
+        return vcf_fpath
 
     gzipped_fpath = join(vcf_fpath + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'

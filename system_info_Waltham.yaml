@@ -32,6 +32,10 @@ resources:
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
+  tabix:
+    path: /opt/az/local/tabix/tabix-0.2.6/tabix
+  bgzip:
+    path: /opt/az/local/tabix/tabix-0.2.6/bgzip
 
 genomes:
   hg19:
