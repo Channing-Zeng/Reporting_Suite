@@ -118,7 +118,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
 
     lr2gene = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'lr2gene.pl'))
     if not lr2gene: sys.exit(1)
-    cmdline = '{lr2gene} {cov2lr_output}'.format(**locals())
+    cmdline = lr2gene + ' ' + cov2lr_output
     res = call(cnf, cmdline, output_fpath, exit_on_error=False)
     info()
 
