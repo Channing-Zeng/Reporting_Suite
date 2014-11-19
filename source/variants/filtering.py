@@ -541,22 +541,22 @@ def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, ca
 
     if caller.combined_filt_maf_fpath:
         comb_basefname = basename(caller.combined_filt_maf_fpath)
-        # pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
+        pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
 
         comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
-        # comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
+        comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
 
         print comb_maf_fpath_symlink
-        # print comb_pass_maf_fpath_symlink
+        print comb_pass_maf_fpath_symlink
         if not exists(comb_maf_fpath_symlink) \
                 and not islink(comb_maf_fpath_symlink) \
                 and caller.combined_filt_maf_fpath != comb_maf_fpath_symlink:
             os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
 
-        # if not exists(comb_pass_maf_fpath_symlink) \
-        #         and not islink(comb_pass_maf_fpath_symlink) \
-        #         and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
-        #     os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
+        if not exists(comb_pass_maf_fpath_symlink) \
+                and not islink(comb_pass_maf_fpath_symlink) \
+                and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
+            os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
 
     info('-' * 70)
     info()
