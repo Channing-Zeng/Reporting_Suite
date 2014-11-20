@@ -253,18 +253,23 @@ class BCBioStructure:
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
 
         # Moving raw variants in the date dir to var_raw
-        raw_var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir + '_raw')
         for fname in os.listdir(self.date_dirpath):
             if '.vcf' in fname:
-                if not isdir(raw_var_dirpath):
-                    safe_mkdir(raw_var_dirpath)
+                if not isdir(self.var_dirpath):
+                    safe_mkdir(self.var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
-                dst_fpath = join(raw_var_dirpath, fname)
-                info('Moving ' + src_fpath + ' to ' + raw_var_dirpath)
+                dst_fpath = join(self.var_dirpath, fname)
+                info('Moving ' + src_fpath + ' to ' + self.var_dirpath)
                 try:
                     os.rename(src_fpath, dst_fpath)
                 except OSError:
                     pass
+
+        # cleaning date dir
+        for fname in listdir(self.date_dirpath):
+            if fname.endswith('.log'):
+                os.rename(join(self.date_dirpath, fname),
+                          join(self.log_dirpath, fname))
 
         info(' '.join(sys.argv))
         info()

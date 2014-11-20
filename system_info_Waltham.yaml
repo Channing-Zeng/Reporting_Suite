@@ -52,7 +52,7 @@ genomes:
     snpeff: /users/klpf990/snpeff/data  # data dir path
     snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
-    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC/UCSC_Gene_Exon_Canonical.bed
 
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
 
