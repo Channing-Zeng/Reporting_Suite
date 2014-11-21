@@ -583,19 +583,7 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
 
 
 def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    # samples = []
-    # for sample_name in sample_names:
-    #     s = next((s for s in caller.samples if s.name == sample_name), None)
-    #     if s:
-    #         samples.append(s)
-    # results = [r for r in Parallel(n_threads) \
-    #     (delayed(postprocess_vcf)
-    #      (sample, caller.name, work_filt_vcf_fpath)
-    #          for sample, work_filt_vcf_fpath in
-    #          zip(samples, vcf_fpaths)
-    #      ) if r is not None and None not in r]
-    # info('Results: ' + str(len(results)))
-    # info('*' * 70)
+    # samples = []StrongSomatic
 
     # caller.combined_filt_maf_fpath, \
     # caller.combined_filt_pass_maf_fpath = \
