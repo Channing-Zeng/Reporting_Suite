@@ -108,6 +108,13 @@ else {
     die "Please specify an input file: input-vcf, input-vep, or input-snpeff. STDIN is not supported.\n";
 }
 
+# vcf2txt
+# Sample Chr Start ID Ref Alt Type Effect Functional_Class Codon_Change Amino_Acid_Change
+# Amino_Acid_Length Gene Transcript_bioType Gene_Coding Transcript Exon COSMIC_CDS_Change
+# COSMIC_AA_Change End Depth AlleleFreq Bias Pmean Pstd Qual Qstd SBF GMAF VD CLNSIG ODDRATIO
+# HIAF MQ SN AdjAF Shift3 MSI dbSNPBuildID Type Status Paired-p_value Paired-OddRatio
+# Matched_Depth Matched_VD Matched_AlleleFreq N_samples N_Var Pcnt_sample Ave_AF PASS Var_Class
+
 # Define default columns for the MAF Header (https://wiki.nci.nih.gov/x/eJaPAQ)
 my @maf_header = qw(
     Hugo_Symbol Entrez_Gene_Id NCBI_Build Chromosome Start_Position End_Position Strand
@@ -540,7 +547,6 @@ sub GetVariantClassification {
 
 # If the VCF variant ID contains multiple entries, return the ones that look like dbSNP rsIDs
 sub GetrsIDs {
-
     my ( $id_line ) = @_;
     return '' if( !$id_line or $id_line eq '.' or $id_line=~m/^\s*$/ ); # Handle null data
     my @rs_ids = grep( /^rs\d+$/, split( /;/, $id_line )); # Pull out rsIDs into a list

@@ -120,7 +120,7 @@ def main():
             type='float',
             help='When individual allele frequency < freq for variants, '
                  'it was considered likely false poitives. '
-                 'Default %f' % defaults['min_freq'],
+                 'Default %f' % Defaults.default_min_freq,
         )),
 
         (['-p'], dict(

@@ -67,7 +67,7 @@ class Defaults:
 
         min_p_mean=5,
         min_q_mean=25,
-        min_freq=0.05,
+        min_freq=None,
         mean_mq=20,
         mean_vd=2,
         signal_noise=4,
@@ -80,6 +80,7 @@ class Defaults:
         bias=False,
         maf=0.0025,
     )
+    default_min_freq = 0.05
 
     quality_control = dict(
         variant_distribution_scale=1000,

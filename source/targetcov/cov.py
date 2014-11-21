@@ -222,10 +222,10 @@ header_metric_storage = MetricStorage(
             Metric('Mapped reads', short_name='Mapped'),
             Metric('Percentage of mapped reads', short_name='%', unit='%'),
 
-            Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
+            Metric('Unmapped reads', short_name='Unmap', quality='Less is better'),
             Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
 
-            Metric('Covered bases in target', short_name='Covered'),
+            Metric('Covered bases in target', short_name='Covered bp in trg'),
             Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
             Metric('Reads mapped on target', short_name='Reads on trg'),

@@ -4,6 +4,8 @@
 # use lib "/users/kdld047/lib/perl5";
 use vars qw($opt_u $opt_v $opt_p $opt_i $opt_I $opt_c $opt_d $opt_D $opt_P $opt_l $opt_L $opt_k $opt_K $opt_C $opt_m $opt_M $opt_a $opt_s $opt_S $opt_X);
 use Getopt::Std;
+
+use FindBin;
 use lib "$FindBin::Bin/../ext_modules/perl_modules/";
 use Util::Parser;
 use strict;

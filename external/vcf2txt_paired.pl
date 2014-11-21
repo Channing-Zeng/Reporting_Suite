@@ -62,18 +62,18 @@ while( <> ) {
     $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
     my @effs = split(/,/, $d{ EFF });
     my $vark = join(":", @a[0,1,3,4]); # Chr Pos Ref Alt
-    next if ( $FILDEPTH && $d{ DP } < $FILDEPTH );
-    next if ( $FILPMEAN && $d{ PMEAN } < $FILPMEAN );
-    next if ( $FILQMEAN && $d{ QUAL } < $FILQMEAN );
+    next if ( $FILDEPTH && $d{ DP } && $d{ DP } < $FILDEPTH );
+    next if ( $FILPMEAN && $d{ PMEAN } && $d{ PMEAN } < $FILPMEAN );
+    next if ( $FILQMEAN && $d{ QUAL } && $d{ QUAL } < $FILQMEAN );
     if ( $control && $control eq $d{ SAMPLE } ) {
 	my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
 	my $pass = "TRUE";
 	#$pass = "FALSE" unless ( $d{PSTD} > 0 );
-	$pass = "FALSE" if ($qmean < $MINQMEAN );
-	$pass = "FALSE" if ($pmean < $MINPMEAN );
+	$pass = "FALSE" if ( $qmean && $qmean < $MINQMEAN );
+	$pass = "FALSE" if ( $pmean && $pmean < $MINPMEAN );
 	$pass = "FALSE" if ( $d{AF} < $MINFREQ );
-	$pass = "FALSE" if ( $d{MQ} < $MINMQ );
-	$pass = "FALSE" if ( $d{SN} < $SN );
+	$pass = "FALSE" if ( $d{MQ} && $d{MQ} < $MINMQ );
+	$pass = "FALSE" if ( $d{SN} && $d{SN} < $SN );
 	$pass = "FALSE" if ( $d{VD} && $d{VD} < $MINVD );
 	my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? (checkCLNSIG($d{CLNSIG}) ? "ClnSNP" : "dbSNP") : "Novel");
         #$CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && ($class ne "dbSNP" && $class ne "ClnSNP"));  # so that any novel or COSMIC variants showed up in control won't be filtered
@@ -129,10 +129,13 @@ foreach my $d (@data) {
 sub checkCLNSIG {
     my $clnsig = shift;
     return 0 unless( $clnsig );
-    my @cs = split(/\||,/, $clnsig );
+    print STDERR "CLNSIG: $clnsig\n";
+    my @cs = split(/\;/, $clnsig );
     foreach my $cs (@cs) {
-        return 1 if ( $cs > 3 && $cs < 7 );
-	    return 1 if ( $cs == 255 );
+        print STDERR "cs: $cs\n";
+        return 1 if ( $clnsig > 3 && $clnsig < 7 );
+        return 1 if ( $clnsig == 255 );
+        last;
     }
     return -1;
 }
@@ -168,7 +171,7 @@ print <<USAGE;
 	likely false positive, even if it's in COSMIC. Default 1.
 
     -F DOUBLE
-        When indivisual allele frequency < feq for variants, it was considered likely false poitives. Default: 0.05 or 5%
+        When individual allele frequency < feq for variants, it was considered likely false poitives. Default: 0.05 or 5%
 
     -p INT
         The minimum mean position in reads for variants.  Default: 5bp

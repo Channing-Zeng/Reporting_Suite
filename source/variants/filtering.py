@@ -172,7 +172,7 @@ def second_round(vcf_fpath, sample_name):
     main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
     cnf.main_sample_index = main_sample_index
 
-    #TODO: tmp
+    #TODO: remove this since it is made in annotation
     res = _snpsift_annotate(cnf, cnf.get('clinvar'), 'clinvar', vcf_fpath)
     if not res:
         err('Could not annotate with clinvar.')
@@ -226,7 +226,7 @@ class Filtering:
                     return False
                 return True
             self.min_freq_filters[sample.name] = CnfFilter('min_freq', min_freq_filter_check,
-                 cnfs_for_sample_names[sample.name], required=True)
+                cnfs_for_sample_names[sample.name], required=True)
 
         self.round2_filters = [
             InfoFilter('min_p_mean', 'PMEAN', required=False),
@@ -275,8 +275,8 @@ class Filtering:
                 return True
         self.multi_filter = Filter('MULTI', multi_filter_check)
 
-        def max_rate_filter_check(rec, frac):  # reject if present in [max_ratio] samples
-            if frac >= Filter.filt_cnf['max_ratio'] and rec.get_val('AF') < 0.3:
+        def max_rate_filter_check(rec, frac, af):  # reject if present in [max_ratio] samples
+            if frac >= Filter.filt_cnf['max_ratio'] and af and af < 0.3:
                 return False
             return True
         self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
@@ -440,8 +440,9 @@ def proc_line_2nd_round(rec, cnf_, self_):
             # info('Dup filter: variant = ' + rec.get_variant())
             pass
 
-        if rec.get_af(cnf_.main_sample_index, self_.caller.name) is not None:
-            if not self_.max_rate_filter.apply(rec, frac=frac):
+        af = rec.get_af(cnf_.main_sample_index, self_.caller.name)
+        if af is not None:
+            if not self_.max_rate_filter.apply(rec, frac=frac, af=af):
                 # info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
                 #      str(rec.af(cnf_.main_sample_index)))
                 pass
@@ -492,29 +493,92 @@ def proc_line_polymorphic(rec, cnf_, self_):
 cnfs_for_sample_names = dict()
 
 
-def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    info()
-    info('Keeping only first sample info in VCFs...')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
+def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
+    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
 
-    info()
-    info('Indexing with tabix ')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(tabix_vcf)(cnf, vcf_fpath) for vcf_fpath in vcf_fpaths)
+    def set_af(rec):
+        af, t_ref_count, t_alt_count = None, None, None
+
+        ads = rec.get_val('AD', main_sample_index)
+        if ads:
+            try:
+                t_ref_count, t_alt_count = ads[0], ads[1]
+            except:
+                t_ref_count, t_alt_count = ads, None
+
+            if caller_name == 'vardict':
+                af = rec.get_val('AF', main_sample_index)
+
+            elif caller_name == 'mutect':
+                af = rec.get_val('FREQ', main_sample_index)
+
+            elif caller_name == 'freebayes':
+                af = rec.get_val('AB', main_sample_index)
+
+            else:
+                dp = rec.get_val('DP', main_sample_index=main_sample_index)
+                if t_alt_count is not None and dp:
+                    af = float(t_alt_count) / dp
+
+            rec.INFO['AF'] = af
+        return rec
+
+    return iterate_vcf(cnf, vcf_fpath, set_af, 'vcf2txt_fix')
+
+
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, sample_min_freq):
+    # info()
+    # info('Keeping only first sample info in VCFs...')
+    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
+
+    # info()
+    # info('Indexing with tabix ')
+    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(tabix_vcf)(cnf, vcf_fpath) for vcf_fpath in vcf_fpaths)
 
     safe_mkdir(bcbio_structure.var_dirpath)
-    combined_vcf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.vcf')
+
+    # combined_vcf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.vcf')
+    #
+    # info()
+    # info('Merging VCFs...')
+    # vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath)
 
     info()
-    info('Merging VCFs...')
-    vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath)
+    info('Preparing VCFs for vcf2txt')
+    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(prep_vcf)(cnf, fpath, s, caller.name)
+        for fpath, s in zip(vcf_fpaths, sample_names))
 
-    caller.combined_vardict_filt_maf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.maf')
-    run_vcf2txt_paired(cnf, combined_vcf_fpath, caller.combined_vardict_filt_maf_fpath)
+    caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
+    res = run_vcf2txt_paired(cnf, vcf_fpaths, caller.vcf2txt_res_fpath, sample_min_freq)
+    if not res:
+        err('Somethings wrong with vcf2txt_paired run')
+        return
 
-    # split and convert back to VCF
-    vcf_fpaths = []
+    res = run_pickline(cnf, caller.vcf2txt_res_fpath)
+    if not res:
+        err('Somethings wrong with pickLine run')
+        return
+    return res
 
-    return vcf_fpaths
+
+def run_pickline(cnf, vcf2txt_res_fpath):
+    pickline = get_script_cmdline(cnf, 'perl', join('external', 'pickLine.pl'))
+    if not pickline:
+        sys.exit(1)
+
+    pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
+
+    cmdline = '{pickline} -l PASS:TRUE -c 44 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+              'grep -v UTR_ | grep -vw SILENT | grep -v INTRON | grep -v UPSTREAM | ' \
+              'grep -v DOWNSTREAM | grep -v INTERGENIC | grep -v INTRAGENIC | ' \
+              'grep -v NON_CODING'.format(**locals())
+    res = call(cnf, cmdline, pickline_res_fpath, exit_on_error=False)
+    return res
+
+    # TODO: polymorphic
+    # /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
+    # '/group/cancer_informatics/tools_resources/NGS/bin/pickLine -v -i 12:3 -c 13:11  > variants_PASS.filtered.mut.txt'
+
 
 
 def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
@@ -577,16 +641,16 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Samples (total ' + str(len(vcf_by_sample)) + '):')
 
     # Set up cnfs for each sample
-    global cnfs_for_sample_names
-    for sample in caller.samples:
-        info(sample.name)
-        cnf_copy = cnf.copy()
-        cnf_copy['name'] = sample.name
-        if cnf_copy['variant_filtering'].get('min_freq') is not None:
-            sample.min_af = cnf_copy['variant_filtering']['min_freq']
-        elif sample.min_af is None:
-            sample.min_af = 0
-        cnfs_for_sample_names[sample.name] = cnf_copy
+    # global cnfs_for_sample_names
+    # for sample in caller.samples:
+    #     info(sample.name)
+    #     cnf_copy = cnf.copy()
+    #     cnf_copy['name'] = sample.name
+    #     if cnf_copy['variant_filtering'].get('min_freq') is not None:
+    #         sample.min_af = cnf_copy['variant_filtering']['min_freq']
+    #     elif sample.min_af is None:
+    #         sample.min_af = 0
+    #     cnfs_for_sample_names[sample.name] = cnf_copy
 
     n_threads = cnf.threads if cnf.threads else min(10, len(vcf_by_sample) + 1)
     if not IN_PARALLEL: n_threads = 1
@@ -595,23 +659,24 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     vcf_fpaths = vcf_by_sample.values()
     sample_names = vcf_by_sample.keys()
 
-    global filtering
-    filtering = Filtering(cnf, bcbio_structure, caller)
+    # global filtering
+    # filtering = Filtering(cnf, bcbio_structure, caller)
 
-    info('Filtering by impact')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(impact_round)(vcf_fpath, s) for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-
-    # info()
-    # info('-' * 70)
-    # info('Filtering using vcf2txt_paired...')
-    # vcf_fpaths__vcf2txt = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
-    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__vcf2txt, sample_names, caller, n_threads)
+    # info('Filtering by impact')
+    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(impact_round)(vcf_fpath, s) for vcf_fpath, s in zip(vcf_fpaths, sample_names))
 
     info()
     info('-' * 70)
-    info('Filtering using reengineered stuff...')
-    vcf_fpaths__intrinsic = filtering.run_regengineered_filtering(vcf_fpaths, sample_names, n_threads)
-    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__intrinsic, sample_names, caller, n_threads)
+    info('Filtering using vcf2txt_paired...')
+    filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
+
+    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+
+    # info()
+    # info('-' * 70)
+    # info('Filtering using reengineered stuff...')
+    # vcf_fpaths__intrinsic = filtering.run_regengineered_filtering(vcf_fpaths, sample_names, n_threads)
+    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__intrinsic, sample_names, caller, n_threads)
 
     info('-' * 70)
     info()
@@ -646,14 +711,23 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
     return output_fpath, output_pass_fpath
 
 
-def run_vcf2txt_paired(cnf, combined_vcf_fpath, final_maf_fpath):
+def run_vcf2txt_paired(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
     info()
     info('Running VarDict vcf2txt_paired.pl...')
 
     vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
     if not vcf2txt:
         sys.exit(1)
-    cmdline = '{vcf2txt} {combined_vcf_fpath}'.format(**locals())
+
+    vcf_fpaths = ' '.join(vcf_fpaths)
+
+    min_freq = cnf.variant_filtering.min_freq or sample_min_freq or Defaults.default_min_freq
+    sample_cnt = cnf.variant_filtering.sample_cnt
+    freq = cnf.variant_filtering.freq
+    min_p_mean = cnf.variant_filtering.min_p_mean
+    min_q_mean = cnf.variant_filtering.min_q_mean
+
+    cmdline = '{vcf2txt} -F {min_freq} -n {sample_cnt} -f {freq} -p {min_p_mean} -q {min_q_mean} {vcf_fpaths}'.format(**locals())
     res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
     return res
 

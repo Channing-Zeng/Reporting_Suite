@@ -63,6 +63,9 @@ class Record(_Record):
         return self._bias
 
     def get_af(self, main_sample_index, caller_name):
+        if caller_name in ['mutect', 'vardict']:
+            pass
+
         if self._af is not None:
             return self._af
 
@@ -198,6 +201,9 @@ class Record(_Record):
         return self.FILTER and 'PASS' not in self.FILTER
 
     def check_clnsig(self):
+        if self.POS == 34640788:
+            pass
+
         clnsig = self.INFO.get('CLNSIG')
         if not clnsig:
             return 'no_clnsig'
@@ -228,7 +234,6 @@ class Record(_Record):
 
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
-    #@profile
     def _convert_vcf(inp_f, out_f):
         max_bunch_size = 10000
         written_records = 0
