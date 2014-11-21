@@ -554,25 +554,26 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
         err('Somethings wrong with vcf2txt_paired run')
         return
 
-    res = run_pickline(cnf, caller.vcf2txt_res_fpath)
+    res = run_pickline(cnf, caller, caller.vcf2txt_res_fpath)
     if not res:
         err('Somethings wrong with pickLine run')
         return
     return res
 
 
-def run_pickline(cnf, vcf2txt_res_fpath):
+def run_pickline(cnf, caller, vcf2txt_res_fpath):
     pickline = get_script_cmdline(cnf, 'perl', join('external', 'pickLine.pl'))
     if not pickline:
         sys.exit(1)
+        return None
 
-    pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
+    caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
     cmdline = '{pickline} -l PASS:TRUE -c 44 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v INTRON | grep -v UPSTREAM | ' \
               'grep -v DOWNSTREAM | grep -v INTERGENIC | grep -v INTRAGENIC | ' \
               'grep -v NON_CODING'.format(**locals())
-    res = call(cnf, cmdline, pickline_res_fpath, exit_on_error=False)
+    res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
     return res
 
     # TODO: polymorphic
@@ -582,30 +583,30 @@ def run_pickline(cnf, vcf2txt_res_fpath):
 
 
 def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    samples = []
-    for sample_name in sample_names:
-        s = next((s for s in caller.samples if s.name == sample_name), None)
-        if s:
-            samples.append(s)
-    results = [r for r in Parallel(n_threads) \
-        (delayed(postprocess_vcf)
-         (sample, caller.name, work_filt_vcf_fpath)
-             for sample, work_filt_vcf_fpath in
-             zip(samples, vcf_fpaths)
-         ) if r is not None and None not in r]
-    info('Results: ' + str(len(results)))
-    info('*' * 70)
+    # samples = []
+    # for sample_name in sample_names:
+    #     s = next((s for s in caller.samples if s.name == sample_name), None)
+    #     if s:
+    #         samples.append(s)
+    # results = [r for r in Parallel(n_threads) \
+    #     (delayed(postprocess_vcf)
+    #      (sample, caller.name, work_filt_vcf_fpath)
+    #          for sample, work_filt_vcf_fpath in
+    #          zip(samples, vcf_fpaths)
+    #      ) if r is not None and None not in r]
+    # info('Results: ' + str(len(results)))
+    # info('*' * 70)
 
-    caller.combined_filt_maf_fpath, \
-    caller.combined_filt_pass_maf_fpath = \
-        combine_mafs(
-            cnf,
-            caller.find_filt_maf_by_sample().values(),
-            join(bcbio_structure.var_dirpath, caller.name))
+    # caller.combined_filt_maf_fpath, \
+    # caller.combined_filt_pass_maf_fpath = \
+    #     combine_mafs(
+            # cnf,
+            # caller.find_filt_maf_by_sample().values(),
+            # join(bcbio_structure.var_dirpath, caller.name))
 
-    if caller.combined_filt_maf_fpath:
+    if caller.pickline_res_fpath:
         # comb_basefname = basename(caller.combined_filt_maf_fpath)
-        pass_comb_basefname = basename(caller.combined_filt_pass_maf_fpath)
+        pass_comb_basefname = basename(caller.pickline_res_fpath)
 
         # comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
         comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
@@ -619,8 +620,8 @@ def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, ca
 
         if not exists(comb_pass_maf_fpath_symlink) \
                 and not islink(comb_pass_maf_fpath_symlink) \
-                and caller.combined_filt_pass_maf_fpath != comb_pass_maf_fpath_symlink:
-            os.symlink(caller.combined_filt_pass_maf_fpath, comb_pass_maf_fpath_symlink)
+                and caller.pickline_res_fpath != comb_pass_maf_fpath_symlink:
+            os.symlink(caller.pickline_res_fpath, comb_pass_maf_fpath_symlink)
 
     info('-' * 70)
     info()
@@ -670,7 +671,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Filtering using vcf2txt_paired...')
     filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
 
-    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
 
     # info()
     # info('-' * 70)

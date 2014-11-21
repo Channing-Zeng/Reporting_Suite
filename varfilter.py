@@ -206,21 +206,21 @@ def filter_all(cnf, bcbio_structure):
 
     msg = ['Filtering finished.']
     info('Results:')
-    for sample in bcbio_structure.samples:
-        finalize_one(cnf, bcbio_structure, sample, msg)
+    # for sample in bcbio_structure.samples:
+    #     finalize_one(cnf, bcbio_structure, sample, msg)
 
-    if any(c.combined_filt_maf_fpath for c in bcbio_structure.variant_callers.values()):
+    if any(c.pickline_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
-        info('Combined MAF files:')
+        info('Final vcf2txt txt results:')
         msg.append('')
         msg.append('Combined MAF files:')
         for caller in bcbio_structure.variant_callers.values():
-            if caller.combined_filt_maf_fpath:
+            if caller.pickline_res_fpath:
                 info('  ' + caller.name)
-                info('     ' + caller.combined_filt_maf_fpath)
+                info('     ' + caller.pickline_res_fpath)
                 # info('     ' + caller.combined_filt_pass_maf_fpath)
                 msg.append('  ' + caller.name)
-                msg.append('     ' + caller.combined_filt_maf_fpath)
+                msg.append('     ' + caller.pickline_res_fpath)
                 # msg.append('     ' + caller.combined_filt_pass_maf_fpath)
 
                 if cnf.datahub_path:

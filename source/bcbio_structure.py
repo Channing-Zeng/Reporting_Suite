@@ -259,7 +259,7 @@ class BCBioStructure:
                     safe_mkdir(self.var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
                 dst_fpath = join(self.var_dirpath, fname)
-                info('Moving ' + src_fpath + ' to ' + self.var_dirpath)
+                info('Moving ' + src_fpath + ' to ' + seof.var_dirpath)
                 try:
                     os.rename(src_fpath, dst_fpath)
                 except OSError:
@@ -267,7 +267,7 @@ class BCBioStructure:
 
         # cleaning date dir
         for fname in listdir(self.date_dirpath):
-            if fname.endswith('.log'):
+            if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt']:
                 os.rename(join(self.date_dirpath, fname),
                           join(self.log_dirpath, fname))
 
@@ -659,7 +659,7 @@ def _ungzip_if_needed(cnf, fpath):
     if not file_exists(fpath) and file_exists(fpath + '.gz'):
         gz_fpath = fpath + '.gz'
         gunzip = get_system_path(cnf, 'gunzip')
-        cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
+        cmdline = '{gunzip} -c {gz_fpath}'.format(**lls())
         res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
         info()
         if not res:

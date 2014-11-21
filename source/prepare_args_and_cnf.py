@@ -116,7 +116,7 @@ def _set_sys_config(opts):
         opts.sys_cnf = Defaults.sys_cnfs['us']
         if 'ukap' in hostname:
             opts.sys_cnf = Defaults.sys_cnfs['uk']
-        elif 'local' in hostname:
+        elif 'local' in hostname or 'Home' in hostname:
             opts.sys_cnf = Defaults.sys_cnfs['local']
         elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
             opts.sys_cnf = Defaults.sys_cnfs['us']
