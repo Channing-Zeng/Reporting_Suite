@@ -549,7 +549,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
         for fpath, s in zip(vcf_fpaths, sample_names))
 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
-    res = run_vcf2txt_paired(cnf, vcf_fpaths, caller.vcf2txt_res_fpath, sample_min_freq)
+    res = run_vcf2txt(cnf, vcf_fpaths, caller.vcf2txt_res_fpath, bcbio_structure.paired, sample_min_freq)
     if not res:
         err('Somethings wrong with vcf2txt_paired run')
         return
@@ -656,7 +656,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     info()
     info('-' * 70)
-    info('Filtering using vcf2txt_paired...')
+    info('Filtering using vcf2txt...')
     filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
 
     postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
@@ -700,11 +700,16 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
     return output_fpath, output_pass_fpath
 
 
-def run_vcf2txt_paired(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
+def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, paired, sample_min_freq=None):
     info()
     info('Running VarDict vcf2txt_paired.pl...')
 
-    vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
+    vcf2txt = None
+    if paired:
+        vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
+    else:
+        vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt.pl'))
+
     if not vcf2txt:
         sys.exit(1)
 

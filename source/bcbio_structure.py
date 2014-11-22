@@ -228,6 +228,7 @@ class BCBioStructure:
         self.bcbio_cnf = cnf.bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
+        self.paired = False
         self.samples = []
         self.variant_callers = OrderedDict()
 
@@ -280,6 +281,11 @@ class BCBioStructure:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
             else:
                 self.samples.append(sample)
+
+        for b in self.batches.values():
+            if b.normal and b.tumor:
+                self.paired = True
+                info('Paired')
 
         if not self.samples:
             critical('No directory for any sample. Exiting.')
