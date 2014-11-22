@@ -574,12 +574,16 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
               'grep -v DOWNSTREAM | grep -v INTERGENIC | grep -v INTRAGENIC | ' \
               'grep -v NON_CODING'.format(**locals())
     res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
-    return res
+    if not res:
+        return None
 
-    # TODO: polymorphic
-    # /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
-    # '/group/cancer_informatics/tools_resources/NGS/bin/pickLine -v -i 12:3 -c 13:11  > variants_PASS.filtered.mut.txt'
-
+    if cnf.genome.polymorphic_variants:
+        info('Polymorpthic variants')
+        poly_vars = abspath(cnf.genome.polymorphic_variants)
+        cmdline = '{pickLine} -v -i 12:3 -c 13:11 {poly_vars}'.format(**locals())
+        res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
+    if res:
+        return res
 
 
 def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):

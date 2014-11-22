@@ -56,7 +56,6 @@ genomes:
 
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
 
-
 queue: batch.q
 
 qsub_runner: runner_Waltham.sh
