@@ -94,7 +94,7 @@ def process_one(cnf):
 
     annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
 
-    anno_vcf_fpath, anno_tsv_fpath = finialize_annotate_file(cnf, anno_vcf_fpath, sample.name)
+    anno_vcf_fpath, anno_tsv_fpath = finialize_annotate_file(cnf, anno_vcf_fpath, sample.name, cnf.caller)
 
     return anno_vcf_fpath, anno_tsv_fpath
 

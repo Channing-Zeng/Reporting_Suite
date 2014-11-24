@@ -3,7 +3,7 @@ from genericpath import isfile
 import math
 from collections import defaultdict, OrderedDict
 import os
-from os.path import join, splitext
+from os.path import join, splitext, basename
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
@@ -91,8 +91,8 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
         cnf.work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample)
     info()
 
-    cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-    cnv_gene_ampl_report_fpath__mine = join(cnf.output_dir, BCBioStructure.seq2c_name + '.mine.tsv')
+    cnv_gene_ampl_report_fpath = join(cnf.work_dir, BCBioStructure.seq2c_name + '.zhongwu.tsv')
+    cnv_gene_ampl_report_fpath__mine = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
 
     # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
     cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
@@ -108,7 +108,7 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
     cov2lr = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'cov2lr.pl'))
     if not cov2lr: sys.exit(1)
-    cov2lr_output = splitext(output_fpath)[0] + '.cov2lr.tsv'
+    cov2lr_output = join(cnf.work_dir, splitext(basename(output_fpath))[0] + '.cov2lr.tsv')
     cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
     call(cnf, cmdline, cov2lr_output, exit_on_error=False)
     info()

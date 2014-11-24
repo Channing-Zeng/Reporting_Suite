@@ -33,7 +33,7 @@ genomes:
     snpeff_transcripts: ~/Dropbox/az/transcripts.txt
 
     # exons: ~/Dropbox/az/UCSC_Gene_Exon_Canonical.chr21.bed
-    exons: ~/Dropbox/az/TGEN/Illumina_TruSeq_Exome.bed
+    exons: ~/Dropbox/az/AZ_Exome.chr21.bed 
     capture_panels:
       agilent: ~/Dropbox/az/SureSelect_Human_AllExon_V5.chr21.bed
 

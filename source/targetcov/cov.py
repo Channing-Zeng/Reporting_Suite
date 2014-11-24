@@ -1,13 +1,13 @@
 # coding=utf-8
 from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile
+from os.path import join, basename, isfile, abspath
 import sys
 import traceback
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists
 
-from source.logger import step_greetings, critical, info, err
+from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, \
     write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
@@ -127,7 +127,7 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
 
     exons_bed = cnf.genome.exons
 
-    gene_names = None
+    ampl_gene_names = None
     all_interesting_exons_bed = None
 
     if not exons_bed: # or abspath(exons_bed) == abspath(sample.bed):
@@ -150,13 +150,14 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
         roi_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
         info()
 
-        gene_names = _get_gene_names(roi_exons_bed)
-        if not gene_names:
-            err('No exons overlap amplicons from the panel.')
+        ampl_gene_names = _get_gene_names(exons_bed)
+        if not ampl_gene_names:
+            critical('No gene names in amplicons.')
             return None
+        print ampl_gene_names
 
         info('Adding other exons for the genes of overlapped exons.')
-        all_interesting_exons_bed = _add_other_exon_of_genes(cnf, gene_names, exons_bed, roi_exons_bed)
+        all_interesting_exons_bed = _add_other_exon_of_genes(cnf, ampl_gene_names, exons_bed, roi_exons_bed)
         info()
 
         info('Calculating coverage statistics for exons of the genes ovelapping with the input regions...')
@@ -170,7 +171,7 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
             exon.feature = 'Exon'
 
         info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
-        gene_infos_by_name = _get_exons_combined_by_genes(exons)
+        gene_infos_by_name = _get_exons_combined_by_genes(exons, ampl_gene_names)
 
         info()
         info('Finding amplicons overlaps with exons, adding gene names to amplicons and adding amplicons to genes...')
@@ -435,8 +436,11 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
     #     # amplicon_copy.gene_name = amplicon_gene_summary.gene_name
 
 
-def _get_exons_combined_by_genes(exons):
+def _get_exons_combined_by_genes(exons, ampl_gene_names):
     genes_by_name = OrderedDict()
+    # for gn in ampl_gene_names:
+    #     genes_by_name[gn] = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
+    #         chrom=exon.chrom, strand=exon.strand)  # TODO: create genes from amplicons that are not in exons
 
     i = 0
     for exon in exons:

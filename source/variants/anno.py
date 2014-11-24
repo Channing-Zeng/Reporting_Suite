@@ -2,6 +2,7 @@ import shutil
 import os
 from os.path import splitext, basename, join, dirname, realpath, isfile, islink
 import socket
+from source.bcbio_structure import _ungzip_if_needed
 
 from source.calling_process import call_subprocess
 from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
@@ -17,6 +18,8 @@ from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_p
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
+
+    vcf_fpath = _ungzip_if_needed(cnf, vcf_fpath)
 
     if 'gatk' in cnf:
         res = _gatk(cnf, vcf_fpath, bam_fpath)
@@ -84,7 +87,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     return annotated, vcf_fpath
 
 
-def finialize_annotate_file(cnf, vcf_fpath, samplename):
+def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     if not cnf.get('no_correct_vcf'):
@@ -93,10 +96,10 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename):
     info('Adding SAMPLE=' + samplename + ' annotation...')
     vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
 
-    final_vcf_fname = add_suffix(basename(cnf['vcf']), 'anno')
-    vcf_basename = splitext(final_vcf_fname)[0]
-    final_vcf_fpath = join(cnf['output_dir'], vcf_basename + '.vcf')
-    final_tsv_fpath = join(cnf['output_dir'], vcf_basename + '.tsv')
+    final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
+    final_tsv_fname = samplename + '-' + callername + '.anno.tsv'
+    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
+    final_tsv_fpath = join(cnf['output_dir'], final_tsv_fname)
 
     # Moving final VCF
     if isfile(final_vcf_fpath):
@@ -104,12 +107,12 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename):
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
     # Indexing
-    info()
-    info('Indexing with IGV ' + final_vcf_fpath)
-    igvtools_index(cnf, final_vcf_fpath)
-    info()
-    info('Indexing with tabix ' + final_vcf_fpath)
-    tabix_vcf(cnf, final_vcf_fpath)
+    # info()
+    # info('Indexing with IGV ' + final_vcf_fpath)
+    # igvtools_index(cnf, final_vcf_fpath)
+    # info()
+    # info('Indexing with tabix ' + final_vcf_fpath)
+    # tabix_vcf(cnf, final_vcf_fpath)
 
     # Converting to TSV
     if 'tsv_fields' in cnf:
@@ -123,7 +126,7 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename):
     else:
         final_tsv_fpath = None
 
-    return final_vcf_fpath + '.gz', final_tsv_fpath
+    return final_vcf_fpath, final_tsv_fpath
 
 
 def _mongo(cnf, input_fpath):

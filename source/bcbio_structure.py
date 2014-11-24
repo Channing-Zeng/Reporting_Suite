@@ -665,7 +665,7 @@ def _ungzip_if_needed(cnf, fpath):
     if not file_exists(fpath) and file_exists(fpath + '.gz'):
         gz_fpath = fpath + '.gz'
         gunzip = get_system_path(cnf, 'gunzip')
-        cmdline = '{gunzip} -c {gz_fpath}'.format(**lls())
+        cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
         res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
         info()
         if not res:
