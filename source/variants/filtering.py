@@ -496,6 +496,8 @@ cnfs_for_sample_names = dict()
 def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
     main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
 
+    vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
+
     def set_af(rec):
         af, t_ref_count, t_alt_count = None, None, None
 
@@ -562,27 +564,26 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
 
 
 def run_pickline(cnf, caller, vcf2txt_res_fpath):
-    pickline = get_script_cmdline(cnf, 'perl', join('external', 'pickLine.pl'))
-    if not pickline:
+    pick_line = get_script_cmdline(cnf, 'perl', join('external', 'pickLine.pl'))
+    if not pick_line:
         sys.exit(1)
         return None
 
     caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
-    cmdline = '{pickline} -l PASS:TRUE -c 44 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
-              'grep -v UTR_ | grep -vw SILENT | grep -v INTRON | grep -v UPSTREAM | ' \
-              'grep -v DOWNSTREAM | grep -v INTERGENIC | grep -v INTRAGENIC | ' \
-              'grep -v NON_CODING'.format(**locals())
+    cmdline = '{pick_line} -l PASS:TRUE -c 44 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+              'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
+              'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
+              'grep -v NON_CODING'
+    if cnf.genome.polymorphic_variants:
+        poly_vars = abspath(cnf.genome.polymorphic_variants)
+        cmdline += ' | {pick_line} -v -i 12:3 -c 13:11 {poly_vars}'
+    cmdline = cmdline.format(**locals())
+
     res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
     if not res:
         return None
-
-    if cnf.genome.polymorphic_variants:
-        info('Polymorpthic variants')
-        poly_vars = abspath(cnf.genome.polymorphic_variants)
-        cmdline = '{pickLine} -v -i 12:3 -c 13:11 {poly_vars}'.format(**locals())
-        res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
-    if res:
+    else:
         return res
 
 
