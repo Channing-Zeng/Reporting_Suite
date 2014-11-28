@@ -559,6 +559,11 @@ class BCBioStructure:
             BCBioStructure.qualimap_dir,
             lambda sample: 'qualimapReport.html')
 
+    def get_qualimap_results_txt_fpath_by_sample(self):
+        return self._get_fpaths_per_sample(
+            BCBioStructure.qualimap_dir,
+            lambda sample: 'genome_results.txt')
+
     def get_fastqc_report_fpaths_by_sample(self):
         return self._get_fpaths_per_sample(
             BCBioStructure.fastqc_dir,

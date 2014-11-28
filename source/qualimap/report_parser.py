@@ -9,8 +9,8 @@ metric_storage = MetricStorage(
             Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
             Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
 
-            Metric('Clipped reads',                                 'Clipped',                     'Number of clipped reads',                quality='Less is better'),
-            Metric('Duplication rate',                              'Duplication',                 'Duplication rate (inside of regions)')
+            Metric('Clipped reads (on target)',                     'Clipped',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
+            Metric('Duplication rate (on target)',                  'Duplication',                 'Duplication rate (inside of regions)')
         ]),
         ReportSection('on_off_metrics', 'ON/OFF target', [
             Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
@@ -34,7 +34,8 @@ metric_storage = MetricStorage(
             Metric('Read mean length',                              'Read mean length',            'Read mean length'),
 
             Metric('Mean Mapping Quality',                          'Mean mapping quality',        'Mean mapping quality, inside of regions'),
-            Metric('Total reads with indels',                       'Indels',                      'Total reads with indels, inside of regions'),
+            # Metric('Total reads with indels',                       'Indels',                      'Total reads with indels, inside of regions'),  # not supported since Qualimap v.2.0
+            Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions'),
             Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions')
@@ -109,7 +110,7 @@ def parse_qualimap_sample_report(report_fpath):
                 'on target':        'Globals (inside of regions)',
                 'coverage':         'Coverage (inside of regions)',
                 'mapping quality':  'Mapping Quality',
-                'finish':           'Input data and parameters'}
+                'finish':           'Coverage across reference'}  # plots are starting from this line
     on_target_stats_suffix = ' (on target)'
     coverage_stats_prefix = 'Coverage '
     with open(report_fpath) as f:
@@ -131,6 +132,9 @@ def parse_qualimap_sample_report(report_fpath):
                     cur_metric_name += on_target_stats_suffix
                 elif cur_section == 'coverage':
                     cur_metric_name = coverage_stats_prefix + cur_metric_name
+                elif not metric_storage.get_metric(cur_metric_name):  # special case for Duplication rate and Clipped reads (Qualimap v.1 and v.2 difference)
+                    if metric_storage.get_metric(cur_metric_name + on_target_stats_suffix):  # extra 'on target' metrics
+                        cur_metric_name += on_target_stats_suffix
 
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)

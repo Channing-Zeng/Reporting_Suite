@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from os.path import relpath, join
+from os.path import relpath, join, exists
 from os import listdir
 import shutil
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
@@ -96,6 +96,22 @@ def _get_targqc_records(records_by_report_type):
     return targqc_records
 
 
+# fixing java.lang.Double.parseDouble error on entries like "6,082.49"
+def _correct_qualimap_genome_results(bcbio_structure):
+    qualimap_results_txt_by_sample = bcbio_structure.get_qualimap_results_txt_fpath_by_sample()
+    for sample_name, results_txt_fpath in qualimap_results_txt_by_sample.items():
+        with open(results_txt_fpath, 'r') as f:
+            content = f.readlines()
+        with open(results_txt_fpath, 'w') as f:
+            metrics_started = False
+            for line in content:
+                if ">> Reference" in line:
+                    metrics_started = True
+                if metrics_started:
+                    line = line.replace(',', '')
+                f.write(line)
+
+
 def summary_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
@@ -144,10 +160,11 @@ def summary_reports(cnf, bcbio_structure):
 
     # Qualimap2 run for multi-sample plots
     if len(qualimap_htmls_by_sample):
-        qualimap = get_system_path(cnf, interpreter=None, name='qualimap2')
+        qualimap = get_system_path(cnf, interpreter=None, name='qualimap')
         if qualimap is not None and get_qualimap_type(qualimap) == "full":
             qualimap_output_dir = join(cnf.output_dir, 'qualimap_multi_bamqc')
             plots_dirpath = join(cnf.output_dir, 'plots')
+            _correct_qualimap_genome_results(bcbio_structure)
 
             safe_mkdir(qualimap_output_dir)
             rows = []
@@ -159,6 +176,8 @@ def summary_reports(cnf, bcbio_structure):
             targqc_full_report.plots = []
             qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
             if (ret_code is None or ret_code == 0) and verify_dir(qualimap_plots_dirpath):
+                if exists(plots_dirpath):
+                    shutil.rmtree(plots_dirpath)
                 shutil.move(qualimap_plots_dirpath, plots_dirpath)
                 for plot_fpath in listdir(plots_dirpath):
                     plot_fpath = join(plots_dirpath, plot_fpath)
@@ -167,7 +186,7 @@ def summary_reports(cnf, bcbio_structure):
             else:
                 warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
             if verify_dir(qualimap_output_dir):
-                shutil.rmtree(qualimap_output_dir)  # TODO: make nicer
+                shutil.rmtree(qualimap_output_dir)
         else:
             warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
