@@ -25,7 +25,7 @@ def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
     if not tsv_fpath:
         return tsv_fpath
 
-    manual_tsv_fields = cnf.get('tsv_fields')
+    manual_tsv_fields = cnf.annotation.get('tsv_fields')
     if manual_tsv_fields:
         field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
         if cnf.get('keep_intermediate'):
@@ -82,7 +82,7 @@ def _extract_fields(cnf, main_sample_index, vcf_fpath):
 
     # broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
 
-    _manual_tsv_fields = cnf['tsv_fields']
+    _manual_tsv_fields = cnf.annotation['tsv_fields']
     if _manual_tsv_fields:
         fields = [
             rec.keys()[0] for rec

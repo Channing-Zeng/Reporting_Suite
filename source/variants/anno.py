@@ -1,38 +1,37 @@
 import shutil
 import os
-from os.path import splitext, basename, join, dirname, realpath, isfile, islink
+from os.path import splitext, basename, join, isfile
 import socket
-from source.bcbio_structure import _ungzip_if_needed
 
+from source.bcbio_structure import ungzip_if_needed
 from source.calling_process import call_subprocess
-from source.file_utils import iterate_file, intermediate_fname, verify_file, add_suffix
+from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import convert_to_maf, iterate_vcf, remove_prev_eff_annotation, leave_main_sample, \
-    igvtools_index, tabix_vcf
+from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
-    vcf_fpath = _ungzip_if_needed(cnf, vcf_fpath)
+    vcf_fpath = ungzip_if_needed(cnf, vcf_fpath)
 
-    if 'gatk' in cnf:
+    if 'gatk' in cnf.annotation:
         res = _gatk(cnf, vcf_fpath, bam_fpath)
         if res:
             vcf_fpath = res
             annotated = True
 
-    dbs = [(dbname, cnf[dbname])
+    dbs = [(dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'cosmic', 'oncomine', 'clinvar']
-           if dbname in cnf]
+           if dbname in cnf.annotation]
 
-    if 'custom_vcfs' in cnf:
-        dbs.extend(cnf['custom_vcfs'].items())
+    if 'custom_vcfs' in cnf.annotation:
+        dbs.extend(cnf.annotation['custom_vcfs'].items())
 
     for dbname, dbconf in dbs:
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
@@ -40,20 +39,20 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             vcf_fpath = res
             annotated = True
 
-    if 'custom_vcfs' in cnf:
-        for dbname, custom_conf in cnf['custom_vcfs'].items():
+    if 'custom_vcfs' in cnf.annotation:
+        for dbname, custom_conf in cnf.annotation['custom_vcfs'].items():
             res = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)
             if res:
                 vcf_fpath = res
                 annotated = True
 
-    if 'dbnsfp' in cnf:
+    if 'dbnsfp' in cnf.annotation:
         res = _snpsift_db_nsfp(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
             annotated = True
 
-    if 'snpeff' in cnf:
+    if 'snpeff' in cnf.annotation:
         res, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
@@ -68,14 +67,14 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             if file_exists(genes_fpath):
                 shutil.move(genes_fpath, cnf['output_dir'])
 
-    if cnf.get('tracks'):
-        for track in cnf['tracks']:
+    if cnf.annotation.get('tracks'):
+        for track in cnf.annotation['tracks']:
             res = _tracks(cnf, track, vcf_fpath)
             if res:
                 annotated = True
                 vcf_fpath = res
 
-    if 'mongo' in cnf:
+    if 'mongo' in cnf.annotation:
         res = _mongo(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
@@ -115,7 +114,7 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     # tabix_vcf(cnf, final_vcf_fpath)
 
     # Converting to TSV
-    if 'tsv_fields' in cnf:
+    if 'tsv_fields' in cnf.annotation:
         tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
         if not tsv_fpath:
             critical('TSV convertion didn\'t work')
@@ -130,12 +129,12 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
 
 
 def _mongo(cnf, input_fpath):
-    if 'mongo' not in cnf:
+    if 'mongo' not in cnf.annotation:
         return None
 
-    executable = get_java_tool_cmdline(cnf, 'external/mongo_loader/VCFStore.jar')
+    executable = get_java_tool_cmdline(cnf, join('external', 'mongo_loader', 'VCFStore.jar'))
     output_fpath = intermediate_fname(cnf, input_fpath, 'mongo')
-    project_name = cnf.get("project_name")
+    project_name = cnf.project_name
 
     cmdline = (
         '{executable} -module annotation -inputFile {input_fpath} ' ''
@@ -204,7 +203,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
         critical('Please, provide a path to DB NSFP file in '
                  'the "genomes" section in the system config.')
 
-    annotations = cnf['dbnsfp'].get('annotations') or []
+    annotations = cnf.annotation['dbnsfp'].get('annotations') or []
 
     # all_fields.extend(['dbNSFP_' + ann for ann in annotations])
 
@@ -230,7 +229,7 @@ def _snpeff(cnf, input_fpath):
         input_fpath = res
     info('')
 
-    if 'snpeff' not in cnf:
+    if 'snpeff' not in cnf.annotation:
         return None, None, None
 
     # self.all_fields.extend([
@@ -241,7 +240,7 @@ def _snpeff(cnf, input_fpath):
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
     stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
-    extra_opts = cnf['snpeff'].get('opts') or ''
+    extra_opts = cnf.annotation['snpeff'].get('opts') or ''
     db_path = cnf['genome'].get('snpeff')
     if db_path:
         db_path_cmdline = ' -dataDir ' + db_path
@@ -252,23 +251,24 @@ def _snpeff(cnf, input_fpath):
         db_path_cmdline = ''
 
     opts = ''
-    if cnf['snpeff'].get('cancer'):
+    if cnf.annotation['snpeff'].get('cancer'):
         opts += ' -cancer '
 
     custom_transcripts = None
-    if cnf['snpeff'].get('only_transcripts'):
+    if cnf.annotation['snpeff'].get('only_transcripts'):
         custom_transcripts = cnf.genome.snpeff_transcripts
         if custom_transcripts:
             if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
                 return None, None, None
             opts += ' -onlyTr ' + custom_transcripts + ' '
 
-    if cnf['snpeff'].get('clinical_reporting') or cnf['snpeff'].get('canonical'):
+    if cnf.annotation['snpeff'].get('clinical_reporting') or \
+            cnf.annotation['snpeff'].get('canonical'):
         opts += ' -hgvs '
         if not custom_transcripts:
             opts += ' -canon '
 
-    extra_opts = cnf['snpeff'].get('extra_opts')
+    extra_opts = cnf.annotation['snpeff'].get('extra_opts')
     if extra_opts:
         opts += ' ' + extra_opts + ' '
     else:
@@ -332,7 +332,7 @@ def _tracks(cnf, track_path, input_fpath):
 
 
 def _gatk(cnf, input_fpath, bam_fpath):
-    if 'gatk' not in cnf:
+    if 'gatk' not in cnf.annotation:
         return None
 
     step_greetings('GATK')
@@ -377,7 +377,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
         'QualByDepth': 'QD',
         'ReadPosRankSumTest': 'ReadPosRankSum'
     }
-    annotations = cnf['gatk'].get('annotations') or []
+    annotations = cnf.annotation['gatk'].get('annotations') or []
 
     # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
 

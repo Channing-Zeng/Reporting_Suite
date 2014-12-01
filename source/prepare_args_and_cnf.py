@@ -7,19 +7,19 @@ from os import getcwd
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
-from source.config import Defaults, Config
+from source.config import defaults, Config
 from source.main import check_keys, check_inputs, set_up_work_dir, load_genome_resources
 from source.logger import info, critical
 
 
 def add_post_bcbio_args(parser):
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % Defaults.sys_cnf)
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % Defaults.run_cnf)
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf'])
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
     # parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
-    parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + Defaults.qsub_runner)
+    parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + defaults['qsub_runner'])
     parser.add_option('--project-name', '--project', dest='project_name')
     parser.add_option('--email', dest='email')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
@@ -113,13 +113,13 @@ def _set_sys_config(opts):
         hostname = socket.gethostname()
         info('hostname: ' + hostname)
 
-        opts.sys_cnf = Defaults.sys_cnfs['us']
+        opts.sys_cnf = defaults['sys_cnfs']['us']
         if 'ukap' in hostname:
-            opts.sys_cnf = Defaults.sys_cnfs['uk']
+            opts.sys_cnf = defaults['sys_cnfs']['uk']
         elif 'local' in hostname or 'Home' in hostname:
-            opts.sys_cnf = Defaults.sys_cnfs['local']
+            opts.sys_cnf = defaults['sys_cnfs']['local']
         elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
-            opts.sys_cnf = Defaults.sys_cnfs['us']
+            opts.sys_cnf = defaults['sys_cnfs']['us']
     info('Using ' + opts.sys_cnf)
 
 
@@ -143,7 +143,7 @@ def _set_run_cnf(config_dirpath, opts):
         if isfile(project_run_cnf_fpath) and verify_file(project_run_cnf_fpath):
             provided_run_cnf_fpath = project_run_cnf_fpath
         else:
-            provided_run_cnf_fpath = Defaults.run_cnf
+            provided_run_cnf_fpath = defaults['run_cnf']
             if provided_run_cnf_fpath != project_run_cnf_fpath:
                 info('Using ' + provided_run_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
                 if isfile(project_run_cnf_fpath):

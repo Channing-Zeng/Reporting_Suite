@@ -40,19 +40,20 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf
-    cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v67_20131024-hg19.vcf
-    dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf
-    oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
+    cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf
+    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
+    oncomine: /ngs/reference_data/genomes/Hsapiens/staging/oncomine/mutation_details.vcf
+    dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
-    snpeff: /users/klpf990/snpeff/data  # data dir path
+    snpeff: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome-expanded.bed
 
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
 queue: batch.q
 

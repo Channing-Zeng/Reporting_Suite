@@ -128,7 +128,8 @@ class VariantCaller:
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
 
-        self.combined_filt_maf_fpath = None
+        self.pickline_res_fpath = None
+        self.vcf2txt_res_fpath = None
 
     def find_filt_maf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_maf_ending)
@@ -246,14 +247,14 @@ class BCBioStructure:
 
         self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
 
-        self.work_dir = join(self.final_dirpath, pardir, 'work', 'post_processing')
+        self.work_dir = abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         self.cnf.work_dir = self.work_dir
         if not isdir(self.work_dir):
             safe_mkdir(self.work_dir)
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
 
-        # Moving raw variants in the date dir to var_raw
+        # Moving raw variants in the date dir to var
         for fname in os.listdir(self.date_dirpath):
             if '.vcf' in fname:
                 if not isdir(self.var_dirpath):
@@ -664,7 +665,7 @@ def _normalize(name):
     return name.lower().replace('_', '').replace('-', '')
 
 
-def _ungzip_if_needed(cnf, fpath):
+def ungzip_if_needed(cnf, fpath):
     if fpath.endswith('.gz'):
         fpath = fpath[:-3]
     if not file_exists(fpath) and file_exists(fpath + '.gz'):

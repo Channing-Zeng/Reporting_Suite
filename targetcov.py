@@ -14,7 +14,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 import shutil
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
-from source.config import Defaults
+from source.config import defaults
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.utils import info
@@ -34,19 +34,14 @@ def main(args):
             (['--padding'], dict(
                 dest='padding',
                 help='integer indicating the number of bases to extend each target region up and down-stream. '
-                     'Default is ' + str(Defaults.coverage_reports['padding']),
+                     'Default is ' + str(defaults['coverage_reports']['padding']),
                 type='int')
-             ),
-            (['--reports'], dict(
-                dest='report_types',
-                metavar=Defaults.coverage_reports['report_types'],
-                help='Comma-separated report names.')
              ),
             (['--depth-thresholds'], dict(
                 dest='depth_thresholds',
                 metavar='A,B,C',
                 help='Default: ' + ','.join(map(str,
-                      Defaults.coverage_reports['depth_thresholds']))),
+                      defaults['coverage_reports']['depth_thresholds']))),
              ),
         ],
         required_keys=['bam', 'bed'],

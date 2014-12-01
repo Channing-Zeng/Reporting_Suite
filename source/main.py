@@ -3,11 +3,11 @@ import sys
 from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir
 from optparse import OptionParser
 from shutil import rmtree
-from source.bcbio_structure import _ungzip_if_needed
+from source.bcbio_structure import ungzip_if_needed
 
 from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path
 from source import logger
-from source.config import Config, Defaults
+from source.config import Config, defaults
 from source.logger import info, err, critical
 from source.file_utils import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
@@ -58,16 +58,16 @@ def read_opts_and_cnfs(extra_opts,
         (['--sys-cnf'], dict(
              dest='sys_cnf',
              metavar='SYS_CNF.yaml',
-             default=Defaults.sys_cnfs['uk'],
+             default=defaults['sys_cnfs']['uk'],
              help='System configuration file with paths to external tools and genome resources. The default is  '
-                  '(see default one %s)' % Defaults.sys_cnf)
+                  '(see default one %s)' % defaults['sys_cnf'])
          ),
         (['--run-cnf'], dict(
              dest='run_cnf',
              metavar='RUN_CNF.yaml',
-             default=Defaults.run_cnf,
+             default=defaults['run_cnf'],
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
-                  'The default is %s' % Defaults.run_cnf)
+                  'The default is %s' % defaults['run_cnf'])
          ),
         (['--work-dir'], dict(
             dest='work_dir',
@@ -261,7 +261,7 @@ def load_genome_resources(cnf, required=list(), optional=list()):
                 gz_fpath = genome_cnf[key] + '.gz'
                 if verify_file(gz_fpath):
                     info(key + ' is in GZip, trying to uncompress...')
-                    fpath = _ungzip_if_needed(cnf, gz_fpath)
+                    fpath = ungzip_if_needed(cnf, gz_fpath)
                     if fpath:
                         genome_cnf[key] = fpath
                     else:

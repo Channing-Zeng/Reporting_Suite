@@ -12,6 +12,7 @@ import sys
 
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
+from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
@@ -525,7 +526,8 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
             rec.INFO['AF'] = af
         return rec
 
-    return iterate_vcf(cnf, vcf_fpath, set_af, 'vcf2txt_fix')
+    vcf_fpath = iterate_vcf(cnf, vcf_fpath, set_af, 'vcf2txt')
+    return vcf_fpath
 
 
 def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, sample_min_freq):
@@ -553,13 +555,13 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
     res = run_vcf2txt(cnf, vcf_fpaths, caller.vcf2txt_res_fpath, bcbio_structure.paired, sample_min_freq)
     if not res:
-        err('Somethings wrong with vcf2txt_paired run')
-        return
+        err('vcf2txt run returned non-0')
+        return None
 
     res = run_pickline(cnf, caller, caller.vcf2txt_res_fpath)
     if not res:
-        err('Somethings wrong with pickLine run')
-        return
+        err('pickLine run returned non-0')
+        return None
     return res
 
 
@@ -571,53 +573,22 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
 
     caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
-    cmdline = '{pick_line} -l PASS:TRUE -c 44 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+    cmdline = '{pick_line} -l PASS:TRUE -c 45 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
               'grep -v NON_CODING'
+
+# grep -E "(^Sample)|(HIGH)|(MODERATE)" variants.txt | pickLine -l PASS:TRUE -c 45 | grep -vw dbSNP | pickLine -v -i 12:3 -c 14:11
+
     if cnf.genome.polymorphic_variants:
         poly_vars = abspath(cnf.genome.polymorphic_variants)
-        cmdline += ' | {pick_line} -v -i 12:3 -c 13:11 {poly_vars}'
+        cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
     cmdline = cmdline.format(**locals())
-
     res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
     if not res:
         return None
     else:
         return res
-
-
-def postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads):
-    # samples = []StrongSomatic
-
-    # caller.combined_filt_maf_fpath, \
-    # caller.combined_filt_pass_maf_fpath = \
-    #     combine_mafs(
-            # cnf,
-            # caller.find_filt_maf_by_sample().values(),
-            # join(bcbio_structure.var_dirpath, caller.name))
-
-    if caller.pickline_res_fpath:
-        # comb_basefname = basename(caller.combined_filt_maf_fpath)
-        pass_comb_basefname = basename(caller.pickline_res_fpath)
-
-        # comb_maf_fpath_symlink = join(bcbio_structure.date_dirpath, comb_basefname)
-        comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
-
-        # print comb_maf_fpath_symlink
-        print comb_pass_maf_fpath_symlink
-        # if not exists(comb_maf_fpath_symlink) \
-        #         and not islink(comb_maf_fpath_symlink) \
-        #         and caller.combined_filt_maf_fpath != comb_maf_fpath_symlink:
-        #     os.symlink(caller.combined_filt_maf_fpath, comb_maf_fpath_symlink)
-
-        if not exists(comb_pass_maf_fpath_symlink) \
-                and not islink(comb_pass_maf_fpath_symlink) \
-                and caller.pickline_res_fpath != comb_pass_maf_fpath_symlink:
-            os.symlink(caller.pickline_res_fpath, comb_pass_maf_fpath_symlink)
-
-    info('-' * 70)
-    info()
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
@@ -662,9 +633,21 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
-    filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
+    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
+    if not res:
+        return None
 
-    postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads)
+    # symlinking
+    pass_comb_basefname = basename(caller.pickline_res_fpath)
+    comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
+    if not exists(comb_pass_maf_fpath_symlink) \
+            and not islink(comb_pass_maf_fpath_symlink) \
+            and caller.pickline_res_fpath != comb_pass_maf_fpath_symlink:
+        os.symlink(caller.pickline_res_fpath, comb_pass_maf_fpath_symlink)
+
+    info('-' * 70)
+    info()
+
 
     # info()
     # info('-' * 70)
@@ -707,26 +690,32 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
 
 def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, paired, sample_min_freq=None):
     info()
-    info('Running VarDict vcf2txt_paired.pl...')
+    info('Running VarDict vcf2txt...')
 
     vcf2txt = None
-    if paired:
-        vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
-    else:
-        vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt.pl'))
+    # if paired:
+    #    vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt_paired.pl'))
+    # else:
+    #    vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt.pl'))
+    vcf2txt = get_script_cmdline(cnf, 'perl', join('external', 'vcf2txt.pl'))
 
     if not vcf2txt:
         sys.exit(1)
 
     vcf_fpaths = ' '.join(vcf_fpaths)
 
-    min_freq = cnf.variant_filtering.min_freq or sample_min_freq or Defaults.default_min_freq
-    sample_cnt = cnf.variant_filtering.sample_cnt
-    freq = cnf.variant_filtering.freq
-    min_p_mean = cnf.variant_filtering.min_p_mean
-    min_q_mean = cnf.variant_filtering.min_q_mean
+    c = cnf.variant_filtering
+    min_freq = c.min_freq or sample_min_freq or defaults.default_min_freq
 
-    cmdline = '{vcf2txt} -F {min_freq} -n {sample_cnt} -f {freq} -p {min_p_mean} -q {min_q_mean} {vcf_fpaths}'.format(**locals())
+    cmdline = '{vcf2txt} ' \
+        '-F {min_freq} -n {c.sample_cnt} -f {c.freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
+        '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
+        '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} ' \
+        '{vcf_fpaths}'.format(**locals())
+
+    if cnf.genome.dbsnp_multi_mafs:
+        cmdline += ' -A ' + cnf.genome.dbsnp_multi_mafs
+
     res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
     return res
 

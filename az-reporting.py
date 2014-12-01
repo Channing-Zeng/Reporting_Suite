@@ -12,7 +12,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 from optparse import OptionParser
 from source.bcbio_runner import BCBioRunner
-from source.config import Defaults
+from source.config import defaults
 from source.logger import info
 from source.main import check_system_resources, load_genome_resources
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
@@ -28,7 +28,7 @@ def main():
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
 
-    parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=Defaults.load_mongo, help='Load to Mongo DB')
+    parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=defaults['load_mongo'], help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
     

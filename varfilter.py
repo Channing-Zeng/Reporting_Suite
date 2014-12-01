@@ -16,11 +16,11 @@ import os
 
 from source.main import load_genome_resources
 from source.variants.filtering import filter_for_variant_caller
-from source.config import Defaults
+from source.config import defaults
 from source.logger import info, send_email, err
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
-from source.file_utils import safe_mkdir, symlink_plus, file_exists, verify_file
+from source.file_utils import safe_mkdir, symlink_plus, file_exists, verify_file, num_lines
 
 
 def main():
@@ -37,13 +37,8 @@ def main():
         other value otherwise, where the value is ;-separated list of failed criteria.
         '''
 
-    defaults = Defaults.variant_filtering
+    dfts = defaults['variant_filtering']
     extra_opts = [
-        (['-i', '--impact'], dict(
-            dest='impact',
-            help='Effect impact. Default: ' + defaults['impact']
-        )),
-
         (['-b', '--bias'], dict(
             dest='bias',
             action='store_true',
@@ -51,12 +46,12 @@ def main():
                  'and AF < 0.3 will be considered as false positive.'
         )),
 
-        (['-M', '--mean-mq'], dict(
-            dest='mean_mq',
+        (['-M', '--min-mq'], dict(
+            dest='min_mq',
             type='float',
             help='The filtering mean mapping quality score for variants. '
                  'The raw variant will be filtered if the mean mapping quality '
-                 'score is less then specified. Default %d' % defaults['mean_mq'],
+                 'score is less then specified. Default %d' % dfts['min_mq'],
         )),
 
         (['-D', '--filt-depth'], dict(
@@ -64,22 +59,22 @@ def main():
             type='int',
             help='The filtering total depth. The raw variant will be filtered '
                  'on first place if the total depth is less then [filt_depth]. '
-                 'Default %s' % str(defaults['filt_depth']),
+                 'Default %s' % str(dfts['filt_depth']),
         )),
 
-        (['-V', '--mean-vd'], dict(
-            dest='mean_vd',
+        (['-V', '--min-vd'], dict(
+            dest='min_vd',
             type='int',
-            help='The filtering variant depth. Variants with depth < [mean_vd] will '
+            help='The filtering variant depth. Variants with depth < [min_vd] will '
                  'be considered false positive. Default is %d (meaning at least %d reads '
-                 'are needed for a variant)' % (defaults['mean_vd'], defaults['mean_vd'])
+                 'are needed for a variant)' % (dfts['min_vd'], dfts['min_vd'])
         )),
 
         (['-m', '--maf'], dict(
             dest='maf',
             type='float',
             help='If there is MAF with frequency, it will be considered dbSNP '
-                 'regardless of COSMIC. Default MAF is %f' % defaults['maf'],
+                 'regardless of COSMIC. Default MAF is %f' % dfts['maf'],
         )),
 
         (['-r', '--fraction'], dict(
@@ -88,7 +83,7 @@ def main():
             help='When a novel variant is present in more than [fraction] '
                  'of samples and mean allele frequency is less than [freq], '
                  'it\'s considered as likely false positive. Default %f. '
-                 'Used with -f and -n' % defaults['fraction'],
+                 'Used with -f and -n' % dfts['fraction'],
         )),
 
         (['-f', '--freq'], dict(
@@ -96,7 +91,7 @@ def main():
             type='float',
             help='When the average allele frequency is also below the [freq], '
                  'the variant is considered likely false positive. '
-                 'Default %f. Used with -r and -n' % defaults['freq'],
+                 'Default %f. Used with -r and -n' % dfts['freq'],
         )),
 
         (['-n'], dict(
@@ -104,7 +99,7 @@ def main():
             type='int',
             help='When the variant is detected in greater or equal [sample_cnt] '
                  'samples, the variant is considered likely false positive. '
-                 'Default %d. Used with -r and -f' % defaults['sample_cnt'],
+                 'Default %d. Used with -r and -f' % dfts['sample_cnt'],
         )),
 
         (['-R', '--max-ratio'], dict(
@@ -112,7 +107,7 @@ def main():
             type='float',
             help='When a variant is present in more than [fraction] of samples, '
                  'and AF < 0.3, it\'s considered as likely false positive, '
-                 'even if it\'s in COSMIC. Default %f.' % defaults['max_ratio'],
+                 'even if it\'s in COSMIC. Default %f.' % dfts['max_ratio'],
         )),
 
         (['-F', '--min-freq'], dict(
@@ -120,21 +115,21 @@ def main():
             type='float',
             help='When individual allele frequency < freq for variants, '
                  'it was considered likely false poitives. '
-                 'Default %f' % Defaults.default_min_freq,
+                 'Default %f' % defaults['default_min_freq'],
         )),
 
         (['-p'], dict(
             dest='min_p_mean',
             type='int',
             help='The minimum mean position in reads for variants.'
-                 'Default %d bp' % defaults['min_p_mean'],
+                 'Default %d bp' % dfts['min_p_mean'],
         )),
 
         (['-q'], dict(
             dest='min_q_mean',
             type='float',
             help='The minimum mean base quality phred score for variant.'
-                 'Default %d' % defaults['min_q_mean'],
+                 'Default %d' % dfts['min_q_mean'],
         )),
 
         (['-P'], dict(
@@ -143,7 +138,7 @@ def main():
             help='The filtering mean position in reads for variants. '
                  'The raw variant will be filtered on first place if the mean '
                  'posititon is less then [filt_p_mean]. '
-                 'Default %s bp' % str(defaults['filt_p_mean']),
+                 'Default %s bp' % str(dfts['filt_p_mean']),
         )),
 
         (['-Q'], dict(
@@ -152,13 +147,13 @@ def main():
             help='The filtering mean base quality phred score for variants. '
                  'The raw variant will be filtered on first place  '
                  'if the mean quality is less then [filt_q_mean]. '
-                 'Default %s' % str(defaults['filt_q_mean']),
+                 'Default %s' % str(dfts['filt_q_mean']),
         )),
 
         (['--sn'], dict(
             dest='signal_noise',
             type='int',
-            help='Minimal signal/noise value. Default %d' % defaults['signal_noise']
+            help='Minimal signal/noise value. Default %d' % dfts['signal_noise']
         )),
 
         (['-u'], dict(
@@ -196,13 +191,13 @@ def main():
     filter_all(cnf, bcbio_structure)
 
 
-#@profile
 def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
 
     for _, caller in bcbio_structure.variant_callers.items():
-        filter_for_variant_caller(caller, cnf, bcbio_structure)
+        if caller.name == 'vardict':
+            filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     msg = ['Filtering finished.']
     info('Results:')
@@ -211,16 +206,24 @@ def filter_all(cnf, bcbio_structure):
 
     if any(c.pickline_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
-        info('Final vcf2txt txt results:')
+        info('Final variants:')
         msg.append('')
-        msg.append('Combined MAF files:')
+        msg.append('Combined variants for each variant caller:')
         for caller in bcbio_structure.variant_callers.values():
-            if caller.pickline_res_fpath:
+            if caller.vcf2txt_res_fpath:
                 info('  ' + caller.name)
-                info('     ' + caller.pickline_res_fpath)
+                info('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
                 # info('     ' + caller.combined_filt_pass_maf_fpath)
                 msg.append('  ' + caller.name)
-                msg.append('     ' + caller.pickline_res_fpath)
+                msg.append('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
+                # msg.append('     ' + caller.combined_filt_pass_maf_fpath)
+
+            if caller.pickline_res_fpath:
+                info('  ' + caller.name + ' PASSed')
+                info('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
+                # info('     ' + caller.combined_filt_pass_maf_fpath)
+                msg.append('  ' + caller.name)
+                msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
                 # msg.append('     ' + caller.combined_filt_pass_maf_fpath)
 
                 if cnf.datahub_path:

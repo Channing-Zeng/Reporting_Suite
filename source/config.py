@@ -17,90 +17,28 @@ else:
 cur_dirpath = dirname(abspath(__file__))
 
 
-# noinspection PyClassHasNoInit
-class Defaults:
-    genome = 'hg19'
-
-    output_dir = getcwd()
-
-    verbose = True
-    threads = None
-    reuse_intermediate = False
-    keep_intermediate = True
-
+defaults = dict(
     sys_cnfs = dict(
         us=abspath(join(cur_dirpath, pardir, 'system_info_Waltham.yaml')),
         uk=abspath(join(cur_dirpath, pardir, 'system_info_AP.yaml')),
         cloud=abspath(join(cur_dirpath, pardir, 'system_info_cloud.yaml')),
         local=abspath(join(cur_dirpath, pardir, 'test', 'system_info.yaml')),
-    )
-    sys_cnf = sys_cnfs['us']
-    run_cnf = join(cur_dirpath, pardir, 'run_info.yaml')
+    ),
+    run_cnf = abspath(join(cur_dirpath, pardir, 'run_info.yaml')),
 
-    load_mongo = False  # 'True' adds 'LoadMongo' to steps
-    qsub_runner = 'runner_Waltham.sh'
+    load_mongo = False,  # 'True' adds 'LoadMongo' to steps
+    qsub_runner = 'runner_Waltham.sh',
 
-    coverage_reports = dict(
-        depth_thresholds=[1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000],
-        padding=250,
-        report_types='summary,genes',
-        min_cov=20,
-        min_cov_factor=0.20,
-        max_cov_factor=2.5,
-    )
+    default_min_freq = 0.05,
+)
+defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
-    ngscat = dict(
-        saturation='n',
-        depthlist='auto',
-        availablefeatures=[
-            'percbases', 'saturation', 'specificity', 'coveragefreq',
-            'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
-    )
 
-    variant_filtering = dict(
-        impact='MODERATE|HIGH',
-        vardict_mode=False,
-
-        filt_p_mean=None,
-        filt_q_mean=None,
-        filt_depth=None,
-
-        min_p_mean=5,
-        min_q_mean=25,
-        min_freq=None,
-        mean_mq=20,
-        mean_vd=2,
-        signal_noise=4,
-
-        fraction=0.4,
-        max_ratio=1,
-        sample_cnt=10,
-        freq=0.15,
-        count_undetermined=True,
-        bias=False,
-        maf=0.0025,
-    )
-    default_min_freq = 0.05
-
-    quality_control = dict(
-        variant_distribution_scale=1000,
-        databases=['dbsnp'],
-        db_for_summary='cosmic',
-        novelty=['all', 'known', 'novel'],
-        metrics=[
-            'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-            'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-            'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio'],
-    )
-
-    snpeff = dict(
-        clinical_reporting=False,
-        cancer=False,
-    )
-
-    @staticmethod
-    def generate_yaml():
-        pass
+defaults_yaml_fpath = abspath(join(cur_dirpath, pardir, 'run_info_DEFAULTS.yaml'))
+if not verify_file(defaults_yaml_fpath): sys.exit(1)
+run_info_defaults = load_yaml(open(defaults_yaml_fpath), Loader=Loader)
+for k, v in run_info_defaults.items():
+    defaults[k] = v
 
 
 class Config(object):
@@ -122,12 +60,6 @@ class Config(object):
 
             self.sys_cnf = sys_cnf_fpath
             self.run_cnf = run_cnf_fpath
-
-            # if self.overwrite is not None:  # if specified
-            #     self.reuse_intermediate = not self.overwrite
-            # else:
-            #     self.overwrite = not self.reuse_intermediate
-
             self.tmp_base_dir = self.work_dir
         else:
             for k, v in cmd_line_opts.items():
@@ -210,7 +142,7 @@ def _load(sys_cnf_fpath, run_cnf_fpath):
     run_dict = load_yaml(open(run_cnf_fpath), Loader=Loader)
 
     loaded_dict = dict(run_dict.items() + sys_dict.items())
-    loaded_dict = fill_dict_from_defaults(loaded_dict, Defaults.__dict__)
+    loaded_dict = fill_dict_from_defaults(loaded_dict, defaults)
 
     info('Loaded system config ' + sys_cnf_fpath)
     info('Loaded run config ' + run_cnf_fpath)

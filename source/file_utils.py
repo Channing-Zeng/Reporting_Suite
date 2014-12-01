@@ -621,6 +621,11 @@ def verify_dir(fpath, description=''):
     return fpath
 
 
+def num_lines(fpath):
+    with open(fpath) as f:
+        return sum(1 for l in f)
+
+
 # def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
 #     base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
 #     if not verify_dir(base_dir, 'Base directory for temporary files'):
