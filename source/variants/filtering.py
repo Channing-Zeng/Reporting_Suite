@@ -562,6 +562,9 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
     if not res:
         err('pickLine run returned non-0')
         return None
+
+    write_vcfs(sample_names, vcf_fpaths, caller, caller.pickline_res_fpath)
+
     return res
 
 
@@ -578,8 +581,6 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
               'grep -v NON_CODING'
 
-# grep -E "(^Sample)|(HIGH)|(MODERATE)" variants.txt | pickLine -l PASS:TRUE -c 45 | grep -vw dbSNP | pickLine -v -i 12:3 -c 14:11
-
     if cnf.genome.polymorphic_variants:
         poly_vars = abspath(cnf.genome.polymorphic_variants)
         cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
@@ -591,12 +592,57 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
         return res
 
 
+def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
+    passed_variants = set()
+
+    with open(pickline_res_fpath) as maf_f:
+        for l in maf_f:
+            if l.startswith('Sample'):
+                pass
+            ts = l.split('\t')
+            s_name, chrom, start, alt = ts[0], ts[1], ts[2], ts[5]
+            # filt = ts[44]
+            passed_variants.add((s_name, chrom, start, alt))
+
+    for s_name, vcf_fpath in zip(sample_names, vcf_fpaths):
+        sample = next(s for s in caller.samples if s.name == s_name)
+        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
+        pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name)
+        safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
+
+        with open(vcf_fpath) as vcf_f, \
+             open(filt_vcf_fpath, 'w') as filt_f, \
+             open(pass_filt_vcf_fpath, 'w') as pass_f:
+            for l in vcf_f:
+                if l.startswith('#'):
+                    filt_f.write(l)
+                    pass_f.write(l)
+                else:
+                    ts = l.split('\t')
+                    chrom, pos, alt = ts[0], ts[1], ts[4]
+                    filt = ts[6]
+                    if (s_name, chrom, pos, alt) in passed_variants:
+                        info('PASSed variant at ' + chrom + ':' + pos + ', alt=' + alt + ' original filt=' + filt)
+                        ts[6] = 'PASS'
+                        filt_f.write('\t'.join(ts))
+                        pass_f.write('\t'.join(ts))
+                    else:
+                        if ts[6] in ['', '.', 'PASS']:
+                            ts[6] = ''
+                        else:
+                            ts[6] += ','
+                        ts[6] += 'vcf2txt'
+
+                        filt_f.write('\t'.join(ts))
+
+
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     IN_PARALLEL = False
 
     info('Running for ' + caller.name)
 
     vcf_by_sample = caller.find_anno_vcf_by_sample(optional_ext='.gz')
+    # only those samples that were found
 
     if len(vcf_by_sample) == 0:
         err('No vcfs for ' + caller.name + '. Skipping.')
@@ -638,12 +684,20 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         return None
 
     # symlinking
-    pass_comb_basefname = basename(caller.pickline_res_fpath)
-    comb_pass_maf_fpath_symlink = join(bcbio_structure.date_dirpath, pass_comb_basefname)
-    if not exists(comb_pass_maf_fpath_symlink) \
-            and not islink(comb_pass_maf_fpath_symlink) \
-            and caller.pickline_res_fpath != comb_pass_maf_fpath_symlink:
-        os.symlink(caller.pickline_res_fpath, comb_pass_maf_fpath_symlink)
+    pass_txt_basefname = basename(caller.pickline_res_fpath)
+    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
+    if not exists(pass_txt_fpath_symlink) \
+            and not islink(pass_txt_fpath_symlink) \
+            and caller.pickline_res_fpath != pass_txt_fpath_symlink:
+        os.symlink(caller.pickline_res_fpath, pass_txt_fpath_symlink)
+
+    for sample in caller.samples:
+        filt_vcf = sample.find_filt_vcf_by_callername(caller.name)
+        if filt_vcf:
+            for link in [join(sample.dirpath, basename(filt_vcf)),
+                         join(bcbio_structure.var_dirpath, basename(filt_vcf))]:
+                if not islink(link):
+                    os.symlink(filt_vcf, link)
 
     info('-' * 70)
     info()

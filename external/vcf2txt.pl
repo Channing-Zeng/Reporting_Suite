@@ -172,7 +172,7 @@ foreach my $d (@data) {
     my $ave_af = mean( $var{ $vark } );
     my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
     #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
-    $pass = "DUP" if ( $d->[25] ==  0 && $d->[23] !~ /1$/ && $d->[23] !~ /0$/ && (!$opt_a) && $d->[22] < 0.35 ); # all variants from one position in reads
+    $pass = "DUP" if ( $d->[25] == 0 && $d->[23] !~ /1$/ && $d->[23] !~ /0$/ && (!$opt_a) && $d->[22] < 0.35 ); # all variants from one position in reads
     $pass = "MAXRATE" if ( $varn/$sam_n >= $MAXRATIO && $d->[22] < 0.35 ); # present in $MAXRATIO samples, regardless of frequency
     $pass = "QMEAN" if ($qmean < $MINQMEAN );
     $pass = "PMEAN" if ($pmean < $MINPMEAN );

@@ -40,7 +40,6 @@ nosetests.xml
 
 # OS X
 .DS_Store
-*/.DS_Store
 
 # Extra
 external/snpEff/data
@@ -54,12 +53,9 @@ test/results_*
 
 # Bcbio tests
 test/**/vardict
-test/**/qc/ngscat
-test/**/qc/qualimap
-test/**/qc/varQC
-test/**/qc/varQC_postVarFilter
-test/**/targetSeq
+test/**/qc
 test/**/varQC
+test/**/targetSeq
 test/**/varFilter
 test/**/*.anno.filt.*
 test/**/scripts/*.map
@@ -67,4 +63,3 @@ test/**/2014-*
 
 test/*.maf
 test/*.vcf
-test/aaa*
