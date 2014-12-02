@@ -1,5 +1,6 @@
 from os.path import join, relpath
 from collections import OrderedDict
+from source.bcbio_structure import BCBioStructure
 
 from source.logger import info, step_greetings, send_email
 from source.file_utils import verify_file
@@ -40,14 +41,15 @@ def make_project_level_report(cnf, bcbio_structure):
 def _add_summary_reports(bcbio_structure, general_section):
     general_records = []
 
-    for (step_name, step_summary_dir) in [
-        (bcbio_structure.fastqc_name, bcbio_structure.fastqc_summary_dir),
-        (bcbio_structure.targqc_name, bcbio_structure.targqc_summary_dir),
-        (bcbio_structure.varqc_name, bcbio_structure.varqc_summary_dir)]:
+    for (name, repr_name, summary_dir) in [
+            (BCBioStructure.fastqc_name,      BCBioStructure.fastqc_repr,      BCBioStructure.fastqc_summary_dir),
+            (BCBioStructure.targqc_name,      BCBioStructure.targqc_repr,      BCBioStructure.targqc_summary_dir),
+            (BCBioStructure.varqc_name,       BCBioStructure.varqc_repr,       BCBioStructure.varqc_summary_dir),
+            (BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_repr, BCBioStructure.varqc_after_summary_dir)]:
 
-        summary_report_fpath = join(bcbio_structure.date_dirpath, step_summary_dir, step_name + '.html')
+        summary_report_fpath = join(bcbio_structure.date_dirpath, summary_dir, name + '.html')
         if verify_file(summary_report_fpath):
-            cur_metric = Metric(step_name + ' summary', common=True)
+            cur_metric = Metric(repr_name + ' summary', common=True)
             general_section.add_metric(cur_metric)
             general_records.append(
                 Record(metric=cur_metric,
@@ -59,20 +61,22 @@ def _add_summary_reports(bcbio_structure, general_section):
 
 
 def _add_per_sample_reports(bcbio_structure, general_records, individual_reports_section):
-    varqc_htmls_by_sample = _add_varqc_reports(bcbio_structure)
-    targqc_htmls_by_sample = _add_targqc_reports(bcbio_structure)
-    fastqc_htmls_by_sample = bcbio_structure.get_fastqc_report_fpaths_by_sample()
+    varqc_htmls_by_sample       = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
+    varqc_after_htmls_by_sample = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_dir)
+    targqc_htmls_by_sample      = _add_targqc_reports(bcbio_structure)
+    fastqc_htmls_by_sample      = bcbio_structure.get_fastqc_report_fpaths_by_sample()
 
     sample_reports_records = dict()
     for sample in bcbio_structure.samples:
         sample_reports_records[sample.name] = list(general_records)
 
-    for (step_name, htmls_by_sample) in [
-        (bcbio_structure.fastqc_name, fastqc_htmls_by_sample),
-        (bcbio_structure.targqc_name, targqc_htmls_by_sample),
-        (bcbio_structure.varqc_name, varqc_htmls_by_sample)]:
+    for (repr_name, htmls_by_sample) in [
+            (bcbio_structure.fastqc_repr,      fastqc_htmls_by_sample),
+            (bcbio_structure.targqc_repr,      targqc_htmls_by_sample),
+            (bcbio_structure.varqc_repr,       varqc_htmls_by_sample),
+            (bcbio_structure.varqc_after_repr, varqc_after_htmls_by_sample)]:
         if htmls_by_sample:
-            cur_metric = Metric(step_name)
+            cur_metric = Metric(repr_name)
             individual_reports_section.add_metric(cur_metric)
             for sample in bcbio_structure.samples:
                 if sample.name in htmls_by_sample:
@@ -88,21 +92,20 @@ def _add_per_sample_reports(bcbio_structure, general_records, individual_reports
     return sample_reports_records
 
 
-def _add_varqc_reports(bcbio_structure):
+def _add_varqc_reports(bcbio_structure, name, dir_name):
     callers = bcbio_structure.variant_callers.values()
     if len(callers) == 0:
         varqc_htmls_by_sample = None
     elif len(callers) == 1:
         varqc_htmls_by_sample = callers[0].find_fpaths_by_sample(
-            bcbio_structure.varqc_dir, bcbio_structure.varqc_name, 'html')
+            dir_name, name, 'html')
     else:
         varqc_htmls_by_sample = OrderedDict()
         for sample in bcbio_structure.samples:
             varqc_htmls_by_sample[sample.name] = OrderedDict()
         for caller in callers:
             for sample, fpath in caller.find_fpaths_by_sample(
-                    bcbio_structure.varqc_dir,
-                    bcbio_structure.varqc_name, 'html').items():
+                    dir_name, name, 'html').items():
                 varqc_htmls_by_sample[sample][caller.name] = fpath
 
     return varqc_htmls_by_sample

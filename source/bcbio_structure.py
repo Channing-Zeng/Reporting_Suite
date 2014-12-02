@@ -193,29 +193,38 @@ class BCBioStructure:
     varannotate_name = varannotate_dir                         = 'varAnnotate'
     targetseq_name   = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
     cnv_dir                          = cnv_summary_dir         = 'cnv'
+
     varqc_name               = 'varQC'
-    varqc_summary_name       = 'varQC_summary'
     varqc_after_name         = 'varQC_postVarFilter'
-    varqc_after_summary_name = 'varQC_postVarFilter_summary'
     ngscat_name              = 'ngscat'
     qualimap_name            = 'qualimap'
     targqc_name              = 'targQC'
     fastqc_name              = 'fastqc'
+
+    varqc_repr               = 'Var QC'
+    varqc_after_repr         = 'Var QC after filtering'
+    ngscat_repr              = 'Ngscat'
+    qualimap_repr            = 'Qualimap'
+    targqc_repr              = 'Target QC'
+    fastqc_repr              = 'FastQC'
+
     varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
     varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
     ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
     qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
     targqc_summary_dir                         = join('qc', targqc_name)
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
-    seq2c_name       = 'Seq2C'
-    combined_report_name = 'combined_report'
+
     detail_gene_report_baseending = '.details.gene'
     detail_sorted_gene_report_baseending = '.sorted.details.gene'
     detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
     detail_highcov_gene_report_baseending = '.details.high_cov.gene'
     detail_gene_report_ending = detail_gene_report_baseending + '.txt'
     detail_gene_report_tsv_ending = detail_gene_report_baseending + '.tsv'
-    seq2c_seq2cov_ending   = 'seq2c_seq2cov.txt'
+
+    seq2c_name           = 'Seq2C'
+    seq2c_seq2cov_ending = 'seq2c_seq2cov.txt'
+
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'

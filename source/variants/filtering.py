@@ -699,6 +699,8 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
                 if not islink(link):
                     os.symlink(filt_vcf, link)
 
+        BCBioStructure.move_vcfs_to_var(sample)
+
     info('-' * 70)
     info()
 

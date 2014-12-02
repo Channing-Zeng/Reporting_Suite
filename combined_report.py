@@ -21,7 +21,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.combined_report_name)
+    cnf, bcbio_structure = summary_script_proc_params('project_level_report')
 
     make_project_level_report(cnf, bcbio_structure)
 
