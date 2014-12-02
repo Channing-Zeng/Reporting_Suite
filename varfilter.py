@@ -196,8 +196,8 @@ def filter_all(cnf, bcbio_structure):
     info('-' * 70)
 
     for _, caller in bcbio_structure.variant_callers.items():
-        if caller.name == 'vardict':
-            filter_for_variant_caller(caller, cnf, bcbio_structure)
+        # if caller.name == 'vardict':
+        filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     msg = ['Filtering finished.']
     info('Results:')
