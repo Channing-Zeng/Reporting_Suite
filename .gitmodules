@@ -1,0 +1,6 @@
+[submodule "VarDict"]
+	path = VarDict
+	url = https://github.com/AstraZeneca-NGS/VarDict.git
+[submodule "Seq2C"]
+	path = Seq2C
+	url = https://github.com/AstraZeneca-NGS/Seq2C.git

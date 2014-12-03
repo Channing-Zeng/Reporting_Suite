@@ -106,7 +106,7 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
 
 
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
-    cov2lr = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'cov2lr.pl'))
+    cov2lr = get_script_cmdline(cnf, 'perl', join('Seq2C', 'cov2lr.pl'))
     if not cov2lr: sys.exit(1)
     cov2lr_output = join(cnf.work_dir, splitext(basename(output_fpath))[0] + '.cov2lr.tsv')
     cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
@@ -116,7 +116,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
     if not verify_file(cov2lr_output):
         return None
 
-    lr2gene = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'lr2gene.pl'))
+    lr2gene = get_script_cmdline(cnf, 'perl', join('Seq2C', 'lr2gene.pl'))
     if not lr2gene: sys.exit(1)
     cmdline = lr2gene + ' ' + cov2lr_output
     res = call(cnf, cmdline, output_fpath, exit_on_error=False)
@@ -167,7 +167,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
 
     # READ STATS
     info('Getting read counts...')
-    bam2reads = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'bam2reads.pl'))
+    bam2reads = get_script_cmdline(cnf, 'perl', join('Seq2C', 'bam2reads.pl'))
     if not bam2reads: sys.exit(1)
 
     bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
