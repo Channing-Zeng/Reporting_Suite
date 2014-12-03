@@ -499,7 +499,7 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
 
     vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
 
-    def set_af(rec):
+    def fix_fields(rec):
         af, t_ref_count, t_alt_count = None, None, None
 
         ads = rec.get_val('AD', main_sample_index)
@@ -524,9 +524,16 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
                     af = float(t_alt_count) / dp
 
             rec.INFO['AF'] = af
+
+        for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
+            if not rec.get_val(f, main_sample_index):
+                rec.INFO[f] = 999999999
+        if not rec.get_val('PSTD', main_sample_index):
+            rec.INFO['PSTD'] = '1.0'
+
         return rec
 
-    vcf_fpath = iterate_vcf(cnf, vcf_fpath, set_af, 'vcf2txt')
+    vcf_fpath = iterate_vcf(cnf, vcf_fpath, fix_fields, 'vcf2txt')
     return vcf_fpath
 
 

@@ -1,16 +1,10 @@
 #!/usr/bin/env python
+
+import __common
+
 import sys
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
-from os.path import abspath, dirname, realpath, join, basename, relpath
-from site import addsitedir
-source_dir = abspath(dirname(realpath(__file__)))
-addsitedir(join(source_dir, 'ext_modules'))
-
 import shutil
+from os.path import abspath, dirname, realpath, join, basename, relpath
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info, warn, send_email

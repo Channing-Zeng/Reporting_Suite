@@ -1,19 +1,13 @@
 #!/usr/bin/python
+
+import __common
+
 import sys
 from source.bcbio_structure import BCBioStructure
 from source.targetcov.bam_file import index_bam
+from os.path import isfile
 
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
-from os.path import abspath, dirname, realpath, pardir, join, basename, isfile
-from site import addsitedir
-source_dir = abspath(dirname(realpath(__file__)))
-addsitedir(join(source_dir, 'ext_modules'))
-
-if not 'matplotlib' in sys.modules:
+if 'matplotlib' not in sys.modules:
     import matplotlib
     matplotlib.use('Agg')  # non-GUI backend
 
@@ -22,7 +16,7 @@ from os.path import dirname
 
 from source.logger import info, critical
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
-from source.config import Defaults
+from source.config import defaults
 from source.runner import run_one
 from source.ngscat import config, ngscat_main
 from source.ngscat.bam_file import filter_unmapped_reads, process_pysam_bug
@@ -47,13 +41,13 @@ def main():
                 dest='padding',
                 help='integer indicating the number of bases to extend each target region up and down-stream',
                 type='int',
-                default=Defaults.coverage_reports['padding'])
+                default=defaults['coverage_reports']['padding'])
              ),
             (['--saturation'], dict(
                 dest='saturation',
                 help='Y/n to indicate whether saturation curve should be calculated',
                 metavar='{y,n}',
-                default=Defaults.ngscat['saturation'])
+                default=defaults['ngscat']['saturation'])
              ),
             (['--depth-list'], dict(
                 dest='depthlist',
@@ -61,14 +55,14 @@ def main():
                      '(do not leave spaces between) indicating the number of millions of reads to simulate '
                      'for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6.',
                 metavar='<float,float,..>',
-                default=Defaults.ngscat['depthlist'])
+                default=defaults['ngscat']['depthlist'])
              ),
             (['--one_feature'], dict(
                 dest='feature',
                 metavar='<str>',
                 help='Use this option if just one of the graphs/statistics should be calculated. '
                      'String indicating one of the following features: '
-                     '{%s}' % (', '.join(Defaults.ngscat['availablefeatures'])))),
+                     '{%s}' % (', '.join(defaults['ngscat']['availablefeatures'])))),
         ],
         required_keys=['bam', 'bed'],
         file_keys=['bam', 'bed', 'extra_bam'],
@@ -114,10 +108,10 @@ def process_parameters(cnf):
     if cnf.feature:
         cnf['feature'] = cnf['feature'].lower()
 
-    if cnf.feature and cnf.feature not in Defaults.ngscat['availablefeatures']:
+    if cnf.feature and cnf.feature not in defaults['ngscat']['availablefeatures']:
         critical('%s is not available. Please, check that the selected '
                  'feature is one of the following: %s'
-                 % (cnf['feature'], ', '.join(Defaults.ngscat['availablefeatures'])))
+                 % (cnf['feature'], ', '.join(defaults['ngscat']['availablefeatures'])))
 
     if 'extend' in cnf:
         cnf['extend'] = int(cnf['extend'])

@@ -57,6 +57,6 @@ genomes:
 
 queue: batch.q
 
-qsub_runner: runner_Waltham.sh
+qsub_runner: sub_scripts/runner_Waltham.sh
 
 #smtp_host: 'uw26.usuwb.astrazeneca.net'

@@ -1,20 +1,13 @@
 #!/usr/bin/env python
+
+import __common
+
 import sys
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
-from os.path import abspath, dirname, realpath, pardir, join
-from site import addsitedir
-source_dir = abspath(dirname(realpath(__file__)))
-addsitedir(join(source_dir, 'ext_modules'))
-
 import shutil
 from source.bcbio_structure import BCBioStructure, Sample
 from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, \
-     get_trasncripts_fpath, fix_chromosome_names
+    get_trasncripts_fpath, fix_chromosome_names
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info

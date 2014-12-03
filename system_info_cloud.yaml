@@ -43,4 +43,4 @@ genomes:
 
 queue: all.q
 
-qsub_runner: runner_cloud.sh
+qsub_runner: sub_scripts/runner_cloud.sh

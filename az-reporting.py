@@ -1,21 +1,13 @@
 #!/usr/bin/env python
+
+import sub_scripts.__common  # checking for python version and adding site dirs inside
 import sys
-if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
-    sys.exit('Python 2, versions 2.7 and higher is supported '
-             '(you are running %d.%d.%d)' %
-             (sys.version_info[0], sys.version_info[1], sys.version_info[2]))
-
-from os.path import dirname, realpath, join
-from site import addsitedir
-source_dir = dirname(realpath(__file__))
-addsitedir(join(source_dir, 'ext_modules'))
-
 from optparse import OptionParser
 from source.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
-from source.main import check_system_resources, load_genome_resources
-from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
+from source.main import check_system_resources
+from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import add_post_bcbio_args, process_post_bcbio_args
 from source.variants.vcf_processing import get_trasncripts_fpath
 
