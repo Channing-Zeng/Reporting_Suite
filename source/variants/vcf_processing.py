@@ -523,7 +523,7 @@ def vcf_one_per_line(cnf, vcf_fpath):
     info('Converting VCF to one-effect-per-line...')
 
     oneperline_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'opl')
-    vcfoneperline_cmline = get_script_cmdline(cnf, 'perl', join('external', 'vcfOnePerLine.pl'))
+    vcfoneperline_cmline = get_script_cmdline(cnf, 'perl', join('ext_tools', 'vcfOnePerLine.pl'))
     call(cnf, vcfoneperline_cmline, oneperline_vcf_fpath, stdin_fpath=vcf_fpath, exit_on_error=False)
     info()
 
@@ -728,7 +728,7 @@ def tabix_vcf(cnf, vcf_fpath):
 
 
 def vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath):
-    vcf_merge_cmdline = get_system_path(cnf, join('external', 'vcftools', 'scripts', 'vcf-merge'))
+    vcf_merge_cmdline = get_system_path(cnf, join('ext_tools', 'vcftools', 'scripts', 'vcf-merge'))
     if vcf_merge_cmdline is None:
         critical('No vcf_merge in path')
 

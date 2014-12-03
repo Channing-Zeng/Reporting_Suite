@@ -42,7 +42,7 @@ nosetests.xml
 .DS_Store
 
 # Extra
-external/snpEff/data
+ext_tools/snpEff/data
 
 # Tests
 test/run_info.yaml

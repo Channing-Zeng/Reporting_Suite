@@ -76,7 +76,7 @@ def make_targetseq_reports(cnf, sample):
 
 
 def seq2c_seq2cov(cnf, sample, amplicons_bed):
-    seq2cov = get_script_cmdline(cnf, 'perl', join('external', 'seq2c', 'seq2cov.pl'))
+    seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'))
     if not seq2cov: sys.exit(1)
 
     seq2c_output = join(

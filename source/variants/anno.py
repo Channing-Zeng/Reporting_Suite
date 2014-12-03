@@ -132,7 +132,7 @@ def _mongo(cnf, input_fpath):
     if 'mongo' not in cnf.annotation:
         return None
 
-    executable = get_java_tool_cmdline(cnf, join('external', 'mongo_loader', 'VCFStore.jar'))
+    executable = get_java_tool_cmdline(cnf, join('ext_tools', 'mongo_loader', 'VCFStore.jar'))
     output_fpath = intermediate_fname(cnf, input_fpath, 'mongo')
     project_name = cnf.project_name
 

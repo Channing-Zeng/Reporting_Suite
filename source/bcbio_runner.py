@@ -73,7 +73,6 @@ class BCBioRunner:
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.steps = Steps()
-        self.vardict_steps = Steps()
         self._set_up_steps(cnf, self.run_id)
 
         self.jobs = []
@@ -148,14 +147,14 @@ class BCBioRunner:
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
             interpreter='python',
-            script='varannotate.py',
+            script=join('sub_scripts', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
             name='VarQC', short_name='vq',
             interpreter='python',
-            script='varqc.py',
+            script=join('sub_scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\''
@@ -163,7 +162,7 @@ class BCBioRunner:
         self.varqc_after = Step(cnf, run_id,
             name='VarQC_postVarFilter', short_name='vqa',
             interpreter='python',
-            script='varqc.py',
+            script=join('sub_scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=spec_params + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
@@ -172,7 +171,7 @@ class BCBioRunner:
         self.targetcov = Step(cnf, run_id,
             name='TargetCov', short_name='tc',
             interpreter='python',
-            script='targetcov.py',
+            script=join('sub_scripts', 'targetcov.py'),
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
@@ -180,7 +179,7 @@ class BCBioRunner:
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
-            script='abnormal_regions.py',
+            script=join('sub_scripts', 'abnormal_regions.py'),
             dir_name=BCBioStructure.targetseq_dir,
             paramln=spec_params + ' -o \'{output_dir}\' {caller_names} {vcfs} '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
@@ -188,7 +187,7 @@ class BCBioRunner:
         self.ngscat = Step(cnf, run_id,
             name='ngsCAT', short_name='nc',
             interpreter='python',
-            script='ngscat.py',
+            script=join('sub_scripts', 'ngscat.py'),
             dir_name=BCBioStructure.ngscat_dir,
             paramln=spec_params + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
@@ -205,14 +204,14 @@ class BCBioRunner:
         self.varqc_summary = Step(cnf, run_id,
             name='VarQC_summary', short_name='vqs',
             interpreter='python',
-            script='varqc_summary.py',
+            script=join('sub_scripts', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.varqc_after_summary = Step(cnf, run_id,
             name='VarQC_postVarFilter_summary', short_name='vqas',
             interpreter='python',
-            script='varqc_summary.py',
+            script=join('sub_scripts', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir +
                     ' --name ' + BCBioStructure.varqc_after_name +
@@ -230,7 +229,7 @@ class BCBioRunner:
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
             interpreter='python',
-            script='varfilter.py',
+            script=join('sub_scripts', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
             paramln=varfilter_paramline
         )
@@ -245,7 +244,7 @@ class BCBioRunner:
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
-            script='seq2c.py',
+            script=join('sub_scripts', 'seq2c.py'),
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
@@ -253,7 +252,7 @@ class BCBioRunner:
             cnf, run_id,
             name='TargQC_summary', short_name='targqc',
             interpreter='python',
-            script='targqc_summary.py',
+            script=join('sub_scripts', 'targqc_summary.py'),
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
 
@@ -262,40 +261,16 @@ class BCBioRunner:
             cnf, run_id,
             name='FastQC_summary', short_name='fastqc',
             interpreter='python',
-            script='fastqc_summary.py',
+            script=join('sub_scripts', 'fastqc_summary.py'),
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         )
         self.combined_report = Step(cnf, run_id,
             name='Combined_report', short_name='cr',
             interpreter='python',
-            script='combined_report.py',
+            script=join('sub_scripts', 'combined_report.py'),
             dir_name=self.bcbio_structure.date_dirpath,
             paramln=cnfs_line + ' ' + self.final_dir + ' ' + summaries_cmdline_params
-        )
-
-        af_thr = str(cnf.variant_filtering.min_freq)
-        self.vardict = Step(cnf, run_id,
-            name='VarDict',
-            interpreter='perl',
-            script='vardict_pl',
-            dir_name='VarDict',
-            paramln=' -G ' + cnf.genome.seq + ' -f ' + af_thr + ' -N {tumor_name} -b \'{tumor_bam}|{normal_bam}\''
-                    ' -z -F -c 1 -S 2 -E 3 -g 4 {bed} > {vars_txt}'
-        )
-        self.testsomatic = Step(cnf, run_id,
-            name='TestSomatic',
-            script='testsomatic_r',
-            dir_name='VarDict',
-            paramln=' < {vars_txt} > {somatic_vars_txt}',
-        )
-        self.var_to_vcf_somatic = Step(cnf, run_id,
-            name='Var2Vcf_Somatic',
-            interpreter='perl',
-            script='var2vcf_somatic_pl',
-            dir_name='VarDict',
-            paramln=' -N \'{tumor_name}|{normal_name}\' -f ' +
-                    af_thr + ' < {somatic_vars_txt} > {vardict_vcf}',
         )
 
     def step_output_dir_and_log_paths(self, step, sample_name, caller=None):
@@ -397,54 +372,6 @@ class BCBioRunner:
         else:
             return bed_fpath
 
-    # def _sumbit_vardict(self, batches):
-    #     for batch_name, batch in batches.items():
-    #         normal_name, normal_bam_fpath = batch['normal']
-    #         bed_fpath = batch['bed']
-    #         for tumor_name, tumor_bam_fpath in batch['tumor'].items():
-    #             output_dirpath, _ = self.step_output_dir_and_log_paths(self.vardict, tumor_name)
-    #             vars_txt = join(output_dirpath, 'vardict.txt')
-    #
-    #             if not verify_bam(tumor_bam_fpath):
-    #                 sys.exit(1)
-    #
-    #             if not file_exists(tumor_bam_fpath + '.bai'):
-    #                 samtools = get_tool_cmdline(self.cnf, 'samtools')
-    #                 cmdline = '{samtools} index {bam}'.format(samtools=samtools, bam=tumor_bam_fpath)
-    #                 call(self.cnf, cmdline)
-    #
-    #             if self.vardict in self.vardict_steps:
-    #                 self.submit(
-    #                     self.vardict, tumor_name, suf='vardict',
-    #                     tumor_name=tumor_name,
-    #                     normal_name=normal_name,
-    #                     tumor_bam=tumor_bam_fpath,
-    #                     normal_bam=normal_bam_fpath,
-    #                     bed=bed_fpath,
-    #                     vars_txt=vars_txt)
-    #
-    #             somatic_vars_txt = join(output_dirpath, 'somatic_variants.txt')
-    #             if self.testsomatic in self.vardict_steps:
-    #                 self.submit(
-    #                     self.testsomatic, tumor_name, suf='testsomatic',
-    #                     vars_txt=vars_txt,
-    #                     somatic_vars_txt=somatic_vars_txt,
-    #                     wait_for_steps=[self.vardict.job_name(tumor_name, 'vardict')])
-    #
-    #             vardict_vcf = join(output_dirpath, 'somatic_variants-vardict_standalone.vcf')
-    #             if self.var_to_vcf_somatic in self.vardict_steps:
-    #                 self.submit(
-    #                     self.var_to_vcf_somatic, tumor_name, suf='var2vcf',
-    #                     tumor_name=tumor_name,
-    #                     normal_name=normal_name,
-    #                     somatic_vars_txt=somatic_vars_txt,
-    #                     vardict_vcf=vardict_vcf,
-    #                     wait_for_steps=[self.testsomatic.job_name(tumor_name, 'testsomatic')])
-    #
-    #             self._process_vcf(
-    #                 tumor_name, tumor_bam_fpath, vardict_vcf, 'vardict_standalone', steps=self.vardict_steps,
-    #                 job_names_to_wait=[self.var_to_vcf_somatic.job_name(tumor_name, 'var2vcf')])
-
     def post_jobs(self):
         callers = self.bcbio_structure.variant_callers.values()
 
@@ -470,8 +397,7 @@ class BCBioRunner:
                          self.varqc_after,
                          self.varannotate,
                          self.mongo_loader,
-                         self.abnormal_regions])
-                or self.vardict_steps):
+                         self.abnormal_regions])):
                 continue
 
             info('Processing "' + sample.name + '"')
@@ -482,8 +408,7 @@ class BCBioRunner:
             if any(step in self.steps for step in [
                    self.targetcov,
                    self.qualimap,
-                   self.ngscat]) \
-                    or self.vardict in self.vardict_steps:
+                   self.ngscat]):
                 if not sample.bam or not verify_bam(sample.bam):
                     err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
 
