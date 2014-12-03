@@ -7,4 +7,5 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 from os.path import abspath, dirname, realpath, join
 from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
+addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
