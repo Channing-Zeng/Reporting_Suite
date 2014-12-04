@@ -583,7 +583,7 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
 
     caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
-    cmdline = '{pick_line} -l PASS:TRUE -c 45 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+    cmdline = '{pick_line} -l PASS:TRUE -c 46 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
               'grep -v NON_CODING'
@@ -764,7 +764,7 @@ def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
     min_freq = c.min_freq or sample_min_freq or defaults.default_min_freq
 
     cmdline = '{vcf2txt} ' \
-        '-F {min_freq} -n {c.sample_cnt} -f {c.freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
+        '-f {min_freq} -n {c.sample_cnt} -F {c.freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
         '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
         '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} '.format(**locals())
 
