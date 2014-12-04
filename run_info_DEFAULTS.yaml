@@ -25,7 +25,7 @@ variant_filtering:
   freq:               0.15
   count_undetermined: True    # Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
 
-  max_ratio:          0.75    # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
+  max_ratio:          1       # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
   min_freq:           0.5     # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
 
@@ -259,3 +259,4 @@ annotation:
 verbose: True                 ## Prints tools' output
 keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
 reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
+

@@ -768,6 +768,12 @@ def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
         '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
         '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} '.format(**locals())
 
+    if c.bias:
+        cmdline += ' -b '
+
+    if c.count_undetermined is False:
+        cmdline += ' -u '
+
     if cnf.genome.dbsnp_multi_mafs and verify_file(cnf.genome.dbsnp_multi_mafs):
         cmdline += ' -A ' + cnf.genome.dbsnp_multi_mafs
 
