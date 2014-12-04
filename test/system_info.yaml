@@ -5,10 +5,10 @@ resources:
     # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: external/snpEff/snpEff.jar
+    path: ext_tools/snpEff/snpEff.jar
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
-    path: external/snpEff/SnpSift.jar
+    path: ext_tools/snpEff/SnpSift.jar
   qsub:
     path: tools/qsub.sh
   vardict_pl:
