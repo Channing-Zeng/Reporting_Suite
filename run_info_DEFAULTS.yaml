@@ -28,15 +28,14 @@ variant_filtering:
   max_ratio:          0.75    # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
   min_freq:           0.5     # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
-  mean_mq:            20      # The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified _mean_mq_.
 
   bias:               False   # Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
   min_p_mean:         5       # QUAL.   The minimum mean position in reads for variants.
   min_q_mean:         25      # PMEAN.  The minimum mean base quality phred score for variant.
-  min_mq:             20      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
-  min_vd:             3       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
+  min_mq:             10      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
+  min_vd:             2       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
   maf:                0.0025  # GMAF.   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
-  signal_noise:       4       # SN.     Signal/noise value.
+  signal_noise:       1.5     # SN.     Signal/noise value.
 
 
 quality_control:
