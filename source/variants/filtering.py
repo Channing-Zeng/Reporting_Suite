@@ -860,3 +860,4 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
         final_maf_fpath = None
 
     return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
+
