@@ -36,6 +36,14 @@ genomes:
     polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/hg19/variation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
+  GRCh37:
+    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
+    cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
+    1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
+    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
+
 queue: ngs.q
 
 qsub_runner: sub_scripts/runner_AP.sh

@@ -581,9 +581,14 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
         sys.exit(1)
         return None
 
+    with open(vcf2txt_res_fpath) as f:
+        pass_col_num = f.readline().split().index('PASS')
+        if pass_col_num < 0:
+            critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
+
     caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
-    cmdline = '{pick_line} -l PASS:TRUE -c 46 {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+    cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
               'grep -v NON_CODING'
