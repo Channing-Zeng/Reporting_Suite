@@ -44,6 +44,9 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
 
+    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
+
 queue: ngs.q
 
 qsub_runner: sub_scripts/runner_AP.sh
