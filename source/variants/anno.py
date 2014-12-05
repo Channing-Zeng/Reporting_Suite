@@ -4,7 +4,7 @@ from os.path import splitext, basename, join, isfile
 import socket
 
 from source.bcbio_structure import ungzip_if_needed
-from source.calling_process import call_subprocess
+from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
 from source.targetcov.bam_file import index_bam
@@ -154,6 +154,10 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     step_greetings('Annotating with ' + dbname)
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
+    java = get_system_path(cnf, 'java')
+    info('Java version:')
+    call(cnf, java + ' -version')
+    info()
 
     db_path = cnf['genome'].get(dbname)
     if not db_path:
@@ -186,7 +190,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             assert ' ' not in line
         return line
 
-    output_fpath = iterate_file(cnf, output_fpath, proc_line)
+    output_fpath = iterate_file(cnf, output_fpath, proc_line, suffix='f')
     return output_fpath
 
 
