@@ -2,14 +2,14 @@ from optparse import OptionParser
 from distutils import file_util
 import sys
 import os
-from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath
+from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, basename
 from os import getcwd
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
 from source.config import defaults, Config
-from source.main import check_keys, check_inputs, set_up_work_dir, load_genome_resources
-from source.logger import info, critical
+from source.main import check_keys, check_inputs, set_up_work_dir, check_genome_resources
+from source.logger import info, critical, warn
 
 
 def add_post_bcbio_args(parser):
@@ -17,7 +17,6 @@ def add_post_bcbio_args(parser):
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf'])
     parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Number of threads for each process')
-    # parser.add_option('-w', dest='overwrite', action='store_true', help='Overwrite existing results')
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
     parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + defaults['qsub_runner'])
     parser.add_option('--project-name', '--project', dest='project_name')
@@ -35,9 +34,9 @@ def process_post_bcbio_args(parser):
 
     bcbio_project_dirpath, final_dirpath, config_dirpath = _set_bcbio_dirpath(dir_arg)
 
-    _set_sys_config(opts)
+    _set_sys_config(config_dirpath, opts)
 
-    _set_run_cnf(config_dirpath, opts)
+    _set_run_config(config_dirpath, opts)
 
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
@@ -46,9 +45,9 @@ def process_post_bcbio_args(parser):
     if not check_inputs(cnf, file_keys=['qsub_runner']):
         sys.exit(1)
 
-    load_genome_resources(cnf, required=['seq'])
-
     bcbio_cnf = load_bcbio_cnf(cnf, config_dirpath)
+
+    check_genome_resources(cnf)
 
     return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
 
@@ -103,58 +102,110 @@ def _set_bcbio_dirpath(dir_arg):
     return bcbio_project_dirpath, final_dirpath, config_dirpath
 
 
-def _set_sys_config(opts):
-    opts.sys_cnf = adjust_path(opts.sys_cnf)
-    if opts.sys_cnf:
-        if not verify_file(opts.sys_cnf):
+def _set_sys_config(config_dirpath, opts):
+    provided_cnf_fpath = adjust_path(opts.sys_cnf)
+    # provided in commandline?
+    if provided_cnf_fpath:
+        if not verify_file(provided_cnf_fpath):
             sys.exit(1)
-    else:
-        import socket
-        hostname = socket.gethostname()
-        info('hostname: ' + hostname)
+        # alright, in commandline.
+        opts.sys_cnf = provided_cnf_fpath
 
-        opts.sys_cnf = defaults['sys_cnfs']['us']
-        if 'ukap' in hostname:
-            opts.sys_cnf = defaults['sys_cnfs']['uk']
-        elif 'local' in hostname or 'Home' in hostname:
-            opts.sys_cnf = defaults['sys_cnfs']['local']
-        elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+    else:
+        # or probably in config dir?
+        fpaths_in_config = [
+            abspath(join(config_dirpath, fname))
+            for fname in os.listdir(config_dirpath)
+            if fname.endswith('.yaml') and 'system_info' in fname]
+
+        if len(fpaths_in_config) > 1:
+            critical('More than one YAML file containing run_info in name found in the config '
+                     'directory ' + config_dirpath + ': ' + ' '.join(fpaths_in_config))
+
+        elif len(fpaths_in_config) == 1:
+            opts.sys_cnf = fpaths_in_config[0]
+            if not verify_file(opts.sys_cnf):
+                sys.exit(1)
+            # alright, in config dir.
+
+        else:
+            # detect system and use default system config
+            import socket
+            hostname = socket.gethostname()
+            info('hostname: ' + hostname)
+
             opts.sys_cnf = defaults['sys_cnfs']['us']
+            if 'ukap' in hostname:
+                opts.sys_cnf = defaults['sys_cnfs']['uk']
+            elif 'local' in hostname or 'Home' in hostname:
+                opts.sys_cnf = defaults['sys_cnfs']['local']
+            elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+                opts.sys_cnf = defaults['sys_cnfs']['us']
+
     info('Using ' + opts.sys_cnf)
 
 
-def _set_run_cnf(config_dirpath, opts):
-    provided_run_cnf_fpath = adjust_path(opts.run_cnf)
-    project_run_cnf_fpath = adjust_path(join(config_dirpath, 'run_info.yaml'))
-    if provided_run_cnf_fpath:
-        if not verify_file(provided_run_cnf_fpath):
+def _set_run_config(config_dirpath, opts):
+    provided_cnf_fpath = adjust_path(opts.run_cnf)
+    # provided in commandline?
+    if provided_cnf_fpath:
+        if not verify_file(provided_cnf_fpath):
             sys.exit(1)
-        if provided_run_cnf_fpath != project_run_cnf_fpath:
-            info('Using ' + provided_run_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
+
+        # alright, in commandline. copying over to config dir.
+        opts.run_cnf = provided_cnf_fpath
+        project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(provided_cnf_fpath)))
+        if provided_cnf_fpath != project_run_cnf_fpath:
+            info('Using ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
                 try:
                     os.remove(project_run_cnf_fpath)
                 except OSError:
                     pass
+
             if not isfile(project_run_cnf_fpath):
-                file_util.copy_file(provided_run_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+                run_info_fpaths_in_config = [
+                    abspath(join(config_dirpath, fname))
+                    for fname in os.listdir(config_dirpath)
+                    if fname.endswith('.yaml') and 'run_info' in fname]
+
+                if len(run_info_fpaths_in_config) > 0:
+                    warn('Warning: there are run_info files in config directory ' + config_dirpath + '. '
+                         'Provided config will be copied there and can cause ambigity in future.')
+
+                file_util.copy_file(provided_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
 
     else:  # No configs provided in command line options
-        if isfile(project_run_cnf_fpath) and verify_file(project_run_cnf_fpath):
-            provided_run_cnf_fpath = project_run_cnf_fpath
-        else:
-            provided_run_cnf_fpath = defaults['run_cnf']
-            if provided_run_cnf_fpath != project_run_cnf_fpath:
-                info('Using ' + provided_run_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
-                if isfile(project_run_cnf_fpath):
-                    try:
-                        os.remove(project_run_cnf_fpath)
-                    except OSError:
-                        pass
-                if not isfile(project_run_cnf_fpath):
-                    file_util.copy_file(provided_run_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
-                    # critical('Usage: ' + __file__ + ' BCBIO_FINAL_DIR [--run-cnf YAML_FILE] [--sys-cnf YAML_FILE]')
-    opts.run_cnf = project_run_cnf_fpath
-    info()
+        run_info_fpaths_in_config = [
+            abspath(join(config_dirpath, fname))
+            for fname in os.listdir(config_dirpath)
+            if fname.endswith('.yaml') and 'run_info' in fname]
+
+        if len(run_info_fpaths_in_config) > 1:
+            critical('More than one YAML file containing run_info in name found in the config '
+                     'directory ' + config_dirpath + ': ' + ' '.join(run_info_fpaths_in_config))
+
+        if len(run_info_fpaths_in_config) == 1:
+            opts.run_cnf = run_info_fpaths_in_config[0]
+            if not verify_file(opts.run_cnf):
+                sys.exit(1)
+            # alright, in config dir.
+
+        if len(run_info_fpaths_in_config) == 0:
+            info('No YAMLs containing run_info in name found in the config directory ' +
+                 config_dirpath + ', using the default one.')
+
+        opts.run_cnf = defaults['run_cnf']
+        project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
+        info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
+        if isfile(project_run_cnf_fpath):
+            try:
+                os.remove(project_run_cnf_fpath)
+            except OSError:
+                pass
+        if not isfile(project_run_cnf_fpath):
+            file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
+
+    info('Using ' + opts.run_cnf)
 
 

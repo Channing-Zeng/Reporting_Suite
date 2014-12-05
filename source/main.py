@@ -5,7 +5,8 @@ from optparse import OptionParser
 from shutil import rmtree
 from source.bcbio_structure import ungzip_if_needed
 
-from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path
+from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path, \
+    verify_obj_by_path
 from source import logger
 from source.config import Config, defaults
 from source.logger import info, err, critical
@@ -69,23 +70,12 @@ def read_opts_and_cnfs(extra_opts,
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
                   'The default is %s' % defaults['run_cnf'])
          ),
-        (['--work-dir'], dict(
-            dest='work_dir',
-            metavar='DIR')
-         ),
-        (['--log-dir'], dict(
-            dest='log_dir',
-            metavar='DIR')
-         ),
-        (['--proc-name'], dict(
-            dest='proc_name'
-        )),
-        (['--project-name'], dict(
-            dest='project_name'
-        )),
-        (['--email'], dict(
-            dest='email'
-        )),
+        (['--work-dir'], dict(dest='work_dir', metavar='DIR')),
+        (['--log-dir'], dict(dest='log_dir', metavar='DIR')),
+        (['--proc-name'], dict(dest='proc_name')),
+        (['--project-name'], dict(dest='project_name')),
+        (['--genome'], dict(dest='genome')),
+        (['--email'], dict(dest='email')),
     ]
 
     parser = OptionParser(description=description)
@@ -219,65 +209,30 @@ def check_system_resources(cnf, required=list(), optional=list()):
         exit()
 
 
-def load_genome_resources(cnf, required=list(), optional=list()):
-    if 'genome' not in cnf:
-        critical('"genome" is not specified in run config.')
-    if 'genomes' not in cnf:
+def check_genome_resources(cnf):
+    if not cnf.genomes:
         critical('"genomes" section is not specified in system config.')
-    genome_name = cnf.genome
-    if genome_name not in cnf.genomes:
-        critical(genome_name + ' is not in "genomes section" of system config.')
-    genome_cnf = cnf.genomes[genome_name].copy()
 
-    to_exit = False
+    for build_name, genome_cnf in cnf.genomes.items():
+        for key in genome_cnf.keys():
+            if isinstance(genome_cnf[key], basestring):
+                genome_cnf[key] = adjust_system_path(genome_cnf[key])
 
-    for key in genome_cnf.keys():
-        if isinstance(genome_cnf[key], basestring):
-            genome_cnf[key] = adjust_system_path(genome_cnf[key])
-        elif key == 'capture_panels':
-            genome_cnf.capture_panel = genome_cnf[key]['agilent']
-            genome_cnf.capture_panel = adjust_system_path(genome_cnf.capture_panel)
-
-    for key in required:  # 'dbsnp', 'cosmic', 'dbsnfp', '1000genomes':
-        if key not in genome_cnf:
-            if key == 'seq':
-                err('Please, provide path to the reference file (seq).')
-            else:
-                err('Please, provide path to ' + key + ' in system config genome section.')
-            to_exit = True
-        else:
-            if key == 'snpeff':
-                if not verify_dir(genome_cnf['snpeff'], 'snpeff'):
-                    to_exit = True
-            else:
-                if not verify_file(genome_cnf[key], key):
-                    to_exit = True
-
-    for key in optional:
-        if key not in genome_cnf:
-            continue
-        else:
-            if not verify_file(genome_cnf[key], key):
-                gz_fpath = genome_cnf[key] + '.gz'
-                if verify_file(gz_fpath):
-                    info(key + ' is in GZip, trying to uncompress...')
-                    fpath = ungzip_if_needed(cnf, gz_fpath)
-                    if fpath:
-                        genome_cnf[key] = fpath
-                    else:
-                        err('Could not uncompress probably due to permission denied or no left space in device, trying to use as is.')
+            if not verify_obj_by_path(genome_cnf[key], key):
+                if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
+                    gz_fpath = genome_cnf[key] + '.gz'
+                    if verify_file(gz_fpath):
+                        info(key + ' is compressed, using ' + gz_fpath)
                         genome_cnf[key] = gz_fpath
                 else:
-                    err('Err: no ' + genome_cnf[key] + ' and ' + gz_fpath)
+                    err('Err: no ' + genome_cnf[key] + ' and .gz')
 
-    if to_exit:
-        sys.exit(1)
+        genome_cnf['name'] = build_name
 
-    cnf.genome = genome_cnf
-    del cnf['genomes']
-    genome_cnf['name'] = genome_name
+    if cnf.genome:
+        cnf.genome = cnf.genomes[cnf.genome]
 
-    info('Loaded resources for ' + genome_cnf['name'])
+    info('Checked genome resources.')
 
 
 def set_up_dirs(cnf):

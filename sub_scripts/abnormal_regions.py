@@ -8,7 +8,7 @@ from source.bcbio_structure import Sample
 from source.file_utils import adjust_path
 from source.logger import send_email
 from source.targetcov.abnormal_regions import make_abnormal_regions_reports
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.runner import run_one
 from source.utils import info
 
@@ -39,7 +39,7 @@ def main(args):
         required=['samtools', 'bedtools'],
         optional=[])
 
-    load_genome_resources(
+    check_genome_resources(
         cnf,
         required=['seq', 'exons'],
         optional=['chr_lengths', 'genes'])

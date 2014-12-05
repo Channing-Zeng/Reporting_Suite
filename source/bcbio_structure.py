@@ -19,7 +19,7 @@ from source.utils import OrderedDefaultDict
 
 
 class Sample:
-    def __init__(self, name, bcbio_structure=None, bam=None, bed=None, vcf=None):
+    def __init__(self, name, bcbio_structure=None, bam=None, bed=None, vcf=None, genome=None):
         self.name = name
         self.bam = bam
         self.bed = bed
@@ -29,6 +29,7 @@ class Sample:
         # self.filtered_tsv_by_callername = OrderedDict()
         # self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
+        self.genome = None
         self.dirpath = None
         self.var_dirpath = None
         self.normal_match = None
@@ -409,6 +410,8 @@ class BCBioStructure:
 
         sample.phenotype = None
 
+        sample.genome = sample_info.get('genome_build') or 'hg19'
+
         if 'metadata' in sample_info:
             sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
             info('Phenotype: ' + str(sample.phenotype))
@@ -644,22 +647,27 @@ class BCBioStructure:
 
 
 def load_bcbio_cnf(cnf, config_dirpath):
-    yaml_files = [join(config_dirpath, fname)
-                  for fname in listdir(config_dirpath)
-                  if fname.endswith('.yaml')]
+    yaml_files_in_config_dir = [
+        join(config_dirpath, fname)
+        for fname in listdir(config_dirpath)
+        if fname.endswith('.yaml')]
 
-    if len(yaml_files) == 0:
+    if len(yaml_files_in_config_dir) == 0:
         critical('No YAML file in the config directory.')
 
-    config_fpaths = [fpath for fpath in yaml_files if not any(n in fpath for n in ['run_info', 'system_info'])]
+    config_fpaths = [
+        fpath for fpath in yaml_files_in_config_dir
+        if not any(n in fpath for n in ['run_info', 'system_info'])]
     if not config_fpaths:
-        critical('No BCBio YAMLs in the config directory (only ' + ', '.join(map(basename, yaml_files)) + ')')
+        critical('No BCBio YAMLs in the config directory ' + config_dirpath +
+                 ' (only ' + ', '.join(map(basename, yaml_files_in_config_dir)) + ')')
 
     yaml_fpath = config_fpaths[0]
     if len(config_fpaths) > 1:
         some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in config_dirpath]
         if len(some_yaml_files) == 0:
-            critical('More than one YAML file in the config directory ' + ' '.join(config_fpaths) +
+            critical('More than one YAML file in the config directory ' +
+                     config_dirpath + ': ' + ' '.join(config_fpaths) +
                      ', and no YAML file named after the project.')
         yaml_fpath = some_yaml_files[0]
 

@@ -5,7 +5,7 @@ import __common
 import sys
 import shutil
 from source.bcbio_structure import BCBioStructure, Sample
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.variants.vcf_processing import remove_rejected, extract_sample, \
     get_trasncripts_fpath, fix_chromosome_names
 from source.runner import run_one
@@ -47,9 +47,7 @@ def main(args):
         required=['java', 'perl', 'snpeff', 'snpsift'],
         optional=['transcripts_fpath'])
 
-    load_genome_resources(cnf,
-        required=['seq'],
-        optional=['dbsnp', 'cosmic', 'oncomine'])
+    check_genome_resources(cnf)
 
     set_up_snpeff(cnf)
 
@@ -72,7 +70,7 @@ def set_up_snpeff(cnf):
 
 
 def process_one(cnf):
-    sample = Sample(cnf.name, vcf=cnf.vcf, bam=cnf.bam)
+    sample = Sample(cnf.name, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     sample.vcf = fix_chromosome_names(cnf, sample.vcf)
 

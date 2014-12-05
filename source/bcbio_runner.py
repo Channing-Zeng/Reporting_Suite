@@ -135,6 +135,7 @@ class BCBioRunner:
                       ' -t ' + str(cnf.threads or 1) + \
                      (' --reuse ' if cnf.reuse_intermediate else '') + \
                       ' --log-dir ' + self.bcbio_structure.log_dirpath + \
+                      ' --genome {genome}' + \
                       ' --project-name ' + self.bcbio_structure.project_name + ' '
 
         anno_paramline = spec_params + ('' +
@@ -417,7 +418,7 @@ class BCBioRunner:
                     info('Target coverage for "' + sample.name + '"')
                     self._submit_job(
                         self.targetcov, sample.name,
-                        bam=sample.bam, bed=sample.bed, sample=sample,
+                        bam=sample.bam, bed=sample.bed, sample=sample.name, genome=sample.genome,
                         caller_names='', vcfs='')
 
                 # ngsCAT reports
@@ -425,14 +426,17 @@ class BCBioRunner:
                     err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
                 else:
                     if self.ngscat in self.steps:
-                        self._submit_job(self.ngscat, sample.name, bam=sample.bam, bed=sample.bed, sample=sample)
+                        self._submit_job(self.ngscat, sample.name, bam=sample.bam, bed=sample.bed,
+                                         sample=sample.name, genome=sample.genome)
 
                 # Qualimap
                 if self.qualimap in self.steps:
                     qualimap_gff = ''
                     if sample.bed:
                         qualimap_gff = ' -gff ' + sample.bed + ' '
-                    self._submit_job(self.qualimap, sample.name, bam=sample.bam, sample=sample, qualimap_gff=qualimap_gff)
+                    self._submit_job(self.qualimap, sample.name, bam=sample.bam,
+                                     sample=sample.name, genome=sample.genome,
+                                     qualimap_gff=qualimap_gff)
 
             # Processing VCFs: QC, annotation
             for caller in self.bcbio_structure.variant_callers.values():
@@ -606,12 +610,12 @@ class BCBioRunner:
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name,
                      steps=None, job_names_to_wait=None):
         steps = steps or self.steps
-        sample_name = sample.name
 
         if self.varqc in steps:
             self._submit_job(
-                self.varqc, sample_name, suf=caller_name, vcf=vcf_fpath,
-                sample=sample_name, caller=caller_name, wait_for_steps=job_names_to_wait)
+                self.varqc, sample.name, suf=caller_name, vcf=vcf_fpath,
+                sample=sample.name, caller=caller_name, genome=sample.genome_build,
+                wait_for_steps=job_names_to_wait)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
         normal_match_cmdline = ''
@@ -620,9 +624,9 @@ class BCBioRunner:
 
         if self.varannotate in steps:
             self._submit_job(
-                self.varannotate, sample_name, suf=caller_name, vcf=vcf_fpath,
-                bam_cmdline=bam_cmdline, sample=sample_name, caller=caller_name,
-                normal_match_cmdline=normal_match_cmdline,
+                self.varannotate, sample.name, suf=caller_name, vcf=vcf_fpath,
+                bam_cmdline=bam_cmdline, sample=sample.name, caller=caller_name,
+                genome=sample.genome_build, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)

@@ -15,7 +15,7 @@ import shutil
 from os.path import dirname
 
 from source.logger import info, critical
-from source.main import read_opts_and_cnfs, check_system_resources, load_genome_resources
+from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.config import defaults
 from source.runner import run_one
 from source.ngscat import config, ngscat_main
@@ -47,7 +47,7 @@ def main():
                 dest='saturation',
                 help='Y/n to indicate whether saturation curve should be calculated',
                 metavar='{y,n}',
-                default=defaults['ngscat']['saturation'])
+                default=defaults['coverage_reports']['saturation'])
              ),
             (['--depth-list'], dict(
                 dest='depthlist',
@@ -55,14 +55,14 @@ def main():
                      '(do not leave spaces between) indicating the number of millions of reads to simulate '
                      'for the saturation curve. E.g.: 1,5,10 would indicate 1*10^6, 5*10^6 and 10*10^6.',
                 metavar='<float,float,..>',
-                default=defaults['ngscat']['depthlist'])
+                default=defaults['coverage_reports']['depthlist'])
              ),
             (['--one_feature'], dict(
                 dest='feature',
                 metavar='<str>',
                 help='Use this option if just one of the graphs/statistics should be calculated. '
                      'String indicating one of the following features: '
-                     '{%s}' % (', '.join(defaults['ngscat']['availablefeatures'])))),
+                     '{%s}' % (', '.join(defaults['coverage_reports']['availablefeatures'])))),
         ],
         required_keys=['bam', 'bed'],
         file_keys=['bam', 'bed', 'extra_bam'],
@@ -73,9 +73,7 @@ def main():
         required=['samtools', 'bedtools'],
         optional=[])
 
-    load_genome_resources(cnf,
-        required=[],
-        optional=['seq', 'chr_lengths'])
+    check_genome_resources(cnf)
 
     if 'coverage_reports' not in cnf:
         critical('No coverage_reports section in the report, cannot run NGScat.')

@@ -9,7 +9,7 @@ from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info, warn, send_email
 from source.variants import qc_gatk
-from source.main import read_opts_and_cnfs, load_genome_resources, check_system_resources
+from source.main import read_opts_and_cnfs, check_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample
 from source.reporting import SampleReport
@@ -34,9 +34,7 @@ def main(args):
         required=['java', 'gatk', 'snpeff'],
         optional=[])
 
-    load_genome_resources(cnf,
-        required=['seq', 'dbsnp'],
-        optional=['chr_lengths', 'cosmic', '1000genomes'])
+    check_genome_resources(cnf)
 
     check_quality_control_config(cnf)
 

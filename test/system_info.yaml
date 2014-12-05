@@ -34,8 +34,6 @@ genomes:
 
     # exons: ~/Dropbox/az/UCSC_Gene_Exon_Canonical.chr21.bed
     exons: ~/Dropbox/az/AZ_Exome.chr21.bed 
-    capture_panels:
-      agilent: ~/Dropbox/az/SureSelect_Human_AllExon_V5.chr21.bed
 
 queue: ngs.q
 

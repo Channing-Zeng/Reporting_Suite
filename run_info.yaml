@@ -6,6 +6,6 @@ steps:
 - TargetCov
 - Seq2C
 - ngsCAT
-- QualiMap
+# - QualiMap
 #- MongoLoader
 #- AbnormalCovReport
