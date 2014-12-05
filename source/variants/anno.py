@@ -264,7 +264,6 @@ def _snpeff(cnf, input_fpath):
 
     if cnf.annotation['snpeff'].get('clinical_reporting') or \
             cnf.annotation['snpeff'].get('canonical'):
-        opts += ' -hgvs '
         if not custom_transcripts:
             opts += ' -canon '
 
