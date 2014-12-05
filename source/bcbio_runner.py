@@ -381,9 +381,6 @@ class BCBioRunner:
                 for s in samples:
                     s.bed = bed
 
-        if self.varannotate in self.steps or self.varfilter_all in self.steps:
-            get_trasncripts_fpath(self.cnf)
-
         for sample in self.bcbio_structure.samples:
             if not (any(step in self.steps for step in
                         [self.targetcov,
