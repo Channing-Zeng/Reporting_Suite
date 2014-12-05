@@ -81,7 +81,7 @@ def main():
             type='float',
             help='When the average allele frequency is also below the [freq], '
                  'the variant is considered likely false positive. '
-                 'Default %f. Used with -r and -n' % dfts['freq'],
+                 'Default %f. Used with -r and -n' % dfts['ave_freq'],
         )),
 
         (['-n'], dict(
