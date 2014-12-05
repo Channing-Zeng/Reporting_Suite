@@ -71,6 +71,10 @@ class BCBioRunner:
 
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
+        self.max_threads = self.cnf.threads or 40
+        total_samples = len(self.bcbio_structure.samples) * len(self.bcbio_structure.variant_callers)
+        self.threads_per_sample = max(self.max_threads / total_samples, 1)
+
         self.steps = Steps()
         self._set_up_steps(cnf, self.run_id)
 
@@ -125,7 +129,7 @@ class BCBioRunner:
         params_for_everyone = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
             ' --run-cnf ' + self.cnf.run_cnf + \
-            ' -t ' + str(self.cnf.threads or 1) + \
+            ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
             ' --log-dir ' + self.bcbio_structure.log_dirpath
         if cnf.email:
@@ -198,7 +202,7 @@ class BCBioRunner:
             name='QualiMap', short_name='qm',
             script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
-            paramln=' bamqc -nt ' + str(cnf.threads or 1) + ' --java-mem-size=24G -nr 5000 '
+            paramln=' bamqc -nt ' + str(self.threads_per_sample) + ' --java-mem-size=24G -nr 5000 '
                     '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
         )
         #############
@@ -223,8 +227,6 @@ class BCBioRunner:
         varfilter_paramline = params_for_everyone + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         if cnf.datahub_path:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
-        self.varfilter_threads = self.cnf.threads or min(len(self.bcbio_structure.batches), 10) + 1
-        varfilter_paramline += ' -t ' + str(self.varfilter_threads)
 
         self.varfilter_all = Step(cnf, run_id,
             name='VarFilter', short_name='vfs',
@@ -321,7 +323,7 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, suf)
         qsub = get_system_path(self.cnf, 'qsub')
-        threads = str(threads or self.cnf.threads or 1)
+        threads = str(threads)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         qsub_cmdline = (
@@ -415,7 +417,7 @@ class BCBioRunner:
                     self._submit_job(
                         self.targetcov, sample.name,
                         bam=sample.bam, bed=sample.bed, sample=sample.name, genome=sample.genome,
-                        caller_names='', vcfs='')
+                        caller_names='', vcfs='', threads=self.threads_per_sample)
 
                 # ngsCAT reports
                 if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
@@ -423,7 +425,7 @@ class BCBioRunner:
                 else:
                     if self.ngscat in self.steps:
                         self._submit_job(self.ngscat, sample.name, bam=sample.bam, bed=sample.bed,
-                                         sample=sample.name, genome=sample.genome)
+                                         sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
                 # Qualimap
                 if self.qualimap in self.steps:
@@ -432,7 +434,7 @@ class BCBioRunner:
                         qualimap_gff = ' -gff ' + sample.bed + ' '
                     self._submit_job(self.qualimap, sample.name, bam=sample.bam,
                                      sample=sample.name, genome=sample.genome,
-                                     qualimap_gff=qualimap_gff)
+                                     qualimap_gff=qualimap_gff, threads=self.threads_per_sample)
 
             # Processing VCFs: QC, annotation
             for caller in self.bcbio_structure.variant_callers.values():
@@ -441,7 +443,7 @@ class BCBioRunner:
                     if sample.phenotype != 'normal':
                         err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + '.')
                 else:
-                    self._process_vcf(sample, sample.bam, vcf_fpath, caller.name)
+                    self._process_vcf(sample, sample.bam, vcf_fpath, caller.name, threads=self.threads_per_sample)
 
             if self.cnf.verbose:
                 info('-' * 70)
@@ -472,8 +474,7 @@ class BCBioRunner:
                     for v in self.bcbio_structure.variant_callers.values()
                     for s in v.samples
                     if self.varannotate in self.steps],
-                create_dir=False,
-                threads=self.varfilter_threads)
+                create_dir=False)
 
         # TargetSeq reports
         if self.abnormal_regions in self.steps:
@@ -501,7 +502,7 @@ class BCBioRunner:
                 self._submit_job(
                     self.abnormal_regions, sample.name,
                     wait_for_steps=wait_for_steps,
-                    sample=sample,
+                    sample=sample, threads=self.threads_per_sample,
                     caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                     vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 
@@ -517,7 +518,7 @@ class BCBioRunner:
                             caller.name + '". You need to run VarFilter first.')
                     else:
                         self._submit_job(
-                            self.varqc_after, sample.name, suf=caller.name,
+                            self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                             vcf=sample.get_pass_filt_vcf_fpath_by_callername(caller.name),
                             sample=sample.name, caller=caller.name)
@@ -603,13 +604,13 @@ class BCBioRunner:
                 msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
             send_email('\n'.join(msg))
 
-    def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name,
+    def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name, threads,
                      steps=None, job_names_to_wait=None):
         steps = steps or self.steps
 
         if self.varqc in steps:
             self._submit_job(
-                self.varqc, sample.name, suf=caller_name, vcf=vcf_fpath,
+                self.varqc, sample.name, suf=caller_name, vcf=vcf_fpath, threads=threads,
                 sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=job_names_to_wait)
 
@@ -620,7 +621,7 @@ class BCBioRunner:
 
         if self.varannotate in steps:
             self._submit_job(
-                self.varannotate, sample.name, suf=caller_name, vcf=vcf_fpath,
+                self.varannotate, sample.name, suf=caller_name, vcf=vcf_fpath, threads=threads,
                 bam_cmdline=bam_cmdline, sample=sample.name, caller=caller_name,
                 genome=sample.genome, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
