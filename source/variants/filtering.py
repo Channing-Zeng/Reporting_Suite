@@ -560,7 +560,7 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
     return vcf_fpath
 
 
-def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, sample_min_freq):
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, n_threads, sample_min_freq):
     # info()
     # info('Keeping only first sample info in VCFs...')
     # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
@@ -580,25 +580,25 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, 
     info()
     info('Preparing VCFs for vcf2txt')
     vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(prep_vcf)(cnf, fpath, s, caller.name)
-        for fpath, s in zip(vcf_fpaths, sample_names))
+        for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
-    res = run_vcf2txt(cnf, vcf_fpaths, caller.vcf2txt_res_fpath, sample_min_freq)
+    res = run_vcf2txt(cnf, vcf_fpaths, sample_by_name, caller.vcf2txt_res_fpath, sample_min_freq)
     if not res:
         err('vcf2txt run returned non-0')
         return None
 
-    res = run_pickline(cnf, caller, caller.vcf2txt_res_fpath)
+    res = run_pickline(cnf, caller, caller.vcf2txt_res_fpath, sample_by_name)
     if not res:
         err('pickLine run returned non-0')
         return None
 
-    write_vcfs(sample_names, vcf_fpaths, caller, caller.pickline_res_fpath)
+    write_vcfs(sample_by_name.keys(), vcf_fpaths, caller, caller.pickline_res_fpath)
 
     return res
 
 
-def run_pickline(cnf, caller, vcf2txt_res_fpath):
+def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'))
     if not pick_line:
         sys.exit(1)
@@ -617,8 +617,9 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
               'grep -v NON_CODING'
 
-    if cnf.genome.polymorphic_variants:
-        poly_vars = abspath(cnf.genome.polymorphic_variants)
+    polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
+    if polymorphic_variants:
+        poly_vars = abspath(polymorphic_variants)
         cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
     cmdline = cmdline.format(**locals())
     res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
@@ -705,6 +706,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     vcf_fpaths = vcf_by_sample.values()
     sample_names = vcf_by_sample.keys()
+    sample_by_name = OrderedDict((sn, next(s for s in caller.samples if s.name == sn)) for sn in sample_names)
 
     # global filtering
     # filtering = Filtering(cnf, bcbio_structure, caller)
@@ -715,25 +717,48 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
-    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_names, caller, n_threads, caller.samples[0].min_af)
+    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, n_threads, caller.samples[0].min_af)
     if not res:
         return None
 
     # symlinking
     pass_txt_basefname = basename(caller.pickline_res_fpath)
     pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
-    if not exists(pass_txt_fpath_symlink) \
-            and not islink(pass_txt_fpath_symlink) \
-            and caller.pickline_res_fpath != pass_txt_fpath_symlink:
+
+    if islink(pass_txt_fpath_symlink):
+        try:
+            os.unlink(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    if isfile(pass_txt_fpath_symlink):
+        try:
+            os.remove(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    try:
         os.symlink(caller.pickline_res_fpath, pass_txt_fpath_symlink)
+    except OSError:
+        err('Cannot symlink ' + caller.pickline_res_fpath + ' -> ' + pass_txt_fpath_symlink)
 
     for sample in caller.samples:
         filt_vcf = sample.find_filt_vcf_by_callername(caller.name)
         if filt_vcf:
             for link in [join(sample.dirpath, basename(filt_vcf)),
                          join(bcbio_structure.var_dirpath, basename(filt_vcf))]:
-                if not islink(link):
+                if islink(link):
+                    try:
+                        os.unlink(link)
+                    except OSError:
+                        pass
+                if isfile(link):
+                    try:
+                        os.remove(link)
+                    except OSError:
+                        pass
+                try:
                     os.symlink(filt_vcf, link)
+                except OSError:
+                    err('Cannot symlink ' + filt_vcf + ' -> ' + link)
 
         BCBioStructure.move_vcfs_to_var(sample)
 
@@ -780,7 +805,7 @@ def combine_mafs(cnf, maf_fpaths, output_basename):
     return output_fpath, output_pass_fpath
 
 
-def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
+def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_freq=None):
     info()
     info('Running VarDict vcf2txt...')
 
@@ -803,8 +828,9 @@ def run_vcf2txt(cnf, vcf_fpaths, final_maf_fpath, sample_min_freq=None):
     if c.count_undetermined is False:
         cmdline += ' -u '
 
-    if cnf.genome.dbsnp_multi_mafs and verify_file(cnf.genome.dbsnp_multi_mafs):
-        cmdline += ' -A ' + cnf.genome.dbsnp_multi_mafs
+    dbsnp_multi_mafs = cnf.genomes[sample_by_name.values()[0].genome].dbsnp_multi_mafs
+    if dbsnp_multi_mafs and verify_file(dbsnp_multi_mafs):
+        cmdline += ' -A ' + dbsnp_multi_mafs
 
     cmdline += ' ' + ' '.join(vcf_fpaths)
 

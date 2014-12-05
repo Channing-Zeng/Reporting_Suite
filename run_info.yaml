@@ -1,11 +1,11 @@
 steps:
-- VarAnnotate
-- VarQC
+# - VarAnnotate
+# - VarQC
 - VarFilter
-- VarQC_postVarFilter
-- TargetCov
-- Seq2C
-- ngsCAT
+# - VarQC_postVarFilter
+# - TargetCov
+# - Seq2C
+# - ngsCAT
 # - QualiMap
 #- MongoLoader
 #- AbnormalCovReport
