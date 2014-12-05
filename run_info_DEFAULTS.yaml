@@ -19,7 +19,7 @@ variant_filtering:
   # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
   fraction:           0.4
   sample_cnt:         10
-  freq:               0.15
+  ave_freq:           0.15
   count_undetermined: True    # Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
 
   max_ratio:          1       # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.

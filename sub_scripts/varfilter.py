@@ -76,8 +76,8 @@ def main():
                  'Used with -f and -n' % dfts['fraction'],
         )),
 
-        (['-f', '--freq'], dict(
-            dest='freq',
+        (['-F', '--freq'], dict(
+            dest='ave_freq',
             type='float',
             help='When the average allele frequency is also below the [freq], '
                  'the variant is considered likely false positive. '
@@ -100,7 +100,7 @@ def main():
                  'even if it\'s in COSMIC. Default %f.' % dfts['max_ratio'],
         )),
 
-        (['-F', '--min-freq'], dict(
+        (['-f', '--min-freq'], dict(
             dest='min_freq',
             type='float',
             help='When individual allele frequency < freq for variants, '
@@ -163,10 +163,6 @@ def main():
             dest='datahub_path',
             help='DataHub directory path to upload final MAFs and CNV (can be remote).',
         )),
-
-        (['--transcripts'], dict(
-            dest='transcripts_fpath')
-         ),
     ]
 
     cnf, bcbio_structure = summary_script_proc_params(

@@ -818,7 +818,7 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_fre
     min_freq = c.min_freq or sample_min_freq or defaults.default_min_freq
 
     cmdline = '{vcf2txt} ' \
-        '-f {min_freq} -n {c.sample_cnt} -F {c.freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
+        '-f {min_freq} -n {c.sample_cnt} -F {c.ave_freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
         '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
         '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} '.format(**locals())
 
