@@ -582,8 +582,9 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath):
         return None
 
     with open(vcf2txt_res_fpath) as f:
-        pass_col_num = f.readline().split().index('PASS')
-        if pass_col_num < 0:
+        try:
+            pass_col_num = f.readline().split().index('PASS') + 1
+        except ValueError:
             critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
 
     caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
