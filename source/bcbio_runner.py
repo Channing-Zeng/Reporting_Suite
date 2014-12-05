@@ -607,7 +607,7 @@ class BCBioRunner:
         if self.varqc in steps:
             self._submit_job(
                 self.varqc, sample.name, suf=caller_name, vcf=vcf_fpath,
-                sample=sample.name, caller=caller_name, genome=sample.genome_build,
+                sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=job_names_to_wait)
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
@@ -619,7 +619,7 @@ class BCBioRunner:
             self._submit_job(
                 self.varannotate, sample.name, suf=caller_name, vcf=vcf_fpath,
                 bam_cmdline=bam_cmdline, sample=sample.name, caller=caller_name,
-                genome=sample.genome_build, normal_match_cmdline=normal_match_cmdline,
+                genome=sample.genome, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
