@@ -10,6 +10,7 @@ from source.bcbio_structure import VariantCaller, Sample
 from source.file_utils import verify_file
 from source.html_reporting import json_saver
 from source.file_utils import file_exists
+from ext_modules.jsontemplate import jsontemplate
 
 
 def get_real_path(path_in_html_saver):
@@ -18,6 +19,7 @@ def get_real_path(path_in_html_saver):
 scripts_inserted = False
 
 template_fpath = get_real_path('template.html')
+static_template_fpath = get_real_path('static_template.html')
 
 static_dirname = 'static'
 static_dirpath = get_real_path(static_dirname)
@@ -114,4 +116,13 @@ def _append(html_fpath, json, keyword):
     with open(html_fpath, 'w') as f_html:
         f_html.write(html_text)
 
+    return html_fpath
+
+
+def write_static_html_report(data_dict, output_dirpath, report_base_name):
+    html_fpath = os.path.join(output_dirpath, report_base_name + '-static.html')
+    with open(static_template_fpath) as stf:
+        with open(html_fpath, 'w') as f_html:
+            template = stf.read()
+            f_html.write(jsontemplate.expand(template, data_dict))
     return html_fpath

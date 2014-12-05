@@ -1,0 +1,71 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+</head>
+<body>
+    {.section common}
+    <div class="row placeholders">
+        {.section fastqc_summary}
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4>Reads</h4>
+                <span class="text-muted"><a href="{html_fpath}">View Project FastQC Reports</a></span>
+            </div>
+        {.end}
+        {.section target_qc_summary}
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4>Alignment and Capture</h4>
+                <span class="text-muted"><a href="{html_fpath}">View Project SeqQC Reports</a></span>
+            </div>
+        {.end}
+        {.section var_qc_summary}
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4>Variants</h4>
+                <span class="text-muted"><a href="{html_fpath}">View Project VarQC Reports</a></span>
+            </div>
+        {.end}
+    </div>
+    {.end}
+
+    <h2 class="sub-header">Project Details</h2>
+    <div class="table-responsive">
+        {.section main}
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th>Project Name</th>
+                <th>Sample Name</th>
+                {.repeated section metric_names}
+                <th>{@}</th>
+                {.end}
+            </tr>
+            </thead>
+            <tbody>
+                {.repeated section sample_reports}
+                    <tr>
+                        <td>{project_name}</td>
+                        <td>{sample_name}</td>
+
+                        {.repeated section records}
+                            <td>
+                                {.repeated section html_fpath}
+                                  <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                                {.or}
+                                  - {# no html_fpath at all!}
+                                {.end}
+                            </td>
+                        {.end}
+                    </tr>
+                {.end}
+            </tbody>
+        </table>
+        {.end}
+    </div>
+
+</body>
+</html>
+

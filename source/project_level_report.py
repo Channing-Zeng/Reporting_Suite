@@ -5,6 +5,7 @@ from source.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, send_email
 from source.file_utils import verify_file
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
+from source.html_reporting.html_saver import write_static_html_report
 
 
 def make_project_level_report(cnf, bcbio_structure):
@@ -29,6 +30,9 @@ def make_project_level_report(cnf, bcbio_structure):
     final_summary_report_fpath = full_report.save_html(
         bcbio_structure.date_dirpath, bcbio_structure.project_name,
         'Project-level report for ' + bcbio_structure.project_name)
+    _save_static_html(full_report, bcbio_structure.date_dirpath,
+                      report_base_name=bcbio_structure.project_name,
+                      project_name=bcbio_structure.project_name)
 
     info()
     info('*' * 70)
@@ -140,3 +144,47 @@ def _convert_to_relpath(value, base_dirpath):
         return value
     else:
         return value
+
+
+def _save_static_html(full_report, output_dirpath, report_base_name, project_name):
+    # metric name in FullReport --> metric name in Static HTML
+    metric_names = OrderedDict([('FastQC', 'FastQC'), ('Target QC', 'SeqQC'), ('Var QC', 'VarQC')])
+
+    def _process_record(record):
+        new_html_fpath = []
+        if isinstance(record["html_fpath"], basestring):
+            new_html_fpath = [{"html_fpath_name": record["value"], "html_fpath_value": record["html_fpath"]}]
+        elif isinstance(record["html_fpath"], dict):
+            for k, v in record["html_fpath"].items():
+                new_html_fpath.append({"html_fpath_name": k, "html_fpath_value": v})
+        record["html_fpath"] = new_html_fpath
+        return record
+
+    def _get_summary_report_name(record):
+        return record.value.lower().replace(' ', '_')
+
+    # common records (summary reports)
+    common_dict = dict()
+    sample_report = full_report.sample_reports[0]
+    for record in sample_report.records:
+        if record.metric.common:
+            common_dict[_get_summary_report_name(record)] = record.__dict__
+
+    # individual records
+    main_dict = dict()
+    main_dict["sample_reports"] = []
+    main_dict["metric_names"] = metric_names.values()
+    for sample_report in full_report.sample_reports:
+        new_records = [_process_record(record.__dict__) for record in sample_report.records
+                       if record.metric.name in metric_names.keys()]
+        sample_report_dict = dict()
+        sample_report_dict["records"] = new_records
+        sample_report_dict["sample_name"] = sample_report.display_name
+        sample_report_dict["project_name"] = project_name
+        main_dict["sample_reports"].append(sample_report_dict)
+
+    html_fpath = write_static_html_report({"common": common_dict, "main": main_dict},
+                                          output_dirpath, report_base_name)
+    info('Project level report (static version) saved in: ')
+    info('  ' + html_fpath)
+    return html_fpath
