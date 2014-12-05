@@ -175,7 +175,7 @@ def _set_run_config(config_dirpath, opts):
 
                 file_util.copy_file(provided_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
 
-    else:  # No configs provided in command line options
+    else:  # no configs provided in command line options
         run_info_fpaths_in_config = [
             abspath(join(config_dirpath, fname))
             for fname in os.listdir(config_dirpath)
@@ -185,26 +185,27 @@ def _set_run_config(config_dirpath, opts):
             critical('More than one YAML file containing run_info in name found in the config '
                      'directory ' + config_dirpath + ': ' + ' '.join(run_info_fpaths_in_config))
 
-        if len(run_info_fpaths_in_config) == 1:
+        elif len(run_info_fpaths_in_config) == 1:
             opts.run_cnf = run_info_fpaths_in_config[0]
             if not verify_file(opts.run_cnf):
                 sys.exit(1)
             # alright, in config dir.
 
-        if len(run_info_fpaths_in_config) == 0:
+        elif len(run_info_fpaths_in_config) == 0:
             info('No YAMLs containing run_info in name found in the config directory ' +
                  config_dirpath + ', using the default one.')
 
-        opts.run_cnf = defaults['run_cnf']
-        project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
-        info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
-        if isfile(project_run_cnf_fpath):
-            try:
-                os.remove(project_run_cnf_fpath)
-            except OSError:
-                pass
-        if not isfile(project_run_cnf_fpath):
-            file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
+            # using default one.
+            opts.run_cnf = defaults['run_cnf']
+            project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
+            info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
+            if isfile(project_run_cnf_fpath):
+                try:
+                    os.remove(project_run_cnf_fpath)
+                except OSError:
+                    pass
+            if not isfile(project_run_cnf_fpath):
+                file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
 
     info('Using ' + opts.run_cnf)
 
