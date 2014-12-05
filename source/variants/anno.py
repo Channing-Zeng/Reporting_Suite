@@ -345,6 +345,11 @@ def _gatk(cnf, input_fpath, bam_fpath):
 
     gatk = get_gatk_cmdline(cnf)
 
+    java = get_system_path(cnf, 'java')
+    info('Java version:')
+    call(cnf, java + ' -version')
+    info()
+
     output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
 
     # duplicating this from "call" function to avoid calling "gatk --version"
