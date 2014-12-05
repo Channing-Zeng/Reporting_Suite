@@ -526,9 +526,9 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
             rec.INFO['AF'] = af
 
         for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
-            if not rec.get_val(f, main_sample_index):
+            if rec.get_val(f, main_sample_index) is None:
                 rec.INFO[f] = 999999999
-        if not rec.get_val('PSTD', main_sample_index):
+        if rec.get_val('PSTD', main_sample_index) is None:
             rec.INFO['PSTD'] = '1.0'
 
         return rec
