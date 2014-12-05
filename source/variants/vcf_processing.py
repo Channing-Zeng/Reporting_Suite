@@ -87,49 +87,62 @@ class Record(_Record):
 
         else:
             t_alt_count = self.INFO.get('t_alt_count')
-            dp = self.get_val('DP', main_sample_index=main_sample_index)
+            dp = self.get_val('DP', main_sample_index)
             if t_alt_count is not None and dp:
                 self._af = float(t_alt_count) / dp
 
         self.INFO['calc_allele_freq'] = self._af
         return self._af
 
+    def __check_val(self, val, default=None):
+        if val is None:
+            return default
+        try:
+            return float(val)
+        except:
+            try:
+                return int(val)
+            except:
+                return val
 
-    def get_val(self, key, default=None, main_sample_index=None):
-        if key in self.INFO:
-            val = self.INFO[key]
-            if not isinstance(val, basestring):
-                try:
-                    val = val[0]
-                except:
-                    pass
-        else:
-            main_sample = self.get_main_sample(main_sample_index)
-            if main_sample:
-                sample_data = main_sample.data._asdict()
-                if key in sample_data:
-                    val = sample_data[key]
+    def get_info_val(self, key, default=None):
+        if key not in self.INFO:
+            return default
+        val = self.INFO[key]
+        if not isinstance(val, basestring):
+            try:
+                val = val[0]
+            except:
+                pass
 
-                    if not isinstance(val, basestring):
-                        try:
-                            val = ':'.join(val)
-                        except:
-                            pass
-                else:
-                    return default
+        return self.__check_val(val, default)
+
+    def get_sample_val(self, key, main_sample_index=None, default=None):
+        main_sample = self.get_main_sample(main_sample_index)
+        if main_sample:
+            sample_data = main_sample.data._asdict()
+            if key in sample_data:
+                val = sample_data[key]
+
+                if not isinstance(val, basestring):
+                    try:
+                        val = ':'.join(val)
+                    except:
+                        pass
             else:
                 return default
-
-        if val is not None:
-            try:
-                return float(val)
-            except:
-                try:
-                    return int(val)
-                except:
-                    return val
         else:
             return default
+
+        return self.__check_val(val, default)
+
+    def get_val(self, key, main_sample_index=None, default=None):
+        val = self.get_info_val(key)
+
+        if val is None:
+            val = self.get_sample_val(key, main_sample_index)
+
+        return self.__check_val(val, default)
 
     def get_cls(self, req_maf=None, max_frac_for_del=None, sample_name=''):
         """

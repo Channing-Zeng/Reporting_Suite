@@ -237,7 +237,7 @@ class Filtering:
             InfoFilter('mean_vd', 'VD', required=False)]
 
         def dup_filter_check(rec, main_sample_index):
-            pstd = rec.get_val('PSTD')
+            pstd = rec.get_val('PSTD', main_sample_index)
             bias = rec.get_bias(main_sample_index)
 
             # all variants from one position in reads
@@ -495,11 +495,16 @@ cnfs_for_sample_names = dict()
 
 
 def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
+    if caller_name == 'mutect' and sample_name == 'YTG_F2_397':
+        pass
     main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
 
-    vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
+    # vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
 
     def fix_fields(rec):
+        if rec.FILTER and rec.FILTER != 'PASS':
+            return None
+
         af, t_ref_count, t_alt_count = None, None, None
 
         ads = rec.get_val('AD', main_sample_index)
@@ -510,24 +515,42 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
                 t_ref_count, t_alt_count = ads, None
 
             if caller_name == 'vardict':
-                af = rec.get_val('AF', main_sample_index)
+                pass
 
             elif caller_name == 'mutect':
-                af = rec.get_val('FREQ', main_sample_index)
+                af = rec.get_sample_val('FREQ', main_sample_index)
+                if af is None:
+                    af = rec.get_info_val('FREQ')
+                    if af is None:
+                        err('No FREQ both in INFO and SAMPLE fields for mutect in ' +
+                            rec.get_variant() + ', ' + vcf_fpath)
+
+                rec.INFO['AF'] = af
 
             elif caller_name == 'freebayes':
-                af = rec.get_val('AB', main_sample_index)
+                af = rec.get_sample_val('AB', main_sample_index)
+                if af is None:
+                    af = rec.get_info_val('AB')
+                    if af is None:
+                        err('No AB both in INFO and SAMPLE fields for freebayes in ' +
+                            rec.get_variant() + ', ' + vcf_fpath)
+
+                rec.INFO['AF'] = af
 
             else:
-                dp = rec.get_val('DP', main_sample_index=main_sample_index)
+                dp = rec.get_val('DP', main_sample_index)
                 if t_alt_count is not None and dp:
                     af = float(t_alt_count) / dp
 
-            rec.INFO['AF'] = af
+                rec.INFO['AF'] = af
 
         for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
-            if rec.get_val(f, main_sample_index) is None:
-                rec.INFO[f] = 999999999
+            val = rec.get_info_val(f)
+            if val is None:
+                val = rec.get_sample_val(f, main_sample_index)
+                if val is None:
+                    rec.INFO[f] = 999999999
+
         if rec.get_val('PSTD', main_sample_index) is None:
             rec.INFO['PSTD'] = '1.0'
 
