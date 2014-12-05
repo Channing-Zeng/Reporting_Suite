@@ -5,7 +5,6 @@ import __common
 import sys
 import os
 from os.path import join, pardir, basename, dirname, islink, isdir
-from source.variants.vcf_processing import get_trasncripts_fpath
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
 from source.logger import info, err
@@ -178,7 +177,6 @@ def main():
     info('*' * 70)
     info()
 
-    get_trasncripts_fpath(cnf)
     filter_all(cnf, bcbio_structure)
 
 

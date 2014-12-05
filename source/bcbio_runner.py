@@ -13,7 +13,6 @@ from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
-from source.variants.vcf_processing import get_trasncripts_fpath
 
 
 class Step:

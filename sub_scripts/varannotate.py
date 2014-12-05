@@ -6,8 +6,7 @@ import sys
 import shutil
 from source.bcbio_structure import BCBioStructure, Sample
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
-from source.variants.vcf_processing import remove_rejected, extract_sample, \
-    get_trasncripts_fpath, fix_chromosome_names
+from source.variants.vcf_processing import remove_rejected, extract_sample, fix_chromosome_names
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
@@ -65,8 +64,6 @@ def set_up_snpeff(cnf):
         if 'snpeff' in cnf:
             cnf['snpeff']['clinical_reporting'] = cnf['clinical_reporting']
         del cnf['clinical_reporting']
-
-    cnf.transcripts_fpath = get_trasncripts_fpath(cnf)
 
 
 def process_one(cnf):
