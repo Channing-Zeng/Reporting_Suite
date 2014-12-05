@@ -142,8 +142,6 @@ class BCBioRunner:
              ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
              '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
              '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
-        # if self.cnf.transcripts_fpath:
-        #     anno_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
 
         self.varannotate = Step(cnf, run_id,
             name='VarAnnotate', short_name='va',
@@ -222,8 +220,6 @@ class BCBioRunner:
         varfilter_paramline = spec_params + ' ' + self.final_dir + ' ' + summaries_cmdline_params
         if cnf.datahub_path:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
-        if self.cnf.transcripts_fpath:
-            varfilter_paramline += ' --transcripts ' + self.cnf.transcripts_fpath
         self.varfilter_threads = self.cnf.threads or min(len(self.bcbio_structure.batches), 10) + 1
         varfilter_paramline += ' -t ' + str(self.varfilter_threads)
 

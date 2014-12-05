@@ -36,8 +36,6 @@ def main():
 
     bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
 
-    get_trasncripts_fpath(cnf)
-
     bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
     bcbio_runner.post_jobs()
 
