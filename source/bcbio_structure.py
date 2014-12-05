@@ -411,6 +411,8 @@ class BCBioStructure:
         sample.phenotype = None
 
         sample.genome = sample_info.get('genome_build') or 'hg19'
+        if sample.genome not in self.cnf.genomes:
+            critical('No section in genomes for ' + sample.genome + ' in ' + self.cnf.sys_cnf)
 
         if 'metadata' in sample_info:
             sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'

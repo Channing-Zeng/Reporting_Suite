@@ -62,7 +62,6 @@ annotation:
   gatk:
     options: ['-dt NONE']
     annotations:                ## Field names in final VCF:
-    - Coverage                  ## DP
     - BaseQualityRankSumTest    ## BaseQRankSum
     - FisherStrand              ## FS
     - GCContent                 ## GC
@@ -73,7 +72,6 @@ annotation:
     - MappingQualityZero        ## MQ0
     - QualByDepth               ## QD
     - ReadPosRankSumTest        ## ReadPosRankSum
-    - DepthPerAlleleBySample
     - AlleleBalanceBySample     ## AB
 
   dbnsfp:
