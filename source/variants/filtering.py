@@ -495,8 +495,6 @@ cnfs_for_sample_names = dict()
 
 
 def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
-    if caller_name == 'mutect' and sample_name == 'YTG_F2_397':
-        pass
     main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
 
     # vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
@@ -505,54 +503,35 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
         if rec.FILTER and rec.FILTER != 'PASS':
             return None
 
-        af, t_ref_count, t_alt_count = None, None, None
+        if caller_name != 'vardict':
+            af, t_ref_count, t_alt_count = None, None, None
 
-        ads = rec.get_val('AD', main_sample_index)
-        if ads:
+            ads = rec.get_val('AD', main_sample_index)
+            if not ads:
+                err('No AD field for ' + rec.get_variant() + ', ' + vcf_fpath)
+                return None
+            dp = rec.get_val('DP', main_sample_index)
+            if not dp:
+                err('No DP field for ' + rec.get_variant() + ', ' + vcf_fpath)
+                return None
+
             try:
                 t_ref_count, t_alt_count = ads[0], ads[1]
             except:
-                t_ref_count, t_alt_count = ads, None
+                err('No AD for alt in ' + rec.get_variant() + ', AD is ' + str(ads) + ', ' + vcf_fpath)
 
-            if caller_name == 'vardict':
-                pass
+            af = float(t_alt_count) / dp
+            rec.INFO['AF'] = af
 
-            elif caller_name == 'mutect':
-                af = rec.get_sample_val('FREQ', main_sample_index)
-                if af is None:
-                    af = rec.get_info_val('FREQ')
-                    if af is None:
-                        err('No FREQ both in INFO and SAMPLE fields for mutect in ' +
-                            rec.get_variant() + ', ' + vcf_fpath)
+        # for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
+        #     val = rec.get_info_val(f)
+        #     if val is None:
+        #         val = rec.get_sample_val(f, main_sample_index)
+        #         if val is None:
+        #             rec.INFO[f] = 999999999
 
-                rec.INFO['AF'] = af
-
-            elif caller_name == 'freebayes':
-                af = rec.get_sample_val('AB', main_sample_index)
-                if af is None:
-                    af = rec.get_info_val('AB')
-                    if af is None:
-                        err('No AB both in INFO and SAMPLE fields for freebayes in ' +
-                            rec.get_variant() + ', ' + vcf_fpath)
-
-                rec.INFO['AF'] = af
-
-            else:
-                dp = rec.get_val('DP', main_sample_index)
-                if t_alt_count is not None and dp:
-                    af = float(t_alt_count) / dp
-
-                rec.INFO['AF'] = af
-
-        for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
-            val = rec.get_info_val(f)
-            if val is None:
-                val = rec.get_sample_val(f, main_sample_index)
-                if val is None:
-                    rec.INFO[f] = 999999999
-
-        if rec.get_val('PSTD', main_sample_index) is None:
-            rec.INFO['PSTD'] = '1.0'
+        # if rec.get_val('PSTD', main_sample_index) is None:
+        #     rec.INFO['PSTD'] = '1.0'
 
         return rec
 
@@ -657,9 +636,7 @@ def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
                 else:
                     ts = l.split('\t')
                     chrom, pos, alt = ts[0], ts[1], ts[4]
-                    filt = ts[6]
                     if (s_name, chrom, pos, alt) in passed_variants:
-                        info('PASSed variant at ' + chrom + ':' + pos + ', alt=' + alt + ' original filt=' + filt)
                         ts[6] = 'PASS'
                         filt_f.write('\t'.join(ts))
                         pass_f.write('\t'.join(ts))

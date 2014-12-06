@@ -370,7 +370,7 @@ def _gatk(cnf, input_fpath, bam_fpath):
     cmdline = ('{gatk} -R {ref_fpath} -T VariantAnnotator'
                ' --variant {input_fpath} -o {output_fpath}').format(**locals())
 
-    if bam_fpath and 'local' not in socket.gethostname():
+    if bam_fpath:
         cmdline += ' -I ' + bam_fpath
 
     gatk_annos_dict = {
