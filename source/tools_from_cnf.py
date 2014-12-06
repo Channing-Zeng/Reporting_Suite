@@ -98,11 +98,12 @@ def get_gatk_cmdline(cnf):
     if not executable:
         sys.exit(1)
     gatk_opts_line = ''
-    if cnf.gatk:
-        if 'options' in cnf.gatk:
-            gatk_opts_line = ' '.join(cnf.gatk['options'])
+    if cnf.annotation.gatk:
+        if 'options' in cnf.annotation.gatk:
+            gatk_opts_line = ' '.join(cnf.annotation.gatk['options'])
     if 'threads' in cnf and ' -nt ' not in gatk_opts_line:
         gatk_opts_line += ' -nt ' + str(cnf.threads)
+    print gatk_opts_line
     return executable + ' ' + gatk_opts_line
 
 

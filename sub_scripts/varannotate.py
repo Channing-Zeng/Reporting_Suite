@@ -48,8 +48,6 @@ def main(args):
 
     check_genome_resources(cnf)
 
-    set_up_snpeff(cnf)
-
     # info('Using variants ' + cnf['vcf'])
     # info('Using alignement ' + cnf['bam'])
 
@@ -57,13 +55,6 @@ def main(args):
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
-
-
-def set_up_snpeff(cnf):
-    if cnf.get('clinical_reporting') is not None:
-        if 'snpeff' in cnf:
-            cnf['snpeff']['clinical_reporting'] = cnf['clinical_reporting']
-        del cnf['clinical_reporting']
 
 
 def process_one(cnf):
