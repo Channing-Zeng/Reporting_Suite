@@ -521,7 +521,7 @@ class BCBioRunner:
                             self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                             vcf=sample.get_pass_filt_vcf_fpath_by_callername(caller.name),
-                            sample=sample.name, caller=caller.name)
+                            sample=sample.name, caller=caller.name, genome=sample.genome)
 
         if self.varqc_after_summary in self.steps:
             self._submit_job(
