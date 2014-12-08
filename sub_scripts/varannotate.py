@@ -5,8 +5,10 @@ import __common
 import sys
 import shutil
 from source.bcbio_structure import BCBioStructure, Sample
+from source.file_utils import iterate_file
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
-from source.variants.vcf_processing import remove_rejected, extract_sample, fix_chromosome_names
+from source.variants.vcf_processing import remove_rejected, extract_sample, fix_chromosome_names, iterate_vcf, \
+    read_sample_names_from_vcf, get_sample_column_index
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
@@ -70,6 +72,33 @@ def process_one(cnf):
 
     if cnf.get('extract_sample'):
         sample.vcf = extract_sample(cnf, sample.vcf, sample.name)
+
+    # In mutect, running paired analysis on a single sample could lead
+    # to a "none" sample column. Removing that column.
+    none_idx = get_sample_column_index(sample.vcf, 'none', suppress_warn=True)
+    if none_idx is not None:
+        info('Removing the "none" column.')
+        def fn(line, i):
+            if line and not line.startswith('##'):
+                ts = line.split('\t')
+                del ts[9 + none_idx]
+                return '\t'.join(ts) + '\n'
+            return line
+        sample.vcf = iterate_file(cnf, sample.vcf, fn, 'none_col')
+
+    # Replacing so the main sample goes first (if it is not already)
+    main_idx = get_sample_column_index(sample.vcf, sample.name)
+    if main_idx != 0:
+        info('Moving the main sample column (' + sample.name + ') to the first place.')
+        def fn(line, i):
+            if line and not line.startswith('##'):
+                ts = line.split('\t')
+                main_sample_field = ts[9 + main_idx]
+                del ts[9 + main_idx]
+                ts = ts[:9] + [main_sample_field] + ts[9:]
+                return '\t'.join(ts) + '\n'
+            return line
+        sample.vcf = iterate_file(cnf, sample.vcf, fn, 'main_col')
 
     annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
 

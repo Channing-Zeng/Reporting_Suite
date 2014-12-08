@@ -10,7 +10,7 @@ from source.file_utils import file_transaction
 from source.file_utils import file_exists
 from source.logger import step_greetings, info, err, critical
 from source.variants.vcf_processing import read_sample_names_from_vcf, leave_main_sample, vcf_one_per_line, \
-    get_main_sample_index
+    get_sample_column_index
 
 
 def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
@@ -19,7 +19,7 @@ def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
     if main_sample_index is None:
-        main_sample_index = get_main_sample_index(vcf_fpath, samplename)
+        main_sample_index = get_sample_column_index(vcf_fpath, samplename)
 
     tsv_fpath = _extract_fields(cnf, main_sample_index, vcf_fpath)
     if not tsv_fpath:

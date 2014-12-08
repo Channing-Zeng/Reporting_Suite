@@ -18,7 +18,7 @@ from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
-    get_main_sample_index, tabix_vcf, vcf_merge, leave_main_sample
+    get_sample_column_index, tabix_vcf, vcf_merge, leave_main_sample
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file
 from source.variants.tsv import make_tsv
@@ -170,7 +170,7 @@ def first_round(vcf_fpath, sample_name):
 
 def second_round(vcf_fpath, sample_name):
     cnf = cnfs_for_sample_names[sample_name]
-    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
+    main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
     cnf.main_sample_index = main_sample_index
 
     #TODO: remove this since it is made in annotation
@@ -495,7 +495,7 @@ cnfs_for_sample_names = dict()
 
 
 def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
-    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
+    main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
 
     # vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
 

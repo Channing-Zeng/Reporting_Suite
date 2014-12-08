@@ -278,13 +278,9 @@ def _snpeff(cnf, input_fpath):
     if cnf.resources.snpeff.config:
         opts += ' -c ' + cnf.resources.snpeff.config + ' '
 
-    extra_opts = cnf.annotation['snpeff'].get('extra_opts')
-    if extra_opts:
-        opts += ' ' + extra_opts + ' '
-    else:
-        extra_opts = ''
+    extra_opts = cnf.annotation['snpeff'].get('extra_opts') or ''
 
-    cmdline = ('{executable} eff {opts} {db_path_cmdline} -stats {stats_fpath} '
+    cmdline = ('{executable} eff -v {opts} {db_path_cmdline} -stats {stats_fpath} '
                '-csvStats -noLog -i vcf -o vcf {extra_opts} {ref_name} '
                '{input_fpath}').format(**locals())
 

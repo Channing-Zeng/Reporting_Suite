@@ -447,7 +447,7 @@ def get_trasncripts_fpath(cnf):
 
 
 def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
-    main_sample_index = get_main_sample_index(vcf_fpath, sample_name)
+    main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
 
     def proc_line(rec):
         main_sample = rec.get_main_sample(main_sample_index)
@@ -558,31 +558,32 @@ def read_sample_names_from_vcf(vcf_fpath):
     return basic_fields[9:]
 
 
-def get_main_sample_index(vcf_fpath, samplename):
+def get_sample_column_index(vcf_fpath, samplename, suppress_warn=False):
     vcf_header_samples = read_sample_names_from_vcf(vcf_fpath)
 
     if len(vcf_header_samples) == 0:
         return None
 
     if len(vcf_header_samples) == 1:
-        return 0
-
-    name = next((name for name in vcf_header_samples if name.lower() in samplename.lower()), None)
-    if name is None:
-        err('No sample ' + samplename + ' in header with samples ' + ', '.join(vcf_header_samples) + ' for ' + vcf_fpath)
-        name = next((name for name in vcf_header_samples if name.lower() != 'none'), None)
-        if name is None:
-            err('All sample names are None. Skipping.')
+        if vcf_header_samples[0].lower() == samplename.lower():
+            return 0
+        else:
             return None
 
-    try:
-        return vcf_header_samples.index(name)
-    except ValueError:
+    name = next((name for name in vcf_header_samples if name.lower() == samplename.lower()), None)
+    if name is None:
+        if not suppress_warn:
+            warn('No sample ' + samplename + ' in header with samples ' + ', '.join(vcf_header_samples) + ' for ' + vcf_fpath)
+        name = next((name for name in vcf_header_samples if name.lower() != 'none'), None)
+        if name is None:
+            err('All sample names are None.')
         return None
+    else:
+        return vcf_header_samples.index(name)
 
 
 def leave_main_sample(cnf, vcf_fpath, samplename):
-    index = get_main_sample_index(vcf_fpath, samplename)
+    index = get_sample_column_index(vcf_fpath, samplename)
     if index is None:
         return vcf_fpath
 
