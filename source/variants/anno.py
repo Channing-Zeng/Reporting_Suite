@@ -275,6 +275,9 @@ def _snpeff(cnf, input_fpath):
         if not custom_transcripts:
             opts += ' -canon '
 
+    if cnf.resources.snpeff.config:
+        opts += ' -c ' + cnf.resources.snpeff.config + ' '
+
     extra_opts = cnf.annotation['snpeff'].get('extra_opts')
     if extra_opts:
         opts += ' ' + extra_opts + ' '
