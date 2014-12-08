@@ -129,6 +129,8 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
 
 
 def _mongo(cnf, input_fpath):
+    step_greetings('Annotating from Mongo')
+
     if 'mongo' not in cnf.annotation:
         return None
 
@@ -335,6 +337,8 @@ def _tracks(cnf, track_path, input_fpath):
 
 
 def _gatk(cnf, input_fpath, bam_fpath):
+    print cnf.caller
+
     if 'gatk' not in cnf.annotation:
         return None
 
@@ -387,6 +391,8 @@ def _gatk(cnf, input_fpath, bam_fpath):
         'ReadPosRankSumTest': 'ReadPosRankSum'
     }
     annotations = cnf.annotation['gatk'].get('annotations') or []
+    if cnf.caller == 'freebayes':
+        annotations.extend(['DepthPerAlleleBySample'])  # AD
 
     # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
 
