@@ -520,8 +520,8 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
             except:
                 err('No AD for alt in ' + rec.get_variant() + ', AD is ' + str(ads) + ', ' + vcf_fpath)
 
-            af = float(t_alt_count) / dp
-            rec.INFO['AF'] = af
+            # af = float(t_alt_count) / dp
+            # rec.INFO['AF'] = af
 
         # for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
         #     val = rec.get_info_val(f)

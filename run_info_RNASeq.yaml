@@ -1,0 +1,13 @@
+steps:
+- VarAnnotate
+- VarQC
+- VarFilter
+- VarQC_postVarFilter
+#- MongoLoader
+
+
+variant_filtering:
+  filt_depth:         5       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+  min_vd:             3       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
+  min_freq:           0.1     # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
+  max_ratio:          0.75    # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
