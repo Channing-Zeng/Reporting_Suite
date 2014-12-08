@@ -246,7 +246,7 @@ def _snpeff(cnf, input_fpath):
     executable = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
     if ref_name == 'GRCh37':
-        ref_name += '75'
+        ref_name += '.75'
     stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
     extra_opts = cnf.annotation['snpeff'].get('opts') or ''
     db_path = cnf['genome'].get('snpeff')
