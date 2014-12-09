@@ -167,7 +167,7 @@ def _set_run_config(config_dirpath, opts):
                 run_info_fpaths_in_config = [
                     abspath(join(config_dirpath, fname))
                     for fname in os.listdir(config_dirpath)
-                    if fname.endswith('.yaml') and 'run_info' in fname]
+                    if fname.startswith('run_info') and fname.endswith('.yaml')]
 
                 if len(run_info_fpaths_in_config) > 0:
                     warn('Warning: there are run_info files in config directory ' + config_dirpath + '. '
