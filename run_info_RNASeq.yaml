@@ -3,7 +3,7 @@ steps:
 - VarQC
 - VarFilter
 - VarQC_postVarFilter
-#- MongoLoader
+- MongoLoader
 
 
 variant_filtering:

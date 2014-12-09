@@ -2,6 +2,7 @@ import shutil
 import os
 from os.path import splitext, basename, join, isfile
 import socket
+import sys
 
 from source.bcbio_structure import ungzip_if_needed
 from source.calling_process import call_subprocess, call
@@ -169,7 +170,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
                 '("path:" field), or in the "genomes" section in the system config')
             return
         if not verify_file(db_path):
-            exit()
+            sys.exit(1)
 
     anno_line = ''
     annotations = vcf_conf.get('annotations')
