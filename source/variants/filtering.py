@@ -609,16 +609,19 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
 
 
 def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
+    variants = dict()
     passed_variants = set()
 
     with open(pickline_res_fpath) as maf_f:
+        pass_col = None
         for l in maf_f:
             if l.startswith('Sample'):
-                pass
+                pass_col = l.split('\t').index('PASS')
             ts = l.split('\t')
             s_name, chrom, start, alt = ts[0], ts[1], ts[2], ts[5]
-            # filt = ts[44]
             passed_variants.add((s_name, chrom, start, alt))
+            filt = ts[pass_col]
+            variants[(s_name, chrom, start, alt)] = filt
 
     for s_name, vcf_fpath in zip(sample_names, vcf_fpaths):
         sample = next(s for s in caller.samples if s.name == s_name)
@@ -641,12 +644,8 @@ def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
                         filt_f.write('\t'.join(ts))
                         pass_f.write('\t'.join(ts))
                     else:
-                        if ts[6] in ['', '.', 'PASS']:
-                            ts[6] = ''
-                        else:
-                            ts[6] += ','
-                        ts[6] += 'vcf2txt'
-
+                        ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
+                        ts[6] += variants[(s_name, chrom, pos, alt)]
                         filt_f.write('\t'.join(ts))
 
 
