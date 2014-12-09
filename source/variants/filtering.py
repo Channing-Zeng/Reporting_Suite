@@ -511,11 +511,16 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
             if missing:
                 err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
                 return None
-            main_sample = rec.get_main_sample(main_sample_index)
             try:
-                main_sample['AD'] = [ro] + aos
+                rec.INFO['AD'] = [ro] + aos
             except TypeError:
-                main_sample['AD'] = [ro] + [aos]
+                rec.INFO['AD'] = [ro] + [aos]
+            # rec.FORMAT += 'AO'
+            # call_data = rec.genotype(sample_name).data._asdict()
+            # try:
+            #     call_data.AD = [ro] + aos
+            # except TypeError:
+            #     call_data.AD = [ro] + [aos]
 
             # af = float(t_alt_count) / dp
             # rec.INFO['AF'] = af
@@ -569,7 +574,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
         err('pickLine run returned non-0')
         return None
 
-    write_vcfs(sample_by_name.keys(), vcf_fpaths, caller, caller.pickline_res_fpath)
+    write_vcfs(sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath, caller.pickline_res_fpath)
 
     return res
 
@@ -605,20 +610,25 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
         return res
 
 
-def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
+def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
     variants = dict()
     passed_variants = set()
 
-    with open(pickline_res_fpath) as maf_f:
+    with open(pickline_res_fpath) as puckline_res_f:
+        for l in puckline_res_f:
+            ts = l.split('\t')
+            s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+            passed_variants.add((s_name, chrom, pos, alt))
+
+    with open(vcf2txt_res_fpath) as vcf2txt_f:
         pass_col = None
-        for l in maf_f:
+        for l in vcf2txt_f:
             if l.startswith('Sample'):
                 pass_col = l.split('\t').index('PASS')
             ts = l.split('\t')
-            s_name, chrom, start, alt = ts[0], ts[1], ts[2], ts[5]
-            passed_variants.add((s_name, chrom, start, alt))
+            s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
             filt = ts[pass_col]
-            variants[(s_name, chrom, start, alt)] = filt
+            variants[(s_name, chrom, pos, alt)] = filt
 
     for s_name, vcf_fpath in zip(sample_names, vcf_fpaths):
         sample = next(s for s in caller.samples if s.name == s_name)
@@ -644,8 +654,10 @@ def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
                         ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
                         filter_value = variants.get((s_name, chrom, pos, alt))
                         if filter_value is None:
-                            warn(' '.join(s_name, chrom, str(pos), alt) + ' for ' + vcf_fpath + ' is not at ' + pickline_res_fpath)
+                            warn(chrom + ':' + str(pos) + alt + ' for ' + vcf_fpath + ' is not at ' + pickline_res_fpath)
                             ts[6] += 'RJCT'
+                        elif filter_value == 'TRUE':
+                            ts[6] += 'pickLine'
                         else:
                             ts[6] += filter_value
                         filt_f.write('\t'.join(ts))
