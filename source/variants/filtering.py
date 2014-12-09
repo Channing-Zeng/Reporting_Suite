@@ -655,7 +655,7 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
                         ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
                         filter_value = variants.get((s_name, chrom, pos, alt))
                         if filter_value is None:
-                            warn(chrom + ':' + str(pos) + ' ' + alt + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_f)
+                            warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
                             ts[6] += 'RJCT'
                         elif filter_value == 'TRUE':
                             ts[6] += 'pickLine'
