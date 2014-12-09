@@ -116,7 +116,7 @@ def _set_sys_config(config_dirpath, opts):
         fpaths_in_config = [
             abspath(join(config_dirpath, fname))
             for fname in os.listdir(config_dirpath)
-            if fname.endswith('.yaml') and 'system_info' in fname]
+            if fname.startswith('system_info') and fname.endswith('.yaml')]
 
         if len(fpaths_in_config) > 1:
             critical('More than one YAML file containing run_info in name found in the config '
@@ -179,7 +179,7 @@ def _set_run_config(config_dirpath, opts):
         run_info_fpaths_in_config = [
             abspath(join(config_dirpath, fname))
             for fname in os.listdir(config_dirpath)
-            if fname.endswith('.yaml') and 'run_info' in fname]
+            if fname.startswith('run_info') and fname.endswith('.yaml')]
 
         if len(run_info_fpaths_in_config) > 1:
             critical('More than one YAML file containing run_info in name found in the config '
