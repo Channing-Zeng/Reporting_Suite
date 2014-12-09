@@ -503,22 +503,16 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
         if rec.FILTER and rec.FILTER != 'PASS':
             return None
 
-        if caller_name != 'vardict':
-            af, t_ref_count, t_alt_count = None, None, None
-
-            ads = rec.get_val('AD', main_sample_index)
-            if not ads:
-                err('No AD field for ' + rec.get_variant() + ', ' + vcf_fpath)
+        ads = rec.get_sample_val('AD', main_sample_index)
+        if ads is None:
+            aos = rec.get_sample_val('AO', main_sample_index)
+            ro = rec.get_info_val('RO', main_sample_index)
+            missing = [n for f, n in [(aos, 'AO'), (ro, 'RO')] if f is None]
+            if missing:
+                err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
                 return None
-            dp = rec.get_val('DP', main_sample_index)
-            if not dp:
-                err('No DP field for ' + rec.get_variant() + ', ' + vcf_fpath)
-                return None
-
-            try:
-                t_ref_count, t_alt_count = ads[0], ads[1]
-            except:
-                err('No AD for alt in ' + rec.get_variant() + ', AD is ' + str(ads) + ', ' + vcf_fpath)
+            main_sample = rec.get_main_sample(main_sample_index)
+            main_sample['AD'] = [ro] + aos
 
             # af = float(t_alt_count) / dp
             # rec.INFO['AF'] = af
@@ -645,7 +639,12 @@ def write_vcfs(sample_names, vcf_fpaths, caller, pickline_res_fpath):
                         pass_f.write('\t'.join(ts))
                     else:
                         ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
-                        ts[6] += variants[(s_name, chrom, pos, alt)]
+                        filter_value = variants.get((s_name, chrom, pos, alt))
+                        if filter_value is None:
+                            warn(' '.join(s_name, chrom, str(pos), alt) + ' for ' + vcf_fpath + ' is not at ' + pickline_res_fpath)
+                            ts[6] += 'RJCT'
+                        else:
+                            ts[6] += filter_value
                         filt_f.write('\t'.join(ts))
 
 

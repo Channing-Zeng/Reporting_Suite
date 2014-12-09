@@ -244,7 +244,7 @@ def _snpeff(cnf, input_fpath):
     # "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
     # "EFF[*].TRID", "EFF[*].RANK"])
 
-    executable = get_java_tool_cmdline(cnf, 'snpeff')
+    snpeff = get_java_tool_cmdline(cnf, 'snpeff')
     ref_name = cnf['genome']['name']
     if ref_name == 'GRCh37':
         ref_name += '.75'
@@ -281,7 +281,7 @@ def _snpeff(cnf, input_fpath):
 
     extra_opts = cnf.annotation['snpeff'].get('extra_opts') or ''
 
-    cmdline = ('{executable} eff -v {opts} {db_path_cmdline} -stats {stats_fpath} '
+    cmdline = ('{snpeff} eff {opts} {db_path_cmdline} -stats {stats_fpath} '
                '-csvStats -noLog -i vcf -o vcf {extra_opts} {ref_name} '
                '{input_fpath}').format(**locals())
 
