@@ -512,7 +512,10 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
                 err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
                 return None
             main_sample = rec.get_main_sample(main_sample_index)
-            main_sample['AD'] = [ro] + aos
+            try:
+                main_sample['AD'] = [ro] + aos
+            except TypeError:
+                main_sample['AD'] = [ro] + [aos]
 
             # af = float(t_alt_count) / dp
             # rec.INFO['AF'] = af
