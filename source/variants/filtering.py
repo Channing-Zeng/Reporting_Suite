@@ -625,10 +625,11 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
         for l in vcf2txt_f:
             if l.startswith('Sample'):
                 pass_col = l.split('\t').index('PASS')
-            ts = l.split('\t')
-            s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
-            filt = ts[pass_col]
-            variants[(s_name, chrom, pos, alt)] = filt
+            else:
+                ts = l.split('\t')
+                s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+                filt = ts[pass_col]
+                variants[(s_name, chrom, pos, alt)] = filt
 
     for s_name, vcf_fpath in zip(sample_names, vcf_fpaths):
         sample = next(s for s in caller.samples if s.name == s_name)
@@ -654,7 +655,7 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
                         ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
                         filter_value = variants.get((s_name, chrom, pos, alt))
                         if filter_value is None:
-                            warn(chrom + ':' + str(pos) + alt + ' for ' + vcf_fpath + ' is not at ' + pickline_res_fpath)
+                            warn(chrom + ':' + str(pos) + ' ' + alt + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_f)
                             ts[6] += 'RJCT'
                         elif filter_value == 'TRUE':
                             ts[6] += 'pickLine'
