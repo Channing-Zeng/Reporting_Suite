@@ -64,7 +64,10 @@ def _init_html(results_dirpath, report_fname, caption=''):
     # shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
     aux_dirpath = join(results_dirpath, aux_dirname)
     if isdir(aux_dirpath):
-        shutil.rmtree(aux_dirpath)
+        try:
+            shutil.rmtree(aux_dirpath)
+        except OSError:
+            pass
     os.mkdir(aux_dirpath)
 
     def copy_aux_file(fname):

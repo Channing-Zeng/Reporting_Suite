@@ -29,11 +29,11 @@ metric_storage = MetricStorage(
             Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
         ]),
         ReportSection('other_metrics', 'Other', [
-            Metric('Read min length',                               'Read min length',             'Read min length'),
-            Metric('Read max length',                               'Read max length',             'Read max length'),
-            Metric('Read mean length',                              'Read mean length',            'Read mean length'),
+            Metric('Read min length',                               'Read min len',             'Read min length'),
+            Metric('Read max length',                               'Read max len',             'Read max length'),
+            Metric('Read mean length',                              'Read mean len',            'Read mean length'),
 
-            Metric('Mean Mapping Quality',                          'Mean mapping quality',        'Mean mapping quality, inside of regions'),
+            Metric('Mean Mapping Quality',                          'Mean MQ',        'Mean mapping quality, inside of regions'),
             # Metric('Total reads with indels',                       'Indels',                      'Total reads with indels, inside of regions'),  # not supported since Qualimap v.2.0
             Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
