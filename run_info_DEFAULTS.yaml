@@ -209,9 +209,9 @@ annotation:
   #- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
   #- GEN[*].EC                     : ExpAlleleCounts
   - GEN[*].AD                     : AllelicDepths
-  - GEN[*].FREQ                   : Mutect_AF
-  - GEN[*].AB                     : Freebayes_AF
-  - GEN[*].AF                     : AF
+  - GEN[*].FREQ                   : Mutect_FREQ
+  - GEN[*].AB                     : Freebayes_AlellicBalance
+  - GEN[*].AF                     : AlleleFrequency
   - GEN[*].AO                     : AlleleObservationCount
   - GEN[*].QA                     : QualitySumForAltObservations
   - GEN[*].QR                     : QualitySumForRefObservations
