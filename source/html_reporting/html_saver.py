@@ -60,15 +60,13 @@ def write_html_report(json, output_dirpath, report_base_name, caption=''):
     return html_fpath
 
 
-def _init_html(results_dirpath, report_fname, caption=''):
-    # shutil.copy(template_fpath, os.path.join(results_dirpath, report_fname))
+def _copy_aux_files(results_dirpath):
     aux_dirpath = join(results_dirpath, aux_dirname)
-    if isdir(aux_dirpath):
+    if not isdir(aux_dirpath):
         try:
-            shutil.rmtree(aux_dirpath)
+            os.mkdir(aux_dirpath)
         except OSError:
             pass
-    os.mkdir(aux_dirpath)
 
     def copy_aux_file(fname):
         src_fpath = join(static_dirpath, fname)
@@ -77,9 +75,14 @@ def _init_html(results_dirpath, report_fname, caption=''):
             dst_fpath = join(aux_dirpath, fname)
 
             if not file_exists(dirname(dst_fpath)):
-                os.makedirs(dirname(dst_fpath))
-
-            shutil.copyfile(src_fpath, dst_fpath)
+                try:
+                    os.makedirs(dirname(dst_fpath))
+                except OSError:
+                    pass
+            try:
+                shutil.copyfile(src_fpath, dst_fpath)
+            except OSError:
+                pass
 
     for aux_f_relpath in aux_files:
         if aux_f_relpath.endswith('.js'):
@@ -92,6 +95,10 @@ def _init_html(results_dirpath, report_fname, caption=''):
 
         else:
             copy_aux_file(aux_f_relpath)
+
+
+def _init_html(results_dirpath, report_fname, caption=''):
+    _copy_aux_files(results_dirpath)
 
     with open(template_fpath) as template_file:
         html = template_file.read()
