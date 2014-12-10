@@ -21,6 +21,7 @@ defaults = dict(
     sys_cnfs = dict(
         us=abspath(join(cur_dirpath, pardir, 'system_info_Waltham.yaml')),
         uk=abspath(join(cur_dirpath, pardir, 'system_info_AP.yaml')),
+        china=abspath(join(cur_dirpath, pardir, 'system_info_China.yaml')),
         cloud=abspath(join(cur_dirpath, pardir, 'system_info_cloud.yaml')),
         local=abspath(join(cur_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
