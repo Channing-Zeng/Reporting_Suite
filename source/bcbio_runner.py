@@ -512,15 +512,15 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    clean_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name)
-                    if not file_exists(clean_vcf_fpath) and not self.varfilter_all:
+                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
+                    if not file_exists(filt_vcf_fpath) and not self.varfilter_all:
                         err('VCF does not exist: sample ' + sample.name + ', caller "' +
                             caller.name + '". You need to run VarFilter first.')
                     else:
                         self._submit_job(
                             self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            vcf=sample.get_pass_filt_vcf_fpath_by_callername(caller.name),
+                            vcf=sample.get_filt_vcf_fpath_by_callername(caller.name),
                             sample=sample.name, caller=caller.name, genome=sample.genome)
 
         if self.varqc_after_summary in self.steps:

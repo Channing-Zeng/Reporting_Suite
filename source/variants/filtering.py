@@ -560,11 +560,11 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
 
     info()
     info('Preparing VCFs for vcf2txt')
-    vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(prep_vcf)(cnf, fpath, s, caller.name)
+    prep_vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(prep_vcf)(cnf, fpath, s, caller.name)
         for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
-    res = run_vcf2txt(cnf, vcf_fpaths, sample_by_name, caller.vcf2txt_res_fpath, sample_min_freq)
+    res = run_vcf2txt(cnf, prep_vcf_fpaths, sample_by_name, caller.vcf2txt_res_fpath, sample_min_freq)
     if not res:
         err('vcf2txt run returned non-0')
         return None
@@ -655,8 +655,8 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
                         ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
                         filter_value = variants.get((s_name, chrom, pos, alt))
                         if filter_value is None:
-                            warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
-                            ts[6] += 'RJCT'
+                            # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
+                            ts[6] += 'vcf2txt_1st_round'
                         elif filter_value == 'TRUE':
                             ts[6] += 'pickLine'
                         else:
