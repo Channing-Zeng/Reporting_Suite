@@ -2,70 +2,99 @@
         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <style type="text/css">
+        body {
+            padding-bottom: 30px;
+            margin: 0;
+            padding: 0;
+        }
+        .content {
+            margin-left: 120px;
+            padding-top: 50px;
+            clear: both;
+        }
+        #header {
+            display: block;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        /*#report_date { *//* not used in Quast html report */
+            /*margin-top: -13px;*/
+            /*margin-bottom: 20px;*/
+        /*}*/
+    </style>
 
+    <link href="html_aux/bootstrap/bootstrap.min.css" type="text/css" rel="stylesheet" />
+    <link href="html_aux/common.css" type="text/css" rel="stylesheet" />
+    <link href="html_aux/report.css" type="text/css" rel="stylesheet" />
+    <link href="html_aux/table_sorter/style.css" type="text/css" rel="stylesheet" />
 </head>
 <body>
-    {.section common}
-    <div class="row placeholders">
-        {.section fastqc_summary}
-            <div class="col-xs-6 col-sm-3 placeholder">
-                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                <h4>Reads</h4>
-                <span class="text-muted"><a href="{html_fpath}">View Project FastQC Reports</a></span>
-            </div>
+<div class="content">
+    <div id='report'>
+        {.section common}
+        <div class="row placeholders">
+            {.section fastqc_summary}
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                    <h4>Reads</h4>
+                    <span class="text-muted"><a href="{html_fpath}">View Project FastQC Reports</a></span>
+                </div>
+            {.end}
+            {.section target_qc_summary}
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                    <h4>Alignment and Capture</h4>
+                    <span class="text-muted"><a href="{html_fpath}">View Project SeqQC Reports</a></span>
+                </div>
+            {.end}
+            {.section var_qc_summary}
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                    <h4>Variants</h4>
+                    <span class="text-muted"><a href="{html_fpath}">View Project VarQC Reports</a></span>
+                </div>
+            {.end}
+        </div>
         {.end}
-        {.section target_qc_summary}
-            <div class="col-xs-6 col-sm-3 placeholder">
-                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                <h4>Alignment and Capture</h4>
-                <span class="text-muted"><a href="{html_fpath}">View Project SeqQC Reports</a></span>
-            </div>
-        {.end}
-        {.section var_qc_summary}
-            <div class="col-xs-6 col-sm-3 placeholder">
-                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                <h4>Variants</h4>
-                <span class="text-muted"><a href="{html_fpath}">View Project VarQC Reports</a></span>
-            </div>
-        {.end}
+
+        <div style="height: 30px; display: block;"></div>
+        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">Project Details</h2>
+        <div class="table-responsive">
+            {.section main}
+            <table class="table table-striped report_table static_report">
+                <thead>
+                <tr class="static_top_row_tr">
+                    <th>Project Name</th>
+                    <th>Sample Name</th>
+                    {.repeated section metric_names}
+                    <th>{@}</th>
+                    {.end}
+                </tr>
+                </thead>
+                <tbody>
+                    {.repeated section sample_reports}
+                        <tr>
+                            <td>{project_name}</td>
+                            <td>{sample_name}</td>
+                            {.repeated section records}
+                                <td>
+                                    {.repeated section html_fpath}
+                                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                                    {.or}
+                                      - {# no html_fpath at all!}
+                                    {.end}
+                                </td>
+                            {.end}
+                        </tr>
+                    {.end}
+                </tbody>
+            </table>
+            {.end}
+        </div>
     </div>
-    {.end}
-
-    <h2 class="sub-header">Project Details</h2>
-    <div class="table-responsive">
-        {.section main}
-        <table class="table table-striped">
-            <thead>
-            <tr>
-                <th>Project Name</th>
-                <th>Sample Name</th>
-                {.repeated section metric_names}
-                <th>{@}</th>
-                {.end}
-            </tr>
-            </thead>
-            <tbody>
-                {.repeated section sample_reports}
-                    <tr>
-                        <td>{project_name}</td>
-                        <td>{sample_name}</td>
-
-                        {.repeated section records}
-                            <td>
-                                {.repeated section html_fpath}
-                                  <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                                {.or}
-                                  - {# no html_fpath at all!}
-                                {.end}
-                            </td>
-                        {.end}
-                    </tr>
-                {.end}
-            </tbody>
-        </table>
-        {.end}
-    </div>
-
+</div>
 </body>
 </html>
 
