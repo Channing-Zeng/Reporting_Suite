@@ -378,7 +378,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
                 if cnf.get('keep_intermediate'):
                     cnf['log'] = join(cnf['work_dir'], cnf['name'] + '.log')
 
-                cnf['vcf'] = extract_sample(cnf, one_item_cnf['vcf'], cnf['name'])
+                # cnf['vcf'] = extract_sample(cnf, one_item_cnf['vcf'], cnf['name'])
                 info()
 
         # SINGLE SAMPLE
@@ -608,42 +608,6 @@ def leave_main_sample(cnf, vcf_fpath, samplename):
         return None
 
     return vcf_fpath
-
-
-def extract_sample(cnf, input_fpath, samplename):
-    work_dir = cnf['work_dir']
-
-    vcf_header_samples = read_sample_names_from_vcf(input_fpath)
-
-    if len(vcf_header_samples) == 0:
-        return input_fpath
-
-    if len(vcf_header_samples) > 0 and samplename not in vcf_header_samples:
-            critical('Error: not sample ' + samplename + ' in the ' + input_fpath +
-                     ' header: available only ' + ', '.join(vcf_header_samples))
-
-    if len(vcf_header_samples) == 1:
-        return input_fpath
-
-    info('-' * 70)
-    info('Extracting sample ' + samplename)
-    info('-' * 70)
-
-    executable = get_java_tool_cmdline(cnf, 'gatk')
-    ref_fpath = cnf['genome']['seq']
-
-    corr_samplename = ''.join([c if c.isalnum() else '_' for c in samplename])
-
-    output_fname = splitext_plus(input_fpath)[0] + '.' + corr_samplename + '.vcf'
-    output_fpath = join(work_dir, output_fname)
-
-    cmd = '{executable} -nt 30 -R {ref_fpath} -T SelectVariants ' \
-          '--variant {input_fpath} -sn {samplename} ' \
-          '-o {output_fpath}'.format(**locals())
-    call_subprocess(cnf, cmd, None, output_fpath, stdout_to_outputfile=False,
-         to_remove=[input_fpath + '.idx'])
-
-    return output_fpath
 
 
 def _verify_sample_info(vcf_conf, vcf_header_samples):

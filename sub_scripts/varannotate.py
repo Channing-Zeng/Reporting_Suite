@@ -7,7 +7,7 @@ import shutil
 from source.bcbio_structure import BCBioStructure, Sample
 from source.file_utils import iterate_file
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
-from source.variants.vcf_processing import remove_rejected, extract_sample, fix_chromosome_names, iterate_vcf, \
+from source.variants.vcf_processing import remove_rejected, fix_chromosome_names, iterate_vcf, \
     read_sample_names_from_vcf, get_sample_column_index
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
@@ -24,7 +24,7 @@ def main(args):
              ),
             (['--bam'], dict(
                 dest='bam',
-                help='used to generate some annotations by GATK')
+                help='(not used anymore) used to generate some annotations by GATK')
              ),
             (['--match-normal-sample-name'], dict(
                 dest='match_normal_normal_name')
@@ -69,9 +69,6 @@ def process_one(cnf):
         if sample.vcf is None:
             err('No variants left for ' + cnf.vcf + ': all rejected and removed.')
             return None, None, None
-
-    if cnf.get('extract_sample'):
-        sample.vcf = extract_sample(cnf, sample.vcf, sample.name)
 
     # In mutect, running paired analysis on a single sample could lead
     # to a "none" sample column. Removing that column.

@@ -9,7 +9,7 @@ from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
 from source.targetcov.bam_file import index_bam
-from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_gatk_cmdline, get_gatk_type
+from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation
@@ -20,12 +20,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     original_vcf = cnf.vcf
 
     vcf_fpath = ungzip_if_needed(cnf, vcf_fpath)
-
-    if 'gatk' in cnf.annotation:
-        res = _gatk(cnf, vcf_fpath, bam_fpath)
-        if res:
-            vcf_fpath = res
-            annotated = True
 
     dbs = [(dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'cosmic', 'oncomine', 'clinvar']
@@ -336,92 +330,6 @@ def _tracks(cnf, track_path, input_fpath):
 
     assert output_fpath
     return iterate_file(cnf, output_fpath, proc_line, 'trk')
-
-
-def _gatk(cnf, input_fpath, bam_fpath):
-    print cnf.caller
-
-    if 'gatk' not in cnf.annotation:
-        return None
-
-    step_greetings('GATK')
-
-    if bam_fpath:
-        index_bam(cnf, bam_fpath)
-
-    gatk = get_gatk_cmdline(cnf)
-
-    java = get_system_path(cnf, 'java')
-    info('Java version:')
-    call(cnf, java + ' -version')
-    info()
-
-    output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
-
-    # duplicating this from "call" function to avoid calling "gatk --version"
-    if output_fpath and cnf.get('reuse_intermediate'):
-        if file_exists(output_fpath):
-            info(output_fpath + ' exists, reusing')
-            return output_fpath
-
-    # Avoid issues with incorrectly created empty GATK index files.
-    # Occurs when GATK cannot lock shared dbSNP database on previous run
-    # (not using dbSNP here anymore, but removing old inx just in case)
-    idx_fpath = input_fpath + '.idx'
-    if os.path.exists(idx_fpath) and not file_exists(idx_fpath):
-        os.remove(idx_fpath)
-
-    ref_fpath = cnf['genome']['seq']
-
-    cmdline = ('{gatk} -R {ref_fpath} -T VariantAnnotator'
-               ' --variant {input_fpath} -o {output_fpath}').format(**locals())
-
-    if bam_fpath:
-        cmdline += ' -I ' + bam_fpath
-
-    gatk_annos_dict = {
-        'Coverage': 'DP',
-        'BaseQualityRankSumTest': 'BaseQRankSum',
-        'FisherStrand': 'FS',
-        'GCContent': 'GC',
-        'HaplotypeScore': 'HaplotypeScore',
-        'HomopolymerRun': 'HRun',
-        'RMSMappingQuality': 'MQ',
-        'MappingQualityRankSumTest': 'MQRankSum',
-        'MappingQualityZero': 'MQ0',
-        'QualByDepth': 'QD',
-        'ReadPosRankSumTest': 'ReadPosRankSum'
-    }
-    annotations = cnf.annotation['gatk'].get('annotations') or []
-    if cnf.caller == 'freebayes':
-        annotations.extend(['DepthPerAlleleBySample'])  # AD
-
-    # self.all_fields.extend(gatk_annos_dict.get(ann) for ann in annotations)
-
-    gatk_type = get_gatk_type(get_java_tool_cmdline(cnf, 'gatk'))
-    for ann in annotations:
-        if ann == 'DepthOfCoverage' and gatk_type == 'restricted':
-            info('Notice: in the restricted Gatk version, DepthOfCoverage '
-                 'is renamed to Coverage. Using the name Coverage.')
-            info()
-            ann = 'Coverage'
-        if ann == 'Coverage' and gatk_type == 'lite':
-            info('Notice: in the lite Gatk version, the Coverage annotation '
-                 'goes by name of DepthOfCoverage. '
-                 'In the system config, the lite version of Gatk is '
-                 'specified; using DepthOfCoverage.')
-            info()
-            ann = 'DepthOfCoverage'
-        cmdline += " -A " + ann
-
-    output_fpath = intermediate_fname(cnf, input_fpath, 'gatk')
-    if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                       stdout_to_outputfile=False, exit_on_error=False,
-                       to_remove=[output_fpath + '.idx',
-                                  input_fpath + '.idx']):
-        return output_fpath
-    else:
-        return None
 
 
 def _add_annotation(cnf, input_fpath, key, value):

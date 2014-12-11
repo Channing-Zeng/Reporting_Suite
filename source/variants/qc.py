@@ -3,7 +3,6 @@ from source.calling_process import call_subprocess
 
 from source.logger import step_greetings
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport
-from source.tools_from_cnf import get_gatk_cmdline
 from ext_modules import vcf_parser
 from source.variants.vcf_processing import get_sample_column_index, iterate_vcf
 import source.variants.vcf_processing as vcf_processing

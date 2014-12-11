@@ -11,7 +11,7 @@ from source.logger import err, info, warn, send_email
 from source.variants import qc
 from source.main import read_opts_and_cnfs, check_genome_resources, check_system_resources
 from source.runner import run_one
-from source.variants.vcf_processing import remove_rejected, extract_sample
+from source.variants.vcf_processing import remove_rejected
 from source.reporting import SampleReport
 from source.bcbio_structure import BCBioStructure, Sample
 
@@ -30,9 +30,7 @@ def main(args):
         proc_name=BCBioStructure.varqc_name,
     )
 
-    check_system_resources(cnf,
-        required=['java', 'gatk', 'snpeff'],
-        optional=[])
+    check_system_resources(cnf)
 
     check_genome_resources(cnf)
 
@@ -58,9 +56,6 @@ def process_one(cnf):
 
     if cnf.get('filter_reject'):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)
-
-    if cnf.get('extract_sample'):
-        vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
     report = qc.make_report(cnf, vcf_fpath, sample)
 
