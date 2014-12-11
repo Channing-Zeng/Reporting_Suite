@@ -608,12 +608,6 @@ class BCBioRunner:
                      steps=None, job_names_to_wait=None):
         steps = steps or self.steps
 
-        if self.varqc in steps:
-            self._submit_job(
-                self.varqc, sample.name, suf=caller_name, vcf=vcf_fpath, threads=threads,
-                sample=sample.name, caller=caller_name, genome=sample.genome,
-                wait_for_steps=job_names_to_wait)
-
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
         normal_match_cmdline = ''
         if sample.normal_match:
@@ -626,11 +620,15 @@ class BCBioRunner:
                 genome=sample.genome, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
+        if self.varqc in steps:
+            self._submit_job(
+                self.varqc, sample.name, suf=caller_name, vcf=sample.find_anno_vcf_fpath_by_callername(caller_name),
+                threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
+                wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)]
+                                if self.varannotate in self.steps else [])
+
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
         # annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
-        #
-        # filter_dirpath = join(dirname(anno_dirpath), self.varfilter_all.dir_name)
-        # safe_mkdir(filter_dirpath)
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)

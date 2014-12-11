@@ -8,7 +8,7 @@ from os.path import abspath, dirname, realpath, join, basename, relpath
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info, warn, send_email
-from source.variants import qc_gatk
+from source.variants import qc
 from source.main import read_opts_and_cnfs, check_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected, extract_sample
@@ -36,8 +36,6 @@ def main(args):
 
     check_genome_resources(cnf)
 
-    check_quality_control_config(cnf)
-
     info('Using variants ' + cnf['vcf'])
 
     run_one(cnf, process_one, finalize_one)
@@ -54,45 +52,6 @@ else:
     warn('Warning: matplotlib is not installed, cannot draw plots.')
 
 
-def check_quality_control_config(cnf):
-    qc_cnf = cnf['quality_control']
-
-    to_exit = False
-    dbs_dict = {}
-    for db in qc_cnf['databases']:
-        if not db:
-            err('Empty field for quality_control databases in system config ' + cnf.sys_cnf)
-            to_exit = True
-        elif file_exists(db):
-            if not verify_file(db, 'VCF'):
-                to_exit = True
-            dbs_dict[basename(db)] = db
-        elif db not in cnf.genome:
-            to_exit = True
-            err(db + ' for variant qc is not found in genome resources in system config ' + cnf.sys_cnf)
-        else:
-            dbs_dict[db] = cnf['genome'][db]
-
-    if to_exit:
-        sys.exit(1)
-
-    qc_cnf['database_vcfs'] = dbs_dict
-
-    ## FOR SUMMARIZING ##
-    # if 'summary_output' in qc_cnf or 'qc_summary_output' in cnf:
-    #     qc_output_fpath = qc_cnf.get('summary_output') or\
-    #                       cnf.get('qc_summary_output')
-    #     summary_output_dir = dirname(qc_output_fpath)
-    #     if not isdir(summary_output_dir):
-    #         try:
-    #             makedirs(summary_output_dir)
-    #         except OSError:
-    #             critical('ERROR: cannot create directory for '
-    #                      'qc summary report: ' + summary_output_dir)
-    #     if not verify_dir(summary_output_dir, 'qc_summary_output'):
-    #         exit()
-
-
 def process_one(cnf):
     vcf_fpath = cnf['vcf']
     sample = Sample(cnf.name, vcf=vcf_fpath)
@@ -103,9 +62,7 @@ def process_one(cnf):
     if cnf.get('extract_sample'):
         vcf_fpath = extract_sample(cnf, vcf_fpath, cnf.name)
 
-    records = qc_gatk.gatk_qc(cnf, vcf_fpath)
-    report = SampleReport(sample, records=records, metric_storage=qc_gatk.metric_storage)
-    qc_gatk.save_report(cnf, report)
+    report = qc.make_report(cnf, vcf_fpath, sample)
 
     if verify_module('matplotlib'):
         try:

@@ -1,10 +1,4 @@
 resources:
-  gatk:
-    jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
-    path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
-    options: ["-U", "ALLOW_N_CIGAR_READS"]
-    # path: /group/ngs/src/CancerAnalysisPackage-2014.1-13-g6b71cb4/GenomeAnalysisTK.jar
-    # path: /opt/az/broadinstitute/gatk/1.6/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/snpEff.jar

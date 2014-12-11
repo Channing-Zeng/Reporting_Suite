@@ -1,8 +1,4 @@
 resources:
-  gatk:
-    jvm_opts: ["-Xms750m", "-Xmx4000m"]
-    path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.2-34-gce410d5/GenomeAnalysisTK.jar
-    options: ["-U", "ALLOW_N_CIGAR_READS"]
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /ngs/RDI/PROGRAMS/snpEff4.0/snpEff.jar

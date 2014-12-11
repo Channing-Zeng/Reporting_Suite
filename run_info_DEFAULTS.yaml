@@ -12,10 +12,9 @@ steps:
 
 
 variant_filtering:
-  fraction:           0.4
   max_ratio:          0.7     # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
-
-  # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
+  # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal [sample_cnt] samples, is present in more than [fraction] of samples; and the avarage allele frequency is less than [ave_freq], it's considered as likely false positive.
+  fraction:           0.4
   sample_cnt:         10
   ave_freq:           0.15
   count_undetermined: True    # Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
@@ -28,7 +27,7 @@ variant_filtering:
   filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 
   min_freq:           0.02    # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
-                              # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
+                              # By default, min_allele_fraction/100 in the bcbio-nextgen YAML is taken instead.
   min_mq:             10      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
   min_vd:             2       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
 
@@ -37,16 +36,6 @@ variant_filtering:
 
   bias:               False   # Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
 
-
-quality_control:
-  databases: ['dbsnp', 'cosmic', '1000genomes']
-  novelty: ['known', 'novel', 'all']
-  db_for_summary: cosmic
-  variant_distribution_scale: 1000  ## in kilobases
-  metrics: [
-      'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-      'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-      'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 coverage_reports:
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
@@ -59,23 +48,6 @@ coverage_reports:
 
 
 annotation:
-  gatk:
-    options: ['-dt NONE']
-    annotations:                ## Field names in final VCF:
-#    - Coverage                  ## DP
-    - BaseQualityRankSumTest    ## BaseQRankSum
-    - FisherStrand              ## FS
-    - GCContent                 ## GC
-    - HaplotypeScore            ## HaplotypeScore
-    - HomopolymerRun            ## HRun
-    - RMSMappingQuality         ## MQ
-    - MappingQualityRankSumTest ## MQRankSum
-    - MappingQualityZero        ## MQ0
-    - QualByDepth               ## QD
-    - ReadPosRankSumTest        ## ReadPosRankSum
-#    - DepthPerAlleleBySample    ## AD
-#    - AlleleBalanceBySample     ## AB
-
   dbnsfp:
     annotations:
     - SIFT_score

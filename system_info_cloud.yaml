@@ -1,7 +1,4 @@
 resources:
-  gatk:
-    jvm_opts: ["-Xms750m", "-Xmx3g", "-Djava.io.tmpdir=/scratch/tmp"]
-    path: /usr/local/share/bcbio-nextgen/toolplus/gatk/2014.2-3.1.7-10-g867c2fb/GenomeAnalysisTK.jar
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/snpEff.jar
