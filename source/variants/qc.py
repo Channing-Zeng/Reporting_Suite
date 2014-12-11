@@ -11,24 +11,24 @@ import source.variants.vcf_processing as vcf_processing
 metric_storage = MetricStorage(
     sections=[
         ReportSection('basic', '', [
-            Metric('total',               'Total',               'Total number of passed variants with'),
-            Metric('snps',                'SNP',                 'SNPs'),
-            Metric('inss',                'Ins',                 'Insertions'),
-            Metric('dels',                'Del',                 'Deletions'),
-            Metric('novel',               'Novel',               'Novel (not in dbSNP or Cosmic'),
-            Metric('novel_percent',       '%',                   '% novel varinats', unit='%'),
+            Metric('Total variants',      'Total',               'Total number of passed variants with'),
+            Metric('SNPs',                'SNP',                 'SNPs'),
+            Metric('Insertions',          'Ins',                 'Insertions'),
+            Metric('Deletions',           'Del',                 'Deletions'),
+            Metric('Novel',               'Novel',               'Novel (not in dbSNP or Cosmic'),
+            Metric('Novel, %',            '%',                   '% novel varinats', unit='%'),
             # Metric('dbsnp_loci',          'Loci in dnSNP',       'Loci in dbSNP (just CHROM:POS matches, regardless if allele is the same)'),
             # Metric('dbsnp_loci_percent',  '%',                   '% loci in dbSNP (just CHROM:POS matches, regardless if allele is the same)', unit='%'),
-            Metric('dbsnps',               'Vars in dnSNP',       'Variants in dbSNP'),
-            Metric('dbsnp_percent',       '%',                   '% variants in dbSNP', unit='%'),
+            Metric('In dbSNP',            'dnSNP',               'Variants in dbSNP'),
+            Metric('In dbSNP, %',         '%',                   '% variants in dbSNP', unit='%'),
             # Metric('cosmic_loci',         'Loci in Cosmic',      'Loci in Cosmic (just CHROM:POS matches, regardless if allele is the same)'),
             # Metric('cosmic_loci_percent', '%',                   '% loci in Cosmic (just CHROM:POS matches, regardless if allele is the same)', unit='%'),
-            Metric('cosmics',              'Vars in Cosmic',      'Variants in Cosmic'),
-            Metric('cosmic_percent',      '%',                   '% variants in Cosmic', unit='%'),
+            Metric('In Cosmic',           'Cosmic',              'Variants in Cosmic'),
+            Metric('In Cosmic, %',        '%',                   '% variants in Cosmic', unit='%'),
             # Metric('bases_per_variant',   'Bp/var',              'Reference bases per variant', quality='Less is better'),
-            Metric('het_hom',             'Het/hom',             'Heterozygosity to homozygosity ratio'),
-            Metric('ti_tv',               'Ti/tv',               'Transition (T<->C, A<->G) to transversion (A<->C, C<->G, G<->T, T<->A) ratio. Should be 2 to 3 or higher (depending on the species and region)'),
-            Metric('total_with_rejected', 'Total with rejected', 'Total number of records in VCF, regardless FILTER column'),
+            Metric('Het/hom',             'Het/hom',             'Heterozygosity to homozygosity ratio'),
+            Metric('Ti/tv',               'Ti/tv',               'Transition (T<->C, A<->G) to transversion (A<->C, C<->G, G<->T, T<->A) ratio. Should be 2 to 3 or higher (depending on the species and region)'),
+            Metric('Total with rejected', 'Total with rejected', 'Total number of records in VCF, regardless FILTER column'),
         ])
     ]
 )
@@ -91,19 +91,19 @@ def make_report(cnf, vcf_fpath, sample):
                         homs += 1
 
     report = SampleReport(sample, metric_storage=metric_storage)
-    report.add_record('total', total)
-    report.add_record('snps', snps)
-    report.add_record('inss', inss)
-    report.add_record('dels', dels)
-    report.add_record('novel', novels)
-    report.add_record('novel_percent', novels * 100.0 / total if total else None)
-    report.add_record('dbsnps', dbsnps)
-    report.add_record('dbsnp_percent', dbsnps * 100.0 / total if total else None)
-    report.add_record('cosmics', cosmics)
-    report.add_record('cosmic_percent', cosmics * 100.0 / total if total else None)
-    report.add_record('het_hom', float(hets) / homs if homs != 0 else None)
-    report.add_record('ti_tv', float(transitions) / transversions if transversions != 0 else None)
-    report.add_record('total_with_rejected', total_with_rejected)
+    report.add_record('Total variants',      total)
+    report.add_record('SNPs',                snps)
+    report.add_record('Insertions',          inss)
+    report.add_record('Deletions',           dels)
+    report.add_record('Novel',               novels)
+    report.add_record('Novel, %',            novels * 100.0 / total if total else None)
+    report.add_record('In dbSNP',            dbsnps)
+    report.add_record('In dbSNP, %',         dbsnps * 100.0 / total if total else None)
+    report.add_record('In Cosmic',           cosmics)
+    report.add_record('In Cosmic, %',        cosmics * 100.0 / total if total else None)
+    report.add_record('Het/hom',             float(hets) / homs if homs != 0 else None)
+    report.add_record('Ti/tv',               float(transitions) / transversions if transversions != 0 else None)
+    report.add_record('Total with rejected', total_with_rejected)
 
     save_report(cnf, report)
     return report

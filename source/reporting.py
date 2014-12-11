@@ -168,7 +168,7 @@ class SampleReport(Report):
         return rec
 
     def flatten(self, sections=None):
-        rows = ['Sample', self.display_name]
+        rows = [['Sample', self.display_name]]
         for metric in self.metric_storage.get_metrics(sections):
             row = [metric.name]
             Report._append_value_to_row(self, row, metric)
