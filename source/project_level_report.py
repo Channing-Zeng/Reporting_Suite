@@ -30,7 +30,7 @@ def make_project_level_report(cnf, bcbio_structure):
     final_summary_report_fpath = full_report.save_html(
         bcbio_structure.date_dirpath, bcbio_structure.project_name,
         'Project-level report for ' + bcbio_structure.project_name)
-    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
+    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.work_dir,
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
