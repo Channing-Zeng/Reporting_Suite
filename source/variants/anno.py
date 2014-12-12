@@ -10,7 +10,7 @@ from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
-from source.file_utils import file_exists
+from source.file_utils import file_exists, code_base_path
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation
 
@@ -271,7 +271,11 @@ def _snpeff(cnf, input_fpath):
             opts += ' -canon '
 
     if cnf.resources.snpeff.config:
-        opts += ' -c ' + cnf.resources.snpeff.config + ' '
+        # IN PROJECT ROOT DIR? IN EXTERNAL?
+        conf_fpath = join(code_base_path, cnf.resources.snpeff.config)
+        if exists(conf_fpath):
+            conf_fpath = verify_obj_by_path(conf_fpath)
+        opts += ' -c ' + conf_fpath + ' '
 
     extra_opts = cnf.annotation['snpeff'].get('extra_opts') or ''
 
