@@ -233,54 +233,36 @@ def _snpeff(cnf, input_fpath):
     if 'snpeff' not in cnf.annotation:
         return None, None, None
 
-    # self.all_fields.extend([
-    # "EFF[*].EFFECT", "EFF[*].IMPACT", "EFF[*].FUNCLASS", "EFF[*].CODON",
-    # "EFF[*].AA", "EFF[*].AA_LEN", "EFF[*].GENE", "EFF[*].CODING",
-    # "EFF[*].TRID", "EFF[*].RANK"])
-
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
-    ref_name = cnf['genome']['name']
-    if ref_name == 'GRCh37':
-        ref_name += '.75'
-    stats_fpath = join(cnf['output_dir'], cnf['name'] + '.snpEff_summary.html')
-    extra_opts = cnf.annotation['snpeff'].get('opts') or ''
-    db_path = cnf['genome'].get('snpeff')
-    if db_path:
-        db_path_cmdline = ' -dataDir ' + db_path
-    else:
-        # err('Please, provide a path to SnpEff data in '
-        #     'the "genomes" section in the system config.')
-        # return None, None, None
-        db_path_cmdline = ''
+
+    stats_fpath = join(cnf.output_dir, cnf.name + '.snpEff_summary.html')
+
+    ref_name = cnf.genome.name
+    if ref_name == 'GRCh37': ref_name += '.75'
 
     opts = ''
-    if cnf.annotation['snpeff'].get('cancer'):
-        opts += ' -cancer '
+    if cnf.annotation.snpeff.cancer: opts += ' -cancer'
 
-    custom_transcripts = None
-    if cnf.annotation['snpeff'].get('only_transcripts'):
+    db_path = cnf.genome.snpeff
+    if db_path: opts += ' -dataDir ' + db_path
+
+    if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
+        opts += ' -canon '
+    else:
         custom_transcripts = cnf.genome.snpeff_transcripts
         if custom_transcripts:
             if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
                 return None, None, None
             opts += ' -onlyTr ' + custom_transcripts + ' '
 
-    if cnf.annotation['snpeff'].get('clinical_reporting') or \
-            cnf.annotation['snpeff'].get('canonical'):
-        if not custom_transcripts:
-            opts += ' -canon '
-
     if cnf.resources.snpeff.config:
-        # IN PROJECT ROOT DIR? IN EXTERNAL?
-        conf_fpath = join(code_base_path, cnf.resources.snpeff.config)
-        if exists(conf_fpath):
-            conf_fpath = verify_obj_by_path(conf_fpath)
-        opts += ' -c ' + conf_fpath + ' '
+        opts += ' -c ' + cnf.resources.snpeff.config + ' '
 
-    extra_opts = cnf.annotation['snpeff'].get('extra_opts') or ''
+    if cnf.annotation.snpeff.extra_options:
+        opts += ''
 
-    cmdline = ('{snpeff} eff {opts} {db_path_cmdline} -stats {stats_fpath} '
-               '-csvStats -noLog -i vcf -o vcf {extra_opts} {ref_name} '
+    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
+               '-csvStats -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')

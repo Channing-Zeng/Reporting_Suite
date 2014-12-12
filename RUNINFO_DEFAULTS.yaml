@@ -136,8 +136,7 @@ annotation:
   snpeff:  ## no "annotations" section here, always applied all annotations
     clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
     cancer: False
-    # only_transcripts: '/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt'
-    extra_opts: ''
+    extra_options: ''
 
   mongo:
     all-annotations: True
