@@ -2,41 +2,57 @@ resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/snpEff.jar
+    config: ext_tools/snpEff/snpEff.config # /usr/local/share/ngs/Reporting_Suite/ext_tools/snpEff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/SnpSift.jar
   qualimap:
-    path: /usr/local/bin/qualimap
+    path: /usr/local/share/bcbio/bin/qualimap
   samtools:
-    path: /usr/local/bin/samtools
+    path: /usr/local/share/bcbio/bin/samtools
   bedtools:
-    path: /usr/local/bin/bedtools
+    path: /usr/local/share/bcbio/bin/bedtools
   vcfannotate:
-    path: /usr/local/bin/vcfannotate
+    path: /usr/local/share/bcbio/bin/vcfannotate
   perl:
     path: /usr/bin/perl
   java:
     path: /usr/bin/java
   python:
-    path: /usr/bin/python
-  igvtools:
-    path: /usr/local/src/IGVTools/igvtools.jar
+    path: /usr/local/share/bcbio/anaconda/bin/python
+#  igvtools:
+#    path: /usr/local/src/IGVTools/igvtools.jar
 
 genomes:
+#/usr/local/share/bcbio/genomes/Hsapiens/hg19/variation
   hg19:
-    seq: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/seq/hg19.fa
-    chr_lengths: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    seq: /usr/local/share/bcbio/genomes/Hsapiens/hg19/seq/hg19.fa
 
-    dbsnp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf.gz
-    cosmic: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf.gz
-    dbnsfp: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
-    1000genomes: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf.gz
-    oncomine: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/variation/oncomine.vcf
+    dbsnp: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf.gz
+    cosmic: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v68_hg19.vcf.gz
+#    dbnsfp: /usr/local/share/bcbio/genomes/Hsapiens/hg19/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+    1000genomes: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/1000G_omni2.5.vcf.gz
+    clinvar: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/clinvar_20140929_hg19.vcf.gz
+#    oncomine: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/oncomine.vcf
+    snpeff: /usr/local/share/bcbio/genomes/Hsapiens/hg19/snpeff
+    exons: /usr/local/share/bcbio/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+    polymorphic_variants: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
-    snpeff: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/snpeff
 
-    exons: /usr/local/share/bcbio-nextgen/genomes/Hsapiens/hg19/bed/UCSC_Gene_Exon_Canonical.bed
+  GRCh37:
+    seq: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
 
+    dbsnp: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf.gz
+    cosmic: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_v68.vcf.gz
+#    dbnsfp: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/dbNSF/dbNSFP2.3/dbNSFP2.3.txt.gz
+    1000genomes: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf.gz
+    clinvar: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/clinvar_20140929.vcf.gz
+#    oncomine: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/oncomine.vcf
+    snpeff: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/snpeff
+    exons: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/bed/AZ_Exome.bed
+    polymorphic_variants: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs: /usr/local/share/bcbio/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
 
 queue: all.q
 
