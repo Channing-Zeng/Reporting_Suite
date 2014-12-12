@@ -217,6 +217,7 @@ def check_genome_resources(cnf):
     info()
 
     for build_name, genome_cnf in cnf.genomes.items():
+        info(build_name)
         for key in genome_cnf.keys():
             if isinstance(genome_cnf[key], basestring):
                 genome_cnf[key] = adjust_system_path(genome_cnf[key])
@@ -231,13 +232,12 @@ def check_genome_resources(cnf):
                     err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
             else:
                 info(key + ': ' + genome_cnf[key])
-
+        info()
         genome_cnf['name'] = build_name
 
     if cnf.genome:
         cnf.genome = cnf.genomes[cnf.genome]
 
-    info()
     info('Checked genome resources.')
     info('*' * 70)
     info()
