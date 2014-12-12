@@ -531,7 +531,7 @@ def fix_chromosome_names(cnf, vcf_fpath):
     if not verify_file(out_fpath):
         err('Could not run fix_chromosome_names')
 
-    return vcf_fpath
+    return out_fpath
 
 
 def vcf_one_per_line(cnf, vcf_fpath):
@@ -679,7 +679,7 @@ def igvtools_index(cnf, vcf_fpath):
     return vcf_fpath + '.idx'
 
 
-def tabix_vcf(cnf, vcf_fpath):
+def bgzip_and_tabix(cnf, vcf_fpath):
     bgzip = get_system_path(cnf, 'bgzip')
     tabix = get_system_path(cnf, 'tabix')
 

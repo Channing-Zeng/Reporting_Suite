@@ -198,18 +198,14 @@ def filter_all(cnf, bcbio_structure):
             if caller.vcf2txt_res_fpath:
                 info('  ' + caller.name)
                 info('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
-                # info('     ' + caller.combined_filt_pass_maf_fpath)
                 msg.append('  ' + caller.name)
                 msg.append('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
-                # msg.append('     ' + caller.combined_filt_pass_maf_fpath)
 
             if caller.pickline_res_fpath:
                 info('  ' + caller.name + ' PASSed')
                 info('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
-                # info('     ' + caller.combined_filt_pass_maf_fpath)
                 msg.append('  ' + caller.name)
                 msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
-                # msg.append('     ' + caller.combined_filt_pass_maf_fpath)
 
                 if cnf.datahub_path:
                     copy_to_datahub(cnf, caller, cnf.datahub_path)
@@ -242,9 +238,8 @@ def finalize_one(cnf, bcbio_structure, sample, msg):
     for caller_name, caller in bcbio_structure.variant_callers.items():
         msg.append('  ' + caller_name)
         for fpath in [
-            sample.get_filt_vcf_fpath_by_callername(caller_name),
-            sample.get_filt_tsv_fpath_by_callername(caller_name),
-            sample.get_filt_maf_fpath_by_callername(caller_name)]:
+            sample.get_filt_vcf_fpath_by_callername(caller_name, gz=True),
+            sample.get_filt_tsv_fpath_by_callername(caller_name)]:
 
             if not file_exists(fpath):
                 if sample.phenotype == 'normal':

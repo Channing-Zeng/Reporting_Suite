@@ -25,9 +25,6 @@ class Sample:
         self.bed = bed
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.vcf = vcf
-        # self.filtered_vcf_by_callername = OrderedDict()
-        # self.filtered_tsv_by_callername = OrderedDict()
-        # self.filtered_maf_by_callername = OrderedDict()
         self.phenotype = None
         self.genome = None
         self.dirpath = None
@@ -41,59 +38,61 @@ class Sample:
     def get_filtered_vcfs_dirpath(self):
         return join(self.dirpath, BCBioStructure.varfilter_dir)
 
-    # def get_filtered_vcf_fpath_by_callername(callername):
-    #     fpath = join(
-    #         self.bcbio_structure.final_dirpath,
-    #         s.name,
-    #         dirname,
-    #         s.name + '-' + self.suf + ending)
-    #     return verify_file(fpath)
-    #
-    # def find_filtered_vcf_by_callername(callername):
-    #     return
 
-    def find_vcf_fpath_by_callername(self, callername):
-        return verify_file(self.get_vcf_fpath_by_callername(callername))
+    # raw variants
+    def find_raw_vcf_by_callername(self, callername):
+        fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=True)
+        if not verify_file(fpath):
+            fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=False)
+        return verify_file(fpath)
 
-    def get_vcf_fpath_by_callername(self, callername):
-        return join(self.dirpath, BCBioStructure.var_dir, self.name + '-' + callername + '.vcf')
+    def get_raw_vcf_fpath_by_callername(self, callername, gz):
+        return join(self.dirpath, BCBioStructure.var_dir,
+                    self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
 
 
-    def find_anno_vcf_fpath_by_callername(self, callername):
-        return verify_file(self.get_anno_vcf_fpath_by_callername(callername))
+    # annotated vcf
+    def find_anno_vcf_by_callername(self, callername):
+        fpath = self.get_anno_vcf_fpath_by_callername(callername, gz=True)
+        if not verify_file(fpath):
+            fpath = self.get_anno_vcf_fpath_by_callername(callername, gz=False)
+        return verify_file(fpath)
 
-    def get_anno_vcf_fpath_by_callername(self, callername):
+    def get_anno_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varannotate_dir,
-                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending)
+                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending +
+                    ('.gz' if gz else ''))
 
-
+    # filtered
     def find_filt_vcf_by_callername(self, callername):
-        return verify_file(self.get_filt_vcf_fpath_by_callername(callername))
+        fpath = self.get_filt_vcf_fpath_by_callername(callername, gz=True)
+        if not verify_file(fpath):
+            fpath = self.get_filt_vcf_fpath_by_callername(callername, gz=False)
+        return verify_file(fpath)
 
-    def find_filt_tsv_by_callername(self, callername):
-        return verify_file(self.get_filt_tsv_fpath_by_callername(callername))
-
-    def find_filt_maf_by_callername(self, callername):
-        return verify_file(self.get_filt_maf_fpath_by_callername(callername))
-
-    def find_pass_filt_vcf_by_callername(self, callername):
-        return verify_file(self.get_pass_filt_vcf_fpath_by_callername(callername))
-
-    def get_filt_vcf_fpath_by_callername(self, callername):
+    def get_filt_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending)
+                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending +
+                    ('.gz' if gz else ''))
 
+    # filtered passed
+    def find_pass_filt_vcf_by_callername(self, callername):
+        fpath = self.get_pass_filt_vcf_fpath_by_callername(callername, gz=True)
+        if not verify_file(fpath):
+            fpath = self.get_pass_filt_vcf_fpath_by_callername(callername, gz=False)
+        return verify_file(fpath)
+
+    def get_pass_filt_vcf_fpath_by_callername(self, callername, gz):
+        return join(self.dirpath, BCBioStructure.varfilter_dir,
+                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending+
+                    ('.gz' if gz else ''))
+
+
+    # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
 
-    def get_filt_maf_fpath_by_callername(self, callername):
-        return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.filt_maf_ending)
-
-    def get_pass_filt_vcf_fpath_by_callername(self, callername):
-        return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending)
 
     def __str__(self):
         return self.name
@@ -132,14 +131,11 @@ class VariantCaller:
         self.pickline_res_fpath = None
         self.vcf2txt_res_fpath = None
 
-    def find_filt_maf_by_sample(self):
-        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_maf_ending)
-
     def find_fpaths_by_sample(self, dir_name, name, ext):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
 
-    def find_anno_vcf_by_sample(self, optional_ext=None):
-        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending, optional_ext=optional_ext)
+    def find_anno_vcf_by_sample(self):
+        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
 
     def get_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
@@ -147,7 +143,7 @@ class VariantCaller:
     def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
-    def _find_files_by_sample(self, dir_name, ending, optional_ext=None):
+    def _find_files_by_sample(self, dir_name, ending):
         files_by_sample = OrderedDict()
 
         for s in self.samples:
@@ -155,17 +151,16 @@ class VariantCaller:
                 self.bcbio_structure.final_dirpath,
                 s.name,
                 dir_name,
-                s.name + '-' + self.suf + ending)
+                s.name + '-' + self.suf + ending + '.gz')
 
             if isfile(fpath):
                 if verify_file(fpath):
                     files_by_sample[s.name] = fpath
             else:
-                if optional_ext:
-                    fpath += optional_ext
-                    if isfile(fpath):
-                        if verify_file(fpath):
-                            files_by_sample[s.name] = fpath
+                fpath = fpath[:-3]
+                if isfile(fpath):
+                    if verify_file(fpath):
+                        files_by_sample[s.name] = fpath
                 elif s.phenotype != 'normal':
                     info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
@@ -359,32 +354,32 @@ class BCBioStructure:
 
     @staticmethod
     def move_vcfs_to_var(sample):
-        fpaths = []
+        fpaths_to_move = []
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
                    [BCBioStructure.filt_maf_ending,
                     BCBioStructure.filt_tsv_ending,
                     BCBioStructure.filt_vcf_ending,
+                    BCBioStructure.filt_vcf_ending + '.gz',
                     BCBioStructure.filt_vcf_ending + '.idx']):
                 continue
 
-            if 'vcf' in fname.split('.') and \
-                    not (islink(fname) and '.anno.filt' in fname):
-                fpaths.append([sample, fname])
+            if 'vcf' in fname.split('.') and not (islink(fname) and '.anno.filt' in fname):
+                fpaths_to_move.append([sample, fname])
 
-        if fpaths:
+        if fpaths_to_move:
             if not exists(sample.var_dirpath):
                 info('Creating "var" directory ' + sample.var_dirpath)
                 safe_mkdir(sample.var_dirpath)
 
-        for sample, fname in fpaths:
+        for sample, fname in fpaths_to_move:
             src_fpath = join(sample.dirpath, fname)
             dst_fpath = join(sample.var_dirpath, fname)
             if exists(dst_fpath):
                 try:
                     os.remove(dst_fpath)
                 except OSError:
-                    info('Cannot move ' + src_fpath + ' to ' + dst_fpath + ': dst exists, and permissions denied to remove it.')
+                    critical('Cannot move ' + src_fpath + ' to ' + dst_fpath + ': dst exists, and permissions do now allow to remove it.')
                     continue
             safe_mkdir(sample.var_dirpath)
             info('Moving ' + src_fpath + ' to ' + dst_fpath)
@@ -432,7 +427,7 @@ class BCBioStructure:
                     self.batches[batch_name].tumor.append(sample)
 
         sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
-        # self.move_vcfs_to_var(sample)
+        # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         to_exit = False
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
@@ -503,23 +498,24 @@ class BCBioStructure:
             err('No BAM file for ' + sample.name)
 
     def _set_vcf_file(self, caller_name, sample):
-        vcf_fname = sample.name + '-' + caller_name + '.vcf'
-
+        vcf_fname = sample.name + '-' + caller_name + '.vcf.gz'
         vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
-        if not isfile(vcf_fpath):
-            vcf_fpath = vcf_fpath + '.gz'
-            if not isfile(vcf_fpath):
+
+        if not isfile(vcf_fpath):  # no var/sample.name-caller_name.vcf.gz?
+            warn('Warning: no ' + vcf_fpath + ', looking for uncompressed version.')
+            vcf_fpath = vcf_fpath[:-3]
+
+            if not isfile(vcf_fpath):  # no var/sample.name-caller_name.vcf?
                 vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
-                if not isfile(vcf_fpath):
-                    vcf_fpath = vcf_fpath + '.gz'
-                    if not isfile(vcf_fpath):
-                        if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
-                            err('Error: Phenotype is ' + str(sample.phenotype) + ', and no VCF file '
-                                'for ' + sample.name + ', ' + caller_name)
-                        else:
-                            warn('Notice: no VCF file for ' + sample.name + ', ' + caller_name +
-                                ', phenotype ' + str(sample.phenotype))
-                        return None
+
+                if not isfile(vcf_fpath):  # no sample.name-caller_name.vcf.gz?
+                    if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
+                        err('Error: phenotype is ' + str(sample.phenotype) + ', and no VCF file '
+                            'for ' + sample.name + ', ' + caller_name)
+                    else:
+                        info('Notice: no VCF file for ' + sample.name + ', ' + caller_name +
+                             ', phenotype ' + str(sample.phenotype))
+                    return None
 
         if not verify_file(vcf_fpath):  # bad file, error :(
             err('Error: ' + vcf_fpath + ' is empty. Phenotype is ' + str(sample.phenotype))

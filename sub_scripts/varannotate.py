@@ -24,7 +24,7 @@ def main(args):
              ),
             (['--bam'], dict(
                 dest='bam',
-                help='(not used anymore) used to generate some annotations by GATK')
+                help='(outdated) used to generate some annotations by GATK')
              ),
             (['--match-normal-sample-name'], dict(
                 dest='match_normal_normal_name')
@@ -62,6 +62,7 @@ def main(args):
 def process_one(cnf):
     sample = Sample(cnf.name, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
+    # this method will also gunzip the vcf file
     sample.vcf = fix_chromosome_names(cnf, sample.vcf)
 
     if cnf.get('filter_reject'):

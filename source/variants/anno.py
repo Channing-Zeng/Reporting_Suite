@@ -4,7 +4,6 @@ from os.path import splitext, basename, join, isfile
 import socket
 import sys
 
-from source.bcbio_structure import ungzip_if_needed
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
@@ -12,14 +11,12 @@ from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation
+from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
-
-    vcf_fpath = ungzip_if_needed(cnf, vcf_fpath)
 
     dbs = [(dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'cosmic', 'oncomine', 'clinvar']
@@ -76,7 +73,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             annotated = True
 
     if not annotated:
-        warn('Warning: No annotations were applied to ' + original_vcf + '..')
+        warn('Warning: No annotations were applied to ' + original_vcf)
 
     return annotated, vcf_fpath
 
@@ -92,21 +89,13 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
 
     final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
     final_tsv_fname = samplename + '-' + callername + '.anno.tsv'
-    final_vcf_fpath = join(cnf['output_dir'], final_vcf_fname)
-    final_tsv_fpath = join(cnf['output_dir'], final_tsv_fname)
+    final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
+    final_tsv_fpath = join(cnf.output_dir, final_tsv_fname)
 
     # Moving final VCF
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
     shutil.copy(vcf_fpath, final_vcf_fpath)
-
-    # Indexing
-    # info()
-    # info('Indexing with IGV ' + final_vcf_fpath)
-    # igvtools_index(cnf, final_vcf_fpath)
-    # info()
-    # info('Indexing with tabix ' + final_vcf_fpath)
-    # tabix_vcf(cnf, final_vcf_fpath)
 
     # Converting to TSV
     if 'tsv_fields' in cnf.annotation:
@@ -119,6 +108,11 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
         shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
         final_tsv_fpath = None
+
+    # Indexing
+    info()
+    info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
+    final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
 
     return final_vcf_fpath, final_tsv_fpath
 

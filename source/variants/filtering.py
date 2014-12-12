@@ -18,9 +18,9 @@ from source.variants.Effect import Effect
 from source.logger import step_greetings, info, critical, err, warn
 from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
-    get_sample_column_index, tabix_vcf, vcf_merge, leave_main_sample
+    get_sample_column_index, bgzip_and_tabix, vcf_merge, leave_main_sample
 from source.utils import mean
-from source.file_utils import safe_mkdir, add_suffix, verify_file
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_is_empty, igvtools_index
 from source.logger import info
@@ -574,7 +574,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
         err('pickLine run returned non-0')
         return None
 
-    write_vcfs(sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath, caller.pickline_res_fpath)
+    write_vcfs(cnf, sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath, caller.pickline_res_fpath)
 
     return res
 
@@ -610,7 +610,7 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
         return res
 
 
-def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
+def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
     variants = dict()
     passed_variants = set()
 
@@ -631,13 +631,13 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
                 filt = ts[pass_col]
                 variants[(s_name, chrom, pos, alt)] = filt
 
-    for s_name, vcf_fpath in zip(sample_names, vcf_fpaths):
+    for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths):
         sample = next(s for s in caller.samples if s.name == s_name)
-        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
-        pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name)
+        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False)
+        pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False)
         safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
 
-        with open(vcf_fpath) as vcf_f, \
+        with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
              open(filt_vcf_fpath, 'w') as filt_f, \
              open(pass_filt_vcf_fpath, 'w') as pass_f:
             for l in vcf_f:
@@ -663,13 +663,19 @@ def write_vcfs(sample_names, vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res
                             ts[6] += filter_value
                         filt_f.write('\t'.join(ts))
 
+        # Indexing
+        info()
+        info('Indexing')
+        igvtools_index(cnf, pass_filt_vcf_fpath)
+        igvtools_index(cnf, filt_vcf_fpath)
+        bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     IN_PARALLEL = False
 
     info('Running for ' + caller.name)
 
-    vcf_by_sample = caller.find_anno_vcf_by_sample(optional_ext='.gz')
+    vcf_by_sample = caller.find_anno_vcf_by_sample()
     # only those samples that were found
 
     if len(vcf_by_sample) == 0:
@@ -857,7 +863,6 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
     # shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
     # os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
     shutil.copy(work_filt_vcf_fpath, final_vcf_fpath)
-    igvtools_index(cnf, final_vcf_fpath)
 
     # Cleaning rejected variants
     pass_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
@@ -867,7 +872,6 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
     if islink(pass_filtered_vcf_fpath): os.unlink(pass_filtered_vcf_fpath)
     shutil.copy(pass_filtered_vcf_fpath, final_pass_vcf_fpath)
     # os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
-    igvtools_index(cnf, final_pass_vcf_fpath)
 
     # Converting to TSV
     if work_filt_vcf_fpath and 'tsv_fields' in cnf:
@@ -882,6 +886,11 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
         if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
         final_tsv_fpath = None
 
+    # Indexing
+    igvtools_index(cnf, final_pass_vcf_fpath)
+    igvtools_index(cnf, final_vcf_fpath)
+    final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
+
     # Converting clean VCF to TSV
     # if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
     #     clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
@@ -893,7 +902,7 @@ def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
     #     final_clean_tsv_fpath = None
 
     # Converting to MAF
-    if cnf.make_maf and work_filt_vcf_fpath:
+    if work_filt_vcf_fpath:
         maf_fpath = convert_to_maf(
             cnf, work_filt_vcf_fpath,
             tumor_sample_name=sample.name,

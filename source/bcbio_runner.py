@@ -512,7 +512,7 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
+                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
                     if not file_exists(filt_vcf_fpath) and not self.varfilter_all:
                         err('VCF does not exist: sample ' + sample.name + ', caller "' +
                             caller.name + '". You need to run VarFilter first.')
@@ -520,7 +520,7 @@ class BCBioRunner:
                         self._submit_job(
                             self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
                             wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            vcf=sample.get_filt_vcf_fpath_by_callername(caller.name),
+                            vcf=sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True),
                             sample=sample.name, caller=caller.name, genome=sample.genome)
 
         if self.varqc_after_summary in self.steps:
@@ -572,17 +572,12 @@ class BCBioRunner:
         if self.mongo_loader in self.steps:
             for sample in self.bcbio_structure.samples:
                 for caller in self.bcbio_structure.variant_callers.values():
-
-                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name)
-                    anno_vcf = sample.get_anno_vcf_fpath_by_callername(caller.name)
-                    vcf = sample.get_vcf_fpath_by_callername(caller.name)
-
-                    if file_exists(filt_vcf_fpath) or file_exists(vcf) or file_exists(anno_vcf):
-                        self._submit_job(
-                            self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
-                            wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
-                            project=self.bcbio_structure.project_name)
+                    filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+                    self._submit_job(
+                        self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
+                        wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+                        path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
+                        project=self.bcbio_structure.project_name)
 
         if not self.cnf.verbose:
             print ''
@@ -622,7 +617,7 @@ class BCBioRunner:
 
         if self.varqc in steps:
             self._submit_job(
-                self.varqc, sample.name, suf=caller_name, vcf=sample.find_anno_vcf_fpath_by_callername(caller_name),
+                self.varqc, sample.name, suf=caller_name, vcf=sample.find_anno_vcf_by_callername(caller_name),
                 threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)]
                                 if self.varannotate in self.steps else [])
