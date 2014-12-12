@@ -35,7 +35,7 @@ defaults = dict(
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
 
-defaults_yaml_fpath = abspath(join(cur_dirpath, pardir, 'run_info_DEFAULTS.yaml'))
+defaults_yaml_fpath = abspath(join(cur_dirpath, pardir, 'RUN_INFO_DEFAULTS.yaml'))
 if not verify_file(defaults_yaml_fpath): sys.exit(1)
 run_info_defaults = load_yaml(open(defaults_yaml_fpath), Loader=Loader)
 for k, v in run_info_defaults.items():
