@@ -30,9 +30,9 @@ def make_project_level_report(cnf, bcbio_structure):
     final_summary_report_fpath = full_report.save_html(
         bcbio_structure.date_dirpath, bcbio_structure.project_name,
         'Project-level report for ' + bcbio_structure.project_name)
-    _save_static_html(full_report, bcbio_structure.work_dir,
-                      report_base_name=bcbio_structure.project_name,
-                      project_name=bcbio_structure.project_name)
+    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
+        report_base_name=bcbio_structure.project_name,
+        project_name=bcbio_structure.project_name)
 
     info()
     info('*' * 70)
@@ -148,7 +148,8 @@ def _convert_to_relpath(value, base_dirpath):
 
 def _save_static_html(full_report, output_dirpath, report_base_name, project_name):
     # metric name in FullReport --> metric name in Static HTML
-    metric_names = OrderedDict([('FastQC', 'FastQC'), ('Target QC', 'SeqQC'), ('Var QC', 'VarQC')])
+    metric_names = OrderedDict([('FastQC', 'FastQC'), ('Target QC', 'SeqQC'),
+                                ('Var QC', 'VarQC'), ('Var QC after filtering', 'VarQC Post Filter')])
 
     def _process_record(record):
         new_html_fpath = []
@@ -165,6 +166,7 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
 
     # common records (summary reports)
     common_dict = dict()
+    common_dict["project_name"] = project_name
     sample_report = full_report.sample_reports[0]
     for record in sample_report.records:
         if record.metric.common:
@@ -180,11 +182,7 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
         sample_report_dict = dict()
         sample_report_dict["records"] = new_records
         sample_report_dict["sample_name"] = sample_report.display_name
-        sample_report_dict["project_name"] = project_name
         main_dict["sample_reports"].append(sample_report_dict)
 
-    html_fpath = write_static_html_report({"common": common_dict, "main": main_dict},
-                                          output_dirpath, report_base_name)
-    info('Project level report (static version) saved in: ')
-    info('  ' + html_fpath)
-    return html_fpath
+    return write_static_html_report({"common": common_dict, "main": main_dict},
+                                    output_dirpath, report_base_name)

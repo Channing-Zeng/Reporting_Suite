@@ -2,6 +2,10 @@
   margin: 0 100px 50px 0;
   min-width: 532px;
   font-size: 1em; }
+  #report div.placeholders h4 {
+    margin: 0px;
+    margin-top: 15px;
+    margin-bottom: 5px; }
   #report table.common_table {
     padding-right: 50px !important; }
     #report table.common_table span.metric_name {

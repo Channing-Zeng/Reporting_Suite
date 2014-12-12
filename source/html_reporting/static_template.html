@@ -35,38 +35,50 @@
     <div id='report'>
         {.section common}
         <div class="row placeholders">
-            {.section fastqc_summary}
-                <div class="col-xs-6 col-sm-3 placeholder">
-                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                    <h4>Reads</h4>
-                    <span class="text-muted"><a href="{html_fpath}">View Project FastQC Reports</a></span>
-                </div>
-            {.end}
-            {.section target_qc_summary}
-                <div class="col-xs-6 col-sm-3 placeholder">
-                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                    <h4>Alignment and Capture</h4>
-                    <span class="text-muted"><a href="{html_fpath}">View Project SeqQC Reports</a></span>
-                </div>
-            {.end}
-            {.section var_qc_summary}
-                <div class="col-xs-6 col-sm-3 placeholder">
-                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                    <h4>Variants</h4>
-                    <span class="text-muted"><a href="{html_fpath}">View Project VarQC Reports</a></span>
-                </div>
-            {.end}
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4 class="section_header">Reads</h4>
+                {.section fastqc_summary}
+                <span class="text-muted"><a href="{html_fpath}">View Project FastQC Reports</a></span>
+                {.or}
+                <span class="text-muted">Project FastQC Reports are not available</span>
+                {.end}
+            </div>
+
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4>Alignment and Capture</h4>
+                {.section target_qc_summary}
+                <span class="text-muted"><a href="{html_fpath}">View Project SeqQC Reports</a></span>
+                {.or}
+                <span class="text-muted">Project SeqQC Reports are not available</span>
+                {.end}
+            </div>
+            <div class="col-xs-6 col-sm-3 placeholder">
+                <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                <h4>Variants</h4>
+                {.section var_qc_summary}
+                <span class="text-muted"><a href="{html_fpath}">View Project VarQC Reports</a></span>
+                {.or}
+                <span class="text-muted">Project VarQC Reports are not available</span>
+                {.end}
+                <br>
+                {.section var_qc_after_filtering_summary}
+                <span class="text-muted"><a href="{html_fpath}">View Project VarQC Post Filter Reports</a></span>
+                {.or}
+                <span class="text-muted">Project VarQC Post Filter Reports are not available</span>
+                {.end}
+            </div>
         </div>
-        {.end}
 
         <div style="height: 30px; display: block;"></div>
-        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">Project Details</h2>
+        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">Project Details - {project_name}</h2>
+        {.end}
         <div class="table-responsive">
             {.section main}
             <table class="table table-striped report_table static_report">
                 <thead>
                 <tr class="static_top_row_tr">
-                    <th>Project Name</th>
                     <th>Sample Name</th>
                     {.repeated section metric_names}
                     <th>{@}</th>
@@ -76,7 +88,6 @@
                 <tbody>
                     {.repeated section sample_reports}
                         <tr>
-                            <td>{project_name}</td>
                             <td>{sample_name}</td>
                             {.repeated section records}
                                 <td>

@@ -130,6 +130,7 @@ def _append(html_fpath, json, keyword):
 
 
 def write_static_html_report(data_dict, output_dirpath, report_base_name):
+    _copy_aux_files(output_dirpath)
     html_fpath = os.path.join(output_dirpath, report_base_name + '-static.html')
     with open(static_template_fpath) as stf:
         with open(html_fpath, 'w') as f_html:
