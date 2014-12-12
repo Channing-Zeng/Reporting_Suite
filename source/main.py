@@ -213,6 +213,9 @@ def check_genome_resources(cnf):
     if not cnf.genomes:
         critical('"genomes" section is not specified in system config.')
 
+    info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
+    info()
+
     for build_name, genome_cnf in cnf.genomes.items():
         for key in genome_cnf.keys():
             if isinstance(genome_cnf[key], basestring):
@@ -222,17 +225,22 @@ def check_genome_resources(cnf):
                 if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
                     gz_fpath = genome_cnf[key] + '.gz'
                     if verify_file(gz_fpath):
-                        info(key + ' is compressed, using ' + gz_fpath)
+                        info(key + ': ' + gz_fpath)
                         genome_cnf[key] = gz_fpath
                 else:
-                    err('Err: no ' + genome_cnf[key] + ' and .gz')
+                    err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
+            else:
+                info(key + ': ' + genome_cnf[key])
 
         genome_cnf['name'] = build_name
 
     if cnf.genome:
         cnf.genome = cnf.genomes[cnf.genome]
 
+    info()
     info('Checked genome resources.')
+    info('*' * 70)
+    info()
 
 
 def set_up_dirs(cnf):

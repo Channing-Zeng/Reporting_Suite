@@ -574,48 +574,68 @@ def file_exists(fpath):
     return fpath and exists(adjust_path(fpath)) and getsize(adjust_path(fpath)) > 0
 
 
-def verify_obj_by_path(path, description=''):
+def verify_obj_by_path(path, description='', silent=False):
+    if not path:
+        if not silent:
+            warn((description + ': f' if description else 'N') + 'ame is empty.')
+        return path
+
+    path = adjust_path(path)
+    if not exists(path):
+        if not silent:
+            warn((description + ': ' if description else '') + path + ' does not exist.')
+        return None
+
     if isfile(path):
-        return verify_file(path, description)
+        return verify_file(path, description, silent)
     elif isdir(path):
-        return verify_dir(path, description)
+        return verify_dir(path, description, silent)
     else:
+        if not silent:
+            err((description + ': ' if description else '') + path + ' is not a file or a directory.')
         return None
 
 
-def verify_file(fpath, description=''):
+def verify_file(fpath, description='', silent=False):
     if not fpath:
-        warn((description + ': f' if description else 'F') + 'ile name is empty.')
+        if not silent:
+            warn((description + ': f' if description else 'F') + 'ile name is empty.')
         return fpath
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        warn((description + ': ' if description else '') + fpath + ' does not exist.')
+        if not silent:
+            warn((description + ': ' if description else '') + fpath + ' does not exist.')
         return None
 
     if not isfile(fpath):
-        err((description + ': ' if description else '') + fpath + ' is not a file.')
+        if not silent:
+            err((description + ': ' if description else '') + fpath + ' is not a file.')
         return None
 
     if getsize(fpath) <= 0:
-        err((description + ': ' if description else '') + fpath + ' is empty.')
+        if not silent:
+            err((description + ': ' if description else '') + fpath + ' is empty.')
         return None
 
     return fpath
 
 
-def verify_dir(fpath, description=''):
+def verify_dir(fpath, description='', silent=False):
     if not fpath:
-        warn((description + ': d' if description else 'D') + 'ir name is empty.')
+        if not silent:
+            warn((description + ': d' if description else 'D') + 'ir name is empty.')
         return None
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        warn((description + ': ' if description else '') + fpath + ' does not exist.')
+        if not silent:
+            warn((description + ': ' if description else '') + fpath + ' does not exist.')
         return None
 
     if not isdir(fpath):
-        err((description + ': ' if description else '') + fpath + ' is not a directory.')
+        if not silent:
+            err((description + ': ' if description else '') + fpath + ' is not a directory.')
         return None
 
     return fpath

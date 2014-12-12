@@ -38,13 +38,13 @@ genomes:
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
-    cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf.gz
+    cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_v68.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
-    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
+#    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
 
-    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
-    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
+#    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
+#    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
 
 
 queue: all.q
