@@ -81,7 +81,7 @@ def make_report(cnf, vcf_fpath, sample):
                     ids = rec.ID
                     if isinstance(ids, basestring):
                         ids = [ids]
-                    if any('COSM' in id for id in ids):
+                    if any(id.startswith('COS') for id in ids):
                         cosmics += 1
                     if any(id.startswith('rs') for id in ids):
                         dbsnps += 1
