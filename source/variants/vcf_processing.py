@@ -446,76 +446,76 @@ def get_trasncripts_fpath(cnf):
     return cnf.transcripts_fpath
 
 
-def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
-    main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
-
-    def proc_line(rec):
-        main_sample = rec.get_main_sample(main_sample_index)
-        if main_sample:
-            sample_data = main_sample.data._asdict()
-
-            for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
-                        'SBF', 'ODDRATIO', 'MQ', 'SN']:
-                if key in sample_data and key not in rec.INFO:
-                    rec.INFO[key] = sample_data[key]
-
-        if rec.ID:
-            rec.INFO['COSMIC_overlapping_mutations'] = ','.join(
-                id for id in rec.ID.split(';') if 'COSM' in id) or None
-        return rec
-
-    return iterate_vcf(cnf, vcf_fpath, proc_line, 'maf')
-
-
-def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
-                   bam_fpath=None, normal_sample_name=None):
-    step_greetings('Converting to MAF')
-
-    if transcripts_fpath:
-        transcripts_fpath_copy = join(cnf.work_dir, tumor_sample_name + '_' + basename(transcripts_fpath))
-        if isfile(transcripts_fpath_copy) and not file_exists(transcripts_fpath_copy):
-            os.remove(transcripts_fpath_copy)
-
-        if not file_exists(transcripts_fpath_copy):
-            info('Copying transcripts file ' + transcripts_fpath + ' to ' + transcripts_fpath_copy)
-            shutil.copyfile(transcripts_fpath, transcripts_fpath_copy)
-            transcripts_fpath = transcripts_fpath_copy
-
-    info('Preparing VCF for MAF conversion...')
-    vcf_fpath = _prepare_fields_for_maf_converter(cnf, vcf_fpath, tumor_sample_name)
-    info()
-
-    vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
-
-    #########################################################
-    transcripts = '--transcripts ' + transcripts_fpath if transcripts_fpath else ''
-
-    bam_fpath = bam_fpath or '.'
-    normal_sample_name = normal_sample_name or '.'
-    fname, _ = splitext_plus(basename(vcf_fpath))
-    maf_fpath = join(cnf['work_dir'], fname + '.maf')
-
-    perl = get_system_path(cnf, 'perl')
-    vcf2maf = join(dirname(realpath(__file__)), 'vcf2maf.pl')
-    cmdline = ('{perl} {vcf2maf} '
-               '--input-snpeff {vcf_fpath} '
-               '--bam-file {bam_fpath} '
-               '--tumor-id {tumor_sample_name} '
-               '--normal-id {normal_sample_name} '
-               '--output-maf {maf_fpath} '
-               '{transcripts} ').format(**locals())
-
-    res = call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False, exit_on_error=False)
-    if not res:
-        return None
-
-    if verify_file(maf_fpath, 'MAF'):
-        warn('MAF file saved to ' + maf_fpath)
-    else:
-        err('Converting to MAF didn\'t generate output file ' + maf_fpath)
-        final_maf_fpath = None
-
-    return maf_fpath
+# def _prepare_fields_for_maf_converter(cnf, vcf_fpath, sample_name):
+#     main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
+#
+#     def proc_line(rec):
+#         main_sample = rec.get_main_sample(main_sample_index)
+#         if main_sample:
+#             sample_data = main_sample.data._asdict()
+#
+#             for key in ['BIAS', 'QUAL', 'QMEAN', 'PMEAN', 'PSTD', 'QSTD',
+#                         'SBF', 'ODDRATIO', 'MQ', 'SN']:
+#                 if key in sample_data and key not in rec.INFO:
+#                     rec.INFO[key] = sample_data[key]
+#
+#         if rec.ID:
+#             rec.INFO['COSMIC_overlapping_mutations'] = ','.join(
+#                 id for id in rec.ID.split(';') if 'COSM' in id) or None
+#         return rec
+#
+#     return iterate_vcf(cnf, vcf_fpath, proc_line, 'maf')
+#
+#
+# def convert_to_maf(cnf, vcf_fpath, tumor_sample_name, transcripts_fpath,
+#                    bam_fpath=None, normal_sample_name=None):
+#     step_greetings('Converting to MAF')
+#
+#     if transcripts_fpath:
+#         transcripts_fpath_copy = join(cnf.work_dir, tumor_sample_name + '_' + basename(transcripts_fpath))
+#         if isfile(transcripts_fpath_copy) and not file_exists(transcripts_fpath_copy):
+#             os.remove(transcripts_fpath_copy)
+#
+#         if not file_exists(transcripts_fpath_copy):
+#             info('Copying transcripts file ' + transcripts_fpath + ' to ' + transcripts_fpath_copy)
+#             shutil.copyfile(transcripts_fpath, transcripts_fpath_copy)
+#             transcripts_fpath = transcripts_fpath_copy
+#
+#     info('Preparing VCF for MAF conversion...')
+#     vcf_fpath = _prepare_fields_for_maf_converter(cnf, vcf_fpath, tumor_sample_name)
+#     info()
+#
+#     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
+#
+#     #########################################################
+#     transcripts = '--transcripts ' + transcripts_fpath if transcripts_fpath else ''
+#
+#     bam_fpath = bam_fpath or '.'
+#     normal_sample_name = normal_sample_name or '.'
+#     fname, _ = splitext_plus(basename(vcf_fpath))
+#     maf_fpath = join(cnf['work_dir'], fname + '.maf')
+#
+#     perl = get_system_path(cnf, 'perl')
+#     vcf2maf = join(dirname(realpath(__file__)), 'vcf2maf.pl')
+#     cmdline = ('{perl} {vcf2maf} '
+#                '--input-snpeff {vcf_fpath} '
+#                '--bam-file {bam_fpath} '
+#                '--tumor-id {tumor_sample_name} '
+#                '--normal-id {normal_sample_name} '
+#                '--output-maf {maf_fpath} '
+#                '{transcripts} ').format(**locals())
+#
+#     res = call(cnf, cmdline, output_fpath=maf_fpath, stdout_to_outputfile=False, exit_on_error=False)
+#     if not res:
+#         return None
+#
+#     if verify_file(maf_fpath, 'MAF'):
+#         warn('MAF file saved to ' + maf_fpath)
+#     else:
+#         err('Converting to MAF didn\'t generate output file ' + maf_fpath)
+#         final_maf_fpath = None
+#
+#     return maf_fpath
 
 
 def fix_chromosome_names(cnf, vcf_fpath):

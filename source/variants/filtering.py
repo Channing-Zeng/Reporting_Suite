@@ -22,7 +22,7 @@ from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
 from source.utils import mean
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import remove_rejected, convert_to_maf, vcf_is_empty, igvtools_index
+from source.variants.vcf_processing import remove_rejected, vcf_is_empty, igvtools_index
 from source.logger import info
 
 

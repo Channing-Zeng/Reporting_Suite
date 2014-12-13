@@ -18,8 +18,18 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
+    def delete_dbsnp(rec):
+        if rec.ID:
+            if isinstance(rec.ID, basestring):
+                if rec.ID.startswith('rs') or rec.ID.startswith('COS'):
+                    rec.ID = None
+            else:
+                rec.ID = [id for id in rec.ID if not id.startswith('rs') and not id.startswith('COS')]
+        return rec
+    vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_dbsnp, suffix='delID')
+
     dbs = [(dbname, cnf.annotation[dbname])
-           for dbname in ['dbsnp', 'cosmic', 'oncomine', 'clinvar']
+           for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
            if dbname in cnf.annotation]
 
     if 'custom_vcfs' in cnf.annotation:
