@@ -25,32 +25,33 @@ static_dirname = 'static'
 static_dirpath = get_real_path(static_dirname)
 
 aux_dirname = 'html_aux'
-aux_files = [
+
+css_files = [
+    'bootstrap/bootstrap.min.css',
+    'common.css',
+    'report.css',
+    'table_sorter/style.css'
+]
+js_files = [
     'jquery-1.8.2.min.js',
     # 'flot/jquery.flot.min.js',
-    # 'flot/excanvas.min.js',
     # 'flot/jquery.flot.dashes.js',
-    'scripts/build_total_report.js',
-    # 'scripts/draw_cumulative_plot.js',
-    # 'scripts/draw_nx_plot.js',
-    # 'scripts/draw_gc_plot.js',
-    'scripts/utils.js',
     'scripts/hsvToRgb.js',
-    # 'scripts/draw_genes_plot.js',
+    'scripts/utils.js',
+    'scripts/build_total_report.js',
     'scripts/build_report.js',
-    'dragtable.js',
-    'ie_html5.js',
-    # 'img/draggable.png',
-    'bootstrap/bootstrap-tooltip-5px-lower.min.js',
-    'bootstrap/bootstrap.min.css',
+    # 'flot/excanvas.min.js',
+    # 'ie_html5.js',
     'bootstrap/bootstrap.min.js',
     'bootstrap/bootstrap-tooltip-vlad.js',
-    'report.css',
-    'common.css',
+    # 'bootstrap/bootstrap-tooltip-5px-lower.min.js',
+    'dragtable.js',
     'table_sorter/tsort.js',
-    'table_sorter/style.css',
+]
+image_files = [
     'table_sorter/arrow_asc.png',
     'table_sorter/arrow_desc.png',
+    # 'img/draggable.png',
 ]
 
 
@@ -62,6 +63,10 @@ def write_html_report(json, output_dirpath, report_base_name, caption=''):
 
 def _copy_aux_files(results_dirpath):
     aux_dirpath = join(results_dirpath, aux_dirname)
+
+    if isdir(aux_dirpath):
+        shutil.rmtree(aux_dirpath)
+
     if not isdir(aux_dirpath):
         try:
             os.mkdir(aux_dirpath)
@@ -84,7 +89,7 @@ def _copy_aux_files(results_dirpath):
             except OSError:
                 pass
 
-    for aux_f_relpath in aux_files:
+    for aux_f_relpath in js_files + css_files + image_files:
         if aux_f_relpath.endswith('.js'):
             for ext in ['.js', '.coffee', '.map']:
                 copy_aux_file(splitext(aux_f_relpath)[0] + ext)
@@ -97,19 +102,49 @@ def _copy_aux_files(results_dirpath):
             copy_aux_file(aux_f_relpath)
 
 
+def _embed_css_and_scripts(html):
+    js_line_tmpl = '<script type="text/javascript" src="/static/{file_rel_path}"></script>'
+    js_l_tag = '<script type="text/javascript" name="{}">'
+    js_r_tag = '    </script>'
+
+    css_line_tmpl = '<link rel="stylesheet" type="text/css" href="/static/{file_rel_path}" />'
+    css_l_tag = '<style type="text/css" rel="stylesheet" name="{}">'
+    css_r_tag = '    </style>'
+
+    for line_tmpl, files, l_tag, r_tag in [
+            (js_line_tmpl, js_files, js_l_tag, js_r_tag),
+            (css_line_tmpl, css_files, css_l_tag, css_r_tag)]:
+        for rel_fpath in files:
+            with open(join(static_dirpath, join(*rel_fpath.split('/')))) as f:
+                contents = f.read()
+                contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
+
+                line = line_tmpl.format(file_rel_path=rel_fpath)
+                html = html.replace(line, l_tag.format(rel_fpath) + '\n' + contents + '\n' + r_tag)
+
+    return html
+
+
 def _init_html(results_dirpath, report_fname, caption=''):
-    _copy_aux_files(results_dirpath)
+    # Temporary:
+    aux_dirpath = join(results_dirpath, aux_dirname)
+    if isdir(aux_dirpath):
+        shutil.rmtree(aux_dirpath)
+    # Temporary.
 
     with open(template_fpath) as template_file:
         html = template_file.read()
-        html = html.replace("/" + static_dirname, aux_dirname)
-        html = html.replace('{{ caption }}', caption)
 
-        html_fpath = os.path.join(results_dirpath, report_fname)
-        if os.path.exists(html_fpath):
-            os.remove(html_fpath)
-        with open(html_fpath, 'w') as f_html:
-            f_html.write(html)
+    html = html.replace('{{ caption }}', caption)
+
+    html = _embed_css_and_scripts(html)
+
+    html_fpath = os.path.join(results_dirpath, report_fname)
+    if os.path.exists(html_fpath):
+        os.remove(html_fpath)
+
+    with open(html_fpath, 'w') as f:
+        f.write(html)
 
     return html_fpath
 
@@ -130,10 +165,18 @@ def _append(html_fpath, json, keyword):
 
 
 def write_static_html_report(data_dict, output_dirpath, report_base_name):
-    _copy_aux_files(output_dirpath)
+    with open(static_template_fpath) as f:
+        html = f.read()
+
+    html = jsontemplate.expand(html, data_dict)
+
+    html = _embed_css_and_scripts(html)
+
     html_fpath = os.path.join(output_dirpath, report_base_name + '.html')
-    with open(static_template_fpath) as stf:
-        with open(html_fpath, 'w') as f_html:
-            template = stf.read()
-            f_html.write(jsontemplate.expand(template, data_dict))
+    if os.path.exists(html_fpath):
+        os.remove(html_fpath)
+
+    with open(html_fpath, 'w') as f:
+        f.write(html)
+
     return html_fpath

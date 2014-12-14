@@ -87,7 +87,7 @@
   };
 
   get_meta_tag_contents = function(rec) {
-    var a, db, dbs, k, meta, meta_table, novelty, short_table, val, val_by_db, values, _i, _len;
+    var a, db, dbs, k, meta, meta_table, novelty, pretty_str, short_table, val, val_by_db, values, _i, _len;
     meta = rec.meta;
     if ((meta != null) && ((function() {
       var _results;
@@ -154,9 +154,11 @@
           meta_table += '<tr><td></td>';
           for (novelty in meta) {
             val_by_db = meta[novelty];
-            if (novelty !== 'all') {
-              meta_table += "<td>" + (toPrettyString(val_by_db[dbs[0]], rec.metric.unit)) + "</td>";
+            if (!(novelty !== 'all')) {
+              continue;
             }
+            pretty_str = toPrettyString(val_by_db[dbs[0]], rec.metric.unit);
+            meta_table += "<td>" + pretty_str + "</td>";
           }
           meta_table += '</tr>\n';
         } else {
@@ -355,7 +357,7 @@
   };
 
   reporting.buildTotalReport = function(report, section, columnOrder) {
-    var caller, caller_links, colNum, direction, html_fpath, i, k, line_caption, links, max_sample_name_len, padding, pos, r, rec, report_name, sample_reports_length, second_row_td, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+    var caller, caller_links, colNum, direction, html_fpath, i, k, line_caption, links, max_sample_name_len, padding, pos, r, rec, report_name, sample_reports_length, second_row_tr, sort_by, table, _i, _j, _k, _l, _len, _len1, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
     if (section.title != null) {
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
@@ -380,8 +382,8 @@
       if (line_caption.length > max_sample_name_len) {
         line_caption = "<span title=\"" + line_caption + "\">" + (line_caption.substring(0, max_sample_name_len)) + "...</span>";
       }
-      second_row_td = i === 0 ? "second_row_tr" : "";
-      table += "\n<tr class=\"" + second_row_td + "\"> <td class=\"left_column_td td\" data-sortAs=" + (sample_reports_length - i) + ">";
+      second_row_tr = i === 0 ? "second_row_tr" : "";
+      table += "\n<tr class=\"" + second_row_tr + "\"> <td class=\"left_column_td td\" data-sortAs=" + (sample_reports_length - i) + ">";
       if (sample_reports_length === 1) {
         table += "<span class=\"sample_name\">" + line_caption + "</span>";
       } else {

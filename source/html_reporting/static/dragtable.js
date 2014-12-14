@@ -6,7 +6,7 @@
 
  Instructions:
  - Download this file
- - Add <script src="DT.js"></script> to your HTML.
+ - Add [script src="DT.js"] [/script] to your HTML.
  - Add class="draggable" to any table you might like to reorder.
  - Drag the headers around to reorder them.
 

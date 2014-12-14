@@ -98,7 +98,8 @@ get_meta_tag_contents = (rec) ->
             if short_table  # Values are the same for each database
                 meta_table += '<tr><td></td>'
                 for novelty, val_by_db of meta when novelty isnt 'all'
-                    meta_table += "<td>#{toPrettyString(val_by_db[dbs[0]], rec.metric.unit)}</td>"
+                    pretty_str = toPrettyString(val_by_db[dbs[0]], rec.metric.unit)
+                    meta_table += "<td>#{pretty_str}</td>"
                 meta_table += '</tr>\n'
             else
                 for db in dbs
