@@ -27,10 +27,10 @@ def make_project_level_report(cnf, bcbio_structure):
             metric_storage=metric_storage))
 
     full_report = FullReport(cnf.name, sample_reports, metric_storage=metric_storage)
-    final_summary_report_fpath = full_report.save_html(
-        bcbio_structure.date_dirpath, bcbio_structure.project_name,
-        'Project-level report for ' + bcbio_structure.project_name)
-    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.work_dir,
+    # final_summary_report_fpath = full_report.save_html(
+    #     bcbio_structure.date_dirpath, bcbio_structure.project_name,
+    #     'Project-level report for ' + bcbio_structure.project_name)
+    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
@@ -79,20 +79,20 @@ def _add_per_sample_reports(bcbio_structure, general_records, individual_reports
             (bcbio_structure.targqc_repr,      targqc_htmls_by_sample),
             (bcbio_structure.varqc_repr,       varqc_htmls_by_sample),
             (bcbio_structure.varqc_after_repr, varqc_after_htmls_by_sample)]:
-        if htmls_by_sample:
-            cur_metric = Metric(repr_name)
-            individual_reports_section.add_metric(cur_metric)
-            for sample in bcbio_structure.samples:
-                if sample.name in htmls_by_sample:
-                    sample_reports_records[sample.name].append(Record(
+        cur_metric = Metric(repr_name)
+        individual_reports_section.add_metric(cur_metric)
+        for sample in bcbio_structure.samples:
+            if htmls_by_sample and sample.name in htmls_by_sample:
+                sample_reports_records[sample.name].append(
+                    Record(
                         metric=cur_metric,
                         value=cur_metric.name,
                         html_fpath=_convert_to_relpath(
                             htmls_by_sample[sample.name],
                             bcbio_structure.date_dirpath)))
-                else:
-                    sample_reports_records[sample.name].append(
-                        Record(metric=cur_metric, value=None, html_fpath=None))
+            else:
+                sample_reports_records[sample.name].append(
+                    Record(metric=cur_metric, value=None, html_fpath=None))
     return sample_reports_records
 
 
@@ -148,8 +148,11 @@ def _convert_to_relpath(value, base_dirpath):
 
 def _save_static_html(full_report, output_dirpath, report_base_name, project_name):
     # metric name in FullReport --> metric name in Static HTML
-    metric_names = OrderedDict([('FastQC', 'FastQC'), ('Target QC', 'SeqQC'),
-                                ('Var QC', 'VarQC'), ('Var QC after filtering', 'VarQC Post Filter')])
+    metric_names = OrderedDict([
+        ('FastQC', 'FastQC'),
+        ('Target QC', 'SeqQC'),
+        ('Var QC', 'VarQC'),
+        ('Var QC after filtering', 'VarQC after filtering')])
 
     def _process_record(record):
         new_html_fpath = []

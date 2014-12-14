@@ -18,7 +18,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
-    def delete_dbsnp(rec):
+    def delete_dbsnp(rec):  # TODO: remove prev dbsnp annotations from INFO too
         if rec.ID:
             if isinstance(rec.ID, basestring):
                 if rec.ID.startswith('rs') or rec.ID.startswith('COS'):

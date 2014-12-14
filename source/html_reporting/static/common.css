@@ -2,7 +2,22 @@ body {
   margin: 0;
   font-family: Lucida Grande, Verdana, Arial, sans-serif;
   font-size: 12px;
-  color: black; }
+  color: black;
+  padding: 0;
+  padding-bottom: 30px; }
+
+.content {
+  margin-left: 120px;
+  padding-top: 50px;
+  clear: both; }
+
+#header {
+  display: block;
+  width: 100%;
+  margin-bottom: 1em; }
+
+h4 {
+  margin-bottom: 0; }
 
 a {
   text-decoration: none;
@@ -68,8 +83,11 @@ a.header_link, a.header_link:hover, a.header_link:visited {
 
 .highlight {
   background-color: #fff9b5;
-  padding: 0px 3px;
+  padding: 0 3px;
   margin-left: -3px; }
+
+.not-available {
+  color: gray; }
 
 ul.list {
   list-style-type: none;

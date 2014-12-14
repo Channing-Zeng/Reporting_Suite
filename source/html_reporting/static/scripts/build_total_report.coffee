@@ -303,8 +303,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         if line_caption.length > max_sample_name_len
             line_caption = "<span title=\"#{line_caption}\">#{line_caption.substring(0, max_sample_name_len)}...</span>"
 
-        second_row_td = if i == 0 then "second_row_tr" else ""
-        table += "\n<tr class=\"#{second_row_td}\">
+        second_row_tr = if i == 0 then "second_row_tr" else ""
+        table += "\n<tr class=\"#{second_row_tr}\">
             <td class=\"left_column_td td\" data-sortAs=#{sample_reports_length - i}>"
         if sample_reports_length == 1
             table += "<span class=\"sample_name\">#{line_caption}</span>"

@@ -1,30 +1,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
-    <style type="text/css">
-        body {
-            padding-bottom: 30px;
-            margin: 0;
-            padding: 0;
-        }
-        .content {
-            margin-left: 120px;
-            padding-top: 50px;
-            clear: both;
-        }
-        #header {
-            display: block;
-            width: 100%;
-            margin-bottom: 1em;
-        }
-        /*#report_date { *//* not used in Quast html report */
-            /*margin-top: -13px;*/
-            /*margin-bottom: 20px;*/
-        /*}*/
-    </style>
-
     <link href="html_aux/bootstrap/bootstrap.min.css" type="text/css" rel="stylesheet" />
     <link href="html_aux/common.css" type="text/css" rel="stylesheet" />
     <link href="html_aux/report.css" type="text/css" rel="stylesheet" />
@@ -34,6 +12,8 @@
 <div class="content">
     <div id='report'>
         {.section common}
+        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">{project_name}</h2>
+
         <div class="row placeholders">
             <div class="col-xs-6 col-sm-3 placeholder">
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
@@ -41,7 +21,7 @@
                 {.section fastqc_summary}
                 <span class="text-muted"><a href="{html_fpath}">FastQC reports</a></span>
                 {.or}
-                <span class="text-muted">FastQC reports are not available</span>
+                <span class="text-muted not-available">FastQC reports are not available</span>
                 {.end}
             </div>
 
@@ -51,56 +31,51 @@
                 {.section target_qc_summary}
                 <span class="text-muted"><a href="{html_fpath}">SeqQC reports</a></span>
                 {.or}
-                <span class="text-muted">SeqQC reports are not available</span>
+                <span class="text-muted not-available">SeqQC reports are not available</span>
                 {.end}
             </div>
             <div class="col-xs-6 col-sm-3 placeholder">
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
                 <h4>Variants</h4>
                 {.section var_qc_summary}
-                <span class="text-muted"><a href="{html_fpath}">VarQC reports</a></span>
+                <span class="text-muted"><a href="{html_fpath}">Variant QC reports</a></span>
                 {.or}
-                <span class="text-muted">VarQC reports are not available</span>
+                <span class="text-muted not-available">VarQC reports are not available</span>
                 {.end}
                 <br>
                 {.section var_qc_after_filtering_summary}
-                <span class="text-muted"><a href="{html_fpath}">VarQC post filtering reports</a></span>
+                <span class="text-muted"><a href="{html_fpath}">Variant QC post-filtering reports</a></span>
                 {.or}
-                <span class="text-muted">VarQC post filtering reports are not available</span>
+                <span class="text-muted not-available">VarQC post filtering reports are not available</span>
                 {.end}
             </div>
         </div>
 
         <div style="height: 30px; display: block;"></div>
-        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">Project Details - {project_name}</h2>
         {.end}
         <div class="table-responsive">
             {.section main}
             <table class="table table-striped report_table static_report">
-                <thead>
-                <tr class="static_top_row_tr">
-                    <th>Sample Name</th>
+                <tr class="top_row_tr">
+                    <th class="top_left_td left_column_td">Sample</th>
                     {.repeated section metric_names}
-                    <th>{@}</th>
+                    <th class="second_through_last_col_headers_td">{@}</th>
                     {.end}
                 </tr>
-                </thead>
-                <tbody>
-                    {.repeated section sample_reports}
-                        <tr>
-                            <td>{sample_name}</td>
-                            {.repeated section records}
-                                <td>
-                                    {.repeated section html_fpath}
-                                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                                    {.or}
-                                      - {# no html_fpath at all!}
-                                    {.end}
-                                </td>
-                            {.end}
-                        </tr>
-                    {.end}
-                </tbody>
+                {.repeated section sample_reports}
+                    <tr>
+                        <td class="left_column_td">{sample_name}</td>
+                        {.repeated section records}
+                            <td class="td">
+                                {.repeated section html_fpath}
+                                  <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                                {.or}
+                                  - {# no html_fpath at all!}
+                                {.end}
+                            </td>
+                        {.end}
+                    </tr>
+                {.end}
             </table>
             {.end}
         </div>

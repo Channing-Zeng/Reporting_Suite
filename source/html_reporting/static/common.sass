@@ -4,15 +4,27 @@ body
     font-family: Lucida Grande, Verdana, Arial, sans-serif
     font-size: 12px
     color: black
-// line-height: 1.3em
+    padding: 0
+    padding-bottom: 30px
+
+.content
+    margin-left: 120px
+    padding-top: 50px
+    clear: both
+
+#header
+    display: block
+    width: 100%
+    margin-bottom: 1em
+
+h4
+    margin-bottom: 0
 
 a
     text-decoration: none
-    // color: #0c4f72
     color: #0077B5
     border-bottom: 1px solid #487b95
     border-color: rgba(12, 79, 114, 0.2)
-// #0c4f72  // #a0d2eb  //rgba(0, 88, cc, 0.3)
 
 a:visited
     text-decoration: none
@@ -23,19 +35,15 @@ a:visited
 a:hover
     text-decoration: none
     color: #b33
-    // #0088cc
     border-bottom: 1px solid #ffcccc
     border-color: rgba(255, 0, 0, 0.2)
-/// #55b2e0 #005580
 
 a.dark_bg_link
     color: white
-    // #0088cc
     border-bottom: 1px solid #cccccc
 
 a.dark_bg_link:hover
     color: white
-    // #0088cc
     border-bottom: 1px solid white
 
 .leading_link_dot
@@ -48,7 +56,6 @@ a.header_link, a.header_link:hover, a.header_link:visited
 .dotted-link
     cursor: pointer
     text-decoration: none
-    // color: #0c4f72
     color: #0077B5
     border-bottom: 1px dashed #487b95
     border-color: rgba(12, 79, 114, 0.2)
@@ -77,8 +84,11 @@ a.header_link, a.header_link:hover, a.header_link:visited
 
 .highlight
     background-color: #FFF9B5
-    padding: 0px 3px
+    padding: 0 3px
     margin-left: -3px
+
+.not-available
+    color: gray
 
 ul.list
     list-style-type: none
@@ -96,7 +106,7 @@ ul.mdash li
     margin-bottom: 0.7em
     list-style-type: none
     text-indent: -1.3em
-//behavior: expression(!this.before ? this.before = this.innerHTML = '&mdash&nbsp' + this.innerHTML : '')
+    //behavior: expression(!this.before ? this.before = this.innerHTML = '&mdash&nbsp' + this.innerHTML : '')
 
 ul.mdash li:before
     content: '\2014\a0'
