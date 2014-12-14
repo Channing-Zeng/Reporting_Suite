@@ -733,7 +733,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
         with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
             convert_file_fn(inp_f, out_f)
 
-    if overwrite:
+    if overwrite or suffix is None:
         shutil.move(output_fpath, input_fpath)
         output_fpath = input_fpath
 

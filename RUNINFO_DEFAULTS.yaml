@@ -59,23 +59,6 @@ coverage_reports:
 
 
 annotation:
-  gatk:
-    options: ['-dt NONE']
-    annotations:                ## Field names in final VCF:
-#    - Coverage                  ## DP
-    - BaseQualityRankSumTest    ## BaseQRankSum
-    - FisherStrand              ## FS
-    - GCContent                 ## GC
-    - HaplotypeScore            ## HaplotypeScore
-    - HomopolymerRun            ## HRun
-    - RMSMappingQuality         ## MQ
-    - MappingQualityRankSumTest ## MQRankSum
-    - MappingQualityZero        ## MQ0
-    - QualByDepth               ## QD
-    - ReadPosRankSumTest        ## ReadPosRankSum
-#    - DepthPerAlleleBySample    ## AD
-#    - AlleleBalanceBySample     ## AB
-
   dbnsfp:
     annotations:
     - SIFT_score
@@ -99,7 +82,6 @@ annotation:
   dbsnp:
     all-annotations: False
     annotations:
-    - ID
     - SAO
     - VC
     - PM
@@ -116,7 +98,6 @@ annotation:
   cosmic:
     all-annotations: False
     annotations:
-    - ID
     - CNT
     - AA
     - CDS

@@ -18,7 +18,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
-    def delete_dbsnp(rec):  # TODO: remove prev dbsnp annotations from INFO too
+    def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
         if rec.ID:
             if isinstance(rec.ID, basestring):
                 if rec.ID.startswith('rs') or rec.ID.startswith('COS'):
@@ -26,7 +26,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             else:
                 rec.ID = [id for id in rec.ID if not id.startswith('rs') and not id.startswith('COS')]
         return rec
-    vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_dbsnp, suffix='delID')
+    vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
     dbs = [(dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
@@ -154,6 +154,17 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     step_greetings('Annotating with ' + dbname)
 
+    info('Removing previous annotations...')
+    annotations = vcf_conf.get('annotations')
+
+    def delete_annos(rec):
+        for anno in annotations:
+            if anno in rec.INFO:
+                del rec.INFO[anno]
+        return rec
+    if annotations:
+        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='delANNO')
+
     executable = get_java_tool_cmdline(cnf, 'snpsift')
     java = get_system_path(cnf, 'java')
     info('Java version:')
@@ -171,7 +182,6 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             sys.exit(1)
 
     anno_line = ''
-    annotations = vcf_conf.get('annotations')
     if annotations:
         anno_line = '-info ' + ','.join(annotations)
 
