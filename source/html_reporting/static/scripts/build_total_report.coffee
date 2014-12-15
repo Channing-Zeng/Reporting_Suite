@@ -167,9 +167,8 @@ calc_cell_contents = (report, section, font) ->
                 else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
                     max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
 
-                if rec.num?
-                    rec.metric.values = [] if not rec.metric.values?
-                    rec.metric.values.push rec.num
+                rec.metric.values = [] if not rec.metric.values?
+                rec.metric.values.push rec.num
 
     else if report.type == 'SampleReport'
         for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
@@ -193,11 +192,12 @@ calc_cell_contents = (report, section, font) ->
 
 
     for metric in section.metrics when metric.values?
-        vals = metric.values.slice().sort((a, b) -> a - b)
+        vals = metric.values.slice().sort((a, b) -> if a? and b? then a - b else if a? then a else b)
         l = vals.length
 
         metric.min = vals[0]
         metric.max = vals[l - 1]
+        metric.all_values_equal = metric.min == metric.max
         metric.med = if l % 2 != 0 then vals[(l - 1) / 2] else mean(vals[l / 2], vals[(l / 2) - 1])
         q1 = vals[Math.floor((l - 1) / 4)]
         q3 = vals[Math.floor((l - 1) * 3 / 4)]
@@ -227,11 +227,7 @@ calc_cell_contents = (report, section, font) ->
                     [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
                     [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
 
-                if metric.min == metric.max
-                    metric.all_values_equal = true
-                else
-                    metric.all_values_equal = false
-
+                if not metric.all_values_equal
                     rec.text_color = 'black'
 
                     # Low outliers

@@ -246,12 +246,10 @@
           } else if (rec.frac_width > max_frac_widths_by_metric[rec.metric.name]) {
             max_frac_widths_by_metric[rec.metric.name] = rec.frac_width;
           }
-          if (rec.num != null) {
-            if (rec.metric.values == null) {
-              rec.metric.values = [];
-            }
-            rec.metric.values.push(rec.num);
+          if (rec.metric.values == null) {
+            rec.metric.values = [];
           }
+          rec.metric.values.push(rec.num);
         }
       }
     } else if (report.type === 'SampleReport') {
@@ -275,11 +273,18 @@
         continue;
       }
       vals = metric.values.slice().sort(function(a, b) {
-        return a - b;
+        if ((a != null) && (b != null)) {
+          return a - b;
+        } else if (a != null) {
+          return a;
+        } else {
+          return b;
+        }
       });
       l = vals.length;
       metric.min = vals[0];
       metric.max = vals[l - 1];
+      metric.all_values_equal = metric.min === metric.max;
       metric.med = l % 2 !== 0 ? vals[(l - 1) / 2] : mean(vals[l / 2], vals[(l / 2) - 1]);
       q1 = vals[Math.floor((l - 1) / 4)];
       q3 = vals[Math.floor((l - 1) * 3 / 4)];
@@ -310,10 +315,7 @@
             _ref10 = [inner_low_brt, inner_top_brt], inner_top_brt = _ref10[0], inner_low_brt = _ref10[1];
             _ref11 = [outer_low_brt, outer_top_brt], outer_top_brt = _ref11[0], outer_low_brt = _ref11[1];
           }
-          if (metric.min === metric.max) {
-            metric.all_values_equal = true;
-          } else {
-            metric.all_values_equal = false;
+          if (!metric.all_values_equal) {
             rec.text_color = 'black';
             if (rec.num < rec.metric.low_outer_fence) {
               rec.color = get_color(low_hue, outer_low_brt);

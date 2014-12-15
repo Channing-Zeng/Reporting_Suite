@@ -141,9 +141,11 @@ Array - Specifc table
 
 			// Add divs for directional arrows
 			$(table).find('tr:first-child th').each(function(index) {
-				if ( sorting_criteria[index] != 'nosort' ) {
-                    $('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
-				}
+				//if ( sorting_criteria[index] != 'nosort' ) {
+				$('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
+				//} else {
+                 //   $('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
+				//}
 			});
 
 			// Set each td's width
@@ -255,12 +257,12 @@ Array - Specifc table
 			});
 
 			// Display arrow direction
-			function display_arrow(column) {
+			function display_arrow(column_index) {
 				$(table).find('tr:first-child th div.sortArrow div').fadeOut(settings['speed'], 'swing');
-                if (is_ascending[column]) {
-                    $(table).find('tr:first-child th div.sortArrow div.sortArrowAscending').eq(column).fadeIn(settings['speed'], 'swing');
+                if (is_ascending[column_index]) {
+                    $(table).find('tr:first-child th div.sortArrow div.sortArrowAscending').eq(column_index).fadeIn(settings['speed'], 'swing');
                 } else {
-                    $(table).find('tr:first-child th div.sortArrow div.sortArrowDescending').eq(column).fadeIn(settings['speed'], 'swing');
+                    $(table).find('tr:first-child th div.sortArrow div.sortArrowDescending').eq(column_index).fadeIn(settings['speed'], 'swing');
                 }
 			}
             display_arrow(0);
