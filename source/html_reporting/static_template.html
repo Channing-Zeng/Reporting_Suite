@@ -56,26 +56,30 @@
         <div class="table-responsive">
             {.section main}
             <table class="table table-striped report_table static_report">
+                <thead>
                 <tr class="top_row_tr">
                     <th class="top_left_td left_column_td">Sample</th>
                     {.repeated section metric_names}
                     <th class="second_through_last_col_headers_td">{@}</th>
                     {.end}
                 </tr>
-                {.repeated section sample_reports}
-                    <tr>
-                        <td class="left_column_td">{sample_name}</td>
-                        {.repeated section records}
-                            <td class="td">
-                                {.repeated section html_fpath}
-                                  <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                                {.or}
-                                  - {# no html_fpath at all!}
-                                {.end}
-                            </td>
-                        {.end}
-                    </tr>
-                {.end}
+                </thead>
+                <tbody>
+                    {.repeated section sample_reports}
+                        <tr>
+                            <td class="left_column_td">{sample_name}</td>
+                            {.repeated section records}
+                                <td class="td">
+                                    {.repeated section html_fpath}
+                                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                                    {.or}
+                                      - {# no html_fpath at all!}
+                                    {.end}
+                                </td>
+                            {.end}
+                        </tr>
+                    {.end}
+                </tbody>
             </table>
             {.end}
         </div>

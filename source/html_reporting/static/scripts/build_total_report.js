@@ -365,7 +365,7 @@
     }
     calc_cell_contents(report, section, $('#report').css('font'));
     table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + section.name + "\">";
-    table += "\n<tr class=\"top_row_tr\">";
+    table += "\n<thead><tr class=\"top_row_tr\">";
     table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'> <span>Sample</span> </th>";
     for (colNum = _i = 0, _ref = section.metrics.length; 0 <= _ref ? _i < _ref : _i > _ref; colNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[colNum];
@@ -374,6 +374,7 @@
       direction = metric.quality === 'Less is better' ? 'ascending' : 'descending';
       table += "<th class='second_through_last_col_headers_td' data-sortBy=" + sort_by + " data-direction=" + direction + "position='" + pos + "'> <span class=\'metricName " + (DRAGGABLE_COLUMNS ? 'drag_handle' : '') + "\'>" + (get_metric_name_html(metric)) + "</span> </th>";
     }
+    table += '</tr></thead><tbody>';
     i = 0;
     sample_reports_length = report.hasOwnProperty('sample_reports') ? report.sample_reports.length : 1;
     _ref1 = (report.hasOwnProperty('sample_reports') ? report.sample_reports : [report]);
@@ -486,7 +487,7 @@
       table += "</tr>";
       i += 1;
     }
-    table += "\n</table>\n";
+    table += "\n<tbody></table>\n";
     table += "<div style=\"height: 30px; display: block;\"></div>";
     return $('#report').append(table);
   };

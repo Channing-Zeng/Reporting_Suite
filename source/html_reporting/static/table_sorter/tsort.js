@@ -51,12 +51,9 @@ Array - Specifc table
 			}
 
 			/* GET SORTING CRITERIA */
-			$(table).find('tr:first-child th').each(function(index) {
+			$(table).find('th').each(function(index) {
                 // And set directions (added by Vlad)
-                is_ascending[index] = false;
-				if ( $(this).attr('data-direction') == 'ascending' ) {
-                    is_ascending[index] = true;
-                }
+				is_ascending[index] = $(this).attr('data-direction') == 'ascending';
 
 				// Check for user defined sorting criteria
 				if ( settings['sortBy'] != undefined ) {
@@ -140,7 +137,7 @@ Array - Specifc table
 			$(table).css('position', 'relative');
 
 			// Add divs for directional arrows
-			$(table).find('tr:first-child th').each(function(index) {
+			$(table).find('th').each(function(index) {
 				//if ( sorting_criteria[index] != 'nosort' ) {
 				$('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
 				//} else {
@@ -149,7 +146,7 @@ Array - Specifc table
 			});
 
 			// Set each td's width
-			$(table).find('tr:first-child th').each(function() {
+			$(table).find('th').each(function() {
 				column_widths.push($(this).outerWidth(true));
 			});
 
@@ -258,11 +255,11 @@ Array - Specifc table
 
 			// Display arrow direction
 			function display_arrow(column_index) {
-				$(table).find('tr:first-child th div.sortArrow div').fadeOut(settings['speed'], 'swing');
+				$(table).find('th div.sortArrow div').fadeOut(settings['speed'], 'swing');
                 if (is_ascending[column_index]) {
-                    $(table).find('tr:first-child th div.sortArrow div.sortArrowAscending').eq(column_index).fadeIn(settings['speed'], 'swing');
+                    $(table).find('th div.sortArrow div.sortArrowAscending').eq(column_index).fadeIn(settings['speed'], 'swing');
                 } else {
-                    $(table).find('tr:first-child th div.sortArrow div.sortArrowDescending').eq(column_index).fadeIn(settings['speed'], 'swing');
+                    $(table).find('th div.sortArrow div.sortArrowDescending').eq(column_index).fadeIn(settings['speed'], 'swing');
                 }
 			}
             display_arrow(0);
@@ -347,7 +344,7 @@ Array - Specifc table
 
 										$(this).css('right','auto')
 
-										if ($(this).is('tr:last-child')) {
+										if ($(this).is('tr')) {
 											animating = false;
 										}
 									});

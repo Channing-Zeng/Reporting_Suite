@@ -277,7 +277,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     table = "<table cellspacing=\"0\"
                     class=\"report_table tableSorter #{if DRAGGABLE_COLUMNS then 'draggable' else ''} fix-align-char\"
                     id=\"report_table_#{section.name}\">"
-    table += "\n<tr class=\"top_row_tr\">"
+    table += "\n<thead><tr class=\"top_row_tr\">"
     table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'>
                     <span>Sample</span>
               </th>"
@@ -291,6 +291,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
              <span class=\'metricName #{if DRAGGABLE_COLUMNS then 'drag_handle' else ''}\'>#{get_metric_name_html(metric)}</span>
         </th>"
         #{if DRAGGABLE_COLUMNS then '<span class=\'drag_handle\'><span class=\'drag_image\'></span></span>' else ''}
+    table += '</tr></thead><tbody>'
 
     i = 0
     sample_reports_length = if report.hasOwnProperty('sample_reports') then report.sample_reports.length else 1
@@ -375,7 +376,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                           </td>"
         table += "</tr>"
         i += 1
-    table += "\n</table>\n"
+    table += "\n<tbody></table>\n"
     table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table

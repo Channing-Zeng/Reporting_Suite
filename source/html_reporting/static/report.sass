@@ -34,9 +34,10 @@
                 padding-top: 2px
                 padding-bottom: 2px
 
-        tr.top_row_tr + tr
-            td
-                border-top: 1px solid #bbb
+        tbody
+            tr:first-child
+                td
+                    border-top: 1px solid #bbb
 
         td.left_column_td, th.left_column_td
             padding-left: 0 !important
@@ -101,8 +102,8 @@ table.draggable
     border-collapse: collapse
 
     .drag_handle
-        padding: 2px 0px 0 0px
-        margin: 0 0px 0 1px
+        padding: 2px 0 0 0
+        margin: 0 0 0 1px
 
         cursor: grab
         cursor: -moz-grab

@@ -24,7 +24,7 @@
       #report table.report_table td.number a {
         padding-top: 2px;
         padding-bottom: 2px; }
-    #report table.report_table tr.top_row_tr + tr td {
+    #report table.report_table tbody tr:first-child td {
       border-top: 1px solid #bbbbbb; }
     #report table.report_table td.left_column_td, #report table.report_table th.left_column_td {
       padding-left: 0 !important; }
@@ -64,8 +64,8 @@ table.draggable {
   border-spacing: 0;
   border-collapse: collapse; }
   table.draggable .drag_handle {
-    padding: 2px 0px 0 0px;
-    margin: 0 0px 0 1px;
+    padding: 2px 0 0 0;
+    margin: 0 0 0 1px;
     cursor: grab;
     cursor: -moz-grab;
     cursor: -webkit-grab; }
