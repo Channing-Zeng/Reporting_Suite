@@ -6,13 +6,13 @@
     <link rel="stylesheet" type="text/css" href="/static/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/common.css" />
     <link rel="stylesheet" type="text/css" href="/static/report.css" />
-
 </head>
+
 <body>
 <div class="content">
     <div id='report'>
         {.section common}
-        <h2 style="margin: 5px 0 5px 0" class="sub-header table_name">{project_name}</h2>
+        <h1 class="report-header">{project_name}</h1>
 
         <div class="row placeholders">
             <div class="col-xs-6 col-sm-3 placeholder">
@@ -51,7 +51,8 @@
             </div>
         </div>
 
-        <div style="height: 30px; display: block;"></div>
+        <div class="space_30px"></div>
+
         {.end}
         <div class="table-responsive">
             {.section main}

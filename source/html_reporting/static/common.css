@@ -1,3 +1,4 @@
+@charset "UTF-8";
 body {
   margin: 0;
   font-family: Lucida Grande, Verdana, Arial, sans-serif;
@@ -19,21 +20,24 @@ body {
 h4 {
   margin-bottom: 0; }
 
+.report-header {
+  margin: 5px 0 5px 0; }
+
 a {
   text-decoration: none;
-  color: #0077b5;
+  color: #0077B5;
   border-bottom: 1px solid #487b95;
   border-color: rgba(12, 79, 114, 0.2); }
 
 a:visited {
   text-decoration: none;
-  color: #8c66b2;
+  color: #8C66B2;
   border-bottom: 1px solid #8c66b2;
   border-color: rgba(102, 51, 153, 0.2); }
 
 a:hover {
   text-decoration: none;
-  color: #bb3333;
+  color: #b33;
   border-bottom: 1px solid #ffcccc;
   border-color: rgba(255, 0, 0, 0.2); }
 
@@ -50,28 +54,28 @@ a.dark_bg_link:hover {
 
 a.header_link, a.header_link:hover, a.header_link:visited {
   color: black;
-  border-bottom: 1px solid #bbbbbb; }
+  border-bottom: 1px solid #bbb; }
 
 .dotted-link {
   cursor: pointer;
   text-decoration: none;
-  color: #0077b5;
+  color: #0077B5;
   border-bottom: 1px dashed #487b95;
   border-color: rgba(12, 79, 114, 0.2); }
 
 .dotted-link:hover {
   text-decoration: none;
-  color: #bb3333 !important;
-  border-bottom: 1px dashed #bb3333 !important;
+  color: #b33 !important;
+  border-bottom: 1px dashed #b33 !important;
   border-color: rgba(255, 0, 0, 0.2) !important; }
 
 .js:visited {
-  color: #0077b5;
+  color: #0077B5;
   border-bottom: 1px dashed #487b95;
   border-color: rgba(12, 79, 114, 0.2); }
 
 .selected-switch {
-  background-color: lightgoldenrodyellow; }
+  background-color: #fafad2; }
 
 .json-code {
   display: none; }
@@ -82,7 +86,7 @@ a.header_link, a.header_link:hover, a.header_link:visited {
   margin-right: -0.15em; }
 
 .highlight {
-  background-color: #fff9b5;
+  background-color: #FFF9B5;
   padding: 0 3px;
   margin-left: -3px; }
 
@@ -107,7 +111,7 @@ ul.mdash li {
   text-indent: -1.3em; }
 
 ul.mdash li:before {
-  content: "\2014\a0"; }
+  content: "— "; }
 
 .small_line_indent {
   height: 0;
@@ -126,14 +130,14 @@ ul.mdash li:before {
 .tooltip-link,
 .tooltip-link:visited {
   text-decoration: none;
-  color: black;
-  border-bottom: 1px dashed #bbbbbb;
+  color: #000;
+  border-bottom: 1px dashed #bbb;
   cursor: hand; }
 
 .tooltip-link:hover {
   text-decoration: none;
-  color: #bb3333;
-  border-bottom: 1px dashed #bb3333; }
+  color: #b33;
+  border-bottom: 1px dashed #b33; }
 
 .tooltip-meta,
 .tooltip-meta:visited {
@@ -192,3 +196,8 @@ ul.mdash li:before {
 
 .space_10px {
   height: 10px; }
+
+.space_30px {
+  height: 30px; }
+
+/*# sourceMappingURL=common.css.map */
