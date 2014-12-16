@@ -119,8 +119,8 @@ annotation:
     cancer: False
     extra_options: ''
 
-  mongo:
-    all-annotations: True
+#  mongo:
+#    all-annotations: True
 
   tracks:
   - /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
