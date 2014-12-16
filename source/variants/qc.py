@@ -52,7 +52,7 @@ def make_report(cnf, vcf_fpath, sample):
 
     main_sample_index = get_sample_column_index(vcf_fpath, sample.name)
 
-    with open(vcf_fpath) as f:
+    with open_gzipsafe(vcf_fpath) as f:
         reader = vcf_parser.Reader(f)
         for rec in (vcf_processing.Record(rec, vcf_fpath, i) for i, rec in enumerate(reader)):
             total_with_rejected += 1
