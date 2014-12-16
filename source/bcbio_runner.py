@@ -512,18 +512,22 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
-                    if not file_exists(filt_vcf_fpath):
+                    raw_vcf_fpath = sample.get_raw_vcf_fpath_by_callername(caller.name, gz=True)
+                    if not file_exists(raw_vcf_fpath):
                         if sample.phenotype != 'normal':
-                            err('Error: VCF does not exist: sample ' + sample.name + ', caller "' +
-                                caller.name + '". Phenotype = ' + sample.phenotype + '.' +
-                                (' Note that you need to run VarFilter first, and this step is not in config.' if not self.varfilter_all else ''))
+                            err('Error: raw VCF does not exist: sample ' + sample.name + ', caller "' +
+                                caller.name + '". Phenotype = ' + sample.phenotype + '.')
                     else:
-                        self._submit_job(
-                            self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
-                            wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                            vcf=sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True),
-                            sample=sample.name, caller=caller.name, genome=sample.genome)
+                        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
+                        if not self.varfilter_all and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath):
+                            err('Error: filtered VCF does not exist: sample ' + sample.name + ', caller "' +
+                                caller.name + '". Phenotype = ' + sample.phenotype + '.' +
+                                ' Note that you need to run VarFilter first, and this step is not in config.')
+                        else:
+                            self._submit_job(
+                                self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
+                                wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+                                vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
 
         if self.varqc_after_summary in self.steps:
             self._submit_job(
