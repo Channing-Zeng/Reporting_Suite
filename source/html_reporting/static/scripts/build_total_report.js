@@ -365,15 +365,9 @@
       $('#report').append("<h3 class='table_name' style='margin: 0px 0 5px 0'>" + section.title + "</h3>");
     }
     calc_cell_contents(report, section, $('#report').css('font'));
-<<<<<<< HEAD
-    table = "<table cellspacing=\"0\" class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\" id=\"report_table_" + section.name + "\">";
-    table += "\n<thead><tr class=\"top_row_tr\">";
-    table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'> <span>Sample</span> </th>";
-=======
     table = "<table cellspacing=\"0\"                    class=\"report_table tableSorter " + (DRAGGABLE_COLUMNS ? 'draggable' : '') + " fix-align-char\"                    id=\"report_table_" + section.name + "\">";
-    table += "\n<tr class=\"top_row_tr\">";
+    table += "\n<thead><tr class=\"top_row_tr\">";
     table += "<th class=\"top_left_td left_column_td\" data-sortBy='numeric'>                    <span>Sample</span>              </th>";
->>>>>>> 2e60b97... CSS changes for static project report
     for (colNum = _i = 0, _ref = section.metrics.length; 0 <= _ref ? _i < _ref : _i > _ref; colNum = 0 <= _ref ? ++_i : --_i) {
       pos = columnOrder[colNum];
       metric = section.metrics[pos];

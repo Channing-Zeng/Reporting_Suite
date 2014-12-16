@@ -26,475 +26,10 @@ from source.variants.vcf_processing import remove_rejected, vcf_is_empty, igvtoo
 from source.logger import info
 
 
-# TODO:
-# add filters to VCF header
+def prep_vcf(vcf_fpath, sample_name, caller_name):
+    global glob_cnf
+    cnf = glob_cnf
 
-class Filter:
-    filt_cnf = None
-    main_sample = None
-
-    def __init__(self, word, check, required=True):
-        self.check = check
-        self.required = required
-        self.word = word.upper()
-
-        # self.num_passed = 0
-        # self.num_rejected = 0
-
-    @staticmethod
-    def __remove_pass(rec):
-        if rec.FILTER == ['PASS']:
-            rec.FILTER = None
-
-    # Call check function. If False, add value to the FILTER field (unless only_check)
-    def apply(self, rec, only_check=False, *args, **kvargs):
-        # if rec.is_rejected():
-        #     return False
-
-        if only_check:
-            return self.check(rec, *args, **kvargs)
-
-        if self.check(rec, *args, **kvargs):  # True if passed, False otherwise
-            # self.num_passed += 1
-            return True
-        else:
-            # self.num_rejected += 1
-
-            if rec.FILTER:
-                self.__remove_pass(rec)
-            rec.add_filter(self.word)
-            return False
-
-
-class CnfFilter(Filter):  # get value from config by key, compare with provided value
-    def __init__(self, key, check, cnf=None, *args, **kvargs):
-        self.cnf = cnf or Filter.filt_cnf
-        self.key = key
-
-        self.cnf_val = self.cnf.get(key)
-        if self.cnf_val:
-            try:
-                cnf_val = float(self.cnf_val)
-            except ValueError:
-                try:
-                    cnf_val = int(self.cnf_val)
-                except ValueError:
-                    pass
-                else:
-                    self.cnf_val = cnf_val
-            else:
-                self.cnf_val = cnf_val
-
-        Filter.__init__(self, key.upper(), check, *args, **kvargs)
-
-    def apply(self, rec, only_check=False, *args, **kvargs):
-        if self.cnf_val is None:
-            return True
-
-        return Filter.apply(self, rec, only_check, *args, **kvargs)
-
-
-class InfoFilter(CnfFilter):  # cnf filter, but compare with value from INFO by key, using the op
-    def __init__(self, cnf_key, info_key, op=operator.gt, *args, **kwargs):
-        # True if PASS
-        def check(rec):
-            anno_val = rec.get_val(info_key)
-            if anno_val is None:
-                if self.required:
-                    critical(
-                        'Error: no field ' + info_key + ' in INFO or SAMPLE for variant ' +
-                        rec.get_variant() + ' - required to test ' + cnf_key)
-                else:
-                    return True  # PASS
-
-            return op(anno_val, self.cnf_val)
-
-        CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
-
-
-class EffectFilter(CnfFilter):  # cnf filter, but compare with value from EFF
-    def __init__(self, cnf_key, *args, **kwargs):
-        def check(rec):
-            if 'EFF' not in rec.INFO:
-                # err('Warning: EFF field is missing for variant ' + str(rec.get_variant()))
-                return False
-            else:
-                return any(eff.impact.upper() in self.important_impacts
-                       for eff in map(Effect, rec.INFO['EFF']))
-
-        CnfFilter.__init__(self, cnf_key, check, *args, **kwargs)
-
-        self.important_impacts = ''
-        if self.cnf_val:
-            if not isinstance(self.cnf_val, basestring):
-                critical('The value of filter impact should be string, like MODERATE|HIGH')
-                return
-            self.important_impacts = [s.upper() for s in self.cnf_val.split('|')]
-
-
-class VariantInfo:  # collects information (here, AFs) for all (chrom, pos, ref, alt) tuples
-    def __init__(self, var_str):  # var_str="CHROM:POS:REF:ALT"
-        self.var_str = var_str
-        self.afs = []
-        self._avg_af = None
-
-    def occurence_num(self):
-        return len(self.afs)
-
-    def frac(self):
-        return float(self.occurence_num()) / len(filtering.sample_names)
-
-    def avg_af(self):
-        if self._avg_af is None:
-            self._avg_af = mean(self.afs)
-        return self._avg_af
-
-
-def process_vcf(vcf_fpath, fun, suffix, cnf=None, *args, **kwargs):
-    return iterate_vcf(cnf, vcf_fpath, fun, suffix, cnf_=cnf, self_=filtering, *args, **kwargs)
-
-
-def rm_prev_round(vcf_fpath, sample_name):
-    return process_vcf(vcf_fpath, proc_line_remove_prev_filter, 'rm_prev', cnfs_for_sample_names[sample_name])
-
-
-def first_round(vcf_fpath, sample_name):
-    variant_dict = dict()  # tuples of (chrom, pos, ref, alt)
-    control_variants = set()  # variants from controls samples
-    res = process_vcf(
-        vcf_fpath, proc_line_1st_round, 'r1', cnfs_for_sample_names[sample_name],
-        variant_dict=variant_dict, control_vars=control_variants)
-
-    return res, variant_dict, control_variants
-
-
-def second_round(vcf_fpath, sample_name):
-    cnf = cnfs_for_sample_names[sample_name]
-    main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
-    cnf.main_sample_index = main_sample_index
-
-    #TODO: remove this since it is made in annotation
-    res = _snpsift_annotate(cnf, cnf.get('clinvar'), 'clinvar', vcf_fpath)
-    if not res:
-        err('Could not annotate with clinvar.')
-    else:
-        vcf_fpath = res
-
-    return process_vcf(vcf_fpath, proc_line_2nd_round, 'r2', cnf)
-
-
-def impact_round(vcf_fpath, sample_name):
-    return process_vcf(vcf_fpath, proc_line_impact, 'impact', cnfs_for_sample_names[sample_name])
-
-
-def one_per_line(vcf_fpath, sample_name):
-    return vcf_one_per_line(cnfs_for_sample_names[sample_name], vcf_fpath)
-
-
-class Filtering:
-    cnf = None
-    filt_cnf = None
-
-    def __init__(self, cnf, bcbio_structure, caller):
-        Filtering.cnf = cnf
-        Filtering.filt_cnf = Filter.filt_cnf = filt_cnf = cnf.variant_filtering.__dict__
-
-        self.caller = caller
-        self.control_vars = set()
-        self.sample_names = set([s.name for s in caller.samples])
-        self.variant_dict = dict()  # "CHROM:POS:REF:ALT" -> VariantInfo("CHROM:POS:REF:ALT", afs)
-        self.polymorphic_variants = None
-
-        self.round1_filters = []
-        if filt_cnf.get('filt_depth') is not None:
-            self.round1_filters.append(InfoFilter('filt_depth', 'DP', required=False))
-        if filt_cnf.get('filt_q_mean') is not None:
-            self.round1_filters.append(InfoFilter('filt_q_mean', 'QUAL', required=False))
-        if filt_cnf.get('filt_p_mean') is not None:
-            self.round1_filters.append(InfoFilter('filt_p_mean', 'PMEAN', required=False))
-
-        self.control = filt_cnf.get('control')
-
-        self.impact_filter = EffectFilter('impact')
-
-        self.polymorphic_filter = Filter('POLYMORPHIC', lambda rec: rec)
-
-        self.min_freq_filters = dict()
-        for sample in caller.samples:
-            def min_freq_filter_check(rec):
-                af = rec.get_af(cnf.main_sample_index, caller.name)
-                if af and af < sample.min_af:
-                    return False
-                return True
-            self.min_freq_filters[sample.name] = CnfFilter('min_freq', min_freq_filter_check,
-                cnfs_for_sample_names[sample.name], required=True)
-
-        self.round2_filters = [
-            InfoFilter('min_p_mean', 'PMEAN', required=False),
-            InfoFilter('min_q_mean', 'QMEAN', required=False),
-            InfoFilter('mean_mq', 'MQ', required=False),
-            InfoFilter('signal_noise', 'SN', required=False),
-            InfoFilter('mean_vd', 'VD', required=False)]
-
-        def dup_filter_check(rec, main_sample_index):
-            pstd = rec.get_val('PSTD', main_sample_index)
-            bias = rec.get_bias(main_sample_index)
-
-            # all variants from one position in reads
-            if pstd is not None and bias is not None:
-                return not (pstd == 0 and bias[-1] != '0' and bias[-1] != '1')
-            return True
-        self.dup_filter = Filter('DUP', dup_filter_check)
-
-        def bias_filter_check(rec, cls, main_sample_index, caller_name):  # Filter novel variants with strand bias.
-            if not Filter.filt_cnf['bias'] is True:
-                return True  # I we don't need to check bias, just keep the variant
-
-            if not cls in ['Novel', 'dbSNP']:
-                return True  # Check only for novel and dnSNP
-
-            if not (rec.get_bias(main_sample_index) and rec.get_bias(main_sample_index) in ['2:1', '2:0']):
-                return True  # Variant has to have bias and with proper values
-
-            return rec.get_af(main_sample_index, caller_name) >= 0.3
-        self.bias_filter = CnfFilter('bias', bias_filter_check)
-
-        def nonclnsnp_filter_check(rec, cls):
-            if cls in ['COSMIC']:
-                return True
-
-            return rec.check_clnsig() != 'not_significant'
-        self.nonclnsnp_filter = Filter('NonClnSNP', nonclnsnp_filter_check)
-
-        def multi_filter_check(rec, var_n, frac, avg_af):
-            if (rec.ID is None and      # reject if novel and present in [fraction] samples
-                frac > Filter.filt_cnf['fraction'] and
-                var_n >= Filter.filt_cnf['sample_cnt'] and
-                avg_af < Filter.filt_cnf['freq']):
-                return False
-            else:
-                return True
-        self.multi_filter = Filter('MULTI', multi_filter_check)
-
-        def max_rate_filter_check(rec, frac, af):  # reject if present in [max_ratio] samples
-            if frac >= Filter.filt_cnf['max_ratio'] and af and af < 0.3:
-                return False
-            return True
-        self.max_rate_filter = CnfFilter('max_ratio', max_rate_filter_check)
-
-        # self.undet_sample_filter = Filter('UNDET_SAMPLE', lambda rec: False)
-
-        def control_filter_check(rec):
-            return not (filt_cnf['control'] and rec.get_variant() in self.control_vars)
-        self.control_filter = CnfFilter('control', control_filter_check)
-
-    def run_regengineered_filtering(self, vcf_fpaths, sample_names, n_threads=1):
-        step_greetings('Filtering')
-
-        global filtering
-        filtering = self
-
-        info('Fixing previous . values to PASS')
-        vcf_fpaths = Parallel(n_jobs=n_threads)(
-            delayed(rm_prev_round)(vcf_fpath, s)
-            for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        info('First round')
-        results = Parallel(n_jobs=n_threads)(
-            delayed(first_round)(vcf_fpath, s)
-            for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        control_vars_dump_fpath = join(self.cnf.work_dir, self.caller.name + '_control_vars.txt')
-        variants_dump_fpath = join(self.cnf.work_dir, self.caller.name + 'variants.txt')
-
-        if not [all([variant_dict, control_vars]) for (_, variant_dict, control_vars) in results]:
-            info('Skipped first round, restoring varks and controls vars.')
-            if not verify_file(control_vars_dump_fpath) or not verify_file(variants_dump_fpath):
-                critical('Cannot restore varks and control_vars, please, run without the --reuse flag.')
-
-            with open(control_vars_dump_fpath) as f:
-                info('Loading control vars...')
-                self.control_vars = pickle.load(f)
-                info('Loaded control vars: ' + str(len(self.control_vars)))
-
-            with open(variants_dump_fpath) as f:
-                info('Loading varks...')
-                self.variant_dict = pickle.load(f)
-                info('Loaded varks: ' + str(len(self.variant_dict)))
-
-        else:
-            for vcf_fpath, variant_dict, control_vars in results:
-                for var_str, variant_info in variant_dict.items():
-                    if var_str not in self.variant_dict:
-                        self.variant_dict[var_str] = variant_info
-                    else:
-                        self.variant_dict[var_str].afs.extend(variant_info.afs)
-
-                self.control_vars.update(control_vars)
-
-            with open(control_vars_dump_fpath, 'w') as f:
-                info('Saving control vars...')
-                pickle.dump(self.control_vars, f)
-                info('Saved control vars: ' + str(len(self.control_vars)))
-
-            with open(variants_dump_fpath, 'w') as f:
-                info('Saving varks...')
-                pickle.dump(self.variant_dict, f)
-                info('Saved varks: ' + str(len(self.variant_dict)))
-
-        vcf_fpaths = [vcf_fpath for vcf_fpath, _, _ in results]
-        filtering = self
-        info()
-
-        info('One effect per line')
-        vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(one_per_line)(vcf_fpath, s)
-                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        info('Second round')
-        vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(second_round)(vcf_fpath, s)
-                     for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-        info()
-
-        # if 'polymorphic_variants' in self.filt_cnf:
-        #     polymorphic_variants_path = self.filt_cnf['polymorphic_variants']
-        #     if verify_file(polymorphic_variants_path):
-        #         info('Filtering out polymorphic variants')
-        #         with open(polymorphic_variants_path) as f:
-        #
-
-        return vcf_fpaths
-
-
-def proc_line_remove_prev_filter(rec, cnf_, self_):
-    if not rec.FILTER:
-        rec.FILTER = ['PASS']
-    return rec
-
-
-# Counting samples, variants and AF_by_vark
-def proc_line_1st_round(rec, cnf_, self_, variant_dict, control_vars):
-    # Strict filter of DP, QUAL, PMEAN
-    for f in self_.round1_filters:
-        if not f.check(rec):
-            return None
-
-    # For those who passed, collect controls, samples and af_by_varid
-    samplename = cnf_.name
-
-    var_str = rec.get_variant()  # = tuple (chrom, pos, ref, alt)
-
-    [f.apply(rec) for f in self_.round2_filters]
-    min_freq_filter = self_.min_freq_filters[samplename]
-    min_freq_filter.apply(rec)
-
-    if samplename and self_.control and samplename == self_.control:
-        if not rec.is_rejected() and rec.get_cls() == 'Novel':
-            # So that any novel variants showed up in control won't be filtered:
-            control_vars.add(var_str)
-
-    if samplename and not rec.is_rejected():
-        # Undetermined won't count toward samples
-        if 'undetermined' not in samplename.lower() or Filtering.filt_cnf['count_undetermined']:
-            if var_str not in variant_dict:
-                variant_dict[var_str] = VariantInfo(var_str)
-            af = rec.get_af(cnf_.main_sample_index, self_.caller.name)
-            variant_dict[var_str].afs.append(af or .0)
-        else:
-            if not self_.undet_sample_filter.apply(rec):
-                err('Undetermined sample for rec ' + rec.get_variant() + ', sample ' + str(samplename))
-                return None
-
-    return rec
-
-
-# Based on counted samples, variants and AF_by_variant:
-#   var_n    = number of occurences of variant       must be >= [sample_cnt]
-#   fraction = variant_n / number of total samples   must be > [fraction]
-#   avg_af   = avg AF for this variant               must be < [freq]
-def proc_line_2nd_round(rec, cnf_, self_):
-    if rec.is_rejected():
-        return rec
-
-    sample_name = rec.sample_field()
-    if sample_name:
-        var_info = self_.variant_dict.get(rec.get_variant())
-        if not var_info:
-            return None
-
-        var_n = var_info.occurence_num()
-        frac = var_info.frac()
-        avg_af = var_info.avg_af()
-        rec.INFO['Num_samples'] = len(filtering.sample_names)
-        rec.INFO['Num_samples_with_the_same_variant'] = var_n
-        rec.INFO['Ave_AF_in_samples_with_the_same_variant'] = avg_af
-
-        if not self_.multi_filter.apply(rec, var_n=var_n, frac=frac, avg_af=avg_af):
-            # info('Multi filter: vark = ' + rec.get_variant() +
-            #      ', var_n = ' + str(var_n) + ', n_sample = ' +
-            #      str(len(self_.sample_names)) + ', avg_af = ' + str(avg_af))
-            pass
-
-        if not self_.dup_filter.apply(rec, main_sample_index=cnf_.main_sample_index):
-            # info('Dup filter: variant = ' + rec.get_variant())
-            pass
-
-        af = rec.get_af(cnf_.main_sample_index, self_.caller.name)
-        if af is not None:
-            if not self_.max_rate_filter.apply(rec, frac=frac, af=af):
-                # info('Max rate filter: variant = ' + rec.get_variant() + ', frac = ' + str(frac) + ', af = ' +
-                #      str(rec.af(cnf_.main_sample_index)))
-                pass
-
-        self_.control_filter.apply(rec)
-
-        cls = rec.get_cls(req_maf=Filtering.filt_cnf.get('maf'), max_frac_for_del=0.95, sample_name=sample_name)
-        rec.INFO['Class'] = cls
-
-        self_.bias_filter.apply(
-            rec,
-            cls=cls,
-            main_sample_index=cnf_.main_sample_index,
-            caller_name=self_.caller.name)  # dbSNP, Novel, and bias satisfied - keep
-        self_.nonclnsnp_filter.apply(rec, cls=cls)
-
-    return rec
-
-
-def proc_line_impact(rec, cnf_, self_):
-    self_.impact_filter.apply(rec)
-    return rec
-
-
-def proc_line_polymorphic(rec, cnf_, self_):
-    self_.polymorphic_filter.apply(rec)
-    return rec
-
-
-# def run_snpsift(cnf, vcf_cnf, vcf_fpath):
-#     expression = vcf_cnf.get('expression')
-#     if not expression:
-#         return vcf_fpath
-#
-#     step_greetings('Running SnpSift filter.')
-#
-#     executable = get_java_tool_cmdline(cnf, 'snpsift')
-#     cmdline = '{executable} filter -a EXPR -n -p -f ' \
-#               '{vcf_fpath} "{expression}"'.format(**locals())
-#     filtered_fpath = intermediate_fname(cnf, vcf_fpath, 'snpsift')
-#     call(cnf, cmdline, filtered_fpath)
-#
-#     info('Done.')
-#
-#     return filtered_fpath
-
-
-cnfs_for_sample_names = dict()
-
-
-def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
     main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
 
     # vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
@@ -541,7 +76,7 @@ def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
     return vcf_fpath
 
 
-def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, n_threads, sample_min_freq):
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, sample_min_freq):
     # info()
     # info('Keeping only first sample info in VCFs...')
     # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
@@ -558,9 +93,13 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
     # info('Merging VCFs...')
     # vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath)
 
+    global glob_cnf
+    glob_cnf = cnf
+
     info()
     info('Preparing VCFs for vcf2txt')
-    prep_vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(prep_vcf)(cnf, fpath, s, caller.name)
+    prep_vcf_fpaths = Parallel(
+        n_jobs=cnf.threads)(delayed(prep_vcf)(fpath, s, caller.name)
         for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
@@ -610,6 +149,51 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
         return res
 
 
+glob_cnf = None
+
+
+def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_variants):
+    global glob_cnf
+    cnf = glob_cnf
+
+    filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
+    pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
+    safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
+
+    with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
+         open(filt_vcf_fpath, 'w') as filt_f, \
+         open(pass_filt_vcf_fpath, 'w') as pass_f:
+        for l in vcf_f:
+            if l.startswith('#'):
+                filt_f.write(l)
+                pass_f.write(l)
+            else:
+                ts = l.split('\t')
+                chrom, pos, alt = ts[0], ts[1], ts[4]
+                if (sample.name, chrom, pos, alt) in passed_variants:
+                    ts[6] = 'PASS'
+                    filt_f.write('\t'.join(ts))
+                    pass_f.write('\t'.join(ts))
+                else:
+                    ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
+                    filter_value = variants.get((sample.name, chrom, pos, alt))
+                    if filter_value is None:
+                        # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
+                        ts[6] += 'vcf2txt_1st_round'
+                    elif filter_value == 'TRUE':
+                        ts[6] += 'pickLine'
+                    else:
+                        ts[6] += filter_value
+                    filt_f.write('\t'.join(ts))
+
+    # Indexing
+    info()
+    info('Indexing')
+    igvtools_index(cnf, pass_filt_vcf_fpath)
+    igvtools_index(cnf, filt_vcf_fpath)
+    bgzip_and_tabix(cnf, filt_vcf_fpath)
+
+
 def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
     variants = dict()
     passed_variants = set()
@@ -631,48 +215,13 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
                 filt = ts[pass_col]
                 variants[(s_name, chrom, pos, alt)] = filt
 
-    for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths):
-        sample = next(s for s in caller.samples if s.name == s_name)
-        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False)
-        pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False)
-        safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
+    Parallel(
+        n_jobs=cnf.threads)(delayed(postprocess_vcf)(
+        next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants)
+        for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
 
-        with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
-             open(filt_vcf_fpath, 'w') as filt_f, \
-             open(pass_filt_vcf_fpath, 'w') as pass_f:
-            for l in vcf_f:
-                if l.startswith('#'):
-                    filt_f.write(l)
-                    pass_f.write(l)
-                else:
-                    ts = l.split('\t')
-                    chrom, pos, alt = ts[0], ts[1], ts[4]
-                    if (s_name, chrom, pos, alt) in passed_variants:
-                        ts[6] = 'PASS'
-                        filt_f.write('\t'.join(ts))
-                        pass_f.write('\t'.join(ts))
-                    else:
-                        ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
-                        filter_value = variants.get((s_name, chrom, pos, alt))
-                        if filter_value is None:
-                            # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
-                            ts[6] += 'vcf2txt_1st_round'
-                        elif filter_value == 'TRUE':
-                            ts[6] += 'pickLine'
-                        else:
-                            ts[6] += filter_value
-                        filt_f.write('\t'.join(ts))
-
-        # Indexing
-        info()
-        info('Indexing')
-        igvtools_index(cnf, pass_filt_vcf_fpath)
-        igvtools_index(cnf, filt_vcf_fpath)
-        bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
-    IN_PARALLEL = False
-
     info('Running for ' + caller.name)
 
     vcf_by_sample = caller.find_anno_vcf_by_sample()
@@ -697,9 +246,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     #         sample.min_af = 0
     #     cnfs_for_sample_names[sample.name] = cnf_copy
 
-    n_threads = cnf.threads if cnf.threads else min(10, len(vcf_by_sample) + 1)
-    if not IN_PARALLEL: n_threads = 1
-    info('Number of threads for filtering: ' + str(n_threads))
+    info('Number of threads for filtering: ' + str(cnf.threads))
 
     vcf_fpaths = vcf_by_sample.values()
     sample_names = vcf_by_sample.keys()
@@ -714,7 +261,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
-    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, n_threads, caller.samples[0].min_af)
+    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, caller.samples[0].min_af)
     if not res:
         return None
 
@@ -758,16 +305,6 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
                     err('Cannot symlink ' + filt_vcf + ' -> ' + link)
 
         BCBioStructure.move_vcfs_to_var(sample)
-
-    info('-' * 70)
-    info()
-
-
-    # info()
-    # info('-' * 70)
-    # info('Filtering using reengineered stuff...')
-    # vcf_fpaths__intrinsic = filtering.run_regengineered_filtering(vcf_fpaths, sample_names, n_threads)
-    # postprocess_filtered_vcfs(cnf, bcbio_structure, vcf_fpaths__intrinsic, sample_names, caller, n_threads)
 
     info('-' * 70)
     info()
@@ -833,92 +370,4 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_fre
 
     res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
     return res
-
-
-def postprocess_vcf(sample, caller_name, work_filt_vcf_fpath):
-    if not work_filt_vcf_fpath:
-        err(sample.name + ': work_filt_vcf_fpath is None')
-        return None, None, None
-
-    cnf = cnfs_for_sample_names.get(sample.name)
-    if cnf is None:
-        err('Error: for ' + sample.name + ': cnf is None')
-        return None, None, None
-    # work_filt_vcf_fpath = leave_first_sample(cnf, work_filt_vcf_fpath)
-
-    safe_mkdir(sample.get_filtered_vcfs_dirpath())
-    final_vcf_fpath = join(sample.get_filtered_vcfs_dirpath(), sample.name + '-' + caller_name + '.anno.filt.vcf')
-
-    file_basefpath = splitext(final_vcf_fpath)[0]
-    final_vcf_fpath = file_basefpath + '.vcf'
-    final_tsv_fpath = file_basefpath + '.tsv'
-    final_maf_fpath = file_basefpath + '.maf'
-    final_pass_vcf_fpath = join(dirname(final_vcf_fpath), sample.name + '-' + caller_name + \
-        BCBioStructure.pass_filt_vcf_ending)  # for futrher processing
-
-    BCBioStructure.move_vcfs_to_var(sample)
-
-    # Moving final VCF
-    if isfile(final_vcf_fpath): os.remove(final_vcf_fpath)
-    # shutil.move(work_filt_vcf_fpath, final_vcf_fpath)
-    # os.symlink(final_vcf_fpath, work_filt_vcf_fpath)
-    shutil.copy(work_filt_vcf_fpath, final_vcf_fpath)
-
-    # Cleaning rejected variants
-    pass_filtered_vcf_fpath = remove_rejected(cnf, work_filt_vcf_fpath)
-    if vcf_is_empty(cnf, pass_filtered_vcf_fpath):
-        info('All variants are rejected.')
-    if isfile(final_pass_vcf_fpath): os.remove(final_pass_vcf_fpath)
-    if islink(pass_filtered_vcf_fpath): os.unlink(pass_filtered_vcf_fpath)
-    shutil.copy(pass_filtered_vcf_fpath, final_pass_vcf_fpath)
-    # os.symlink(final_clean_vcf_fpath, clean_filtered_vcf_fpath)
-
-    # Converting to TSV
-    if work_filt_vcf_fpath and 'tsv_fields' in cnf:
-        tsv_fpath = make_tsv(cnf, work_filt_vcf_fpath, sample.name)
-        if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
-        if not tsv_fpath:
-            err('TSV convertion didn\'t work for ' + sample.name)
-            final_tsv_fpath = None
-        else:
-            shutil.copy(tsv_fpath, final_tsv_fpath)
-    else:
-        if isfile(final_tsv_fpath): os.remove(final_tsv_fpath)
-        final_tsv_fpath = None
-
-    # Indexing
-    igvtools_index(cnf, final_pass_vcf_fpath)
-    igvtools_index(cnf, final_vcf_fpath)
-    final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
-
-    # Converting clean VCF to TSV
-    # if clean_filtered_vcf_fpath and 'tsv_fields' in cnf:
-    #     clean_tsv_fpath = make_tsv(cnf, clean_filtered_vcf_fpath)
-    #
-    #     if isfile(final_clean_tsv_fpath):
-    #         os.remove(final_clean_tsv_fpath)
-    #     shutil.move(clean_tsv_fpath, final_clean_tsv_fpath)
-    # else:
-    #     final_clean_tsv_fpath = None
-
-    # Converting to MAF
-    if work_filt_vcf_fpath:
-        maf_fpath = convert_to_maf(
-            cnf, work_filt_vcf_fpath,
-            tumor_sample_name=sample.name,
-            bam_fpath=sample.bam,
-            transcripts_fpath=cnf.transcripts_fpath,
-            normal_sample_name=sample.normal_match.name if sample.normal_match else None)
-        if isfile(final_maf_fpath): os.remove(final_maf_fpath)
-        if maf_fpath:
-            shutil.copy(maf_fpath, final_maf_fpath)
-        else:
-            final_maf_fpath = None
-        info('-' * 70)
-        info()
-    else:
-        if isfile(final_maf_fpath): os.remove(final_maf_fpath)
-        final_maf_fpath = None
-
-    return [final_vcf_fpath, final_tsv_fpath, final_maf_fpath]
 
