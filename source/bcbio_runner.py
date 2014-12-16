@@ -513,9 +513,11 @@ class BCBioRunner:
                 for sample in caller.samples:
                     info('    ' + sample.name)
                     filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
-                    if not file_exists(filt_vcf_fpath) and not self.varfilter_all:
-                        err('VCF does not exist: sample ' + sample.name + ', caller "' +
-                            caller.name + '". You need to run VarFilter first.')
+                    if not file_exists(filt_vcf_fpath):
+                        if sample.phenotype != 'normal':
+                            err('Error: VCF does not exist: sample ' + sample.name + ', caller "' +
+                                caller.name + '". Phenotype = ' + sample.phenotype + '.' +
+                                (' Note that you need to run VarFilter first, and this step is not in config.' if not self.varfilter_all else ''))
                     else:
                         self._submit_job(
                             self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
@@ -617,7 +619,7 @@ class BCBioRunner:
 
         if self.varqc in steps:
             self._submit_job(
-                self.varqc, sample.name, suf=caller_name, vcf=sample.find_anno_vcf_by_callername(caller_name),
+                self.varqc, sample.name, suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
                 threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)]
                                 if self.varannotate in self.steps else [])

@@ -52,6 +52,9 @@ else:
 
 def process_one(cnf):
     vcf_fpath = cnf['vcf']
+    if not verify_file(vcf_fpath):
+        critical('Annotated VCF ' + vcf_fpath + ' does not exist, thus cannot run VarQC')
+
     sample = Sample(cnf.name, vcf=vcf_fpath)
 
     if cnf.get('filter_reject'):
