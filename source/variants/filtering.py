@@ -38,18 +38,19 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
         if rec.FILTER and rec.FILTER != 'PASS':
             return None
 
-        ads = rec.get_sample_val('AD', main_sample_index)
-        if ads is None:
-            aos = rec.get_sample_val('AO', main_sample_index)
-            ro = rec.get_info_val('RO', main_sample_index)
-            missing = [n for f, n in [(aos, 'AO'), (ro, 'RO')] if f is None]
-            if missing:
-                err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
-                return None
-            try:
-                rec.INFO['AD'] = [ro] + aos
-            except TypeError:
-                rec.INFO['AD'] = [ro] + [aos]
+        # ads = rec.get_sample_val('AD', main_sample_index)
+        # if ads is None:
+        #     aos = rec.get_sample_val('AO', main_sample_index)
+        #     ro = rec.get_info_val('RO', main_sample_index)
+        #     missing = [n for f, n in [(aos, 'AO'), (ro, 'RO')] if f is None]
+        #     if missing:
+        #         err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
+        #         return None
+        #     try:
+        #         rec.INFO['AD'] = [ro] + aos
+        #     except TypeError:
+        #         rec.INFO['AD'] = [ro] + [aos]
+            
             # rec.FORMAT += 'AO'
             # call_data = rec.genotype(sample_name).data._asdict()
             # try:
