@@ -105,6 +105,8 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     # Moving final VCF
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
+    if isfile(final_vcf_fpath + '.gz'):
+        os.remove(final_vcf_fpath + '.gz')
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
     # Converting to TSV

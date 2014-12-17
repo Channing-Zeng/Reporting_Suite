@@ -238,15 +238,26 @@ class BCBioStructure:
         self.samples = []
         self.variant_callers = OrderedDict()
 
-        # Date dirpath is from bcbio and named after fc_name, not our own project name
-        self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + bcbio_cnf['fc_name'])
+        self.project_name = None
+        if cnf.project_name:
+            self.project_name = cnf.project_name
+
+        if 'fc_date' not in bcbio_cnf:
+            err('Error: fc_date not in bcbio config!')
+            bcbio_project_dirname = basename(dirname(self.final_dirpath))
+            bcbio_project_parent_dirname = basename(dirname(dirname(self.final_dirpath)))
+            self.project_name = self.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
+            self.date_dirpath = join(self.final_dirpath, self['fc_date'] + '_' + self.project_name)
+
+        else:
+            self.project_name = self.project_name or bcbio_cnf['fc_name']
+            # Date dirpath is from bcbio and named after fc_name, not our own project name
+            self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + bcbio_cnf['fc_name'])
+
         if not verify_dir(self.date_dirpath):
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        bcbio_project_dirname = basename(dirname(self.final_dirpath))
-        bcbio_project_parent_dirname = basename(dirname(dirname(self.final_dirpath)))
-        self.project_name = cnf.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
 
