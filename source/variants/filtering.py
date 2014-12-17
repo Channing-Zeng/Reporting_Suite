@@ -50,7 +50,7 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
         #         rec.INFO['AD'] = [ro] + aos
         #     except TypeError:
         #         rec.INFO['AD'] = [ro] + [aos]
-            
+
             # rec.FORMAT += 'AO'
             # call_data = rec.genotype(sample_name).data._asdict()
             # try:
