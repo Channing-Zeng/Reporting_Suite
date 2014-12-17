@@ -2,12 +2,15 @@
   margin: 0 100px 50px 0;
   min-width: 532px;
   font-size: 1em; }
+  #report .table_name {
+    margin-bottom: 5px; }
   #report table.common_table {
     padding-right: 50px !important; }
     #report table.common_table span.metric_name {
       font-weight: bold; }
   #report table.report_table {
     padding-right: 50px !important;
+    margin-bottom: 30px;
     border-width: 0;
     border-spacing: 0;
     border-collapse: collapse; }
@@ -97,14 +100,14 @@ table.draggable {
   padding-right: 80px; }
 
 .plot-header {
-  margin-left: 0px;
+  margin-left: 0;
   font-weight: bold;
   height: 1.5em;
   display: block; }
 
 .plots {
   margin-top: 2px;
-  margin-bottom: 0px;
+  margin-bottom: 0;
   float: left; }
   .plots td {
     vertical-align: top;

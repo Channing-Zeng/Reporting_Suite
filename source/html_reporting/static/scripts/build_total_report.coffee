@@ -270,7 +270,7 @@ median = (x) ->
 
 reporting.buildTotalReport = (report, section, columnOrder) ->
     if section.title?
-        $('#report').append "<h3 class='table_name' style='margin: 0px 0 5px 0'>#{section.title}</h3>"
+        $('#report').append "<h3 class='table_name'>#{section.title}</h3>"
 
     calc_cell_contents report, section, $('#report').css 'font'
 
@@ -400,7 +400,7 @@ reporting.buildCommonRecords = (common_records) ->
                           #{rec.cell_contents}"
         table += "</td></tr>"
     table += "\n</table>\n"
-    table += "<div style=\"height: 30px; display: block;\"></div>"
+    table += "<div class='space_30px'></div>"
 
     $('#report').append table
 
