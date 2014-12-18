@@ -532,7 +532,7 @@ class BCBioStructure:
             err('Error: ' + vcf_fpath + ' is empty. Phenotype is ' + str(sample.phenotype))
             return None
 
-        info(vcf_fpath)
+        info('Found ' + vcf_fpath)
         return vcf_fpath
 
     def find_gene_reports_by_sample(self):

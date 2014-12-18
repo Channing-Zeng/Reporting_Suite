@@ -518,8 +518,8 @@ class BCBioRunner:
                 info('  ' + caller.name)
                 for sample in caller.samples:
                     info('    ' + sample.name)
-                    raw_vcf_fpath = sample.get_raw_vcf_fpath_by_callername(caller.name, gz=True)
-                    if not file_exists(raw_vcf_fpath):
+                    raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
+                    if not raw_vcf_fpath:
                         if sample.phenotype != 'normal':
                             err('Error: raw VCF does not exist: sample ' + sample.name + ', caller "' +
                                 caller.name + '". Phenotype = ' + sample.phenotype + '.')
