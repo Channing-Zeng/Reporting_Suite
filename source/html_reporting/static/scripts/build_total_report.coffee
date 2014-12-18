@@ -376,8 +376,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                           </td>"
         table += "</tr>"
         i += 1
-    table += "\n<tbody></table>\n"
-    table += "<div style=\"height: 30px; display: block;\"></div>"
+    table += "\n</tbody></table>\n"
+#    table += "<div style=\"height: 30px; display: block;\"></div>"
 
     $('#report').append table
 

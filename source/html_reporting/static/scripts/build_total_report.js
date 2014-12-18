@@ -487,8 +487,7 @@
       table += "</tr>";
       i += 1;
     }
-    table += "\n<tbody></table>\n";
-    table += "<div style=\"height: 30px; display: block;\"></div>";
+    table += "\n</tbody></table>\n";
     return $('#report').append(table);
   };
 
