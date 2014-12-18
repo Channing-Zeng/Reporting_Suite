@@ -162,7 +162,7 @@ def summary_reports(cnf, bcbio_structure):
     if len(qualimap_htmls_by_sample):
         qualimap = get_system_path(cnf, interpreter=None, name='qualimap')
         if qualimap is not None and get_qualimap_type(qualimap) == "full":
-            qualimap_output_dir = join(cnf.output_dir, 'qualimap_multi_bamqc')
+            qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
             plots_dirpath = join(cnf.output_dir, 'plots')
             _correct_qualimap_genome_results(bcbio_structure)
 
@@ -185,8 +185,6 @@ def summary_reports(cnf, bcbio_structure):
                         targqc_full_report.plots.append(relpath(plot_fpath, cnf.output_dir))
             else:
                 warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
-            if verify_dir(qualimap_output_dir):
-                shutil.rmtree(qualimap_output_dir)
         else:
             warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
