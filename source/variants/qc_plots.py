@@ -25,6 +25,7 @@ def draw_plots(cnf, vcf_fpath):
     plot_scale = 1000 * variants_per_kbp
 
     variants_distribution, substituitions, indel_lengths = _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale)
+
     variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp)
     substs_plot_fpath = _draw_substitutions(cnf, substituitions)
     indels_plot_fpath = _draw_indel_lengths(cnf, indel_lengths)
@@ -74,7 +75,7 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
 
 
 def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp):
-    plot_fpath = join(cnf.output_dir, cnf['name'] + distr_plot_ending)
+    plot_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + distr_plot_ending)
 
     not_counted = variants_distribution['OTHER']
     del variants_distribution['OTHER']
@@ -144,7 +145,7 @@ def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variant
 
 
 def _draw_substitutions(cnf, substituitions):
-    plot_fpath = join(cnf.output_dir, cnf['name'] + substs_plot_ending)
+    plot_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + substs_plot_ending)
 
     colors = ['#CC0000', '#CC6600', '#CCCC00', '#66CC00']
     # params of bars
@@ -189,7 +190,7 @@ def _draw_substitutions(cnf, substituitions):
 
 
 def _draw_indel_lengths(cnf, indel_lengths):
-    plot_fpath = join(cnf.output_dir, cnf['name'] + indels_plot_ending)
+    plot_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + indels_plot_ending)
 
     bins = list(numpy.arange(min(indel_lengths) - 0.5, max(indel_lengths) + 1.0, 1.0))
     matplotlib.pyplot.hist(indel_lengths, bins=bins, color='#CC0000')
