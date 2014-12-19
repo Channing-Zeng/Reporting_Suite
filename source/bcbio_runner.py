@@ -569,6 +569,7 @@ class BCBioRunner:
             wait_for_steps = []
             # summaries
             wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
+            wait_for_steps += [self.varqc_after_summary.job_name()] if self.varqc_after_summary in self.steps else []
             wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
             wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
             # and individual reports too
