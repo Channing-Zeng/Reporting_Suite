@@ -407,8 +407,6 @@ class BCBioStructure:
             sample.dirpath = None
             return sample
 
-        self._set_bed_file(sample, sample_info)
-
         self._set_bam_file(sample)
 
         if 'min_allele_fraction' in sample_info['algorithm']:
@@ -419,6 +417,8 @@ class BCBioStructure:
         sample.genome = sample_info.get('genome_build') or 'hg19'
         if sample.genome not in self.cnf.genomes:
             critical('No section in genomes for ' + sample.genome + ' in ' + self.cnf.sys_cnf)
+
+        self._set_bed_file(sample, sample_info)
 
         if 'metadata' in sample_info:
             sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
@@ -485,9 +485,9 @@ class BCBioStructure:
             bed = adjust_path(sample_info['algorithm']['variant_regions'])
             if not verify_bed(bed):
                 sys.exit(1)
-        elif self.cnf.genome.exons:
+        elif self.cnf.genomes[sample.genome].exons:
             warn('Warning: no amplicon BED file provided, using exons instead.')
-            bed = self.cnf.genome.exons
+            bed = self.cnf.genomes[sample.genome].exons
             if not verify_bed(bed):
                 sys.exit(1)
         else:
