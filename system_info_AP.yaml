@@ -9,7 +9,7 @@ resources:
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
-    path: /home/klpf990/qualimap/qualimap
+    path: /ngs/RDI/SCRIPTS/qualimap/qualimap
   python:
     path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
   java:
