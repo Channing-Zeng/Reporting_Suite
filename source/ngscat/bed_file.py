@@ -39,7 +39,7 @@ def verify_bed(fpath, description=''):
 
     error = BedFile(fpath).checkformat()
     if error:
-        err('Error: incorrect bed file format (' + fpath + '): ' + err + '\n')
+        err('Error: incorrect bed file format (' + fpath + '): ' + str(error) + '\n')
         return None
 
     return fpath
