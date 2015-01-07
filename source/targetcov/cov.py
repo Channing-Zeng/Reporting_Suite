@@ -130,71 +130,70 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
     ampl_gene_names = None
     all_interesting_exons_bed = None
 
-    if not exons_bed: # or abspath(exons_bed) == abspath(sample.bed):
+    if not exons_bed:  # or abspath(exons_bed) == abspath(sample.bed):
         if not exons_bed:
             warn('Warning: no genes or exons specified for the genome in system config.')
         elif abspath(exons_bed) == abspath(sample.bed):
             warn('Same file used for exons and amplicons: ' + exons_bed)
-        return None
+        return None, None
         # gene_names = _get_gene_names(amplicons_bed)
 
-    else:
-        info('Choosing unique exons.')
-        exons_bed = _unique_longest_exons(cnf, exons_bed)
+    info('Choosing unique exons.')
+    exons_bed = _unique_longest_exons(cnf, exons_bed)
 
-        info('Sorting exons BED file.')
-        exons_bed = sort_bed(cnf, exons_bed)
-        info()
+    info('Sorting exons BED file.')
+    exons_bed = sort_bed(cnf, exons_bed)
+    info()
 
-        info('Getting the exons that overlap amplicons.')
-        roi_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
-        info()
+    info('Getting the exons that overlap amplicons.')
+    roi_exons_bed = intersect_bed(cnf, exons_bed, amplicons_bed)
+    info()
 
-        ampl_gene_names = _get_gene_names(exons_bed)
-        if not ampl_gene_names:
-            critical('No gene names in amplicons.')
-            return None
+    ampl_gene_names = _get_gene_names(exons_bed)
+    if not ampl_gene_names:
+        critical('No gene names in amplicons.')
+        return None, None
 
-        info('Adding other exons for the genes of overlapped exons.')
-        all_interesting_exons_bed = _add_other_exon_of_genes(cnf, ampl_gene_names, exons_bed, roi_exons_bed)
-        info()
+    info('Adding other exons for the genes of overlapped exons.')
+    all_interesting_exons_bed = _add_other_exon_of_genes(cnf, ampl_gene_names, exons_bed, roi_exons_bed)
+    info()
 
-        info('Calculating coverage statistics for exons of the genes ovelapping with the input regions...')
-        exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, all_interesting_exons_bed)
-        for exon in exons:
-            exon.sample_name = sample.name
-            if exon.extra_fields:
-                exon.exon_num = exon.extra_fields[0]
-            if len(exon.extra_fields) >= 2:
-                exon.strand = exon.extra_fields[1]
-            exon.feature = 'Exon'
+    info('Calculating coverage statistics for exons of the genes ovelapping with the input regions...')
+    exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, all_interesting_exons_bed)
+    for exon in exons:
+        exon.sample_name = sample.name
+        if exon.extra_fields:
+            exon.exon_num = exon.extra_fields[0]
+        if len(exon.extra_fields) >= 2:
+            exon.strand = exon.extra_fields[1]
+        exon.feature = 'Exon'
 
-        info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
-        gene_infos_by_name = _get_exons_combined_by_genes(exons, ampl_gene_names)
+    info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
+    gene_infos_by_name = _get_exons_combined_by_genes(exons, ampl_gene_names)
 
-        info()
-        info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
-        _combine_amplicons_by_genes(cnf, sample, amplicons, exons, gene_infos_by_name)
+    info()
+    info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
+    _combine_amplicons_by_genes(cnf, sample, amplicons, exons, gene_infos_by_name)
 
-        non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
+    non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
 
-        info()
-        non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
-        info()
-        info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
-        non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
-        genes = []
-        for non_overlapping_exon in non_overlapping_exons_2:
-            gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
-            for d, bs in non_overlapping_exon.bases_by_depth.items():
-                gene_info.bases_by_depth[d] += bs
-            genes.append(gene_info)
+    info()
+    non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
+    info()
+    info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
+    non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
+    genes = []
+    for non_overlapping_exon in non_overlapping_exons_2:
+        gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
+        for d, bs in non_overlapping_exon.bases_by_depth.items():
+            gene_info.bases_by_depth[d] += bs
+        genes.append(gene_info)
 
-        info()
-        info('Building region coverage report.')
-        gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
+    info()
+    info('Building region coverage report.')
+    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
 
-        return gene_report_fpath, gene_infos_by_name
+    return gene_report_fpath, gene_infos_by_name
 
 
 def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
@@ -401,6 +400,7 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
                         err('Amplicon gene name != exon gene name for line: ' + line.strip())
                     if e_gene_name not in genes_by_name:
                         err(e_gene_name + ' from exons not in genes_by_name from exons')
+                        print str(genes_by_name)
                         continue
                     gene_name = e_gene_name
 
