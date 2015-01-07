@@ -181,13 +181,17 @@ class BCBioRunner:
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
+        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' ' \
+            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
+        if cnf.exons:
+            targetcov_params += '--exons {cnf.exons} '
+
         self.targetcov = Step(cnf, run_id,
             name='TargetCov', short_name='tc',
             interpreter='python',
             script=join('sub_scripts', 'targetcov.py'),
             dir_name=BCBioStructure.targetseq_dir,
-            paramln=params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
+            paramln=targetcov_params,
         )
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
@@ -366,7 +370,7 @@ class BCBioRunner:
                         continue
 
                     if len(fields) < 4:
-                        fields.append('-')
+                        fields.append('.')
 
                     if len(fields) < 5:
                         fields.append('0')

@@ -64,7 +64,7 @@ except ImportError:
 #         shutil.rmtree(cnf['work_dir'])
 
 
-def run_one(cnf, process_one_fun, finalize_one_fun=None, multiple_samples=False):
+def run_one(cnf, process_one_fun, finalize_one_fun=None, multiple_samples=False, *args, **kwargs):
     # input_fpaths = []
     # for key in required_inputs:
     #     input_fpaths.append(cnf[key])
@@ -82,7 +82,7 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, multiple_samples=False)
         # for fpath in input_fpaths:
         #     info('  ' + fpath)
 
-    results_one = process_one_fun(cnf)
+    results_one = process_one_fun(cnf, *args, **kwargs)
 
     if finalize_one_fun and results_one:
         info('')

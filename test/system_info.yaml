@@ -32,8 +32,8 @@ genomes:
 
     snpeff_transcripts: ~/Dropbox/az/transcripts.txt
 
-    # exons: ~/Dropbox/az/UCSC_Gene_Exon_Canonical.chr21.bed
-    exons: ~/Dropbox/az/AZ_Exome.chr21.bed 
+    exons: ~/Dropbox/az/UCSC_exons_canonical.chr21.bed
+    az_exome: ~/Dropbox/az/AZ_Exome.chr21.bed
 
 queue: ngs.q
 

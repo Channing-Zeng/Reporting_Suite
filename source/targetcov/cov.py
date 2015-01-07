@@ -16,10 +16,11 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
 
-def make_targetseq_reports(cnf, sample):
+def make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath):
     if not (sample.bam or sample.bed):
         if not sample.bam: err(sample.name + ': BAM file is required.')
-        if not sample.bed: err(sample.name + ': BED file is required.')
+        if not sample.bed:
+            err(sample.name + ': BED file was not provided. Using AZ-Exome as default: ' + cnf.genome.az-exome)
         sys.exit(1)
 
     info()
@@ -54,7 +55,8 @@ def make_targetseq_reports(cnf, sample):
         ampl.feature = 'Amplicon'
         ampl.sample_name = sample.name
 
-    per_gene_rep_fpath, genes_by_name = make_and_save_region_report(cnf, sample, amplicons, amplicons_bed)
+    per_gene_rep_fpath, genes_by_name = make_and_save_region_report(
+        cnf, exons_bed_fpath, sample, amplicons, amplicons_bed)
 
     amplicons = []
     for gene in genes_by_name.values():
@@ -122,10 +124,8 @@ def _get_gene_names(exons_bed, gene_index=3):
     return gene_names
 
 
-def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
+def make_and_save_region_report(cnf, exons_bed, sample, amplicons, amplicons_bed):
     step_greetings('Analysing regions.')
-
-    exons_bed = cnf.genome.exons
 
     ampl_gene_names = None
     all_interesting_exons_bed = None
@@ -392,11 +392,11 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
             e_chrom, e_start, e_end, e_gene_name, e_feature, \
             overlap_size = line.split('\t')
 
-            if e_gene_name != '.' or a_gene_name != '-':
+            if e_gene_name != '.' or a_gene_name != '.':
                 gene_name = None
 
                 if e_gene_name != '.':  # hit
-                    if a_gene_name != '-' and a_gene_name != e_gene_name:
+                    if a_gene_name != '.' and a_gene_name != e_gene_name:
                         err('Amplicon gene name != exon gene name for line: ' + line.strip())
                     if e_gene_name not in genes_by_name:
                         err(e_gene_name + ' from exons not in genes_by_name from exons')
@@ -404,7 +404,7 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
                         continue
                     gene_name = e_gene_name
 
-                elif a_gene_name != '-':  # not hit, but a_gene_name != '-', so amplicons gene names provided
+                elif a_gene_name != '.':  # not hit, but a_gene_name != '.', so amplicons gene names provided
                     if a_gene_name not in genes_by_name:
                         err(a_gene_name + ' from amplicons not in genes_by_name from exons')
                         continue

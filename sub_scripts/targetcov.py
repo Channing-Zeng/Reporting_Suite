@@ -10,6 +10,7 @@ from source.config import defaults
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.utils import info
+from source.file_utils import adjust_path
 
 
 def main(args):
@@ -22,6 +23,14 @@ def main(args):
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
                 help='capture panel/amplicons')
+             ),
+            (['--exons', '--exome'], dict(
+                dest='exome',
+                help='exome (default is in system_config)')
+             ),
+            (['--genes'], dict(
+                dest='genes',
+                help='custom list of genes')
              ),
             (['--padding'], dict(
                 dest='padding',
@@ -47,18 +56,30 @@ def main(args):
 
     check_genome_resources(cnf)
 
+    if cnf.exons:
+        exons_bed_fpath = adjust_path(cnf.exons)
+    else:
+        exons_bed_fpath = adjust_path(cnf.genome.exons)
+    info('Exons: ' + exons_bed_fpath)
+
+    if cnf.genes:
+        genes_fpath = adjust_path(cnf.genes)
+        info('Custom genes list: ' + exons_bed_fpath)
+    else:
+        genes_fpath = None
+
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])
 
-    run_one(cnf, process_one, finalize_one)
+    run_one(cnf, process_one, finalize_one, multiple_samples=False, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_one(cnf):
+def process_one(cnf, exons_bed_fpath, genes_fpath):
     sample = Sample(cnf.name, bam=cnf.bam, bed=cnf.bed)
-    return make_targetseq_reports(cnf, sample)  # cnf.vcfs_by_callername
+    return make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
 
 
 def finalize_one(cnf, summary_report_txt_path, gene_report_fpath):
