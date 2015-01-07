@@ -154,7 +154,6 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
         if not ampl_gene_names:
             critical('No gene names in amplicons.')
             return None
-        print ampl_gene_names
 
         info('Adding other exons for the genes of overlapped exons.')
         all_interesting_exons_bed = _add_other_exon_of_genes(cnf, ampl_gene_names, exons_bed, roi_exons_bed)
@@ -174,7 +173,7 @@ def make_and_save_region_report(cnf, sample, amplicons, amplicons_bed):
         gene_infos_by_name = _get_exons_combined_by_genes(exons, ampl_gene_names)
 
         info()
-        info('Finding amplicons overlaps with exons, adding gene names to amplicons and adding amplicons to genes...')
+        info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
         _combine_amplicons_by_genes(cnf, sample, amplicons, exons, gene_infos_by_name)
 
         non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
@@ -394,18 +393,18 @@ def _combine_amplicons_by_genes(cnf, sample, amplicons, exons, genes_by_name):
             e_chrom, e_start, e_end, e_gene_name, e_feature, \
             overlap_size = line.split('\t')
 
-            if e_gene_name != '.' or a_gene_name != '.':
+            if e_gene_name != '.' or a_gene_name != '-':
                 gene_name = None
 
                 if e_gene_name != '.':  # hit
-                    if a_gene_name != '.' and a_gene_name != e_gene_name:
+                    if a_gene_name != '-' and a_gene_name != e_gene_name:
                         err('Amplicon gene name != exon gene name for line: ' + line.strip())
                     if e_gene_name not in genes_by_name:
                         err(e_gene_name + ' from exons not in genes_by_name from exons')
                         continue
                     gene_name = e_gene_name
 
-                else:  # not hit, but a_gene_name != '.', so amplicons gene names provided
+                elif a_gene_name != '-':  # not hit, but a_gene_name != '-', so amplicons gene names provided
                     if a_gene_name not in genes_by_name:
                         err(a_gene_name + ' from amplicons not in genes_by_name from exons')
                         continue
@@ -677,6 +676,7 @@ def _fix_amplicons_gene_names(cnf, amplicons_fpath):
 
     with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
         prev_end = None
+        prev_chr = None
 
         for line in f:
             if not line.strip() or line.startswith('#'):
@@ -686,11 +686,13 @@ def _fix_amplicons_gene_names(cnf, amplicons_fpath):
             ts = line.split()
             assert len(ts) >= 3
 
-            if prev_end is not None:
+            cur_chr = ts[0]
+            if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
                 cur_start = int(ts[1])
                 if prev_end > cur_start:
                     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
             prev_end = int(ts[2])
+            prev_chr = cur_chr
 
             if len(ts) >= 4:
                 if ':' in ts[3]:

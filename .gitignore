@@ -63,3 +63,4 @@ test/**/2014-*
 
 test/*.maf
 test/*.vcf
+test/dropbox
