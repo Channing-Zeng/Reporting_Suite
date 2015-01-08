@@ -729,15 +729,20 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = ('{bedtools} merge ' + ('-c 4,5,6 -o distinct' if collapse_gene_names
                else '') + ' -i {bed_fpath}').format(**locals())
-    call(cnf, cmdline, output_fpath)
+    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
 
-    def fn(l, i):
-        ts = l.split('\t')
-        if len(ts) < 4:
-            return l
-        gns = ts[4].split(',')
-        return l.replace(ts[4], ','.join(set(gns)))
-    return iterate_file(cnf, output_fpath, fn, 'dstnct')
+    if res is not None:
+        return res
+    else:
+        cmdline = ('{bedtools} merge ' + ('-nms -score collapse' if collapse_gene_names
+                   else '') + ' -i {bed_fpath}').format(**locals())
+        def fn(l, i):
+            ts = l.split('\t')
+            if len(ts) < 4:
+                return l
+            gns = ts[4].split(',')
+            return l.replace(ts[4], ','.join(set(gns)))
+        return iterate_file(cnf, output_fpath, fn, 'dstnct')
 
 
 def _fix_amplicons_gene_names(cnf, amplicons_fpath):
