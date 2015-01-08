@@ -734,8 +734,12 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
     if res is not None:
         return res
     else:
+        warn('Old version of bedtools. Trying different arguments...')
+
         cmdline = ('{bedtools} merge ' + ('-nms -score collapse' if collapse_gene_names
                    else '') + ' -i {bed_fpath}').format(**locals())
+        call(cnf, cmdline, output_fpath)
+
         def fn(l, i):
             ts = l.split('\t')
             if len(ts) < 4:
