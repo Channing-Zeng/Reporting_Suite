@@ -168,7 +168,7 @@ class GeneInfo(Region):
         - Not a "Region" instance itself, so does not support sum_up() method,
           but can construct a "Region" object for a given feature.
     """
-    def __init__(self, sample_name, gene_name, chrom, strand, feature='Whole-Gene', exon_num=None):
+    def __init__(self, sample_name, gene_name, chrom=None, strand=None, feature='Whole-Gene', exon_num=None):
         Region.__init__(self, sample_name=sample_name, gene_name=gene_name, exon_num=exon_num, strand=strand,
                               feature=feature, chrom=chrom)
         self.exons = []
@@ -181,29 +181,18 @@ class GeneInfo(Region):
     def get_amplicons(self):
         return self.amplicons  # self.subregions_by_feature['Amplicon']['regions']
 
-    def add_non_overlapping_exon(self, start, end):
-        reg = Region(
-            sample_name=self.sample_name, gene_name=self.gene_name,
-            chrom=self.chrom, start=start, end=end, feature='Non-Overlapping-Exon')
-        self.non_overlapping_exons.append(reg)
-        self.size += end - start
-        self.end = end
-
     def add_exon(self, exon):  # exons come sorted by start
         if self.exons == []:
             self.size = 0
             self.start = exon.start
-            self.add_non_overlapping_exon(exon.start, exon.end)
+            self.end = exon.end
         else:
-            if exon.end <= self.end:
-                err('exon.end ' + str(exon.end) + ' <= self.end ' + str(self.end) +
-                    ' for Gene ' + str(self) + ', exon ' + str(exon))
-                pass
-            else:
-                self.add_non_overlapping_exon(max(exon.start, self.end), exon.end)
-
-        assert self.end is not None, exon
+            if exon.end > self.end:
+                self.end = exon.end
+        self.size += exon.get_size()
         self.exons.append(exon)
+        for depth, bases in exon.bases_by_depth.items():
+            self.bases_by_depth[depth] += bases
 
     def add_amplicon(self, amplicon):
         # amplicon = copy.copy(amplicon)
