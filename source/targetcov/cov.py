@@ -744,8 +744,9 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
             ts = l.split('\t')
             if len(ts) < 4:
                 return l
-            gns = ts[4].split(',')
-            return l.replace(ts[4], ','.join(set(gns)))
+            gns = ts[3].split(',')
+            return l.replace(ts[3], ','.join(set(gns)))
+            
         return iterate_file(cnf, output_fpath, fn, 'dstnct')
 
 
@@ -764,13 +765,13 @@ def _fix_amplicons_gene_names(cnf, amplicons_fpath):
             ts = line.split()
             assert len(ts) >= 3
 
-            cur_chr = ts[0]
-            if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
-                cur_start = int(ts[1])
-                if prev_end > cur_start:
-                    err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
-            prev_end = int(ts[2])
-            prev_chr = cur_chr
+            # cur_chr = ts[0]
+            # if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
+            #     cur_start = int(ts[1])
+                # if prev_end > cur_start:
+                #     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
+            # prev_end = int(ts[2])
+            # prev_chr = cur_chr
 
             if len(ts) >= 4:
                 if ':' in ts[3]:
