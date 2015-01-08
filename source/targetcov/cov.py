@@ -744,7 +744,7 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
             ts = l.split('\t')
             if len(ts) < 4:
                 return l
-            gns = ts[3].split(',')
+            gns = ts[3].split(';')
             if len(gns) > 1:
                 print l
             l = l.replace(ts[3], ','.join(set(gns)))
