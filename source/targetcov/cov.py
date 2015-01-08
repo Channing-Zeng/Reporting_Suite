@@ -745,11 +745,7 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
             if len(ts) < 4:
                 return l
             gns = ts[3].split(';')
-            if len(gns) > 1:
-                print l
             l = l.replace(ts[3], ','.join(set(gns)))
-            if len(gns) > 1:
-                print l
             return l
 
         return iterate_file(cnf, output_fpath, fn, 'dstnct')
