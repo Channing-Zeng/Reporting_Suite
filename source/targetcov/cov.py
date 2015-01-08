@@ -736,7 +736,7 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
     else:
         warn('Old version of bedtools. Trying different arguments...')
 
-        cmdline = ('{bedtools} merge ' + ('-nms -score collapse' if collapse_gene_names
+        cmdline = ('{bedtools} merge ' + ('-nms -scores collapse' if collapse_gene_names
                    else '') + ' -i {bed_fpath}').format(**locals())
         call(cnf, cmdline, output_fpath)
 
