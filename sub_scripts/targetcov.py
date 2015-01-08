@@ -25,7 +25,7 @@ def main(args):
                 help='capture panel/amplicons')
              ),
             (['--exons', '--exome'], dict(
-                dest='exome',
+                dest='exons',
                 help='exome (default is in system_config)')
              ),
             (['--genes'], dict(
