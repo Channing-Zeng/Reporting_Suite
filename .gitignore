@@ -64,3 +64,5 @@ test/**/2014-*
 test/*.maf
 test/*.vcf
 test/dropbox
+
+test/targqc_on_bams_test/

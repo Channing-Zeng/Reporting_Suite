@@ -202,7 +202,7 @@ def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_
     info()
     info('Saved to ')
     info('  ' + summary_report_txt_fpath)
-    return summary_report_json_fpath
+    return summary_report_txt_path
 
 
 def _get_gene_names(exons_bed, gene_index=3):

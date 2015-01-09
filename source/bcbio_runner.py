@@ -1,8 +1,7 @@
-from dircache import listdir
-import hashlib
 import os
 import shutil
 import sys
+import hashlib
 import base64
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
 from source.bcbio_structure import BCBioStructure
@@ -158,14 +157,14 @@ class BCBioRunner:
              '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
 
         self.varannotate = Step(cnf, run_id,
-            name='VarAnnotate', short_name='va',
+            name=BCBioStructure.varannotate_name, short_name='va',
             interpreter='python',
             script=join('sub_scripts', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
-            name='VarQC', short_name='vq',
+            name=BCBioStructure.varqc_name, short_name='vq',
             interpreter='python',
             script=join('sub_scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_dir,
@@ -173,7 +172,7 @@ class BCBioRunner:
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\''
         )
         self.varqc_after = Step(cnf, run_id,
-            name='VarQC_postVarFilter', short_name='vqa',
+            name=BCBioStructure.varqc_after_name, short_name='vqa',
             interpreter='python',
             script=join('sub_scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_after_dir,
@@ -187,7 +186,7 @@ class BCBioRunner:
             targetcov_params += '--exons {cnf.exons} '
 
         self.targetcov = Step(cnf, run_id,
-            name='TargetCov', short_name='tc',
+            name=BCBioStructure.targetseq_name, short_name='tc',
             interpreter='python',
             script=join('sub_scripts', 'targetcov.py'),
             dir_name=BCBioStructure.targetseq_dir,
@@ -202,7 +201,7 @@ class BCBioRunner:
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         )
         self.ngscat = Step(cnf, run_id,
-            name='ngsCAT', short_name='nc',
+            name=BCBioStructure.ngscat_name, short_name='nc',
             interpreter='python',
             script=join('sub_scripts', 'ngscat.py'),
             dir_name=BCBioStructure.ngscat_dir,
@@ -210,7 +209,7 @@ class BCBioRunner:
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
         self.qualimap = Step(cnf, run_id,
-            name='QualiMap', short_name='qm',
+            name=BCBioStructure.qualimap_name, short_name='qm',
             script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
             paramln=' bamqc -nt ' + str(self.threads_per_sample) + ' --java-mem-size=24G -nr 5000 '
@@ -219,14 +218,14 @@ class BCBioRunner:
         #############
         # Summaries #
         self.varqc_summary = Step(cnf, run_id,
-            name='VarQC_summary', short_name='vqs',
+            name=BCBioStructure.varqc_name + '_summary', short_name='vqs',
             interpreter='python',
             script=join('sub_scripts', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.varqc_after_summary = Step(cnf, run_id,
-            name='VarQC_postVarFilter_summary', short_name='vqas',
+            name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
             interpreter='python',
             script=join('sub_scripts', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
@@ -239,7 +238,7 @@ class BCBioRunner:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
 
         self.varfilter_all = Step(cnf, run_id,
-            name='VarFilter', short_name='vfs',
+            name=BCBioStructure.varfilter_name, short_name='vfs',
             interpreter='python',
             script=join('sub_scripts', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
@@ -262,23 +261,22 @@ class BCBioRunner:
         )
         self.targqc_summary = Step(
             cnf, run_id,
-            name='TargQC_summary', short_name='targqc',
+            name=BCBioStructure.targqc_name, short_name='targqc',
             interpreter='python',
             script=join('sub_scripts', 'targqc_summary.py'),
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
-
         )
         self.fastqc_summary = Step(
             cnf, run_id,
-            name='FastQC_summary', short_name='fastqc',
+            name=BCBioStructure.fastqc_name, short_name='fastqc',
             interpreter='python',
             script=join('sub_scripts', 'fastqc_summary.py'),
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.combined_report = Step(cnf, run_id,
-            name='Combined_report', short_name='cr',
+            name='ProjectLevelReport', short_name='cr',
             interpreter='python',
             script=join('sub_scripts', 'combined_report.py'),
             dir_name=self.bcbio_structure.date_dirpath,
@@ -320,7 +318,7 @@ class BCBioRunner:
             try:
                 os.remove(log_fpath)
             except OSError:
-                err('Warning: cannot remove log file ' + out_fpath + ', probably permission denied.')
+                err('Warning: cannot remove log file ' + log_fpath + ', probably permission denied.')
 
         safe_mkdir(dirname(log_fpath))
         safe_mkdir(dirname(out_fpath))
@@ -354,31 +352,12 @@ class BCBioRunner:
         if self.cnf.verbose: info()
         return output_dirpath
 
+
     def _qualimap_bed(self, bed_fpath):
         if self.qualimap in self.steps and bed_fpath:
             qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
 
-            with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
-                for l in inn:
-                    fields = l.strip().split('\t')
-
-                    if len(fields) < 3:
-                        continue
-                    try:
-                        int(fields[1]), int(fields[2])
-                    except ValueError:
-                        continue
-
-                    if len(fields) < 4:
-                        fields.append('.')
-
-                    if len(fields) < 5:
-                        fields.append('0')
-
-                    if len(fields) < 6:
-                        fields.append('+')
-
-                    out.write('\t'.join(fields) + '\n')
+            fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
 
             return qualimap_bed_fpath
         else:
@@ -653,7 +632,7 @@ class BCBioRunner:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-            for fname in listdir(sample_dirpath):
+            for fname in os.listdir(sample_dirpath):
                 if any(fname.endswith(s) for s in ['-cn_mops.bed', '-ensemble.bed']):
                     if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
                     try:
@@ -662,7 +641,7 @@ class BCBioRunner:
                         pass
 
             if isdir(cnv_dirpath):
-                for fname in listdir(cnv_dirpath):
+                for fname in os.listdir(cnv_dirpath):
                     if not fname.startswith('.'):
                         src_fpath = join(cnv_dirpath, fname)
 
@@ -677,3 +656,27 @@ class BCBioRunner:
                             symlink_plus(src_fpath, dst_fpath)
                         except OSError:
                             pass
+
+
+def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
+    with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
+        for l in inn:
+            fields = l.strip().split('\t')
+
+            if len(fields) < 3:
+                continue
+            try:
+                int(fields[1]), int(fields[2])
+            except ValueError:
+                continue
+
+            if len(fields) < 4:
+                fields.append('.')
+
+            if len(fields) < 5:
+                fields.append('0')
+
+            if len(fields) < 6:
+                fields.append('+')
+
+            out.write('\t'.join(fields) + '\n')
