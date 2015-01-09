@@ -5,9 +5,9 @@ import sub_scripts.__common  # checking for python version and adding site dirs 
 import sys
 import os
 from optparse import OptionParser
-from source.config import Config
+from source.config import Config, defaults
 from source.targetcov.summarize_targqc import summary_reports
-from source.prepare_args_and_cnf import add_post_bcbio_args
+from source.prepare_args_and_cnf import add_post_bcbio_args, detect_sys_cnf
 from source.logger import info, err, warn, critical
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
 from source.main import check_genome_resources
@@ -43,15 +43,14 @@ def main():
     bam_fpaths = [join(output_dir, fname) for fname in listdir(output_dir) if fname.endswith('.bam')]
     if not bam_fpaths: critical('No BAM files inside ' + output_dir)
 
-    opts.sys_cnf = adjust_path(opts.sys_cnf)
-    if not opts.sys_cnf: critical('Error: --sys-cnf is not provided.')
+    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
     if not verify_file(opts.sys_cnf): sys.exit(1)
     info('Using ' + opts.sys_cnf)
 
-    opts.run_cnf = adjust_path(opts.run_cnf)
-    if not opts.run_cnf: critical('Error: --run-cnf is not provided.')
-    if not verify_file(opts.run_cnf): sys.exit(1)
-    info('Using ' + opts.run_cnf)
+    opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
+    project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
+    info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
+
 
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
     cnf.output_dir = output_dir

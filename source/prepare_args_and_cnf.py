@@ -103,6 +103,22 @@ def _set_bcbio_dirpath(dir_arg):
     return bcbio_project_dirpath, final_dirpath, config_dirpath
 
 
+def detect_sys_cnf(opts):
+    import socket
+    hostname = socket.gethostname()
+    info('hostname: ' + hostname)
+    opts.sys_cnf = defaults['sys_cnfs']['us']
+    if 'ukap' in hostname:
+        opts.sys_cnf = defaults['sys_cnfs']['uk']
+    elif 'cniclhpc' in hostname:
+        opts.sys_cnf = defaults['sys_cnfs']['china']
+    elif 'local' in hostname or 'Home' in hostname:
+        opts.sys_cnf = defaults['sys_cnfs']['local']
+    elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+        opts.sys_cnf = defaults['sys_cnfs']['us']
+    return opts.sys_cnf
+
+
 def _set_sys_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.sys_cnf)
     # provided in commandline?
@@ -131,19 +147,7 @@ def _set_sys_config(config_dirpath, opts):
 
         else:
             # detect system and use default system config
-            import socket
-            hostname = socket.gethostname()
-            info('hostname: ' + hostname)
-
-            opts.sys_cnf = defaults['sys_cnfs']['us']
-            if 'ukap' in hostname:
-                opts.sys_cnf = defaults['sys_cnfs']['uk']
-            elif 'cniclhpc' in hostname:
-                opts.sys_cnf = defaults['sys_cnfs']['china']
-            elif 'local' in hostname or 'Home' in hostname:
-                opts.sys_cnf = defaults['sys_cnfs']['local']
-            elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
-                opts.sys_cnf = defaults['sys_cnfs']['us']
+            detect_sys_cnf(opts)
 
     info('Using ' + opts.sys_cnf)
 
