@@ -66,3 +66,4 @@ test/*.vcf
 test/dropbox
 
 test/targqc_on_bams_test/
+test/targqc_small_test/

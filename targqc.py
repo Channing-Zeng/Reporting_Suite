@@ -31,12 +31,12 @@ def main():
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
-    parser.add_option('--genome', dest='genome')
+    parser.add_option('--genome', dest='genome', default='hg19')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
 
     (opts, args) = parser.parse_args()
 
-    output_dir = args[0] if len(args) > 0 else getcwd()
+    output_dir = args[0] if len(args) > 0 else os.getcwd()
     output_dir = adjust_path(output_dir)
     info('Running on ' + output_dir)
     if not verify_dir(output_dir): sys.exit(1)
@@ -70,7 +70,7 @@ def main():
     info('*' * 70)
     info()
 
-    run(cnf, bam_fpaths)
+    _run(cnf, bam_fpaths)
 
 
 def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath):
@@ -139,20 +139,20 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath):
         paramln=qualimap_params
     )
 
-    summary_cmdline_params = ' '.join(sys.argv) + '--only-summary'
+    summary_cmdline_params = ' '.join(sys.argv[1:]) + ' --only-summary'
 
     targqc_summary_step = Step(
         cnf, run_id,
-        name=BCBioStructure.targqc_name, short_name='targqc',
+        name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
         interpreter='python',
-        script=abspath(__file__),
+        script=basename(__file__),
         paramln=summary_cmdline_params
     )
 
     return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step
 
 
-def run(cnf, bam_fpaths):
+def _run(cnf, bam_fpaths):
     for bam_fpath in bam_fpaths:
         if not verify_bam(bam_fpath):
             sys.exit(1)
@@ -179,11 +179,11 @@ def run(cnf, bam_fpaths):
             info('TargetSeq for "' + basename(sample.bam) + '"')
             _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample,
                 bam=sample.bam, sample=sample.name)
-
+            #
             info('NgsCat for "' + basename(sample.bam) + '"')
             _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample,
                 bam=sample.bam, sample=sample.name)
-
+            #
             info('Qualimap for "' + basename(sample.bam) + '"')
             _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample,
                 bam=sample.bam, sample=sample.name)
@@ -247,7 +247,17 @@ from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 
 
-def summary(cnf, samples, bed_fpath):
+def _find(samples, output_dir, dir_name, f_template):
+    fpaths_dict = dict()
+    for s in samples:
+        fpath = join(output_dir, s.name + '_' + dir_name, f_template % dict(sample=s.name, dir_name=dir_name))
+        if verify_file(fpath):
+            fpaths_dict[s.name] = fpath
+
+    return fpaths_dict
+
+
+def _summary(cnf, samples, bed_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     targetcov_metric_storage = cov.header_metric_storage
@@ -257,13 +267,13 @@ def summary(cnf, samples, bed_fpath):
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    targetcov_jsons_by_sample = dict(s.name, join(cnf.output_dir, s.name + BCBioStructure.targetseq_name, s.name + '.' + BCBioStructure.targetseq_name + '.json'))
-    targetcov_htmls_by_sample = dict(s.name, join(cnf.output_dir, s.name + BCBioStructure.targetseq_name, s.name + '.' + BCBioStructure.targetseq_name + '.html'))
-    ngscat_htmls_by_sample = dict(s.name, join(cnf.output_dir, s.name + BCBioStructure.ngscat_name, 'captureQC.html'))
-    qualimap_htmls_by_sample = dict(s.name, join(cnf.output_dir, s.name + BCBioStructure.qualimap_name, 'qualimapReport.html'))
+    targetcov_jsons_by_sample = _find(samples, cnf.output_dir, BCBioStructure.targetseq_name, '{sample}.{dir_name}.json')
+    targetcov_htmls_by_sample = _find(samples, cnf.output_dir, BCBioStructure.targetseq_name, '{sample}.{dir_name}.html')
+    ngscat_htmls_by_sample = _find(samples, cnf.output_dir, BCBioStructure.ngscat_name, 'captureQC.html')
+    qualimap_htmls_by_sample = _find(samples, cnf.output_dir, BCBioStructure.qualimap_name, 'qualimapReport.html')
 
     all_htmls_by_sample = OrderedDict()
-    for sample in bcbio_structure.samples:
+    for sample in samples:
         all_htmls_by_sample[sample.name] = OrderedDict()
         if sample.name in targetcov_htmls_by_sample:
             all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], cnf.output_dir)
@@ -323,9 +333,13 @@ def summary(cnf, samples, bed_fpath):
         else:
             warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
-    final_summary_report_fpaths = targqc_full_report.save_into_files(
-        cnf.output_dir, BCBioStructure.targqc_name,
+    targqc_full_report.save_txt(cnf.output_dir, BCBioStructure.targqc_name)
+    targqc_full_report.save_html(cnf.output_dir, BCBioStructure.targqc_name,
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
+
+    # final_summary_report_fpaths = targqc_full_report.save_into_files(
+    #     cnf.output_dir, BCBioStructure.targqc_name,
+    #     'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     info()
     info('*' * 70)
