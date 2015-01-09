@@ -14,7 +14,7 @@ from source.main import check_genome_resources
 
 import hashlib
 import base64
-from os.path import splitext, abspath, basename, join, isfile, dirname
+from os.path import splitext, abspath, basename, join, isfile, dirname, pardir
 from os import listdir
 from source.bcbio_runner import Step, fix_bed_for_qualimap
 from source.ngscat.bed_file import verify_bam, verify_bed
@@ -33,15 +33,15 @@ def main():
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
     parser.add_option('--genome', dest='genome', default='hg19')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
+    parser.add_option('-o', dest='output_dir', metavar='DIR')
 
     (opts, args) = parser.parse_args()
 
-    output_dir = args[0] if len(args) > 0 else os.getcwd()
-    output_dir = adjust_path(output_dir)
-    info('Running on ' + output_dir)
-    if not verify_dir(output_dir): sys.exit(1)
-    bam_fpaths = [join(output_dir, fname) for fname in listdir(output_dir) if fname.endswith('.bam')]
-    if not bam_fpaths: critical('No BAM files inside ' + output_dir)
+    if len(args) == 0:
+        critical('No BAMs provided to input.')
+    bam_fpaths = [abspath(a) for a in args]
+    if any(not verify_bam(fpath) for fpath in bam_fpaths):
+        sys.exit(1)
 
     opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
     if not verify_file(opts.sys_cnf): sys.exit(1)
@@ -52,6 +52,11 @@ def main():
     info('Using ' + opts.run_cnf)
 
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+
+    output_dir = adjust_path(cnf.output_dir or join(os.getcwd(), 'targetqc'))
+    if not verify_dir(join(output_dir, pardir)): sys.exit(1)
+    safe_mkdir(output_dir)
+    info('Output to ' + output_dir)
     cnf.output_dir = output_dir
 
     cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
@@ -333,8 +338,8 @@ def _summary(cnf, samples, bed_fpath):
         else:
             warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
-    targqc_full_report.save_txt(cnf.output_dir, BCBioStructure.targqc_name)
-    targqc_full_report.save_html(cnf.output_dir, BCBioStructure.targqc_name,
+    txt_fpath = targqc_full_report.save_txt(cnf.output_dir, BCBioStructure.targqc_name)
+    html_fpath = targqc_full_report.save_html(cnf.output_dir, BCBioStructure.targqc_name,
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     # final_summary_report_fpaths = targqc_full_report.save_into_files(
@@ -344,7 +349,7 @@ def _summary(cnf, samples, bed_fpath):
     info()
     info('*' * 70)
     info('TargQC summary saved in: ')
-    for fpath in final_summary_report_fpaths:
+    for fpath in [txt_fpath, html_fpath]:
         if fpath: info('  ' + fpath)
 
 
