@@ -255,7 +255,7 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir
 def _find(samples, output_dir, dir_name, f_template):
     fpaths_dict = dict()
     for s in samples:
-        fpath = join(output_dir, s.name + '_' + dir_name, f_template % dict(sample=s.name, dir_name=dir_name))
+        fpath = join(output_dir, s.name + '_' + dir_name, f_template.format(**dict(sample=s.name, dir_name=dir_name)))
         if verify_file(fpath):
             fpaths_dict[s.name] = fpath
 
