@@ -48,9 +48,8 @@ def main():
     info('Using ' + opts.sys_cnf)
 
     opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
-    project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
-    info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
-
+    if not verify_file(opts.run_cnf): sys.exit(1)
+    info('Using ' + opts.run_cnf)
 
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
     cnf.output_dir = output_dir
