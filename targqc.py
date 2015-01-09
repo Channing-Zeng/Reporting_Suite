@@ -65,7 +65,7 @@ def main():
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
 
-    if not cnf.project_name: critical('Error: specify --project-name')
+    if not cnf.project_name: cnf.project_name = cnf.output_dir
 
     info('*' * 70)
     info()
