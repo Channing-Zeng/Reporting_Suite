@@ -1,4 +1,3 @@
-
 import hashlib
 import base64
 import sys
@@ -15,7 +14,7 @@ from source.calling_process import call
 from source.standalone_targqc.summarize import summarize_targqc
 
 
-def run(cnf, bed_fpath, bam_fpaths):
+def run(cnf, bed_fpath, bam_fpaths, main_script_name):
     samples = [
         Sample(basename(splitext(bam_fpath)[0]), bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
@@ -25,7 +24,7 @@ def run(cnf, bed_fpath, bam_fpaths):
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
-            _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath)
+            _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -55,7 +54,7 @@ def run(cnf, bed_fpath, bam_fpaths):
         summarize_targqc(cnf, samples, bed_fpath)
 
 
-def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath):
+def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
     run_id = path_hash + '_' + cnf.project_name
@@ -127,7 +126,7 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath):
         cnf, run_id,
         name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
         interpreter='python',
-        script=basename(__file__),
+        script=main_script_name,
         paramln=summary_cmdline_params
     )
 

@@ -17,7 +17,6 @@ from source.standalone_targqc.submit_jobs import run
 from source.ngscat.bed_file import verify_bam, verify_bed
 
 
-
 def main():
     info(' '.join(sys.argv))
     info()
@@ -74,7 +73,7 @@ def main():
     info('*' * 70)
     info()
 
-    run(cnf, bed_fpath, bam_fpaths)
+    run(cnf, bed_fpath, bam_fpaths, basename(__file__))
 
 
 if __name__ == '__main__':

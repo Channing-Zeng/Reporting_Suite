@@ -51,6 +51,7 @@ def get_system_path(cnf, interpreter, name=None,
 
 
     if not suppress_warn:
+        a = 1/0
         err(name + ' was not found. '
             'You may either specify path in the system config, '
             'or load into your PATH environment variable.')
