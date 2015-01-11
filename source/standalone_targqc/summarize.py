@@ -210,7 +210,7 @@ def _correct_qualimap_genome_results(samples, output_dir):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
     qualimap_results_txt_by_sample  = _make_fpaths_per_sample(
-        samples, output_dir, BCBioStructure.qualimap_dir, 'genome_results.txt')
+        samples, output_dir, BCBioStructure.qualimap_name, 'genome_results.txt')
 
     for sample_name, results_txt_fpath in qualimap_results_txt_by_sample.items():
         with open(results_txt_fpath, 'r') as f:
