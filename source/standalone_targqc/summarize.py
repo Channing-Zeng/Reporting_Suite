@@ -80,7 +80,7 @@ def summarize_targqc(cnf, samples, bed_fpath):
         if qualimap is not None and get_qualimap_type(qualimap) == "full":
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
             plots_dirpath = join(cnf.output_dir, 'plots')
-            _correct_qualimap_genome_results()
+            _correct_qualimap_genome_results(samples, cnf.output_dir)
 
             safe_mkdir(qualimap_output_dir)
             rows = []
