@@ -2,6 +2,7 @@ from collections import OrderedDict
 from os.path import relpath, join, exists
 from os import listdir
 import shutil
+
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
 from source.logger import step_greetings, info, send_email, critical, warn
 from source.targetcov import cov
