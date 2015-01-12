@@ -32,10 +32,12 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
         for sample in samples:
             info('Processing ' + basename(sample.bam))
 
-            if not cnf.reuse_intermediate or not sample.targetcov_done():
-                info('TargetSeq for "' + basename(sample.bam) + '"')
-                _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
-                summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
+            info('TargetSeq for "' + basename(sample.bam) + '"')
+            reuse = cnf.reuse_intermediate
+            # if not sample.targetcov_done():
+            #     reuse = False
+            _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, reuse=reuse)
+            summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
             if not cnf.reuse_intermediate or not sample.ngscat_done():
                 info('NgsCat for "' + basename(sample.bam) + '"')
@@ -136,7 +138,7 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
     return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step
 
 
-def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwargs):
+def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, reuse=False, **kwargs):
     log_fpath = join(cnf.log_dir, (step.name + ('_' + sample_name if sample_name else '') + '.log'))
 
     if isfile(log_fpath):
@@ -150,6 +152,8 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwa
     tool_cmdline = get_system_path(cnf, step.interpreter, step.script)
     if not tool_cmdline: sys.exit(1)
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
+    if reuse:
+        cmdline += ' --reuse'
 
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     job_name = step.job_name(sample_name)
