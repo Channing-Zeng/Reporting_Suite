@@ -5,6 +5,7 @@ from os import listdir
 from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict
 
+import source
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
 from source.logger import step_greetings, info, send_email, critical, warn
 from source.targetcov import cov
@@ -212,8 +213,9 @@ def _get_targqc_records(records_by_report_type):
 def _correct_qualimap_genome_results(samples, output_dir):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
-    qualimap_results_txt_by_sample  = _make_fpaths_per_sample(
-        samples, output_dir, BCBioStructure.qualimap_name, 'genome_results.txt')
+    qualimap_results_txt_by_sample = [
+        s.mk_fpath('{output_dir}/{sample}_{name}/genome_results.txt',
+             source.qualimap_name) for s in samples]
 
     for sample_name, results_txt_fpath in qualimap_results_txt_by_sample.items():
         with open(results_txt_fpath, 'r') as f:
