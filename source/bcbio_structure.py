@@ -398,6 +398,7 @@ class BCBioStructure:
         sample.genome = sample_info.get('genome_build') or 'hg19'
         if sample.genome not in self.cnf.genomes:
             critical('No section in genomes for ' + sample.genome + ' in ' + self.cnf.sys_cnf)
+        # sample.genome = self.cnf.genomes[sample.genome]
 
         self._set_bed_file(sample, sample_info)
 
@@ -466,14 +467,14 @@ class BCBioStructure:
             bed = adjust_path(sample_info['algorithm']['variant_regions'])
             if not verify_bed(bed):
                 sys.exit(1)
-        elif self.cnf.genomes[sample.genome].exons:
-            warn('Warning: no amplicon BED file provided, using exons instead.')
-            bed = self.cnf.genomes[sample.genome].exons
-            if not verify_bed(bed):
-                sys.exit(1)
+        # elif self.cnf.genomes[sample.genome].exons:
+        #     warn('Warning: no amplicon BED file provided, using exons instead.')
+        #     bed = self.cnf.genomes[sample.genome].exons
+        #     if not verify_bed(bed):
+        #         sys.exit(1)
         else:
-            err('No BED file for sample, no default BED file and exons (or cannot read them)'
-                ' - skipping targetSeq reproting.')
+            err('No BED file for sample and no variant BED file'
+                ' - assuming WGS')
         sample.bed = bed
         if sample.bed:
             info('BED file for ' + sample.name + ': ' + sample.bed)
