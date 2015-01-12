@@ -91,7 +91,11 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             os.remove(input_fpath_to_remove)
 
     env = os.environ.copy()
-    env.update(env_vars or {})
+    for k, v in env_vars.items():
+        if v is None:
+            del env[k]
+        else:
+            env[k] = v
 
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None):
