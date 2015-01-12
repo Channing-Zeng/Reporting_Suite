@@ -104,6 +104,9 @@ class BCBioRunner:
                 self.qualimap,
             ] if contains(s.name, cnf.steps)])
 
+        if 'TargetCov' in cnf.steps:
+            self.steps.append(self.targetcov)
+
         # self.vardict_steps.extend(
         #     [s for s in [
         #         self.vardict,

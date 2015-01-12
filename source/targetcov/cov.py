@@ -104,6 +104,15 @@ def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
     return exons_bed, amplicons_bed, gene_names
 
 
+class TargetInfo:
+    def __init__(self, fpath=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
+        self.fpath = fpath
+        self.regions_num = regions_num
+        self.bases_num = bases_num
+        self.genes_fpath = genes_fpath
+        self.genes_num = genes_num
+
+
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     exons_bed, amplicons_bed = _prep_files(cnf, sample, exons_bed)
 
@@ -115,8 +124,12 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Calculation of coverage statistics for the regions in the input BED file...')
     amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.name, sample.bam, amplicons_bed)
 
+    target_info = TargetInfo(
+        fpath=sample.bed, regions_num=len(amplicons), bases_num=total_bed_size,
+        genes_fpath=genes_fpath, genes_num=len(gene_names))
+
     info()
-    general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size)
+    general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, target_info)
 
     # Guilding the gene list
     genes_by_name = OrderedDict()
@@ -188,13 +201,13 @@ def seq2c_seq2cov(cnf, sample, amplicons_bed):
         return None
 
 
-def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_bed_size):
+def make_and_save_general_report(cnf, sample, combined_region, max_depth, target_info):
     step_greetings('Target coverage summary report')
 
     chr_len_fpath = get_chr_len_fpath(cnf)
 
     summary_report = generate_summary_report(cnf, sample, chr_len_fpath,
-        cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, total_bed_size)
+        cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, target_info)
 
     summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
     summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
@@ -288,7 +301,10 @@ def get_records_by_metrics(records, metrics):
 
 header_metric_storage = MetricStorage(
     general_section=ReportSection('general_section', '', [
-        Metric('Bases in target', short_name='Target bp', common=True)
+        Metric('Target', short_name='Target', common=True),
+        Metric('Regions in target', short_name='Regions in target', common=True),
+        Metric('Bases in target', short_name='Target bp', common=True),
+        Metric('Genes in target', short_name='Genes in target', common=True),
     ]),
     sections_by_name=OrderedDict(
         basic_metrics=ReportSection('basic_metrics', 'General', [
@@ -318,9 +334,9 @@ header_metric_storage = MetricStorage(
         ])))
 
 
-def generate_summary_report(cnf, sample, chr_len_fpath,
-                            depth_thresholds, padding,
-                            combined_region, max_depth, total_bed_size):
+def generate_summary_report(
+        cnf, sample, chr_len_fpath, depth_thresholds, padding,
+        combined_region, max_depth, target_info):
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
@@ -346,14 +362,20 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
     info('')
 
     info('* Target coverage statistics *')
-    report.add_record('Bases in target', total_bed_size)
+    report.add_record('Target', target_info.fpath)
+    report.add_record('Regions in target', target_info.regions_num)
+    report.add_record('Bases in target', target_info.bases_num)
+    if target_info.genes_fpath:
+        report.add_record('Genes', target_info.genes_fpath)
+    report.add_record('Genes in target', target_info.genes_num)
 
     combined_region.sum_up(depth_thresholds)
 
     v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
 
-    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / total_bed_size if total_bed_size else None
+    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / target_info.regions_num \
+        if target_info.regions_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
 
     info('Getting number of mapped reads on target...')
@@ -373,7 +395,7 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
-    v_read_bases_on_targ = combined_region.avg_depth * total_bed_size  # sum of all coverages
+    v_read_bases_on_targ = combined_region.avg_depth * target_info.regions_num  # sum of all coverages
     report.add_record('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
@@ -383,7 +405,7 @@ def generate_summary_report(cnf, sample, chr_len_fpath,
     report.add_record('Percentage of target within 20% of mean depth', combined_region.percent_within_normal)
 
     for depth, bases in combined_region.bases_within_threshs.items():
-        percent_val = 100.0 * bases / total_bed_size if total_bed_size else 0
+        percent_val = 100.0 * bases / target_info.regions_num if target_info.regions_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
     return report

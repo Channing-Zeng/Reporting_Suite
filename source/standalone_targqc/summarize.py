@@ -171,19 +171,21 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
     metrics_by_sections = OrderedDict()
     general_section_id = None
     general_section_metric_list = []
+
     for report_type, metric_storage in metric_storages_by_report_type.items():
         for section in metric_storage.sections:
             section_id = SectionId(section.name, section.title)
             if section_id not in metrics_by_sections.keys():
                 metrics_by_sections[section_id] = []
-            metrics_by_sections[section_id] += [metric for metric in
-                                                metric_storage.get_metrics(sections=[section],
-                                                                           skip_general_section=True)
-                                                if metric == _get_targqc_metric(metric, report_type)]
+
+            metrics_by_sections[section_id] += [metric
+                for metric in metric_storage.get_metrics(sections=[section], skip_general_section=True)
+                if metric == _get_targqc_metric(metric, report_type)]
 
         # specific behaviour for general section
-        general_section_metric_list += [metric for metric in metric_storage.general_section.metrics
-                                        if metric == _get_targqc_metric(metric, report_type)]
+        general_section_metric_list += [metric
+            for metric in metric_storage.general_section.metrics
+            if metric == _get_targqc_metric(metric, report_type)]
         if not general_section_id:
             general_section_id = SectionId(metric_storage.general_section.name, metric_storage.general_section.title)
 
