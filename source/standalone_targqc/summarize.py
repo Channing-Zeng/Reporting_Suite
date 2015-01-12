@@ -90,7 +90,7 @@ def summarize_targqc(cnf, samples, bed_fpath):
                 rows += [[sample.name, sample.qualimap_html_fpath]]
 
             data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
-            cmdline = 'DISPLAY= {qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
+            cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
             ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=None))
 
             targqc_full_report.plots = []
