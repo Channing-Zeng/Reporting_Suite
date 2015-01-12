@@ -6,7 +6,7 @@ import datetime
 from os.path import join, abspath, dirname, isdir, splitext
 from json import dumps, JSONEncoder
 
-from source.bcbio_structure import VariantCaller, Sample
+from source.bcbio_structure import VariantCaller, BCBioSample
 from source.file_utils import verify_file
 from source.html_reporting import json_saver
 from source.file_utils import file_exists

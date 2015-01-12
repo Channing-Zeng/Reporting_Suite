@@ -4,7 +4,7 @@ from os.path import join, relpath
 from json import load, dump, JSONEncoder, dumps
 import datetime
 
-from source.bcbio_structure import VariantCaller, Sample
+from source.bcbio_structure import VariantCaller, BCBioSample
 from source.logger import critical, info, err
 from source.html_reporting.html_saver import write_html_report
 
@@ -113,7 +113,7 @@ class Report:
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
         class Encoder(JSONEncoder):
             def default(self, o):
-                if isinstance(o, (VariantCaller, Sample)):
+                if isinstance(o, (VariantCaller, BCBioSample)):
                     return o.for_json()
                 return o.__dict__
 
@@ -183,7 +183,7 @@ class SampleReport(Report):
 
     @staticmethod
     def load(data, sample=None, bcbio_structure=None):
-        data['sample'] = sample or Sample.load(data['sample'], bcbio_structure)
+        data['sample'] = sample or BCBioSample.load(data['sample'], bcbio_structure)
         data['records'] = [Record.load(d) for d in data['records']]
         data['metric_storage'] = MetricStorage.load(data['metric_storage'])
 

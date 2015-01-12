@@ -4,7 +4,7 @@ import __common
 
 import sys
 import shutil
-from source.bcbio_structure import Sample
+from source.bcbio_structure import BCBioSample
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.config import defaults
 from source.targetcov.cov import make_targetseq_reports
@@ -78,7 +78,7 @@ def main(args):
 
 
 def process_one(cnf, exons_bed_fpath, genes_fpath):
-    sample = Sample(cnf.name, bam=cnf.bam, bed=cnf.bed)
+    sample = BCBioSample(cnf.name, bam=cnf.bam, bed=cnf.bed)
     return make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
 
 

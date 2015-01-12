@@ -53,22 +53,24 @@ def main():
     info('Output to ' + output_dir)
     cnf.output_dir = output_dir
 
-    cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-    if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
-    if not verify_file(cnf.qsub_runner): sys.exit(1)
-
-    check_genome_resources(cnf)
-
     if not cnf.work_dir: cnf.work_dir = join(cnf.output_dir, 'work')
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
 
-    bed_fpath = cnf.bed
-    if not verify_bed(bed_fpath):
-        sys.exit(1)
-
     if not cnf.project_name: cnf.project_name = basename(cnf.output_dir)
+
+    check_genome_resources(cnf)
+
+    bed_fpath = cnf.bed
+
+    if not cnf.only_summary:
+        cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
+        if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
+        if not verify_file(cnf.qsub_runner): sys.exit(1)
+
+        if not verify_bed(bed_fpath):
+            sys.exit(1)
 
     info('*' * 70)
     info()

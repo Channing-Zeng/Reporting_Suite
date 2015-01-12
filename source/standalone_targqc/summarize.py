@@ -1,7 +1,9 @@
-from collections import OrderedDict
-from os.path import relpath, join, exists
-from os import listdir
+import sys
 import shutil
+import os
+from os import listdir
+from os.path import relpath, join, exists, dirname, basename
+from collections import OrderedDict
 
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
 from source.logger import step_greetings, info, send_email, critical, warn
@@ -14,20 +16,6 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.bcbio_structure import BCBioStructure
 
 
-def _make_fpaths_per_sample(samples, output_dir, dir_name, f_template):
-    fpaths_dict = dict()
-    for s in samples:
-        fpath = join(output_dir, s.name + '_' + dir_name, f_template.format(**dict(sample=s.name, dir_name=dir_name)))
-        fpaths_dict[s.name] = fpath
-
-    return fpaths_dict
-
-
-def _find_fpaths_per_sample(samples, output_dir, dir_name, f_template):
-    fpaths_dict = _make_fpaths_per_sample(samples, output_dir, dir_name, f_template)
-    return {sn: fpath for sn, fpath in fpaths_dict.items() if verify_file(fpath)}
-
-
 def summarize_targqc(cnf, samples, bed_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
@@ -38,20 +26,29 @@ def summarize_targqc(cnf, samples, bed_fpath):
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    targetcov_jsons_by_sample = _find_fpaths_per_sample(samples, cnf.output_dir, BCBioStructure.targetseq_name, '{sample}.{dir_name}.json')
-    targetcov_htmls_by_sample = _find_fpaths_per_sample(samples, cnf.output_dir, BCBioStructure.targetseq_name, '{sample}.{dir_name}.html')
-    ngscat_htmls_by_sample =    _find_fpaths_per_sample(samples, cnf.output_dir, BCBioStructure.ngscat_name, 'captureQC.html')
-    qualimap_htmls_by_sample =  _find_fpaths_per_sample(samples, cnf.output_dir, BCBioStructure.qualimap_name, 'qualimapReport.html')
-
-    all_htmls_by_sample = OrderedDict()
     for sample in samples:
-        all_htmls_by_sample[sample.name] = OrderedDict()
-        if sample.name in targetcov_htmls_by_sample:
-            all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], cnf.output_dir)
-        if sample.name in ngscat_htmls_by_sample:
-            all_htmls_by_sample[sample.name]['ngscat'] = relpath(ngscat_htmls_by_sample[sample.name], cnf.output_dir)
-        if sample.name in qualimap_htmls_by_sample:
-            all_htmls_by_sample[sample.name]['qualimap'] = relpath(qualimap_htmls_by_sample[sample.name], cnf.output_dir)
+        if not sample.targetcov_done():
+            sys.exit(1)
+        if not sample.ngscat_done():
+            sample.ngscat_html_fpath = None
+        if not sample.qualimap_done():
+            sample.qualimap_html_fpath = None
+
+        new_link = join(dirname(dirname(sample.targetcov_detailed_tsv)), basename(sample.targetcov_detailed_tsv))
+        if exists(new_link):
+            os.unlink(new_link)
+        os.symlink(sample.targetcov_detailed_tsv, new_link)
+        info('TargetCov TSV symlink saved to ' + new_link)
+
+    # all_htmls_by_sample = OrderedDict()
+    # for sample in samples:
+    #     all_htmls_by_sample[sample.name] = OrderedDict()
+    #     if sample.name in targetcov_htmls_by_sample:
+    #         all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], cnf.output_dir)
+    #     if sample.name in ngscat_htmls_by_sample:
+    #         all_htmls_by_sample[sample.name]['ngscat'] =    relpath(ngscat_htmls_by_sample[sample.name], cnf.output_dir)
+    #     if sample.name in qualimap_htmls_by_sample:
+    #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], cnf.output_dir)
 
     targqc_metric_storage = _get_targqc_metric_storage(OrderedDict(
         targetcov=targetcov_metric_storage,
@@ -59,26 +56,30 @@ def summarize_targqc(cnf, samples, bed_fpath):
         qualimap=qualimap_report_parser.metric_storage))
 
     targqc_full_report = FullReport(cnf.name, [
-        SampleReport(sample,
-                     records=_get_targqc_records(OrderedDict(
-                         targetcov=load_records(targetcov_jsons_by_sample[sample.name])
-                         if sample.name in targetcov_jsons_by_sample else [],
-                         ngscat=ngscat_report_parser.parse_ngscat_sample_report(ngscat_htmls_by_sample[sample.name])
-                         if sample.name in ngscat_htmls_by_sample else [],
-                         qualimap=qualimap_report_parser.parse_qualimap_sample_report(qualimap_htmls_by_sample[sample.name])
-                         if sample.name in qualimap_htmls_by_sample else []
-                     )),
-                     html_fpath=all_htmls_by_sample[sample.name]) for sample in samples
-            if sample.name in set(targetcov_jsons_by_sample.keys() +
-                                  ngscat_htmls_by_sample.keys() +
-                                  qualimap_htmls_by_sample.keys())],
+            SampleReport(
+                sample,
+                records=_get_targqc_records(OrderedDict(
+                    targetcov=load_records(sample.targetcov_json_fpath) if sample.targetcov_json_fpath else [],
+                    ngscat=ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath) if sample.ngscat_html_fpath else [],
+                    qualimap=qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if sample.qualimap_html_fpath else []
+                )),
+                html_fpath=dict(
+                    targetcov=relpath(sample.targetcov_html_fpath, cnf.output_dir),
+                    ngscat=relpath(sample.ngscat_html_fpath, cnf.output_dir),
+                    qualimap=relpath(sample.qualimap_html_fpath, cnf.output_dir)
+                )
+            )
+            for sample in samples
+        ],
         metric_storage=targqc_metric_storage)
 
     # Qualimap2 run for multi-sample plots
-    if len(qualimap_htmls_by_sample):
+    if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]):
         qualimap = get_system_path(cnf, interpreter=None, name='qualimap')
-        if qualimap is not None and get_qualimap_type(qualimap) == "full":
+
+        if qualimap is not None and get_qualimap_type(qualimap) == 'full':
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
+
             plots_dirpath = join(cnf.output_dir, 'plots')
             _correct_qualimap_genome_results(samples, cnf.output_dir)
 
@@ -86,9 +87,11 @@ def summarize_targqc(cnf, samples, bed_fpath):
             rows = []
             for sample_name, html_fpath in qualimap_htmls_by_sample.items():
                 rows += [[sample_name, html_fpath]]
+
             data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
             cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
-            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True)
+            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=''))
+
             targqc_full_report.plots = []
             qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
             if (ret_code is None or ret_code == 0) and verify_dir(qualimap_plots_dirpath):

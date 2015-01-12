@@ -10,20 +10,20 @@ from source.file_utils import add_suffix, verify_file
 
 from source.logger import info, err
 from source.reporting import Metric, MetricStorage, ReportSection, Record, SquareSampleReport
-from source.targetcov.Region import Region, _proc_regions, save_regions_to_bed
+from source import targetcov
+from source.targetcov.Region import Region, proc_regions, save_regions_to_bed
 from source.tools_from_cnf import get_system_path
 from source.utils import median
 
 
-def make_flagged_regions_reports(cnf, sample, filtered_vcf_by_callername=None):
+def make_flagged_regions_reports(cnf, targetseq_dir, sample, filtered_vcf_by_callername=None):
     if not filtered_vcf_by_callername:
         info('No variants, skipping flagging regions reports...')
         return []
 
     detail_gene_rep_fpath = join(
         cnf.output_dir,
-        sample.name + '.' + BCBioStructure.targetseq_dir +
-        BCBioStructure.detail_gene_report_baseending + '.tsv')
+        sample.name + '.' + targetseq_dir + targetcov.detail_gene_report_baseending + '.tsv')
 
     info('Reading regions from ' + detail_gene_rep_fpath)
     regions = _read_regions(detail_gene_rep_fpath)
@@ -113,7 +113,7 @@ def classify_based_on_min_and_max(cnf, sample, regions):
             high_regions.append(region)
 
     info('Classifying regions...')
-    _proc_regions(regions, _classify_region, low_regions, high_regions,
+    proc_regions(regions, _classify_region, low_regions, high_regions,
         sample.median_cov, min_cov, max_cov)
 
     return low_regions, high_regions
@@ -270,7 +270,7 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
     for rec in rec_by_name.values():
         report.records.append(rec)
 
-    _proc_regions(regions, _fill_in_record_info, rec_by_name, sample.median_cov)
+    proc_regions(regions, _fill_in_record_info, rec_by_name, sample.median_cov)
 
     return report
 

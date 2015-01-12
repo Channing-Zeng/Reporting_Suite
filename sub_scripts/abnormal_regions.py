@@ -4,7 +4,7 @@ import __common
 
 import sys
 import shutil
-from source.bcbio_structure import Sample
+from source.bcbio_structure import BCBioSample
 from source.file_utils import adjust_path
 from source.logger import send_email
 from source.targetcov.abnormal_regions import make_abnormal_regions_reports
@@ -55,7 +55,7 @@ def main(args):
 
 
 def process_one(cnf):
-    sample = Sample(cnf.name, bam=cnf.bam, bed=cnf.bed)
+    sample = BCBioSample(cnf.name, bam=cnf.bam, bed=cnf.bed)
     return make_abnormal_regions_reports(cnf, sample, cnf.vcfs_by_callername)
 
 

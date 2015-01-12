@@ -26,33 +26,36 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
          overwrite=False, check_output=False, return_proc=False, print_stderr=True,
-         return_err_code=False):
+         return_err_code=False,
+
+         env_vars=None):
     """
     Required arguments:
     ------------------------------------------------------------
-    cnf:                            dict with the following _optional_ fields:
+    cnf                             dict with the following _optional_ fields:
                                       - reuse_intermediate
                                       - keep_intermediate
                                       - log
                                       - tmp_dir
-    cmdline:                        called using subprocess.Popen
+    cmdline                         called using subprocess.Popen
     ------------------------------------------------------------
 
     Optional arguments:
     ------------------------------------------------------------
-    input_fpath_to_remove:          removed if not keep_intermediate
-    output_fpath:                   overwritten if reuse_intermediate
-    stdout_to_outputfile:           stdout=open(output_fpath, 'w')
-    to_remove:                      list of files removed after the process finished
+    input_fpath_to_remove           removed if not keep_intermediate
+    output_fpath                    overwritten if reuse_intermediate
+    stdout_to_outputfile            stdout=open(output_fpath, 'w')
+    to_remove                       list of files removed after the process finished
     output_is_dir                   output_fpath is a directory
-    stdin_fpath:                    stdin=open(stdin_fpath)
-    exit_on_error:                  is return code != 0, exit
+    stdin_fpath                     stdin=open(stdin_fpath)
+    exit_on_error                   is return code != 0, exit
 
     overwrite                       overwrite even if reuse_intermediate=True
     check_output                    subprocess.check_output; returns stdout
     return_proc                     proc = subprocess.Popen; returns proc
     return_err_code                 if return code !=0, return this code (only if exit_on_error=False)
 
+    env_vars                        dictionary of environment variables to set only for this subprocess call
     ------------------------------------------------------------
     """
 
@@ -87,6 +90,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         if not cnf.keep_intermediate and input_fpath_to_remove:
             os.remove(input_fpath_to_remove)
 
+    env = os.environ.copy()
+    env.update(env_vars or {})
+
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None):
         stdout = subprocess.PIPE
@@ -112,13 +118,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
 
             if check_output:
-                res = subprocess.check_output(
-                    cmdl, shell=True, stderr=stderr, stdin=open(stdin_fpath) if stdin_fpath else None)
+                res = subprocess.check_output(cmdl, shell=True, stderr=stderr,
+                    stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
                 clean()
                 return res
 
-            proc = subprocess.Popen(
-                cmdl, shell=True, stdout=stdout, stderr=stderr, stdin=open(stdin_fpath) if stdin_fpath else None)
+            proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
+                stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
             stderr_dump = ''
 
             if return_proc:
@@ -192,7 +198,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             ret_code = subprocess.call(
                 cmdl, shell=True, stdout=stdout, stderr=stderr,
-                stdin=open(stdin_fpath) if stdin_fpath else None)
+                stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
 
             # PRINT STDOUT AND STDERR
             if ret_code != 0:

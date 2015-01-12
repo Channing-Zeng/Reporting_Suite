@@ -200,7 +200,7 @@ class GeneInfo(Region):
         self.amplicons.append(amplicon)
 
 
-def _proc_regions(regions, fn, *args, **kwargs):
+def proc_regions(regions, fn, *args, **kwargs):
     i = 0
     for region in regions:
         i += 1

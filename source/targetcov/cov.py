@@ -1,19 +1,20 @@
 # coding=utf-8
-from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile, abspath
+
 import sys
 import traceback
-from source.bcbio_structure import BCBioStructure
+from collections import OrderedDict, defaultdict
+from os.path import join, basename, isfile, abspath
+
+import source
+import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file
 from source.logger import step_greetings, critical, info, err, warn
-from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, \
-    write_tsv_rows
+from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
-
 
 
 def _prep_files(cnf, sample, exons_bed):
@@ -195,9 +196,9 @@ def make_and_save_general_report(cnf, sample, combined_region, max_depth, total_
     summary_report = generate_summary_report(cnf, sample, chr_len_fpath,
         cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, total_bed_size)
 
-    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name)
-    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name)
-    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, sample.name + '.' + BCBioStructure.targetseq_name,
+    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, sample.name + '.' + source.targetseq_name,
                                                          caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
@@ -426,9 +427,7 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
     info('Saving report...')
     rows = _make_flat_region_report(final_regions, cnf.coverage_reports.depth_thresholds)
 
-    gene_report_basename = sample.name + '.' + \
-                           BCBioStructure.targetseq_name + \
-                           BCBioStructure.detail_gene_report_baseending
+    gene_report_basename = sample.name + '.' + source.targetseq_name + source.targetcov.detail_gene_report_baseending
     txt_rep_fpath = write_txt_rows(rows, output_dir, gene_report_basename)
     tsv_rep_fpath = write_tsv_rows(rows, output_dir, gene_report_basename)
     info('')

@@ -1,12 +1,13 @@
-from dircache import listdir
-from genericpath import isdir, isfile
 import os
 import shutil
 import sys
+import re
+from dircache import listdir
+from genericpath import isdir, isfile
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
-import re
-from source import logger
+
+from source import logger, BaseSample
 from source.logger import info, err, critical, warn
 from source.calling_process import call
 from source.config import load_yaml_config
@@ -16,28 +17,19 @@ from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
+from source import targetcov
 
 
-class Sample:
-    def __init__(self, name, bcbio_structure=None, bam=None, bed=None, vcf=None, genome=None):
-        self.name = name
-        self.bam = bam
-        self.bed = bed
-        self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
-        self.vcf = vcf
-        self.phenotype = None
-        self.genome = None
-        self.dirpath = None
-        self.var_dirpath = None
-        self.normal_match = None
-        self.min_af = None
+class BCBioSample(BaseSample):
+    def __init__(self, name, **kwargs):
+        BaseSample.__init__(self, name, **kwargs)
+
 
     def annotated_vcfs_dirpath(self):
         return join(self.dirpath, BCBioStructure.varannotate_dir)
 
     def get_filtered_vcfs_dirpath(self):
         return join(self.dirpath, BCBioStructure.varfilter_dir)
-
 
     # raw variants
     def find_raw_vcf_by_callername(self, callername):
@@ -49,7 +41,6 @@ class Sample:
     def get_raw_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.var_dir,
                     self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
-
 
     # annotated vcf
     def find_anno_vcf_by_callername(self, callername):
@@ -87,13 +78,12 @@ class Sample:
                     self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending+
                     ('.gz' if gz else ''))
 
-
     # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
                     self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
 
-
+    # ...other
     def __str__(self):
         return self.name
 
@@ -114,7 +104,7 @@ class Sample:
     @staticmethod
     def load(data, bcbio_structure):
         data['bcbio_structure'] = bcbio_structure
-        sample = Sample(**data)
+        sample = BCBioSample(**data)
         sample.__dict__ = data
         return sample
 
@@ -211,22 +201,14 @@ class BCBioStructure:
     targqc_summary_dir                         = join('qc', targqc_name)
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
 
-    detail_gene_report_baseending = '.details.gene'
-    detail_sorted_gene_report_baseending = '.sorted.details.gene'
-    detail_lowcov_gene_report_baseending = '.details.low_cov.gene'
-    detail_highcov_gene_report_baseending = '.details.high_cov.gene'
-    detail_gene_report_ending = detail_gene_report_baseending + '.txt'
-    detail_gene_report_tsv_ending = detail_gene_report_baseending + '.tsv'
-
-    seq2c_name           = 'Seq2C'
+    seq2c_name = 'Seq2C'
     seq2c_seq2cov_ending = 'seq2c_seq2cov.txt'
 
+    var_dir = 'var'
     anno_vcf_ending  = '.anno.vcf'
     filt_vcf_ending  = '.anno.filt.vcf'
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'
     filt_tsv_ending  = '.anno.filt.tsv'
-    filt_maf_ending  = '.anno.filt.maf'
-    var_dir          = 'var'
 
     def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
         self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
@@ -368,8 +350,7 @@ class BCBioStructure:
         fpaths_to_move = []
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
-                   [BCBioStructure.filt_maf_ending,
-                    BCBioStructure.filt_tsv_ending,
+                   [BCBioStructure.filt_tsv_ending,
                     BCBioStructure.filt_vcf_ending,
                     BCBioStructure.filt_vcf_ending + '.gz',
                     BCBioStructure.filt_vcf_ending + '.idx']):
@@ -397,7 +378,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = Sample(name=sample_info['description'], bcbio_structure=self)
+        sample = BCBioSample(name=sample_info['description'])
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -544,14 +525,14 @@ class BCBioStructure:
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' +
                            BCBioStructure.targetseq_dir +
-                           BCBioStructure.detail_gene_report_ending)
+                           targetcov.detail_gene_report_baseending + '.txt')
 
     def get_gene_report_tsv_fpaths_by_sample(self):
         return self._get_fpaths_per_sample(
             BCBioStructure.targetseq_dir,
             lambda sample: sample.name + '.' +
                            BCBioStructure.targetseq_dir +
-                           BCBioStructure.detail_gene_report_tsv_ending)
+                           targetcov.detail_gene_report_baseending + '.tsv')
 
     def find_targetcov_reports_by_sample(self, ext='json'):
         return dict((sname, verify_file(fpath))

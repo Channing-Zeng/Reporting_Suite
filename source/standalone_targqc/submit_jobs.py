@@ -5,18 +5,19 @@ import os
 from os.path import splitext, abspath, basename, join, isfile, dirname, pardir
 from os import listdir
 
+import source
 from source.logger import info, err, warn, critical
 from source.bcbio_runner import Step, fix_bed_for_qualimap
-from source.bcbio_structure import BCBioStructure, Sample
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.utils import get_system_path
 from source.calling_process import call
 from source.standalone_targqc.summarize import summarize_targqc
+from source.standalone_targqc import Sample
 
 
 def run(cnf, bed_fpath, bam_fpaths, main_script_name):
     samples = [
-        Sample(basename(splitext(bam_fpath)[0]), bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
+        Sample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
 
     max_threads = cnf.threads or 40
@@ -29,23 +30,25 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
         summary_wait_for_steps = []
 
         for sample in samples:
-            info('Processing "' + basename(sample.bam) + '"')
+            info('Processing ' + basename(sample.bam))
 
-            info('TargetSeq for "' + basename(sample.bam) + '"')
-            _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample,
-                bam=sample.bam, sample=sample.name)
+            if not cnf.reuse_intermediate or not sample.targetcov_done():
+                info('TargetSeq for "' + basename(sample.bam) + '"')
+                _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+                summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
-            info('NgsCat for "' + basename(sample.bam) + '"')
-            _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample,
-                bam=sample.bam, sample=sample.name)
+            if not cnf.reuse_intermediate or not sample.ngscat_done():
+                info('NgsCat for "' + basename(sample.bam) + '"')
+                _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+                summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
-            info('Qualimap for "' + basename(sample.bam) + '"')
-            _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample,
-                bam=sample.bam, sample=sample.name)
+            if not cnf.reuse_intermediate or not sample.qualimap_done():
+                info('Qualimap for "' + basename(sample.bam) + '"')
+                _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+                summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
 
-            summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
-            summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
-            summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
+            info('Done ' + basename(sample.bam))
+            info()
 
         _submit_job(cnf, targqc_summary_step, wait_for_steps=summary_wait_for_steps)
 
@@ -72,14 +75,14 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
 
     targetcov_params = params_for_one_sample + \
         ' -s {sample}' + \
-        ' -o ' + join(cnf.output_dir, '{sample}_' + BCBioStructure.targetseq_name) + \
-        ' --work-dir ' + join(cnf.work_dir, '{sample}_' + BCBioStructure.targetseq_name) + \
+        ' -o ' + join(cnf.output_dir, '{sample}_' + source.targetseq_name) + \
+        ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.targetseq_name) + \
         ' --bam {bam}' + \
         ' --bed ' + cnf.bed + \
        ('--exons ' + cnf.exons if cnf.exons else '')
 
     targetcov_step = Step(cnf, run_id,
-        name=BCBioStructure.targetseq_name, short_name='tc',
+        name=source.targetseq_name, short_name='tc',
         interpreter='python',
         script=join('sub_scripts', 'targetcov.py'),
         paramln=targetcov_params
@@ -87,14 +90,14 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
 
     ngscat_params = params_for_one_sample + \
         ' -s {sample} ' + \
-        ' -o ' + join(cnf.output_dir, '{sample}_' + BCBioStructure.ngscat_name) + \
-        ' --work-dir ' + join(cnf.work_dir, '{sample}_' + BCBioStructure.ngscat_name) + \
+        ' -o ' + join(cnf.output_dir, '{sample}_' + source.ngscat_name) + \
+        ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.ngscat_name) + \
         ' --bam {bam}' + \
         ' --bed ' + cnf.bed + \
         ' --saturation y '
 
     ngscat_step = Step(cnf, run_id,
-        name=BCBioStructure.ngscat_name, short_name='nc',
+        name=source.ngscat_name, short_name='nc',
         interpreter='python',
         script=join('sub_scripts', 'ngscat.py'),
         paramln=ngscat_params
@@ -109,13 +112,13 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
         ' --java-mem-size=24G' + \
         ' -nr 5000 ' + \
         ' -bam {bam}' + \
-        ' -outdir ' + join(cnf.output_dir, '{sample}_' + BCBioStructure.qualimap_name) + \
+        ' -outdir ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name) + \
         ' -gff ' + qualimap_bed_fpath + \
         ' -c' + \
         ' -gd HUMAN'
 
     qualimap_step = Step(cnf, run_id,
-        name=BCBioStructure.qualimap_name, short_name='qm',
+        name=source.qualimap_name, short_name='qm',
         script='qualimap',
         paramln=qualimap_params
     )
@@ -124,7 +127,7 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
 
     targqc_summary_step = Step(
         cnf, run_id,
-        name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
+        name=source.targqc_name + '_summary', short_name='targqc',
         interpreter='python',
         script=main_script_name,
         paramln=summary_cmdline_params
