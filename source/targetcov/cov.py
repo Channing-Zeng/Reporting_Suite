@@ -125,7 +125,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.name, sample.bam, amplicons_bed)
 
     target_info = TargetInfo(
-        fpath=sample.bed, regions_num=len(amplicons), bases_num=total_bed_size,
+        fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
         genes_fpath=genes_fpath, genes_num=len(gene_names))
 
     info()

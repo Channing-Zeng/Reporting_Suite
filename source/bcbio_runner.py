@@ -374,9 +374,10 @@ class BCBioRunner:
             beds = set(bed_by_sample.values())
             samples_by_bed = dict((b, (s for s in self.bcbio_structure.samples if s.bed and s.bed == b)) for b in beds)
             for bed, samples in samples_by_bed.items():
-                bed = self._qualimap_bed(bed)
+                qualimap_bed = self._qualimap_bed(bed)
                 for s in samples:
                     s.bed = bed
+                    s.qualimap_bed = qualimap_bed
 
         for sample in self.bcbio_structure.samples:
             if not (any(step in self.steps for step in
@@ -423,7 +424,7 @@ class BCBioRunner:
                 if self.qualimap in self.steps:
                     qualimap_gff = ''
                     if sample.bed:
-                        qualimap_gff = ' -gff ' + sample.bed + ' '
+                        qualimap_gff = ' -gff ' + sample.qualimap_bed + ' '
                     self._submit_job(self.qualimap, sample.name, bam=sample.bam,
                                      sample=sample.name, genome=sample.genome,
                                      qualimap_gff=qualimap_gff, threads=self.threads_per_sample)

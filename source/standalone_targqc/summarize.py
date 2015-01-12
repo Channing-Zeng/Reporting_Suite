@@ -22,7 +22,7 @@ def summarize_targqc(cnf, samples, bed_fpath):
 
     targetcov_metric_storage = cov.header_metric_storage
     for depth in cnf.coverage_reports.depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        name = 'Part of target covered at least vby ' + str(depth) + 'x'
         targetcov_metric_storage.add_metric(
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')

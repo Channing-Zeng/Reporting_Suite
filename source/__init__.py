@@ -26,6 +26,7 @@ class BaseSample:
         self.name = name
         self.bam = bam
         self.bed = bed
+        self.qualimap_bed = None
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.vcf = vcf
         self.dirpath = dirpath
