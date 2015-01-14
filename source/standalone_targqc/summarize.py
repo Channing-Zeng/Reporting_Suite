@@ -128,6 +128,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
         ],
         metric_storage=targqc_metric_storage)
 
+    _correct_qualimap_genome_results(samples, output_dir)
+
     # Qualimap2 run for multi-sample plots
     if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]):
         qualimap = get_system_path(cnf, interpreter=None, name='qualimap')
@@ -269,14 +271,10 @@ def _get_targqc_records(records_by_report_type):
 def _correct_qualimap_genome_results(samples, output_dir):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
-    qualimap_results_txt_by_sample = {s.name:
-        s.make_fpath('{output_dir}/{sample}_{name}/genome_results.txt',
-             name=source.qualimap_name) for s in samples}
-
-    for sample_name, results_txt_fpath in qualimap_results_txt_by_sample.items():
-        with open(results_txt_fpath, 'r') as f:
+    for s in samples:
+        with open(s.qualimap_genome_results_fpath, 'r') as f:
             content = f.readlines()
-        with open(results_txt_fpath, 'w') as f:
+        with open(s.qualimap_genome_results_fpath, 'w') as f:
             metrics_started = False
             for line in content:
                 if ">> Reference" in line:
