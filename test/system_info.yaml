@@ -19,6 +19,9 @@ resources:
     path: ~/vagrant/VarDict/var2vcf_somatic.pl
   vcf_merge:
     path: /usr/local/bin/vcf-merge
+  picard:
+    path: ext_tools/picard/picard.jar
+
 
 genomes:
   hg19:

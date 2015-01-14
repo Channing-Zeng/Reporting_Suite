@@ -6,8 +6,9 @@ from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict
 
 import source
-from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records
-from source.logger import step_greetings, info, send_email, critical, warn
+from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
+    Record
+from source.logger import step_greetings, info, send_email, critical, warn, err
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
@@ -15,6 +16,48 @@ from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.bcbio_structure import BCBioStructure
+
+
+picard_metric_storage = MetricStorage(
+    sections=[
+        ReportSection('basic_metrics', 'General', [
+        ]),
+        ReportSection('other_metrics', '', [
+            Metric('Duplication rate',  'Duplication rate', 'Percent duplication', quality='More is better', unit='%'),
+        ]),
+        ReportSection('depth_metrics', 'Target coverage depth', [
+        ]),
+    ]
+)
+
+
+def _parse_picard_dup_report(dup_report_fpath):
+    records = []
+
+    metric = picard_metric_storage.get_metric('Duplication rate')
+    record = Record(metric=metric)
+    records.append(record)
+
+    record.value = None
+    with open(dup_report_fpath) as f:
+        for l in f:
+            if l.startswith('## METRICS CLASS'):
+                try:
+                    l_LIBRARY = next(f)
+                    l_EMPTY = next(f)
+                    l_UNKNOWN = next(f)
+                except StopIteration:
+                    pass
+                else:
+                    if l_UNKNOWN:
+                        ts = l_UNKNOWN.split()
+                        if len(ts) >= 9:
+                            dup_rate = float(ts[8])
+                            info('Dup rate = ' + str(dup_rate))
+                            record.value = dup_rate
+                            return records
+    err('Error: cannot read duplication rate from ' + dup_report_fpath)
+    return records
 
 
 def summarize_targqc(cnf, output_dir, samples, bed_fpath):
@@ -56,15 +99,21 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     targqc_metric_storage = _get_targqc_metric_storage(OrderedDict(
         targetcov=targetcov_metric_storage,
         ngscat=ngscat_report_parser.metric_storage,
-        qualimap=qualimap_report_parser.metric_storage))
+        qualimap=qualimap_report_parser.metric_storage,
+        picard=picard_metric_storage))
 
     targqc_full_report = FullReport(cnf.name, [
             SampleReport(
                 sample,
                 records=_get_targqc_records(OrderedDict(
-                    targetcov=load_records(sample.targetcov_json_fpath) if sample.targetcov_json_fpath else [],
-                    ngscat=ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath) if sample.ngscat_html_fpath else [],
-                    qualimap=qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if sample.qualimap_html_fpath else []
+                    targetcov=load_records(sample.targetcov_json_fpath)
+                        if verify_file(sample.targetcov_json_fpath, silent=True) else [],
+                    ngscat=ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath)
+                        if verify_file(sample.ngscat_html_fpath, silent=True) else [],
+                    qualimap=qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath)
+                        if verify_file(sample.qualimap_html_fpath, silent=True) else [],
+                    picard=_parse_picard_dup_report(sample.picard_dup_metrics_fpath)
+                        if verify_file(sample.picard_dup_metrics_fpath, silent=True) else [],
                 )),
                 html_fpath=dict(
                     targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
@@ -154,9 +203,9 @@ def _get_targqc_metric(metric, report_type='targetcov'):  # report type is in ['
         if metric.name in _ngscat_to_targetcov_dict:
             return _ngscat_to_targetcov_dict[metric.name]
         return metric
-    critical('Incorrect usage of get_targqc_metric(), report_type is %s but should be one of the following: %s' %
-             (report_type, ", ".join(['targetcov', 'qualimap', 'ngscat'])))
-    return None
+    # critical('Incorrect usage of get_targqc_metric(), report_type is %s but should be one of the following: %s' %
+    #          (report_type, ", ".join(['targetcov', 'qualimap', 'ngscat'])))
+    return metric
 
 
 def _get_targqc_metric_storage(metric_storages_by_report_type):

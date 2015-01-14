@@ -3,7 +3,7 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection
 
 metric_storage = MetricStorage(
     sections=[
-        ReportSection('basic_metrics', '', [
+        ReportSection('basic_metrics', 'General', [
             Metric('Number of reads',                               'Reads',                       'Total number of reads'),
             Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
             Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
@@ -23,11 +23,11 @@ metric_storage = MetricStorage(
             # Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on trg)',       'Number of mapped reads inside of regions, both in pair'),
             # Metric('Mapped reads, singletons (on target)',          'Mapped, single (on trg)',     'Number of mapped reads inside of regions, singletons')
         # ]),
-        ReportSection('depth_metrics', '', [
+        ReportSection('depth_metrics', 'Target coverage depth', [
             Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
             Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
         ]),
-        ReportSection('other_metrics', 'Other', [
+        ReportSection('other_metrics', '', [
             Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
             Metric('Read min length',                               'Read min len',             'Read min length'),
             Metric('Read max length',                               'Read max len',             'Read max length'),

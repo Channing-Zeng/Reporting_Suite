@@ -26,9 +26,11 @@ class BCBioSample(BaseSample):
     def __init__(self, name, final_dir, **kwargs):
         self.dirpath = join(final_dir, name)
         BaseSample.__init__(self, name, self.dirpath, '{dirpath}/{name}/', **kwargs)
-        self.ngscat_html_fpath      = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=BCBioStructure.ngscat_name)
-        self.qualimap_html_fpath    = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=BCBioStructure.qualimap_name)
-        self.fastqc_html_fpath      = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=BCBioStructure.fastqc_name)
+        self.ngscat_html_fpath         = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=source.ngscat_name)
+        self.qualimap_html_fpath       = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=source.qualimap_name)
+        self.fastqc_html_fpath         = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=source.fastqc_name)
+        self.picard_dup_metrics_fpath  = self.make_fpath('{dirpath}/qc/{name}/picard_dup_metrics.txt', name=source.picard_name)
+        self.picard_ins_size_pdf_fpath = self.make_fpath('{dirpath}/qc/{name}/picard_ins_size_hist.pdf', name=source.picard_name)
 
     # ----------
     def annotated_vcfs_dirpath(self):

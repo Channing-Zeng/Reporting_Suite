@@ -3,7 +3,7 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection
 
 metric_storage = MetricStorage(
     sections=[
-        ReportSection('basic_metrics', '', [
+        ReportSection('basic_metrics', 'General', [
             Metric('Number reads',                       'Reads',              'Number of mapped reads'),
             Metric('% target bases with coverage >= 1x', 'Target cvrd',        '% target bases with coverage >= 1x'),
             Metric('% reads on target',                  '% reads on target',  '% reads on target'),
@@ -13,7 +13,7 @@ metric_storage = MetricStorage(
             #                                                                    'Percentage of duplicated on-target reads normally should be greater '
             #                                                                    'than the percentage of duplicated off-target reads',            quality='Equal'),
         # ]),
-        ReportSection('depth_metrics', '', [
+        ReportSection('depth_metrics', 'Target coverage depth', [
             Metric('Coverage saturation',                'Saturation',         'Coverage saturation (slope at the end of the curve)',           quality='Less is better'),
             Metric('mean coverage',                      'Mean cov.',          'Coverage distribution (mean target coverage)'),
             Metric('Coverage per position',              'Cov per bp',         'Coverage per position (consecutive bases with coverage <= 6x)', quality='Less is better'),

@@ -24,7 +24,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
     threads_per_sample = max(max_threads / len(samples), 1)
 
     if not cnf.only_summary:
-        targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
+        targetcov_step, ngscat_step, qualimap_step, targqc_summary_step, picard_dup_step, picard_ins_size_step = \
             _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name)
 
         summary_wait_for_steps = []
@@ -44,9 +44,23 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
                 summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
             if not cnf.reuse_intermediate or not sample.qualimap_done():
-                info('Qualimap for "' + basename(sample.bam) + '"')
+                info('Qualimap "' + basename(sample.bam) + '"')
                 _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
                 summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
+
+            if not cnf.reuse_intermediate or not sample.picard_dup_done():
+                safe_mkdir(dirname(sample.picard_dup_metrics_fpath))
+                info('Picard duplication metrics for "' + basename(sample.bam) + '"')
+                _submit_job(cnf, picard_dup_step, sample.name, threads=threads_per_sample,
+                    bam=sample.bam, sample=sample.name, dup_metrics_txt=sample.picard_dup_metrics_fpath)
+                summary_wait_for_steps.append(picard_dup_step.job_name(sample.name))
+
+            if not cnf.reuse_intermediate or not sample.picard_ins_size_done():
+                safe_mkdir(dirname(sample.picard_dup_metrics_fpath))
+                info('Picard insert size hist for "' + basename(sample.bam) + '"')
+                _submit_job(cnf, picard_ins_size_step, sample.name, threads=threads_per_sample,
+                    bam=sample.bam, sample=sample.name, ref=cnf.genome.seq, hist_pdf=sample.picard_ins_size_pdf_fpath)
+                summary_wait_for_steps.append(picard_ins_size_step.job_name(sample.name))
 
             info('Done ' + basename(sample.bam))
             info()
@@ -124,6 +138,35 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
         paramln=qualimap_params
     )
 
+    picard_dup_params = \
+        ' MarkDuplicates' + \
+        ' I={bam}' + \
+        ' O=/dev/null' + \
+        ' METRICS_FILE={dup_metrics_txt}'
+
+    picard_dup_step = Step(cnf, run_id,
+        name=source.picard_name + '_dup', short_name='pc_dup',
+        script='picard',
+        interpreter='java',
+        paramln=picard_dup_params
+    )
+
+    picard_ins_size_params = \
+        ' CollectInsertSizeMetrics' + \
+        ' I={bam}' + \
+        ' O=/dev/null' + \
+        ' HISTOGRAM_FILE={hist_pdf}'
+        # ' REFERENCE_SEQUENCE={ref}'
+
+    picard_ins_size_step = Step(cnf, run_id,
+        name=source.picard_name + '_IS', short_name='pc_is',
+        script='picard',
+        interpreter='java',
+        paramln=picard_ins_size_params
+    )
+
+    #######################################
+    # Summary
     summary_cmdline_params = ' '.join(sys.argv[1:]) + ' --only-summary'
 
     targqc_summary_step = Step(
@@ -134,7 +177,8 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
         paramln=summary_cmdline_params
     )
 
-    return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step
+    return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step, \
+        picard_dup_step, picard_ins_size_step
 
 
 def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwargs):

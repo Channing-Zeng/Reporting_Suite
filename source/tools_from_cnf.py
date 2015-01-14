@@ -49,9 +49,7 @@ def get_system_path(cnf, interpreter, name=None,
     if tool_path and exists(tool_path):
         return verify_obj_by_path(tool_path, name)
 
-
     if not suppress_warn:
-        a = 1/0
         err(name + ' was not found. '
             'You may either specify path in the system config, '
             'or load into your PATH environment variable.')

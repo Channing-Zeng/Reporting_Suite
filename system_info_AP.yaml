@@ -14,6 +14,8 @@ resources:
     path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
   java:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
+  picard:
+    path: ext_tools/picard/picard.jar
 
 genomes:
   hg19:

@@ -13,6 +13,7 @@ varqc_name               = 'varQC'
 varqc_after_name         = 'varQC_postVarFilter'
 ngscat_name              = 'ngscat'
 qualimap_name            = 'qualimap'
+picard_name              = 'picard'
 targqc_name              = 'targQC'
 fastqc_name              = 'fastqc'
 
@@ -42,13 +43,16 @@ class BaseSample:
         self.normal_match = None
         self.min_af = None
 
-        self.targetcov_html_fpath   = self.make_fpath(path_base + '{sample}.{name}.html', name=targetseq_name)
-        self.targetcov_json_fpath   = self.make_fpath(path_base + '{sample}.{name}.json', name=targetseq_name)
-        self.targetcov_detailed_txt = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.txt', name=targetseq_name)
-        self.targetcov_detailed_tsv = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.tsv', name=targetseq_name)
-        self.ngscat_html_fpath      = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)
-        self.qualimap_html_fpath    = self.make_fpath(path_base + 'qualimapReport.html', name=qualimap_name)
-        self.fastqc_html_fpath      = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
+        self.targetcov_html_fpath      = self.make_fpath(path_base + '{sample}.{name}.html', name=targetseq_name)
+        self.targetcov_json_fpath      = self.make_fpath(path_base + '{sample}.{name}.json', name=targetseq_name)
+        self.targetcov_detailed_txt    = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.txt', name=targetseq_name)
+        self.targetcov_detailed_tsv    = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.tsv', name=targetseq_name)
+        self.ngscat_html_fpath         = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)
+        self.qualimap_html_fpath       = self.make_fpath(path_base + 'qualimapReport.html', name=qualimap_name)
+        self.fastqc_html_fpath         = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
+        self.picard_dup_metrics_fpath  = self.make_fpath(path_base + 'picard_dup_metrics.txt', name=picard_name)
+        self.picard_ins_size_pdf_fpath = self.make_fpath(path_base + 'picard_ins_size_hist.pdf', name=picard_name)
+
 
     def make_fpath(self, path_template, **kwargs):
         keys = dict(dict(dirpath=self.dirpath, sample=self.name).items() + kwargs.items())
@@ -76,6 +80,15 @@ class BaseSample:
             return True
         return False
 
+    def picard_dup_done(self):
+        if verify_file(self.picard_dup_metrics_fpath):
+            info(self.picard_dup_metrics_fpath + ' exists.')
+            return True
+        return False
 
-# class Sample:
-#
+    def picard_ins_size_done(self):
+        if verify_file(self.picard_ins_size_pdf_fpath):
+            info(self.picard_ins_size_pdf_fpath + ' exists.')
+            return True
+        return False
+

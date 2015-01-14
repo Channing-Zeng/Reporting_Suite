@@ -22,6 +22,8 @@ resources:
     path: /usr/local/share/bcbio/anaconda/bin/python
 #  igvtools:
 #    path: /usr/local/src/IGVTools/igvtools.jar
+  picard:
+    path: ext_tools/picard/picard.jar
 
 genomes:
 #/usr/local/share/bcbio/genomes/Hsapiens/hg19/variation
