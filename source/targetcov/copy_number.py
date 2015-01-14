@@ -18,13 +18,13 @@ from source.utils import median, mean
 import source
 
 
-def cnv_reports(cnf, bcbio_structure):
-    step_greetings('Coverage statistics for each gene for all samples')
+def _get_exons_and_genes(cnf, sample):
+    exons_bed_fpath, genes_fpath = None, None
 
     if cnf.exons:
         exons_bed_fpath = adjust_path(cnf.exons)
     else:
-        exons_bed_fpath = adjust_path(cnf.genome.exons)
+        exons_bed_fpath = adjust_path(cnf.genomes[sample.genome].exons)
     info('Exons: ' + exons_bed_fpath)
 
     if cnf.genes:
@@ -33,8 +33,16 @@ def cnv_reports(cnf, bcbio_structure):
     else:
         genes_fpath = None
 
+    return exons_bed_fpath, genes_fpath
+
+
+def cnv_reports(cnf, bcbio_structure):
+    step_greetings('Coverage statistics for each gene for all samples')
+
     for sample in bcbio_structure.samples:
         if not verify_file(sample.targetcov_json_fpath) or not verify_file(sample.targetcov_detailed_tsv):
+            exons_bed_fpath, genes_fpath = _get_exons_and_genes(cnf, sample)
+
             # TargetSeq was not run but needed, thus running.
             proc_name, name, output_dir = cnf.proc_name, cnf.name, cnf.output_dir
             cnf.proc_name, cnf.name, cnf.output_dir = source.targetseq_name, sample.name, join(sample.dirpath, source.targetseq_name)
@@ -81,7 +89,7 @@ def _get_whole_genes_and_amlicons(report_fpath):
     return gene_summary_lines
 
 
-def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample):
+def _seq2c(cnf, bcbio_structure):
     """
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
@@ -94,8 +102,7 @@ def _seq2c(cnf, bcbio_structure, gene_reports_by_sample, report_fpath_by_sample)
     # if not read_stats_fpath or not combined_gene_depths_fpath:
     # info('No read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
     info('Getting old way reads and cov stats, but with amplicons')
-    read_stats_fpath__mine, combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(
-        cnf.work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample)
+    read_stats_fpath__mine, combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(cnf.work_dir, bcbio_structure)
     info()
 
     cnv_gene_ampl_report_fpath = join(cnf.work_dir, BCBioStructure.seq2c_name + '.zhongwu.tsv')
@@ -189,28 +196,26 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
     return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads_and_cov(work_dir, bcbio_structure, report_fpath_by_sample, gene_reports_by_sample):
+def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
     coverage_info = []
     mapped_reads_by_sample = OrderedDict()
 
-    for sample_name, gene_report_fpath in gene_reports_by_sample.items():
-        json_fpath = report_fpath_by_sample[sample_name]
-
+    for sample in bcbio_structure.samples:
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
-        for tokens in _get_whole_genes_and_amlicons(gene_report_fpath):
-            sample, chrom, s, e, gene, tag, size, cov = tokens
+        for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
+            sample_name, chrom, s, e, gene, tag, size, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
             if float(cov) != 0:
-                reordered = sample, gene, chrom, s, e, tag, size, cov
+                reordered = sample_name, gene, chrom, s, e, tag, size, cov
                 coverage_info.append(reordered)
 
-        with open(json_fpath) as f:
+        with open(sample.targetcov_json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
-        sample = next((s for s in bcbio_structure.samples if s.name == sample_name), None)
+        sample = next((s for s in bcbio_structure.samples if s.name == sample.name), None)
         if not sample: continue
         cov_report = SampleReport.load(data, sample, bcbio_structure)
 
-        mapped_reads_by_sample[sample_name] = int(next(
+        mapped_reads_by_sample[sample.name] = int(next(
             rec.value for rec in cov_report.records
             if rec.metric.name == 'Mapped reads'))
 
