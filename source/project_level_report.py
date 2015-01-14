@@ -128,11 +128,16 @@ def _add_targqc_reports(bcbio_structure):
 
 
 def _convert_to_relpath(value, base_dirpath):
+    if not value:
+        return None
     if isinstance(value, str):
         return relpath(value, base_dirpath)
     elif isinstance(value, dict):
         for k in value.keys():
-            value[k] = relpath(value[k], base_dirpath)
+            if not value[k]:
+                value[k] = None
+            else:
+                value[k] = relpath(value[k], base_dirpath)
         return value
     else:
         return value
