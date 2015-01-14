@@ -7,28 +7,28 @@ metric_storage = MetricStorage(
             Metric('Number of reads',                               'Reads',                       'Total number of reads'),
             Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
             Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
-            Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
 
-            Metric('Clipped reads (on target)',                     'Clipped',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
-            Metric('Duplication rate (on target)',                  'Duplication',                 'Duplication rate (inside of regions)')
+            Metric('Clipped reads (on target)',                     'Clipped (trg)',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
+            # Metric('Duplication rate (on target)',                  'Duplication',                 'Duplication rate (inside of regions)')
         ]),
-        ReportSection('on_off_metrics', 'ON/OFF target', [
-            Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
-            Metric('Mapped reads, only second in pair',             'Mapped, 2nd',                 'Number of mapped reads, only second in pair'),
-            Metric('Mapped reads, both in pair',                    'Mapped, both',                'Number of mapped reads, both in pair'),
-            Metric('Mapped reads, singletons',                      'Mapped, single',              'Number of mapped reads, singletons'),
-
-            Metric('Mapped reads (on target)',                      'Mapped (on trg)',             'Number of mapped reads inside of regions'),
-            Metric('Mapped reads, only first in pair (on target)',  'Mapped, 1st (on trg)',        'Number of mapped reads inside of regions, only first in pair'),
-            Metric('Mapped reads, only second in pair (on target)', 'Mapped, 2nd (on trg)',        'Number of mapped reads inside of regions, only second in pair'),
-            Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on trg)',       'Number of mapped reads inside of regions, both in pair'),
-            Metric('Mapped reads, singletons (on target)',          'Mapped, single (on trg)',     'Number of mapped reads inside of regions, singletons')
-        ]),
+        # ReportSection('on_off_metrics', 'ON/OFF target', [
+            # Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
+            # Metric('Mapped reads, only second in pair',             'Mapped, 2nd',                 'Number of mapped reads, only second in pair'),
+            # Metric('Mapped reads, both in pair',                    'Mapped, both',                'Number of mapped reads, both in pair'),
+            # Metric('Mapped reads, singletons',                      'Mapped, single',              'Number of mapped reads, singletons'),
+            #
+            # Metric('Mapped reads (on target)',                      'Mapped (on trg)',             'Number of mapped reads inside of regions'),
+            # Metric('Mapped reads, only first in pair (on target)',  'Mapped, 1st (on trg)',        'Number of mapped reads inside of regions, only first in pair'),
+            # Metric('Mapped reads, only second in pair (on target)', 'Mapped, 2nd (on trg)',        'Number of mapped reads inside of regions, only second in pair'),
+            # Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on trg)',       'Number of mapped reads inside of regions, both in pair'),
+            # Metric('Mapped reads, singletons (on target)',          'Mapped, single (on trg)',     'Number of mapped reads inside of regions, singletons')
+        # ]),
         ReportSection('depth_metrics', '', [
             Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
             Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
         ]),
         ReportSection('other_metrics', 'Other', [
+            Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
             Metric('Read min length',                               'Read min len',             'Read min length'),
             Metric('Read max length',                               'Read max len',             'Read max length'),
             Metric('Read mean length',                              'Read mean len',            'Read mean length'),

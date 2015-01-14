@@ -1,7 +1,7 @@
 from os.path import join
 from source.calling_process import call_subprocess
 
-from source.logger import step_greetings
+from source.logger import step_greetings, warn
 from source.file_utils import open_gzipsafe
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport
 from ext_modules import vcf_parser

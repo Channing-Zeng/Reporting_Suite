@@ -13,12 +13,10 @@ def summary_reports(cnf, bcbio_structure):
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
 
-    jsons_by_sample = bcbio_structure.find_targetcov_reports_by_sample('json')
-    htmls_by_sample = bcbio_structure.find_targetcov_reports_by_sample('html')
-
     full_report = FullReport.construct_from_sample_report_jsons(
-        bcbio_structure.samples, bcbio_structure,
-        jsons_by_sample, htmls_by_sample, cnf.output_dir)
+        bcbio_structure.samples, bcbio_structure, cnf.output_dir,
+        dict((s.name, s.targetcov_json_fpath) for s in bcbio_structure.samples),
+        dict((s.name, s.targetcov_html_fpath) for s in bcbio_structure.samples),)
 
     final_summary_report_fpaths = full_report.save_into_files(
         cnf.output_dir, cnf.name, 'Target coverage statistics')

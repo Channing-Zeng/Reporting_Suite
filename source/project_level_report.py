@@ -68,7 +68,7 @@ def _add_per_sample_reports(bcbio_structure, general_records, individual_reports
     varqc_htmls_by_sample       = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
     varqc_after_htmls_by_sample = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_dir)
     targqc_htmls_by_sample      = _add_targqc_reports(bcbio_structure)
-    fastqc_htmls_by_sample      = bcbio_structure.get_fastqc_report_fpaths_by_sample()
+    fastqc_htmls_by_sample      = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in bcbio_structure.samples])
 
     sample_reports_records = dict()
     for sample in bcbio_structure.samples:
@@ -82,7 +82,7 @@ def _add_per_sample_reports(bcbio_structure, general_records, individual_reports
         cur_metric = Metric(repr_name)
         individual_reports_section.add_metric(cur_metric)
         for sample in bcbio_structure.samples:
-            if htmls_by_sample and sample.name in htmls_by_sample:
+            if htmls_by_sample and htmls_by_sample.get(sample.name):
                 sample_reports_records[sample.name].append(
                     Record(
                         metric=cur_metric,
@@ -116,21 +116,13 @@ def _add_varqc_reports(bcbio_structure, name, dir_name):
 
 
 def _add_targqc_reports(bcbio_structure):
-    targetcov_htmls_by_sample = bcbio_structure.find_targetcov_reports_by_sample('html')
-    ngscat_htmls_by_sample = bcbio_structure.find_ngscat_reports_by_sample()
-    qualimap_htmls_by_sample = bcbio_structure.find_qualimap_reports_by_sample()
-
     targqc_htmls_by_sample = OrderedDict()
 
     for sample in bcbio_structure.samples:
         targqc_htmls_by_sample[sample.name] = OrderedDict()
-
-        if sample.name in targetcov_htmls_by_sample:
-            targqc_htmls_by_sample[sample.name]['targetcov'] = targetcov_htmls_by_sample[sample.name]
-        if sample.name in ngscat_htmls_by_sample:
-            targqc_htmls_by_sample[sample.name]['ngscat'] = ngscat_htmls_by_sample[sample.name]
-        if sample.name in qualimap_htmls_by_sample:
-            targqc_htmls_by_sample[sample.name]['qualimap'] = qualimap_htmls_by_sample[sample.name]
+        targqc_htmls_by_sample[sample.name]['targetcov'] = verify_file(sample.targetcov_html_fpath)
+        targqc_htmls_by_sample[sample.name]['ngscat'] = verify_file(sample.ngscat_html_fpath)
+        targqc_htmls_by_sample[sample.name]['qualimap'] = verify_file(sample.qualimap_html_fpath)
 
     return targqc_htmls_by_sample
 

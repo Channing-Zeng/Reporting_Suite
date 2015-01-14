@@ -4,6 +4,7 @@ import os
 from bs4 import BeautifulSoup
 import collections
 import itertools
+from source import verify_file
 
 
 _header = ["Basic Statistics",
@@ -20,17 +21,17 @@ _header = ["Basic Statistics",
            "Kmer Content"]
 
 
-def get_graphs(input_files):
+def get_graphs(samples):
     parsed_data = collections.OrderedDict()
-    for sample_name, input_value in input_files.items():
-        if os.path.exists(input_value):
-            with open(input_value) as source_file_obj:
+    for s in samples:
+        if verify_file(s.fastqc_html_fpath):
+            with open(s.fastqc_html_fpath) as source_file_obj:
                 html = source_file_obj.read()
                 soup = BeautifulSoup(html)
                 #bam_file_name = soup.title.string.strip(" FastQC Report")
 
                 module_divs = soup.find_all("div", class_="module")
-                _sort_graph_by_type(parsed_data, module_divs, sample_name)
+                _sort_graph_by_type(parsed_data, module_divs, s.name)
                 soup.decompose()
 
     return parsed_data

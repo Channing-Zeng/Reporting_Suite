@@ -7,6 +7,7 @@ from genericpath import isdir, isfile
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
 
+import source
 from source import logger, BaseSample
 from source.logger import info, err, critical, warn
 from source.calling_process import call
@@ -18,13 +19,18 @@ from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
 from source import targetcov
+from source.targetcov import detail_gene_report_baseending
 
 
 class BCBioSample(BaseSample):
-    def __init__(self, name, **kwargs):
-        BaseSample.__init__(self, name, **kwargs)
+    def __init__(self, name, final_dir, **kwargs):
+        self.dirpath = join(final_dir, name)
+        BaseSample.__init__(self, name, self.dirpath, '{dirpath}/{name}/', **kwargs)
+        self.ngscat_html_fpath      = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=BCBioStructure.ngscat_name)
+        self.qualimap_html_fpath    = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=BCBioStructure.qualimap_name)
+        self.fastqc_html_fpath      = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=BCBioStructure.fastqc_name)
 
-
+    # ----------
     def annotated_vcfs_dirpath(self):
         return join(self.dirpath, BCBioStructure.varannotate_dir)
 
@@ -205,10 +211,10 @@ class BCBioStructure:
     seq2c_seq2cov_ending = 'seq2c_seq2cov.txt'
 
     var_dir = 'var'
-    anno_vcf_ending  = '.anno.vcf'
-    filt_vcf_ending  = '.anno.filt.vcf'
+    anno_vcf_ending = '.anno.vcf'
+    filt_vcf_ending = '.anno.filt.vcf'
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'
-    filt_tsv_ending  = '.anno.filt.tsv'
+    filt_tsv_ending = '.anno.filt.tsv'
 
     def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
         self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
@@ -220,6 +226,7 @@ class BCBioStructure:
         self.samples = []
         self.variant_callers = OrderedDict()
 
+        self.bed = None
         self.project_name = None
         if cnf.project_name:
             self.project_name = cnf.project_name
@@ -280,6 +287,11 @@ class BCBioStructure:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
             else:
                 self.samples.append(sample)
+
+        bed_files_used = [s.bed for s in self.samples]
+        if len(set(bed_files_used)) > 2:
+            critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
+        self.bed = bed_files_used[0] if bed_files_used else None
 
         for b in self.batches.values():
             if b.normal and b.tumor:
@@ -378,7 +390,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(name=sample_info['description'])
+        sample = BCBioSample(name=sample_info['description'], final_dir=self.final_dirpath)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -516,81 +528,6 @@ class BCBioStructure:
 
         info('Found ' + vcf_fpath)
         return vcf_fpath
-
-    def find_gene_reports_by_sample(self):
-        return dict((sname, verify_file(fpath))
-                    for sname, fpath in self.get_gene_report_fpaths_by_sample().items())
-
-    def get_gene_report_fpaths_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.targetseq_dir,
-            lambda sample: sample.name + '.' +
-                           BCBioStructure.targetseq_dir +
-                           targetcov.detail_gene_report_baseending + '.txt')
-
-    def get_gene_report_tsv_fpaths_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.targetseq_dir,
-            lambda sample: sample.name + '.' +
-                           BCBioStructure.targetseq_dir +
-                           targetcov.detail_gene_report_baseending + '.tsv')
-
-    def find_targetcov_reports_by_sample(self, ext='json'):
-        return dict((sname, verify_file(fpath))
-                    for sname, fpath in self.get_targetcov_report_fpaths_by_sample(ext).items())
-
-    def get_targetcov_report_fpaths_by_sample(self, ext='json'):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.targetseq_dir,
-            lambda sample: sample.name + '.' +
-                           BCBioStructure.targetseq_dir + '.' + ext)
-
-    def find_ngscat_reports_by_sample(self):
-        return dict((sname, verify_file(fpath))
-                    for sname, fpath in self.get_ngscat_report_fpaths_by_sample().items())
-
-    def get_ngscat_report_fpaths_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.ngscat_dir,
-            lambda sample: 'captureQC.html')
-
-    def find_qualimap_reports_by_sample(self):
-        return dict((sname, verify_file(fpath))
-                    for sname, fpath in self.get_qualimap_report_fpaths_by_sample().items())
-
-    def get_qualimap_report_fpaths_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.qualimap_dir,
-            lambda sample: 'qualimapReport.html')
-
-    def get_qualimap_results_txt_fpath_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.qualimap_dir,
-            lambda sample: 'genome_results.txt')
-
-    def get_fastqc_report_fpaths_by_sample(self):
-        return self._get_fpaths_per_sample(
-            BCBioStructure.fastqc_dir,
-            lambda sample: 'fastqc_report.html')
-
-    def _get_fpaths_per_sample(self, base_dir, get_name_fn):
-        fpaths_by_sample = OrderedDict()
-
-        for sample in self.samples:
-            report_fpath = join(self.final_dirpath, sample.name, base_dir, get_name_fn(sample))
-            info(report_fpath)
-
-            if verify_file(report_fpath):
-                fpaths_by_sample[sample.name] = report_fpath
-
-        # if len(fpaths_by_sample) < len(self.samples):
-        #     raise RuntimeError('No ')
-
-        return fpaths_by_sample
-
-    def _find_files_per_sample(self, base_dir, get_name_fn):
-        return dict((sname, verify_file(fpath))
-                    for sname, fpath in self._get_fpaths_per_sample(base_dir, get_name_fn).items())
 
     def clean(self):
         for sample in self.samples:

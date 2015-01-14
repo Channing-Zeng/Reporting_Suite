@@ -190,8 +190,8 @@ def seq2c_seq2cov(cnf, sample, amplicons_bed):
     seq2c_output = join(
         cnf.output_dir,
         sample.name + '.' + \
-        BCBioStructure.targetseq_name + '_' + \
-        BCBioStructure.seq2c_seq2cov_ending)
+        source.targetseq_name + '_' + \
+        source.seq2c_seq2cov_ending)
     sample_name = sample.name
     bam = sample.bam
     cmdline = '{seq2cov} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
@@ -236,44 +236,44 @@ def _get_gene_names(exons_bed, gene_index=3):
     return gene_names
 
 
-def make_and_save_region_report(cnf, exons_bed, sample, amplicons, gene_names):
-    step_greetings('Analysing regions.')
-
-    ampli_bed_fpath = save_regions_to_bed(cnf, exons, sample.name + '_exons_by_gene_name')
-    exons_bed_fpath = save_regions_to_bed(cnf, amplicons, sample.name + '_amplicons_by_gene_name')
-
-    info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
-
-    # gene_infos_by_name = _get_exons_combined_by_genes(exons, gene_names)
-
-    info()
-    info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
-
-    amplicons_by_gene_name = _combine_amplicons_by_genes(cnf, sample, ampli_bed_fpath, exons_bed_fpath, gene_names)
-    for gene_name, ampls in amplicons_by_gene_name.items():
-        gene = genes_by_name[gene_name]
-        for a in ampls:
-            gene.add_amplicon(a)
-
-    non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
-
-    info()
-    non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
-    info()
-    info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
-    non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
-    genes = []
-    for non_overlapping_exon in non_overlapping_exons_2:
-        gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
-        for d, bs in non_overlapping_exon.bases_by_depth.items():
-            gene_info.bases_by_depth[d] += bs
-        genes.append(gene_info)
-
-    info()
-    info('Building region coverage report.')
-    gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
-
-    return gene_report_fpath, gene_infos_by_name
+# def make_and_save_region_report(cnf, exons_bed, sample, amplicons, gene_names):
+#     step_greetings('Analysing regions.')
+#
+#     ampli_bed_fpath = save_regions_to_bed(cnf, exons, sample.name + '_exons_by_gene_name')
+#     exons_bed_fpath = save_regions_to_bed(cnf, amplicons, sample.name + '_amplicons_by_gene_name')
+#
+#     info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
+#
+#     # gene_infos_by_name = _get_exons_combined_by_genes(exons, gene_names)
+#
+#     info()
+#     info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
+#
+#     amplicons_by_gene_name = _combine_amplicons_by_genes(cnf, sample, ampli_bed_fpath, exons_bed_fpath, gene_names)
+#     for gene_name, ampls in amplicons_by_gene_name.items():
+#         gene = genes_by_name[gene_name]
+#         for a in ampls:
+#             gene.add_amplicon(a)
+#
+#     non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
+#
+#     info()
+#     non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
+#     info()
+#     info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
+#     non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
+#     genes = []
+#     for non_overlapping_exon in non_overlapping_exons_2:
+#         gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
+#         for d, bs in non_overlapping_exon.bases_by_depth.items():
+#             gene_info.bases_by_depth[d] += bs
+#         genes.append(gene_info)
+#
+#     info()
+#     info('Building region coverage report.')
+#     gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
+#
+#     return gene_report_fpath, gene_infos_by_name
 
 
 def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):

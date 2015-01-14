@@ -3,6 +3,7 @@ from itertools import repeat, izip, chain
 from os.path import join, relpath
 from json import load, dump, JSONEncoder, dumps
 import datetime
+from source import verify_file
 
 from source.bcbio_structure import VariantCaller, BCBioSample
 from source.logger import critical, info, err
@@ -26,6 +27,9 @@ class Record:
 
     def format(self):
         return self.metric.format(self.value)
+
+    def __repr__(self):
+        return self.metric.name + ' ' + self.metric.format(self.value)
 
     @staticmethod
     def load(data):
@@ -300,7 +304,7 @@ class FullReport(Report):
         return rows
 
     @staticmethod
-    def construct_from_sample_report_jsons(samples, bcbio_structure, jsons_by_sample, htmls_by_sample, output_dirpath):
+    def construct_from_sample_report_jsons(samples, bcbio_structure, output_dirpath, jsons_by_sample, htmls_by_sample):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:

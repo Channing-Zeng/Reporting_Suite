@@ -1,16 +1,17 @@
 import sys
 import itertools
+from source import verify_file
 from source.fastqc.html_parser_fastqc import get_graphs
 
 
-def print_html(a_outfile, input_files):
-    graphs = get_graphs(input_files)
+def print_html(a_outfile, samples):
+    graphs = get_graphs(samples)
     with open(a_outfile, 'w') as outfile:
         print >> outfile, """<html> <head> <title>FASTQC</title> """
         print >> outfile, print_js()
         print >> outfile, print_css()
         print >> outfile, """ </head> <body>"""
-        links_show_hide(outfile, input_files)
+        links_show_hide(outfile, samples)
         print_graphs(outfile, graphs)
         print >> outfile, """ </body> </html>"""
 
@@ -57,16 +58,16 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def links_show_hide(outfile, input_files):
+def links_show_hide(outfile, s_names):
     print >> outfile, '<form name="tcol" onsubmit="return false">  Show columns <br/>'
     print >> outfile, '<table>'
     i = 0
 
-    list_of_chunks = list(chunks(input_files.keys(), 6))
+    list_of_chunks = list(chunks([s.fastqc_html_fpath for s in s_names if verify_file(s.fastqc_html_fpath)], 6))
    
-    for samples in list_of_chunks:
+    for s_names in list_of_chunks:
         print >> outfile, '<tr>'
-        for sample in samples:
+        for sample in s_names:
             print >> outfile, '<td><input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(
                 i) + ')" checked> ' + sample + '</td>'
             i += 1

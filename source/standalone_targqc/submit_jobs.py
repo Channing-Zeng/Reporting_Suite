@@ -12,12 +12,12 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.utils import get_system_path
 from source.calling_process import call
 from source.standalone_targqc.summarize import summarize_targqc
-from source.standalone_targqc import Sample
+from source.standalone_targqc import StandaloneSample
 
 
 def run(cnf, bed_fpath, bam_fpaths, main_script_name):
     samples = [
-        Sample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
+        StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
 
     max_threads = cnf.threads or 40
@@ -55,7 +55,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
 
     else:
         info('Making targqc summary')
-        summarize_targqc(cnf, samples, bed_fpath)
+        summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath)
 
 
 def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name):

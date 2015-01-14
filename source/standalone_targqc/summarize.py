@@ -17,12 +17,12 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.bcbio_structure import BCBioStructure
 
 
-def summarize_targqc(cnf, samples, bed_fpath):
+def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     targetcov_metric_storage = cov.header_metric_storage
     for depth in cnf.coverage_reports.depth_thresholds:
-        name = 'Part of target covered at least vby ' + str(depth) + 'x'
+        name = 'Part of target covered at least by ' + str(depth) + 'x'
         targetcov_metric_storage.add_metric(
             Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
             'depth_metrics')
@@ -35,7 +35,9 @@ def summarize_targqc(cnf, samples, bed_fpath):
         if not sample.qualimap_done():
             sample.qualimap_html_fpath = None
 
-        new_link = join(dirname(dirname(sample.targetcov_detailed_tsv)), basename(sample.targetcov_detailed_tsv))
+        new_link = join(
+            dirname(dirname(sample.targetcov_detailed_tsv)),
+            basename(sample.targetcov_detailed_tsv))
         if exists(new_link):
             os.unlink(new_link)
         os.symlink(sample.targetcov_detailed_tsv, new_link)
@@ -45,11 +47,11 @@ def summarize_targqc(cnf, samples, bed_fpath):
     # for sample in samples:
     #     all_htmls_by_sample[sample.name] = OrderedDict()
     #     if sample.name in targetcov_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], cnf.output_dir)
+    #         all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], output_dir)
     #     if sample.name in ngscat_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['ngscat'] =    relpath(ngscat_htmls_by_sample[sample.name], cnf.output_dir)
+    #         all_htmls_by_sample[sample.name]['ngscat'] =    relpath(ngscat_htmls_by_sample[sample.name], output_dir)
     #     if sample.name in qualimap_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], cnf.output_dir)
+    #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
 
     targqc_metric_storage = _get_targqc_metric_storage(OrderedDict(
         targetcov=targetcov_metric_storage,
@@ -65,12 +67,15 @@ def summarize_targqc(cnf, samples, bed_fpath):
                     qualimap=qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if sample.qualimap_html_fpath else []
                 )),
                 html_fpath=dict(
-                    targetcov=relpath(sample.targetcov_html_fpath, cnf.output_dir),
-                    ngscat=relpath(sample.ngscat_html_fpath, cnf.output_dir),
-                    qualimap=relpath(sample.qualimap_html_fpath, cnf.output_dir)
+                    targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
+                    ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
+                    qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
                 )
             )
-            for sample in samples
+            for sample in samples if
+                verify_file(sample.targetcov_json_fpath, True) or
+                verify_file(sample.ngscat_html_fpath, True) or
+                verify_file(sample.qualimap_html_fpath, True)
         ],
         metric_storage=targqc_metric_storage)
 
@@ -81,8 +86,8 @@ def summarize_targqc(cnf, samples, bed_fpath):
         if qualimap is not None and get_qualimap_type(qualimap) == 'full':
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
 
-            plots_dirpath = join(cnf.output_dir, 'plots')
-            _correct_qualimap_genome_results(samples, cnf.output_dir)
+            plots_dirpath = join(output_dir, 'plots')
+            _correct_qualimap_genome_results(samples, output_dir)
 
             safe_mkdir(qualimap_output_dir)
             rows = []
@@ -102,18 +107,18 @@ def summarize_targqc(cnf, samples, bed_fpath):
                 for plot_fpath in listdir(plots_dirpath):
                     plot_fpath = join(plots_dirpath, plot_fpath)
                     if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
-                        targqc_full_report.plots.append(relpath(plot_fpath, cnf.output_dir))
+                        targqc_full_report.plots.append(relpath(plot_fpath, output_dir))
             else:
                 warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
         else:
             warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
 
-    txt_fpath = targqc_full_report.save_txt(cnf.output_dir, BCBioStructure.targqc_name)
-    html_fpath = targqc_full_report.save_html(cnf.output_dir, BCBioStructure.targqc_name,
+    txt_fpath = targqc_full_report.save_txt(output_dir, BCBioStructure.targqc_name)
+    html_fpath = targqc_full_report.save_html(output_dir, BCBioStructure.targqc_name,
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     # final_summary_report_fpaths = targqc_full_report.save_into_files(
-    #     cnf.output_dir, BCBioStructure.targqc_name,
+    #     output_dir, BCBioStructure.targqc_name,
     #     'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     info()
@@ -133,7 +138,7 @@ _qualimap_to_targetcov_dict = {
 
 _ngscat_to_targetcov_dict = {
     'Number reads': cov.header_metric_storage.get_metric('Mapped reads'),
-    '% target bases with coverage >= 1x': cov.header_metric_storage.get_metric('Percentage of target covered by at least 1 read'),
+    # '% target bases with coverage >= 1x': cov.header_metric_storage.get_metric('Percentage of target covered by at least 1 read'),
     '% reads on target': cov.header_metric_storage.get_metric('Reads mapped on target'),
     'mean coverage': cov.header_metric_storage.get_metric('Average target coverage depth')}
 
@@ -142,11 +147,11 @@ def _get_targqc_metric(metric, report_type='targetcov'):  # report type is in ['
     if report_type == 'targetcov':
         return metric
     elif report_type == 'qualimap':
-        if metric.name in _qualimap_to_targetcov_dict.keys():
+        if metric.name in _qualimap_to_targetcov_dict:
             return _qualimap_to_targetcov_dict[metric.name]
         return metric
     elif report_type == 'ngscat':
-        if metric.name in _ngscat_to_targetcov_dict.keys():
+        if metric.name in _ngscat_to_targetcov_dict:
             return _ngscat_to_targetcov_dict[metric.name]
         return metric
     critical('Incorrect usage of get_targqc_metric(), report_type is %s but should be one of the following: %s' %

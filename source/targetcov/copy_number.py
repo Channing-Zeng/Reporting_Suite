@@ -8,36 +8,43 @@ import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
-from source.file_utils import verify_file
+from source.file_utils import verify_file, adjust_path
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports
 from source.tools_from_cnf import get_script_cmdline
-
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
+import source
 
 
 def cnv_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
 
-    info('Collecting sample reports...')
-    summary_report_fpath_by_sample = bcbio_structure.get_targetcov_report_fpaths_by_sample('json')
-    gene_report_fpaths_by_sample = bcbio_structure.get_gene_report_tsv_fpaths_by_sample()
+    if cnf.exons:
+        exons_bed_fpath = adjust_path(cnf.exons)
+    else:
+        exons_bed_fpath = adjust_path(cnf.genome.exons)
+    info('Exons: ' + exons_bed_fpath)
+
+    if cnf.genes:
+        genes_fpath = adjust_path(cnf.genes)
+        info('Custom genes list: ' + exons_bed_fpath)
+    else:
+        genes_fpath = None
 
     for sample in bcbio_structure.samples:
-        if (not verify_file(summary_report_fpath_by_sample.get(sample.name)) or
-            not verify_file(gene_report_fpaths_by_sample.get(sample.name))):
+        if not verify_file(sample.targetcov_json_fpath) or not verify_file(sample.targetcov_detailed_tsv):
             # TargetSeq was not run but needed, thus running.
             proc_name, name, output_dir = cnf.proc_name, cnf.name, cnf.output_dir
-            cnf.proc_name, cnf.name, cnf.output_dir = \
-                BCBioStructure.targetseq_name, sample.name, join(sample.dirpath, BCBioStructure.targetseq_name)
-            make_targetseq_reports(cnf, sample)
+            cnf.proc_name, cnf.name, cnf.output_dir = source.targetseq_name, sample.name, join(sample.dirpath, source.targetseq_name)
+
+            make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
+
             cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
 
     info('Calculating normalized coverages for CNV...')
-    cnv_report_fpath, cnv_report_fpath__mine = _seq2c(cnf, bcbio_structure,
-        gene_report_fpaths_by_sample, summary_report_fpath_by_sample)
+    cnv_report_fpath, cnv_report_fpath__mine = _seq2c(cnf, bcbio_structure)
 
     info()
     info('*' * 70)

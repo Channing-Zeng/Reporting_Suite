@@ -4,7 +4,7 @@ import __common
 
 import sys
 import shutil
-from source.bcbio_structure import BCBioSample
+from source import BaseSample
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.config import defaults
 from source.targetcov.cov import make_targetseq_reports
@@ -71,14 +71,19 @@ def main(args):
     info('Using alignement ' + cnf['bam'])
     info('Using amplicons/capture panel ' + cnf['bed'])
 
-    run_one(cnf, process_one, finalize_one, multiple_samples=False, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
+    run_one(cnf, process_one, finalize_one, multiple_samples=False, output_dir=cnf.output_dir, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_one(cnf, exons_bed_fpath, genes_fpath):
-    sample = BCBioSample(cnf.name, bam=cnf.bam, bed=cnf.bed)
+class Sample(BaseSample):
+    def __init__(self, name, output_dir, **kwargs):
+        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
+
+
+def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
+    sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
     return make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
 
 

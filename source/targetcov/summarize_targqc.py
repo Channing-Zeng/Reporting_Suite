@@ -49,11 +49,11 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
             self.title = title
 
         def __hash__(self):
-            #return hash((self.name, self.title))
+            # return hash((self.name, self.title))
             return hash(self.name)  # use title from the first metric_storage
 
         def __eq__(self, other):
-            #return (self.name, self.title) == (other.name, other.title)
+            # return (self.name, self.title) == (other.name, other.title)
             return self.name == other.name  # use title from the first metric_storage
 
     metrics_by_sections = OrderedDict()
@@ -64,10 +64,11 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
             section_id = SectionId(section.name, section.title)
             if section_id not in metrics_by_sections.keys():
                 metrics_by_sections[section_id] = []
-            metrics_by_sections[section_id] += [metric for metric in
-                                                metric_storage.get_metrics(sections=[section],
-                                                                           skip_general_section=True)
-                                                if metric == _get_targqc_metric(metric, report_type)]
+            metrics_by_sections[section_id] += [
+                metric for metric in
+                metric_storage.get_metrics(sections=[section],
+                    skip_general_section=True)
+                if metric == _get_targqc_metric(metric, report_type)]
 
         # specific behaviour for general section
         general_section_metric_list += [metric for metric in metric_storage.general_section.metrics
@@ -113,7 +114,7 @@ def _correct_qualimap_genome_results(bcbio_structure):
                 f.write(line)
 
 
-def summary_reports(cnf, bcbio_structure):
+def summary_reports(cnf, samples, bed_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     targetcov_metric_storage = cov.header_metric_storage
