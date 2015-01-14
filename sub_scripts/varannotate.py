@@ -4,7 +4,9 @@ import __common
 
 import sys
 import shutil
-from source.bcbio_structure import BCBioStructure, BCBioSample
+import source
+from source import SingleSample
+from source.bcbio_structure import BCBioStructure
 from source.file_utils import iterate_file
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.variants.vcf_processing import remove_rejected, fix_chromosome_names, iterate_vcf, \
@@ -42,7 +44,7 @@ def main(args):
         required_keys=['vcf'],
         file_keys=['bam', 'vcf'],
         key_for_sample_name='vcf',
-        proc_name=BCBioStructure.varannotate_name)
+        proc_name=source.varannotate_name)
 
     check_system_resources(cnf,
         required=['java', 'perl', 'snpeff', 'snpsift'],
@@ -60,7 +62,7 @@ def main(args):
 
 
 def process_one(cnf):
-    sample = BCBioSample(cnf.name, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+    sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     # this method will also gunzip the vcf file
     sample.vcf = fix_chromosome_names(cnf, sample.vcf)

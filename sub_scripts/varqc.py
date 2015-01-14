@@ -5,15 +5,16 @@ import __common
 import sys
 import shutil
 from os.path import abspath, dirname, realpath, join, basename, relpath
+import source
+from source import SingleSample
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
-from source.logger import err, info, warn, send_email
+from source.logger import err, info, warn, send_email, critical
 from source.variants import qc
 from source.main import read_opts_and_cnfs, check_genome_resources, check_system_resources
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected
 from source.reporting import SampleReport
-from source.bcbio_structure import BCBioStructure, BCBioSample
 
 
 def main(args):
@@ -27,7 +28,7 @@ def main(args):
         required_keys=['vcf'],
         file_keys=['vcf'],
         key_for_sample_name='vcf',
-        proc_name=BCBioStructure.varqc_name,
+        proc_name=source.varqc_name,
     )
 
     check_system_resources(cnf)
@@ -55,7 +56,7 @@ def process_one(cnf):
     if not verify_file(vcf_fpath):
         critical('Annotated VCF ' + vcf_fpath + ' does not exist, thus cannot run VarQC')
 
-    sample = BCBioSample(cnf.name, vcf=vcf_fpath)
+    sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     if cnf.get('filter_reject'):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)

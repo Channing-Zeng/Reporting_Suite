@@ -93,3 +93,8 @@ class BaseSample:
             return True
         return False
 
+
+class SingleSample(BaseSample):
+    def __init__(self, name, output_dir, **kwargs):
+        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
+
