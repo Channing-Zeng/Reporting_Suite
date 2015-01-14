@@ -23,7 +23,7 @@ picard_metric_storage = MetricStorage(
         ReportSection('basic_metrics', 'General', [
         ]),
         ReportSection('other_metrics', '', [
-            Metric('Duplication rate',  'Duplication rate', 'Percent duplication', quality='More is better', unit='%'),
+            Metric('Duplication rate',  'Duplication rate (picard)', 'Percent duplication', quality='More is better', unit='%'),
         ]),
         ReportSection('depth_metrics', 'Target coverage depth', [
         ]),
@@ -34,7 +34,7 @@ picard_metric_storage = MetricStorage(
 def _parse_picard_dup_report(dup_report_fpath):
     records = []
 
-    metric = picard_metric_storage.get_metric('Duplication rate')
+    metric = picard_metric_storage.get_metric('Duplication rate (picard)')
     record = Record(metric=metric)
     records.append(record)
 
@@ -96,37 +96,40 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     #     if sample.name in qualimap_htmls_by_sample:
     #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
 
-    targqc_metric_storage = _get_targqc_metric_storage(OrderedDict(
-        targetcov=targetcov_metric_storage,
-        ngscat=ngscat_report_parser.metric_storage,
-        qualimap=qualimap_report_parser.metric_storage,
-        picard=picard_metric_storage))
 
-    targqc_full_report = FullReport(cnf.name, [
+
+    targqc_metric_storage = _get_targqc_metric_storage([
+        ('targetcov', targetcov_metric_storage),
+        ('ngscat', ngscat_report_parser.metric_storage),
+        ('qualimap', qualimap_report_parser.metric_storage),
+        ('picard', picard_metric_storage)])
+
+    targqc_full_report = FullReport(cnf.name, [], metric_storage=targqc_metric_storage)
+
+    for sample in samples:
+        records_by_report_type = []
+        if (verify_file(sample.targetcov_json_fpath, True) or
+            verify_file(sample.ngscat_html_fpath, True) or
+            verify_file(sample.picard_dup_metrics_fpath, True) or
+            verify_file(sample.qualimap_html_fpath, True)):
+
+            records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(sample.targetcov_json_fpath, silent=True) else []))
+            records_by_report_type.append(('ngscat',    ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
+            records_by_report_type.append(('qualimap',  qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
+            records_by_report_type.append(('picard',    _parse_picard_dup_report(sample.picard_dup_metrics_fpath) if verify_file(sample.picard_dup_metrics_fpath, silent=True) else []))
+
+        targqc_full_report.sample_reports.append(
             SampleReport(
                 sample,
-                records=_get_targqc_records(OrderedDict(
-                    targetcov=load_records(sample.targetcov_json_fpath)
-                        if verify_file(sample.targetcov_json_fpath, silent=True) else [],
-                    ngscat=ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath)
-                        if verify_file(sample.ngscat_html_fpath, silent=True) else [],
-                    qualimap=qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath)
-                        if verify_file(sample.qualimap_html_fpath, silent=True) else [],
-                    picard=_parse_picard_dup_report(sample.picard_dup_metrics_fpath)
-                        if verify_file(sample.picard_dup_metrics_fpath, silent=True) else [],
-                )),
+                records=_get_targqc_records(records_by_report_type),
                 html_fpath=dict(
                     targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
                     ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
                     qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
-                )
+                ),
+                metric_storage=targqc_metric_storage
             )
-            for sample in samples if
-                verify_file(sample.targetcov_json_fpath, True) or
-                verify_file(sample.ngscat_html_fpath, True) or
-                verify_file(sample.qualimap_html_fpath, True)
-        ],
-        metric_storage=targqc_metric_storage)
+        )
 
     _correct_qualimap_genome_results(samples, output_dir)
 
@@ -228,7 +231,7 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
     general_section_id = None
     general_section_metric_list = []
 
-    for report_type, metric_storage in metric_storages_by_report_type.items():
+    for report_type, metric_storage in metric_storages_by_report_type:
         for section in metric_storage.sections:
             section_id = SectionId(section.name, section.title)
             if section_id not in metrics_by_sections.keys():
@@ -258,7 +261,7 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
 def _get_targqc_records(records_by_report_type):
     targqc_records = []
     filled_metric_names = []
-    for report_type, records in records_by_report_type.items():
+    for report_type, records in records_by_report_type:
         for record in records:
             new_metric = _get_targqc_metric(record.metric, report_type)
             if new_metric.name not in filled_metric_names:
@@ -272,13 +275,14 @@ def _correct_qualimap_genome_results(samples, output_dir):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
     for s in samples:
-        with open(s.qualimap_genome_results_fpath, 'r') as f:
-            content = f.readlines()
-        with open(s.qualimap_genome_results_fpath, 'w') as f:
-            metrics_started = False
-            for line in content:
-                if ">> Reference" in line:
-                    metrics_started = True
-                if metrics_started:
-                    line = line.replace(',', '')
-                f.write(line)
+        if verify_file(s.qualimap_genome_results_fpath):
+            with open(s.qualimap_genome_results_fpath, 'r') as f:
+                content = f.readlines()
+            with open(s.qualimap_genome_results_fpath, 'w') as f:
+                metrics_started = False
+                for line in content:
+                    if ">> Reference" in line:
+                        metrics_started = True
+                    if metrics_started:
+                        line = line.replace(',', '')
+                    f.write(line)

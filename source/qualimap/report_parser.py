@@ -8,8 +8,7 @@ metric_storage = MetricStorage(
             Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
             Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
 
-            Metric('Clipped reads (on target)',                     'Clipped (trg)',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
-            # Metric('Duplication rate (on target)',                  'Duplication',                 'Duplication rate (inside of regions)')
+            # Metric('Clipped reads (on target)',                     'Clipped (trg)',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
         ]),
         # ReportSection('on_off_metrics', 'ON/OFF target', [
             # Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
@@ -38,7 +37,8 @@ metric_storage = MetricStorage(
             Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions'),
-            Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions')
+            Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions'),
+            Metric('Duplication rate (on trg)',                  'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]
 )

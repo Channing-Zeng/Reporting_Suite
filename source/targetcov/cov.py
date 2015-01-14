@@ -304,6 +304,7 @@ header_metric_storage = MetricStorage(
         Metric('Target', short_name='Target', common=True),
         Metric('Regions in target', short_name='Regions in target', common=True),
         Metric('Bases in target', short_name='Target bp', common=True),
+        Metric('Genes', short_name='Genes', common=True),
         Metric('Genes in target', short_name='Genes in target', common=True),
     ]),
     sections_by_name=OrderedDict(
@@ -374,8 +375,8 @@ def generate_summary_report(
     v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
 
-    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / target_info.regions_num \
-        if target_info.regions_num else None
+    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / target_info.bases_num \
+        if target_info.bases_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
 
     info('Getting number of mapped reads on target...')
@@ -395,7 +396,7 @@ def generate_summary_report(
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
-    v_read_bases_on_targ = combined_region.avg_depth * target_info.regions_num  # sum of all coverages
+    v_read_bases_on_targ = combined_region.avg_depth * target_info.bases_num  # sum of all coverages
     report.add_record('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
@@ -405,7 +406,7 @@ def generate_summary_report(
     report.add_record('Percentage of target within 20% of mean depth', combined_region.percent_within_normal)
 
     for depth, bases in combined_region.bases_within_threshs.items():
-        percent_val = 100.0 * bases / target_info.regions_num if target_info.regions_num else 0
+        percent_val = 100.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
     return report
