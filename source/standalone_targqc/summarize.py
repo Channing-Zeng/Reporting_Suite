@@ -264,7 +264,7 @@ def _get_targqc_records(records_by_report_type):
     for report_type, records in records_by_report_type:
         for record in records:
             new_metric = _get_targqc_metric(record.metric, report_type)
-            if new_metric.name not in filled_metric_names:
+            if not new_metric or new_metric.name not in filled_metric_names:
                 filled_metric_names.append(new_metric.name)
                 record.metric = new_metric
                 targqc_records.append(record)

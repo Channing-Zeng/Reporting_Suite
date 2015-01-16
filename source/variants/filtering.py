@@ -153,7 +153,7 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
 glob_cnf = None
 
 
-def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_variants):
+def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath):
     global glob_cnf
     cnf = glob_cnf
 
@@ -176,15 +176,16 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
                     filt_f.write('\t'.join(ts))
                     pass_f.write('\t'.join(ts))
                 else:
-                    ts[6] = '' if ts[6] in ['', '.', 'PASS'] else ts[6] + ','
-                    filter_value = variants.get((sample.name, chrom, pos, alt))
-                    if filter_value is None:
-                        # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
-                        ts[6] += 'vcf2txt_1st_round'
-                    elif filter_value == 'TRUE':
-                        ts[6] += 'pickLine'
-                    else:
-                        ts[6] += filter_value
+                    if ts[6] in ['', '.', 'PASS']:
+                        ts[6] = ''
+                        filter_value = variants.get((sample.name, chrom, pos, alt))
+                        if filter_value is None:
+                            warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
+                            ts[6] += 'vcf2txt'
+                        elif filter_value == 'TRUE':
+                            ts[6] += 'EFFECT'
+                        else:
+                            ts[6] += filter_value
                     filt_f.write('\t'.join(ts))
 
     # Indexing
@@ -216,10 +217,10 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
                 filt = ts[pass_col]
                 variants[(s_name, chrom, pos, alt)] = filt
 
-    Parallel(
-        n_jobs=cnf.threads)(delayed(postprocess_vcf)(
-        next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants)
-        for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+    Parallel(n_jobs=cnf.threads) \
+        (delayed(postprocess_vcf) \
+            (next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
+            for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
