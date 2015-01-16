@@ -7,8 +7,6 @@ metric_storage = MetricStorage(
             Metric('Number of reads',                               'Reads',                       'Total number of reads'),
             Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
             Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
-
-            # Metric('Clipped reads (on target)',                     'Clipped (trg)',                     'Number of clipped reads (inside of regions)', quality='Less is better'),
         ]),
         # ReportSection('on_off_metrics', 'ON/OFF target', [
             # Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
@@ -26,19 +24,21 @@ metric_storage = MetricStorage(
             Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
             Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
         ]),
-        ReportSection('other_metrics', '', [
-            Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
-            Metric('Read min length',                               'Read min len',             'Read min length'),
-            Metric('Read max length',                               'Read max len',             'Read max length'),
-            Metric('Read mean length',                              'Read mean len',            'Read mean length'),
 
-            Metric('Mean Mapping Quality',                          'Mean MQ',        'Mean mapping quality, inside of regions'),
-            # Metric('Total reads with indels',                       'Indels',                      'Total reads with indels, inside of regions'),  # not supported since Qualimap v.2.0
+        ReportSection('reads', 'Reads', [
+            Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
+            Metric('Read min length',                               'Read min len',                'Read min length'),
+            Metric('Read max length',                               'Read max len',                'Read max length'),
+            Metric('Read mean length',                              'Read mean len',               'Read mean length'),
+        ]),
+
+        ReportSection('qualimap', 'Qualimap metrics, inside the regions (unless it is a WGS study)', [
+            Metric('Mean Mapping Quality',                          'Mean MQ',                     'Mean mapping quality, inside of regions'),
             Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions'),
             Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions'),
-            Metric('Duplication rate (on trg)',                  'Duplication rate',            'Duplication rate (inside of regions)')
+            Metric('Duplication rate (on trg)',                     'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]
 )

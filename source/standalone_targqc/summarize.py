@@ -97,7 +97,6 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
 
 
-
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', targetcov_metric_storage),
         ('ngscat', ngscat_report_parser.metric_storage),

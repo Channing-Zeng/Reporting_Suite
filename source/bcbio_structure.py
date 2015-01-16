@@ -506,31 +506,40 @@ class BCBioStructure:
             err('No BAM file for ' + sample.name)
 
     def _set_vcf_file(self, caller_name, sample):
-        vcf_fname = sample.name + '-' + caller_name + '.vcf.gz'
-        vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+        vcf_fname = sample.name + '-' + caller_name + '.vcf'
 
-        if not isfile(vcf_fpath):  # no var/sample.name-caller_name.vcf.gz?
-            warn('Warning: no ' + vcf_fpath + ', looking for uncompressed version.')
-            vcf_fpath = vcf_fpath[:-3]
+        vcf_fpath_gz = adjust_path(join(sample.dirpath, vcf_fname + '.gz'))  # in var
+        var_vcf_fpath_gz = adjust_path(join(sample.var_dirpath, vcf_fname + '.gz'))  # in var
+        vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
+        var_vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
 
-            if not isfile(vcf_fpath):  # no var/sample.name-caller_name.vcf?
-                vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))  # in sample dir
+        if isfile(vcf_fpath_gz):
+            if not verify_file(vcf_fpath_gz): sys.exit(1)
+            info('Found VCF ' + vcf_fpath_gz)
+            return vcf_fpath_gz
 
-                if not isfile(vcf_fpath):  # no sample.name-caller_name.vcf.gz?
-                    if sample.phenotype != 'normal':  # no VCF file is OK if phenotype is normal, otherwise - warning
-                        err('Error: phenotype is ' + str(sample.phenotype) + ', and no VCF file '
-                            'for ' + sample.name + ', ' + caller_name)
-                    else:
-                        info('Notice: no VCF file for ' + sample.name + ', ' + caller_name +
-                             ', phenotype ' + str(sample.phenotype))
-                    return None
+        if isfile(var_vcf_fpath_gz):
+            if not verify_file(var_vcf_fpath_gz): sys.exit(1)
+            info('Found VCF in the var/ dir ' + var_vcf_fpath_gz)
+            return var_vcf_fpath_gz
 
-        if not verify_file(vcf_fpath):  # bad file, error :(
-            err('Error: ' + vcf_fpath + ' is empty. Phenotype is ' + str(sample.phenotype))
-            return None
+        if isfile(vcf_fpath):
+            if not verify_file(vcf_fpath): sys.exit(1)
+            info('Found uncompressed VCF ' + var_vcf_fpath)
+            return vcf_fpath
 
-        info('Found ' + vcf_fpath)
-        return vcf_fpath
+        if isfile(var_vcf_fpath):
+            if not verify_file(var_vcf_fpath): sys.exit(1)
+            info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
+            return var_vcf_fpath
+
+        if sample.phenotype != 'normal':
+            warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outsize '
+                'the var directory. Phenotype is ' + str(sample.phenotype))
+        else:
+            info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))
+
+        return None
 
     def clean(self):
         for sample in self.samples:
