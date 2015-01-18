@@ -38,8 +38,12 @@ def make_project_level_report(cnf, bcbio_structure):
     info('*' * 70)
     info('Project-level report saved in: ')
     info('  ' + final_summary_report_fpath)
-    send_email('Report for ' + bcbio_structure.project_name + ':'
-               '\n  ' + final_summary_report_fpath)
+    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + final_summary_report_fpath)
+
+    server_path = '/opt/lampp/htdocs/reports'
+    username = 'klpf990'
+    password = '123werasd'
+    # ls -n final_dir to server_path/project_name
 
 
 def _add_summary_reports(bcbio_structure, general_section):

@@ -3,11 +3,12 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection
 
 metric_storage = MetricStorage(
     sections=[
-        ReportSection('basic_metrics', 'General', [
-            Metric('Number of reads',                               'Reads',                       'Total number of reads'),
-            Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
-            Metric('Unmapped reads',                                'Unmapped',                    'Number of unmapped reads',               quality='Less is better'),
-        ]),
+        # ReportSection('basic_metrics', 'General', [
+            # Metric('Number of reads',                               'Reads ngscat',                       'Total number of reads'),
+            # Metric('Mapped reads',                                  'Mapped ngscat',                      'Number of mapped reads'),
+            # Metric('Unmapped reads',                                'Unmapped ngscat',                    'Number of unmapped reads',               quality='Less is better'),
+        # ]),
+
         # ReportSection('on_off_metrics', 'ON/OFF target', [
             # Metric('Mapped reads, only first in pair',              'Mapped, 1st',                 'Number of mapped reads, only first in pair'),
             # Metric('Mapped reads, only second in pair',             'Mapped, 2nd',                 'Number of mapped reads, only second in pair'),
@@ -20,10 +21,11 @@ metric_storage = MetricStorage(
             # Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on trg)',       'Number of mapped reads inside of regions, both in pair'),
             # Metric('Mapped reads, singletons (on target)',          'Mapped, single (on trg)',     'Number of mapped reads inside of regions, singletons')
         # ]),
-        ReportSection('depth_metrics', 'Target coverage depth', [
-            Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
-            Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
-        ]),
+
+        # ReportSection('depth_metrics', 'Target coverage depth', [
+            # Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
+            # Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
+        # ]),
 
         ReportSection('reads', 'Reads', [
             Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
@@ -38,7 +40,7 @@ metric_storage = MetricStorage(
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions'),
             Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions'),
-            Metric('Duplication rate (on trg)',                     'Duplication rate',            'Duplication rate (inside of regions)')
+            # Metric('Duplication rate',                              'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]
 )

@@ -9,12 +9,57 @@ import source
 import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file
+from source import logger
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
+
+
+header_metric_storage = MetricStorage(
+    general_section=ReportSection('general_section', '', [
+        Metric('Target', short_name='Target', common=True),
+        Metric('Regions in target', short_name='Regions in target', common=True),
+        Metric('Bases in target', short_name='Target bp', common=True),
+        Metric('Genes', short_name='Genes', common=True),
+        Metric('Genes in target', short_name='Genes in target', common=True),
+    ]),
+    sections=[
+        ReportSection('reads', 'Reads', [
+            Metric('Reads'),
+
+            Metric('Mapped reads', short_name='Mapped'),
+            Metric('Percentage of mapped reads', short_name='%', unit='%'),
+
+            Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
+            Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
+
+            Metric('Duplication rate (picard)', short_name='Dup rate', description='Percent duplication, reported by Picard', quality='More is better', unit='%'),
+        ]),
+
+        ReportSection('target_metrics', 'Target', [
+            Metric('Covered bases in target', short_name='Cvrd bp in trg'),
+            Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
+
+            Metric('Reads mapped on target', short_name='Reads on trg'),
+            Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+
+            Metric('Reads mapped on padded target', 'On padded trg'),
+            Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+
+            Metric('Read bases mapped on target', short_name='Read bp on trg'),
+        ]),
+
+        ReportSection('depth_metrics', 'Target coverage depth', [
+            Metric('Average target coverage depth', short_name='Avg'),
+            Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
+            Metric('Maximum target coverage depth', short_name='Max'),
+            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
+        ]),
+    ]
+)
 
 
 def _prep_files(cnf, sample, exons_bed):
@@ -146,11 +191,12 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
             exon.strand = exon.extra_fields[1]
         exon.feature = 'Exon'
 
-        for gn in exon.gene_name.split(','):
-            gene = genes_by_name[gn]
-            gene.chrom = exon.chrom
-            gene.strand = exon.strand
-            gene.add_exon(exon)
+        for exon_gn in exon.gene_name.split(','):
+            if exon_gn in genes_by_name:
+                gene = genes_by_name[exon_gn]
+                gene.chrom = exon.chrom
+                gene.strand = exon.strand
+                gene.add_exon(exon)
 
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
@@ -205,14 +251,15 @@ def make_and_save_general_report(cnf, sample, combined_region, max_depth, target
     step_greetings('Target coverage summary report')
 
     chr_len_fpath = get_chr_len_fpath(cnf)
+    ref_fapth = cnf.genome.seq
 
-    summary_report = generate_summary_report(cnf, sample, chr_len_fpath,
+    summary_report = generate_summary_report(cnf, sample, chr_len_fpath, ref_fapth,
         cnf.coverage_reports.depth_thresholds, cnf.padding, combined_region, max_depth, target_info)
 
     summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
     summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
     summary_report_html_fpath = summary_report.save_html(cnf.output_dir, sample.name + '.' + source.targetseq_name,
-                                                         caption='Target coverage statistics for ' + sample.name)
+        caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
     info('  ' + summary_report_txt_fpath)
@@ -299,45 +346,9 @@ def get_records_by_metrics(records, metrics):
     return _records
 
 
-header_metric_storage = MetricStorage(
-    general_section=ReportSection('general_section', '', [
-        Metric('Target', short_name='Target', common=True),
-        Metric('Regions in target', short_name='Regions in target', common=True),
-        Metric('Bases in target', short_name='Target bp', common=True),
-        Metric('Genes', short_name='Genes', common=True),
-        Metric('Genes in target', short_name='Genes in target', common=True),
-    ]),
-    sections_by_name=OrderedDict(
-        basic_metrics=ReportSection('basic_metrics', 'General', [
-            Metric('Reads'),
-            Metric('Mapped reads', short_name='Mapped'),
-            Metric('Percentage of mapped reads', short_name='%', unit='%'),
-
-            Metric('Unmapped reads', short_name='Unmap', quality='Less is better'),
-            Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
-
-            Metric('Covered bases in target', short_name='Covered bp in trg'),
-            Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-
-            Metric('Reads mapped on target', short_name='Reads on trg'),
-            Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
-
-            Metric('Reads mapped on padded target', 'On padded trg'),
-            Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
-
-            Metric('Read bases mapped on target', short_name='Read bp on trg')
-        ]),
-        depth_metrics=ReportSection('depth_metrics', 'Target coverage depth', [
-            Metric('Average target coverage depth', short_name='Avg'),
-            Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
-            Metric('Maximum target coverage depth', short_name='Max'),
-            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
-        ])))
-
-
 def generate_summary_report(
-        cnf, sample, chr_len_fpath, depth_thresholds, padding,
-        combined_region, max_depth, target_info):
+        cnf, sample, chr_len_fpath, ref_fapth,
+        depth_thresholds, padding, combined_region, max_depth, target_info):
 
     for depth in depth_thresholds:
         name = 'Part of target covered at least by ' + str(depth) + 'x'
@@ -409,7 +420,56 @@ def generate_summary_report(
         percent_val = 100.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
+    picard = get_system_path(cnf, 'java', 'picard')
+    if picard:
+        info('Picard duplication metrics for "' + basename(sample.bam) + '"')
+        dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
+        cmdline = '{picard} MarkDuplicates' \
+                  ' I={sample.bam}' \
+                  ' O=/dev/null' \
+                  ' METRICS_FILE={dup_metrics_txt}'
+        if not logger.is_local:
+            cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        cmdline = cmdline.format(**locals())
+        call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False)
+
+        info('Picard ins size hist for "' + basename(sample.bam) + '"')
+        picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
+        picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
+        cmdline = '{picard} CollectInsertSizeMetrics' \
+                  ' I={sample.bam}' \
+                  ' O={picard_ins_size_hist_txt}' \
+                  ' H={picard_ins_size_hist_pdf}'
+        if not logger.is_local:
+            cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        cmdline = cmdline.format(**locals())
+        call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False)
+
+        _parse_picard_dup_report(report, dup_metrics_txt)
+
     return report
+
+
+def _parse_picard_dup_report(report, dup_report_fpath):
+    records = []
+
+    with open(dup_report_fpath) as f:
+        for l in f:
+            if l.startswith('## METRICS CLASS'):
+                try:
+                    l_LIBRARY = next(f)
+                    l_EMPTY = next(f)
+                    l_UNKNOWN = next(f)
+                except StopIteration:
+                    pass
+                else:
+                    if l_UNKNOWN:
+                        ts = l_UNKNOWN.split()
+                        if len(ts) >= 9:
+                            dup_rate = float(ts[8])
+                            report.add_record('Duplication rate (picard)', dup_rate)
+                            return records
+    err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 
 def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):

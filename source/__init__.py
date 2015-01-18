@@ -51,8 +51,8 @@ class BaseSample:
         self.qualimap_html_fpath           = self.make_fpath(path_base + 'qualimapReport.html', name=qualimap_name)
         self.qualimap_genome_results_fpath = self.make_fpath(path_base + 'genome_results.txt', name=qualimap_name)
         self.fastqc_html_fpath             = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
-        self.picard_dup_metrics_fpath      = self.make_fpath(path_base + 'picard_dup_metrics.txt', name=picard_name)
-        self.picard_ins_size_pdf_fpath     = self.make_fpath(path_base + 'picard_ins_size_hist.pdf', name=picard_name)
+        # self.picard_dup_metrics_fpath      = self.make_fpath(path_base + 'picard_dup_metrics.txt', name=picard_name)
+        # self.picard_ins_size_pdf_fpath     = self.make_fpath(path_base + 'picard_ins_size_hist.pdf', name=picard_name)
 
 
     def make_fpath(self, path_template, **kwargs):

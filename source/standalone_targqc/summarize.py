@@ -18,48 +18,6 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.bcbio_structure import BCBioStructure
 
 
-picard_metric_storage = MetricStorage(
-    sections=[
-        ReportSection('basic_metrics', 'General', [
-        ]),
-        ReportSection('other_metrics', '', [
-            Metric('Duplication rate',  'Duplication rate (picard)', 'Percent duplication', quality='More is better', unit='%'),
-        ]),
-        ReportSection('depth_metrics', 'Target coverage depth', [
-        ]),
-    ]
-)
-
-
-def _parse_picard_dup_report(dup_report_fpath):
-    records = []
-
-    metric = picard_metric_storage.get_metric('Duplication rate (picard)')
-    record = Record(metric=metric)
-    records.append(record)
-
-    record.value = None
-    with open(dup_report_fpath) as f:
-        for l in f:
-            if l.startswith('## METRICS CLASS'):
-                try:
-                    l_LIBRARY = next(f)
-                    l_EMPTY = next(f)
-                    l_UNKNOWN = next(f)
-                except StopIteration:
-                    pass
-                else:
-                    if l_UNKNOWN:
-                        ts = l_UNKNOWN.split()
-                        if len(ts) >= 9:
-                            dup_rate = float(ts[8])
-                            info('Dup rate = ' + str(dup_rate))
-                            record.value = dup_rate
-                            return records
-    err('Error: cannot read duplication rate from ' + dup_report_fpath)
-    return records
-
-
 def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
@@ -100,8 +58,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', targetcov_metric_storage),
         ('ngscat', ngscat_report_parser.metric_storage),
-        ('qualimap', qualimap_report_parser.metric_storage),
-        ('picard', picard_metric_storage)])
+        ('qualimap', qualimap_report_parser.metric_storage)])
+        # ('picard', picard_metric_storage)])
 
     targqc_full_report = FullReport(cnf.name, [], metric_storage=targqc_metric_storage)
 
@@ -115,7 +73,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
             records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(sample.targetcov_json_fpath, silent=True) else []))
             records_by_report_type.append(('ngscat',    ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
             records_by_report_type.append(('qualimap',  qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
-            records_by_report_type.append(('picard',    _parse_picard_dup_report(sample.picard_dup_metrics_fpath) if verify_file(sample.picard_dup_metrics_fpath, silent=True) else []))
+            # records_by_report_type.append(('picard',    _parse_picard_dup_report(sample.picard_dup_metrics_fpath) if verify_file(sample.picard_dup_metrics_fpath, silent=True) else []))
 
         targqc_full_report.sample_reports.append(
             SampleReport(
