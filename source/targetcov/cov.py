@@ -431,7 +431,7 @@ def generate_summary_report(
         if not logger.is_local:
             cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False)
+        call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
 
         info('Picard ins size hist for "' + basename(sample.bam) + '"')
         picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
@@ -443,7 +443,7 @@ def generate_summary_report(
         if not logger.is_local:
             cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False)
+        call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
         _parse_picard_dup_report(report, dup_metrics_txt)
 
