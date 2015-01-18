@@ -445,7 +445,8 @@ def generate_summary_report(
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
-        _parse_picard_dup_report(report, dup_metrics_txt)
+        if verify_file(dup_metrics_txt, silent=True):
+            _parse_picard_dup_report(report, dup_metrics_txt)
 
     return report
 
