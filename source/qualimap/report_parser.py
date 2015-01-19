@@ -71,7 +71,6 @@ def parse_qualimap_sample_report(report_fpath):
                 metric = metric_storage.get_metric('Read ' + metric_infix + ' length')
                 rec = Record(metric, value)
                 records.append(rec)
-
         else:
             metric = metric_storage.get_metric(metric_name)
             if not metric:
@@ -106,7 +105,6 @@ def parse_qualimap_sample_report(report_fpath):
             if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
                 rec.meta = val_unit[1:]
             records.append(rec)
-
 
     sections = {'start':            'Summary',
                 'on target':        'Globals (inside of regions)',

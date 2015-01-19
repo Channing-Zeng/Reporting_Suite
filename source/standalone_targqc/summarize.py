@@ -88,8 +88,6 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
             )
         )
 
-    _correct_qualimap_genome_results(samples, output_dir)
-
     # Qualimap2 run for multi-sample plots
     if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]):
         qualimap = get_system_path(cnf, interpreter=None, name='qualimap')

@@ -285,6 +285,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
     for colNum in [0...section.metrics.length]
         pos = columnOrder[colNum]
         metric = section.metrics[pos]
+        if not metric.values?
+            continue
         sort_by = if metric.all_values_equal then 'nosort' else 'numeric'
         direction = if metric.quality == 'Less is better' then 'ascending' else 'descending'
         table += "<th class='second_through_last_col_headers_td' data-sortBy=#{sort_by} data-direction=#{direction}position='#{pos}'>
@@ -329,6 +331,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
         for colNum in [0...section.metrics.length]
             pos = columnOrder[colNum]
             metric = section.metrics[pos]
+            if not metric.values?
+                continue
             rec = null
             for r in sampleReport.records
                 if r.metric.name == metric.name
