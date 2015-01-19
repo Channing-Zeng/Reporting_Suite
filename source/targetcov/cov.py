@@ -428,8 +428,8 @@ def generate_summary_report(
                   ' I={sample.bam}' \
                   ' O=/dev/null' \
                   ' METRICS_FILE={dup_metrics_txt}'
-        if not logger.is_local:
-            cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        # if not logger.is_local:
+        # cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -440,8 +440,8 @@ def generate_summary_report(
                   ' I={sample.bam}' \
                   ' O={picard_ins_size_hist_txt}' \
                   ' H={picard_ins_size_hist_pdf}'
-        if not logger.is_local:
-            cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        # if not logger.is_local:
+        # cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
