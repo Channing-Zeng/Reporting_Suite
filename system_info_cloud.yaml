@@ -38,6 +38,7 @@ genomes:
 #    oncomine: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/oncomine.vcf
     snpeff: /usr/local/share/bcbio/genomes/Hsapiens/hg19/snpeff
     exons: /usr/local/share/bcbio/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+    az_exome: /usr/local/share/bcbio/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
     polymorphic_variants: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /usr/local/share/bcbio/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 

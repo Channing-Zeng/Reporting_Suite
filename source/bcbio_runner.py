@@ -260,7 +260,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('sub_scripts', 'seq2c.py'),
             dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=summaries_cmdline_params + ' ' + self.final_dir
+            paramln=summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         )
         self.targqc_summary = Step(
             cnf, run_id,
@@ -538,7 +538,8 @@ class BCBioRunner:
                 wait_for_steps=[
                     self.targetcov.job_name(s.name)
                     for s in self.bcbio_structure.samples
-                    if self.targetcov in self.steps])
+                    if self.targetcov in self.steps],
+                genome=self.bcbio_structure.samples[0].genome)
 
         if self.targqc_summary in self.steps:
             wait_for_steps = []
