@@ -393,7 +393,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(name=sample_info['description'], final_dir=self.final_dirpath)
+        sample = BCBioSample(name=sample_info['description'].replace('.', '_'), final_dir=self.final_dirpath)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
