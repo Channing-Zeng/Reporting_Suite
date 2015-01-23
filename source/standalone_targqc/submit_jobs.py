@@ -25,7 +25,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
-            _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name)
+            _prep_steps(cnf, max_threads, threads_per_sample, samples, cnf.output_dir, bed_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
