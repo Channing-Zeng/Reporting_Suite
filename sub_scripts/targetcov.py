@@ -38,12 +38,12 @@ def main(args):
                      'Default is ' + str(defaults['coverage_reports']['padding']),
                 type='int')
              ),
-            (['--depth-thresholds'], dict(
-                dest='depth_thresholds',
-                metavar='A,B,C',
-                help='Default: ' + ','.join(map(str,
-                      defaults['coverage_reports']['depth_thresholds']))),
-             ),
+            # (['--depth-thresholds'], dict(
+            #     dest='depth_thresholds',
+            #     metavar='A,B,C',
+            #     help='Default: ' + ','.join(map(str,
+            #           defaults['coverage_reports']['depth_thresholds']))),
+            #  ),
         ],
         required_keys=['bam', 'bed'],
         file_keys=['bam', 'bed'],
