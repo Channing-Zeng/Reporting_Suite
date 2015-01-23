@@ -24,6 +24,7 @@ def main():
     parser = OptionParser(description=description)
     add_post_bcbio_args(parser)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
+    parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR')
 
