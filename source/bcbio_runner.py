@@ -571,15 +571,15 @@ class BCBioRunner:
                 wait_for_steps=wait_for_steps
             )
 
-        if self.mongo_loader in self.steps:
-            for sample in self.bcbio_structure.samples:
-                for caller in self.bcbio_structure.variant_callers.values():
-                    filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
-                    self._submit_job(
-                        self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
-                        wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                        path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
-                        project=self.bcbio_structure.project_name)
+        # if self.mongo_loader in self.steps:
+        #     for sample in self.bcbio_structure.samples:
+        #         for caller in self.bcbio_structure.variant_callers.values():
+        #             filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+        #             self._submit_job(
+        #                 self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
+        #                 wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+        #                 path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
+        #                 project=self.bcbio_structure.project_name)
 
         if not self.cnf.verbose:
             print ''
