@@ -23,7 +23,7 @@ def add_post_bcbio_args(parser):
     # parser.add_option('--email', dest='email')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
-    parser.add_option('--genome', dest='genome', help='Genome build.')
+    parser.add_option('--genome', dest='genome', help='Genome build.', default='hg19')
 
 
 def process_post_bcbio_args(parser):
