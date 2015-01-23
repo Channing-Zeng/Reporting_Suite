@@ -116,13 +116,13 @@ def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
     return output_fpath
 
 
-def _filter_bed_with_gene_list(cnf, bed_fpath, gene_names):
+def _filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
     def fn(l, i):
         if l:
             ts = l.split('\t')
             new_gns = []
             for g in ts[3].split(','):
-                if g in gene_names:
+                if g in gene_names_set:
                     new_gns.append(g)
             if new_gns:
                 return l.replace(ts[3], ','.join(new_gns))
@@ -131,22 +131,30 @@ def _filter_bed_with_gene_list(cnf, bed_fpath, gene_names):
 
 
 def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
-    gene_names = set()
+    gene_names_set = set()
+    gene_names_list = list()
 
     info()
     if genes_fpath:
         with open(genes_fpath) as f:
-            gene_names = set([g.strip() for g in f.read().split('\n') if g])
+            gene_names_list = [g.strip() for g in f.read().split('\n') if g]
+            gene_names_set = set(gene_names_list)
         info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
-        amplicons_bed = _filter_bed_with_gene_list(cnf, amplicons_bed, gene_names)
-        exons_bed = _filter_bed_with_gene_list(cnf, exons_bed, gene_names)
+        amplicons_bed = _filter_bed_with_gene_set(cnf, amplicons_bed, gene_names_set)
+        exons_bed = _filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
     else:
-        amplicons_gene_names = _get_gene_names(amplicons_bed)
-        gene_names = amplicons_gene_names
+        gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
         info('Using genes from amplicons list, filtering exons with this genes.')
-        exons_bed = _filter_bed_with_gene_list(cnf, exons_bed, gene_names)
+        exons_bed = _filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
 
-    return exons_bed, amplicons_bed, gene_names
+    fixed_gene_names_list = []
+    added_gene_names_set = set()
+    for i in range(len(gene_names_list)):
+        gene_name = gene_names_list[i]
+        if gene_name not in added_gene_names_set:
+            fixed_gene_names_list.append(gene_name)
+
+    return exons_bed, amplicons_bed, gene_names_set, fixed_gene_names_list
 
 
 class TargetInfo:
@@ -163,7 +171,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
-    exons_bed, amplicons_bed, gene_names = _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath)
+    exons_bed, amplicons_bed, gene_names_set, gene_names_list = \
+        _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -171,14 +180,14 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     target_info = TargetInfo(
         fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
-        genes_fpath=genes_fpath, genes_num=len(gene_names))
+        genes_fpath=genes_fpath, genes_num=len(gene_names_list))
 
     info()
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, target_info)
 
     # Guilding the gene list
     genes_by_name = OrderedDict()
-    for gn in gene_names:
+    for gn in gene_names_list:
         genes_by_name[gn] = GeneInfo(sample_name=sample.name, gene_name=gn)
 
     info('Calculating coverage statistics for exons...')
@@ -267,7 +276,8 @@ def make_and_save_general_report(cnf, sample, combined_region, max_depth, target
 
 
 def _get_gene_names(exons_bed, gene_index=3):
-    gene_names = set()
+    gene_names_set = set()
+    gene_names_list = list()
     # getting gene names for all exons overlapped with amplicons
     with open(exons_bed) as f:
         for line in f:
@@ -278,9 +288,10 @@ def _get_gene_names(exons_bed, gene_index=3):
             if len(tokens) <= gene_index:
                 continue
 
-            gene_names |= set(tokens[gene_index].split(','))
+            gene_names_set |= set(tokens[gene_index].split(','))
+            gene_names_list.extend(tokens[gene_index].split(','))
 
-    return gene_names
+    return gene_names_set, gene_names_list
 
 
 # def make_and_save_region_report(cnf, exons_bed, sample, amplicons, gene_names):
@@ -429,7 +440,7 @@ def generate_summary_report(
                   ' O=/dev/null' \
                   ' METRICS_FILE={dup_metrics_txt}'
         # if not logger.is_local:
-        # cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -441,7 +452,7 @@ def generate_summary_report(
                   ' O={picard_ins_size_hist_txt}' \
                   ' H={picard_ins_size_hist_pdf}'
         # if not logger.is_local:
-        # cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -693,14 +704,14 @@ def _make_flat_region_report(regions, depth_threshs):
         try:
             row = [
                 region.sample_name,
-                region.chrom,
-                '{:,}'.format(region.start),
-                '{:,}'.format(region.end),
+                region.chrom if region.chrom is not None else '-',
+                '{:,}'.format(region.start) if region.start is not None else '-',
+                '{:,}'.format(region.end) if region.end is not None else '-',
                 region.gene_name,
-                str(region.exon_num) if region.exon_num else '.',
+                str(region.exon_num) if region.exon_num is not None else '.',
                 region.strand if region.strand else '.',
                 region.feature,
-                '{:,}'.format(region.get_size()),
+                '{:,}'.format(region.get_size()) if region.get_size() is not None else '-',
                 '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',
                 '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
                 '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
