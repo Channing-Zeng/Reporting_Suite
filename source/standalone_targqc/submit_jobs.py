@@ -71,7 +71,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
         summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath)
 
 
-def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_name):
+def _prep_steps(cnf, max_threads, threads_per_sample, samples, output_dirpath, bed_fpath, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
     run_id = path_hash + '_' + cnf.project_name
@@ -139,7 +139,16 @@ def _prep_steps(cnf, max_threads, threads_per_sample, bed_fpath, main_script_nam
 
     #######################################
     # Summary
-    summary_cmdline_params = ' '.join(sys.argv[1:]) + ' --only-summary'
+    summary_cmdline_params = basic_params + \
+        ' -o ' + cnf.output_dir + \
+        ' --work-dir ' + cnf.work_dir + \
+        ' --log-dir ' + cnf.log_dir + \
+       (' --reuse ' if cnf.reuse_intermediate else '') + \
+        ' --genome ' + cnf.genome.name + \
+        ' --project-name ' + cnf.project_name + \
+        ' '.join([s.bam for s in samples]) + \
+        ' --bed ' + bed_fpath + \
+        ' --only-summary'
 
     targqc_summary_step = Step(
         cnf, run_id,
