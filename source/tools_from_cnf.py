@@ -4,7 +4,8 @@ import sys
 import subprocess
 from os.path import join, dirname, abspath, pardir
 from distutils.version import LooseVersion
-from source.file_utils import verify_file, code_base_path, adjust_system_path, verify_dir, verify_obj_by_path
+from source.file_utils import verify_file, code_base_path, adjust_system_path, verify_dir, verify_obj_by_path, \
+    safe_mkdir
 
 from source.logger import info, err
 from source.file_utils import file_exists, which
@@ -85,6 +86,7 @@ def get_java_tool_cmdline(cnf, script, extra_warning='', suppress_warn=False):
         jvm_opts = cnf.resources[script]['jvm_opts']
     else:
         jvm_opts = ['-Xms750m', '-Xmx3g']
+    jvm_opts.append('-Djava.io.tmpdir=' + join(cnf.work_dir))
 
     return get_script_cmdline(
         cnf, 'java', script,
