@@ -22,7 +22,7 @@ header_metric_storage = MetricStorage(
     general_section=ReportSection('general_section', '', [
         Metric('Target', short_name='Target', common=True),
         Metric('Regions in target', short_name='Regions in target', common=True),
-        Metric('Bases in target', short_name='Target bp', common=True),
+        Metric('Bases in target', short_name='Target bp', unit='bp', common=True),
         Metric('Genes', short_name='Genes', common=True),
         Metric('Genes in target', short_name='Genes in target', common=True),
     ]),
@@ -40,7 +40,7 @@ header_metric_storage = MetricStorage(
         ]),
 
         ReportSection('target_metrics', 'Target', [
-            Metric('Covered bases in target', short_name='Cvrd bp in trg'),
+            Metric('Covered bases in target', short_name='Covered in trg', unit='bp'),
             Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
             Metric('Reads mapped on target', short_name='Reads on trg'),
@@ -49,7 +49,7 @@ header_metric_storage = MetricStorage(
             Metric('Reads mapped on padded target', 'On padded trg'),
             Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
 
-            Metric('Read bases mapped on target', short_name='Read bp on trg'),
+            Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
         ]),
 
         ReportSection('depth_metrics', 'Target coverage depth', [
