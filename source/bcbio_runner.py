@@ -16,7 +16,7 @@ from source.ngscat.bed_file import verify_bam
 
 class Step:
     def __init__(self, cnf, run_id, name, script, dir_name=None,
-                 interpreter=None, short_name=None, paramln=''):
+                 interpreter=None, short_name=None, paramln='', env_vars=None):
         self.name = name
         self.dir_name = dir_name
         self.cnf = cnf
@@ -27,6 +27,7 @@ class Step:
         self.run_id = None
         self.script = script
         self.interpreter = interpreter
+        self.env_vars = env_vars
 
     def job_name(self, sample=None, caller=None):
         return self.short_name.upper() + '_' + self.run_id_ + \
@@ -216,7 +217,8 @@ class BCBioRunner:
             script='qualimap',
             dir_name=BCBioStructure.qualimap_dir,
             paramln=' bamqc -nt ' + str(self.threads_per_sample) + ' --java-mem-size=24G -nr 5000 '
-                    '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN'
+                    '-bam \'{bam}\' -outdir \'{output_dir}\' {qualimap_gff} -c -gd HUMAN',
+            env_vars=dict(DISPLAY=None)
         )
         #############
         # Summaries #
@@ -348,7 +350,7 @@ class BCBioRunner:
         else:
             print step.name,
 
-        call(self.cnf, qsub_cmdline, silent=True)
+        call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars)
 
         self.jobs.append(JobRunning(name=step.name, log_fpath=log_fpath, qsub_cmdline=qsub_cmdline))
 

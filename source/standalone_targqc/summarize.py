@@ -101,7 +101,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
             safe_mkdir(qualimap_output_dir)
             rows = []
             for sample in samples:
-                rows += [[sample.name, sample.qualimap_html_fpath]]
+                if sample.qualimap_html_fpath:
+                    rows += [[sample.name, sample.qualimap_html_fpath]]
 
             data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
             cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
