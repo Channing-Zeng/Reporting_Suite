@@ -153,6 +153,7 @@ def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
         gene_name = gene_names_list[i]
         if gene_name not in added_gene_names_set:
             fixed_gene_names_list.append(gene_name)
+            added_gene_names_set.add(gene_name)
 
     return exons_bed, amplicons_bed, gene_names_set, fixed_gene_names_list
 
