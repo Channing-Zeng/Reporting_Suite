@@ -36,10 +36,10 @@ metric_storage = MetricStorage(
 
         ReportSection('qualimap', 'Qualimap metrics, inside the regions (unless it is a WGS study)', [
             Metric('Mean Mapping Quality',                          'Mean MQ',                     'Mean mapping quality, inside of regions'),
-            Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions'),  # added in Qualimap v.2.0
-            Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions'),
-            Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions'),
-            Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions'),
+            Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
+            Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions', quality='Less is better'),
+            Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions', quality='Less is better'),
+            Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
             # Metric('Duplication rate',                              'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]

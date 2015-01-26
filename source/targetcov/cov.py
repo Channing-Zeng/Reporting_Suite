@@ -36,7 +36,7 @@ header_metric_storage = MetricStorage(
             Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
             Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
 
-            Metric('Duplication rate (picard)', short_name='Dup rate', description='Percent duplication, reported by Picard', quality='More is better', unit='%'),
+            Metric('Duplication rate (picard)', short_name='Dup rate', description='Percent duplication, reported by Picard', quality='Less is better', unit='%'),
         ]),
 
         ReportSection('target_metrics', 'Target', [
@@ -56,7 +56,7 @@ header_metric_storage = MetricStorage(
             Metric('Average target coverage depth', short_name='Avg'),
             Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
             Metric('Maximum target coverage depth', short_name='Max'),
-            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
+            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%', quality='Less is better')
         ]),
     ]
 )
