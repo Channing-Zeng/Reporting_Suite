@@ -124,9 +124,11 @@ def _add_targqc_reports(bcbio_structure):
 
     for sample in bcbio_structure.samples:
         targqc_htmls_by_sample[sample.name] = OrderedDict()
-        targqc_htmls_by_sample[sample.name]['targetcov'] = verify_file(sample.targetcov_html_fpath)
-        targqc_htmls_by_sample[sample.name]['ngscat'] = verify_file(sample.ngscat_html_fpath)
-        targqc_htmls_by_sample[sample.name]['qualimap'] = verify_file(sample.qualimap_html_fpath)
+        for report_name, report_html_fpath in [('targetcov', sample.targetcov_html_fpath),
+                                               ('ngscat', sample.ngscat_html_fpath),
+                                               ('qualimap', sample.qualimap_html_fpath)]:
+            if verify_file(report_html_fpath):
+                targqc_htmls_by_sample[sample.name][report_name] = verify_file(report_html_fpath)
 
     return targqc_htmls_by_sample
 
