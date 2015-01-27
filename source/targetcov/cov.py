@@ -160,12 +160,10 @@ def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
 
 class TargetInfo:
     def __init__(self, fpath=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
-        if fpath:
-            self.fpath = realpath(fpath)
+        self.fpath = realpath(fpath) if fpath else None
         self.regions_num = regions_num
         self.bases_num = bases_num
-        if genes_fpath:
-            self.genes_fpath = realpath(genes_fpath)
+        self.genes_fpath = realpath(genes_fpath) if genes_fpath else None
         self.genes_num = genes_num
 
 
