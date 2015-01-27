@@ -1,9 +1,8 @@
-from source.logger import critical
 from itertools import repeat, izip
-from os.path import join, basename
+from os.path import join
 
+from source.copy_number import my_copy_number
 
-from source.targetcov.copy_number import my_copy_number
 
 _BCBIO_DIR = "/home/alla/worksplace/Reporting_Suite/test/bcbio_test_dir/"
 _FILE_MAPPED_READS_PATH = _BCBIO_DIR + "reads_mapped.txt"

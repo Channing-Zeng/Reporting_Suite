@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import __common
-
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
-from source.targetcov.copy_number import cnv_reports
+from source.copy_number import cnv_reports
 
 
 def main():
