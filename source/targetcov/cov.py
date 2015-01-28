@@ -445,6 +445,9 @@ def generate_summary_report(
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
 
+        if verify_file(dup_metrics_txt, silent=True):
+            _parse_picard_dup_report(report, dup_metrics_txt)
+
         info('Picard ins size hist for "' + basename(sample.bam) + '"')
         picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
         picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
@@ -456,9 +459,6 @@ def generate_summary_report(
         #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
-
-        if verify_file(dup_metrics_txt, silent=True):
-            _parse_picard_dup_report(report, dup_metrics_txt)
 
     return report
 
@@ -479,7 +479,7 @@ def _parse_picard_dup_report(report, dup_report_fpath):
                     if l_UNKNOWN:
                         ts = l_UNKNOWN.split()
                         if len(ts) >= 9:
-                            dup_rate = float(ts[8])
+                            dup_rate = 100.0 * float(ts[8])
                             report.add_record('Duplication rate (picard)', dup_rate)
                             return records
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
