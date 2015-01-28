@@ -506,8 +506,6 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
         i += 1
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
-        if region.feature == 'Whole-Gene':
-            pass
         region.sum_up(cnf.coverage_reports.depth_thresholds)
 
     # info('Sorting...')

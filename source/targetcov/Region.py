@@ -92,13 +92,15 @@ class Region:
         if self.bases_within_threshs is not None:
             return self.bases_within_threshs
 
-        if self.bases_by_depth:
-            self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
-            for depth, bases in self.bases_by_depth.iteritems():
-                for depth_thres in depth_thresholds:
-                    if depth >= depth_thres:
-                        self.bases_within_threshs[depth_thres] += bases
-            return self.bases_within_threshs
+        if not self.bases_by_depth:
+            err('Error: not self.bases_by_depth for ' + str(self))
+
+        self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
+        for depth, bases in self.bases_by_depth.iteritems():
+            for depth_thres in depth_thresholds:
+                if depth >= depth_thres:
+                    self.bases_within_threshs[depth_thres] += bases
+        return self.bases_within_threshs
 
     def calc_avg_depth(self):
         if self.avg_depth is not None:
@@ -158,15 +160,13 @@ class Region:
 
 class GeneInfo(Region):
     """ Collects assisiated exons and overlapping amlicons.
-        - Knows it's sample, gene name and chromosome.
+        - Knows its sample, gene name and chromosome.
 
         - Stores amplicons and exons ("Region" instances).
 
         - Supports extending with exons in sorted by starting position order;
           when adding a new exon, recalculates start, end, size and based_by_depth.
 
-        - Not a "Region" instance itself, so does not support sum_up() method,
-          but can construct a "Region" object for a given feature.
     """
     def __init__(self, sample_name, gene_name, chrom=None, strand=None, feature='Whole-Gene', exon_num=None):
         Region.__init__(self, sample_name=sample_name, gene_name=gene_name, exon_num=exon_num, strand=strand,
