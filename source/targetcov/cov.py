@@ -419,7 +419,7 @@ def generate_summary_report(
     v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
-    v_read_bases_on_targ = combined_region.avg_depth * target_info.bases_num  # sum of all coverages
+    v_read_bases_on_targ = int(target_info.bases_num * combined_region.avg_depth)  # sum of all coverages
     report.add_record('Read bases mapped on target', v_read_bases_on_targ)
 
     info('')
