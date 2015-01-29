@@ -432,33 +432,33 @@ def generate_summary_report(
         percent_val = 100.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
-    picard = get_system_path(cnf, 'java', 'picard')
-    if picard:
-        info('Picard duplication metrics for "' + basename(sample.bam) + '"')
-        dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
-        cmdline = '{picard} MarkDuplicates' \
-                  ' I={sample.bam}' \
-                  ' O=/dev/null' \
-                  ' METRICS_FILE={dup_metrics_txt}'
-        # if not logger.is_local:
-        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
-        cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
-
-        if verify_file(dup_metrics_txt, silent=True):
-            _parse_picard_dup_report(report, dup_metrics_txt)
-
-        info('Picard ins size hist for "' + basename(sample.bam) + '"')
-        picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
-        picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
-        cmdline = '{picard} CollectInsertSizeMetrics' \
-                  ' I={sample.bam}' \
-                  ' O={picard_ins_size_hist_txt}' \
-                  ' H={picard_ins_size_hist_pdf}'
-        # if not logger.is_local:
-        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
-        cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
+    # picard = get_system_path(cnf, 'java', 'picard')
+    # if picard:
+    #     info('Picard duplication metrics for "' + basename(sample.bam) + '"')
+    #     dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
+    #     cmdline = '{picard} MarkDuplicates' \
+    #               ' I={sample.bam}' \
+    #               ' O=/dev/null' \
+    #               ' METRICS_FILE={dup_metrics_txt}'
+    #     # if not logger.is_local:
+    #     #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+    #     cmdline = cmdline.format(**locals())
+    #     call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
+    #
+    #     if verify_file(dup_metrics_txt, silent=True):
+    #         _parse_picard_dup_report(report, dup_metrics_txt)
+    #
+    #     info('Picard ins size hist for "' + basename(sample.bam) + '"')
+    #     picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
+    #     picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
+    #     cmdline = '{picard} CollectInsertSizeMetrics' \
+    #               ' I={sample.bam}' \
+    #               ' O={picard_ins_size_hist_txt}' \
+    #               ' H={picard_ins_size_hist_pdf}'
+    #     # if not logger.is_local:
+    #     #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
+    #     cmdline = cmdline.format(**locals())
+    #     call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
     return report
 
@@ -720,7 +720,7 @@ def _make_flat_region_report(regions, depth_threshs):
             traceback.print_exc()
         else:
             for thresh in depth_threshs:
-                if not region.bases_within_threshs:
+                if region.bases_within_threshs is None:
                     err('No bases_within_threshs for ' + str(region))
                 else:
                     bases = region.bases_within_threshs.get(thresh)

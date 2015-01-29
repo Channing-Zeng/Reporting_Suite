@@ -92,8 +92,8 @@ class Region:
         if self.bases_within_threshs is not None:
             return self.bases_within_threshs
 
-        if not self.bases_by_depth:
-            err('Error: not self.bases_by_depth for ' + str(self))
+        if self.bases_by_depth is None:
+            err('Error: self.bases_by_depth is None for ' + str(self))
 
         self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
         for depth, bases in self.bases_by_depth.iteritems():
@@ -174,6 +174,7 @@ class GeneInfo(Region):
         self.exons = []
         self.amplicons = []
         self.non_overlapping_exons = []
+        self.size = 0
 
     def get_exons(self):
         return self.exons  # self.subregions_by_feature['Exon']['regions']
@@ -183,7 +184,6 @@ class GeneInfo(Region):
 
     def add_exon(self, exon):  # exons come sorted by start
         if self.exons == []:
-            self.size = 0
             self.start = exon.start
             self.end = exon.end
         else:
