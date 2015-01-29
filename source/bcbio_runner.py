@@ -156,9 +156,9 @@ class BCBioRunner:
             summaries_cmdline_params += ' --bed ' + cnf.bed
 
         anno_paramline = params_for_one_sample + ('' +
-             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
-             '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
-             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
+            ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
+            '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
+            '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
 
         self.varannotate = Step(cnf, run_id,
             name=BCBioStructure.varannotate_name, short_name='va',
@@ -405,32 +405,32 @@ class BCBioRunner:
                    self.ngscat]):
                 if not sample.bam or not verify_bam(sample.bam):
                     err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
-
-                # TargetCov reports
-                if self.targetcov in self.steps:
-                    info('Target coverage for "' + sample.name + '"')
-                    self._submit_job(
-                        self.targetcov, sample.name,
-                        bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons, sample=sample.name, genome=sample.genome,
-                        caller_names='', vcfs='', threads=self.threads_per_sample)
-
-                # ngsCAT reports
-                if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                    err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
                 else:
-                    if self.ngscat in self.steps:
+                    # TargetCov reports
+                    if self.targetcov in self.steps:
+                        info('Target coverage for "' + sample.name + '"')
                         self._submit_job(
-                            self.ngscat, sample.name, bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons,
-                            sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
+                            self.targetcov, sample.name,
+                            bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons, sample=sample.name, genome=sample.genome,
+                            caller_names='', vcfs='', threads=self.threads_per_sample)
 
-                # Qualimap
-                if self.qualimap in self.steps:
-                    qualimap_gff = ''
-                    if sample.bed:
-                        qualimap_gff = ' -gff ' + sample.qualimap_bed + ' '
-                    self._submit_job(
-                        self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                        genome=sample.genome, qualimap_gff=qualimap_gff, threads=self.threads_per_sample)
+                    # ngsCAT reports
+                    if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
+                        err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
+                    else:
+                        if self.ngscat in self.steps:
+                            self._submit_job(
+                                self.ngscat, sample.name, bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons,
+                                sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
+
+                    # Qualimap
+                    if self.qualimap in self.steps:
+                        qualimap_gff = ''
+                        if sample.bed:
+                            qualimap_gff = ' -gff ' + sample.qualimap_bed + ' '
+                        self._submit_job(
+                            self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
+                            genome=sample.genome, qualimap_gff=qualimap_gff, threads=self.threads_per_sample)
 
             # Processing VCFs: QC, annotation
             for caller in self.bcbio_structure.variant_callers.values():

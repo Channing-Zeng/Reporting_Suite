@@ -498,7 +498,7 @@ class BCBioStructure:
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
-        if verify_bam(bam):
+        if isfile(bam) and verify_bam(bam):
             sample.bam = bam
             info('BAM file for ' + sample.name + ': ' + sample.bam)
         else:
