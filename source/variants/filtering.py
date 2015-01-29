@@ -351,7 +351,7 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_fre
         sys.exit(1)
 
     c = cnf.variant_filtering
-    min_freq = c.min_freq or sample_min_freq or defaults.default_min_freq
+    min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
     cmdline = '{vcf2txt} ' \
         '-f {min_freq} -n {c.sample_cnt} -F {c.ave_freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \

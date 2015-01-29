@@ -241,6 +241,8 @@ class BCBioRunner:
         varfilter_paramline = summaries_cmdline_params + ' ' + self.final_dir
         if cnf.datahub_path:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
+        if cnf.min_freq is not None:
+            varfilter_paramline += ' --freq ' + str(cnf.min_freq)
 
         self.varfilter_all = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',

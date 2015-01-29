@@ -24,6 +24,7 @@ def add_post_bcbio_args(parser):
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('--genome', dest='genome', help='Genome build.', default='hg19')
+    parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
 
 
 def process_post_bcbio_args(parser):

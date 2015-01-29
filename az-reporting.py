@@ -26,6 +26,9 @@ def main():
     
     cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)
 
+    if cnf.min_freq is not None:
+        info('Min freq for filtering is %f' % cnf.min_freq)
+
     if cnf.steps and cnf.load_mongo and 'MongoLoader' not in cnf.steps:
         cnf.steps.append('MongoLoader')
 

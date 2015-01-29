@@ -76,7 +76,7 @@ def main():
                  'Used with -f and -n' % dfts['fraction'],
         )),
 
-        (['-F', '--freq'], dict(
+        (['-F', '--ave-freq'], dict(
             dest='ave_freq',
             type='float',
             help='When the average allele frequency is also below the [freq], '
@@ -100,13 +100,14 @@ def main():
                  'even if it\'s in COSMIC. Default %f.' % dfts['max_ratio'],
         )),
 
-        (['-f', '--min-freq'], dict(
-            dest='min_freq',
-            type='float',
-            help='When individual allele frequency < freq for variants, '
-                 'it was considered likely false poitives. '
-                 'Default %f' % defaults['default_min_freq'],
-        )),
+        # This option moved to add_post_bcbio_args()
+        # (['-f', '--min-freq'], dict(
+        #     dest='min_freq',
+        #     type='float',
+        #     help='When individual allele frequency < freq for variants, '
+        #          'it was considered likely false poitives. '
+        #          'Default %f' % defaults['default_min_freq'],
+        # )),
 
         (['-p'], dict(
             dest='min_p_mean',
