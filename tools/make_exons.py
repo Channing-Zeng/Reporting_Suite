@@ -13,6 +13,24 @@ class ApprovedGene:
         self.ucsc_id = ucsc_id
 
 
+def parse_chrom(chrom):
+    if chrom in ['reserved', 'c10_B']:
+        return None
+
+    CHROMS = ['Y', 'X', 'mitochondria']
+    for i in range(24, 0, -1):
+        CHROMS.append(str(i))
+
+    for c in CHROMS:
+        if chrom.startswith(c):
+            if c == 'mitochondria':
+                return 'chrM'
+            return 'chr' + c
+
+    sys.stderr.write('Cannot parse chromosome ' + chrom + '\n')
+    return None
+
+
 def _read_approved_genes(synonyms_fpath):
     approved_gene_by_name = dict()
     approved_gnames_by_prev_gname = defaultdict(list)
@@ -24,7 +42,8 @@ def _read_approved_genes(synonyms_fpath):
             if l and not l.startswith('#'):
                 approved_gn, prev_names, synonyms, chrom, ucsc_id = l[:-1].split('\t')
                 if chrom:
-                    chrom = 'chr' + chrom.split('p')[0]
+                    chrom = parse_chrom(chrom)
+
                 approved_gene = ApprovedGene(approved_gn, prev_names, synonyms, chrom, ucsc_id)
                 approved_gene_by_name[approved_gn] = approved_gene
 
@@ -46,52 +65,67 @@ def _read_approved_genes(synonyms_fpath):
 
 
 def _check_gene_symbol(approved_gene, gene_symbol, ucsc_g_id, chrom):
-    if ucsc_g_id != approved_gene.ucsc_id:
-        sys.stderr.write(gene_symbol + ': HGNC ucsc_id = ' + approved_gene.ucsc_id + ', UCSC id = ' + ucsc_g_id + '\n')
-    if chrom != approved_gene.chrom:
-        sys.stderr.write(gene_symbol + ': HGNC chrom = ' + approved_gene.chrom + ', UCSC chrom = ' + chrom + '\n')
+    # if ucsc_g_id != approved_gene.ucsc_id:
+    #     sys.stderr.write(gene_symbol + ': HGNC ucsc_id = ' + approved_gene.ucsc_id + ', UCSC id = ' + ucsc_g_id + '\n')
 
+    if chrom.split('_')[0] != approved_gene.chrom:
+        sys.stderr.write(gene_symbol + ': HGNC chrom = ' + approved_gene.chrom + ', UCSC chrom = ' + chrom + '\n')
+        return None
+
+    return approved_gene
 
 def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
                               gene_symbol, ucsc_g_id, chrom):
     if gene_symbol in approved_gene_by_name:
-        _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, ucsc_g_id, chrom)
-        return approved_gene_by_name[gene_symbol]
+        if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, ucsc_g_id, chrom):
+            return approved_gene_by_name[gene_symbol]
 
-    def _get_approved_by_prev_gname(approved_genes, kind):
-        if approved_genes:
-            if len(approved_genes) == 1:
-                _check_gene_symbol(approved_genes[0], gene_symbol, ucsc_g_id, chrom)
+    def _get_approved_genes_by_kind(approved_genes, kind):
+        if not approved_genes:
+            return 'NOT FOUND'
+
+        if len(approved_genes) > 1:
+            approved_genes_same_ucsc = [g for g in approved_genes if g.ucsc_id == ucsc_g_id]
+
+            if len(approved_genes_same_ucsc) > 1:
+                sys.stderr.write('Err: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + ucsc_g_id)
+                return 'AMBIGOUS'
+
+            if len(approved_genes_same_ucsc) == 1:
+                if _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, ucsc_g_id, chrom):
+                    return approved_genes_same_ucsc[0]
+
+            # no genes with same ucsc id, or not the same chromosome for them
+
+            approved_genes_same_chrom = [g for g in approved_genes if g.chrom == chrom.split('_')[0]]
+
+            if len(approved_genes_same_chrom) > 1:
+                sys.stderr.write('Err: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + chrom)
+                return 'AMBIGOUS'
+
+            if len(approved_genes_same_chrom) == 1:
+                g = approved_genes_same_chrom[0]
+                sys.stderr.write('Only ' + g.gname + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + chrom + ', picking it')
+                if _check_gene_symbol(g, gene_symbol, ucsc_g_id, chrom):
+                    return g
+                else:
+                    return 'NOT FOUND'
+
+            if len(approved_genes_same_chrom) == 0:
+                sys.stderr.write('Err: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + chrom)
+                return 'NOT FOUND'
+
+        if len(approved_genes) == 1:
+            if _check_gene_symbol(approved_genes[0], gene_symbol, ucsc_g_id, chrom):
                 return approved_genes[0]
 
-            if len(approved_genes) > 1:
-                approved_genes_same_ucsc = [g for g in approved_genes if g.ucsc_id == ucsc_g_id]
-                if len(approved_genes_same_ucsc) == 1:
-                    _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, ucsc_g_id, chrom)
-                    return approved_genes_same_ucsc[0]
-                if len(approved_genes_same_ucsc) > 1:
-                    sys.stderr.write('Err: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + ucsc_g_id)
-                    return 'AMBIGOUS'
+        return 'NOT FOUND'
 
-                if len(approved_genes_same_ucsc) == 0:
-                    approved_genes_same_chrom = [g for g in approved_genes if g.chrom == chrom]
-                    if len(approved_genes_same_chrom) == 1:
-                        g = approved_genes_same_chrom[0]
-                        sys.stderr.write('Only ' + g.gname + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + chrom + ', picking it')
-                        _check_gene_symbol(g, gene_symbol, ucsc_g_id, chrom)
-                        return g
-                    if len(approved_genes_same_chrom) > 1:
-                        sys.stderr.write('Err: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + chrom)
-                        return 'AMBIGOUS'
-                    if len(approved_genes_same_chrom) == 0:
-                        sys.stderr.write('Err: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + chrom)
-                        return 'NOT FOUND'
-
-    res = _get_approved_by_prev_gname(approved_gnames_by_prev_gname.get(gene_symbol), 'prev')
+    res = _get_approved_genes_by_kind(approved_gnames_by_prev_gname.get(gene_symbol), 'prev')
     if res == 'AMBIGOUS':
         return None
     elif res == 'NOT FOUND':
-        res = _get_approved_by_prev_gname(approved_gnames_by_synonym.get(gene_symbol), 'synonym')
+        res = _get_approved_genes_by_kind(approved_gnames_by_synonym.get(gene_symbol), 'synonym')
         if res in ['AMBIGOUS', 'NOT FOUND']:
             return None
         else:
