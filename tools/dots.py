@@ -11,7 +11,7 @@ def dots_to_empty_cells():
         while '\t\t' in l:
             l = l.replace('\t\t', '\t.\t')
         sys.stdout.write(l)
-
+    sys.stdout.close()
 
 def main():
     dots_to_empty_cells()
