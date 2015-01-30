@@ -170,6 +170,8 @@ class TargetInfo:
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     exons_bed, amplicons_bed = _prep_files(cnf, sample, exons_bed)
 
+    info()
+    info('Annotating amplicons with gene names from exons...')
     amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     exons_bed, amplicons_bed, gene_names_set, gene_names_list = \

@@ -43,13 +43,20 @@ class BCBioSample(BaseSample):
     # raw variants
     def find_raw_vcf_by_callername(self, callername):
         fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=True)
-        if not verify_file(fpath):
+        if not isfile(fpath):
             fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=False)
+        if not isfile(fpath):
+            fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=True)
+        if not isfile(fpath):
+            fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=False)
         return verify_file(fpath)
 
     def get_raw_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.var_dir,
                     self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
+
+    def get_rawest_vcf_fpath_by_callername(self, callername, gz):
+        return join(self.dirpath, self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
 
     # annotated vcf
     def find_anno_vcf_by_callername(self, callername):
