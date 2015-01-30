@@ -55,8 +55,7 @@ with sys.stdin as inp, sys.stdout as out:
             g_id, chrom, strand, txStart, txEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
             approved_gene_symbol = approved_gname_by_gname.get(geneSymbol)
             if approved_gene_symbol:
-                sys.stderr.write(str(exonStarts.split(',')) + '\n\n')
-                for j, s, e in zip(range(int(exonCount)), exonStarts.split(','), exonEnds.split(',')):
+                for j, s, e in zip(range(int(exonCount)), [e for e in exonStarts.split(',') if e], [e for e in exonEnds.split(',') if e]):
                     out.write('\t'.join([chrom, s, e, approved_gene_symbol, str(j), strand]) + '\n')
             else:
                 if not_approved_f:
