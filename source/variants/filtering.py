@@ -123,7 +123,6 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'))
     if not pick_line:
         sys.exit(1)
-        return None
 
     with open(vcf2txt_res_fpath) as f:
         try:
@@ -157,6 +156,8 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
     global glob_cnf
     cnf = glob_cnf
 
+    info(sample.name + ', ' + caller_name + ': writing filtered VCFs')
+
     filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
     pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
     safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
@@ -164,6 +165,9 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
     with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
          open(filt_vcf_fpath, 'w') as filt_f, \
          open(pass_filt_vcf_fpath, 'w') as pass_f:
+
+        info(sample.name + ', ' + caller_name + ': opened ' + anno_vcf_fpath + ', writing to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
+
         for l in vcf_f:
             if l.startswith('#'):
                 filt_f.write(l)
@@ -188,9 +192,11 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
                             ts[6] += filter_value
                     filt_f.write('\t'.join(ts))
 
+    info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
+
     # Indexing
     info()
-    info('Indexing')
+    info(sample.name + ', ' + caller_name + ': indexing')
     igvtools_index(cnf, pass_filt_vcf_fpath)
     igvtools_index(cnf, filt_vcf_fpath)
     bgzip_and_tabix(cnf, filt_vcf_fpath)
@@ -217,6 +223,7 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
                 filt = ts[pass_col]
                 variants[(s_name, chrom, pos, alt)] = filt
 
+    info('* Writing filtered VCFs... *')
     Parallel(n_jobs=cnf.threads) \
         (delayed(postprocess_vcf) \
             (next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
