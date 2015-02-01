@@ -838,12 +838,22 @@ def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
                    else '') + ' -i {bed_fpath}').format(**locals())
         call(cnf, cmdline, output_fpath)
 
+        # disctinct genes and exon numbers
         def fn(l, i):
             ts = l.split('\t')
+
+            # distinct genes
             if len(ts) < 4:
                 return l
             gns = ts[3].split(';')
             l = l.replace(ts[3], ','.join(set(gns)))
+
+            # distinct exons
+            if len(ts) < 5:
+                return l
+            exons = ts[4].split(',')
+            l = l.replace(ts[4], ','.join(set(exons)))
+
             return l
 
         return iterate_file(cnf, output_fpath, fn, 'dstnct')

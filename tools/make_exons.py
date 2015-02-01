@@ -18,7 +18,7 @@ def parse_chrom(chrom):
         return None
 
     CHROMS = ['Y', 'X', 'mitochondria']
-    for i in range(24, 0, -1):
+    for i in range(22, 0, -1):
         CHROMS.append(str(i))
 
     for c in CHROMS:
@@ -177,7 +177,7 @@ def main():
 
                 if approved_gene_symbol:
                     for j, s, e in zip(range(int(exonCount)), [e for e in exonStarts.split(',') if e], [e for e in exonEnds.split(',') if e]):
-                        out.write('\t'.join([chrom, s, e, approved_gene_symbol, str(j), strand]) + '\n')
+                        out.write('\t'.join([chrom, s, e, approved_gene_symbol, '.', strand]) + '\n')
                 else:
                     not_approved_gene_names.append(geneSymbol + '\t' + status)
 

@@ -203,15 +203,21 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
 
 
 def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
+    info('')
+    info('-' * 70)
+    info('Writing VCFs')
+
     variants = dict()
     passed_variants = set()
 
+    info('Collecting passed variants...')
     with open(pickline_res_fpath) as puckline_res_f:
         for l in puckline_res_f:
             ts = l.split('\t')
             s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
             passed_variants.add((s_name, chrom, pos, alt))
 
+    info('Collecting all vcf2txt variants...')
     with open(vcf2txt_res_fpath) as vcf2txt_f:
         pass_col = None
         for l in vcf2txt_f:
@@ -223,7 +229,8 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
                 filt = ts[pass_col]
                 variants[(s_name, chrom, pos, alt)] = filt
 
-    info('* Writing filtered VCFs... *')
+    info()
+    info('Writing filtered VCFs')
     Parallel(n_jobs=cnf.threads) \
         (delayed(postprocess_vcf) \
             (next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
