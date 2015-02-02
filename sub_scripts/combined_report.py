@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import __common
+import __check_python_version
 
 import sys
 from source.project_level_report import make_project_level_report

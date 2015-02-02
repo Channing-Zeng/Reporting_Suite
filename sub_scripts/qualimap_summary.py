@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import __common
+import __check_python_version
 
 import sys
 from source.qualimap.summarize_qualimap import summary_reports

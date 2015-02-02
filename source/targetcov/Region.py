@@ -36,22 +36,22 @@ class Region:
         self.missed_by_db = dict()
         self.var_num = None
 
-    def get_chrom_num(self):
-        digits = [c for c in self.chrom if c.isdigit()]
-        if digits:
-            return int(''.join(digits))
-        if 'M' in self.chrom:
-            return 0
-        if 'X' in self.chrom:
-            return 23
-        if 'Y' in self.chrom:
-            return 24
-        else:
-            return 25
-
-    @staticmethod
-    def get_order_key(r):
-        return r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name
+    # def get_chrom_num(self):
+    #     digits = [c for c in self.chrom if c.isdigit()]
+    #     if digits:
+    #         return int(''.join(digits))
+    #     if 'M' in self.chrom:
+    #         return 0
+    #     if 'X' in self.chrom:
+    #         return 23
+    #     if 'Y' in self.chrom:
+    #         return 24
+    #     else:
+    #         return 25
+    #
+    # @staticmethod
+    # def get_order_key(r):
+    #     return r.get_chrom_num(), r.get_start(), r.get_end(), r.gene_name
 
     def get_start(self):
         return self.start

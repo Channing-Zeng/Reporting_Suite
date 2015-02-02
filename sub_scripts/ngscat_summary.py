@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import __common
+import __check_python_version
 
 import sys
 from source.ngscat.summarize_ngscat import summary_reports

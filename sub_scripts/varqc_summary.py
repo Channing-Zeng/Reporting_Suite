@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import __common
+import __check_python_version
 
 import sys
 from source.variants.summarize_qc import make_summary_reports

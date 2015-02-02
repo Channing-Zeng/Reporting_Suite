@@ -79,28 +79,29 @@ def _prep_files(cnf, sample, exons_bed):
     elif abspath(exons_bed) == abspath(amplicons_bed):
         warn('Same file used for exons and amplicons: ' + exons_bed)
 
-    # Amplicons
-    info('Sorting amplicons BED file.')
+    # Exons
+    info()
+    info('Sorting and merging exons...')
+    exons_bed = _merge_bed(cnf, exons_bed)
+
+    # Amplicons - can be 3-columned
+    info('bedtools-sorting amplicons...')
     amplicons_bed = sort_bed(cnf, amplicons_bed)
 
+    # info()
+    # info('Fixing amplicon gene names if there are...')
+    # amplicons_bed = _fix_amplicons_gene_names(cnf, amplicons_bed)
+
     info()
-    info('Fixing amplicon gene names if there are...')
-    amplicons_bed = _fix_amplicons_gene_names(cnf, amplicons_bed)
+    info('Annotating amplicons with gene names from exons...')
+    amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     info()
     info('Merging amplicons...')
-    amplicons_bed = _merge_bed(cnf, amplicons_bed, collapse_gene_names=False)
+    amplicons_bed = _merge_bed(cnf, amplicons_bed)
 
     # info('Choosing unique exons.')
     # exons_bed = _unique_longest_exons(cnf, exons_bed)
-
-    # Exons
-    info('Sorting exons BED file.')
-    exons_bed = sort_bed(cnf, exons_bed)
-
-    info()
-    info('Merging exons...')
-    exons_bed = _merge_bed(cnf, exons_bed, collapse_gene_names=True)
 
     return exons_bed, amplicons_bed
 
@@ -169,10 +170,6 @@ class TargetInfo:
 
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     exons_bed, amplicons_bed = _prep_files(cnf, sample, exons_bed)
-
-    info()
-    info('Annotating amplicons with gene names from exons...')
-    amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     exons_bed, amplicons_bed, gene_names_set, gene_names_list = \
         _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath)
@@ -337,18 +334,18 @@ def _get_gene_names(exons_bed, gene_index=3):
 #     return gene_report_fpath, gene_infos_by_name
 
 
-def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
-    new_overlp_exons_bed = intermediate_fname(cnf, overlapped_exons_bed, 'by_genes')
-    # finding exons for our genes that did not overlapped with amplicons, and adding them too
-    with open(exons_bed) as exons_f, \
-         open(new_overlp_exons_bed, 'w') as new_overl_f:
-        for line in exons_f:
-            if not line or not line.strip() or line.startswith('#') or len(line.split()) < 4:
-                new_overl_f.write(line)
-            elif line.split()[3] in gene_names:
-                new_overl_f.write(line)
-
-    return sort_bed(cnf, new_overlp_exons_bed)
+# def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
+#     new_overlp_exons_bed = intermediate_fname(cnf, overlapped_exons_bed, 'by_genes')
+#     # finding exons for our genes that did not overlapped with amplicons, and adding them too
+#     with open(exons_bed) as exons_f, \
+#          open(new_overlp_exons_bed, 'w') as new_overl_f:
+#         for line in exons_f:
+#             if not line or not line.strip() or line.startswith('#') or len(line.split()) < 4:
+#                 new_overl_f.write(line)
+#             elif line.split()[3] in gene_names:
+#                 new_overl_f.write(line)
+#
+#     return sort_bed(cnf, new_overlp_exons_bed)
 
 
 def get_records_by_metrics(records, metrics):
@@ -787,10 +784,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                 extra_fields = ()
             else:
                 start, end = map(int, line_tokens[1:3])
-                extra_fields = tuple(line_tokens[3:-4])
-                if extra_fields:
-                    gene_name = extra_fields[0]
-                    extra_fields = extra_fields[1:]
+                gene_name = line_tokens[3]
+                extra_fields = tuple(line_tokens[4:-4])
 
             line_region_key_tokens = (sample_name, chrom, start, end, gene_name, extra_fields)
 
@@ -815,48 +810,23 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
         info('  Processed {0:,} regions'.format(_total_regions_count))
 
     total_region = regions[-1]
-    info('Sorting genes...')
-    regions = sorted(regions[:-1], key=Region.get_order_key)
+    regions = regions[:-1]
+    # info('Sorting genes...')
+    # regions = sorted(regions[:-1], key=Region.get_order_key)
 
     return regions, total_region, max_depth, total_bed_size
 
 
-def _merge_bed(cnf, bed_fpath, collapse_gene_names=True):
+def _merge_bed(cnf, bed_fpath):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
 
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = ('{bedtools} merge ' + ('-c 4,5,6 -o distinct' if collapse_gene_names
-               else '') + ' -i {bed_fpath}').format(**locals())
-    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'merge_bed.py'))
 
-    if res is not None:
-        return res
-    else:
-        warn('Old version of bedtools. Trying different arguments...')
+    cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
 
-        cmdline = ('{bedtools} merge ' + ('-nms -scores collapse' if collapse_gene_names
-                   else '') + ' -i {bed_fpath}').format(**locals())
-        call(cnf, cmdline, output_fpath)
+    call(cnf, cmdline, output_fpath)
 
-        # disctinct genes and exon numbers
-        def fn(l, i):
-            ts = l.split('\t')
-
-            # distinct genes
-            if len(ts) < 4:
-                return l
-            gns = ts[3].split(';')
-            l = l.replace(ts[3], ','.join(set(gns)))
-
-            # distinct exons
-            if len(ts) < 5:
-                return l
-            exons = ts[4].split(',')
-            l = l.replace(ts[4], ','.join(set(exons)))
-
-            return l
-
-        return iterate_file(cnf, output_fpath, fn, 'dstnct')
+    return output_fpath
 
 
 def _fix_amplicons_gene_names(cnf, amplicons_fpath):

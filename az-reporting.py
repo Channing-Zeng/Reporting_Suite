@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sub_scripts.__common  # checking for python version and adding site dirs inside
+import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
 import sys
 from optparse import OptionParser
 from source.bcbio_runner import BCBioRunner

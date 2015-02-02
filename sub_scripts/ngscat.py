@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import __common
+import __check_python_version
 
 import sys
 from source.bcbio_structure import BCBioStructure
