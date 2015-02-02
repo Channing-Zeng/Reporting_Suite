@@ -30,13 +30,13 @@ class Gene:
         for i in range(22, 0, -1):
             CHROMS.append((str(i), i))
 
-        chrom = self.chrom
-        if chrom.startswith('chr'):
-            chrom = chrom[3:]
+        chr_remainder = self.chrom
+        if self.chrom.startswith('chr'):
+            chr_remainder = self.chrom[3:]
         for (c, i) in CHROMS:
-            if chrom == c:
+            if chr_remainder == c:
                 return i
-            if chrom.startswith(c):
+            elif chr_remainder.startswith(c):
                 return i + 24
 
         sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
@@ -66,7 +66,7 @@ def main():
     if len(sys.argv) <= 1:
         sys.exit('Usage: ' + __file__ + ' bed_file')
 
-    gene_by_name = dict()
+    gene_by_chrom_and_name = dict()
 
     with open(sys.argv[1]) as inp:
         for l in inp:
@@ -82,26 +82,25 @@ def main():
                 chrom, start, end, gname = fields[:4]
                 # start, end = int(start), int(end)
 
-                gene = gene_by_name.get(gname)
+                gene = gene_by_chrom_and_name.get((chrom, gname))
                 if gene is None:
                     strand = fields[5] if len(fields) == 6 else None
                     gene = Gene(gname, chrom, strand)
-                    gene_by_name[gname] = gene
+                    gene_by_chrom_and_name[(chrom, gname)] = gene
 
                 gene.regions.append(Region(int(start), int(end)))
 
-    genes = gene_by_name.values()
+    genes = gene_by_chrom_and_name.values()
     for gene in genes:
         gene.sort_regions()
 
-    genes = sorted(genes, key=lambda r: r.get_key())
-    for gene in genes:
+    final_regions = []
+    for gene in sorted(genes, key=lambda g: g.get_key()):
         for r in gene.merge_regions():
-            sys.stdout.write(gene.chrom + '\t' + str(r.start) + '\t' +
-                             str(r.end) + '\t' + gene.name)
-            if gene.strand:
-                sys.stdout.write('\t.\t' + gene.strand)
-            sys.stdout.write('\n')
+            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand or '.'))
+
+    for chrom, start, end, gname, strand in sorted(final_regions):
+        sys.stdout.write(chrom + '\t' + str(start) + '\t' + str(end) + '\t' + gname + '\t.\t' + strand + '\n')
 
 
 if __name__ == '__main__':

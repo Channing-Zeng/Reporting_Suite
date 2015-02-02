@@ -81,36 +81,28 @@ def _prep_files(cnf, sample, exons_bed):
 
     # Exons
     info()
-    info('Sorting and merging exons...')
+    info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
-    # Amplicons - can be 3-columned
-    info('bedtools-sorting amplicons...')
-    amplicons_bed = sort_bed(cnf, amplicons_bed)
-
-    # info()
-    # info('Fixing amplicon gene names if there are...')
-    # amplicons_bed = _fix_amplicons_gene_names(cnf, amplicons_bed)
-
     info()
-    info('Annotating amplicons with gene names from exons...')
+    info('bedtools-sotring and annotating amplicons with gene names from exons...')
     amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     info()
     info('Merging amplicons...')
     amplicons_bed = _merge_bed(cnf, amplicons_bed)
 
-    # info('Choosing unique exons.')
-    # exons_bed = _unique_longest_exons(cnf, exons_bed)
-
     return exons_bed, amplicons_bed
 
 
 def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
+    amplicons_bed = sort_bed(cnf, amplicons_bed)
+
     output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
 
     bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} closest -t first -a {amplicons_bed} -b {exons_bed} ' \
+    cmdline = 'cut -f1,2,3 {amplicons_bed} ' \
+              '| {bedtools} closest -t first -a - -b {exons_bed} ' \
               '| cut -f1,2,3,7,8,9'.format(**locals())
     call(cnf, cmdline, output_fpath)
 
@@ -829,40 +821,40 @@ def _merge_bed(cnf, bed_fpath):
     return output_fpath
 
 
-def _fix_amplicons_gene_names(cnf, amplicons_fpath):
-    output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixedgenenames')
-
-    with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
-        prev_end = None
-        prev_chr = None
-
-        for line in f:
-            if not line.strip() or line.startswith('#'):
-                out.write(line)
-                continue
-
-            ts = line.split()
-            assert len(ts) >= 3
-
-            # cur_chr = ts[0]
-            # if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
-            #     cur_start = int(ts[1])
-                # if prev_end > cur_start:
-                #     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
-            # prev_end = int(ts[2])
-            # prev_chr = cur_chr
-
-            if len(ts) >= 4:
-                if ':' in ts[3]:
-                    ts[3] = ts[3].split(':')[-1]
-                if len(ts) < 8:
-                    ts = ts[:4]
-                if len(ts) > 8:
-                    ts = ts[:8]
-            out.write('\t'.join(ts) + '\n')
-
-    info('Saved to ' + output_fpath)
-    return output_fpath
+# def _fix_amplicons_gene_names(cnf, amplicons_fpath):
+#     output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixedgenenames')
+#
+#     with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
+#         prev_end = None
+#         prev_chr = None
+#
+#         for line in f:
+#             if not line.strip() or line.startswith('#'):
+#                 out.write(line)
+#                 continue
+#
+#             ts = line.split()
+#             assert len(ts) >= 3
+#
+#             # cur_chr = ts[0]
+#             # if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
+#             #     cur_start = int(ts[1])
+#                 # if prev_end > cur_start:
+#                 #     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
+#             # prev_end = int(ts[2])
+#             # prev_chr = cur_chr
+#
+#             if len(ts) >= 4:
+#                 if ':' in ts[3]:
+#                     ts[3] = ts[3].split(':')[-1]
+#                 if len(ts) < 8:
+#                     ts = ts[:4]
+#                 if len(ts) > 8:
+#                     ts = ts[:8]
+#             out.write('\t'.join(ts) + '\n')
+#
+#     info('Saved to ' + output_fpath)
+#     return output_fpath
 
 
 def sort_bed(cnf, bed_fpath):
