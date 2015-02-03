@@ -1,3 +1,4 @@
+#!/bin/sh
 while read -r -a cols; do
     (
 		if [[ ${cols} == \#\#* ]] ;

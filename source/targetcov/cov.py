@@ -84,9 +84,9 @@ def _prep_files(cnf, sample, exons_bed):
     info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
-    info()
-    info('bedtools-sotring and annotating amplicons with gene names from exons...')
-    amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
+    # info()
+    # info('bedtools-sotring and annotating amplicons with gene names from exons...')
+    # amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     info()
     info('Merging amplicons...')
