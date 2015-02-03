@@ -112,10 +112,13 @@ class Region:
                 depth * bases
                 for depth, bases
                 in self.bases_by_depth.items())
-            self.avg_depth = float(depth_sum) / self.get_size()
+            self.avg_depth = float(depth_sum) / self.get_size() if self.get_size() else None
             return self.avg_depth
 
     def calc_std_dev(self, avg_depth):
+        if avg_depth is None:
+            return None
+
         if self.std_dev is not None:
             return self.std_dev
 
@@ -128,6 +131,9 @@ class Region:
             return self.std_dev
 
     def calc_percent_within_normal(self, avg_depth):
+        if avg_depth is None:
+            return None
+
         if self.percent_within_normal is not None:
             return self.percent_within_normal
 
