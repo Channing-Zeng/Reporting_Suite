@@ -265,15 +265,15 @@ def save_best_for_each_gene(samples, output_dir):
                 gene = fields[4]
                 size = fields[8]
 
-                min_depths = [float(l.split('\t')[9]) for l in lines_for_each_sample]
-                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample]
-                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample]
-                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample]
+                min_depths = [float(l.split('\t')[9]) for l in lines_for_each_sample if l.split('\t')[9] != '.']
+                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample if l.split('\t')[10] != '.']
+                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample if l.split('\t')[11] != '.']
+                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample if l.split('\t')[13] != '.']
 
-                min_depth, s = max(zip(min_depths, samples))
-                ave_depth, s = max(zip(ave_depths, samples))
-                stddev, s = min(zip(stddevs, samples))
-                percent1x, s = max(zip(percent1x, samples))
+                min_depth, s = max(zip(min_depths, samples)) if min_depths else ('.', None)
+                ave_depth, s = max(zip(ave_depths, samples)) if ave_depths else ('.', None)
+                stddev, s = min(zip(stddevs, samples)) if stddevs else ('.', None)
+                percent1x, s = max(zip(percent1x, samples)) if percent1x else ('.', None)
 
                 best_f.write('{chrom}\t{gene}\t{size}\t{min_depth}\t{ave_depth:.2f}\t{stddev:.2f}\t{percent1x:.2f}%\n'.format(**locals()))
 
