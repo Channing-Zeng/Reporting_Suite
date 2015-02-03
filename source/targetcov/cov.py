@@ -798,7 +798,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                     info('  Processed {0:,} regions'.format(_total_regions_count))
 
             regions[-1].add_bases_for_depth(depth, bases)
-            if regions[-1].min_depth == 0 and bases != 0:
+
+            if regions[-1].min_depth is None:
                 regions[-1].min_depth = depth
 
     if _total_regions_count % 100000 != 0:

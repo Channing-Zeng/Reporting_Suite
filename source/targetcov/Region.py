@@ -10,7 +10,7 @@ from source.ngscat.bed_file import verify_bed
 class Region:
     def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None,
                  feature=None, extra_fields=list(),
-                 chrom=None, start=None, end=None, size=None, min_depth=0,
+                 chrom=None, start=None, end=None, size=None, min_depth=None,
                  avg_depth=None, std_dev=None, percent_within_normal=None, bases_by_depth=None):
 
         self.sample_name = sample_name
@@ -182,7 +182,7 @@ class GeneInfo(Region):
         self.amplicons = []
         self.non_overlapping_exons = []
         self.size = 0
-        self.min_depth = 0
+        self.min_depth = None
 
     def get_exons(self):
         return self.exons  # self.subregions_by_feature['Exon']['regions']
@@ -202,7 +202,7 @@ class GeneInfo(Region):
         for depth, bases in exon.bases_by_depth.items():
             self.bases_by_depth[depth] += bases
 
-        self.min_depth = min(self.min_depth, exon.min_depth)
+        self.min_depth = min(self.min_depth, exon.min_depth) if self.min_depth else exon.min_depth
 
     def add_amplicon(self, amplicon):
         # amplicon = copy.copy(amplicon)
