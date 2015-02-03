@@ -44,6 +44,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
         os.symlink(sample.targetcov_detailed_txt, new_link)
         info('TargetCov TXT symlink saved to ' + new_link)
 
+    best_for_regions_fpath = save_best_for_each_gene(samples, output_dir)
+
     # all_htmls_by_sample = OrderedDict()
     # for sample in samples:
     #     all_htmls_by_sample[sample.name] = OrderedDict()
@@ -53,7 +55,6 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     #         all_htmls_by_sample[sample.name]['ngscat'] =    relpath(ngscat_htmls_by_sample[sample.name], output_dir)
     #     if sample.name in qualimap_htmls_by_sample:
     #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
-
 
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', targetcov_metric_storage),
@@ -136,6 +137,9 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     info('TargQC summary saved in: ')
     for fpath in [txt_fpath, html_fpath]:
         if fpath: info('  ' + fpath)
+    info()
+    info('Best stats for regions saved in:')
+    info('  ' + best_for_regions_fpath)
 
 
 _qualimap_to_targetcov_dict = {
@@ -244,9 +248,10 @@ def _correct_qualimap_genome_results(samples, output_dir):
                     f.write(line)
 
 
-def _collect_best_for_each_gene(samples, output_dir):
+def save_best_for_each_gene(samples, output_dir):
     best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
-    with open(best_metrics_fpath) as best_f:
+    with open(best_metrics_fpath, 'w') as best_f:
+        best_f.write('Chr\tGene\tSize\tMin Depth\tAvg Depth\tStd Dev.\tPercent 1x\n')
 
         open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
         while True:
@@ -263,12 +268,16 @@ def _collect_best_for_each_gene(samples, output_dir):
                 min_depths = [float(l.split('\t')[9]) for l in lines_for_each_sample]
                 ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample]
                 stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample]
-                percent1x = [float(l.split('\t')[13]) for l in lines_for_each_sample]
+                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample]
 
                 min_depth, s = max(zip(min_depths, samples))
                 ave_depth, s = max(zip(ave_depths, samples))
-                stddevs, s = min(zip(stddevs, samples))
+                stddev, s = min(zip(stddevs, samples))
                 percent1x, s = max(zip(percent1x, samples))
 
-                # best_f.write('')
-                # best_f.write('Ave depth\t{0:.2f}\t{}'.format(best_ave_depth, s.name))
+                best_f.write('{chrom}\t{gene}\t{size}\t{min_depth}\t{ave_depth:.2f}\t{stddev:.2f}\t{percent1x:.2f}%\n'.format(**locals()))
+
+        for f in open_tsv_files:
+            f.close()
+
+    return best_metrics_fpath

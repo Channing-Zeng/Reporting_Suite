@@ -11,7 +11,7 @@ genes = set(open(sys.argv[1]).read().split())
 if len(sys.argv) > 2:
     exons_fpath = sys.argv[2]
 else:
-    exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/UCSC_HGNC_exons.bed'
+    exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Ensembl_HGNC.standard_exons.bed'
 
 exons = [l.split('\t') for l in open(exons_fpath).read().split('\n')]
 for ts in exons:
