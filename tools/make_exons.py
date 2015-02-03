@@ -221,7 +221,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 continue
 
             _prop_dict = dict(t.strip().split(' ') for t in props_line.split(';') if t.strip())
-            gname = _rm_quotes(_prop_dict['gene_name'])
+            gname = _rm_quotes(_prop_dict['gene_name']).split('.')[0]
             db_id = _rm_quotes(_prop_dict['gene_id'])
             gene_biotype = _rm_quotes(_prop_dict['gene_biotype'])
 
@@ -271,8 +271,8 @@ def main():
         sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < UCSC_knownGene.txt > UCSC_HGNC_exons.bed\n')
         sys.stderr.write('\n')
         sys.stderr.write('    where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:\n')
-        sys.stderr.write('      #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   UCSC ID(supplied by UCSC)\n')
-        sys.stderr.write('      OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  19q13.43	 uc002qsg.3\n')
+        sys.stderr.write('      #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)\n')
+        sys.stderr.write('      OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  19q13.43	 ENSG00000121410   uc002qsg.3\n')
         sys.stderr.write('      ...\n')
         sys.stderr.write('\n')
         sys.stderr.write('    and UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:\n')

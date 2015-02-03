@@ -251,7 +251,7 @@ def _correct_qualimap_genome_results(samples, output_dir):
 def save_best_for_each_gene(samples, output_dir):
     best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
     with open(best_metrics_fpath, 'w') as best_f:
-        best_f.write('Chr\tGene\tSize\tMin Depth\tAvg Depth\tStd Dev.\tPercent 1x\n')
+        best_f.write('Chr\tGene\tSize\tMin Depth\tAvg Depth\tStd Dev.\t% Within 20% of mean\tPercent 1x\tPercent 1x\n')
 
         open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
         while True:
@@ -265,17 +265,26 @@ def save_best_for_each_gene(samples, output_dir):
                 gene = fields[4]
                 size = fields[8]
 
-                min_depths = [float(l.split('\t')[9]) for l in lines_for_each_sample if l.split('\t')[9] != '.']
-                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample if l.split('\t')[10] != '.']
-                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample if l.split('\t')[11] != '.']
-                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample if l.split('\t')[13] != '.']
+                min_depths = [int(''.join(c for c in l.split('\t')[9] if c.isdigit())) for l in lines_for_each_sample if l and l.split('\t')[9] not in ['.', '-']]
+                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample if l and l.split('\t')[10] not in ['.', '-']]
+                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample if l and l.split('\t')[11] not in ['.', '-']]
+                withins = [float(l.split('\t')[12][:-1]) for l in lines_for_each_sample if l and l.split('\t')[12] not in ['.', '-']]
+                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample if l and l.split('\t')[13] not in ['.', '-']]
+                percent25x = [float(l.split('\t')[16][:-1]) for l in lines_for_each_sample if l and l.split('\t')[16] not in ['.', '-']]
 
                 min_depth, s = max(zip(min_depths, samples)) if min_depths else ('.', None)
                 ave_depth, s = max(zip(ave_depths, samples)) if ave_depths else ('.', None)
                 stddev, s = min(zip(stddevs, samples)) if stddevs else ('.', None)
                 percent1x, s = max(zip(percent1x, samples)) if percent1x else ('.', None)
+                percent25x, s = max(zip(percent25x, samples)) if percent25x else ('.', None)
+                within, s = max(zip(withins, samples)) if withins else ('.', None)
 
-                best_f.write('{chrom}\t{gene}\t{size}\t{min_depth}\t{ave_depth:.2f}\t{stddev:.2f}\t{percent1x:.2f}%\n'.format(**locals()))
+                best_f.write('{chrom}\t{gene}\t{size}\t{min_depth}\t'.format(**locals()))
+                best_f.write('{ave_depth:.2f}\t'.format(**locals()) if ave_depth != '.' else '.\t')
+                best_f.write('{stddev:.2f}\t'.format(**locals()) if stddev != '.' else '.\t')
+                best_f.write('{within:.2f}\t'.format(**locals()) if within != '.' else '.\t')
+                best_f.write('{percent1x:.2f}\t'.format(**locals()) if percent1x != '.' else '.\t')
+                best_f.write('{percent25x:.2f}\n'.format(**locals()) if percent25x != '.' else '.\n')
 
         for f in open_tsv_files:
             f.close()
