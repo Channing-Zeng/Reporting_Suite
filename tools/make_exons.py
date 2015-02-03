@@ -102,7 +102,7 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
             return 'NOT FOUND'
 
         if len(approved_genes) > 1:
-            approved_genes_same_ucsc = [g for g in approved_genes if g.ucsc_id == db_id]
+            approved_genes_same_ucsc = [g for g in approved_genes if g.db_id == db_id]
 
             if len(approved_genes_same_ucsc) > 1:
                 sys.stderr.write('__Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')

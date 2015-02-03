@@ -93,6 +93,9 @@ class BaseSample:
             return True
         return False
 
+    def __cmp__(self, other):
+        return cmp(self.name, other.name)
+
 
 class SingleSample(BaseSample):
     def __init__(self, name, output_dir, **kwargs):

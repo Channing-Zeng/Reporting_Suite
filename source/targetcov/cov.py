@@ -519,7 +519,7 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
     info('Regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + txt_rep_fpath)
 
-    return tsv_rep_fpath
+    return txt_rep_fpath
 
 
 # def _combine_amplicons_by_genes(cnf, sample, exons_bed_fpath, ampli_bed_fpath, gene_names):
@@ -679,7 +679,7 @@ def _get_exons_combined_by_genes(exons, ampl_gene_names):
 
 def _make_flat_region_report(regions, depth_threshs):
     header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Exon', 'Strand', 'Feature', 'Size',
-                     'Mean Depth', 'Standard Dev.', 'Within 20% of Mean']
+                     'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
     for thres in depth_threshs:
         header_fields.append('{}x'.format(thres))
 
@@ -702,6 +702,7 @@ def _make_flat_region_report(regions, depth_threshs):
                 region.strand if region.strand else '.',
                 region.feature,
                 '{:,}'.format(region.get_size()) if region.get_size() is not None else '-',
+                '{:,}'.format(region.min_depth) if region.min_depth is not None else '.',
                 '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',
                 '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
                 '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
@@ -797,6 +798,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                     info('  Processed {0:,} regions'.format(_total_regions_count))
 
             regions[-1].add_bases_for_depth(depth, bases)
+            if regions[-1].min_depth == 0 and bases != 0:
+                regions[-1].min_depth = depth
 
     if _total_regions_count % 100000 != 0:
         info('  Processed {0:,} regions'.format(_total_regions_count))

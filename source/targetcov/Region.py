@@ -10,7 +10,7 @@ from source.ngscat.bed_file import verify_bed
 class Region:
     def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None,
                  feature=None, extra_fields=list(),
-                 chrom=None, start=None, end=None, size=None,
+                 chrom=None, start=None, end=None, size=None, min_depth=0,
                  avg_depth=None, std_dev=None, percent_within_normal=None, bases_by_depth=None):
 
         self.sample_name = sample_name
@@ -24,6 +24,7 @@ class Region:
         self.start = start  # int
         self.end = end      # int
         self.size = size    # int
+        self.min_depth = min_depth
         self.bases_by_depth = bases_by_depth or defaultdict(int)  # filled in from the "bedcoverage hist" output
 
         # Calculated once on "sum_up()", when all self.bases_by_depth are there:
@@ -175,6 +176,7 @@ class GeneInfo(Region):
         self.amplicons = []
         self.non_overlapping_exons = []
         self.size = 0
+        self.min_depth = 0
 
     def get_exons(self):
         return self.exons  # self.subregions_by_feature['Exon']['regions']
@@ -193,6 +195,8 @@ class GeneInfo(Region):
         self.exons.append(exon)
         for depth, bases in exon.bases_by_depth.items():
             self.bases_by_depth[depth] += bases
+
+        self.min_depth = min(self.min_depth, exon.min_depth)
 
     def add_amplicon(self, amplicon):
         # amplicon = copy.copy(amplicon)

@@ -37,12 +37,12 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
             sample.qualimap_html_fpath = None
 
         new_link = join(
-            dirname(dirname(sample.targetcov_detailed_tsv)),
-            basename(sample.targetcov_detailed_tsv))
+            dirname(dirname(sample.targetcov_detailed_txt)),
+            basename(sample.targetcov_detailed_txt))
         if exists(new_link):
             os.unlink(new_link)
-        os.symlink(sample.targetcov_detailed_tsv, new_link)
-        info('TargetCov TSV symlink saved to ' + new_link)
+        os.symlink(sample.targetcov_detailed_txt, new_link)
+        info('TargetCov TXT symlink saved to ' + new_link)
 
     # all_htmls_by_sample = OrderedDict()
     # for sample in samples:
@@ -242,3 +242,33 @@ def _correct_qualimap_genome_results(samples, output_dir):
                     if metrics_started:
                         line = line.replace(',', '')
                     f.write(line)
+
+
+def _collect_best_for_each_gene(samples, output_dir):
+    best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
+    with open(best_metrics_fpath) as best_f:
+
+        open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
+        while True:
+            lines_for_each_sample = [next(f, None) for f in open_tsv_files]
+            if not all(lines_for_each_sample):
+                break
+
+            if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
+                fields = lines_for_each_sample[0].split('\t')
+                chrom = fields[1]
+                gene = fields[4]
+                size = fields[8]
+
+                min_depths = [float(l.split('\t')[9]) for l in lines_for_each_sample]
+                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample]
+                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample]
+                percent1x = [float(l.split('\t')[13]) for l in lines_for_each_sample]
+
+                min_depth, s = max(zip(min_depths, samples))
+                ave_depth, s = max(zip(ave_depths, samples))
+                stddevs, s = min(zip(stddevs, samples))
+                percent1x, s = max(zip(percent1x, samples))
+
+                # best_f.write('')
+                # best_f.write('Ave depth\t{0:.2f}\t{}'.format(best_ave_depth, s.name))

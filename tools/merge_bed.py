@@ -80,8 +80,8 @@ def main():
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
                              ' (' + ' | '.join(fields) + '). Should be 4 of 6.')
 
-                chrom, start, end, gname, _, strand, feature, biotype = fields
-
+                # chrom, start, end, gname, _, strand, feature, biotype = fields
+                    
                 chrom, start, end, gname = fields[:4]
                 # start, end = int(start), int(end)
 
