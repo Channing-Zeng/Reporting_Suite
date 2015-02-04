@@ -268,8 +268,8 @@ def save_best_for_each_gene(samples, output_dir):
                 break
 
             if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-                shared_fields = lines_for_each_sample[0].split('\t')
-                best_f.write('\t'.join(shared_fields[:9]) + '\t')  # chrom, start, end, symbol, strand, feature, biotype, size
+                shared_fields = lines_for_each_sample[0].split('\t')[1:]
+                best_f.write('\t'.join(shared_fields[:9]) + '\t')  # sample, chrom, start, end, symbol, strand, feature, biotype, size
 
                 min_depths, ave_depths, stddevs, withins = ([], [], [], [])
                 percents_by_col_num = defaultdict(list)

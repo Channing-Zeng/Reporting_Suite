@@ -74,8 +74,10 @@ class Gene:
 
 def main():
     if len(sys.argv) <= 1:
-        sys.exit('Usage: ' + __file__ + ' bed_file')
+        sys.exit('Usage: ' + __file__ + ' bed_file [--exons]')
 
+    running_with_exons = len(sys.argv) >= 3
+    
     gene_by_chrom_and_name = dict()
 
     with open(sys.argv[1]) as inp:
@@ -87,15 +89,15 @@ def main():
             else:
                 fields = l[:-1].split('\t')
 
-                if len(fields) not in (4, 6, 8):
+                if len(fields) < 4:
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
-                             ' (' + ' | '.join(fields) + '). Should be 4, 6, or 8.')
+                             ' (' + ' | '.join(fields) + '). Should be >= 4.')
 
                 else:
                     chrom, start, end, gname = fields[:4]
                     start, end = int(start), int(end)
-                    strand = fields[5] if len(fields) == 6 else None
-                    (feature, biotype) = fields[6:8] if len(fields) == 8 else (None, None)
+                    strand = fields[5] if len(fields) >= 6 else None
+                    (feature, biotype) = fields[6:8] if len(fields) >= 8 else (None, None)
 
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
@@ -107,7 +109,7 @@ def main():
                         gene.start = start
                         gene.end = end
 
-                    elif feature == 'exon':
+                    elif feature is None or feature == 'exon':
                         gene.regions.append(Exon(int(start), int(end), biotype))
 
     genes = []

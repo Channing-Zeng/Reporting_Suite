@@ -1,5 +1,12 @@
 #!/usr/bin/env python
 
+from os.path import abspath, dirname, realpath, join
+from site import addsitedir
+project_dir = abspath(dirname(dirname(realpath(__file__))))
+addsitedir(join(project_dir))
+addsitedir(join(project_dir, 'ext_modules'))
+import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
+
 from collections import defaultdict
 import sys
 
@@ -211,8 +218,6 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     for i, l in enumerate(inp):
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
-            if chrom != '21':
-                continue
 
             if feature not in ['gene', 'exon']:
                 continue

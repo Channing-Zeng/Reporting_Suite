@@ -88,6 +88,11 @@ def _prep_files(cnf, sample, exons_bed):
         info()
         info('bedtools-sotring and annotating amplicons with gene names from exons...')
         amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
+    else:
+        amplicons_bed = sort_bed(cnf, amplicons_bed)
+        cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
+        amplicons_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
+        call(cnf, cmdline, amplicons_bed)
 
     info()
     info('Merging amplicons...')
