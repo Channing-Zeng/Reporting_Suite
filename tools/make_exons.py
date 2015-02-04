@@ -105,12 +105,12 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
             approved_genes_same_ucsc = [g for g in approved_genes if g.db_id == db_id]
 
             if len(approved_genes_same_ucsc) > 1:
-                sys.stderr.write('__Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
+                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
                 return 'AMBIGOUS'
 
             if len(approved_genes_same_ucsc) == 1:
                 if _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, db_id, db_chrom):
-                    sys.stderr.write('Found approved gene for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + '\n')
+                    sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + '\n')
                     return approved_genes_same_ucsc[0].gname
 
             # Ok, no genes with same ucsc id, or not the same chromosome for them.
@@ -118,24 +118,24 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
             approved_genes_same_chrom = [g for g in approved_genes if g.chrom == db_chrom]
 
             if len(approved_genes_same_chrom) > 1:
-                sys.stderr.write('__Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
+                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
                 return 'AMBIGOUS'
 
             if len(approved_genes_same_chrom) == 1:
                 g = approved_genes_same_chrom[0]
-                sys.stderr.write('Only ' + g.gname + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it\n')
+                sys.stderr.write('  Only ' + g.gname + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it\n')
                 if _check_gene_symbol(g, gene_symbol, db_id, db_chrom):
                     return g.gname
                 else:
                     return 'NOT FOUND'
 
             if len(approved_genes_same_chrom) == 0:
-                sys.stderr.write('__Error: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + db_chrom + '\n')
+                sys.stderr.write('  Error: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + db_chrom + '\n')
                 return 'NOT FOUND'
 
         if len(approved_genes) == 1:
             if _check_gene_symbol(approved_genes[0], gene_symbol, db_id, db_chrom):
-                sys.stderr.write('Found approved gene for ' + gene_symbol + ' (as ' + kind + ')\n')
+                sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ')\n')
                 return approved_genes[0].gname
 
         return 'NOT FOUND'
@@ -150,10 +150,10 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
         if res == 'NOT FOUND':
             return None, res
         else:
-            sys.stderr.write('Finally found approved gene for ' + gene_symbol + ' (as synonym)\n')
+            sys.stderr.write('  Finally found approved gene for ' + gene_symbol + ' (as synonym):' + res + '\n')
             return res, None
     else:
-        sys.stderr.write('Finally found approved gene for ' + gene_symbol + ' (as prev)\n')
+        sys.stderr.write('  Finally found approved gene for ' + gene_symbol + ' (as prev):' + res + '\n')
         return res, None
 
 
@@ -205,14 +205,15 @@ def _rm_quotes(l):
 
 
 def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym):
-    not_approved_gene_names = list()
-
     gene_by_name = dict()
     genes = []
 
     for i, l in enumerate(inp):
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
+            if chrom != '21':
+                continue
+
             if feature not in ['gene', 'exon']:
                 continue
 
@@ -221,42 +222,59 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 continue
 
             _prop_dict = dict(t.strip().split(' ') for t in props_line.split(';') if t.strip())
-            gname = _rm_quotes(_prop_dict['gene_name']).split('.')[0]
+            gene_symbol = _rm_quotes(_prop_dict['gene_name'])
             db_id = _rm_quotes(_prop_dict['gene_id'])
             gene_biotype = _rm_quotes(_prop_dict['gene_biotype'])
 
             if feature == 'gene':
-                assert gene_biotype == biotype, 'Gene: gene_biotype "' + gene_biotype + '" do not match biotype "' + biotype + '" for ' + gname
-                assert gname not in genes, 'Error: duplicated gene ' + gname
-                gene = Gene(gname, chrom, start, end, strand, biotype, db_id)
-                gene_by_name[gname] = gene
+                assert gene_biotype == biotype, 'Gene: gene_biotype "' + gene_biotype + '" do not match biotype "' + biotype + '" for ' + gene_symbol
+                assert gene_symbol not in genes, 'Error: duplicated gene ' + gene_symbol
+                gene = Gene(gene_symbol, chrom, start, end, strand, biotype, db_id)
+                gene_by_name[gene_symbol] = gene
                 genes.append(gene)
 
             elif feature == 'exon':
-                assert gname in gene_by_name, 'Error: exon record before gene record ' + gname
-                gene = gene_by_name[gname]
-                assert gene_biotype == gene.biotype, 'Exon: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gname
+                assert gene_symbol in gene_by_name, 'Error: exon record before gene record ' + gene_symbol
+                gene = gene_by_name[gene_symbol]
+                assert gene_biotype == gene.biotype, 'Exon: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
                 exon = Exon(gene, start, end, biotype)
                 gene.exons.append(exon)
 
         if i and i % 10000 == 0:
             sys.stderr.write('processed ' + str(i / 1000) + 'k lines, ' + str(len(genes)) + ' genes found\n')
 
+    not_approved_gene_names = dict()
+
     for i, g in enumerate(genes):
         if i and i % 1000 == 0:
             sys.stderr.write('processed ' + str(i / 1000) + 'k genes...\n')
 
-        approved_gname, status = _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname,
-            approved_gnames_by_synonym, g.name, g.db_id, g.chrom)
+        approved_gname, status = _get_approved_gene_symbol(
+            approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
+            g.name, g.db_id, g.chrom)
+
+        if not approved_gname:
+            gname2 = g.name.split('.')[0]
+            if gname2 != g.name:
+                approved_gname, status2 = _get_approved_gene_symbol(
+                    approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
+                    gname2, g.db_id, g.chrom)
+
+            sys.stderr.write('  Not found approved gene for ' + g.name + ' (' + status + ')')
+            if gname2 != g.name:
+                if not approved_gname:
+                    sys.stderr.write(' and ' + gname2 + ' (' + status2 + ')')
+                else:
+                    sys.stderr.write(', but approved for ' + gname2 + ' as ' + approved_gname)
+            sys.stderr.write('\n')
 
         if approved_gname:
             out.write('\t'.join([g.chrom, g.start, g.end, approved_gname, '.', g.strand, 'gene', g.biotype]) + '\n')
-
             for e in g.exons:
                 out.write('\t'.join([g.chrom, e.start, e.end, approved_gname, '.', g.strand, 'exon', e.biotype]) + '\n')
         else:
-            sys.stderr.write('Not found approved gene for ' + g.name + '\n')
-            not_approved_gene_names.append(g.name + '\t' + status)
+            if g.name not in not_approved_gene_names:
+                not_approved_gene_names[g.name] = status
 
     return not_approved_gene_names
 
@@ -298,11 +316,12 @@ def main():
         else:
             not_approved_gene_names = _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym)
 
-    sys.stderr.write('Not approved ' + str(len(not_approved_gene_names)) + ' genes.\n')
+    sys.stderr.write('\n')
+    sys.stderr.write('Not approved ' + str(len(not_approved_gene_names.keys())) + ' genes.\n')
     if not_approved_fpath:
         with open(not_approved_fpath, 'w') as f:
-            for not_approved_gn in not_approved_gene_names:
-                f.write(not_approved_gn + '\n')
+            f.write('#Searched as\tStatus\n')
+            f.writelines((gn + '\t' + st + '\n' for gn, st in not_approved_gene_names.items()))
         sys.stderr.write('Saved not approved to ' + not_approved_fpath + '\n')
 
 

@@ -740,6 +740,8 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
     if suffix:
         info('Saved to ' + output_fpath)
 
+    if not verify_file(output_fpath):
+        sys.exit(1)
     return output_fpath
 
 

@@ -3,7 +3,7 @@ import shutil
 import os
 from os import listdir
 from os.path import relpath, join, exists, dirname, basename
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import source
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
@@ -251,7 +251,15 @@ def _correct_qualimap_genome_results(samples, output_dir):
 def save_best_for_each_gene(samples, output_dir):
     best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
     with open(best_metrics_fpath, 'w') as best_f:
-        best_f.write('Chr\tGene\tSize\tMin Depth\tAvg Depth\tStd Dev.\t% Within 20% of mean\tPercent 1x\tPercent 1x\n')
+        with open(samples[0].targetcov_detailed_tsv) as f:
+            header_fields = f.readline().split('\t')
+            # 0        1      2      3    4       5       6        7        8     9          10         11        12                  13...
+            # #Sample, Chrom, Start, End, Symbol, Strand, Feature, Biotype, Size, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
+
+        threshold_num = len(header_fields[13:])
+
+        best_f.write('Chr\tStart\tEnd\tSymbol\tStrand\tFeature\tBiotype\tSize\t'
+                     'Min Depth\tAvg Depth\tStd Dev.\tWithin 20% of Mean\t' + '\t'.join(header_fields[13:]))
 
         open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
         while True:
@@ -260,31 +268,52 @@ def save_best_for_each_gene(samples, output_dir):
                 break
 
             if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-                fields = lines_for_each_sample[0].split('\t')
-                chrom = fields[1]
-                gene = fields[4]
-                size = fields[8]
+                shared_fields = lines_for_each_sample[0].split('\t')
+                best_f.write('\t'.join(shared_fields[:9]) + '\t')  # chrom, start, end, symbol, strand, feature, biotype, size
 
-                min_depths = [int(''.join(c for c in l.split('\t')[9] if c.isdigit())) for l in lines_for_each_sample if l and l.split('\t')[9] not in ['.', '-']]
-                ave_depths = [float(l.split('\t')[10]) for l in lines_for_each_sample if l and l.split('\t')[10] not in ['.', '-']]
-                stddevs = [float(l.split('\t')[11]) for l in lines_for_each_sample if l and l.split('\t')[11] not in ['.', '-']]
-                withins = [float(l.split('\t')[12][:-1]) for l in lines_for_each_sample if l and l.split('\t')[12] not in ['.', '-']]
-                percent1x = [float(l.split('\t')[13][:-1]) for l in lines_for_each_sample if l and l.split('\t')[13] not in ['.', '-']]
-                percent25x = [float(l.split('\t')[16][:-1]) for l in lines_for_each_sample if l and l.split('\t')[16] not in ['.', '-']]
+                min_depths, ave_depths, stddevs, withins = ([], [], [], [])
+                percents_by_col_num = defaultdict(list)
 
-                min_depth, s = max(zip(min_depths, samples)) if min_depths else ('.', None)
-                ave_depth, s = max(zip(ave_depths, samples)) if ave_depths else ('.', None)
-                stddev, s = min(zip(stddevs, samples)) if stddevs else ('.', None)
-                percent1x, s = max(zip(percent1x, samples)) if percent1x else ('.', None)
-                percent25x, s = max(zip(percent25x, samples)) if percent25x else ('.', None)
-                within, s = max(zip(withins, samples)) if withins else ('.', None)
+                for l in lines_for_each_sample:
+                    fs = l.split('\t')
 
-                best_f.write('{chrom}\t{gene}\t{size}\t{min_depth}\t'.format(**locals()))
-                best_f.write('{ave_depth:.2f}\t'.format(**locals()) if ave_depth != '.' else '.\t')
-                best_f.write('{stddev:.2f}\t'.format(**locals()) if stddev != '.' else '.\t')
-                best_f.write('{within:.2f}\t'.format(**locals()) if within != '.' else '.\t')
-                best_f.write('{percent1x:.2f}\t'.format(**locals()) if percent1x != '.' else '.\t')
-                best_f.write('{percent25x:.2f}\n'.format(**locals()) if percent25x != '.' else '.\n')
+                    val = ''.join(c for c in fs[9] if c.isdigit())  # skipping decimal dots and spaces
+                    if val not in ['', '.', '-']:
+                        min_depths.append(int(val))
+
+                    val = fs[10]
+                    if val not in ['', '.', '-']:
+                        ave_depths.append(float(val))
+
+                    val = fs[11]
+                    if val not in ['', '.', '-']:
+                        stddevs.append(float(val))
+
+                    val = fs[12][:-1]  # skipping "%" sign
+                    if val not in ['', '.', '-']:
+                        withins.append(float(val))
+
+                    for col_num, f in enumerate(fs[13:]):
+                        val = f.strip()[:-1]  # skipping "%" sign
+                        if val not in ['', '.', '-']:
+                            percents_by_col_num[col_num].append(float(val))
+
+                # counting bests
+                min_depth = max(min_depths) if min_depths else '.'
+                ave_depth = max(ave_depths) if ave_depths else '.'
+                stddev = min(stddevs) if stddevs else '.'
+                within = max(withins) if withins else '.'
+                percent_by_col_num = dict()
+                for col_num, values in percents_by_col_num.iteritems():
+                    percent_by_col_num[col_num] = max(values) if values else '.'
+
+                best_f.write('{:,}\t'.format(min_depth) if min_depth != '.' else '.\t')
+                best_f.write('{:.2f}\t'.format(ave_depth) if ave_depth != '.' else '.\t')
+                best_f.write('{:.2f}\t'.format(stddev) if stddev != '.' else '.\t')
+                best_f.write('{:.2f}\t'.format(within) if within != '.' else '.\t')
+                for col_num, val in percent_by_col_num.iteritems():
+                    best_f.write('{:.2f}\t'.format(val) if val != '.' else '.\t')
+                best_f.write('\n')
 
         for f in open_tsv_files:
             f.close()

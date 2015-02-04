@@ -84,15 +84,24 @@ def _prep_files(cnf, sample, exons_bed):
     info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
-    # info()
-    # info('bedtools-sotring and annotating amplicons with gene names from exons...')
-    # amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
+    if cnt_fields_in_bed(amplicons_bed) < 4:
+        info()
+        info('bedtools-sotring and annotating amplicons with gene names from exons...')
+        amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     info()
     info('Merging amplicons...')
     amplicons_bed = _merge_bed(cnf, amplicons_bed)
 
     return exons_bed, amplicons_bed
+
+
+def cnt_fields_in_bed(bed_fpath):
+    with open(bed_fpath) as f:
+        for l in f:
+            if l and l.strip() and not l.startswith('#'):
+                return len(l.split('\t'))
+    critical('Empty bed file: ' + bed_fpath)
 
 
 def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
@@ -112,13 +121,13 @@ def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
 def _filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
     def fn(l, i):
         if l:
-            ts = l.split('\t')
+            fs = l.split('\t')
             new_gns = []
-            for g in ts[3].split(','):
+            for g in fs[3].split(','):
                 if g in gene_names_set:
                     new_gns.append(g)
             if new_gns:
-                return l.replace(ts[3], ','.join(new_gns))
+                return l.replace(fs[3], ','.join(new_gns))
 
     return iterate_file(cnf, bed_fpath, fn, suffix='key')
 
@@ -168,7 +177,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(cnf, sample.name, sample.bam, amplicons_bed)
+    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(
+        cnf, sample.name, sample.bam, amplicons_bed)
 
     target_info = TargetInfo(
         fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
@@ -177,27 +187,38 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info()
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, target_info)
 
-    # Guilding the gene list
+    # Building the gene list
     genes_by_name = OrderedDict()
     for gn in gene_names_list:
         genes_by_name[gn] = GeneInfo(sample_name=sample.name, gene_name=gn)
 
     info('Calculating coverage statistics for exons...')
-    exons, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_bed)
-    for exon in exons:
-        exon.sample_name = sample.name
-        if exon.extra_fields:
-            exon.exon_num = exon.extra_fields[0]
-        if len(exon.extra_fields) >= 2:
-            exon.strand = exon.extra_fields[1]
-        exon.feature = 'Exon'
+    exons_with_optional_genes, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_bed)
+    for exon_or_gene in exons_with_optional_genes:
+        exon_or_gene.sample_name = sample.name
 
-        for exon_gn in exon.gene_name.split(','):
-            if exon_gn in genes_by_name:
-                gene = genes_by_name[exon_gn]
-                gene.chrom = exon.chrom
-                gene.strand = exon.strand
-                gene.add_exon(exon)
+        ef = exon_or_gene.extra_fields
+        if ef:
+            exon_or_gene.exon_num = ef[0]
+            if len(ef) >= 2:
+                exon_or_gene.strand = ef[1]
+            if len(ef) >= 3:
+                exon_or_gene.feature = ef[2]
+            else:
+                exon_or_gene.feature = 'exon'
+            if len(ef) >= 4:
+                exon_or_gene.biotype = ef[3]
+
+        if exon_or_gene.gene_name in genes_by_name:
+            gene = genes_by_name[exon_or_gene.gene_name]
+            if exon_or_gene.feature == 'gene':
+                gene.start = exon_or_gene.start
+                gene.end = exon_or_gene.end
+                gene.biotype = exon_or_gene.biotype
+            else:
+                gene.chrom = exon_or_gene.chrom
+                gene.strand = exon_or_gene.strand
+                gene.add_exon(exon_or_gene)
 
     for ampl in amplicons:
         ampl.feature = 'Amplicon'
@@ -678,8 +699,8 @@ def _get_exons_combined_by_genes(exons, ampl_gene_names):
 
 
 def _make_flat_region_report(regions, depth_threshs):
-    header_fields = ['Sample', 'Chr', 'Start', 'End', 'Gene', 'Exon', 'Strand', 'Feature', 'Size',
-                     'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
+    header_fields = ['#Sample', 'Chr', 'Start', 'End', 'Symbol', 'Strand', 'Feature',
+                     'Biotype', 'Size', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
     for thres in depth_threshs:
         header_fields.append('{}x'.format(thres))
 
@@ -698,9 +719,10 @@ def _make_flat_region_report(regions, depth_threshs):
                 '{:,}'.format(region.start) if region.start is not None else '-',
                 '{:,}'.format(region.end) if region.end is not None else '-',
                 region.gene_name,
-                str(region.exon_num) if region.exon_num is not None else '.',
+                # str(region.exon_num) if region.exon_num is not None else '.',
                 region.strand if region.strand else '.',
                 region.feature,
+                region.biotype if region.biotype else '.',
                 '{:,}'.format(region.get_size()) if region.get_size() is not None else '-',
                 '{:,}'.format(region.min_depth) if region.min_depth is not None else '.',
                 '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',

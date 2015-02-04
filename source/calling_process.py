@@ -6,7 +6,7 @@ from os.path import isfile, exists, join, islink
 import time
 
 from source.logger import info, err, warn, send_email
-from source.file_utils import file_exists, file_transaction
+from source.file_utils import file_exists, file_transaction, verify_file
 
 
 def call_pipe(cnf, cmdline, *args, **kwargs):
@@ -275,6 +275,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     if res:
         if output_fpath and not output_is_dir:
             info('Saved to ' + output_fpath)
+            if not verify_file(output_fpath):
+                sys.exit(1)
 
         return output_fpath
     else:

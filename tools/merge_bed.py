@@ -5,15 +5,16 @@ from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
-import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
+import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
 
 
-class Region:
-    def __init__(self, start, end):
+class Exon:
+    def __init__(self, start, end, biotype=None):
         self.start = start
         self.end = end
+        self.biotype = biotype
 
 
 class Gene:
@@ -22,8 +23,11 @@ class Gene:
         self.chrom = chrom
         self.__chrom_key = self.__make_chrom_key()
         self.strand = strand
-        self.regions = []
+        self.biotype = None
         self.start = None
+        self.end = None
+
+        self.regions = []
 
     def __make_chrom_key(self):
         CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
@@ -43,11 +47,17 @@ class Gene:
         return None
 
     def get_key(self):
-        return self.__chrom_key, self.start, self.name
+        return self.__chrom_key, self.start, self.end, self.name
 
     def sort_regions(self):
         self.regions = sorted(self.regions, key=lambda r: (r.start, r.end))
-        self.start = self.regions[0].start
+        if self.start is None or self.end is None:
+            if not self.regions:
+                return None  # no coordinates and no exons to infer coordinates
+            else:
+                self.start = self.regions[0].start
+                self.end = self.regions[-1].end
+        return self.regions
 
     def merge_regions(self):
         non_overlapping_regions = [self.regions[0]]
@@ -76,34 +86,43 @@ def main():
                 sys.stdout.write(l)
             else:
                 fields = l[:-1].split('\t')
-                if not len(fields) != 4 or len(fields) != 6:
+
+                if len(fields) not in (4, 6, 8):
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
-                             ' (' + ' | '.join(fields) + '). Should be 4 of 6.')
+                             ' (' + ' | '.join(fields) + '). Should be 4, 6, or 8.')
 
-                # chrom, start, end, gname, _, strand, feature, biotype = fields
-                    
-                chrom, start, end, gname = fields[:4]
-                # start, end = int(start), int(end)
-
-                gene = gene_by_chrom_and_name.get((chrom, gname))
-                if gene is None:
+                else:
+                    chrom, start, end, gname = fields[:4]
+                    start, end = int(start), int(end)
                     strand = fields[5] if len(fields) == 6 else None
-                    gene = Gene(gname, chrom, strand)
-                    gene_by_chrom_and_name[(chrom, gname)] = gene
+                    (feature, biotype) = fields[6:8] if len(fields) == 8 else (None, None)
 
-                gene.regions.append(Region(int(start), int(end)))
+                    gene = gene_by_chrom_and_name.get((chrom, gname))
+                    if gene is None:
+                        gene = Gene(gname, chrom, strand)
+                        gene_by_chrom_and_name[(chrom, gname)] = gene
 
-    genes = gene_by_chrom_and_name.values()
-    for gene in genes:
-        gene.sort_regions()
+                    if feature == 'gene':
+                        gene.biotype = biotype
+                        gene.start = start
+                        gene.end = end
+
+                    elif feature == 'exon':
+                        gene.regions.append(Exon(int(start), int(end), biotype))
+
+    genes = []
+    for gene in gene_by_chrom_and_name.values():
+        if gene.sort_regions() is not None:
+            genes.append(gene)
 
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
+        final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, 'gene', gene.biotype))
         for r in gene.merge_regions():
-            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand or '.'))
+            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, 'exon', r.biotype))
 
-    for chrom, start, end, gname, strand in sorted(final_regions):
-        sys.stdout.write(chrom + '\t' + str(start) + '\t' + str(end) + '\t' + gname + '\t.\t' + strand + '\n')
+    for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
+        sys.stdout.write('\t'.join([chrom, str(start), str(end), gname, '.', strand or '.', feature, biotype or '.']) + '\n')
 
 
 if __name__ == '__main__':

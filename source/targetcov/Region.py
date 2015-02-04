@@ -8,7 +8,7 @@ from source.logger import info, err
 from source.ngscat.bed_file import verify_bed
 
 class Region:
-    def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None,
+    def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None, biotype=None,
                  feature=None, extra_fields=list(),
                  chrom=None, start=None, end=None, size=None, min_depth=None,
                  avg_depth=None, std_dev=None, percent_within_normal=None, bases_by_depth=None):
@@ -19,6 +19,7 @@ class Region:
         self.extra_fields = extra_fields  # for exons, extra_fields is [Gene, Exon number, Strand]
         self.exon_num = exon_num
         self.strand = strand
+        self.biotype = biotype
 
         self.chrom = chrom
         self.start = start  # int
@@ -192,11 +193,14 @@ class GeneInfo(Region):
 
     def add_exon(self, exon):  # exons come sorted by start
         if self.exons == []:
-            self.start = exon.start
-            self.end = exon.end
-        else:
-            if exon.end > self.end:
+            if self.start is None:
+                self.start = exon.start
+            if self.end is None:
                 self.end = exon.end
+        else:
+            if self.end is None:
+                if exon.end > self.end:
+                    self.end = exon.end
         self.size += exon.get_size()
         self.exons.append(exon)
         for depth, bases in exon.bases_by_depth.items():
