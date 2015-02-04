@@ -76,11 +76,15 @@ def cnv_reports(cnf, bcbio_structure):
 def _get_whole_genes_and_amlicons(report_fpath):
     gene_summary_lines = []
 
+    info('Reading from ' + report_fpath)
+
     with open(report_fpath, 'r') as f:
         for i, line in enumerate(f):
             if 'Amplicon' in line or 'Whole-Gene' in line:
                 ts = line.split('\t')
-                ts = ts[:5] + ts[7:10]  # Skipping Exon, Strand
+                # ['#Sample', 'Chr', 'Start', 'End', 'Symbol', 'Strand', 'Feature', 'Biotype', 'Size', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
+                ts = ts[:5] + ts[6:7] + ts[8:9] + ts[10:11]   # ts = ts[:5] + ts[7:9] + ts[10:11]  # Skipping Exon, Strand
+                # sample_name, chrom, s, e, gene, tag, size, cov = tokens
                 gene_summary_lines.append(ts)
 
     if not gene_summary_lines:
@@ -205,7 +209,7 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
         for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
             sample_name, chrom, s, e, gene, tag, size, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
-            if float(cov) != 0:
+            if cov != '.' and float(cov) != 0:
                 reordered = sample_name, gene, chrom, s, e, tag, size, cov
                 coverage_info.append(reordered)
 
