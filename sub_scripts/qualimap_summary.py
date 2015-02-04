@@ -3,6 +3,7 @@
 import __check_python_version
 
 import sys
+
 from source.qualimap.summarize_qualimap import summary_reports
 from source.bcbio_structure import BCBioStructure
 from source.prepare_args_and_cnf import summary_script_proc_params
