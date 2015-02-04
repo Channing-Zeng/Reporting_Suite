@@ -374,7 +374,7 @@ class BCBioRunner:
         callers = self.bcbio_structure.variant_callers.values()
 
         if self.qualimap in self.steps:
-            bed_by_sample = dict((s, s.bed) for s in self.bcbio_structure.samples if s.bed)
+            bed_by_sample = dict((s.name, s.bed) for s in self.bcbio_structure.samples if s.bed)
             beds = set(bed_by_sample.values())
             samples_by_bed = dict((b, (s for s in self.bcbio_structure.samples if s.bed and s.bed == b)) for b in beds)
             for bed, samples in samples_by_bed.items():
