@@ -219,6 +219,9 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
 
+            # if chrom != '21':
+            #     continue
+
             if feature not in ['gene', 'exon']:
                 continue
 

@@ -66,7 +66,10 @@ class Gene:
             if r.start > non_overlapping_regions[-1].end:
                 non_overlapping_regions.append(r)
             else:
-                non_overlapping_regions[-1].end = r.end
+                prev_r = non_overlapping_regions[-1]
+                prev_r.end = r.end
+                if prev_r.biotype and r.biotype:
+                    prev_r.biotype = ','.join(set(prev_r.biotype.split(',')) | set([r.biotype]))
 
         self.regions = non_overlapping_regions
         return non_overlapping_regions
@@ -77,7 +80,7 @@ def main():
         sys.exit('Usage: ' + __file__ + ' bed_file [--exons]')
 
     running_with_exons = len(sys.argv) >= 3
-    
+
     gene_by_chrom_and_name = dict()
 
     with open(sys.argv[1]) as inp:
