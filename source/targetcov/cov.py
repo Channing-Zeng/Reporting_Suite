@@ -243,13 +243,15 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     # info('Sorting amplicons')
     # amplicons = sorted((a for a in amplicons if a.gene_name), key=Region.get_order_key)
 
-    info()
-    info('Saving only amplicons overlapped with exons, updated with a gene name')
-    amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
-                                        save_original_fields=True)
-    info()
-    # info('Running seq2cov.pl for ' + sample.name)
-    # seq2c_seq2cov(cnf, sample, amplicons_bed)
+    # info()
+    # info('Saving only amplicons overlapped with exons, updated with a gene name')
+    # amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
+    #                                     save_original_fields=True)
+
+    if sample.bed:
+        info()
+        info('Running seq2cov.pl for ' + sample.name)
+        seq2c_seq2cov(cnf, sample, sample.bed)
 
     return general_rep_fpath, per_gene_rep_fpath
 
