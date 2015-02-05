@@ -458,7 +458,8 @@ def generate_summary_report(
         cmdline = '{picard} MarkDuplicates' \
                   ' I={fixed_bam_fpath}' \
                   ' O=/dev/null' \
-                  ' METRICS_FILE={dup_metrics_txt}'
+                  ' METRICS_FILE={dup_metrics_txt}' \
+                  ' VALIDATION_STRINGENCY=LENIENT'
         # if not logger.is_local:
         #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
@@ -473,7 +474,8 @@ def generate_summary_report(
         cmdline = '{picard} CollectInsertSizeMetrics' \
                   ' I={fixed_bam_fpath}' \
                   ' O={picard_ins_size_hist_txt}' \
-                  ' H={picard_ins_size_hist_pdf}'
+                  ' H={picard_ins_size_hist_pdf}' \
+                  ' VALIDATION_STRINGENCY=LENIENT'
         # if not logger.is_local:
         #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
