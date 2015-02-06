@@ -23,7 +23,7 @@ def histo(alldata, xlab, ylab, outdir, legend=None):
         maximum = max(maximum, max(data))
 
     #    print 'MAXIMUM = '+str(maximum)
-    bin = range(1, maximum + 1, max(1, maximum / 50))
+    bin = range(1, maximum + 2, max(1, maximum / 50))
     histograms = []
     for colouridx, data in enumerate(alldata):
         histograms.append(ax.hist(data, bins=bin, facecolor=colours[colouridx % 12], alpha=0.5)[2])
@@ -38,7 +38,7 @@ def histo(alldata, xlab, ylab, outdir, legend=None):
     ax.set_xlabel(xlab)
     ax.set_xlim(left=1)
     ax.set_xbound(lower=1)
-    ax.set_xticks([1] + range(0, maximum + 1, maximum / 10)[1:])
+    ax.set_xticks([1] + range(0, maximum + 1, max(1, maximum / 10))[1:])
 
     bp = ax2.boxplot(alldata, sym='+', vert=1, whis=1.5)
 

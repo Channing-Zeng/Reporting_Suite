@@ -970,12 +970,17 @@ class BamFile(pysam.Samfile):
                     y.append(overmaxreplicates * 100.0 / ontargetreads[j])
 
                 ind = numpy.array(ind)
-                rects.append(ax.bar(ind, y, width, color='#46a246'))
+                if len(ind) > 0 and len(y) > 0:
+                    rects.append(ax.bar(ind, y, width, color='#46a246'))
+                else:
+                    rects.append(ax.bar([0], [0], width, color='#46a246'))
             else:
                 err('WARNING: no ON-target reads were found at bam ' + bam.filename + '\n' + \
                     'The most probable reason for this is an incorrect target (bed) file.\n ' + \
                     'Check that contig ids are exactly the same that appear in the bam ' + \
                     'file, e.g. check whether chromosome ids start with "chr" or not')
+                rects.append(ax.bar([0], [0], width, color='#46a246'))
+
 
             # Check that there are off-target reads to avoid a division by zero. Then build bars for off-target reads.
             if (offtargetreads[j] > 0):
@@ -1005,7 +1010,12 @@ class BamFile(pysam.Samfile):
                     y.append(overmaxreplicates * 100.0 / offtargetreads[j])
 
                 ind = numpy.array(ind)
-                rects.append(ax.bar(ind + width, y, width, color='#ff0000'))
+                if len(ind) > 0 and len(y) > 0:
+                    rects.append(ax.bar(ind + width, y, width, color='#ff0000'))
+                else:
+                    rects.append(ax.bar(numpy.array([0]) + width, [0], width, color='#ff0000'))
+            else:
+                rects.append(ax.bar(numpy.array([0]) + width, [0], width, color='#ff0000'))
 
             ax.set_xticks(ind + width)
 
@@ -1039,13 +1049,14 @@ class BamFile(pysam.Samfile):
 
             ws = wb.add_sheet(str(j + 1) + '-' + legend[j][:10])
             # Create header font
-            ws.write(1, 0, '# on');
-            ws.write(2, 0, '# off');
-            ws.write(3, 0, '# total');
-            ws.write(4, 0, '% on');
+            ws.write(1, 0, '# on')
+            ws.write(2, 0, '# off')
+            ws.write(3, 0, '# total')
+            ws.write(4, 0, '% on')
             ws.write(5, 0, '% off')
 
             # Write the numbers used to build the bar plot in a spreadsheet
+            n = 0
             for n in range(int(xlim)):
                 overmaxreplicateson = 0
                 overmaxreplicatesoff = 0
@@ -1065,19 +1076,19 @@ class BamFile(pysam.Samfile):
                 if (n < MAXREPLICATES):
                     ws.write(0, n + 1, n + 1, header_style)
                     total = on + off
-                    ws.write(1, n + 1, on);
-                    ws.write(2, n + 1, off);
-                    ws.write(3, n + 1, total);
+                    ws.write(1, n + 1, on)
+                    ws.write(2, n + 1, off)
+                    ws.write(3, n + 1, total)
 
                     # Check that there are on-target reads to avoid a division by zero
                     if (ontargetreads[j] > 0):
-                        ws.write(4, n + 1, on * 100 / ontargetreads[j]);
+                        ws.write(4, n + 1, on * 100 / ontargetreads[j])
                     else:
-                        ws.write(4, n + 1, 0);
+                        ws.write(4, n + 1, 0)
 
                     # Check that there are off-target reads to avoid a division by zero
                     if (offtargetreads[j] > 0):
-                        ws.write(5, n + 1, off * 100 / offtargetreads[j]);
+                        ws.write(5, n + 1, off * 100 / offtargetreads[j])
                     else:
                         ws.write(5, n + 1, 0)
                 else:
@@ -1087,18 +1098,18 @@ class BamFile(pysam.Samfile):
             if (n >= MAXREPLICATES):
                 ws.write(0, MAXREPLICATES + 1, '>=' + str(MAXREPLICATES + 1), header_style)
                 total = overmaxreplicateson + overmaxreplicatesoff
-                ws.write(1, MAXREPLICATES + 1, on);
-                ws.write(2, MAXREPLICATES + 1, off);
-                ws.write(3, MAXREPLICATES + 1, total);
+                ws.write(1, MAXREPLICATES + 1, on)
+                ws.write(2, MAXREPLICATES + 1, off)
+                ws.write(3, MAXREPLICATES + 1, total)
                 # Check that there are on-target reads to avoid a division by zero
                 if (ontargetreads[j] > 0):
-                    ws.write(4, MAXREPLICATES + 1, overmaxreplicateson * 100 / ontargetreads[j]);
+                    ws.write(4, MAXREPLICATES + 1, overmaxreplicateson * 100 / ontargetreads[j])
                 else:
-                    ws.write(4, MAXREPLICATES + 1, 0);
+                    ws.write(4, MAXREPLICATES + 1, 0)
 
                 # Check that there are off-target reads to avoid a division by zero
                 if (offtargetreads[j] > 0):
-                    ws.write(5, MAXREPLICATES + 1, overmaxreplicatesoff / offtargetreads[j]);
+                    ws.write(5, MAXREPLICATES + 1, overmaxreplicatesoff / offtargetreads[j])
                 else:
                     ws.write(5, MAXREPLICATES + 1, 0)
 

@@ -5,6 +5,7 @@ import sys
 import string
 import numpy
 from source.logger import err, info
+import os
 
 biopython_error = False
 try:
@@ -237,35 +238,42 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
         ymin = coveragearray.min()
         ymax = coveragearray.max()
 
-        # Perform a kernel density estimator on the results
-        X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
-        positions = c_[X.ravel(), Y.ravel()]
-        values = c_[gccontentarray, coveragearray]
-        kernel = stats.kde.gaussian_kde(values.T)
-        Z = reshape(kernel(positions.T).T, X.T.shape)
-
-        fig = pyplot.figure(figsize=(6, 6))
-        ax = fig.add_subplot(111)
-        sc = ax.imshow(rot90(Z), cmap=cm.gist_earth_r, extent=[xmin, 100, ymin, ymax],
-                       aspect="auto")  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
-        cbar = fig.colorbar(sc, ticks=[numpy.min(Z), numpy.max(Z)])
-        cbar.ax.set_yticklabels(['Low', 'High'])
-        cbar.set_label('Density')
-        ax.set_xlabel('GC content (%)')
-        ax.set_ylabel('Mean coverage')
-
-        if (len(graphtitle) > 25):
-            ax.set_title(graphtitle[:25] + '...')
+        if ymax == 0:
+            err('Warning: coverage is zero. Skipping GC bias calculation.')
+            if os.path.isfile(fileout):
+                os.remove(fileout)
         else:
-            ax.set_title(graphtitle)
+            # Perform a kernel density estimator on the results
+            X, Y = mgrid[xmin:xmax:100j, ymin:ymax:100j]
+            positions = c_[X.ravel(), Y.ravel()]
+            values = c_[gccontentarray, coveragearray]
+            print "VAUES"
+            print values
+            print values.T
 
-        fig.savefig(fileout)
+            kernel = stats.kde.gaussian_kde(values.T)
+            Z = reshape(kernel(positions.T).T, X.T.shape)
 
-        if (status <> None):
-            meanvalue = gccontentarray.mean()
-            status.value = bool(meanvalue >= 45 and meanvalue <= 55)
+            fig = pyplot.figure(figsize=(6, 6))
+            ax = fig.add_subplot(111)
+            sc = ax.imshow(rot90(Z), cmap=cm.gist_earth_r, extent=[xmin, 100, ymin, ymax],
+                           aspect="auto")  # Due to the imshow sentence, we need to rescale gccontent from [0,1] to [0,100]
+            cbar = fig.colorbar(sc, ticks=[numpy.min(Z), numpy.max(Z)])
+            cbar.ax.set_yticklabels(['Low', 'High'])
+            cbar.set_label('Density')
+            ax.set_xlabel('GC content (%)')
+            ax.set_ylabel('Mean coverage')
 
+            if (len(graphtitle) > 25):
+                ax.set_title(graphtitle[:25] + '...')
+            else:
+                ax.set_title(graphtitle)
 
+            fig.savefig(fileout)
+
+            if (status <> None):
+                meanvalue = gccontentarray.mean()
+                status.value = bool(meanvalue >= 45 and meanvalue <= 55)
     else:
         err('Warning: only one region found in the bed file. Skipping GC bias calculation.')
 
