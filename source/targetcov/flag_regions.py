@@ -9,7 +9,7 @@ from source.calling_process import call
 from source.file_utils import add_suffix, verify_file
 
 from source.logger import info, err
-from source.reporting import Metric, MetricStorage, ReportSection, Record, SquareSampleReport
+from source.reporting import Metric, MetricStorage, ReportSection, Record, PerRegionSampleReport
 from source import targetcov
 from source.targetcov.Region import Region, proc_regions, save_regions_to_bed
 from source.tools_from_cnf import get_system_path
@@ -18,8 +18,8 @@ from source.utils import median
 
 def make_flagged_regions_reports(cnf, targetseq_dir, sample, filtered_vcf_by_callername=None):
     if not filtered_vcf_by_callername:
-        info('No variants, skipping flagging regions reports...')
-        return []
+        info('No variant callset')
+        # return []
 
     detail_gene_rep_fpath = join(
         cnf.output_dir,
@@ -233,7 +233,7 @@ def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller
             high_cov=ReportSection('Regions', 'Amplcons and exons coverage depth statistics', regions_metrics[:],
         )))
 
-    report = SquareSampleReport(sample, metric_storage=region_metric_storage)
+    report = PerRegionSampleReport(sample, metric_storage=region_metric_storage)
 
     for vcf_db in vcf_dbs:
         if not vcf_db.annotated_bed:

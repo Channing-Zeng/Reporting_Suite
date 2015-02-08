@@ -48,19 +48,6 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
                 _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
                 summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
 
-            # if not cnf.reuse_intermediate or not sample.picard_dup_done():
-            #     safe_mkdir(dirname(sample.picard_dup_metrics_fpath))
-            #     _submit_job(cnf, picard_dup_step, sample.name, threads=threads_per_sample,
-            #         bam=sample.bam, sample=sample.name, dup_metrics_txt=sample.picard_dup_metrics_fpath)
-            #     summary_wait_for_steps.append(picard_dup_step.job_name(sample.name))
-            #
-            # if not cnf.reuse_intermediate or not sample.picard_ins_size_done():
-            #     safe_mkdir(dirname(sample.picard_dup_metrics_fpath))
-            #     info('Picard insert size hist for "' + basename(sample.bam) + '"')
-            #     _submit_job(cnf, picard_ins_size_step, sample.name, threads=threads_per_sample,
-            #         bam=sample.bam, sample=sample.name, ref=cnf.genome.seq, hist_pdf=sample.picard_ins_size_pdf_fpath)
-            #     summary_wait_for_steps.append(picard_ins_size_step.job_name(sample.name))
-
             info('Done ' + basename(sample.bam))
             info()
 

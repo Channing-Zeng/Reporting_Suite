@@ -18,15 +18,15 @@ def main(args):
         extra_opts=[
             (['--bam'], dict(
                 dest='bam',
-                help='path to the BAM file')
+                help='a path to the BAM file to study')
              ),
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
-                help='capture panel/amplicons')
+                help='a BED file for capture panel or amplicons')
              ),
             (['--exons', '--exome'], dict(
                 dest='exons',
-                help='exome (default is in system_config)')
+                help='a BED file with real CDS regions (default Ensembl is in system_config)')
              ),
             (['--genes'], dict(
                 dest='genes',
@@ -38,12 +38,6 @@ def main(args):
                      'Default is ' + str(defaults['coverage_reports']['padding']),
                 type='int')
              ),
-            # (['--depth-thresholds'], dict(
-            #     dest='depth_thresholds',
-            #     metavar='A,B,C',
-            #     help='Default: ' + ','.join(map(str,
-            #           defaults['coverage_reports']['depth_thresholds']))),
-            #  ),
         ],
         required_keys=['bam', 'bed'],
         file_keys=['bam', 'bed'],

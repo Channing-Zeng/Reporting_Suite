@@ -32,44 +32,9 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
 
     main_sample_index = get_sample_column_index(vcf_fpath, sample_name)
 
-    # vcf_fpath = leave_main_sample(cnf, vcf_fpath, sample_name)
-
     def fix_fields(rec):
         if rec.FILTER and rec.FILTER != 'PASS':
             return None
-
-        # ads = rec.get_sample_val('AD', main_sample_index)
-        # if ads is None:
-        #     aos = rec.get_sample_val('AO', main_sample_index)
-        #     ro = rec.get_info_val('RO', main_sample_index)
-        #     missing = [n for f, n in [(aos, 'AO'), (ro, 'RO')] if f is None]
-        #     if missing:
-        #         err('No AD or ' + ','.join(missing) + ' for ' + rec.get_variant() + ', ' + vcf_fpath)
-        #         return None
-        #     try:
-        #         rec.INFO['AD'] = [ro] + aos
-        #     except TypeError:
-        #         rec.INFO['AD'] = [ro] + [aos]
-
-            # rec.FORMAT += 'AO'
-            # call_data = rec.genotype(sample_name).data._asdict()
-            # try:
-            #     call_data.AD = [ro] + aos
-            # except TypeError:
-            #     call_data.AD = [ro] + [aos]
-
-            # af = float(t_alt_count) / dp
-            # rec.INFO['AF'] = af
-
-        # for f in ['QUAL', 'PMEAN', 'MQ', 'SN', 'VD']:
-        #     val = rec.get_info_val(f)
-        #     if val is None:
-        #         val = rec.get_sample_val(f, main_sample_index)
-        #         if val is None:
-        #             rec.INFO[f] = 999999999
-
-        # if rec.get_val('PSTD', main_sample_index) is None:
-        #     rec.INFO['PSTD'] = '1.0'
 
         return rec
 

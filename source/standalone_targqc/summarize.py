@@ -44,7 +44,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
         os.symlink(sample.targetcov_detailed_txt, new_link)
         info('TargetCov TXT symlink saved to ' + new_link)
 
-    best_for_regions_fpath = save_best_for_each_gene(samples, output_dir)
+    best_for_regions_fpath = _save_best_detailed_for_each_gene(samples, output_dir)
 
     # all_htmls_by_sample = OrderedDict()
     # for sample in samples:
@@ -248,18 +248,18 @@ def _correct_qualimap_genome_results(samples, output_dir):
                     f.write(line)
 
 
-def save_best_for_each_gene(samples, output_dir):
+def _save_best_detailed_for_each_gene(samples, output_dir):
     best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
     with open(best_metrics_fpath, 'w') as best_f:
         with open(samples[0].targetcov_detailed_tsv) as f:
             header_fields = f.readline().split('\t')
-            # 0        1      2      3    4       5       6        7        8     9          10         11        12                  13...
-            # #Sample, Chrom, Start, End, Symbol, Strand, Feature, Biotype, Size, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
+            # 0        1      2      3    4     5     6       7        8        9          10         11        12                  13...
+            # #Sample, Chrom, Start, End, Size, Gene, Strand, Feature, Biotype, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
 
         threshold_num = len(header_fields[13:])
 
-        best_f.write('Chr\tStart\tEnd\tSymbol\tStrand\tFeature\tBiotype\tSize\t'
-                     'Min Depth\tAvg Depth\tStd Dev.\tWithin 20% of Mean\t' + '\t'.join(header_fields[13:]))
+        best_f.write('Chr\tStart\tEnd\tSize\tSymbol\tStrand\tFeature\tBiotype\t'
+                     'Min depth\tAvg depth\tStd dev.\tW/n 20% of ave\t' + '\t'.join(header_fields[13:]))
 
         open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
         while True:
@@ -268,11 +268,11 @@ def save_best_for_each_gene(samples, output_dir):
                 break
 
             if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-                shared_fields = lines_for_each_sample[0].split('\t')[1:]
-                best_f.write('\t'.join(shared_fields[:9]) + '\t')  # sample, chrom, start, end, symbol, strand, feature, biotype, size
+                shared_fields = lines_for_each_sample[0].split('\t')[1:9]
+                best_f.write('\t'.join(shared_fields) + '\t')  # chrom, start, end, symbol, strand, feature, biotype, size
 
                 min_depths, ave_depths, stddevs, withins = ([], [], [], [])
-                percents_by_col_num = defaultdict(list)
+                percents_by_col_num = {t: [] for t in range(threshold_num)}
 
                 for l in lines_for_each_sample:
                     fs = l.split('\t')
@@ -310,9 +310,9 @@ def save_best_for_each_gene(samples, output_dir):
                 best_f.write('{:,}\t'.format(min_depth) if min_depth != '.' else '.\t')
                 best_f.write('{:.2f}\t'.format(ave_depth) if ave_depth != '.' else '.\t')
                 best_f.write('{:.2f}\t'.format(stddev) if stddev != '.' else '.\t')
-                best_f.write('{:.2f}\t'.format(within) if within != '.' else '.\t')
+                best_f.write('{:.2f}%\t'.format(within) if within != '.' else '.\t')
                 for col_num, val in percent_by_col_num.iteritems():
-                    best_f.write('{:.2f}\t'.format(val) if val != '.' else '.\t')
+                    best_f.write('{:.2f}%\t'.format(val) if val != '.' else '.\t')
                 best_f.write('\n')
 
         for f in open_tsv_files:

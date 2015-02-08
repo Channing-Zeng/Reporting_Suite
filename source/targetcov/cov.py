@@ -2,7 +2,7 @@
 
 import sys
 import traceback
-import pysam
+# import pysam
 from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath
 
@@ -12,7 +12,7 @@ from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile
 from source import logger
 from source.logger import step_greetings, critical, info, err, warn
-from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, write_txt_rows, write_tsv_rows
+from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -70,10 +70,10 @@ def _prep_files(cnf, sample, exons_bed):
         info('Indexing bam ' + sample.bam)
         index_bam(cnf, sample.bam)
 
-    amplicons_bed = sample.bed
-    if not amplicons_bed:
+    seq2c_bed = amplicons_bed = sample.bed
+    if not sample.bed:
         err(sample.name + ': BED file was not provided. Using AZ-Exome as default: ' + cnf.genome.az_exome)
-        amplicons_bed = cnf.genome.az_exome
+        seq2c_bed = amplicons_bed = cnf.genome.az_exome
 
     if not exons_bed:
         critical('Error: no exons specified for the genome in system config.')
@@ -85,21 +85,24 @@ def _prep_files(cnf, sample, exons_bed):
     info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
-    if cnt_fields_in_bed(amplicons_bed) < 4:
-        info()
-        info('bedtools-sotring and annotating amplicons with gene names from exons...')
-        amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
-    else:
-        amplicons_bed = sort_bed(cnf, amplicons_bed)
-        cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
-        amplicons_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
-        call(cnf, cmdline, amplicons_bed)
+    info()
+    info('bedtools-sotring and annotating amplicons with gene names from exons...')
+    amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
+
+    if cnt_fields_in_bed(seq2c_bed) < 4:
+        seq2c_bed = amplicons_bed
+
+    # else:
+    #     amplicons_bed = sort_bed(cnf, amplicons_bed)
+    #     cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
+    #     amplicons_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
+    #     call(cnf, cmdline, amplicons_bed)
 
     info()
     info('Merging amplicons...')
     amplicons_bed = _merge_bed(cnf, amplicons_bed)
 
-    return exons_bed, amplicons_bed
+    return exons_bed, amplicons_bed, seq2c_bed
 
 
 def cnt_fields_in_bed(bed_fpath):
@@ -176,7 +179,7 @@ class TargetInfo:
 
 
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
-    exons_bed, amplicons_bed = _prep_files(cnf, sample, exons_bed)
+    exons_bed, amplicons_bed, seq2c_bed = _prep_files(cnf, sample, exons_bed)
 
     exons_bed, amplicons_bed, gene_names_set, gene_names_list = \
         _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath)
@@ -211,7 +214,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
             if len(ef) >= 3:
                 exon_or_gene.feature = ef[2]
             else:
-                exon_or_gene.feature = 'exon'
+                exon_or_gene.feature = 'CDS'
             if len(ef) >= 4:
                 exon_or_gene.biotype = ef[3]
 
@@ -248,10 +251,9 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     # amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
     #                                     save_original_fields=True)
 
-    if sample.bed:
-        info()
-        info('Running seq2cov.pl for ' + sample.name)
-        seq2c_seq2cov(cnf, sample, sample.bed)
+    info()
+    info('Running seq2cov.pl for ' + sample.name)
+    seq2c_seq2cov(cnf, sample, seq2c_bed)
 
     return general_rep_fpath, per_gene_rep_fpath
 
@@ -452,18 +454,19 @@ def generate_summary_report(
         percent_val = 100.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
+    info()
+
     picard = get_system_path(cnf, 'java', 'picard')
     if picard:
         info('Picard duplication metrics for "' + basename(sample.bam) + '"')
-        fixed_bam_fpath = _prepare_bam_for_picard(cnf, sample.bam)
+        bam_fpath = sample.bam
+        # bam_fpath = _prepare_bam_for_picard(cnf, bam_fpath)
         dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
         cmdline = '{picard} MarkDuplicates' \
-                  ' I={fixed_bam_fpath}' \
+                  ' I={bam_fpath}' \
                   ' O=/dev/null' \
                   ' METRICS_FILE={dup_metrics_txt}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
-        # if not logger.is_local:
-        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -474,12 +477,10 @@ def generate_summary_report(
         picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
         picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
         cmdline = '{picard} CollectInsertSizeMetrics' \
-                  ' I={fixed_bam_fpath}' \
+                  ' I={bam_fpath}' \
                   ' O={picard_ins_size_hist_txt}' \
                   ' H={picard_ins_size_hist_pdf}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
-        # if not logger.is_local:
-        #     cmdline += ' REFERENCE_SEQUENCE={ref_fapth}'
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -618,11 +619,11 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
     #             r.size, r.avg_depth, r.std_dev, r.percent_within_normal])) + '\n')
 
     info('Saving report...')
-    rows = _make_flat_region_report(final_regions, cnf.coverage_reports.depth_thresholds)
+    report = _make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
 
     gene_report_basename = sample.name + '.' + source.targetseq_name + source.targetcov.detail_gene_report_baseending
-    txt_rep_fpath = write_txt_rows(rows, output_dir, gene_report_basename)
-    tsv_rep_fpath = write_tsv_rows(rows, output_dir, gene_report_basename)
+    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
+    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
     info('')
     info('Regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + txt_rep_fpath)
@@ -785,13 +786,35 @@ def _get_exons_combined_by_genes(exons, ampl_gene_names):
 #     return all_rows
 
 
-def _make_flat_region_report(regions, depth_threshs):
-    header_fields = ['#Sample', 'Chr', 'Start', 'End', 'Symbol', 'Strand', 'Feature',
-                     'Biotype', 'Size', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
-    for thres in depth_threshs:
-        header_fields.append('{}x'.format(thres))
+def _make_flat_region_report(sample, regions, depth_threshs):
+    metric_storage = MetricStorage(sections=[ReportSection(metrics=[
+        Metric('Sample'),
+        Metric('Chr'),
+        Metric('Start'),
+        Metric('End'),
+        Metric('Size'),
+        Metric('Gene'),
+        Metric('Strand'),
+        Metric('Feature'),
+        Metric('Biotype'),
+        Metric('Min depth'),
+        Metric('Ave depth'),
+        Metric('Std dev', description='Coverage depth standard deviation'),
+        Metric('W/n 20% of ave depth', description='Persentage of the region that lies within 20% of an avarage depth.', unit='%'),
+        # Metric('Norm depth', description='Ave region depth devided by median depth of sample'),
+    ] + [
+        Metric('{}x'.format(thresh), description='Bases covered by at least {} reads'.format(thresh), unit='%')
+        for thresh in depth_threshs
+    ])])
 
-    all_rows = [header_fields]
+    # header_fields = ['#Sample', 'Chr', 'Start', 'End', 'Size', 'Gene', 'Strand', 'Feature',
+    #                  'Biotype', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
+    # for thres in depth_threshs:
+    #     header_fields.append('{}x'.format(thres))
+    #
+    # all_rows = [header_fields]
+
+    report = PerRegionSampleReport(sample=sample, metric_storage=metric_storage)
 
     i = 0
     for region in regions:
@@ -799,49 +822,46 @@ def _make_flat_region_report(regions, depth_threshs):
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
 
-        try:
-            row = [
-                region.sample_name,
-                region.chrom if region.chrom is not None else '-',
-                '{:,}'.format(region.start) if region.start is not None else '-',
-                '{:,}'.format(region.end) if region.end is not None else '-',
-                region.gene_name,
-                # str(region.exon_num) if region.exon_num is not None else '.',
-                region.strand if region.strand else '.',
-                region.feature,
-                region.biotype if region.biotype else '.',
-                '{:,}'.format(region.get_size()) if region.get_size() is not None else '-',
-                '{:,}'.format(region.min_depth) if region.min_depth is not None else '.',
-                '{0:.2f}'.format(region.avg_depth) if region.avg_depth is not None else '.',
-                '{0:.2f}'.format(region.std_dev) if region.std_dev is not None else '.',
-                '{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '.']
-        except:
-            err('Err in region ' + ' '.join(map(str, [region.sample_name, region.chrom, region.start,
-                                                      region.end, region.gene_name, region.exon_num])))
-            traceback.print_exc()
-        else:
-            for thresh in depth_threshs:
-                if region.bases_within_threshs is None:
-                    err('No bases_within_threshs for ' + str(region))
-                else:
-                    bases = region.bases_within_threshs.get(thresh)
-                    if bases is None:
-                        percent_str = '.'
-                    elif int(region.get_size()) == 0:
-                        percent_str = '-'
-                    else:
-                        percent = 100.0 * bases / region.get_size()
-                        percent_str = '{0:.2f}%'.format(percent)
-                        if percent > 100:
-                            err('Percent = ' + percent_str + ', bases = ' + str(bases) +
-                                ', size = ' + str(region.get_size()) +
-                                ', start = ' + str(region.start) + ', end = ' + str(region.end))
-                    row.append(percent_str)
+        rep_region = report.add_region()
+        rep_region.add_record('Sample', region.sample_name)
+        rep_region.add_record('Chr', region.chrom)
+        rep_region.add_record('Start', region.start)
+        rep_region.add_record('End', region.end)
+        rep_region.add_record('Size', region.get_size())
+        rep_region.add_record('Gene', region.gene_name)
+        rep_region.add_record('Strand', region.strand)
+        rep_region.add_record('Feature', region.feature)
+        rep_region.add_record('Biotype', region.biotype)
+        rep_region.add_record('Min depth', region.min_depth)
+        rep_region.add_record('Ave depth', region.avg_depth)
+        rep_region.add_record('Std dev', region.std_dev)
+        rep_region.add_record('W/n 20% of ave depth', region.percent_within_normal)
 
-            all_rows.append(row)
+        for thresh in depth_threshs:
+            percent = None
+            if region.bases_within_threshs is None:
+                err('Error: no bases_within_threshs for ' + str(region))
+            else:
+                bases = region.bases_within_threshs.get(thresh)
+                if bases is not None and region.get_size() > 0:
+                    percent = 100.0 * bases / region.get_size()
+                    if percent > 100:
+                        critical(
+                            'Error: percent = ' + str(percent) + ', bases = ' + str(bases) +
+                            ', size = ' + str(region.get_size()) +
+                            ', start = ' + str(region.start) + ', end = ' + str(region.end))
+            rep_region.add_record('{}x'.format(thresh), percent)
+
+        # except:
+        #     err('Err in region ' + ' '.join(map(str, [region.sample_name, region.chrom, region.start,
+        #                                               region.end, region.gene_name, region.exon_num])))
+        #     traceback.print_exc()
+        # else:
+
         # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
+
     info('Processed {0:,} regions.'.format(i))
-    return all_rows
+    return report
 
 
 def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):

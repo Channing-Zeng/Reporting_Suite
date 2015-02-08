@@ -82,9 +82,9 @@ def _get_whole_genes_and_amlicons(report_fpath):
         for i, line in enumerate(f):
             if 'Amplicon' in line or 'Whole-Gene' in line:
                 ts = line.split('\t')
-                # ['#Sample', 'Chr', 'Start', 'End', 'Symbol', 'Strand', 'Feature', 'Biotype', 'Size', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
-                ts = ts[:5] + ts[6:7] + ts[8:9] + ts[10:11]   # ts = ts[:5] + ts[7:9] + ts[10:11]  # Skipping Exon, Strand
-                # sample_name, chrom, s, e, gene, tag, size, cov = tokens
+                # #Sample  Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave
+                ts = ts[:4] +               ts[5:6] + ts[7:8] + ts[4:5] + ts[10:11]
+                # sample_name, chrom, s, e, gene,     tag,      size,     cov
                 gene_summary_lines.append(ts)
 
     if not gene_summary_lines:
@@ -209,7 +209,7 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
     for sample in bcbio_structure.samples:
         # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
         for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
-            sample_name, chrom, s, e, gene, tag, size, cov = tokens
+            sample_name, chrom, s, e, size, gene, tag, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
             if cov != '.' and float(cov) != 0:
                 reordered = sample_name, gene, chrom, s, e, tag, size, cov

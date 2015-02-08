@@ -4,13 +4,15 @@ import __check_python_version
 
 import sys
 import shutil
+from source import BaseSample
 from source.bcbio_structure import BCBioSample
 from source.file_utils import adjust_path
 from source.logger import send_email
-from source.targetcov.abnormal_regions import make_abnormal_regions_reports
+from source.targetcov.flag_regions import make_flagged_regions_reports
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.runner import run_one
 from source.utils import info
+from tools.leave_first_sample import proc_all
 
 
 def main(args):
@@ -24,29 +26,26 @@ def main(args):
                 dest='vcfs',
                 help='filteted variants in VCF, comma-separate, must correspond to caller-names')
              ),
-            (['--region-report'], dict(
-                dest='vcfs',
-                help='filteted variants in VCF, comma-separate, must correspond to caller-names')
-             ),
+            # (['--region-report'], dict(
+            #     dest='vcfs',
+            #     help='filteted variants in VCF, comma-separate, must correspond to caller-names')
+            #  ),
         ],
         required_keys=[],
         file_keys=[],
         key_for_sample_name=None
-        )
+    )
 
     check_system_resources(
         cnf,
         required=['samtools', 'bedtools'],
         optional=[])
 
-    check_genome_resources(
-        cnf,
-        required=['seq', 'exons'],
-        optional=['chr_lengths', 'genes'])
-
     cnf.vcfs = map(adjust_path, cnf.vcfs.split(',') if cnf.vcfs else [])
     cnf.caller_names = cnf.caller_names.split(',') if cnf.caller_names else []
     cnf.vcfs_by_callername = zip(cnf.caller_names, cnf.vcfs)
+
+    process_all(cnf.output_dir)
 
     run_one(cnf, process_one, finalize_one)
 
@@ -54,9 +53,23 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_one(cnf):
-    sample = BCBioSample(cnf.name, bam=cnf.bam, bed=cnf.bed)
-    return make_abnormal_regions_reports(cnf, sample, cnf.vcfs_by_callername)
+def process_all(targetcov_dir):
+
+    pass
+    # read all detail reports
+    # normalize
+    # extrac low-cov
+    # report cov and missed vars
+
+
+class Sample(BaseSample):
+    def __init__(self, name, output_dir, **kwargs):
+        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
+
+
+def process_one(cnf, output_dir):
+    sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
+    return make_flagged_regions_reports(cnf, output_dir, sample)
 
 
 def finalize_one(cnf, *abnormal_regions_reports):

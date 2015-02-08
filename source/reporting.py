@@ -89,7 +89,6 @@ class Metric:
 
         return '-'
 
-
     def __repr__(self):
         return self.name
 
@@ -194,37 +193,67 @@ class SampleReport(Report):
         return SampleReport(**data)
 
 
-class SquareSampleReport(SampleReport):
+class PerRegionSampleReport(SampleReport):
+    class Region:
+        def __init__(self, parent_report):
+            self.__parent_report = parent_report
+            self.records = []
+
+        def add_record(self, metric_name, value, meta=None):
+            metric = self.__parent_report.metric_storage.get_metric(metric_name.strip())
+            assert metric, metric_name
+            rec = Record(metric, value, meta)
+            self.records.append(rec)
+            return rec
+
     def __init__(self, *args, **kwargs):
         SampleReport.__init__(self, *args, **kwargs)
+        self.records = None
+        self.__regions = []
+
+    def add_region(self):
+        region = PerRegionSampleReport.Region(self)
+        self.__regions.append(region)
+        return region
+
+    def add_record(self, metric_name, value, meta=None):
+        raise NotImplementedError
 
     def flatten(self, sections=None):
         rows = []
 
-        row = []
-        for m in self.metric_storage.get_metrics(sections):
-            if m.name in [r.metric.name for r in self.records]:
-                row.append(m.name)
-        rows.append(row)
+        header_row = []
+        ms = self.metric_storage.get_metrics(sections)
+        for i, m in enumerate(ms):
+            header_row.append(('#' if i == 0 else '') + m.name)
+        rows.append(header_row)
 
-        next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
-        if next_list_value:
-            for i in range(len(next_list_value)):
-                row = []
-                for m in self.metric_storage.get_metrics(sections):
-                    try:
-                        r = next((r for r in self.records if r.metric.name == m.name), None)
-                        if r:
-                            if m.name in self.metric_storage.general_section.metrics_by_name:
-                                val = r.value
-                            elif not r.value:
-                                val = None
-                            else:
-                                val = r.value[i]
-                            row.append(r.metric.format(val))
-                    except StopIteration:
-                        row.append('-')  # if no record for the metric
-                rows.append(row)
+        for reg in self.__regions:
+            row = []
+            for rec, m in zip(reg.records, ms):
+                assert rec.metric == m
+                row.append(rec.format())
+            rows.append(row)
+
+        # next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
+        # if next_list_value:
+        #     for i in range(len(next_list_value)):
+        #         header_row = []
+        #         for m in self.metric_storage.get_metrics(sections):
+        #             try:
+        #                 r = next((r for r in self.records if r.metric.name == m.name), None)
+        #                 if r:
+        #                     if m.name in self.metric_storage.general_section.metrics_by_name:
+        #                         val = r.value
+        #                     elif not r.value:
+        #                         val = None
+        #                     else:
+        #                         val = r.value[i]
+        #                     header_row.append(r.metric.format(val))
+        #             except StopIteration:
+        #                 header_row.append('-')  # if no record for the metric
+        #         rows.append(header_row)
+
         return rows
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
