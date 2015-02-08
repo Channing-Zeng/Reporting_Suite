@@ -60,6 +60,10 @@ class Gene:
         return self.regions
 
     def merge_regions(self):
+        if len(self.regions) == 0:
+            sys.stderr.write('Error: sub-regions of ' + str(self) + ' is 0' + '\n')
+            sys.exit(1)
+
         non_overlapping_regions = [self.regions[0]]
 
         for r in self.regions[1:]:
@@ -74,6 +78,12 @@ class Gene:
         self.regions = non_overlapping_regions
         return non_overlapping_regions
 
+    def __repr__(self):
+        return self.chrom + ':' + str(self.start) + '-' + str(self.end) + ',' + str(self.name)
+
+    def __str__(self):
+        return self.__repr__()
+
 
 def main():
     if len(sys.argv) <= 1:
@@ -83,6 +93,7 @@ def main():
 
     gene_by_chrom_and_name = dict()
 
+    i = 0
     with open(sys.argv[1]) as inp:
         for l in inp:
             if not l:
@@ -95,7 +106,6 @@ def main():
                 if len(fields) < 4:
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
                              ' (' + ' | '.join(fields) + '). Should be >= 4.')
-
                 else:
                     chrom, start, end, gname = fields[:4]
                     start, end = int(start), int(end)
@@ -112,22 +122,32 @@ def main():
                         gene.start = start
                         gene.end = end
 
-                    elif feature is None or feature == 'exon':
+                    elif feature is None or feature == 'CDS':
                         gene.regions.append(Exon(int(start), int(end), biotype))
+            i += 1
+            if i % 1000 == 0:
+                sys.stderr.write('processed ' + str(i) + ' lines\n')
+                sys.stderr.flush()
+    sys.stderr.write('Processed ' + str(i) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' genes\n')
+    sys.stderr.write('\n')
 
+    sys.stderr.write('Sorting regions...\n')
     genes = []
     for gene in gene_by_chrom_and_name.values():
         if gene.sort_regions() is not None:
             genes.append(gene)
 
+    sys.stderr.write('Merging regions...\n')
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
         final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, 'gene', gene.biotype))
         for r in gene.merge_regions():
-            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, 'exon', r.biotype))
+            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, 'CDS', r.biotype))
+    sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')
 
     for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
         sys.stdout.write('\t'.join([chrom, str(start), str(end), gname, '.', strand or '.', feature, biotype or '.']) + '\n')
+    sys.stderr.write('Saved\n')
 
 
 if __name__ == '__main__':

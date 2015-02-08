@@ -9,6 +9,7 @@ import sub_scripts.__check_python_version  # do not remove it: checking for pyth
 
 from collections import defaultdict
 import sys
+from source.logger import err, is_local
 
 
 class ApprovedGene:
@@ -58,9 +59,9 @@ def _read_approved_genes(synonyms_fpath):
     approved_gnames_by_prev_gname = defaultdict(list)
     approved_gnames_by_synonym = defaultdict(list)
 
-    with open(synonyms_fpath) as syn:
-        i = 1
-        for l in syn:
+    with open(synonyms_fpath) as f:
+        i = 0
+        for l in f:
             if l and not l.startswith('#'):
                 approved_gn, prev_names, synonyms, hgnc_chrom, ensembl_id, ucsc_id = l[:-1].split('\t')
                 if hgnc_chrom:
@@ -215,14 +216,26 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     gene_by_name = dict()
     genes = []
 
-    for i, l in enumerate(inp):
+    zero_size_gene_lines = []
+    zero_size_cds_lines = []
+
+    sys.stderr.write('Parsing Ensembl input...\n')
+    i = 0
+    for l in inp:
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
 
-            # if chrom != '21':
-            #     continue
+            if is_local:
+                if chrom != '21':
+                    continue
 
-            if feature not in ['gene', 'exon']:
+            if feature not in ['gene', 'CDS']:
+                continue
+
+            start, end = str(int(start) - 1), end
+
+            if int(end) <= int(start):
+                sys.stderr.write('Error: start > end: ' + l + '\n')
                 continue
 
             chrom = parse_ensembl_chrom(chrom)
@@ -241,21 +254,30 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 gene_by_name[gene_symbol] = gene
                 genes.append(gene)
 
-            elif feature == 'exon':
-                assert gene_symbol in gene_by_name, 'Error: exon record before gene record ' + gene_symbol
+            elif feature == 'CDS':
+                assert gene_symbol in gene_by_name, 'Error: CDS record before gene record ' + gene_symbol
                 gene = gene_by_name[gene_symbol]
-                assert gene_biotype == gene.biotype, 'Exon: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
+                assert gene_biotype == gene.biotype, 'CDS: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
                 exon = Exon(gene, start, end, biotype)
                 gene.exons.append(exon)
 
-        if i and i % 10000 == 0:
-            sys.stderr.write('processed ' + str(i / 1000) + 'k lines, ' + str(len(genes)) + ' genes found\n')
+        i += 1
+        if i % 1000 == 0:
+            sys.stderr.write('processed ' + str(i) + ' lines, ' + str(len(genes)) + ' genes found\n')
+            sys.stderr.flush()
+
+    sys.stderr.write('\n')
+    sys.stderr.write('Processed ' + str(i) + ' lines, ' + str(len(genes)) + ' genes found\n')
+    sys.stderr.write('Found ' + str(len(zero_size_cds_lines)) + ' zero-size CDS, ' + str(len(zero_size_gene_lines)) + ' zero-size genes.\n')
+    sys.stderr.write('\n')
 
     not_approved_gene_names = dict()
 
-    for i, g in enumerate(genes):
-        if i and i % 1000 == 0:
-            sys.stderr.write('processed ' + str(i / 1000) + 'k genes...\n')
+    exons_num = 0
+    j = 0
+    for g in genes:
+        if len(g.exons) == 0:
+            continue
 
         approved_gname, status = _get_approved_gene_symbol(
             approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
@@ -279,17 +301,26 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if approved_gname:
             out.write('\t'.join([g.chrom, g.start, g.end, approved_gname, '.', g.strand, 'gene', g.biotype]) + '\n')
             for e in g.exons:
-                out.write('\t'.join([g.chrom, e.start, e.end, approved_gname, '.', g.strand, 'exon', e.biotype]) + '\n')
+                exons_num += 1
+                out.write('\t'.join([g.chrom, e.start, e.end, approved_gname, '.', g.strand, 'CDS', e.biotype]) + '\n')
         else:
             if g.name not in not_approved_gene_names:
                 not_approved_gene_names[g.name] = status
+
+        j += 1
+        if j % 1000 == 0:
+            sys.stderr.write('processed ' + str(j / 1000) + 'k genes...\n')
+
+    sys.stderr.write('\n')
+    sys.stderr.write('Processed ' + str(j) + ' genes, ' + str(exons_num) + ' CDSs\n')
+    sys.stderr.write('Found ' + str(len(zero_size_cds_lines)) + ' zero-size CDS, ' + str(len(zero_size_gene_lines)) + ' zero-size genes.\n')
 
     return not_approved_gene_names
 
 
 def main():
     if len(sys.argv) < 1:
-        sys.stderr.write('The script writes all exons for all known UCSC genes, with associated gene symbols.\n')
+        sys.stderr.write('The script writes all CDS for all known Ensembl genes, with associated gene symbols.\n')
         sys.stderr.write('When the gene name is found in HGNC, it get replaced with an approved name.\n')
         sys.stderr.write('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.\n')
         sys.stderr.write('\n')
@@ -311,6 +342,10 @@ def main():
         sys.stderr.write('\n')
         sys.stderr.write('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons+with+approved+HUGO+gene+symbols\n')
         sys.exit(1)
+
+    if is_local:
+        sys.stderr.write('Local: will run only for chr21\n')
+        sys.stderr.write('\n')
 
     synonyms_fpath = sys.argv[1]
     approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = _read_approved_genes(synonyms_fpath)
