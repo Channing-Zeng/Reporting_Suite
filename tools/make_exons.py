@@ -332,7 +332,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
 
 
 def main():
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         sys.stderr.write('The script writes all CDS for all known Ensembl genes, with associated gene symbols.\n')
         sys.stderr.write('When the gene name is found in HGNC, it get replaced with an approved name.\n')
         sys.stderr.write('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.\n')
