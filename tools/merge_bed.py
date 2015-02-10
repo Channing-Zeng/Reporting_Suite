@@ -11,10 +11,11 @@ import sys
 
 
 class Exon:
-    def __init__(self, start, end, biotype=None):
+    def __init__(self, start, end, biotype=None, feature=None):
         self.start = start
         self.end = end
         self.biotype = biotype
+        self.feature = feature
 
 
 class Gene:
@@ -26,6 +27,7 @@ class Gene:
         self.biotype = None
         self.start = None
         self.end = None
+        self.feature = 'gene'
 
         self.regions = []
 
@@ -74,6 +76,8 @@ class Gene:
                 prev_r.end = r.end
                 if prev_r.biotype and r.biotype:
                     prev_r.biotype = ','.join(set(prev_r.biotype.split(',')) | set([r.biotype]))
+                if prev_r.feature and r.feature:
+                    prev_r.feature = ','.join(set(prev_r.feature.split(',')) | set([r.feature]))
 
         self.regions = non_overlapping_regions
         return non_overlapping_regions
@@ -122,8 +126,8 @@ def main():
                         gene.start = start
                         gene.end = end
 
-                    elif feature is None or feature == 'CDS':
-                        gene.regions.append(Exon(int(start), int(end), biotype))
+                    elif feature is None or feature == 'CDS' or feature == 'exon':
+                        gene.regions.append(Exon(int(start), int(end), biotype, feature))
             i += 1
             if i % 1000 == 0:
                 sys.stderr.write('processed ' + str(i) + ' lines\n')
@@ -140,13 +144,13 @@ def main():
     sys.stderr.write('Merging regions...\n')
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
-        final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, 'gene', gene.biotype))
+        final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
         for r in gene.merge_regions():
-            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, 'CDS', r.biotype))
+            final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, r.feature, r.biotype))
     sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')
 
     for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
-        sys.stdout.write('\t'.join([chrom, str(start), str(end), gname, '.', strand or '.', feature, biotype or '.']) + '\n')
+        sys.stdout.write('\t'.join([chrom, str(start), str(end), gname, '.', strand or '.', feature or '.', biotype or '.']) + '\n')
     sys.stderr.write('Saved\n')
 
 
