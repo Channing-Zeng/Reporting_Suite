@@ -68,13 +68,11 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
         records_by_report_type = []
         if (verify_file(sample.targetcov_json_fpath, True) or
             verify_file(sample.ngscat_html_fpath, True) or
-            verify_file(sample.picard_dup_metrics_fpath, True) or
             verify_file(sample.qualimap_html_fpath, True)):
 
             records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(sample.targetcov_json_fpath, silent=True) else []))
             records_by_report_type.append(('ngscat',    ngscat_report_parser.parse_ngscat_sample_report(sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
             records_by_report_type.append(('qualimap',  qualimap_report_parser.parse_qualimap_sample_report(sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
-            # records_by_report_type.append(('picard',    _parse_picard_dup_report(sample.picard_dup_metrics_fpath) if verify_file(sample.picard_dup_metrics_fpath, silent=True) else []))
 
         targqc_full_report.sample_reports.append(
             SampleReport(
@@ -97,7 +95,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
 
             plots_dirpath = join(output_dir, 'plots')
-            _correct_qualimap_genome_results(samples, output_dir)
+            _correct_qualimap_genome_results(samples)
+            _correct_qualimap_insert_size_histogram(samples)
 
             safe_mkdir(qualimap_output_dir)
             rows = []
@@ -231,7 +230,7 @@ def _get_targqc_records(records_by_report_type):
     return targqc_records
 
 
-def _correct_qualimap_genome_results(samples, output_dir):
+def _correct_qualimap_genome_results(samples):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
     for s in samples:
@@ -246,6 +245,35 @@ def _correct_qualimap_genome_results(samples, output_dir):
                     if metrics_started:
                         line = line.replace(',', '')
                     f.write(line)
+
+
+def _correct_qualimap_insert_size_histogram(samples):
+    """ replacing Qualimap IS histogram with Picard one.
+    """
+    for s in samples:
+        qualimap1_dirname = dirname(s.qualimap_ins_size_hist_fpath).replace('raw_data_qualimapReport', 'raw_data')
+        qualimap2_dirname = dirname(s.qualimap_ins_size_hist_fpath)
+        if exists(qualimap1_dirname):
+            if not exists(qualimap2_dirname):
+                shutil.move(qualimap1_dirname, qualimap2_dirname)
+            else:
+                shutil.rmtree(qualimap1_dirname)
+        elif not exists(qualimap2_dirname):
+            continue  # no data from both Qualimap v.1 and Qualimap v.2
+
+        if verify_file(s.picard_ins_size_hist_fpath):
+            with open(s.picard_ins_size_hist_fpath, 'r') as picard_f:
+                one_line_to_stop = False
+                for line in picard_f:
+                    if one_line_to_stop:
+                        break
+                    if line.startswith('## HISTOGRAM'):
+                        one_line_to_stop = True
+                with open(s.qualimap_ins_size_hist_fpath, 'w') as qualimap_f:
+                    for line in picard_f:
+                        qualimap_f.write(line)
+        elif verify_file(s.qualimap_ins_size_hist_fpath):
+            os.remove(s.qualimap_ins_size_hist_fpath)
 
 
 def _save_best_detailed_for_each_gene(samples, output_dir):

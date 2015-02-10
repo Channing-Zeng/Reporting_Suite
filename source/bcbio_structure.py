@@ -29,9 +29,8 @@ class BCBioSample(BaseSample):
         self.ngscat_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=source.ngscat_name)
         self.qualimap_html_fpath           = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=source.qualimap_name)
         self.qualimap_genome_results_fpath = self.make_fpath('{dirpath}/qc/{name}/genome_results.txt', name=source.qualimap_name)
+        self.qualimap_ins_size_hist_fpath  = self.make_fpath('{dirpath}/qc/{name}/raw_data_qualimapReport/insert_size_histogram.txt', name=source.qualimap_name)
         self.fastqc_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=source.fastqc_name)
-        self.picard_dup_metrics_fpath      = self.make_fpath('{dirpath}/qc/{name}/picard_dup_metrics.txt', name=source.picard_name)
-        self.picard_ins_size_pdf_fpath     = self.make_fpath('{dirpath}/qc/{name}/picard_ins_size_hist.pdf', name=source.picard_name)
 
     # ----------
     def annotated_vcfs_dirpath(self):

@@ -134,7 +134,7 @@ def _prep_steps(cnf, max_threads, threads_per_sample, samples, output_dirpath, b
        (' --reuse ' if cnf.reuse_intermediate else '') + \
         ' --genome ' + cnf.genome.name + \
         ' --project-name ' + cnf.project_name + \
-        ' '.join([s.bam for s in samples]) + \
+        ' ' + ' '.join([s.bam for s in samples]) + \
         ' --bed ' + bed_fpath + \
         ' --only-summary'
 

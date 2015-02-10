@@ -491,7 +491,7 @@ def generate_summary_report(
                   ' H={picard_ins_size_hist_pdf}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
         cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=picard_ins_size_hist_pdf, stdout_to_outputfile=False, exit_on_error=False)
+        call(cnf, cmdline, output_fpath=picard_ins_size_hist_txt, stdout_to_outputfile=False, exit_on_error=False)
 
     return report
 
