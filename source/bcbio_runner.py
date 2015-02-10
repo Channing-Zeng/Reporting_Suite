@@ -188,6 +188,8 @@ class BCBioRunner:
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         if cnf.exons:
             targetcov_params += '--exons {cnf.exons} '
+        if cnf.reannotate:
+            targetcov_params += '--reannotate '
 
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targetseq_name, short_name='tc',

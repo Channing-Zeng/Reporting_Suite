@@ -24,6 +24,12 @@ def main(args):
                 dest='bed',
                 help='a BED file for capture panel or amplicons')
              ),
+            (['--reannotate'], dict(
+                dest='reannotate',
+                help='re-annotate BED file with gene names',
+                action='store_true',
+                default=False)
+             ),
             (['--exons', '--exome'], dict(
                 dest='exons',
                 help='a BED file with real CDS regions (default Ensembl is in system_config)')

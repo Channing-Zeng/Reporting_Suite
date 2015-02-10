@@ -27,6 +27,7 @@ def main():
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR')
+    parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
 
     (opts, args) = parser.parse_args()
 

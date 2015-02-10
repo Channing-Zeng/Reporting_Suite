@@ -85,7 +85,14 @@ def _prep_files(cnf, sample, exons_bed):
     info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
-    # amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
+    info()
+    info('bedtools-sotring amplicons...')
+    amplicons_bed = sort_bed(cnf, amplicons_bed)
+
+    if cnf.reannotate or cnt_fields_in_bed(seq2c_bed) < 4:
+        info()
+        info('annotating amplicons with gene names from exons...')
+        amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     if cnt_fields_in_bed(seq2c_bed) < 4:
         seq2c_bed = amplicons_bed
@@ -112,18 +119,18 @@ def cnt_fields_in_bed(bed_fpath):
 
 
 def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
-    info()
-    info('bedtools-sotring amplicons...')
-    amplicons_bed = sort_bed(cnf, amplicons_bed)
-
     output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
 
     info()
     info('annotating amplicons with gene names from exons...')
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = 'cut -f1,2,3 {amplicons_bed} ' \
-              '| {bedtools} closest -t first -a - -b {exons_bed} ' \
-              '| cut -f1,2,3,7,8,9'.format(**locals())
+              '| {bedtools} intersect -a - -b {exons_bed} -loj'
+    call(cnf, cmdline, output_fpath)
+
+    # cmdline = 'cut -f1,2,3 {amplicons_bed} ' \
+    #           '| {bedtools} closest -t first -a - -b {exons_bed} ' \
+    #           '| cut -f1,2,3,7,8,9'.format(**locals())
     call(cnf, cmdline, output_fpath)
 
     return output_fpath
