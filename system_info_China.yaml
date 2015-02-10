@@ -32,7 +32,7 @@ genomes:
 #    snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
 #    snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
-    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.bed
+    exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
 
     polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/hg19/variation/snpeffect_export_Polymorphic.txt

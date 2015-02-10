@@ -39,7 +39,7 @@ def _read_args(args):
     if not exists(work_dirpath):
         os.mkdir(work_dirpath)
 
-    ref_bed_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.bed'
+    ref_bed_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed'
     bedtools = 'bedtools'
     if len(args) > 2:
         if args[2]:
