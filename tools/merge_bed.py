@@ -8,6 +8,7 @@ addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
+from collections import OrderedDict
 
 
 class Exon:
@@ -27,7 +28,7 @@ class Gene:
         self.biotype = None
         self.start = None
         self.end = None
-        self.feature = 'gene'
+        self.feature = 'Gene'
         self.met_gene_feature = False  # some bed files can contain 'gene' features, so we can take start and end from them
 
         self.regions = []
@@ -97,12 +98,15 @@ def merge_fields(consensus_field, other_field):
 
 
 def main():
-    if len(sys.argv) <= 1:
+    if len(sys.argv) < 2:
         sys.exit('Usage: ' + __file__ + ' bed_file')
 
-    summarize_by_genes = True
+    summarize_by_genes = len(sys.argv) > 2
+    sys.stderr.write('Setting summarize_by_genes to ' + str(summarize_by_genes) + '\n')
 
-    gene_by_chrom_and_name = dict()
+    three_fields = False
+
+    gene_by_chrom_and_name = OrderedDict()
 
     i = 0
     total_genes_inp = 0
@@ -119,7 +123,8 @@ def main():
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
                              ' (' + ' | '.join(fields) + '). Should be >= 3.')
                 else:
-                    if len(fields) <= 3 and summarize_by_genes is True:
+                    three_fields = len(fields) == 3
+                    if three_fields:
                         summarize_by_genes = False
                         sys.stderr.write('3 columns in BED; no summarizing by genes\n')
 
@@ -134,7 +139,7 @@ def main():
                         gene = Gene(gname, chrom, strand)
                         gene_by_chrom_and_name[(chrom, gname)] = gene
 
-                    if feature == 'gene':  # in fact 'gene' features in BED files are optional
+                    if feature == 'Gene':  # in fact 'gene' features in BED files are optional
                         total_genes_inp += 1
 
                         if gene.met_gene_feature:
@@ -150,7 +155,7 @@ def main():
                             gene.biotype = biotype
                             gene.met_gene_feature = True
 
-                    elif feature is None or feature == 'CDS' or feature == 'exon':
+                    elif feature is None or feature == '.' or feature == 'CDS' or feature == 'Exon':
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
             i += 1
             if i % 1000 == 0:
@@ -168,7 +173,7 @@ def main():
     sys.stderr.write('Merging regions...\n')
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
-        if summarize_by_genes:
+        if summarize_by_genes and gene.name != '.':
             final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
 
         for r in gene.merge_regions():
@@ -178,7 +183,7 @@ def main():
 
     for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
         sys.stdout.write('\t'.join([chrom, str(start), str(end)]))
-        if summarize_by_genes:
+        if not three_fields:
             sys.stdout.write('\t' + '\t'.join([gname, '.', strand or '.', feature or '.', biotype or '.']))
         sys.stdout.write('\n')
     sys.stderr.write('Saved\n')

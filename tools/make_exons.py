@@ -180,7 +180,7 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
                 for j, s, e in zip(range(int(exonCount)),
                    [e for e in exonStarts.split(',') if e], [
                     e for e in exonEnds.split(',') if e]):
-                    out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'gene']) + '\n')
+                    out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'Gene']) + '\n')
             else:
                 not_approved_gene_names.append(geneSymbol + '\t' + status)
 
@@ -196,7 +196,7 @@ class Gene:
         self.strand = strand
         self.biotype = biotype
         self.db_id = db_id
-        self.feature = 'gene'
+        self.feature = 'Gene'
 
         self.exons = []
 
@@ -267,7 +267,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 assert gene_symbol in gene_by_name, 'Error: Exon record before gene record ' + gene_symbol
                 gene = gene_by_name[gene_symbol]
                 assert gene_biotype == gene.biotype, 'Exon: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
-                exon = Exon(gene, start, end, biotype, feature)
+                exon = Exon(gene, start, end, biotype, 'Exon')
                 gene.exons.append(exon)
 
         i += 1
@@ -313,7 +313,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             for e in g.exons:
                 if e.feature == 'CDS':
                     cds_num += 1
-                if e.feature == 'exon':
+                if e.feature == 'Exon':
                     exons_num += 1
                 out.write('\t'.join([g.chrom, e.start, e.end, approved_gname, '.', g.strand, e.feature, e.biotype]) + '\n')
         else:

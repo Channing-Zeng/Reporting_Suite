@@ -189,7 +189,7 @@ class GeneInfo(Region):
         return self.exons  # self.subregions_by_feature['Exon']['regions']
 
     def get_amplicons(self):
-        return self.amplicons  # self.subregions_by_feature['Amplicon']['regions']
+        return self.amplicons  # self.subregions_by_feature['Capture']['regions']
 
     def add_exon(self, exon):  # exons come sorted by start
         if self.exons == []:

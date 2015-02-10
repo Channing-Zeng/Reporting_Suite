@@ -116,7 +116,7 @@ def main():
         annotated_2, off_targets = _annotate(bedtools, off_target_fpath, ref_bed_genes_fpath)
 
         for a in annotated_2:
-            a.feature = 'UTR/intron'
+            a.feature = 'UTR/Intron'
         annotated.extend(annotated_2)
 
         annotated.extend(off_targets)
@@ -233,11 +233,11 @@ def _split_reference(work_dirpath, ref_bed_fpath):
     ref_bed_no_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__no_whole_genes')
     ref_bed_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__whole_genes')
     with open(ref_bed_no_genes_fpath, 'w') as out:
-        cmdline = 'grep -wv gene {ref_bed_fpath}'.format(**locals())
+        cmdline = 'grep -wv Gene {ref_bed_fpath}'.format(**locals())
         log(cmdline + ' > ' + ref_bed_no_genes_fpath)
         subprocess.call(cmdline.split(), stdout=out)
     with open(ref_bed_genes_fpath, 'w') as out:
-        cmdline = 'grep -w gene {ref_bed_fpath}'.format(**locals())
+        cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
         log(cmdline + ' > ' + ref_bed_genes_fpath)
         subprocess.call(cmdline.split(), stdout=out)
     log()

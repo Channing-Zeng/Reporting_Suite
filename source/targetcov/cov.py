@@ -64,6 +64,9 @@ header_metric_storage = MetricStorage(
 
 
 def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
+    info()
+    info('Preparing BED file for seq2c...')
+
     if cnt_fields_in_bed(seq2c_bed) < 4:
         seq2c_bed = amplicons_bed
 
@@ -78,8 +81,9 @@ def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
             return None
         else:
             return l
-    seq2c_bed = iterate_file(cnf, seq2c_bed, f)
+    seq2c_bed = iterate_file(cnf, seq2c_bed, f, 'filt')
 
+    info('Done: ' + seq2c_bed)
     return seq2c_bed
 
 
@@ -103,7 +107,7 @@ def _prep_files(cnf, sample, exons_bed):
     # Exons
     info()
     info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
-    exons_bed = _merge_bed(cnf, exons_bed)
+    exons_bed = _merge_bed(cnf, exons_bed, make_gene_records=True)
 
     info()
     info('bedtools-sotring amplicons...')
@@ -157,11 +161,14 @@ def _filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
     return iterate_file(cnf, bed_fpath, fn, suffix='key')
 
 
-def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
+def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpath):
+    gene_by_name = OrderedDict()
+
     gene_names_set = set()
-    gene_names_list = list()
+    gene_names_list = []
 
     info()
+    info('Getting gene list')
     if genes_fpath:
         with open(genes_fpath) as f:
             gene_names_list = [g.strip() for g in f.read().split('\n') if g]
@@ -174,6 +181,7 @@ def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
         info('Using genes from amplicons list, filtering exons with this genes.')
         exons_bed = _filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
 
+    info('Making uniq gene list without affecting the order')
     fixed_gene_names_list = []
     added_gene_names_set = set()
     for i in range(len(gene_names_list)):
@@ -181,8 +189,36 @@ def _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath):
         if gene_name not in added_gene_names_set:
             fixed_gene_names_list.append(gene_name)
             added_gene_names_set.add(gene_name)
+    gene_names_list = fixed_gene_names_list
+    info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
+    info()
+    info('Filtering exon bed file to have only gene records...')
+    exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
+    call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
 
-    return exons_bed, amplicons_bed, gene_names_set, fixed_gene_names_list
+    info('Building the gene list')
+    for gn in gene_names_list:
+        gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
+    info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
+    info()
+
+    info('Setting start and end for the genes')
+    i = 0
+    with open(exons_only_genes_bed) as f:
+        for l in f:
+            l = l.strip()
+            if l and not l.startswith('#'):
+                fs = l.split('\t')
+                chrom, start, end, symbol = fs[:4]
+                gene_by_name[symbol].start = int(start)
+                gene_by_name[symbol].end = int(end)
+                if len(fs) >= 8:
+                    gene_by_name[symbol].biotype = fs[7]
+                i += 1
+    info('Processed ' + str(i) + ' genes')
+    info()
+
+    return exons_bed, amplicons_bed, gene_by_name
 
 
 class TargetInfo:
@@ -197,8 +233,8 @@ class TargetInfo:
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     exons_bed, amplicons_bed, seq2c_bed = _prep_files(cnf, sample, exons_bed)
 
-    exons_bed, amplicons_bed, gene_names_set, gene_names_list = \
-        _get_genes_and_filter(cnf, amplicons_bed, exons_bed, genes_fpath)
+    exons_bed, amplicons_bed, gene_by_name = _get_genes_and_filter(
+        cnf, sample.name, amplicons_bed, exons_bed, genes_fpath)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -207,20 +243,28 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     target_info = TargetInfo(
         fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
-        genes_fpath=genes_fpath, genes_num=len(gene_names_list))
+        genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
     info()
     general_rep_fpath = make_and_save_general_report(cnf, sample, combined_region, max_depth, target_info)
 
-    # Building the gene list
-    genes_by_name = OrderedDict()
-    for gn in gene_names_list:
-        genes_by_name[gn] = GeneInfo(sample_name=sample.name, gene_name=gn)
+    info()
+    info('Filtering exon bed file to have only non-gene records...')
+    exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes')
+    call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
+
+    # with open(exons_only_genes_bed) as f:
+    #     for l in f:
+    #         l = l.strip()
+    #         if l and not l.startswith('#'):
+    #             fs = l.split('\t')
+    #             chrom =
 
     un_annotated_amplicons = []
 
+    info()
     info('Calculating coverage statistics for exons...')
-    exons_with_optional_genes, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_bed)
+    exons_with_optional_genes, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_no_genes_bed)
     for exon_or_gene in exons_with_optional_genes:
         exon_or_gene.sample_name = sample.name
 
@@ -236,32 +280,29 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
             if len(ef) >= 4:
                 exon_or_gene.biotype = ef[3]
 
-        if exon_or_gene.gene_name in genes_by_name:
-            gene = genes_by_name[exon_or_gene.gene_name]
-            if exon_or_gene.feature == 'gene':
-                gene.start = exon_or_gene.start
-                gene.end = exon_or_gene.end
-                gene.biotype = exon_or_gene.biotype
-            else:
-                gene.chrom = exon_or_gene.chrom
-                gene.strand = exon_or_gene.strand
-                gene.add_exon(exon_or_gene)
+        if exon_or_gene.gene_name in gene_by_name:
+            gene = gene_by_name[exon_or_gene.gene_name]
+            gene.chrom = exon_or_gene.chrom
+            gene.strand = exon_or_gene.strand
+            gene.add_exon(exon_or_gene)
 
     for ampl in amplicons:
-        ampl.feature = 'Amplicon'
+        ampl.feature = 'Capture'
         ampl.sample_name = sample.name
 
         if ampl.gene_name != '.':
-            gene = genes_by_name[ampl.gene_name]
+            gene = gene_by_name[ampl.gene_name]
             gene.add_amplicon(ampl)
         else:
             un_annotated_amplicons.append(ampl)
+
+    un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
 
     # per_gene_rep_fpath, genes_by_name = make_and_save_region_report(
     #     cnf, exons_bed_fpath, sample, amplicons, amplicons_bed, gene_names)
 
     per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name,
-         genes_by_name.values(), un_annotated_amplicons)
+         gene_by_name.values(), un_annotated_amplicons)
 
     # info()
     # info('Sorting amplicons')
@@ -288,8 +329,8 @@ def seq2c_seq2cov(cnf, sample, amplicons_bed):
 
     seq2c_output = join(
         cnf.output_dir,
-        sample.name + '.' + \
-        source.targetseq_name + '_' + \
+        sample.name + '.' +
+        source.targetseq_name + '_' +
         source.seq2c_seq2cov_ending)
     sample_name = sample.name
     bam = sample.bam
@@ -332,8 +373,10 @@ def _get_gene_names(exons_bed, gene_index=3):
             if len(tokens) <= gene_index:
                 continue
 
-            gene_names_set |= set(tokens[gene_index].split(','))
-            gene_names_list.extend(tokens[gene_index].split(','))
+            for gn in tokens[gene_index].split(','):
+                if gn != '.':
+                    gene_names_set.add(gn)
+                    gene_names_list.append(gn)
 
     return gene_names_set, gene_names_list
 
@@ -683,7 +726,7 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
 #
 #                 if e_gene_name != '.':  # hit
 #                     if a_gene_name != '.' and a_gene_name != e_gene_name:
-#                         err('Amplicon gene name != exon gene name for line: ' + line.strip())
+#                         err('Capture gene name != exon gene name for line: ' + line.strip())
 #                     if e_gene_name not in gene_names:
 #                         err(e_gene_name + ' from exons not in gene_names from exons and amplicons')
 #                         print str(gene_names)
@@ -721,32 +764,33 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
     #     # amplicon_copy.gene_name = amplicon_gene_summary.gene_name
 
 
-def _get_exons_combined_by_genes(exons, ampl_gene_names):
-    genes_by_name = OrderedDict()
-    # for gn in ampl_gene_names:
-    #     genes_by_name[gn] = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
-    #         chrom=exon.chrom, strand=exon.strand)  # TODO: create genes from amplicons that are not in exons
-
-    i = 0
-    for exon in exons:
-        if not exon.gene_name:
-            info()
-            err('  No gene name info in the record: ' + str(exon) + '. Skipping.')
-            continue
-
-        if i and i % 10000 == 0:
-            info('  Processed {0:,} exons, current gene {1}'.format(i, exon.gene_name))
-        i += 1
-
-        gene = genes_by_name.get(exon.gene_name)
-        if gene is None:
-            gene = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
-                            chrom=exon.chrom, strand=exon.strand)
-            genes_by_name[exon.gene_name] = gene
-        gene.add_exon(exon)
-
-    info('  Processed {0:,} exons.'.format(i))
-    return genes_by_name
+# def _get_exons_combined_by_genes(exons, ampl_gene_names):
+#     genes_by_name = OrderedDict()
+#     # for gn in ampl_gene_names:
+#     #     genes_by_name[gn] = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
+#     #         chrom=exon.chrom, strand=exon.strand)  # TODO: create genes from amplicons that are not in exons
+#
+#     i = 0
+#     for exon in exons:
+#         if not exon.gene_name:
+#             info()
+#             err('  No gene name info in the record: ' + str(exon) + '. Skipping.')
+#             continue
+#
+#         if i and i % 10000 == 0:
+#             info('  Processed {0:,} exons, current gene {1}'.format(i, exon.gene_name))
+#         i += 1
+#
+#         gene = genes_by_name.get(exon.gene_name)
+#         if gene is None:
+#             gene = GeneInfo(
+#                 sample_name=exon.sample_name, gene_name=exon.gene_name,
+#                 chrom=exon.chrom, strand=exon.strand)
+#             genes_by_name[exon.gene_name] = gene
+#         gene.add_exon(exon)
+#
+#     info('  Processed {0:,} exons.'.format(i))
+#     return genes_by_name
 
 
 # def _make_region_report(sample, regions, depth_threshs):
@@ -967,12 +1011,14 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return regions, total_region, max_depth, total_bed_size
 
 
-def _merge_bed(cnf, bed_fpath):
+def _merge_bed(cnf, bed_fpath, make_gene_records=False):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
 
     merge_bed_py = get_system_path(cnf, 'python', join('tools', 'merge_bed.py'))
 
-    cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
+    cmdline = '{merge_bed_py} {bed_fpath} '.format(**locals())
+    if make_gene_records:
+        cmdline += ' --summarize-genes'
 
     call(cnf, cmdline, output_fpath)
 

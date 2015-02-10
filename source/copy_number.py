@@ -80,7 +80,7 @@ def _get_whole_genes_and_amlicons(report_fpath):
 
     with open(report_fpath, 'r') as f:
         for i, line in enumerate(f):
-            if 'Amplicon' in line or 'Whole-Gene' in line:
+            if 'Capture' in line or 'Whole-Gene' in line:
                 ts = line.split('\t')
                 # #Sample  Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave
                 ts = ts[:4] +               ts[5:6] + ts[7:8] + ts[4:5] + ts[10:11]
@@ -88,7 +88,7 @@ def _get_whole_genes_and_amlicons(report_fpath):
                 gene_summary_lines.append(ts)
 
     if not gene_summary_lines:
-        critical('No Amplicon or Whole-Gene is not found in ' + report_fpath)
+        critical('No Capture or Whole-Gene is not found in ' + report_fpath)
 
     return gene_summary_lines
 
@@ -207,7 +207,6 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
     mapped_reads_by_sample = OrderedDict()
 
     for sample in bcbio_structure.samples:
-        # amplicon_summary_lines += _get_lines_by_region_type(gene_report_fpath, 'Amplicon')
         for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
             sample_name, chrom, s, e, size, gene, tag, cov = tokens
             s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
@@ -444,7 +443,7 @@ def _report_row_to_objects(gene_depth):
 
 class CovRec:
     def __init__(self, sample_name=None, chrom=None, start_position=None, end_position=None, gene_name=None,
-                 type="Gene-Amplicon", size=None, mean_depth=None):
+                 type="Gene-Capture", size=None, mean_depth=None):
         self.sample_name = sample_name
         self.chrom = chrom
         self.start_position = int(start_position)
