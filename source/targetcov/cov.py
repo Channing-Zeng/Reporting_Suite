@@ -63,6 +63,26 @@ header_metric_storage = MetricStorage(
 )
 
 
+def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
+    if cnt_fields_in_bed(seq2c_bed) < 4:
+        seq2c_bed = amplicons_bed
+
+    elif cnt_fields_in_bed(seq2c_bed) > 4:
+        cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
+        seq2c_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
+        call(cnf, cmdline, amplicons_bed)
+
+    # removing regions with no gene annotation
+    def f(l, i):
+        if l.split('\t')[3].strip() == '.':
+            return None
+        else:
+            return l
+    seq2c_bed = iterate_file(cnf, seq2c_bed, f)
+
+    return seq2c_bed
+
+
 def _prep_files(cnf, sample, exons_bed):
     if not sample.bam:
         critical(sample.name + ': BAM file is required.')
@@ -82,7 +102,7 @@ def _prep_files(cnf, sample, exons_bed):
 
     # Exons
     info()
-    info('Sorting exons by (chrom, gene name, start); and merging regions withing genes...')
+    info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
     exons_bed = _merge_bed(cnf, exons_bed)
 
     info()
@@ -91,17 +111,10 @@ def _prep_files(cnf, sample, exons_bed):
 
     if cnf.reannotate or cnt_fields_in_bed(seq2c_bed) < 4:
         info()
-        info('annotating amplicons with gene names from exons...')
+        info('Annotating amplicons with gene names from Ensembl...')
         amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
-    if cnt_fields_in_bed(seq2c_bed) < 4:
-        seq2c_bed = amplicons_bed
-
-    # else:
-    #     amplicons_bed = sort_bed(cnf, amplicons_bed)
-    #     cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
-    #     amplicons_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
-    #     call(cnf, cmdline, amplicons_bed)
+    seq2c_bed = _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)
 
     info()
     info('Merging amplicons...')
@@ -121,16 +134,10 @@ def cnt_fields_in_bed(bed_fpath):
 def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
     output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
 
-    info()
-    info('annotating amplicons with gene names from exons...')
+    annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = 'cut -f1,2,3 {amplicons_bed} ' \
-              '| {bedtools} intersect -a - -b {exons_bed} -loj'
-    call(cnf, cmdline, output_fpath)
 
-    # cmdline = 'cut -f1,2,3 {amplicons_bed} ' \
-    #           '| {bedtools} closest -t first -a - -b {exons_bed} ' \
-    #           '| cut -f1,2,3,7,8,9'.format(**locals())
+    cmdline = '{annotate_bed_py} {amplicons_bed} {cnf.work_dir} {exons_bed} {bedtools}'.format(**locals())
     call(cnf, cmdline, output_fpath)
 
     return output_fpath
@@ -210,6 +217,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     for gn in gene_names_list:
         genes_by_name[gn] = GeneInfo(sample_name=sample.name, gene_name=gn)
 
+    un_annotated_amplicons = []
+
     info('Calculating coverage statistics for exons...')
     exons_with_optional_genes, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_bed)
     for exon_or_gene in exons_with_optional_genes:
@@ -242,14 +251,17 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
         ampl.feature = 'Amplicon'
         ampl.sample_name = sample.name
 
-        for gn in ampl.gene_name.split(','):
-            gene = genes_by_name[gn]
+        if ampl.gene_name != '.':
+            gene = genes_by_name[ampl.gene_name]
             gene.add_amplicon(ampl)
+        else:
+            un_annotated_amplicons.append(ampl)
 
     # per_gene_rep_fpath, genes_by_name = make_and_save_region_report(
     #     cnf, exons_bed_fpath, sample, amplicons, amplicons_bed, gene_names)
 
-    per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes_by_name.values())
+    per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name,
+         genes_by_name.values(), un_annotated_amplicons)
 
     # info()
     # info('Sorting amplicons')
@@ -594,7 +606,7 @@ def _parse_picard_dup_report(report, dup_report_fpath):
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 
-def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
+def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_annotated_amplicons):
     final_regions = []
     info('Combining all regions for final report...')
     i = 0
@@ -606,6 +618,10 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes):
         final_regions.extend(gene.get_amplicons())
         final_regions.extend(gene.get_exons())
         final_regions.append(gene)
+
+    for ampl in un_annotated_amplicons:
+        final_regions.append(ampl)
+
     info('Processed {0:,} genes.'.format(i))
 
     info()

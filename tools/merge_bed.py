@@ -28,6 +28,7 @@ class Gene:
         self.start = None
         self.end = None
         self.feature = 'gene'
+        self.met_gene_feature = False  # some bed files can contain 'gene' features, so we can take start and end from them
 
         self.regions = []
 
@@ -74,10 +75,8 @@ class Gene:
             else:
                 prev_r = non_overlapping_regions[-1]
                 prev_r.end = r.end
-                if prev_r.biotype and r.biotype:
-                    prev_r.biotype = ','.join(set(prev_r.biotype.split(',')) | set([r.biotype]))
-                if prev_r.feature and r.feature:
-                    prev_r.feature = ','.join(set(prev_r.feature.split(',')) | set([r.feature]))
+                prev_r.biotype = merge_fields(prev_r.biotype, r.biotype)
+                prev_r.feature = merge_fields(prev_r.feature, r.feature)
 
         self.regions = non_overlapping_regions
         return non_overlapping_regions
@@ -89,15 +88,24 @@ class Gene:
         return self.__repr__()
 
 
+def merge_fields(consensus_field, other_field):
+    if not consensus_field:
+        consensus_field = other_field
+    else:
+        consensus_field = ','.join(set(consensus_field.split(',')) | set(other_field.split(',')))
+    return consensus_field
+
+
 def main():
     if len(sys.argv) <= 1:
-        sys.exit('Usage: ' + __file__ + ' bed_file [--exons]')
+        sys.exit('Usage: ' + __file__ + ' bed_file')
 
-    running_with_exons = len(sys.argv) >= 3
+    summarize_by_genes = True
 
     gene_by_chrom_and_name = dict()
 
     i = 0
+    total_genes_inp = 0
     with open(sys.argv[1]) as inp:
         for l in inp:
             if not l:
@@ -107,12 +115,17 @@ def main():
             else:
                 fields = l[:-1].split('\t')
 
-                if len(fields) < 4:
+                if len(fields) < 3:
                     sys.exit('Incorrect number of fields: ' + str(len(fields)) +
-                             ' (' + ' | '.join(fields) + '). Should be >= 4.')
+                             ' (' + ' | '.join(fields) + '). Should be >= 3.')
                 else:
-                    chrom, start, end, gname = fields[:4]
+                    if len(fields) <= 3 and summarize_by_genes is True:
+                        summarize_by_genes = False
+                        sys.stderr.write('3 columns in BED; no summarizing by genes\n')
+
+                    chrom, start, end = fields[:3]
                     start, end = int(start), int(end)
+                    gname = fields[3] if len(fields) >= 4 else '.'
                     strand = fields[5] if len(fields) >= 6 else None
                     (feature, biotype) = fields[6:8] if len(fields) >= 8 else (None, None)
 
@@ -121,10 +134,21 @@ def main():
                         gene = Gene(gname, chrom, strand)
                         gene_by_chrom_and_name[(chrom, gname)] = gene
 
-                    if feature == 'gene':
-                        gene.biotype = biotype
-                        gene.start = start
-                        gene.end = end
+                    if feature == 'gene':  # in fact 'gene' features in BED files are optional
+                        total_genes_inp += 1
+
+                        if gene.met_gene_feature:
+                            # miltiple records for gene, picking the lowest start and the biggest end
+                            gene.start = min(gene.start, start)
+                            gene.end = max(gene.end, end)
+                            gene.biotype = merge_fields(gene.biotype, biotype)
+                            assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand
+
+                        else:
+                            gene.start = start
+                            gene.end = end
+                            gene.biotype = biotype
+                            gene.met_gene_feature = True
 
                     elif feature is None or feature == 'CDS' or feature == 'exon':
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
@@ -132,7 +156,7 @@ def main():
             if i % 1000 == 0:
                 sys.stderr.write('processed ' + str(i) + ' lines\n')
                 sys.stderr.flush()
-    sys.stderr.write('Processed ' + str(i) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' genes\n')
+    sys.stderr.write('Processed ' + str(i) + ' lines, found ' + str(total_genes_inp) + ' genes, ' + str(len(gene_by_chrom_and_name)) + ' uniq gene names.\n')
     sys.stderr.write('\n')
 
     sys.stderr.write('Sorting regions...\n')
@@ -144,13 +168,19 @@ def main():
     sys.stderr.write('Merging regions...\n')
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
-        final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
+        if summarize_by_genes:
+            final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
+
         for r in gene.merge_regions():
             final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, r.feature, r.biotype))
+
     sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')
 
     for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
-        sys.stdout.write('\t'.join([chrom, str(start), str(end), gname, '.', strand or '.', feature or '.', biotype or '.']) + '\n')
+        sys.stdout.write('\t'.join([chrom, str(start), str(end)]))
+        if summarize_by_genes:
+            sys.stdout.write('\t' + '\t'.join([gname, '.', strand or '.', feature or '.', biotype or '.']))
+        sys.stdout.write('\n')
     sys.stderr.write('Saved\n')
 
 
