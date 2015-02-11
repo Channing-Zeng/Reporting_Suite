@@ -199,6 +199,8 @@ class Gene:
         self.db_id = db_id
         self.feature = 'Gene'
 
+        self.approved_gname = None
+
         self.exons = []
 
     def __str__(self):
@@ -331,7 +333,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
 
                     prev_g = gene_after_approving_by_name[g.approved_gname]
 
-                    if prev_g.name == prev_g.approved_name:
+                    if prev_g.name == prev_g.approved_gname:
                         # previous gene name with this approved name was already approved - we have to keep it, thus reporting this one with the original name
                         sys.stderr.write('Previous gene name with this approved name ' + g.approved_gname + ' was already approved - we have to keep it, thus reporting this one with the original name\n')
                     else:
@@ -355,7 +357,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                             sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
                                              ' which is not duplicated, so picking original instead.\n')
                             del gene_after_approving_by_name[prev_g.approved_gname]
-                            prev_g.approved_name = prev_g.name
+                            prev_g.approved_gname = prev_g.name
                             gene_after_approving_by_name[prev_g.approved_gname] = prev_g
                         else:
                             sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
