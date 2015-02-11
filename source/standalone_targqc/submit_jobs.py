@@ -81,7 +81,7 @@ def _prep_steps(cnf, max_threads, threads_per_sample, samples, output_dirpath, b
         ' --bam {bam}' + \
         ' --bed ' + cnf.bed + \
        (' --exons ' + cnf.exons if cnf.exons else '') + \
-        ' --reannotate ' if cnf.reannotate else ''
+       (' --reannotate ' if cnf.reannotate else '')
 
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',
