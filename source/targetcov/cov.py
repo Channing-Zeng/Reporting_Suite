@@ -2,7 +2,6 @@
 
 import sys
 import traceback
-# import pysam
 from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath
 
@@ -524,15 +523,20 @@ def generate_summary_report(
     if picard:
         info('Picard duplication metrics for "' + basename(sample.bam) + '"')
         bam_fpath = sample.bam
-        # bam_fpath = _prepare_bam_for_picard(cnf, bam_fpath)
         dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
         cmdline = '{picard} MarkDuplicates' \
                   ' I={bam_fpath}' \
                   ' O=/dev/null' \
                   ' METRICS_FILE={dup_metrics_txt}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
-        cmdline = cmdline.format(**locals())
-        call(cnf, cmdline, output_fpath=dup_metrics_txt, stdout_to_outputfile=False, exit_on_error=False)
+        result = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
+                      stdout_to_outputfile=False, exit_on_error=False)
+        if result != dup_metrics_txt:  # error occurred, try to correct BAM and restart
+            warn('Picard duplication metrics failed for "' + basename(sample.bam) + '". '
+                 'Trying to fix the file and restart Picard.')
+            bam_fpath = _fix_bam_for_picard(cnf, sample.bam)
+            call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
+                 stdout_to_outputfile=False, exit_on_error=False)
 
         if verify_file(dup_metrics_txt, silent=True):
             _parse_picard_dup_report(report, dup_metrics_txt)
@@ -551,7 +555,7 @@ def generate_summary_report(
     return report
 
 
-def _prepare_bam_for_picard(cnf, bam_fpath):
+def _fix_bam_for_picard(cnf, bam_fpath):
     def __process_problem_read_aligns(read_aligns):
         # each alignment: 0:NAME 1:FLAG 2:CHR 3:COORD 4:MAPQUAL 5:CIGAR 6:MATE_CHR 7:MATE_COORD TLEN SEQ ...
         def __get_key(align):
@@ -584,46 +588,69 @@ def _prepare_bam_for_picard(cnf, bam_fpath):
         return [correct_pairs[0][0], correct_pairs[0][1]]
 
     samtools = get_system_path(cnf, 'samtools')
-    ## TODO if REFERENCE_SEQUENCE is needed for Picard (both in CollectInsertSizeMetrics and MarkDuplicates)
-    ## problem: header should contain exactly the same chromosomes as in REFERENCE_SEQUENCE
-    ## solution:
-    ## header_lines = pysam.view("-H", bam_fpath)
-    ## modify @SQ entries according to cnf.genome.seq + ".fai" or cnf.genome.chr_lengths
-    ## save modified header into COR_HEADER_SAM (plain text file)
-    ## samtools reheader COR_HEADER_SAM INPUT_BAM > CORRECTED_BAM
+    try:
+        import pysam
+        without_pysam = False
+    except ImportError:
+        without_pysam = True
 
-    #TODO: fix alignments for MarkDuplicates (problem more than 2 alignments per read-pair)
-    # version 1: sort BAM by queryname, process reads which are present more than twice
-    qname_sorted_bam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')
-    cmdline = '{samtools} sort -n -o {bam_fpath} prefix'.format(**locals())  # queryname sorting, output to stdout, 'prefix' is not used
-    call(cnf, cmdline, qname_sorted_bam_fpath)
+    # find reads presented more than twice in input BAM
+    if without_pysam:
+        qname_sorted_sam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')[:-len('bam')] + 'sam'
+        # queryname sorting; output is SAM
+        cmdline = '{samtools} view {bam_fpath} | sort '.format(**locals())
+        call(cnf, cmdline, qname_sorted_sam_fpath)
+        qname_sorted_file = open(qname_sorted_sam_fpath, 'r')
+    else:
+        qname_sorted_bam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')
+        # queryname sorting (-n), to stdout (-o), 'prefix' is not used; output is BAM
+        cmdline = '{samtools} sort -n -o {bam_fpath} prefix'.format(**locals())
+        call(cnf, cmdline, qname_sorted_bam_fpath)
+        qname_sorted_file = pysam.Samfile(qname_sorted_bam_fpath, 'rb')
     problem_reads = dict()
     cur_read_aligns = []
-    for cur_align in pysam.Samfile(qname_sorted_bam_fpath, 'rb'):
-        cur_align = str(cur_align)
+    for line in qname_sorted_file:
+        line = str(line)
         if cur_read_aligns:
-            if cur_align.split('\t')[0] != cur_read_aligns[0].split('\t')[0]:
+            if line.split('\t')[0] != cur_read_aligns[0].split('\t')[0]:
                 if len(cur_read_aligns) > 2:
                     problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
                 cur_read_aligns = []
-        flag = int(cur_align.split('\t')[1])
-        cur_read_aligns.append(cur_align)
+        flag = int(line.split('\t')[1])
+        cur_read_aligns.append(line)
     if len(cur_read_aligns) > 2:
         problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
-    #TODO if speed up is important and disk space is critical
-    # version 2: read initial BAM and count number of alignments for each read, process the ones with n>2
+    qname_sorted_file.close()
 
     for read_id, read_aligns in problem_reads.items():
         problem_reads[read_id] = __process_problem_read_aligns(read_aligns)
+
     # correct input BAM
-    bam_file = pysam.Samfile(bam_fpath, 'rb')
     fixed_bam_fpath = intermediate_fname(cnf, bam_fpath, 'fixed_for_picard')
-    fixed_bam_file = pysam.Samfile(fixed_bam_fpath, "wb", template=bam_file)
-    for cur_align in bam_file:
-        read_name = str(cur_align).split('\t')[0]
-        if read_name not in problem_reads or str(cur_align) in problem_reads[read_name]:
-            fixed_bam_file.write(cur_align)
-    fixed_bam_file.close()
+    fixed_sam_fpath = fixed_bam_fpath[:-len('bam')] + 'sam'
+    if without_pysam:
+        sam_fpath = intermediate_fname(cnf, bam_fpath, 'tmp')[:-len('bam')] + 'sam'
+        cmdline = '{samtools} view -h {bam_fpath}'.format(**locals())
+        call(cnf, cmdline, sam_fpath)
+        input_file = open(sam_fpath, 'r')
+        fixed_file = open(fixed_sam_fpath, 'w')
+    else:
+        input_file = pysam.Samfile(bam_fpath, 'rb')
+        fixed_file = pysam.Samfile(fixed_bam_fpath, "wb", template=input_file)
+    for line in input_file:
+        if without_pysam and line.startswith('@'):  # header
+            fixed_file.write(line)
+            continue
+        read_name = str(line).split('\t')[0]
+        if read_name in problem_reads and str(line) not in problem_reads[read_name]:
+            continue
+        fixed_file.write(line)
+    input_file.close()
+    fixed_file.close()
+    if without_pysam:
+        cmdline = '{samtools} view -bS {fixed_sam_fpath}'.format(**locals())
+        call(cnf, cmdline, fixed_bam_fpath)
+
     return fixed_bam_fpath
 
 
