@@ -22,6 +22,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
 
     max_threads = cnf.threads or 40
     threads_per_sample = max(max_threads / len(samples), 1)
+    threads_per_sample = 1  # override
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
