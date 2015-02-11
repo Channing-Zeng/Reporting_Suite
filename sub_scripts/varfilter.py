@@ -240,7 +240,10 @@ def finalize_one(cnf, bcbio_structure, sample, msg):
         msg.append('  ' + caller_name)
         for fpath in [
             sample.get_filt_vcf_fpath_by_callername(caller_name, gz=True),
-            sample.get_filt_tsv_fpath_by_callername(caller_name)]:
+            sample.get_filt_tsv_fpath_by_callername(caller_name),
+            sample.get_filt_tsv_fpath_by_callername(caller_name) + '.idx',
+            sample.get_filt_tsv_fpath_by_callername(caller_name) + '.gz.tbi',
+        ]:
 
             if not file_exists(fpath):
                 if sample.phenotype == 'normal':
