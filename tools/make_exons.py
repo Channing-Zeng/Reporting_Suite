@@ -7,7 +7,7 @@ addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import sys
 from source.logger import err, is_local
 
@@ -200,6 +200,13 @@ class Gene:
 
         self.exons = []
 
+    def __str__(self):
+        fs = [self.chrom, '{}'.format(self.start), '{}'.format(self.end),
+              self.name or '.', '.', self.strand or '.',
+              self.feature or '.', self.biotype or '.']
+
+        return '\t'.join(fs) + '\n'
+
 
 class Exon:
     def __init__(self, gene, start, end, biotype, feature):
@@ -281,9 +288,8 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     sys.stderr.write('\n')
 
     not_approved_gene_names = dict()
+    gene_after_approving_by_name = OrderedDict()
 
-    cds_num = 0
-    exons_num = 0
     j = 0
     for g in genes:
         if len(g.exons) == 0:
@@ -309,13 +315,53 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             sys.stderr.write('\n')
 
         if approved_gname:
-            out.write('\t'.join([g.chrom, g.start, g.end, approved_gname, '.', g.strand, g.feature, g.biotype]) + '\n')
-            for e in g.exons:
-                if e.feature == 'CDS':
-                    cds_num += 1
-                if e.feature == 'Exon':
-                    exons_num += 1
-                out.write('\t'.join([g.chrom, e.start, e.end, approved_gname, '.', g.strand, e.feature, e.biotype]) + '\n')
+            g.approved_gname = approved_gname
+
+            if g.approved_gname in gene_after_approving_by_name:
+                # Duplicated gene. what do we do with it?
+                sys.stderr.write('\nApproved name ' + g.approved_gname + ' is duplicated for ' + g.name + ': ' + str(g))
+
+                if g.name != g.approved_gname:
+                    # If the original gene name was not already-approved, we can try take the original name back.
+                    sys.stderr.write('Original was not approved, so trying to take an original instead of the approved version.\n')
+                    g.approved_gname = g.name
+                    if g.approved_gname in gene_after_approving_by_name:
+                        # Still no luck... skipping this gene.
+                        sys.stderr.write('Original name is still duplicated. If the diplator\'s original name was not approved, picking the one which is longest - ')
+                        prev_g = gene_after_approving_by_name[g.approved_gname]
+                        if prev_g.name != prev_g.approved_name and int(g.end) - int(g.start) > int(prev_g.end) - int(prev_g.start):
+                            del gene_after_approving_by_name[g.approved_gname]
+                            sys.stderr.write('the new one\n')
+                        else:
+                            sys.stderr.write('the previous one\n')
+                            sys.stderr.write('\n')
+                            continue
+                else:
+                    # If the original name was already approved, maybe check the original for the one we already met?
+                    prev_g = gene_after_approving_by_name[g.approved_gname]
+                    if prev_g.name != g.approved_gname:
+                        if prev_g.name not in gene_after_approving_by_name:
+                            sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
+                                             ' which is not duplicated, so picking it instead.\n')
+                            prev_g.approved_name = prev_g.name
+                        else:
+                            sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
+                                             ' that was already met. So just keeping ours, removing prev...\n')
+                            del gene_after_approving_by_name[g.approved_gname]
+                    else:
+                        sys.stderr.write('Prev gene with this approved name had approved original name, so picking the longest - ')
+                        if int(g.end) - int(g.start) > int(prev_g.end) - int(prev_g.start):
+                            del gene_after_approving_by_name[g.approved_gname]
+                            sys.stderr.write('the new one\n')
+                        else:
+                            sys.stderr.write('the previous one\n')
+                            sys.stderr.write('\n')
+                            continue
+
+                sys.stderr.write('\n')
+
+            gene_after_approving_by_name[approved_gname] = g
+
         else:
             if g.name not in not_approved_gene_names:
                 not_approved_gene_names[g.name] = status
@@ -325,7 +371,23 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             sys.stderr.write('processed ' + str(j / 1000) + 'k genes...\n')
 
     sys.stderr.write('\n')
-    sys.stderr.write('Processed ' + str(j) + ' genes, ' + str(cds_num) + ' CDSs, ' + str(exons_num) + ' ncRNA exons\n')
+    sys.stderr.write('Saving genes.')
+    k = 0
+    cds_num = 0
+    exons_num = 0
+
+    for gname, g in gene_after_approving_by_name.iteritems():
+        out.write('\t'.join([g.chrom, g.start, g.end, gname, '.', g.strand, g.feature, g.biotype]) + '\n')
+        for e in g.exons:
+            if e.feature == 'CDS':
+                cds_num += 1
+            if e.feature == 'Exon':
+                exons_num += 1
+            out.write('\t'.join([g.chrom, e.start, e.end, gname, '.', g.strand, e.feature, e.biotype]) + '\n')
+        k += 1
+
+    sys.stderr.write('\n')
+    sys.stderr.write('Saved ' + str(k) + ' genes, ' + str(cds_num) + ' CDSs, ' + str(exons_num) + ' ncRNA exons\n')
     sys.stderr.write('Found ' + str(len(zero_size_cds_lines)) + ' zero-size regions, ' + str(len(zero_size_gene_lines)) + ' zero-size genes.\n')
 
     return not_approved_gene_names
@@ -338,7 +400,7 @@ def main():
         sys.stderr.write('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.\n')
         sys.stderr.write('\n')
         sys.stderr.write('Usage:\n')
-        sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < UCSC_knownGene.txt > UCSC_HGNC_exons.bed\n')
+        sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < Ensembl.gtf > UCSC_HGNC_exons.bed\n')
         sys.stderr.write('\n')
         sys.stderr.write('    where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:\n')
         sys.stderr.write('      #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)\n')

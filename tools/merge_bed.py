@@ -65,7 +65,7 @@ class Gene:
 
     def merge_regions(self):
         if len(self.regions) == 0:
-            sys.stderr.write('Error: sub-regions of ' + str(self) + ' is 0' + '\n')
+            sys.stderr.write('Error: no sub-regions of ' + str(self) + '\n')
             sys.exit(1)
 
         non_overlapping_regions = [self.regions[0]]
@@ -134,6 +134,9 @@ def main():
                     strand = fields[5] if len(fields) >= 6 else None
                     (feature, biotype) = fields[6:8] if len(fields) >= 8 else (None, None)
 
+                    if gname == 'MIR3648-1':
+                        pass
+
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
                         gene = Gene(gname, chrom, strand)
@@ -143,11 +146,12 @@ def main():
                         total_genes_inp += 1
 
                         if gene.met_gene_feature:
+                            sys.stderr.write(gene.name + ' has been previously met: ' + str(gene) + '\n')
                             # miltiple records for gene, picking the lowest start and the biggest end
                             gene.start = min(gene.start, start)
                             gene.end = max(gene.end, end)
                             gene.biotype = merge_fields(gene.biotype, biotype)
-                            assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand
+                            assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand + ' gene is ' + gene.name
 
                         else:
                             gene.start = start
