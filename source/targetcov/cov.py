@@ -70,8 +70,8 @@ def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
         seq2c_bed = amplicons_bed
 
     elif cnt_fields_in_bed(seq2c_bed) > 4:
-        cmdline = 'cut -f1,2,3,4 ' + amplicons_bed
-        seq2c_bed = intermediate_fname(cnf, amplicons_bed, 'cut')
+        cmdline = 'cut -f1,2,3,4 ' + seq2c_bed
+        seq2c_bed = intermediate_fname(cnf, seq2c_bed, 'cut')
         call(cnf, cmdline, seq2c_bed)
 
     # removing regions with no gene annotation
