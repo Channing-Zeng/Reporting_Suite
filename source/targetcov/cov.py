@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 
 import sys
 import traceback
@@ -523,7 +524,10 @@ def generate_summary_report(
     if picard:
         info('Picard duplication metrics for "' + basename(sample.bam) + '"')
         bam_fpath = sample.bam
+
         dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
+        if isfile(dup_metrics_txt): os.remove(dup_metrics_txt)
+
         cmdline = '{picard} MarkDuplicates' \
                   ' I={bam_fpath}' \
                   ' O=/dev/null' \
@@ -531,7 +535,8 @@ def generate_summary_report(
                   ' VALIDATION_STRINGENCY=LENIENT'
         result = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
                       stdout_to_outputfile=False, exit_on_error=False)
-        if result != dup_metrics_txt:  # error occurred, try to correct BAM and restart
+
+        if not verify_file(dup_metrics_txt):  # error occurred, try to correct BAM and restart
             warn('Picard duplication metrics failed for "' + basename(sample.bam) + '". '
                  'Trying to fix the file and restart Picard.')
             bam_fpath = _fix_bam_for_picard(cnf, sample.bam)
@@ -541,6 +546,7 @@ def generate_summary_report(
         if verify_file(dup_metrics_txt, silent=True):
             _parse_picard_dup_report(report, dup_metrics_txt)
 
+        info()
         info('Picard ins size hist for "' + basename(sample.bam) + '"')
         picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
         picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
@@ -549,6 +555,7 @@ def generate_summary_report(
                   ' O={picard_ins_size_hist_txt}' \
                   ' H={picard_ins_size_hist_pdf}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
+
         cmdline = cmdline.format(**locals())
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_txt, stdout_to_outputfile=False, exit_on_error=False)
 
@@ -660,17 +667,20 @@ def _parse_picard_dup_report(report, dup_report_fpath):
     with open(dup_report_fpath) as f:
         for l in f:
             if l.startswith('## METRICS CLASS'):
+                l_NEXT = None
                 try:
                     l_LIBRARY = next(f)
-                    l_EMPTY = next(f)
-                    l_UNKNOWN = next(f)
+                    if l_LIBRARY.startswith('LIBRARY'):
+                        l_NEXT = next(f)
+                        while not l_NEXT.strip():
+                            l_NEXT = next(f)
                 except StopIteration:
                     pass
                 else:
-                    if l_UNKNOWN:
-                        ts = l_UNKNOWN.split()
-                        if len(ts) >= 9:
-                            dup_rate = 100.0 * float(ts[8])
+                    if l_NEXT:
+                        fields = l_NEXT.split()
+                        if len(fields) >= 9:
+                            dup_rate = 100.0 * float(fields[8])
                             report.add_record('Duplication rate (picard)', dup_rate)
                             return records
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
