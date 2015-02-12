@@ -671,7 +671,7 @@ def _parse_picard_dup_report(report, dup_report_fpath):
                 try:
                     l_LIBRARY = next(f)
                     if l_LIBRARY.startswith('LIBRARY'):
-                        ind = l_LIBRARY.strip().split().index('PERCENT_DUPLICATION')
+                        ind = l_LIBRARY.strip().split().index('PERCENT_DUPLICATION') + 1
                         l_NEXT = next(f)
                         while l_NEXT.startswith(' ') or l_NEXT.startswith('\t'):
                             l_NEXT = next(f)
