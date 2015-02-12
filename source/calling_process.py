@@ -69,7 +69,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         if file_exists(output_fpath):
             info(output_fpath + ' exists, reusing')
             return output_fpath
-    if output_fpath and file_exists(output_fpath):
+    if output_fpath and isfile(output_fpath):
         if output_is_dir:
             shutil.rmtree(output_fpath)
         else:

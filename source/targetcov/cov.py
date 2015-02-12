@@ -526,7 +526,6 @@ def generate_summary_report(
         bam_fpath = sample.bam
 
         dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
-        if isfile(dup_metrics_txt): os.remove(dup_metrics_txt)
 
         cmdline = '{picard} MarkDuplicates' \
                   ' I={bam_fpath}' \
