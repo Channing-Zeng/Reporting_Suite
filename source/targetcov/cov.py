@@ -667,19 +667,21 @@ def _parse_picard_dup_report(report, dup_report_fpath):
         for l in f:
             if l.startswith('## METRICS CLASS'):
                 l_NEXT = None
+                ind = None
                 try:
                     l_LIBRARY = next(f)
                     if l_LIBRARY.startswith('LIBRARY'):
+                        ind = l_LIBRARY.strip().split().index('PERCENT_DUPLICATION')
                         l_NEXT = next(f)
                         while l_NEXT.startswith(' ') or l_NEXT.startswith('\t'):
                             l_NEXT = next(f)
                 except StopIteration:
                     pass
                 else:
-                    if l_NEXT:
+                    if l_NEXT and ind:
                         fields = l_NEXT.split()
-                        if len(fields) >= 9:
-                            dup_rate = 100.0 * float(fields[8])
+                        if len(fields) > ind:
+                            dup_rate = 100.0 * float(fields[ind])
                             report.add_record('Duplication rate (picard)', dup_rate)
                             return records
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
