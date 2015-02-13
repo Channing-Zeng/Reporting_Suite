@@ -702,7 +702,7 @@ def add_suffix(fname, suf):
 
 def intermediate_fname(cnf, fname, suf):
     output_fname = add_suffix(fname, suf)
-    return join(cnf['work_dir'], basename(output_fname))
+    return join(cnf.work_dir, basename(output_fname))
 
 
 def remove_quotes(s):
@@ -806,7 +806,7 @@ def file_transaction(cnf, *rollback_files):
     """Wrap file generation in a transaction, moving to output if finishes.
     """
     exts = {".vcf": ".idx", ".bam": ".bai", "vcf.gz": ".tbi"}
-    safe_fpaths, orig_names = _flatten_plus_safe(cnf['work_dir'], rollback_files)
+    safe_fpaths, orig_names = _flatten_plus_safe(cnf.work_dir, rollback_files)
     _remove_files(safe_fpaths)  # remove any half-finished transactions
     try:
         if len(safe_fpaths) == 1:

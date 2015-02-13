@@ -131,6 +131,15 @@ class Config(object):
         return self.__d.__len__()
 
 
+class CallCnf:
+    def __init__(self, dict_cnf):
+        self.work_dir = dict_cnf['work_dir']
+        self.log = dict_cnf['log']
+        self.reuse_intermediate = dict_cnf['reuse_intermediate']
+        self.keep_intermediate = dict_cnf['keep_intermediate']
+        self.verbose = dict_cnf['verbose']
+
+
 def load_yaml_config(fpath):
     if not verify_file(fpath):
         sys.exit(1)

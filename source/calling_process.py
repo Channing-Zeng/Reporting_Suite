@@ -35,8 +35,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     cnf                             dict with the following _optional_ fields:
                                       - reuse_intermediate
                                       - keep_intermediate
+                                      - verbose
                                       - log
-                                      - tmp_dir
+                                      - work_dir
     cmdline                         called using subprocess.Popen
     ------------------------------------------------------------
 
@@ -76,7 +77,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             os.remove(output_fpath)
 
     # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
-    err_fpath = join(cnf['work_dir'], '.subprocess_stderr.txt')
+    err_fpath = join(cnf.work_dir, '.subprocess_stderr.txt')
     if exists(err_fpath):
         os.remove(err_fpath)
 
@@ -104,7 +105,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
 
-        if cnf['verbose'] or return_proc or check_output:
+        if cnf.verbose or return_proc or check_output:
             if out_fpath:
                 # STDOUT TO PIPE OR TO FILE
                 if stdout_to_outputfile:

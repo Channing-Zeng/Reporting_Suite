@@ -532,17 +532,17 @@ def generate_summary_report(
                   ' O=/dev/null' \
                   ' METRICS_FILE={dup_metrics_txt}' \
                   ' VALIDATION_STRINGENCY=LENIENT'
-        result = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
+        res = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
                       stdout_to_outputfile=False, exit_on_error=False)
 
-        if result is None:  # error occurred, try to correct BAM and restart
+        if res != dup_metrics_txt:  # error occurred, try to correct BAM and restart
             warn('Picard duplication metrics failed for "' + basename(sample.bam) + '". '
                  'Trying to fix the file and restart Picard.')
             bam_fpath = _fix_bam_for_picard(cnf, sample.bam)
-            call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
+            res = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
                  stdout_to_outputfile=False, exit_on_error=False)
 
-        if verify_file(dup_metrics_txt, silent=True):
+        if res == dup_metrics_txt:
             dup_rate = _parse_picard_dup_report(dup_metrics_txt)
             if dup_rate:
                 report.add_record('Duplication rate (picard)', dup_rate)
