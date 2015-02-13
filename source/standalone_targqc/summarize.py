@@ -60,7 +60,6 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
         ('targetcov', targetcov_metric_storage),
         ('ngscat', ngscat_report_parser.metric_storage),
         ('qualimap', qualimap_report_parser.metric_storage)])
-        # ('picard', picard_metric_storage)])
 
     targqc_full_report = FullReport(cnf.name, [], metric_storage=targqc_metric_storage)
 
@@ -139,6 +138,25 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     info()
     info('Best stats for regions saved in:')
     info('  ' + best_for_regions_fpath)
+
+    _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
+
+
+def get_ave_coverage(cnf, report_fpath):
+    if verify_file(report_fpath):
+        records = load_records(report_fpath)
+        return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
+
+
+def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath):
+    oncomine_vcf_fpath = cnf.genomes[cnf.genome].oncomine
+
+    ave_coverages_per_sample = {
+        s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
+        for s in samples if verify_file(s.targetcov_json_fpath)}
+
+    for sample in samples:
+        ave_cov = 0
 
 
 _qualimap_to_targetcov_dict = {

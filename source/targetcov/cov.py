@@ -535,7 +535,7 @@ def generate_summary_report(
         result = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
                       stdout_to_outputfile=False, exit_on_error=False)
 
-        if not verify_file(dup_metrics_txt):  # error occurred, try to correct BAM and restart
+        if result is None:  # error occurred, try to correct BAM and restart
             warn('Picard duplication metrics failed for "' + basename(sample.bam) + '". '
                  'Trying to fix the file and restart Picard.')
             bam_fpath = _fix_bam_for_picard(cnf, sample.bam)
@@ -543,7 +543,9 @@ def generate_summary_report(
                  stdout_to_outputfile=False, exit_on_error=False)
 
         if verify_file(dup_metrics_txt, silent=True):
-            _parse_picard_dup_report(report, dup_metrics_txt)
+            dup_rate = _parse_picard_dup_report(dup_metrics_txt)
+            if dup_rate:
+                report.add_record('Duplication rate (picard)', dup_rate)
 
         info()
         info('Picard ins size hist for "' + basename(sample.bam) + '"')
@@ -660,9 +662,7 @@ def _fix_bam_for_picard(cnf, bam_fpath):
     return fixed_bam_fpath
 
 
-def _parse_picard_dup_report(report, dup_report_fpath):
-    records = []
-
+def _parse_picard_dup_report(dup_report_fpath):
     with open(dup_report_fpath) as f:
         for l in f:
             if l.startswith('## METRICS CLASS'):
@@ -684,8 +684,7 @@ def _parse_picard_dup_report(report, dup_report_fpath):
                             ind += 1
                         if len(fields) > ind:
                             dup_rate = 100.0 * float(fields[ind])
-                            report.add_record('Duplication rate (picard)', dup_rate)
-                            return records
+                            return dup_rate
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 

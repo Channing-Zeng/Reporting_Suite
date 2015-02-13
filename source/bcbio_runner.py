@@ -502,7 +502,7 @@ class BCBioRunner:
                 self._submit_job(
                     self.abnormal_regions, sample.name,
                     wait_for_steps=wait_for_steps,
-                    sample=sample, threads=self.threads_per_sample,
+                    sample=sample, threads=self.threads_per_sample, genome=sample.genome,
                     caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                     vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 

@@ -12,7 +12,6 @@ from source.targetcov.flag_regions import make_flagged_regions_reports
 from source.main import read_opts_and_cnfs, check_system_resources, check_genome_resources
 from source.runner import run_one
 from source.utils import info
-from tools.leave_first_sample import proc_all
 
 
 def main(args):
@@ -47,14 +46,13 @@ def main(args):
 
     process_all(cnf.output_dir)
 
-    run_one(cnf, process_one, finalize_one)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
 
 
 def process_all(targetcov_dir):
-
+    make_flagged_regions_reports()
     pass
     # read all detail reports
     # normalize
@@ -67,9 +65,9 @@ class Sample(BaseSample):
         BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
 
-def process_one(cnf, output_dir):
-    sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
-    return make_flagged_regions_reports(cnf, output_dir, sample)
+# def process_one(cnf, output_dir):
+#     sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
+#     return make_flagged_regions_reports(cnf, output_dir, sample)
 
 
 def finalize_one(cnf, *abnormal_regions_reports):
