@@ -109,9 +109,9 @@ def read_opts_and_cnfs(extra_opts,
         try:
             cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
         except:
-            cnf.caller = None
+            cnf.caller = ''
     else:
-        cnf.caller = None
+        cnf.caller = ''
 
     cnf.proc_name = cnf.proc_name or proc_name
     set_up_dirs(cnf)
