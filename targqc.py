@@ -8,10 +8,10 @@ from os.path import relpath, join, exists, abspath, pardir, basename
 from optparse import OptionParser
 
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_post_bcbio_args
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources
 from source.logger import info, err, warn, critical
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
-from source.main import check_genome_resources, determine_cnf_files
+from source.main import determine_cnf_files
 from source.standalone_targqc.submit_jobs import run
 from source.ngscat.bed_file import verify_bam, verify_bed
 

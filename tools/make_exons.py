@@ -228,9 +228,6 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     gene_by_name = dict()
     genes = []
 
-    zero_size_gene_lines = []
-    zero_size_cds_lines = []
-
     sys.stderr.write('Parsing Ensembl input...\n')
     i = 0
     for l in inp:
@@ -241,7 +238,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 if chrom != '21':
                     continue
 
-            if feature not in ['gene', 'CDS', 'exon']:
+            if feature not in ['gene', 'CDS', 'stop_codon', 'exon']:
                 continue
 
             start, end = str(int(start) - 1), end
@@ -266,18 +263,11 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 gene_by_name[gene_symbol] = gene
                 genes.append(gene)
 
-            elif feature == 'CDS':
-                assert gene_symbol in gene_by_name, 'Error: CDS record before gene record ' + gene_symbol
+            elif feature in ['CDS', 'stop_codon'] or feature == 'exon' and 'RNA' in biotype:
+                assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + gene_symbol
                 gene = gene_by_name[gene_symbol]
-                assert gene_biotype == gene.biotype, 'CDS: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
-                exon = Exon(gene, start, end, biotype, feature)
-                gene.exons.append(exon)
-
-            elif feature == 'exon' and 'RNA' in biotype:
-                assert gene_symbol in gene_by_name, 'Error: Exon record before gene record ' + gene_symbol
-                gene = gene_by_name[gene_symbol]
-                assert gene_biotype == gene.biotype, 'Exon: gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
-                exon = Exon(gene, start, end, biotype, 'Exon')
+                assert gene_biotype == gene.biotype, feature + ': gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
+                exon = Exon(gene, start, end, biotype, {'exon': 'Exon', 'stop_codon': 'CDS'}.get(feature, feature))
                 gene.exons.append(exon)
 
         i += 1
@@ -287,7 +277,6 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
 
     sys.stderr.write('\n')
     sys.stderr.write('Processed ' + str(i) + ' lines, ' + str(len(genes)) + ' genes found\n')
-    sys.stderr.write('Found ' + str(len(zero_size_cds_lines)) + ' zero-size regions, ' + str(len(zero_size_gene_lines)) + ' zero-size genes.\n')
     sys.stderr.write('\n')
 
     not_approved_gene_names = dict()
@@ -393,41 +382,38 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     for gname, g in gene_after_approving_by_name.iteritems():
         out.write('\t'.join([g.chrom, g.start, g.end, gname, '.', g.strand, g.feature, g.biotype]) + '\n')
         for e in g.exons:
-            if e.feature == 'CDS':
-                cds_num += 1
-            if e.feature == 'Exon':
-                exons_num += 1
+            if e.feature == 'CDS': cds_num += 1
+            if e.feature == 'Exon': exons_num += 1
             out.write('\t'.join([g.chrom, e.start, e.end, gname, '.', g.strand, e.feature, e.biotype]) + '\n')
         k += 1
 
     sys.stderr.write('\n')
     sys.stderr.write('Saved ' + str(k) + ' genes, ' + str(cds_num) + ' CDSs, ' + str(exons_num) + ' ncRNA exons\n')
-    sys.stderr.write('Found ' + str(len(zero_size_cds_lines)) + ' zero-size regions, ' + str(len(zero_size_gene_lines)) + ' zero-size genes.\n')
 
     return not_approved_gene_names
 
 
 def main():
     if len(sys.argv) < 2:
-        sys.stderr.write('The script writes all CDS for all known Ensembl genes, with associated gene symbols.\n')
+        sys.stderr.write('The script writes all CDS, stop codon, and ncRNA exon regions for all known Ensembl genes, with associated gene symbols.\n')
         sys.stderr.write('When the gene name is found in HGNC, it get replaced with an approved name.\n')
         sys.stderr.write('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.\n')
         sys.stderr.write('\n')
         sys.stderr.write('Usage:\n')
         sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < Ensembl.gtf > UCSC_HGNC_exons.bed\n')
         sys.stderr.write('\n')
-        sys.stderr.write('    where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:\n')
-        sys.stderr.write('      #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)\n')
-        sys.stderr.write('      OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  19q13.43	 ENSG00000121410   uc002qsg.3\n')
-        sys.stderr.write('      ...\n')
+        sys.stderr.write('   where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:\n')
+        sys.stderr.write('     #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)\n')
+        sys.stderr.write('     OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  19q13.43	    ENSG00000121410   uc002qsg.3\n')
+        sys.stderr.write('     ...\n')
         sys.stderr.write('\n')
-        sys.stderr.write('    and UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:\n')
-        sys.stderr.write('      #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  hg19.knownGene.txEnd  hg19.knownGene.exonCount  hg19.knownGene.exonStarts  hg19.knownGene.exonEnds  hg19.kgXref.geneSymbol\n')
-        sys.stderr.write('      uc001aaa.3	          chr1	                +	                   11873                   14409                 3                         11873,12612,13220,	      12227,12721,14409,	   DDX11L1\n')
-        sys.stderr.write('      ...\n')
-        sys.stderr.write('    or Ensembl.gtf (ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz)')
-        sys.stderr.write('      1       pseudogene      gene    11869   14412   .       +       .       gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";')
-        sys.stderr.write('      1       processed_transcript    transcript      11869   14409   .       +       .       gene_id "ENSG00000223972"; transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";')
+        sys.stderr.write('   and UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:\n')
+        sys.stderr.write('     #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  hg19.knownGene.txEnd  hg19.knownGene.exonCount  hg19.knownGene.exonStarts  hg19.knownGene.exonEnds  hg19.kgXref.geneSymbol\n')
+        sys.stderr.write('     uc001aaa.3	          chr1	                +	                   11873                   14409                 3                         11873,12612,13220,	      12227,12721,14409,	   DDX11L1\n')
+        sys.stderr.write('     ...\n')
+        sys.stderr.write('   or Ensembl.gtf (ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz)')
+        sys.stderr.write('     1  pseudogene            gene        11869  14412  .  +  .  gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";')
+        sys.stderr.write('     1  processed_transcript  transcript  11869  14409  .  +  .  gene_id "ENSG00000223972"; transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";')
         sys.stderr.write('\n')
         sys.stderr.write('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons+with+approved+HUGO+gene+symbols\n')
         sys.exit(1)

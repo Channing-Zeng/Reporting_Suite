@@ -4,11 +4,12 @@ import os
 from os import listdir
 from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict, defaultdict
+from joblib import Parallel, delayed
 
 import source
 from source.config import CallCnf
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
-    Record
+    Record, PerRegionSampleReport
 from source.logger import step_greetings, info, send_email, critical, warn, err
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
@@ -149,7 +150,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
 
     txt_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
-    norm_oncomine_report_fpath = _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
+    _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
 
     info()
     info('*' * 70)
@@ -161,9 +162,9 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     info('Best stats for regions saved in:')
     info('  ' + best_for_regions_fpath)
 
-    info()
-    info('Normalized cov for oncomine saved in:')
-    info('  ' + norm_oncomine_report_fpath)
+    # info()
+    # info('Normalized cov for oncomine saved in:')
+    # info('  ' + norm_oncomine_report_fpath)
 
 
 def get_ave_coverage(cnf, report_fpath):
@@ -172,7 +173,7 @@ def get_ave_coverage(cnf, report_fpath):
         return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
 
 
-def _clip_oncomine_vcf(cnf, bed_fpath):
+def _clip_oncomine_vcf_by_bed(cnf, bed_fpath):
     oncomine_vcf_fpath = cnf.genomes[cnf.genome].oncomine
     info('Clipping Oncomine VCF ' + oncomine_vcf_fpath)
 
@@ -193,60 +194,108 @@ class Variant:
         self.pos = pos
         self.ref = ref
         self.alt = alt
+        self.depth = None
 
 
-def _get_coverage_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_fpath, bed_fpath, vcf_fpath):
-    cnf = CallCnf(cnf_dict)
-
-    cov_bg = join(cnf.work_dir, sample_name + '_coverage.bg')
-    cmdline = '{samtools} view -b {bam_fpath} -L {bed_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
-    call(cnf, cmdline, output_fpath=cov_bg)
-
-    oncomine_depth_numbers = intermediate_fname(cnf, vcf_fpath[:-3], 'depth_numbers')
-    cmdline = '{bedtools} intersect -a {vcf_fpath} -b {cov_bg} -wao | cut -f1,2,4,5,8,11,12,13,14,15'.format(**locals())
-    call(cnf, cmdline, output_fpath=oncomine_depth_numbers)
-
-    # 1,2,4,5,8,11,12,13,14,15,16,17,18,19,20,21,22
-    # c,p,r,a,f,ch,st,en,ge,ex,st,ft,bt,de,ov
-
-    depths_per_var = defaultdict(list())
-    with open(oncomine_depth_numbers) as f:
-        for l in f:
-            chrom, pos, ref, alt, fields, _, _, _, depth, overlap = l[:-1].split('\t')
-            var = Variant(chrom, pos, ref, alt)
-            # for each
-            # depths_per_var[var].append(int(depth))
-
-
-
-    return oncomine_depth_numbers
-
-
-def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath):
+def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_fpath, bed_fpath, vcf_fpath):
+    # http://www.1000genomes.org/faq/what-depth-coverage-your-phase1-variants
     # bedtools intersect -a oncomine.vcf -b Exons.az_key.bed -header > oncomine.az_key.vcf
     # /opt/az/local/tabix/tabix-0.2.6/bgzip oncomine.az_key.vcf
     # /opt/az/local/tabix/tabix-0.2.6/tabix -h -p vcf oncomine.az_key.vcf.gz
     # samtools view -b TRF004223.sorted.bam -L Exons.az_key.bed | bedtools genomecov -ibam stdin -bg > coverage.bg
     # bedtools intersect -a oncomine.az_key.vcf.gz -b coverage.bg -wa | cut -f1,2,4,5,8,11,12,13,14 > oncomine.az_key.depth_numbers.vcf
 
+    cnf = CallCnf(cnf_dict)
+
+    cov_bg = join(cnf.work_dir, sample_name + '_coverage.bg')
+    cmdline = '{samtools} view -b {bam_fpath} -L {bed_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
+    call(cnf, cmdline, output_fpath=cov_bg)
+
+    oncomine_depth_numbers_fpath = intermediate_fname(cnf, vcf_fpath[:-3], 'depth_numbers')
+    cmdline = '{bedtools} intersect -a {vcf_fpath} -b {cov_bg} -wao | cut -f1,2,4,5,8,11,12,13,14,15'.format(**locals())
+    call(cnf, cmdline, output_fpath=oncomine_depth_numbers_fpath)
+
+    variants = []
+    depths_per_var = defaultdict(list())
+    with open(oncomine_depth_numbers_fpath) as f:
+        for l in f:
+            # 1,2,4,5,8,11,12,13,14,15,16,17,18,19,20,21,22
+            # c,p,r,a,f,ch,st,en,ge,ex,st,ft,bt,de,ov
+            chrom, pos, ref, alt, fields, _, _, _, depth, overlap = l[:-1].split('\t')
+            var = Variant(chrom, pos, ref, alt)
+            variants.append(var)
+            depth = int(depth)
+            for i in range(int(overlap)):
+                depths_per_var[var].append(depth)
+
+    # getting avarage depth of coverage of each variant (exactly for those parts that were in BED)
+    for var in variants:
+        depths = depths_per_var[var]
+        var.depth = sum(depths) / len(depths)
+
+    return variants
+
+
+def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath):
     ave_coverages_per_sample = {
         s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
-        for s in samples if verify_file(s.targetcov_json_fpath)}
+        for s in samples if verify_file(s.targetcov_json_fpath)
+    }
 
-    cnf = get_call_cnf(cnf)
+    oncomine_vcf_fpath = _clip_oncomine_vcf_by_bed(cnf, bed_fpath)
+    samtools = get_system_path(cnf, 'samtools')
+    bedtools = get_system_path(cnf, 'bedtools')
 
-    oncomine_vcf_fpath = _clip_oncomine_vcf(cnf, bed_fpath)
+    def proc(s):
+        info()
+        info('Processing sample ' + s.name)
+        return s.name, _get_depth_for_each_variant(cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, oncomine_vcf_fpath)
+
+    variants_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(proc)(s) for s in samples))
+
+    metric_storage = MetricStorage(
+        general_section=ReportSection('general_section', '', [
+            Metric('Sample name', short_name='Sample', common=True),
+            Metric('Average sample depth', short_name='Ave depth', common=True),
+        ]),
+        sections=[ReportSection(metrics=[
+            Metric('Sample'),
+            Metric('Chr'),
+            Metric('Pos'),
+            Metric('Ref'),
+            Metric('Alt'),
+            Metric('Depth'),
+            Metric('Normalized depth')
+        ])])
 
     for sample in samples:
-        ave_cov = ave_coverages_per_sample[sample.name]
+        info()
+        info('Saving report for sample ' + sample.name)
+        report = PerRegionSampleReport(sample=sample, metric_storage=metric_storage)
 
-        samtools = get_system_path(cnf, 'samtools')
-        bedtools = get_system_path(cnf, 'bedtools')
-        cov_per_site = _get_coverage_for_each_variant(cnf.__dict__, samtools, bedtools, sample_name, sample.bam, bed_fpath, oncomine_vcf_fpath)
+        ave_sample_depth = ave_coverages_per_sample[sample.name]
+        report.add_record('Sample name', sample.name)
+        report.add_record('Average sample depth', ave_sample_depth)
 
+        i = 0
+        for var in variants_per_sample[sample.name]:
+            i += 1
+            if i % 10000 == 0:
+                info('Processed {0:,} regions.'.format(i))
+            rep_region = report.add_region()
+            rep_region.add_record('Chr', var.chrom)
+            rep_region.add_record('Pos', var.pos)
+            rep_region.add_record('Ref', var.ref)
+            rep_region.add_record('Alt', var.alt)
+            rep_region.add_record('Depth', var.depth)
+            rep_region.add_record('Normalized depth', var.depth / ave_sample_depth if ave_sample_depth > 0 else None)
 
-
-    return norm_oncomine_report_fpath
+        report_basename = sample.name + '_oncomine'
+        txt_rep_fpath = report.save_txt(output_dir, report_basename)
+        tsv_rep_fpath = report.save_tsv(output_dir, report_basename)
+        info('')
+        info('Oncomine variants coverage report (total' + str(len(variants_per_sample)) + ') saved into:')
+        info('  ' + txt_rep_fpath)
 
 
 _qualimap_to_targetcov_dict = {

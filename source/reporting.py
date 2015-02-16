@@ -133,15 +133,13 @@ class Report:
             dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
-    def _append_value_to_row(sample_report, row, metric, human_readable=False):
+    def _find_record(records, metric):
         try:
-            row.append(next(
-                r.metric.format(r.value, human_readable)
-                for r in sample_report.records
-                if r.metric.name == metric.name))
+            rec = next(r for r in records if r.metric.name == metric.name)
         except StopIteration:
-            row.append('-')  # if no record for the metric
-        return row
+            return None  # if no record for the metric
+        else:
+            return rec
 
 
 class SampleReport(Report):
@@ -171,10 +169,18 @@ class SampleReport(Report):
         return rec
 
     def flatten(self, sections=None):
-        rows = [['Sample', self.display_name]]
-        for metric in self.metric_storage.get_metrics(sections):
+        rows = []
+
+        for m in self.metric_storage.general_section.metrics:
+            r = Report._find_record(self.records, m)
+            if r:
+                rows.append(['## ' + m.name + '=' + r.format()])
+
+        rows.append(['Sample', self.display_name])
+        for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
-            Report._append_value_to_row(self, row, metric)
+            rec = Report._find_record(self.records, metric)
+            row.append(rec.format() if rec else '-')
             rows.append(row)
         return rows
 
@@ -208,7 +214,7 @@ class PerRegionSampleReport(SampleReport):
 
     def __init__(self, *args, **kwargs):
         SampleReport.__init__(self, *args, **kwargs)
-        self.records = None
+        self.records = []
         self.__regions = []
 
     def add_region(self):
@@ -216,23 +222,24 @@ class PerRegionSampleReport(SampleReport):
         self.__regions.append(region)
         return region
 
-    def add_record(self, metric_name, value, meta=None):
-        raise NotImplementedError
-
     def flatten(self, sections=None):
         rows = []
 
+        for r, m in zip(self.records, self.metric_storage.general_section.metrics):
+            assert r.metric == m
+            rows.append(['## ' + m.name + '=' + r.format()])
+
         header_row = []
-        ms = self.metric_storage.get_metrics(sections)
+        ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
         for i, m in enumerate(ms):
             header_row.append(('#' if i == 0 else '') + m.name)
         rows.append(header_row)
 
         for reg in self.__regions:
             row = []
-            for rec, m in zip(reg.records, ms):
-                assert rec.metric == m
-                row.append(rec.format())
+            for r, m in zip(reg.records, ms):
+                assert r.metric == m
+                row.append(r.format())
             rows.append(row)
 
         # next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
@@ -323,12 +330,21 @@ class FullReport(Report):
             err('No sample reports found: summary will not be produced.')
             return []
 
-        rows = [['Sample'] + [rep.display_name for rep in self.sample_reports]]
+        rows = []
 
-        for metric in self.metric_storage.get_metrics(sections):
+        some_rep = self.sample_reports[0]
+        for m in self.metric_storage.general_section.metrics:
+            rec = Report._find_record(some_rep.reocords, m)
+            if rec:
+                rows.append(['## ' + m.name + '=' + rec.format()])
+
+        rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
+
+        for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             for sr in self.sample_reports:
-                Report._append_value_to_row(sr, row, metric)
+                rec = Report._find_record(sr.records, metric)
+                row.append(rec.format() if rec else '-')
             rows.append(row)
         return rows
 
@@ -505,12 +521,16 @@ def write_txt_rows(rows, output_dirpath, base_fname):
 
     col_widths = repeat(0)
     for row in rows:
-        col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
+        if not row[0].startswith('## '):
+            col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
 
     with open(output_fpath, 'w') as out:
         for row in rows:
-            for val, w in izip(row, col_widths):
-                out.write(val + (' ' * (w - len(val) + 2)))
+            if row[0].startswith('## '):
+                out.write(row[0])
+            else:
+                for val, w in izip(row, col_widths):
+                    out.write(val + (' ' * (w - len(val) + 2)))
             out.write('\n')
 
     return output_fpath
