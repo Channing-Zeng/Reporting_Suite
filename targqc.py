@@ -8,10 +8,10 @@ from os.path import relpath, join, exists, abspath, pardir, basename
 from optparse import OptionParser
 
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_post_bcbio_args, detect_sys_cnf
+from source.prepare_args_and_cnf import add_post_bcbio_args
 from source.logger import info, err, warn, critical
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
-from source.main import check_genome_resources
+from source.main import check_genome_resources, determine_cnf_files
 from source.standalone_targqc.submit_jobs import run
 from source.ngscat.bed_file import verify_bam, verify_bed
 
@@ -37,14 +37,7 @@ def main():
     if any(not verify_bam(fpath) for fpath in bam_fpaths):
         sys.exit(1)
 
-    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
-    if not verify_file(opts.sys_cnf): sys.exit(1)
-    info('Using ' + opts.sys_cnf)
-
-    opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
-    if not verify_file(opts.run_cnf): sys.exit(1)
-    info('Using ' + opts.run_cnf)
-
+    determine_cnf_files(opts)
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
     output_dir = adjust_path(cnf.output_dir or join(os.getcwd(), 'targetqc'))

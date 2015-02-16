@@ -6,10 +6,10 @@ from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, b
 from os import getcwd
 
 from source.bcbio_structure import BCBioStructure, load_bcbio_cnf
-from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path
+from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path
 from source.config import defaults, Config
-from source.main import check_keys, check_inputs, set_up_work_dir, check_genome_resources
-from source.logger import info, critical, warn
+from source.logger import info, critical, warn, err
+from source.ngscat.bed_file import verify_bam, verify_bed
 
 
 def add_post_bcbio_args(parser):
@@ -55,6 +55,39 @@ def process_post_bcbio_args(parser):
     return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
 
 
+def check_genome_resources(cnf):
+    if not cnf.genomes:
+        critical('"genomes" section is not specified in system config.')
+
+    info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
+    info()
+
+    for build_name, genome_cnf in cnf.genomes.items():
+        info(build_name)
+        for key in genome_cnf.keys():
+            if isinstance(genome_cnf[key], basestring):
+                genome_cnf[key] = adjust_system_path(genome_cnf[key])
+
+            if not verify_obj_by_path(genome_cnf[key], key):
+                if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
+                    gz_fpath = genome_cnf[key] + '.gz'
+                    if verify_file(gz_fpath):
+                        info(key + ': ' + gz_fpath)
+                        genome_cnf[key] = gz_fpath
+                else:
+                    err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
+            else:
+                info(key + ': ' + genome_cnf[key])
+        info()
+        genome_cnf['name'] = build_name
+
+    cnf.genome = cnf.genomes[cnf.genome]
+
+    info('Checked genome resources.')
+    info('*' * 70)
+    info()
+
+
 def summary_script_proc_params(name, dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
@@ -78,6 +111,70 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
     info()
 
     return cnf, bcbio_structure
+
+
+def determine_cnf_files(opts):
+    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
+    if not verify_file(opts.sys_cnf): sys.exit(1)
+    info('Using ' + opts.sys_cnf)
+
+    opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
+    if not verify_file(opts.run_cnf): sys.exit(1)
+    info('Using ' + opts.run_cnf)
+
+
+def check_keys(cnf, required_keys):
+    to_exit = False
+
+    for key in required_keys:
+        if key not in cnf or not cnf[key]:
+            to_exit = True
+            err('Error: "' + key + '" must be provided in options or '
+                'in ' + cnf.run_cnf + '.')
+    return not to_exit
+
+
+def set_up_work_dir(cnf):
+    if not cnf.work_dir:
+        work_dir_name = 'work_' + cnf.name
+        cnf.work_dir = join(cnf.output_dir, work_dir_name)
+        # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
+        #     rmtree(cnf.work_dir)
+    else:
+        cnf.work_dir = adjust_path(cnf.work_dir)
+
+    safe_mkdir(cnf.work_dir, 'working directory')
+
+
+def check_inputs(cnf, file_keys=list(), dir_keys=list()):
+    to_exit = False
+
+    def _verify_input_file(_key):
+        cnf[_key] = adjust_path(cnf[_key])
+        if not verify_file(cnf[_key], _key):
+            return False
+        if 'bam' in _key and not verify_bam(cnf[_key]):
+            return False
+        if 'bed' in _key and not verify_bed(cnf[_key]):
+            return False
+        return True
+
+    for key in file_keys:
+        if key and key in cnf and cnf[key]:
+            if not _verify_input_file(key):
+                to_exit = True
+            else:
+                cnf[key] = adjust_path(cnf[key])
+
+    for key in dir_keys:
+        if key and key in cnf and cnf[key]:
+            cnf[key] = adjust_system_path(cnf[key])
+            if not verify_dir(cnf[key], key):
+                to_exit = True
+            else:
+                cnf[key] = abspath(expanduser(cnf[key]))
+
+    return not to_exit
 
 
 def _set_bcbio_dirpath(dir_arg):

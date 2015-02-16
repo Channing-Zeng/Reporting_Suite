@@ -12,6 +12,7 @@ from source.config import Config, defaults
 from source.logger import info, err, critical
 from source.file_utils import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
+from source.prepare_args_and_cnf import determine_cnf_files, set_up_work_dir, check_keys, check_inputs
 
 
 code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
@@ -59,7 +60,6 @@ def read_opts_and_cnfs(extra_opts,
         (['--sys-cnf'], dict(
              dest='sys_cnf',
              metavar='SYS_CNF.yaml',
-             default=defaults['sys_cnfs']['uk'],
              help='System configuration file with paths to external tools and genome resources. The default is  '
                   '(see default one %s)' % defaults['sys_cnf'])
          ),
@@ -83,6 +83,7 @@ def read_opts_and_cnfs(extra_opts,
         parser.add_option(*args, **kwargs)
 
     (opts, args) = parser.parse_args()
+    determine_cnf_files(opts)
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
     if not check_keys(cnf, required_keys):
@@ -119,48 +120,6 @@ def read_opts_and_cnfs(extra_opts,
     info()
 
     return cnf
-
-
-def check_keys(cnf, required_keys):
-    to_exit = False
-
-    for key in required_keys:
-        if key not in cnf or not cnf[key]:
-            to_exit = True
-            err('Error: "' + key + '" must be provided in options or '
-                'in ' + cnf.run_cnf + '.')
-    return not to_exit
-
-
-def check_inputs(cnf, file_keys=list(), dir_keys=list()):
-    to_exit = False
-
-    def _verify_input_file(_key):
-        cnf[_key] = adjust_path(cnf[_key])
-        if not verify_file(cnf[_key], _key):
-            return False
-        if 'bam' in _key and not verify_bam(cnf[_key]):
-            return False
-        if 'bed' in _key and not verify_bed(cnf[_key]):
-            return False
-        return True
-
-    for key in file_keys:
-        if key and key in cnf and cnf[key]:
-            if not _verify_input_file(key):
-                to_exit = True
-            else:
-                cnf[key] = adjust_path(cnf[key])
-
-    for key in dir_keys:
-        if key and key in cnf and cnf[key]:
-            cnf[key] = adjust_system_path(cnf[key])
-            if not verify_dir(cnf[key], key):
-                to_exit = True
-            else:
-                cnf[key] = abspath(expanduser(cnf[key]))
-
-    return not to_exit
 
 
 def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
@@ -209,39 +168,6 @@ def check_system_resources(cnf, required=list(), optional=list()):
         exit()
 
 
-def check_genome_resources(cnf):
-    if not cnf.genomes:
-        critical('"genomes" section is not specified in system config.')
-
-    info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
-    info()
-
-    for build_name, genome_cnf in cnf.genomes.items():
-        info(build_name)
-        for key in genome_cnf.keys():
-            if isinstance(genome_cnf[key], basestring):
-                genome_cnf[key] = adjust_system_path(genome_cnf[key])
-
-            if not verify_obj_by_path(genome_cnf[key], key):
-                if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
-                    gz_fpath = genome_cnf[key] + '.gz'
-                    if verify_file(gz_fpath):
-                        info(key + ': ' + gz_fpath)
-                        genome_cnf[key] = gz_fpath
-                else:
-                    err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-            else:
-                info(key + ': ' + genome_cnf[key])
-        info()
-        genome_cnf['name'] = build_name
-
-    cnf.genome = cnf.genomes[cnf.genome]
-
-    info('Checked genome resources.')
-    info('*' * 70)
-    info()
-
-
 def set_up_dirs(cnf):
     """ Creates output_dir, work_dir; sets up log
     """
@@ -251,18 +177,6 @@ def set_up_dirs(cnf):
 
     set_up_work_dir(cnf)
     set_up_log(cnf)
-
-
-def set_up_work_dir(cnf):
-    if not cnf.work_dir:
-        work_dir_name = 'work_' + cnf.name
-        cnf.work_dir = join(cnf.output_dir, work_dir_name)
-        # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
-        #     rmtree(cnf.work_dir)
-    else:
-        cnf.work_dir = adjust_path(cnf.work_dir)
-
-    safe_mkdir(cnf.work_dir, 'working directory')
 
 
 def set_up_log(cnf):
