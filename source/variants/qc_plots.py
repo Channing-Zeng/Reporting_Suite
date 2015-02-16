@@ -24,11 +24,18 @@ def draw_plots(cnf, vcf_fpath):
     variants_per_kbp = qc_cnf.get('variant_distribution_scale')
     plot_scale = 1000 * variants_per_kbp
 
+    info()
+    info('Subsitutions and indel stats...')
     variants_distribution, substituitions, indel_lengths = _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale)
-
-    variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp)
     substs_plot_fpath = _draw_substitutions(cnf, substituitions)
     indels_plot_fpath = _draw_indel_lengths(cnf, indel_lengths)
+    if substs_plot_fpath:
+        info('  Substitutions: ' + substs_plot_fpath)
+    if indels_plot_fpath:
+        info('  Indels:        ' + indels_plot_fpath)
+    variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp)
+    if variants_distribution_plot_fpath:
+        info('  Variant distr: ' + variants_distribution_plot_fpath)
     return [variants_distribution_plot_fpath, substs_plot_fpath, indels_plot_fpath]
 
 

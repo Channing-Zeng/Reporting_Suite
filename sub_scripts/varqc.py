@@ -64,10 +64,7 @@ def process_one(cnf):
     report = qc.make_report(cnf, vcf_fpath, sample)
 
     if verify_module('matplotlib'):
-        try:
-            qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
-        except:
-            qc_plots_fpaths = []
+        qc_plots_fpaths = draw_plots(cnf, vcf_fpath)
     else:
         qc_plots_fpaths = []
 
@@ -77,8 +74,6 @@ def process_one(cnf):
     summary_report_html_fpath = report.save_html(
         cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
         caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
-
-    info('\t' + summary_report_html_fpath)
 
     return summary_report_html_fpath, qc_plots_fpaths
 

@@ -53,7 +53,7 @@ def human_sorted(l):
 
 
 def get_chr_len_fpath(cnf):
-    chr_len_fpath = cnf['genome'].get('chr_lengths')
+    chr_len_fpath = cnf.genome.get('chr_lengths')
     if chr_len_fpath:
         if not verify_file(chr_len_fpath):
             critical('Could not open a file with chromosome lengths provided in system config. '

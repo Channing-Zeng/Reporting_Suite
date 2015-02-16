@@ -74,7 +74,7 @@ def read_opts_and_cnfs(extra_opts,
         (['--log-dir'], dict(dest='log_dir', metavar='DIR')),
         (['--proc-name'], dict(dest='proc_name')),
         (['--project-name'], dict(dest='project_name')),
-        (['--genome'], dict(dest='genome')),
+        (['--genome'], dict(dest='genome', default=defaults['genome'])),
         (['--email'], dict(dest='email')),
     ]
 
@@ -235,8 +235,7 @@ def check_genome_resources(cnf):
         info()
         genome_cnf['name'] = build_name
 
-    if cnf.genome:
-        cnf.genome = cnf.genomes[cnf.genome]
+    cnf.genome = cnf.genomes[cnf.genome]
 
     info('Checked genome resources.')
     info('*' * 70)

@@ -31,6 +31,8 @@ defaults = dict(
     qsub_runner = 'runner_Waltham.sh',
 
     default_min_freq = 0.05,
+
+    genome='hg19',
 )
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
