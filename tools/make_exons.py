@@ -317,22 +317,31 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                     # If the original gene name was not already-approved, we can try take the original name back.
                     sys.stderr.write('Original was not approved, so trying to take an original instead of the approved version.\n')
 
-                    # never happens!!!! better check if the prev occurence was not approved, and
-                    assert g.name not in gene_after_approving_by_name, g.name + ' -> ' + g.approved_gname
-
-                    prev_g = gene_after_approving_by_name[g.approved_gname]
-
-                    if prev_g.name == prev_g.approved_gname:
-                        # previous gene name with this approved name was already approved - we have to keep it, thus reporting this one with the original name
-                        sys.stderr.write('Previous gene name with this approved name ' + g.approved_gname + ' was already approved - we have to keep it, thus reporting this one with the original name\n')
+                    if g.name in gene_after_approving_by_name:
+                        # someone's approved name was already picked, so non-approved g.name is in gene_after_approving_by_name. chossing longest of both.
+                        prev_g = gene_after_approving_by_name[g.name]
+                        sys.stderr.write('Prev gene with this name was approved as non-approved original, so picking the longest - ')
+                        if int(g.end) - int(g.start) > int(prev_g.end) - int(prev_g.start):
+                            del gene_after_approving_by_name[g.name]
+                            sys.stderr.write('the new one\n')
+                        else:
+                            sys.stderr.write('the previous one\n')
+                            sys.stderr.write('\n')
+                            continue
                     else:
-                        # previous was not initally approved, thus keeping both under orignial names
-                        sys.stderr.write('Previous was not initally approved, thus keeping both under orignial names: ' + g.name + ' and ' + prev_g.name + '\n')
-                        assert prev_g.name not in gene_after_approving_by_name, 'Prev : ' + prev_g.name + ' -> ' + prev_g.approved_gname
+                        prev_g = gene_after_approving_by_name[g.approved_gname]
 
-                        del gene_after_approving_by_name[prev_g.approved_gname]
-                        prev_g.approved_gname = prev_g.name
-                        gene_after_approving_by_name[prev_g.approved_gname] = prev_g
+                        if prev_g.name == prev_g.approved_gname:
+                            # previous gene name with this approved name was already approved - we have to keep it, thus reporting this one with the original name
+                            sys.stderr.write('Previous gene name with this approved name ' + g.approved_gname + ' was already approved - we have to keep it, thus reporting this one with the original name\n')
+                        else:
+                            # previous was not initally approved, thus keeping both under orignial names
+                            sys.stderr.write('Previous was not initally approved, thus keeping both under orignial names: ' + g.name + ' and ' + prev_g.name + '\n')
+                            assert prev_g.name not in gene_after_approving_by_name, 'Prev : ' + prev_g.name + ' -> ' + prev_g.approved_gname
+
+                            del gene_after_approving_by_name[prev_g.approved_gname]
+                            prev_g.approved_gname = prev_g.name
+                            gene_after_approving_by_name[prev_g.approved_gname] = prev_g
 
                     g.approved_gname = g.name
 
