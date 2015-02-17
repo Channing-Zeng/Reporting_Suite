@@ -8,6 +8,7 @@ addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
+from operator import attrgetter
 
 
 """ Input: Sorted and annotated BED file (i.e. at least 4 columns), File with list of key genes
@@ -88,42 +89,50 @@ class Region:
 
 def main():
     input_bed_fpath, key_genes_fpath, bedtools = _read_args(sys.argv[1:])
-    # TODO: assumed sorted input
 
     key_genes = []
     with open(key_genes_fpath, 'r') as f:
         for line in f:
             key_genes.append(line.strip())
 
-    prev_regions = []
+    input_regions = []
     with open(input_bed_fpath, 'r') as f:
         for line in f:
-            cur_region = Region(line.strip().split('\t'))
-            # remove all previous regions before (i.e. not overlapping) cur_region
-            while prev_regions:
-                if not prev_regions[0].overlaps(cur_region):
-                    region = prev_regions.pop(0)
-                    print(region)
+            if line.startswith('track') or line.startswith('browser'):
+                continue
+            if len(line.strip().split('\t')) < 4:
+                log("ERROR: Input_BED_file should be annotated (i.e. has at least 4 columns)!")
+                sys.exit(1)
+            input_regions.append(Region(line.strip().split('\t')))
+    sorted_regions = sorted(input_regions, key=attrgetter('chrom', 'start', 'end'))
+
+    prev_regions = []
+    for cur_region in sorted_regions:
+        # remove all previous regions before (i.e. not overlapping) cur_region
+        while prev_regions:
+            if not prev_regions[0].overlaps(cur_region):
+                region = prev_regions.pop(0)
+                print(region)
+            else:
+                break
+        if prev_regions:
+            # splitting overlaps of cur_region with rest of prev_regions
+            i = 0
+            while i < len(prev_regions):
+                region = prev_regions[i]
+                if region.overlaps(cur_region):
+                    split_regions = region.split(cur_region, key_genes)
+                    if len(prev_regions) > i + 1 and split_regions[-1].overlaps(prev_regions[i + 1]):
+                        prev_regions = prev_regions[:i] + split_regions[:-1] + prev_regions[i + 1:]
+                        i += len(split_regions) - 1
+                        cur_region = split_regions[-1]
+                    else:  # no overlaps with rest of prev_regions
+                        prev_regions = prev_regions[:i] + split_regions + prev_regions[i + 1:]
+                        break
                 else:
                     break
-            if prev_regions:
-                # splitting overlaps of cur_region with rest of prev_regions
-                i = 0
-                while i < len(prev_regions):
-                    region = prev_regions[i]
-                    if region.overlaps(cur_region):
-                        split_regions = region.split(cur_region, key_genes)
-                        if len(prev_regions) > i + 1 and split_regions[-1].overlaps(prev_regions[i + 1]):
-                            prev_regions = prev_regions[:i] + split_regions[:-1] + prev_regions[i + 1:]
-                            i += len(split_regions) - 1
-                            cur_region = split_regions[-1]
-                        else:  # no overlaps with rest of prev_regions
-                            prev_regions = prev_regions[:i] + split_regions + prev_regions[i + 1:]
-                            break
-                    else:
-                        break
-            else:
-                prev_regions = [cur_region]
+        else:
+            prev_regions = [cur_region]
     for region in prev_regions:
         print(region)
 
