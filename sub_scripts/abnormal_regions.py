@@ -8,8 +8,9 @@ from source import BaseSample
 from source.bcbio_structure import BCBioSample
 from source.file_utils import adjust_path
 from source.logger import send_email
+from source.prepare_args_and_cnf import check_system_resources
 from source.targetcov.flag_regions import make_flagged_regions_reports
-from source.main import read_opts_and_cnfs, check_system_resources
+from source.main import read_opts_and_cnfs
 from source.runner import run_one
 from source.utils import info
 

@@ -8,8 +8,8 @@ import source
 from source import SingleSample
 from source.bcbio_structure import BCBioStructure
 from source.file_utils import iterate_file
-from source.main import read_opts_and_cnfs, check_system_resources
-from source.prepare_args_and_cnf import check_genome_resources
+from source.main import read_opts_and_cnfs
+from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.variants.vcf_processing import remove_rejected, fix_chromosome_names, iterate_vcf, \
     read_sample_names_from_vcf, get_sample_column_index
 from source.runner import run_one

@@ -334,7 +334,7 @@ class FullReport(Report):
 
         some_rep = self.sample_reports[0]
         for m in self.metric_storage.general_section.metrics:
-            rec = Report._find_record(some_rep.reocords, m)
+            rec = Report._find_record(some_rep.records, m)
             if rec:
                 rows.append(['## ' + m.name + '=' + rec.format()])
 

@@ -8,8 +8,7 @@ from os.path import join, pardir, basename, dirname, islink, isdir
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
 from source.logger import info, err
-from source.bcbio_structure import BCBioStructure
-from source.prepare_args_and_cnf import summary_script_proc_params
+from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines
 
 

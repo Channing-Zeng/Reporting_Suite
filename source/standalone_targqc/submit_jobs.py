@@ -21,12 +21,13 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
             for bam_fpath in bam_fpaths]
 
     max_threads = cnf.threads or 40
-    threads_per_sample = max(max_threads / len(samples), 1)
-    threads_per_sample = 1  # override
+    threads_per_sample = 1  # max(max_threads / len(samples), 1)
+    summary_threads = min(len(samples), max_threads)
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
-            _prep_steps(cnf, max_threads, threads_per_sample, samples, cnf.output_dir, bed_fpath, main_script_name)
+            _prep_steps(cnf, threads_per_sample, summary_threads,
+                samples, cnf.output_dir, bed_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -52,14 +53,14 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
             info('Done ' + basename(sample.bam))
             info()
 
-        _submit_job(cnf, targqc_summary_step, wait_for_steps=summary_wait_for_steps)
+        _submit_job(cnf, targqc_summary_step, wait_for_steps=summary_wait_for_steps, threads=summary_threads)
 
     else:
         info('Making targqc summary')
         summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath)
 
 
-def _prep_steps(cnf, max_threads, threads_per_sample, samples, output_dirpath, bed_fpath, main_script_name):
+def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpath, bed_fpath, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
     run_id = path_hash + '_' + cnf.project_name
@@ -137,7 +138,8 @@ def _prep_steps(cnf, max_threads, threads_per_sample, samples, output_dirpath, b
         ' --project-name ' + cnf.project_name + \
         ' ' + ' '.join([s.bam for s in samples]) + \
         ' --bed ' + bed_fpath + \
-        ' --only-summary'
+        ' --only-summary ' + \
+        ' -t ' + str(summary_threads)
 
     targqc_summary_step = Step(
         cnf, run_id,

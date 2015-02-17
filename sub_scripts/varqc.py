@@ -10,9 +10,9 @@ from source import SingleSample
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info, warn, send_email, critical
-from source.prepare_args_and_cnf import check_genome_resources
+from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.variants import qc
-from source.main import read_opts_and_cnfs, check_system_resources
+from source.main import read_opts_and_cnfs
 from source.runner import run_one
 from source.variants.vcf_processing import remove_rejected
 from source.reporting import SampleReport

@@ -6,9 +6,8 @@ from optparse import OptionParser
 from source.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
-from source.main import check_system_resources
-from source.bcbio_structure import BCBioStructure
-from source.prepare_args_and_cnf import add_post_bcbio_args, process_post_bcbio_args
+from source.bcbio_structure import BCBioStructure, process_post_bcbio_args
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources
 from source.variants.vcf_processing import get_trasncripts_fpath
 
 

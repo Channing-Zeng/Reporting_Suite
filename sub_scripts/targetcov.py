@@ -5,9 +5,9 @@ import __check_python_version
 import sys
 import shutil
 from source import BaseSample
-from source.main import read_opts_and_cnfs, check_system_resources
+from source.main import read_opts_and_cnfs
 from source.config import defaults
-from source.prepare_args_and_cnf import check_genome_resources
+from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.utils import info

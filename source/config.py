@@ -136,10 +136,10 @@ class Config(object):
 class CallCnf:
     def __init__(self, dict_cnf):
         self.work_dir = dict_cnf['work_dir']
-        self.log = dict_cnf['log']
+        self.log = dict_cnf.get('log')
         self.reuse_intermediate = dict_cnf['reuse_intermediate']
         self.keep_intermediate = dict_cnf['keep_intermediate']
-        self.verbose = dict_cnf['verbose']
+        self.verbose = dict_cnf.get('verbose')
 
 
 def load_yaml_config(fpath):

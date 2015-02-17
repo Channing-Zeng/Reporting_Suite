@@ -150,7 +150,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
 
     txt_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
-    _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
+    _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, 'oncomine', bed_fpath)
 
     info()
     info('*' * 70)
@@ -173,19 +173,18 @@ def get_ave_coverage(cnf, report_fpath):
         return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
 
 
-def _clip_oncomine_vcf_by_bed(cnf, bed_fpath):
-    oncomine_vcf_fpath = cnf.genomes[cnf.genome].oncomine
-    info('Clipping Oncomine VCF ' + oncomine_vcf_fpath)
+def _clip_vcf_by_bed(cnf, vcf_fpath, bed_fpath):
+    info('Clipping VCF ' + vcf_fpath + ' using BED ' + bed_fpath)
 
     bedtools = get_system_path(cnf, 'bedtools')
 
-    oncomine_clipped_vcf_fpath = intermediate_fname(cnf, oncomine_vcf_fpath, 'clip')
-    cmdline = '{bedtools} intersect -a {oncomine_vcf_fpath} -b {bed_fpath}'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=oncomine_clipped_vcf_fpath)
+    clipped_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'clip')
+    cmdline = '{bedtools} intersect -header	-a {vcf_fpath} -b {bed_fpath}'.format(**locals())
+    res = call(cnf, cmdline, output_fpath=clipped_vcf_fpath)
 
-    oncomine_clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, oncomine_clipped_vcf_fpath)
+    clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, clipped_vcf_fpath)
 
-    return oncomine_clipped_gz_vcf_fpath
+    return clipped_gz_vcf_fpath
 
 
 class Variant:
@@ -198,6 +197,9 @@ class Variant:
 
 
 def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_fpath, bed_fpath, vcf_fpath):
+    info()
+    info('Processing sample ' + sample_name)
+
     # http://www.1000genomes.org/faq/what-depth-coverage-your-phase1-variants
     # bedtools intersect -a oncomine.vcf -b Exons.az_key.bed -header > oncomine.az_key.vcf
     # /opt/az/local/tabix/tabix-0.2.6/bgzip oncomine.az_key.vcf
@@ -207,51 +209,64 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
 
     cnf = CallCnf(cnf_dict)
 
+    info()
+    info('Depth of coverage for regions in BED ' + bed_fpath)
     cov_bg = join(cnf.work_dir, sample_name + '_coverage.bg')
-    cmdline = '{samtools} view -b {bam_fpath} -L {bed_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
+    cmdline = '{samtools} view -L {bed_fpath} -b {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
     call(cnf, cmdline, output_fpath=cov_bg)
 
-    oncomine_depth_numbers_fpath = intermediate_fname(cnf, vcf_fpath[:-3], 'depth_numbers')
-    cmdline = '{bedtools} intersect -a {vcf_fpath} -b {cov_bg} -wao | cut -f1,2,4,5,8,11,12,13,14,15'.format(**locals())
-    call(cnf, cmdline, output_fpath=oncomine_depth_numbers_fpath)
+    info()
+    info('Intersection depth regions with VCF ' + vcf_fpath)
+    vcf_depth_numbers_fpath = join(cnf.work_dir, sample_name + '_depth_numbers.txt')
+    cmdline = '{bedtools} intersect -a {vcf_fpath} -b {cov_bg} -wao'.format(**locals())
+    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath, exit_on_error=False)
+    # if res != oncomine_depth_numbers_fpath:
+    #     info()
+    #     info('Trying with uncompressed VCF')
+    #     cmdline = 'gunzip {vcf_fpath} -c | {bedtools} intersect -a - -b {cov_bg} -wao | cut -f1,2,4,5,8,11,12,13,14,15'.format(**locals())
+    #     call(cnf, cmdline, output_fpath=oncomine_depth_numbers_fpath)
 
     variants = []
-    depths_per_var = defaultdict(list())
-    with open(oncomine_depth_numbers_fpath) as f:
+    depths_per_var = defaultdict(list)
+    with open(vcf_depth_numbers_fpath) as f:
         for l in f:
             # 1,2,4,5,8,11,12,13,14,15,16,17,18,19,20,21,22
             # c,p,r,a,f,ch,st,en,ge,ex,st,ft,bt,de,ov
-            chrom, pos, ref, alt, fields, _, _, _, depth, overlap = l[:-1].split('\t')
+            fs = l[:-1].split('\t')
+            chrom, pos, _, ref, alt, _, _, info_fields = fs[:8]
+            depth, overlap = fs[-2:]
             var = Variant(chrom, pos, ref, alt)
             variants.append(var)
-            depth = int(depth)
-            for i in range(int(overlap)):
-                depths_per_var[var].append(depth)
+            if depth != '.':
+                depth, overlap = int(depth), int(overlap)
+                for i in range(overlap):
+                    depths_per_var[var].append(depth)
 
     # getting avarage depth of coverage of each variant (exactly for those parts that were in BED)
     for var in variants:
         depths = depths_per_var[var]
-        var.depth = sum(depths) / len(depths)
+        var.depth = (sum(depths) / len(depths)) if len(depths) != 0 else None
 
-    return variants
+    return sample_name, variants
 
 
-def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath):
+def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_key, bed_fpath):
+    step_greetings('Normalized coverage for ' + vcf_key + ' hotspots')
+    vcf_fpath = cnf.genome.get(vcf_key)
+    if not vcf_fpath:
+        err('Error: no ' + vcf_key + ' for ' + cnf.genome.name + ' VCF fpath specified in ' + cnf.sys_cnf)
+        return None
+
     ave_coverages_per_sample = {
         s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
-        for s in samples if verify_file(s.targetcov_json_fpath)
-    }
+        for s in samples if verify_file(s.targetcov_json_fpath)}
 
-    oncomine_vcf_fpath = _clip_oncomine_vcf_by_bed(cnf, bed_fpath)
+    vcf_fpath = _clip_vcf_by_bed(cnf, vcf_fpath, bed_fpath)
     samtools = get_system_path(cnf, 'samtools')
     bedtools = get_system_path(cnf, 'bedtools')
 
-    def proc(s):
-        info()
-        info('Processing sample ' + s.name)
-        return s.name, _get_depth_for_each_variant(cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, oncomine_vcf_fpath)
-
-    variants_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(proc)(s) for s in samples))
+    variants_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
+        cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, vcf_fpath) for s in samples))
 
     metric_storage = MetricStorage(
         general_section=ReportSection('general_section', '', [
@@ -259,7 +274,6 @@ def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
             Metric('Average sample depth', short_name='Ave depth', common=True),
         ]),
         sections=[ReportSection(metrics=[
-            Metric('Sample'),
             Metric('Chr'),
             Metric('Pos'),
             Metric('Ref'),
@@ -288,9 +302,9 @@ def _report_normalize_coverage_and_hotspots(cnf, output_dir, samples, bed_fpath)
             rep_region.add_record('Ref', var.ref)
             rep_region.add_record('Alt', var.alt)
             rep_region.add_record('Depth', var.depth)
-            rep_region.add_record('Normalized depth', var.depth / ave_sample_depth if ave_sample_depth > 0 else None)
+            rep_region.add_record('Normalized depth', var.depth / ave_sample_depth if var.depth and ave_sample_depth > 0 else None)
 
-        report_basename = sample.name + '_oncomine'
+        report_basename = sample.name + '_' + vcf_key
         txt_rep_fpath = report.save_txt(output_dir, report_basename)
         tsv_rep_fpath = report.save_tsv(output_dir, report_basename)
         info('')

@@ -1,3 +1,4 @@
+from distutils import file_util
 import os
 import shutil
 import sys
@@ -6,20 +7,196 @@ from dircache import listdir
 from genericpath import isdir, isfile
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
+from optparse import OptionParser
 
 import source
 from source import logger, BaseSample
 from source.logger import info, err, critical, warn
 from source.calling_process import call
-from source.config import load_yaml_config
-from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes
+from source.config import load_yaml_config, Config
+from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.ngscat.bed_file import verify_bed, verify_bam
-from source.targetcov.bam_file import index_bam
+from source.prepare_args_and_cnf import add_post_bcbio_args, set_up_log, set_up_work_dir, \
+    detect_sys_cnf, check_genome_resources, check_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
-from source import targetcov
-from source.targetcov import detail_gene_report_baseending
+
+
+def summary_script_proc_params(name, dir_name=None, description=None, extra_opts=None):
+    description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
+    parser = OptionParser(description=description)
+    add_post_bcbio_args(parser)
+
+    parser.add_option('--log-dir', dest='log_dir')
+    parser.add_option('--dir', dest='dir_name', default=dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
+    parser.add_option('--name', dest='name', default=name, help='Procedure name')
+    for args, kwargs in extra_opts or []:
+        parser.add_option(*args, **kwargs)
+
+    cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)
+
+    bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
+
+    cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
+    cnf.work_dir = bcbio_structure.work_dir
+    set_up_work_dir(cnf)
+
+    info('*' * 70)
+    info()
+
+    return cnf, bcbio_structure
+
+
+def process_post_bcbio_args(parser):
+    (opts, args) = parser.parse_args()
+
+    dir_arg = args[0] if len(args) > 0 else os.getcwd()
+    dir_arg = adjust_path(dir_arg)
+    if not verify_dir(dir_arg):
+        sys.exit(1)
+
+    bcbio_project_dirpath, final_dirpath, config_dirpath = _set_bcbio_dirpath(dir_arg)
+
+    _set_sys_config(config_dirpath, opts)
+
+    _set_run_config(config_dirpath, opts)
+
+    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+
+    if 'qsub_runner' in cnf:
+        cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
+    if not check_inputs(cnf, file_keys=['qsub_runner']):
+        sys.exit(1)
+
+    bcbio_cnf = load_bcbio_cnf(cnf, config_dirpath)
+
+    check_genome_resources(cnf)
+
+    return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
+
+
+def _set_bcbio_dirpath(dir_arg):
+    final_dirpath, bcbio_project_dirpath, config_dirpath = None, None, None
+
+    if isdir(join(dir_arg, 'config')):
+        bcbio_project_dirpath = dir_arg
+        final_dirpath = None
+        config_dirpath = join(bcbio_project_dirpath, 'config')
+
+    elif isdir(abspath(join(dir_arg, pardir, 'config'))):
+        bcbio_project_dirpath = abspath(join(dir_arg, pardir))
+        final_dirpath = dir_arg
+        config_dirpath = join(bcbio_project_dirpath, 'config')
+
+    else:
+        critical(
+            'No config directory ' + join(dir_arg, 'config') + ' or ' + abspath(join(dir_arg, pardir, 'config')) +
+            ', check if you provided a correct path to the bcbio directory.'
+            '\nIt can be provided by the first argument for the script, or by changing to it.')
+
+    info('BCBio project directory: ' + bcbio_project_dirpath)
+    if final_dirpath: info('final directory: ' + final_dirpath)
+    info('Config directory: ' + config_dirpath)
+    return bcbio_project_dirpath, final_dirpath, config_dirpath
+
+
+def _set_sys_config(config_dirpath, opts):
+    provided_cnf_fpath = adjust_path(opts.sys_cnf)
+    # provided in commandline?
+    if provided_cnf_fpath:
+        if not verify_file(provided_cnf_fpath):
+            sys.exit(1)
+        # alright, in commandline.
+        opts.sys_cnf = provided_cnf_fpath
+
+    else:
+        # or probably in config dir?
+        fpaths_in_config = [
+            abspath(join(config_dirpath, fname))
+            for fname in os.listdir(config_dirpath)
+            if fname.startswith('system_info') and fname.endswith('.yaml')]
+
+        if len(fpaths_in_config) > 1:
+            critical('More than one YAML file containing run_info in name found in the config '
+                     'directory ' + config_dirpath + ': ' + ' '.join(fpaths_in_config))
+
+        elif len(fpaths_in_config) == 1:
+            opts.sys_cnf = fpaths_in_config[0]
+            if not verify_file(opts.sys_cnf):
+                sys.exit(1)
+            # alright, in config dir.
+
+        else:
+            # detect system and use default system config
+            detect_sys_cnf(opts)
+
+    info('Using ' + opts.sys_cnf)
+
+
+def _set_run_config(config_dirpath, opts):
+    provided_cnf_fpath = adjust_path(opts.run_cnf)
+    # provided in commandline?
+    if provided_cnf_fpath:
+        if not verify_file(provided_cnf_fpath):
+            sys.exit(1)
+
+        # alright, in commandline. copying over to config dir.
+        opts.run_cnf = provided_cnf_fpath
+        project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(provided_cnf_fpath)))
+        if provided_cnf_fpath != project_run_cnf_fpath:
+            info('Using ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
+            if isfile(project_run_cnf_fpath):
+                try:
+                    os.remove(project_run_cnf_fpath)
+                except OSError:
+                    pass
+
+            if not isfile(project_run_cnf_fpath):
+                run_info_fpaths_in_config = [
+                    abspath(join(config_dirpath, fname))
+                    for fname in os.listdir(config_dirpath)
+                    if fname.startswith('run_info') and fname.endswith('.yaml')]
+
+                if len(run_info_fpaths_in_config) > 0:
+                    warn('Warning: there are run_info files in config directory ' + config_dirpath + '. '
+                         'Provided config will be copied there and can cause ambigity in future.')
+
+                file_util.copy_file(provided_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+
+    else:  # no configs provided in command line options
+        run_info_fpaths_in_config = [
+            abspath(join(config_dirpath, fname))
+            for fname in os.listdir(config_dirpath)
+            if fname.startswith('run_info') and fname.endswith('.yaml')]
+
+        if len(run_info_fpaths_in_config) > 1:
+            critical('More than one YAML file containing run_info in name found in the config '
+                     'directory ' + config_dirpath + ': ' + ' '.join(run_info_fpaths_in_config))
+
+        elif len(run_info_fpaths_in_config) == 1:
+            opts.run_cnf = run_info_fpaths_in_config[0]
+            if not verify_file(opts.run_cnf):
+                sys.exit(1)
+            # alright, in config dir.
+
+        elif len(run_info_fpaths_in_config) == 0:
+            info('No YAMLs containing run_info in name found in the config directory ' +
+                 config_dirpath + ', using the default one.')
+
+            # using default one.
+            opts.run_cnf = defaults['run_cnf']
+            project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
+            info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
+            if isfile(project_run_cnf_fpath):
+                try:
+                    os.remove(project_run_cnf_fpath)
+                except OSError:
+                    pass
+            if not isfile(project_run_cnf_fpath):
+                file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
+
+    info('Using ' + opts.run_cnf)
 
 
 class BCBioSample(BaseSample):
@@ -259,12 +436,15 @@ class BCBioStructure:
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
 
-        self.set_up_log(cnf, proc_name, self.project_name, self.final_dirpath)
+        self.log_dirpath = self.cnf.log_dir = join(self.date_dirpath, 'log')
+        info('log_dirpath: ' + self.log_dirpath)
+        safe_mkdir(self.log_dirpath)
+        info('cnf.name: ' + self.cnf.name)
+        cnf.project_fpath = self.final_dirpath
+        set_up_log(self.cnf)
 
-        self.work_dir = abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
-        self.cnf.work_dir = self.work_dir
-        if not isdir(self.work_dir):
-            safe_mkdir(self.work_dir)
+        self.work_dir = self.cnf.work_dir = abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
+        set_up_work_dir(cnf)
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
 
@@ -335,36 +515,6 @@ class BCBioStructure:
             print ''
         else:
             info('Done loading BCBio structure.')
-
-    def set_up_log(self, cnf, proc_name, project_name, project_fpath):
-        logger.proc_name = proc_name
-        logger.project_name = project_name
-        logger.project_fpath = project_fpath
-        logger.address = remove_quotes(cnf.email) if cnf.email else ''
-        logger.smtp_host = cnf.smtp_host
-
-        self.log_dirpath = join(self.date_dirpath, 'log')
-        info('log_dirpath: ' + self.log_dirpath)
-        safe_mkdir(self.log_dirpath)
-
-        if not proc_name:
-            info('self.cnf.name: ' + self.cnf.name)
-            self.cnf.log = join(self.log_dirpath, self.cnf.name + '.log')
-            info('log_dirpath: ' + self.cnf.log)
-            i = 1
-            if file_exists(self.cnf.log):
-                bak_fpath = self.cnf.log + '.' + str(i)
-                while isfile(bak_fpath):
-                    bak_fpath = self.cnf.log + '.' + str(i)
-                    i += 1
-                os.rename(self.cnf.log, bak_fpath)
-            elif isfile(self.cnf.log):
-                try:
-                    os.remove(self.cnf.log)
-                except OSError:
-                    pass
-
-            logger.log_fpath = self.cnf.log
 
     @staticmethod
     def move_vcfs_to_var(sample):
