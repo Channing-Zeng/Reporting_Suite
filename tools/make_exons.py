@@ -249,9 +249,9 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
 
-            if is_local:
-                if chrom != '21':
-                    continue
+            # if is_local:
+            #     if chrom != '21':
+            #         continue
 
             total_lines += 1
             if total_lines % 1000 == 0:
@@ -263,6 +263,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 'processed_transcript',
                 'polymorphic_pseudogene',
                 'sense_intronic',
+                'sense_overlapping',
                 'antisense',
             ] and 'RNA' not in biotype:
                 total_non_coding_genes += 1

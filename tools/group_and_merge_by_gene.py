@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from os.path import abspath, dirname, realpath, join
+from pybedtools.cbedtools import defaultdict
 from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
@@ -108,9 +109,8 @@ def main():
 
     gene_by_chrom_and_name = OrderedDict()
 
-    i = 0
-    total_genes_in_input = 0
-    total_multi_genes_in_input = 0
+    total_lines = 0
+    feature_counter = defaultdict(int)
     with open(sys.argv[1]) as inp:
         for l in inp:
             if not l:
@@ -135,8 +135,7 @@ def main():
                     strand = fields[5] if len(fields) >= 6 else None
                     (feature, biotype) = fields[6:8] if len(fields) >= 8 else (None, None)
 
-                    if gname == 'MIR3648-1':
-                        pass
+                    feature_counter[feature] += 1
 
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
@@ -144,10 +143,6 @@ def main():
                         gene_by_chrom_and_name[(chrom, gname)] = gene
 
                     if feature in ['Gene', 'Multi_Gene']:  # in fact '*Gene' features in BED files are optional
-                        if feature == 'Multi_Gene':
-                            total_multi_genes_in_input += 1
-                        total_genes_in_input += 1
-
                         if gene.already_met_gene_feature_for_this_gene:
                             sys.stderr.write(gene.name + ' is duplicating: ' + str(gene) + '\n')
                             sys.exit(1)
@@ -167,15 +162,15 @@ def main():
                     elif feature in [None, '.', 'CDS', 'Exon']:
                         assert gene.strand == strand, str(gene) + ' strand is not ' + strand
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
-            i += 1
-            if i % 1000 == 0:
-                sys.stderr.write('processed ' + str(i) + ' lines\n')
+            total_lines += 1
+            if total_lines % 1000 == 0:
+                sys.stderr.write('processed ' + str(total_lines) + ' lines\n')
                 sys.stderr.flush()
-    sys.stderr.write(
-        'Processed ' + str(i) + ' lines, found ' +
-        str(total_genes_in_input) + ' genes, including ' +
-        str(total_multi_genes_in_input) + ' multi-genes. Total ' +
-        str(len(gene_by_chrom_and_name)) + ' uniq gene names.\n')
+
+    sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(gene_by_chrom_and_name) + ' uniq genes.\n')
+    sys.stderr.write('Features:\n')
+    for ft, cnt in feature_counter.items():
+        sys.stderr.write('  ' + ft + ': ' + str(cnt) + '\n')
     sys.stderr.write('\n')
 
     sys.stderr.write('Sorting regions...\n')
