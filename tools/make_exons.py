@@ -219,6 +219,12 @@ class Exon:
         self.biotype = biotype
         self.feature = feature
 
+    def __str__(self):
+        fs = [self.gene.name, '{}'.format(self.start), '{}'.format(self.end),
+              self.biotype or '.', '.', self.feature or '.']
+
+        return '\t'.join(fs) + '\n'
+
 
 def _rm_quotes(l):
     return l[1:-1]
@@ -272,12 +278,18 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
 
         i += 1
         if i % 1000 == 0:
-            sys.stderr.write('processed ' + str(i) + ' lines, ' + str(len(genes)) + ' genes found\n')
+            sys.stderr.write('processed ' + str(i / 1000) + 'k lines, ' + str(len(genes)) + ' genes found\n')
             sys.stderr.flush()
 
     sys.stderr.write('\n')
     sys.stderr.write('Processed ' + str(i) + ' lines, ' + str(len(genes)) + ' genes found\n')
     sys.stderr.write('\n')
+
+    with open('serialized_genes.txt', 'w') as f:
+        for g in genes:
+            f.write(str(g) + '\t' + str(g.db_id) + '\n')
+            for e in g.exons:
+                f.write('\t' + str(e) + '\n')
 
     not_approved_gene_names = dict()
     gene_after_approving_by_name = OrderedDict()
@@ -372,7 +384,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
 
                 sys.stderr.write('\n')
 
-            gene_after_approving_by_name[approved_gname] = g
+            gene_after_approving_by_name[g.approved_gname] = g
 
         else:
             if g.name not in not_approved_gene_names:
@@ -409,7 +421,7 @@ def main():
         sys.stderr.write('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.\n')
         sys.stderr.write('\n')
         sys.stderr.write('Usage:\n')
-        sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < Ensembl.gtf > UCSC_HGNC_exons.bed\n')
+        sys.stderr.write('    ' + __file__ + ' HGNC_gene_synonyms.txt [file_to_write_not_approved_genes.txt] < Ensembl.gtf > Exons.bed\n')
         sys.stderr.write('\n')
         sys.stderr.write('   where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:\n')
         sys.stderr.write('     #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)\n')
