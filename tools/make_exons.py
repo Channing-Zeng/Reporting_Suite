@@ -333,9 +333,10 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             elif feature in ['CDS', 'stop_codon'] or feature == 'exon' and 'RNA' in biotype:
                 assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + gene_symbol + ', ' + gene_id
                 gene = gene_by_name[gene_symbol]
-                assert gene_biotype == gene.biotype, feature + ': gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
-                exon = Exon(gene, start, end, biotype, feature)
-                gene.exons.append(exon)
+                if gene.db_id == gene_id:
+                    assert gene_biotype == gene.biotype, feature + ': gene_biotype "' + gene_biotype + '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
+                    exon = Exon(gene, start, end, biotype, feature)
+                    gene.exons.append(exon)
 
     sys.stderr.write('\n')
     sys.stderr.write(
