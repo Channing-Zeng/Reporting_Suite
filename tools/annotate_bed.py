@@ -117,7 +117,7 @@ def main():
         annotated_2, off_targets = _annotate(bedtools, off_target_fpath, ref_bed_genes_fpath)
 
         for a in annotated_2:
-            a.feature = 'UTR/Intron'
+            a.feature = 'UTR/Intron/Decay'
         annotated.extend(annotated_2)
 
         annotated.extend(off_targets)

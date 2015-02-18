@@ -158,7 +158,7 @@ def main():
                         gene.biotype = biotype
                         gene.already_met_gene_feature_for_this_gene = True
 
-                    elif feature in [None, '.', 'CDS', 'Exon', 'UTR/Intron']:
+                    elif feature in [None, '.', 'CDS', 'Exon', 'UTR/Intron/Decay']:
                         assert gene.strand == strand, str(gene) + ' strand is not ' + strand
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
 

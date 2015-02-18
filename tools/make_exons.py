@@ -331,7 +331,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 gene_by_name[gene_symbol] = gene
                 gene_by_id[gene_id] = gene
 
-            elif (feature in ['CDS', 'stop_codon'] and '_decay' not in biotype) or feature == 'exon' and 'RNA' in biotype:
+            elif feature in ['CDS', 'stop_codon'] or feature == 'exon' and 'RNA' in biotype:
                 assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + gene_symbol + ', ' + gene_id
                 gene = gene_by_name[gene_symbol]
                 if gene.db_id == gene_id:
