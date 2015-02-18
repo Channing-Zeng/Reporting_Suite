@@ -107,7 +107,7 @@ def _prep_files(cnf, sample, exons_bed):
     # Exons
     info()
     info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
-    exons_bed = _merge_bed(cnf, exons_bed, make_gene_records=True)
+    exons_bed = _group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
 
     info()
     info('bedtools-sotring amplicons...')
@@ -122,7 +122,7 @@ def _prep_files(cnf, sample, exons_bed):
 
     info()
     info('Merging amplicons...')
-    amplicons_bed = _merge_bed(cnf, amplicons_bed)
+    amplicons_bed = _group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
 
     return exons_bed, amplicons_bed, seq2c_bed
 
@@ -1050,14 +1050,14 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return regions, total_region, max_depth, total_bed_size
 
 
-def _merge_bed(cnf, bed_fpath, make_gene_records=False):
+def _group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
 
-    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'merge_bed.py'))
+    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'group_and_merge_by_gene.py'))
 
-    cmdline = '{merge_bed_py} {bed_fpath} '.format(**locals())
-    if make_gene_records:
-        cmdline += ' --summarize-genes'
+    cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
+    if not keep_genes:
+        cmdline += ' | grep -vw Gene'
 
     call(cnf, cmdline, output_fpath)
 

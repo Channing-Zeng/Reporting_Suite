@@ -101,8 +101,8 @@ def main():
     if len(sys.argv) < 2:
         sys.exit('Usage: ' + __file__ + ' bed_file')
 
-    summarize_by_genes = len(sys.argv) > 2
-    sys.stderr.write('Setting summarize_by_genes to ' + str(summarize_by_genes) + '\n')
+    summarize_by_genes = True  # len(sys.argv) > 2
+    # sys.stderr.write('Setting summarize_by_genes to ' + str(summarize_by_genes) + '\n')
 
     three_fields = False
 
