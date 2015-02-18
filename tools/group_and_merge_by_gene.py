@@ -20,7 +20,7 @@ class Exon:
 
 
 class Gene:
-    def __init__(self, name, chrom, strand=None):
+    def __init__(self, name, chrom, strand=None, feature=None):
         self.name = name
         self.chrom = chrom
         self.__chrom_key = self.__make_chrom_key()
@@ -28,8 +28,8 @@ class Gene:
         self.biotype = None
         self.start = None
         self.end = None
-        self.feature = 'Gene'
-        self.met_gene_feature = False  # some bed files can contain 'gene' features, so we can take start and end from them
+        self.feature = feature
+        self.already_met_gene_feature_for_this_gene = False  # some BED files can contain '*Gene' features, so we can take start and end from them
 
         self.regions = []
 
@@ -99,7 +99,7 @@ def merge_fields(consensus_field, other_field):
 
 def main():
     if len(sys.argv) < 2:
-        sys.exit('Usage: ' + __file__ + ' bed_file')
+        sys.exit('Usage: ' + __file__ + ' bed_file > merged_bed_file')
 
     summarize_by_genes = True  # len(sys.argv) > 2
     # sys.stderr.write('Setting summarize_by_genes to ' + str(summarize_by_genes) + '\n')
@@ -109,7 +109,8 @@ def main():
     gene_by_chrom_and_name = OrderedDict()
 
     i = 0
-    total_genes_inp = 0
+    total_genes_in_input = 0
+    total_multi_genes_in_input = 0
     with open(sys.argv[1]) as inp:
         for l in inp:
             if not l:
@@ -142,30 +143,39 @@ def main():
                         gene = Gene(gname, chrom, strand)
                         gene_by_chrom_and_name[(chrom, gname)] = gene
 
-                    if feature == 'Gene':  # in fact 'gene' features in BED files are optional
-                        total_genes_inp += 1
+                    if feature in ['Gene', 'Multi_Gene']:  # in fact '*Gene' features in BED files are optional
+                        if feature == 'Multi_Gene':
+                            total_multi_genes_in_input += 1
+                        total_genes_in_input += 1
 
-                        if gene.met_gene_feature:
-                            sys.stderr.write(gene.name + ' has been previously met: ' + str(gene) + '\n')
+                        if gene.already_met_gene_feature_for_this_gene:
+                            sys.stderr.write(gene.name + ' is duplicating: ' + str(gene) + '\n')
+                            sys.exit(1)
                             # miltiple records for gene, picking the lowest start and the biggest end
-                            gene.start = min(gene.start, start)
-                            gene.end = max(gene.end, end)
-                            gene.biotype = merge_fields(gene.biotype, biotype)
-                            assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand + ' gene is ' + gene.name
+                            # gene.start = min(gene.start, start)
+                            # gene.end = max(gene.end, end)
+                            # gene.biotype = merge_fields(gene.biotype, biotype)
+                            # assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand + ' gene is ' + gene.name
 
-                        else:
-                            gene.start = start
-                            gene.end = end
-                            gene.biotype = biotype
-                            gene.met_gene_feature = True
+                        assert gene.strand == strand, str(gene) + ' strand is not ' + strand
+                        gene.feature = feature
+                        gene.start = start
+                        gene.end = end
+                        gene.biotype = biotype
+                        gene.already_met_gene_feature_for_this_gene = True
 
-                    elif feature is None or feature == '.' or feature == 'CDS' or feature == 'Exon':
+                    elif feature in [None, '.', 'CDS', 'Exon']:
+                        assert gene.strand == strand, str(gene) + ' strand is not ' + strand
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
             i += 1
             if i % 1000 == 0:
                 sys.stderr.write('processed ' + str(i) + ' lines\n')
                 sys.stderr.flush()
-    sys.stderr.write('Processed ' + str(i) + ' lines, found ' + str(total_genes_inp) + ' genes, ' + str(len(gene_by_chrom_and_name)) + ' uniq gene names.\n')
+    sys.stderr.write(
+        'Processed ' + str(i) + ' lines, found ' +
+        str(total_genes_in_input) + ' genes, including ' +
+        str(total_multi_genes_in_input) + ' multi-genes. Total ' +
+        str(len(gene_by_chrom_and_name)) + ' uniq gene names.\n')
     sys.stderr.write('\n')
 
     sys.stderr.write('Sorting regions...\n')

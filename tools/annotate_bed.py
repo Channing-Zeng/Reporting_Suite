@@ -233,7 +233,7 @@ def _split_reference(work_dirpath, ref_bed_fpath):
     ref_bed_no_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__no_whole_genes')
     ref_bed_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__whole_genes')
     with open(ref_bed_no_genes_fpath, 'w') as out:
-        cmdline = 'grep -wv Gene {ref_bed_fpath}'.format(**locals())
+        cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
         log(cmdline + ' > ' + ref_bed_no_genes_fpath)
         subprocess.call(cmdline.split(), stdout=out)
     with open(ref_bed_genes_fpath, 'w') as out:
