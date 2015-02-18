@@ -167,7 +167,7 @@ def main():
                 sys.stderr.write('processed ' + str(total_lines) + ' lines\n')
                 sys.stderr.flush()
 
-    sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(gene_by_chrom_and_name) + ' uniq genes.\n')
+    sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' uniq genes.\n')
     sys.stderr.write('Features:\n')
     for ft, cnt in feature_counter.items():
         sys.stderr.write('  ' + ft + ': ' + str(cnt) + '\n')

@@ -15,7 +15,8 @@ from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 
 
-""" Input: Any BED file
+usage = """
+    Input: Any BED file
     Ouput:
         BED file with regions from input, followed by symbol from best gene overlap from Ensembl.
         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
@@ -27,8 +28,8 @@ from collections import defaultdict, OrderedDict
 
 def _read_args(args):
     if len(args) < 2:
-        log('Usage:\n')
-        log('  ' + __file__ + ' Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file\n')
+        log('Usage:')
+        log('  ' + __file__ + ' Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file')
         sys.exit(1)
 
     input_bed_fpath = abspath(args[0])
