@@ -306,7 +306,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                         #     del gene_by_name[prev_gene.name]
                         #     del gene_by_id[prev_gene.db_id]
                         #
-                        # elif answer == '2' or answer == '' and gene.end - gene.start <= prev_gene.end - prev_gene.start:
+                        # else:
                         #     continue
 
                         if gene.source == 'ensembl' or prev_gene.source == 'havana':

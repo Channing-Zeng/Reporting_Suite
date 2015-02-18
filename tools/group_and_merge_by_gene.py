@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 from os.path import abspath, dirname, realpath, join
-from pybedtools.cbedtools import defaultdict
 from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
@@ -9,7 +8,7 @@ addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 
 class Exon:
@@ -159,9 +158,10 @@ def main():
                         gene.biotype = biotype
                         gene.already_met_gene_feature_for_this_gene = True
 
-                    elif feature in [None, '.', 'CDS', 'Exon']:
+                    elif feature in [None, '.', 'CDS', 'Exon', 'UTR/Intron']:
                         assert gene.strand == strand, str(gene) + ' strand is not ' + strand
                         gene.regions.append(Exon(int(start), int(end), biotype, feature))
+
             total_lines += 1
             if total_lines % 1000 == 0:
                 sys.stderr.write('processed ' + str(total_lines) + ' lines\n')
