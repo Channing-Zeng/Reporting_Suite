@@ -816,37 +816,33 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
 
 
 def get_detailed_metric_storage(depth_threshs):
-    return MetricStorage(sections=[ReportSection(metrics=[
-        Metric('Sample'),
-        Metric('Chr'),
-        Metric('Start'),
-        Metric('End'),
-        Metric('Size'),
-        Metric('Gene'),
-        Metric('Strand'),
-        Metric('Feature'),
-        Metric('Biotype'),
-        Metric('Min depth'),
-        Metric('Ave depth'),
-        Metric('Std dev', description='Coverage depth standard deviation'),
-        Metric('W/n 20% of ave depth', description='Persentage of the region that lies within 20% of an avarage depth.', unit='%'),
-        # Metric('Norm depth', description='Ave region depth devided by median depth of sample'),
-    ] + [
-        Metric('{}x'.format(thresh), description='Bases covered by at least {} reads'.format(thresh), unit='%')
-        for thresh in depth_threshs
-    ])])
+    return MetricStorage(
+        general_section=ReportSection(metrics=[
+            Metric('Sample'),
+        ]),
+        sections=[ReportSection(metrics=[
+            Metric('Chr'),
+            Metric('Start'),
+            Metric('End'),
+            Metric('Size'),
+            Metric('Gene'),
+            Metric('Strand'),
+            Metric('Feature'),
+            Metric('Biotype'),
+            Metric('Min depth'),
+            Metric('Ave depth'),
+            Metric('Std dev', description='Coverage depth standard deviation'),
+            Metric('W/n 20% of ave depth', description='Persentage of the region that lies within 20% of an avarage depth.', unit='%'),
+            # Metric('Norm depth', description='Ave region depth devided by median depth of sample'),
+        ] + [
+            Metric('{}x'.format(thresh), description='Bases covered by at least {} reads'.format(thresh), unit='%')
+            for thresh in depth_threshs
+        ])])
 
 
 def _make_flat_region_report(sample, regions, depth_threshs):
-    # header_fields = ['#Sample', 'Chr', 'Start', 'End', 'Size', 'Gene', 'Strand', 'Feature',
-    #                  'Biotype', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
-    # for thres in depth_threshs:
-    #     header_fields.append('{}x'.format(thres))
-    #
-    # all_rows = [header_fields]
-
-    report = PerRegionSampleReport(sample=sample,
-        metric_storage=get_detailed_metric_storage(depth_threshs))
+    report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
+    report.add_record('Sample', sample.name)
 
     i = 0
     for region in regions:
@@ -855,7 +851,6 @@ def _make_flat_region_report(sample, regions, depth_threshs):
             info('Processed {0:,} regions.'.format(i))
 
         rep_region = report.add_region()
-        rep_region.add_record('Sample', region.sample_name)
         rep_region.add_record('Chr', region.chrom)
         rep_region.add_record('Start', region.start)
         rep_region.add_record('End', region.end)

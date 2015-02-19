@@ -159,9 +159,9 @@ class Report:
             dump(self, f, default=lambda o: o.__dict__, indent=4)
 
     @staticmethod
-    def _find_record(records, metric):
+    def find_record(records, metric_name):
         try:
-            rec = next(r for r in records if r.metric.name == metric.name)
+            rec = next(r for r in records if r.metric.name == metric_name)
         except StopIteration:
             return None  # if no record for the metric
         else:
@@ -198,7 +198,7 @@ class SampleReport(Report):
         rows = []
 
         for m in self.metric_storage.general_section.metrics:
-            r = Report._find_record(self.records, m)
+            r = Report.find_record(self.records, m.name)
             if r:
                 if human_readable:
                     rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
@@ -208,7 +208,7 @@ class SampleReport(Report):
         rows.append(['Sample', self.display_name])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
-            rec = Report._find_record(self.records, metric)
+            rec = Report.find_record(self.records, metric.name)
             row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
         return rows
@@ -251,15 +251,19 @@ class PerRegionSampleReport(SampleReport):
         self.__regions.append(region)
         return region
 
+    def get_regions(self):
+        return self.__regions
+
     def flatten(self, sections=None, human_readable=True):
         rows = []
 
-        for r, m in zip(self.records, self.metric_storage.general_section.metrics):
-            assert r.metric == m
-            if human_readable:
-                rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
-            else:
-                rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
+        for m in self.metric_storage.general_section.metrics:
+            rec = Report.find_record(self.records, m.name)
+            if rec:
+                if human_readable:
+                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
+                else:
+                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
@@ -269,9 +273,13 @@ class PerRegionSampleReport(SampleReport):
 
         for reg in self.__regions:
             row = []
-            for r, m in zip(reg.records, ms):
-                assert r.metric == m
-                row.append(r.format(human_readable=human_readable))
+            for m in self.metric_storage.get_metrics(sections, skip_general_section=True):
+                rec = Report.find_record(reg.records, m.name)
+                if rec:
+                    row.append(rec.format(human_readable=human_readable))
+                else:
+                    pass
+
             rows.append(row)
 
         # next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
@@ -366,7 +374,7 @@ class FullReport(Report):
 
         some_rep = self.sample_reports[0]
         for m in self.metric_storage.general_section.metrics:
-            rec = Report._find_record(some_rep.records, m)
+            rec = Report.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
                     rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
@@ -378,7 +386,7 @@ class FullReport(Report):
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             for sr in self.sample_reports:
-                rec = Report._find_record(sr.records, metric)
+                rec = Report.find_record(sr.records, metric.name)
                 row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
         return rows

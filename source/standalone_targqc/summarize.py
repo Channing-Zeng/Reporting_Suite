@@ -1,3 +1,4 @@
+from copy import deepcopy
 import sys
 import shutil
 import os
@@ -9,7 +10,7 @@ from joblib import Parallel, delayed
 import source
 from source.config import CallCnf
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
-    Record, PerRegionSampleReport
+    Record, PerRegionSampleReport, Report
 from source.logger import step_greetings, info, send_email, critical, warn, err
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
@@ -133,8 +134,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
 
     _make_targetcov_symlinks(samples)
 
-    best_for_regions_fpath = _save_best_detailed_for_each_gene(
-        cnf.coverage_reports.depth_thresholds, samples, output_dir)
+    best_for_regions_fpath = _save_best_detailed_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
 
     exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
 
@@ -150,7 +150,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
 
     txt_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
-    _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, 'oncomine', bed_fpath)
+    norm_best_var_fpath = _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, 'oncomine', bed_fpath)
 
     info()
     info('*' * 70)
@@ -162,9 +162,9 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
     info('Best stats for regions saved in:')
     info('  ' + best_for_regions_fpath)
 
-    # info()
-    # info('Normalized cov for oncomine saved in:')
-    # info('  ' + norm_oncomine_report_fpath)
+    info()
+    info('Best normalized depths for oncomine saved in:')
+    info('  ' + norm_best_var_fpath)
 
 
 def get_ave_coverage(cnf, report_fpath):
@@ -294,7 +294,7 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
 
     metric_storage = MetricStorage(
         general_section=ReportSection('general_section', '', [
-            Metric('Sample name', short_name='Sample', common=True),
+            Metric('Sample', short_name='Sample', common=True),
             Metric('Average sample depth', short_name='Ave depth', common=True),
         ]),
         sections=[ReportSection(metrics=[
@@ -314,15 +314,14 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
             Metric('Gene'),
         ])])
 
-    bed_cols_num = count_bed_cols(bed_fpath)
-
     for sample in samples:
         info()
         info('Saving report for sample ' + sample.name)
         report = PerRegionSampleReport(sample=sample, metric_storage=metric_storage)
+        sample.report = report
+        report.add_record('Sample', sample.name)
 
         ave_sample_depth = ave_coverages_per_sample[sample.name]
-        report.add_record('Sample name', sample.name)
         report.add_record('Average sample depth', ave_sample_depth)
 
         total_variants = 0
@@ -348,12 +347,51 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
                 rep_region.add_record('Depth', var.depth)
                 rep_region.add_record('Norm depth', var.depth / ave_sample_depth if var.depth and ave_sample_depth > 0 else None)
 
-        report_basename = sample.name + '_' + vcf_key
-        txt_rep_fpath = report.save_txt(output_dir, report_basename)
-        tsv_rep_fpath = report.save_tsv(output_dir, report_basename)
+        report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
+        sample.targetcov_norm_depth_vcf_txt = report.save_txt(sample.dirpath, report_basename)
+        sample.targetcov_norm_depth_vcf_tsv = report.save_tsv(sample.dirpath, report_basename)
         info('')
         info('Oncomine variants coverage report (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants, total_regions))
-        info('  ' + txt_rep_fpath)
+        info('  ' + sample.targetcov_norm_depth_vcf_txt)
+
+    ############################ Best ############################
+    info()
+    info('*' * 70)
+    info('Saving best values.')
+    report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
+    report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
+
+    m = metric_storage.get_metric('Average sample depth')
+    ave_sample_depth = max(Report.find_record(s.report.records, m.name).value for s in samples)
+    report.add_record('Average sample depth', ave_sample_depth)
+
+    total_variants = 0
+
+    nth_regions_from_each_sample = [s.report.get_regions() for s in samples]
+    while True:
+        nth_region_from_each_sample = [rs[total_variants] for rs in nth_regions_from_each_sample if total_variants < len(rs)]
+        total_variants += 1
+        if len(nth_region_from_each_sample) == 0:
+            break
+        assert len(nth_region_from_each_sample) == len(nth_regions_from_each_sample), 'Region files for samples are not euqal size'
+
+        best_reg = report.add_region()
+        rand_reg = nth_region_from_each_sample[0]
+        for i in range(10):
+            best_reg.records.append(rand_reg.records[i])
+
+        best_depth = select_best(rand_reg.records[10].value for r in nth_region_from_each_sample)
+        best_norm_depth = select_best(rand_reg.records[11].value for r in nth_region_from_each_sample)
+        best_reg.add_record('Depth', best_depth)
+        best_reg.add_record('Norm depth', best_norm_depth)
+
+    report_basename = 'Best.' + source.targetseq_name  + '_' + vcf_key
+    best_targetcov_norm_depth_vcf_txt = report.save_txt(output_dir, report_basename)
+    best_targetcov_norm_depth_vcf_tsv = report.save_tsv(output_dir, report_basename)
+    info('')
+    info('Best depths for Oncomine variants (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants))
+    info('  ' + best_targetcov_norm_depth_vcf_txt)
+    return best_targetcov_norm_depth_vcf_txt
 
 
 def _get_targqc_metric(metric, header_metric_storage, report_type='targetcov'):  # report type is in ['targetcov', 'qualimap', 'ngscat']
@@ -492,11 +530,16 @@ def _correct_qualimap_insert_size_histogram(samples):
             os.remove(s.qualimap_ins_size_hist_fpath)
 
 
+def select_best(values, fn=max):
+    vs = [v for v in values if v is not None]
+    return fn(vs) if len(vs) > 0 else None
+
+
 def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
     metric_storage = cov.get_detailed_metric_storage(depth_threshs)
-    metric_storage.remove_metric('Sample')
 
     report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
+    report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
     def get_int_val(v):
         return int(get_val(v)) if get_val(v) else None
@@ -506,10 +549,6 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
 
     def get_val(v):
         return v.strip() if v.strip() not in ['.', '-', ''] else None
-
-    def select_best(fn, values):
-        vs = [v for v in values if v is not None]
-        return fn(vs) if len(vs) > 0 else None
 
     total_regions = 0
     open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
@@ -544,12 +583,12 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
                     percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests
-            reg.add_record('Min depth', select_best(max, min_depths))
-            reg.add_record('Ave depth', select_best(max, ave_depths))
-            reg.add_record('Std dev', select_best(min, stddevs))
-            reg.add_record('W/n 20% of ave depth', select_best(max, withins))
+            reg.add_record('Min depth', select_best(min_depths))
+            reg.add_record('Ave depth', select_best(ave_depths))
+            reg.add_record('Std dev', select_best(stddevs, max))
+            reg.add_record('W/n 20% of ave depth', select_best(withins))
             for t in depth_threshs:
-                reg.add_record('{}x'.format(t), select_best(max, percents_by_threshs[t]))
+                reg.add_record('{}x'.format(t), select_best(percents_by_threshs[t]))
 
             total_regions += 1
 
