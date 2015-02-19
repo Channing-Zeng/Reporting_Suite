@@ -21,9 +21,30 @@ class Record:
                  meta=None,
                  html_fpath=None):
         self.metric = metric
-        self.value = value
+        self.set_value(value)
         self.meta = meta or dict()
         self.html_fpath = html_fpath
+
+    def get_value(self):
+        return self.__value
+
+    def set_value(self, value):
+        if value is None:
+            pass
+        else:
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+        self.__value = value
+
+    def del_value(self):
+        del self.__value
+
+    value = property(get_value, set_value, del_value, 'value')
 
     def format(self, human_readable=True):
         return self.metric.format(self.value, human_readable=human_readable)
@@ -38,13 +59,14 @@ class Record:
 
 
 class Metric:
-    def __init__(self,
-                 name=None,
-                 short_name=None,
-                 description=None,
-                 quality='More is better',  # "More is better", "Less is better", "Equal"
-                 unit='',
-                 common=False):
+    def __init__(
+            self,
+            name=None,
+            short_name=None,
+            description=None,
+            quality='More is better',  # "More is better", "Less is better", "Equal"
+            unit='',
+            common=False):
         self.name = name
         self.short_name = short_name
         self.description = description
@@ -58,22 +80,15 @@ class Metric:
     @staticmethod
     def format_value(value, unit='', human_readable=True):
         if value is None:
-            return '-'
+            return '.'
 
         if isinstance(value, basestring):
-            try:
-                value = int(value)
-            except ValueError:
-                try:
-                    value = float(value)
-                except ValueError:
-                    # assert False, 'Strange value ' + str(value)
-                    if human_readable:
-                        return '{value}{unit}'.format(**locals())
-                    else:
-                        return value
+            if human_readable:
+                return '{value}{unit}'.format(**locals())
+            else:
+                return value
 
-        if isinstance(value, int):
+        elif isinstance(value, int):
             if value == 0:
                 return '0'
             if human_readable:
@@ -81,7 +96,7 @@ class Metric:
             else:
                 return str(value)
 
-        if isinstance(value, float):
+        elif isinstance(value, float):
             if value == 0:
                 return '0'
             if human_readable:
@@ -98,7 +113,7 @@ class Metric:
         if isinstance(value, list):
             return ','.join(list)
 
-        return '-'
+        return '.'
 
     def __repr__(self):
         return self.name
@@ -165,7 +180,7 @@ class SampleReport(Report):
         self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
         self.json_fpath = json_fpath
-        self.display_name = sample.name
+        self.display_name = sample if isinstance(sample, basestring) else sample.name
 
     def set_display_name(self, name):
         self.display_name = name
@@ -194,7 +209,7 @@ class SampleReport(Report):
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             rec = Report._find_record(self.records, metric)
-            row.append(rec.format(human_readable=human_readable) if rec else '-')
+            row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
         return rows
 
@@ -241,7 +256,10 @@ class PerRegionSampleReport(SampleReport):
 
         for r, m in zip(self.records, self.metric_storage.general_section.metrics):
             assert r.metric == m
-            rows.append(['## ' + m.name + '=' + r.format(human_readable=human_readable)])
+            if human_readable:
+                rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
+            else:
+                rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
 
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
@@ -350,7 +368,10 @@ class FullReport(Report):
         for m in self.metric_storage.general_section.metrics:
             rec = Report._find_record(some_rep.records, m)
             if rec:
-                rows.append(['## ' + m.name + '=' + rec.format(human_readable=human_readable)])
+                if human_readable:
+                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
+                else:
+                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
         rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 
@@ -358,7 +379,7 @@ class FullReport(Report):
             row = [metric.name]
             for sr in self.sample_reports:
                 rec = Report._find_record(sr.records, metric)
-                row.append(rec.format(human_readable=human_readable) if rec else '-')
+                row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
         return rows
 
@@ -414,6 +435,7 @@ class ReportSection:
     def remove_metric(self, metric_name):
         metric = self.metrics_by_name[metric_name]
         self.metrics.remove(metric)
+        del self.metrics_by_name[metric_name]
 
     def __repr__(self):
         return self.name + ', ' + self.title
@@ -456,6 +478,10 @@ class MetricStorage:
 
     def get_metric(self, metric_name):
         return next((m for m in self.get_metrics() if m.name == metric_name), None)
+
+    def remove_metric(self, metric_name):
+        for section in self.sections:
+            section.remove_metric(metric_name)
 
     def get_metrics(self, sections=None, skip_general_section=False):
         metrics = []
@@ -539,12 +565,12 @@ def write_txt_rows(rows, output_dirpath, base_fname):
 
     col_widths = repeat(0)
     for row in rows:
-        if not row[0].startswith('## '):
+        if not row[0].startswith('##'):
             col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
 
     with open(output_fpath, 'w') as out:
         for row in rows:
-            if row[0].startswith('## '):
+            if row[0].startswith('##'):
                 out.write(row[0])
             else:
                 for val, w in izip(row, col_widths):

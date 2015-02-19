@@ -57,15 +57,12 @@ def main(args):
 
     check_genome_resources(cnf)
 
-    if cnf.exons:
-        exons_bed_fpath = adjust_path(cnf.exons)
-    else:
-        exons_bed_fpath = adjust_path(cnf.genome.exons)
+    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
     info('Exons: ' + exons_bed_fpath)
 
     if cnf.genes:
         genes_fpath = adjust_path(cnf.genes)
-        info('Custom genes list: ' + exons_bed_fpath)
+        info('Custom genes list: ' + genes_fpath)
     else:
         genes_fpath = None
 

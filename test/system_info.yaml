@@ -29,6 +29,7 @@ genomes:
 
     dbsnp: ~/Dropbox/az/dbsnp.chr21.vcf
     cosmic: ~/Dropbox/az/cosmic.chr21.vcf
+    oncomine: ~/Dropbox/az/oncomine.chr21.vcf
     dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
     clinvar: ~/Dropbox/az/clinvar_latest.chr21.vcf
     1000genomes: ~/Dropbox/az/1000G.chr21.vcf

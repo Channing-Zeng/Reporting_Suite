@@ -14,7 +14,7 @@ from source import logger
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
-from source.targetcov.bam_file import index_bam
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
@@ -71,30 +71,6 @@ def get_header_metric_storage(depth_thresholds):
     return ms
 
 
-def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
-    info()
-    info('Preparing BED file for seq2c...')
-
-    if cnt_fields_in_bed(seq2c_bed) < 4:
-        seq2c_bed = amplicons_bed
-
-    elif cnt_fields_in_bed(seq2c_bed) > 4:
-        cmdline = 'cut -f1,2,3,4 ' + seq2c_bed
-        seq2c_bed = intermediate_fname(cnf, seq2c_bed, 'cut')
-        call(cnf, cmdline, seq2c_bed)
-
-    # removing regions with no gene annotation
-    def f(l, i):
-        if l.split('\t')[3].strip() == '.':
-            return None
-        else:
-            return l
-    seq2c_bed = iterate_file(cnf, seq2c_bed, f, 'filt')
-
-    info('Done: ' + seq2c_bed)
-    return seq2c_bed
-
-
 def _prep_files(cnf, sample, exons_bed):
     if not sample.bam:
         critical(sample.name + ': BAM file is required.')
@@ -109,64 +85,8 @@ def _prep_files(cnf, sample, exons_bed):
 
     if not exons_bed:
         critical('Error: no exons specified for the genome in system config.')
-    elif abspath(exons_bed) == abspath(amplicons_bed):
-        warn('Same file used for exons and amplicons: ' + exons_bed)
 
-    # Exons
-    info()
-    info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
-    exons_bed = _group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
-
-    info()
-    info('bedtools-sotring amplicons...')
-    amplicons_bed = sort_bed(cnf, amplicons_bed)
-
-    if cnf.reannotate or cnt_fields_in_bed(seq2c_bed) < 4:
-        info()
-        info('Annotating amplicons with gene names from Ensembl...')
-        amplicons_bed = _annotate_amplicons(cnf, amplicons_bed, exons_bed)
-
-    seq2c_bed = _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)
-
-    info()
-    info('Merging amplicons...')
-    amplicons_bed = _group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
-
-    return exons_bed, amplicons_bed, seq2c_bed
-
-
-def cnt_fields_in_bed(bed_fpath):
-    with open(bed_fpath) as f:
-        for l in f:
-            if l and l.strip() and not l.startswith('#'):
-                return len(l.split('\t'))
-    critical('Empty bed file: ' + bed_fpath)
-
-
-def _annotate_amplicons(cnf, amplicons_bed, exons_bed):
-    output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
-
-    annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'annotate_bed.py'))
-    bedtools = get_system_path(cnf, 'bedtools')
-
-    cmdline = '{annotate_bed_py} {amplicons_bed} {cnf.work_dir} {exons_bed} {bedtools}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
-
-    return output_fpath
-
-
-def _filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
-    def fn(l, i):
-        if l:
-            fs = l.split('\t')
-            new_gns = []
-            for g in fs[3].split(','):
-                if g in gene_names_set:
-                    new_gns.append(g)
-            if new_gns:
-                return l.replace(fs[3], ','.join(new_gns))
-
-    return iterate_file(cnf, bed_fpath, fn, suffix='key')
+    return prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed)
 
 
 def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpath):
@@ -182,12 +102,12 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
             gene_names_list = [g.strip() for g in f.read().split('\n') if g]
             gene_names_set = set(gene_names_list)
         info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
-        amplicons_bed = _filter_bed_with_gene_set(cnf, amplicons_bed, gene_names_set)
-        exons_bed = _filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+        amplicons_bed = filter_bed_with_gene_set(cnf, amplicons_bed, gene_names_set)
+        exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
     else:
         gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
         info('Using genes from amplicons list, filtering exons with this genes.')
-        exons_bed = _filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+        exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
 
     info('Making uniq gene list without affecting the order')
     fixed_gene_names_list = []
@@ -241,8 +161,7 @@ class TargetInfo:
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     exons_bed, amplicons_bed, seq2c_bed = _prep_files(cnf, sample, exons_bed)
 
-    exons_bed, amplicons_bed, gene_by_name = _get_genes_and_filter(
-        cnf, sample.name, amplicons_bed, exons_bed, genes_fpath)
+    exons_bed, amplicons_bed, gene_by_name = _get_genes_and_filter(cnf, sample.name, amplicons_bed, exons_bed, genes_fpath)
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -1055,20 +974,6 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return regions, total_region, max_depth, total_bed_size
 
 
-def _group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
-
-    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'group_and_merge_by_gene.py'))
-
-    cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
-    if not keep_genes:
-        cmdline += ' | grep -vw Gene'
-
-    call(cnf, cmdline, output_fpath)
-
-    return output_fpath
-
-
 # def _fix_amplicons_gene_names(cnf, amplicons_fpath):
 #     output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixedgenenames')
 #
@@ -1103,14 +1008,6 @@ def _group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
 #
 #     info('Saved to ' + output_fpath)
 #     return output_fpath
-
-
-def sort_bed(cnf, bed_fpath):
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
-    call(cnf, cmdline, output_fpath)
-    return output_fpath
 
 
 def _unique_longest_exons(cnf, exons_bed_fpath):

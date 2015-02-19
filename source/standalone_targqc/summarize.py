@@ -14,11 +14,13 @@ from source.logger import step_greetings, info, send_email, critical, warn, err
 from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
+from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
+from sub_scripts.targetcov import Sample
 
 
 def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
@@ -118,7 +120,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     return txt_fpath, html_fpath
 
 
-def summarize_targqc(cnf, output_dir, samples, bed_fpath):
+def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpath):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     for sample in samples:
@@ -131,8 +133,10 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
 
     _make_targetcov_symlinks(samples)
 
-    # best_for_regions_fpath = _save_best_detailed_for_each_gene(
-    #     cnf.coverage_reports.depth_thresholds, samples, output_dir)
+    best_for_regions_fpath = _save_best_detailed_for_each_gene(
+        cnf.coverage_reports.depth_thresholds, samples, output_dir)
+
+    exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
 
     # all_htmls_by_sample = OrderedDict()
     # for sample in samples:
@@ -154,9 +158,9 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     for fpath in [txt_fpath, html_fpath]:
         if fpath: info('  ' + fpath)
 
-    # info()
-    # info('Best stats for regions saved in:')
-    # info('  ' + best_for_regions_fpath)
+    info()
+    info('Best stats for regions saved in:')
+    info('  ' + best_for_regions_fpath)
 
     # info()
     # info('Normalized cov for oncomine saved in:')
@@ -251,7 +255,7 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
     cmdline = '{bedtools} intersect -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
     res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
 
-    bed_columns_num = len(next(open(bed_fpath)).split('\t'))
+    bed_columns_num = count_bed_cols(bed_fpath)
 
     vars_by_region = defaultdict(list)
     with open(vcf_bed_intersect) as f:
@@ -309,6 +313,8 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
             Metric('Norm depth'),
             Metric('Gene'),
         ])])
+
+    bed_cols_num = count_bed_cols(bed_fpath)
 
     for sample in samples:
         info()
@@ -486,36 +492,26 @@ def _correct_qualimap_insert_size_histogram(samples):
             os.remove(s.qualimap_ins_size_hist_fpath)
 
 
-def get_int_val(v):
-    return int(get_val(v)) if get_val(v) else None
-
-def get_float_val(v):
-    return float(get_val(v)) if get_val(v) else None
-
-# def get_percent_val(v):
-#     return float(get_val(v[:-1])) if get_val(v[:-1]) else None
-
-def get_val(v):
-    return v.strip() if v.strip() not in ['.', '-', ''] else None
-
-
 def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
-    # best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
-    # best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.txt')
-
     metric_storage = cov.get_detailed_metric_storage(depth_threshs)
     metric_storage.remove_metric('Sample')
 
-    report = PerRegionSampleReport(sample=None, metric_storage=metric_storage)
+    report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
 
-    # with open(best_metrics_fpath, 'w') as best_f:
-    # with open(samples[0].targetcov_detailed_tsv) as f:
-    #     header_fields = f.readline().split('\t')
-        # 0        1      2      3    4     5     6       7        8        9          10         11        12                  13...
-        # #Sample, Chrom, Start, End, Size, Gene, Strand, Feature, Biotype, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
+    def get_int_val(v):
+        return int(get_val(v)) if get_val(v) else None
 
-    # threshold_num = len(header_fields[13:])
+    def get_float_val(v):
+        return float(get_val(v)) if get_val(v) else None
 
+    def get_val(v):
+        return v.strip() if v.strip() not in ['.', '-', ''] else None
+
+    def select_best(fn, values):
+        vs = [v for v in values if v is not None]
+        return fn(vs) if len(vs) > 0 else None
+
+    total_regions = 0
     open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
     while True:
         lines_for_each_sample = [next(f, None) for f in open_tsv_files]
@@ -540,45 +536,31 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             for l in lines_for_each_sample:
                 fs = l.split('\t')
 
-                val = ''.join(c for c in fs[9] if c.isdigit())  # skipping decimal dots and spaces
-                if val not in ['', '.', '-']:
-                    min_depths.append(int(val))
-
-                val = fs[10]
-                if val not in ['', '.', '-']:
-                    ave_depths.append(float(val))
-
-                val = fs[11]
-                if val not in ['', '.', '-']:
-                    stddevs.append(float(val))
-
-                val = fs[12][:-1]  # skipping "%" sign
-                if val not in ['', '.', '-']:
-                    withins.append(float(val))
-
+                min_depths.append(get_int_val(fs[9]))
+                ave_depths.append(get_float_val(fs[10]))
+                stddevs.append(get_float_val(fs[11]))
+                withins.append(get_float_val(fs[12]))
                 for t, f in zip(depth_threshs, fs[13:]):
-                    val = f.strip()[:-1]  # skipping "%" sign
-                    if val not in ['', '.', '-']:
-                        percents_by_threshs[t].append(float(val))
+                    percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests
-            min_depth = max(min_depths) if min_depths else '.'
-            ave_depth = max(ave_depths) if ave_depths else '.'
-            stddev = min(stddevs) if stddevs else '.'
-            within = max(withins) if withins else '.'
-            percent_by_col_num = dict()
-            for col_num, values in percents_by_threshs.iteritems():
-                percent_by_col_num[col_num] = max(values) if values else '.'
+            reg.add_record('Min depth', select_best(max, min_depths))
+            reg.add_record('Ave depth', select_best(max, ave_depths))
+            reg.add_record('Std dev', select_best(min, stddevs))
+            reg.add_record('W/n 20% of ave depth', select_best(max, withins))
+            for t in depth_threshs:
+                reg.add_record('{}x'.format(t), select_best(max, percents_by_threshs[t]))
 
-            best_f.write('{:,}\t'.format(min_depth) if min_depth != '.' else '.\t')
-            best_f.write('{:.2f}\t'.format(ave_depth) if ave_depth != '.' else '.\t')
-            best_f.write('{:.2f}\t'.format(stddev) if stddev != '.' else '.\t')
-            best_f.write('{:.2f}%\t'.format(within) if within != '.' else '.\t')
-            for col_num, val in percent_by_col_num.iteritems():
-                best_f.write('{:.2f}%\t'.format(val) if val != '.' else '.\t')
-            best_f.write('\n')
+            total_regions += 1
 
     for f in open_tsv_files:
         f.close()
 
-    return best_metrics_fpath
+    gene_report_basename = 'Best.' + source.targetseq_name + source.targetcov.detail_gene_report_baseending
+    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
+    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    info('')
+    info('Best values for the regions (total ' + str(total_regions) + ') saved into:')
+    info('  ' + txt_rep_fpath)
+
+    return txt_rep_fpath

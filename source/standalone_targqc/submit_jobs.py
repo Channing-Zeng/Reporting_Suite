@@ -15,7 +15,7 @@ from source.standalone_targqc.summarize import summarize_targqc
 from source.standalone_targqc import StandaloneSample
 
 
-def run(cnf, bed_fpath, bam_fpaths, main_script_name):
+def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_fpath):
     samples = [
         StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
@@ -57,7 +57,7 @@ def run(cnf, bed_fpath, bam_fpaths, main_script_name):
 
     else:
         info('Making targqc summary')
-        summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath)
+        summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath, exons_fpath, genes_fpath)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpath, bed_fpath, main_script_name):

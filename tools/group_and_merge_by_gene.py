@@ -9,6 +9,7 @@ import sub_scripts.__check_python_version  # do not remove it: checking for pyth
 
 import sys
 from collections import OrderedDict, defaultdict
+from source.targetcov.bam_and_bed_utils import count_bed_cols
 
 
 class Exon:
@@ -104,7 +105,12 @@ def main():
     summarize_by_genes = True  # len(sys.argv) > 2
     # sys.stderr.write('Setting summarize_by_genes to ' + str(summarize_by_genes) + '\n')
 
-    three_fields = False
+    num_bed_cols = count_bed_cols(sys.argv[1])
+    if num_bed_cols < 3:
+        sys.exit('Incorrect number of fields: ' + str(num_bed_cols) + '. Should be at least 3.')
+    if num_bed_cols == 3:
+        summarize_by_genes = False
+        sys.stderr.write('3 columns in BED; no summarizing by genes\n')
 
     gene_by_chrom_and_name = OrderedDict()
 
@@ -118,23 +124,17 @@ def main():
                 sys.stdout.write(l)
             else:
                 fields = l[:-1].split('\t')
-
-                if len(fields) < 3:
-                    sys.exit('Incorrect number of fields: ' + str(len(fields)) +
-                             ' (' + ' | '.join(fields) + '). Should be >= 3.')
+                if len(fields) != num_bed_cols:
+                    sys.stderr.write('Error: number of fields inconsitent. Expected ' + str(num_bed_cols) + ', got ' + str(len(fields)) + ' at + ' + ' | '.join(fields) + '\n')
+                    sys.exit(1)
                 else:
-                    three_fields = len(fields) == 3
-                    if three_fields:
-                        summarize_by_genes = False
-                        sys.stderr.write('3 columns in BED; no summarizing by genes\n')
-
                     chrom, start, end = fields[:3]
                     start, end = int(start), int(end)
-                    gname = fields[3] if len(fields) >= 4 else '.'
-                    strand = fields[5] if len(fields) >= 6 else None
-                    (feature, biotype) = fields[6:8] if len(fields) >= 8 else (None, None)
-
-                    feature_counter[feature] += 1
+                    gname = fields[3] if num_bed_cols >= 4 else '.'
+                    strand = fields[5] if num_bed_cols >= 6 else None
+                    (feature, biotype) = fields[6:8] if num_bed_cols >= 8 else (None, None)
+                    if feature:
+                        feature_counter[feature] += 1
 
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
@@ -168,9 +168,10 @@ def main():
                 sys.stderr.flush()
 
     sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' uniq genes.\n')
-    sys.stderr.write('Features:\n')
-    for ft, cnt in feature_counter.items():
-        sys.stderr.write('  ' + ft + ': ' + str(cnt) + '\n')
+    if feature_counter:
+        sys.stderr.write('Features:\n')
+        for ft, cnt in feature_counter.items():
+            sys.stderr.write('  ' + ft + ': ' + str(cnt) + '\n')
     sys.stderr.write('\n')
 
     sys.stderr.write('Sorting regions...\n')
@@ -191,10 +192,8 @@ def main():
     sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')
 
     for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
-        sys.stdout.write('\t'.join([chrom, str(start), str(end)]))
-        if not three_fields:
-            sys.stdout.write('\t' + '\t'.join([gname, '.', strand or '.', feature or '.', biotype or '.']))
-        sys.stdout.write('\n')
+        fs = [chrom, str(start), str(end), gname, '.', strand or '.', feature or '.', biotype or '.']
+        sys.stdout.write('\t'.join(fs[:num_bed_cols]) + '\n')
     sys.stderr.write('Saved\n')
 
 

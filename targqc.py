@@ -14,7 +14,7 @@ from source.logger import info, err, warn, critical
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
 from source.main import determine_cnf_files, set_up_dirs
-from source.standalone_targqc.submit_jobs import run
+from source.standalone_targqc.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
 
 
@@ -52,6 +52,15 @@ def main():
     check_genome_resources(cnf)
 
     bed_fpath = cnf.bed
+    info('Using amplicons/capture panel ' + abspath(bed_fpath))
+
+    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    info('Exons: ' + exons_bed_fpath)
+
+    genes_fpath = None
+    if cnf.genes:
+        genes_fpath = adjust_path(cnf.genes)
+        info('Custom genes list: ' + genes_fpath)
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
@@ -64,7 +73,7 @@ def main():
     info('*' * 70)
     info()
 
-    run(cnf, bed_fpath, bam_fpaths, basename(__file__))
+    run_targqc(cnf, bam_fpaths, basename(__file__), bed_fpath, exons_bed_fpath, genes_fpath)
 
 
 if __name__ == '__main__':
