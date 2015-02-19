@@ -19,48 +19,56 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
 
-header_metric_storage = MetricStorage(
-    general_section=ReportSection('general_section', '', [
-        Metric('Target', short_name='Target', common=True),
-        Metric('Regions in target', short_name='Regions in target', common=True),
-        Metric('Bases in target', short_name='Target bp', unit='bp', common=True),
-        Metric('Genes', short_name='Genes', common=True),
-        Metric('Genes in target', short_name='Genes in target', common=True),
-    ]),
-    sections=[
-        ReportSection('reads', 'Reads', [
-            Metric('Reads'),
-
-            Metric('Mapped reads', short_name='Mapped'),
-            Metric('Percentage of mapped reads', short_name='%', unit='%'),
-
-            Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
-            Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
-
-            Metric('Duplication rate (picard)', short_name='Dup rate', description='Percent duplication, reported by Picard', quality='Less is better', unit='%'),
+def get_header_metric_storage(depth_thresholds):
+    ms = MetricStorage(
+        general_section=ReportSection('general_section', '', [
+            Metric('Target', short_name='Target', common=True),
+            Metric('Regions in target', short_name='Regions in target', common=True),
+            Metric('Bases in target', short_name='Target bp', unit='bp', common=True),
+            Metric('Genes', short_name='Genes', common=True),
+            Metric('Genes in target', short_name='Genes in target', common=True),
         ]),
+        sections=[
+            ReportSection('reads', 'Reads', [
+                Metric('Reads'),
 
-        ReportSection('target_metrics', 'Target', [
-            Metric('Covered bases in target', short_name='Covered in trg', unit='bp'),
-            Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
+                Metric('Mapped reads', short_name='Mapped'),
+                Metric('Percentage of mapped reads', short_name='%', unit='%'),
 
-            Metric('Reads mapped on target', short_name='Reads on trg'),
-            Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+                Metric('Unmapped reads', short_name='Unmapped', quality='Less is better'),
+                Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
 
-            Metric('Reads mapped on padded target', 'On padded trg'),
-            Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+                Metric('Duplication rate (picard)', short_name='Dup rate', description='Percent duplication, reported by Picard', quality='Less is better', unit='%'),
+            ]),
 
-            Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
-        ]),
+            ReportSection('target_metrics', 'Target', [
+                Metric('Covered bases in target', short_name='Covered in trg', unit='bp'),
+                Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
-        ReportSection('depth_metrics', 'Target coverage depth', [
-            Metric('Average target coverage depth', short_name='Avg'),
-            Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
-            Metric('Maximum target coverage depth', short_name='Max'),
-            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%', quality='Less is better')
-        ]),
-    ]
-)
+                Metric('Reads mapped on target', short_name='Reads on trg'),
+                Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+
+                Metric('Reads mapped on padded target', 'On padded trg'),
+                Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+
+                Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
+            ]),
+
+            ReportSection('depth_metrics', 'Target coverage depth', [
+                Metric('Average target coverage depth', short_name='Avg'),
+                Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
+                Metric('Maximum target coverage depth', short_name='Max'),
+                Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%', quality='Less is better')
+            ]),
+        ])
+
+    for depth in depth_thresholds:
+        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        ms.add_metric(
+            Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
+            'depth_metrics')
+
+    return ms
 
 
 def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
@@ -448,13 +456,7 @@ def generate_summary_report(
         cnf, sample, chr_len_fpath, ref_fapth,
         depth_thresholds, padding, combined_region, max_depth, target_info):
 
-    for depth in depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
-        header_metric_storage.add_metric(
-            Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
-            'depth_metrics')
-
-    report = SampleReport(sample, metric_storage=header_metric_storage)
+    report = SampleReport(sample, metric_storage=get_header_metric_storage(depth_thresholds))
 
     info('* General coverage statistics *')
     info('Getting number of reads...')
@@ -894,8 +896,8 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
 #     return all_rows
 
 
-def _make_flat_region_report(sample, regions, depth_threshs):
-    metric_storage = MetricStorage(sections=[ReportSection(metrics=[
+def get_detailed_metric_storage(depth_threshs):
+    return MetricStorage(sections=[ReportSection(metrics=[
         Metric('Sample'),
         Metric('Chr'),
         Metric('Start'),
@@ -915,6 +917,8 @@ def _make_flat_region_report(sample, regions, depth_threshs):
         for thresh in depth_threshs
     ])])
 
+
+def _make_flat_region_report(sample, regions, depth_threshs):
     # header_fields = ['#Sample', 'Chr', 'Start', 'End', 'Size', 'Gene', 'Strand', 'Feature',
     #                  'Biotype', 'Min Depth', 'Avg Depth', 'Std Dev.', 'Within 20% of Mean']
     # for thres in depth_threshs:
@@ -922,7 +926,8 @@ def _make_flat_region_report(sample, regions, depth_threshs):
     #
     # all_rows = [header_fields]
 
-    report = PerRegionSampleReport(sample=sample, metric_storage=metric_storage)
+    report = PerRegionSampleReport(sample=sample,
+        metric_storage=get_detailed_metric_storage(depth_threshs))
 
     i = 0
     for region in regions:

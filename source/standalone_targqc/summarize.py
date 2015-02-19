@@ -75,15 +75,10 @@ def _make_targetcov_symlinks(samples):
 
 
 def _make_tarqc_html_report(cnf, output_dir, samples):
-    targetcov_metric_storage = cov.header_metric_storage
-    for depth in cnf.coverage_reports.depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
-        targetcov_metric_storage.add_metric(
-            Metric(name, short_name=str(depth) + 'x', description=name, unit='%'),
-            'depth_metrics')
+    header_storage = cov.get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
     targqc_metric_storage = _get_targqc_metric_storage([
-        ('targetcov', targetcov_metric_storage),
+        ('targetcov', header_storage),
         ('ngscat', ngscat_report_parser.metric_storage),
         ('qualimap', qualimap_report_parser.metric_storage)])
 
@@ -104,7 +99,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
         targqc_full_report.sample_reports.append(
             SampleReport(
                 sample,
-                records=_get_targqc_records(records_by_report_type),
+                records=_get_targqc_records(records_by_report_type, header_storage),
                 html_fpath=dict(
                     targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
                     ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
@@ -136,7 +131,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
 
     _make_targetcov_symlinks(samples)
 
-    best_for_regions_fpath = _save_best_detailed_for_each_gene(samples, output_dir)
+    # best_for_regions_fpath = _save_best_detailed_for_each_gene(
+    #     cnf.coverage_reports.depth_thresholds, samples, output_dir)
 
     # all_htmls_by_sample = OrderedDict()
     # for sample in samples:
@@ -158,9 +154,9 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath):
     for fpath in [txt_fpath, html_fpath]:
         if fpath: info('  ' + fpath)
 
-    info()
-    info('Best stats for regions saved in:')
-    info('  ' + best_for_regions_fpath)
+    # info()
+    # info('Best stats for regions saved in:')
+    # info('  ' + best_for_regions_fpath)
 
     # info()
     # info('Normalized cov for oncomine saved in:')
@@ -217,9 +213,9 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
 
     info()
     info('Intersection depth regions with VCF ' + vcf_fpath)
-    vcf_depth_numbers_fpath = join(cnf.work_dir, sample_name + '_depth_numbers.txt')
+    vcf_depth_numbers_fpath = join(cnf.work_dir, sample_name + '_vcf_bg.intersect')
     cmdline = '{bedtools} intersect -a {vcf_fpath} -b {cov_bg} -wao'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath, exit_on_error=False)
+    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath)
     # if res != oncomine_depth_numbers_fpath:
     #     info()
     #     info('Trying with uncompressed VCF')
@@ -243,11 +239,35 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
                     depths_per_var[var].append(depth)
 
     # getting avarage depth of coverage of each variant (exactly for those parts that were in BED)
+    var_by_locus = dict()
     for var in variants:
         depths = depths_per_var[var]
         var.depth = (sum(depths) / len(depths)) if len(depths) != 0 else None
+        var_by_locus[(var.chrom, var.pos, var.ref, var.alt)] = var
 
-    return sample_name, variants
+    info()
+    info('Intersection BED with VCF to annotate variants with gene names')
+    vcf_bed_intersect = join(cnf.work_dir, sample_name + '_vcf_bed.intersect')
+    cmdline = '{bedtools} intersect -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
+    res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
+
+    bed_columns_num = len(next(open(bed_fpath)).split('\t'))
+
+    vars_by_region = defaultdict(list)
+    with open(vcf_bed_intersect) as f:
+        for l in f:
+            fs = l[:-1].split('\t')
+            chrom, pos, _, ref, alt, _, _, info_fields = fs[:8]
+            chrom_b, start_b, end_b, symbol, strand, feature, biotype = None, None, None, None, None, None, None
+            if bed_columns_num == 8:
+                chrom_b, start_b, end_b, symbol, _, strand, feature, biotype, _ = fs[-9:]
+            if bed_columns_num == 4:
+                chrom_b, start_b, end_b, symbol, _ = fs[-5:]
+            assert chrom == chrom_b, l
+            var = var_by_locus[(chrom, pos, ref, alt)]
+            vars_by_region[(chrom, start_b, end_b, symbol, strand, feature, biotype)].append(var)
+
+    return sample_name, vars_by_region
 
 
 def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_key, bed_fpath):
@@ -265,7 +285,7 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
     samtools = get_system_path(cnf, 'samtools')
     bedtools = get_system_path(cnf, 'bedtools')
 
-    variants_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
+    vars_by_region_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
         cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, vcf_fpath) for s in samples))
 
     metric_storage = MetricStorage(
@@ -275,11 +295,19 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
         ]),
         sections=[ReportSection(metrics=[
             Metric('Chr'),
+            Metric('Start'),
+            Metric('End'),
+            Metric('Symbol'),
+            Metric('Strand'),
+            Metric('Feature'),
+            Metric('Biotype'),
+
             Metric('Pos'),
             Metric('Ref'),
             Metric('Alt'),
             Metric('Depth'),
-            Metric('Normalized depth')
+            Metric('Norm depth'),
+            Metric('Gene'),
         ])])
 
     for sample in samples:
@@ -291,52 +319,63 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
         report.add_record('Sample name', sample.name)
         report.add_record('Average sample depth', ave_sample_depth)
 
-        i = 0
-        for var in variants_per_sample[sample.name]:
-            i += 1
-            if i % 10000 == 0:
-                info('Processed {0:,} regions.'.format(i))
-            rep_region = report.add_region()
-            rep_region.add_record('Chr', var.chrom)
-            rep_region.add_record('Pos', var.pos)
-            rep_region.add_record('Ref', var.ref)
-            rep_region.add_record('Alt', var.alt)
-            rep_region.add_record('Depth', var.depth)
-            rep_region.add_record('Normalized depth', var.depth / ave_sample_depth if var.depth and ave_sample_depth > 0 else None)
+        total_variants = 0
+        total_regions = 0
+        for (chrom, start, end, symbol, strand, feature, biotype), variants in vars_by_region_per_sample[sample.name].iteritems():
+            total_regions += 1
+            for var in variants:
+                total_variants += 1
+                if total_variants % 10000 == 0:
+                    info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
+
+                rep_region = report.add_region()
+                rep_region.add_record('Chr', chrom)
+                rep_region.add_record('Start', start)
+                rep_region.add_record('End', end)
+                rep_region.add_record('Symbol', symbol)
+                rep_region.add_record('Strand', strand)
+                rep_region.add_record('Feature', feature)
+                rep_region.add_record('Biotype', biotype)
+                rep_region.add_record('Pos', var.pos)
+                rep_region.add_record('Ref', var.ref)
+                rep_region.add_record('Alt', var.alt)
+                rep_region.add_record('Depth', var.depth)
+                rep_region.add_record('Norm depth', var.depth / ave_sample_depth if var.depth and ave_sample_depth > 0 else None)
 
         report_basename = sample.name + '_' + vcf_key
         txt_rep_fpath = report.save_txt(output_dir, report_basename)
         tsv_rep_fpath = report.save_tsv(output_dir, report_basename)
         info('')
-        info('Oncomine variants coverage report (total' + str(len(variants_per_sample)) + ') saved into:')
+        info('Oncomine variants coverage report (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants, total_regions))
         info('  ' + txt_rep_fpath)
 
 
-_qualimap_to_targetcov_dict = {
-    'Number of reads': cov.header_metric_storage.get_metric('Reads'),
-    'Mapped reads': cov.header_metric_storage.get_metric('Mapped reads'),
-    'Unmapped reads': cov.header_metric_storage.get_metric('Unmapped reads'),
-    'Mapped reads (on target)': cov.header_metric_storage.get_metric('Reads mapped on target'),
-    'Coverage Mean': cov.header_metric_storage.get_metric('Average target coverage depth'),
-    'Coverage Standard Deviation': cov.header_metric_storage.get_metric('Std. dev. of target coverage depth')}
+def _get_targqc_metric(metric, header_metric_storage, report_type='targetcov'):  # report type is in ['targetcov', 'qualimap', 'ngscat']
+    qualimap_to_targetcov_dict = {
+        'Number of reads': header_metric_storage.get_metric('Reads'),
+        'Mapped reads': header_metric_storage.get_metric('Mapped reads'),
+        'Unmapped reads': header_metric_storage.get_metric('Unmapped reads'),
+        'Mapped reads (on target)': header_metric_storage.get_metric('Reads mapped on target'),
+        'Coverage Mean': header_metric_storage.get_metric('Average target coverage depth'),
+        'Coverage Standard Deviation': header_metric_storage.get_metric('Std. dev. of target coverage depth')
+    }
 
-_ngscat_to_targetcov_dict = {
-    'Number reads': cov.header_metric_storage.get_metric('Mapped reads'),
-    # '% target bases with coverage >= 1x': cov.header_metric_storage.get_metric('Percentage of target covered by at least 1 read'),
-    '% reads on target': cov.header_metric_storage.get_metric('Reads mapped on target'),
-    'mean coverage': cov.header_metric_storage.get_metric('Average target coverage depth')}
+    ngscat_to_targetcov_dict = {
+        'Number reads': header_metric_storage.get_metric('Mapped reads'),
+        # '% target bases with coverage >= 1x': cov.header_metric_storage.get_metric('Percentage of target covered by at least 1 read'),
+        '% reads on target': header_metric_storage.get_metric('Reads mapped on target'),
+        'mean coverage': header_metric_storage.get_metric('Average target coverage depth')
+    }
 
-
-def _get_targqc_metric(metric, report_type='targetcov'):  # report type is in ['targetcov', 'qualimap', 'ngscat']
     if report_type == 'targetcov':
         return metric
     elif report_type == 'qualimap':
-        if metric.name in _qualimap_to_targetcov_dict:
-            return _qualimap_to_targetcov_dict[metric.name]
+        if metric.name in qualimap_to_targetcov_dict:
+            return qualimap_to_targetcov_dict[metric.name]
         return metric
     elif report_type == 'ngscat':
-        if metric.name in _ngscat_to_targetcov_dict:
-            return _ngscat_to_targetcov_dict[metric.name]
+        if metric.name in ngscat_to_targetcov_dict:
+            return ngscat_to_targetcov_dict[metric.name]
         return metric
     # critical('Incorrect usage of get_targqc_metric(), report_type is %s but should be one of the following: %s' %
     #          (report_type, ", ".join(['targetcov', 'qualimap', 'ngscat'])))
@@ -369,12 +408,12 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
 
             metrics_by_sections[section_id] += [metric
                 for metric in metric_storage.get_metrics(sections=[section], skip_general_section=True)
-                if metric == _get_targqc_metric(metric, report_type)]
+                if metric == _get_targqc_metric(metric, dict(metric_storages_by_report_type)['targetcov'], report_type)]
 
         # specific behaviour for general section
         general_section_metric_list += [metric
             for metric in metric_storage.general_section.metrics
-            if metric == _get_targqc_metric(metric, report_type)]
+            if metric == _get_targqc_metric(metric, dict(metric_storages_by_report_type)['targetcov'], report_type)]
         if not general_section_id:
             general_section_id = SectionId(metric_storage.general_section.name, metric_storage.general_section.title)
 
@@ -388,12 +427,12 @@ def _get_targqc_metric_storage(metric_storages_by_report_type):
         sections=sections)
 
 
-def _get_targqc_records(records_by_report_type):
+def _get_targqc_records(records_by_report_type, header_storage):
     targqc_records = []
     filled_metric_names = []
     for report_type, records in records_by_report_type:
         for record in records:
-            new_metric = _get_targqc_metric(record.metric, report_type)
+            new_metric = _get_targqc_metric(record.metric, header_storage, report_type)
             if not new_metric or new_metric.name not in filled_metric_names:
                 filled_metric_names.append(new_metric.name)
                 record.metric = new_metric
@@ -447,74 +486,99 @@ def _correct_qualimap_insert_size_histogram(samples):
             os.remove(s.qualimap_ins_size_hist_fpath)
 
 
-def _save_best_detailed_for_each_gene(samples, output_dir):
-    best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
-    with open(best_metrics_fpath, 'w') as best_f:
-        with open(samples[0].targetcov_detailed_tsv) as f:
-            header_fields = f.readline().split('\t')
-            # 0        1      2      3    4     5     6       7        8        9          10         11        12                  13...
-            # #Sample, Chrom, Start, End, Size, Gene, Strand, Feature, Biotype, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
+def get_int_val(v):
+    return int(get_val(v)) if get_val(v) else None
 
-        threshold_num = len(header_fields[13:])
+def get_float_val(v):
+    return float(get_val(v)) if get_val(v) else None
 
-        best_f.write('Chr\tStart\tEnd\tSize\tSymbol\tStrand\tFeature\tBiotype\t'
-                     'Min depth\tAvg depth\tStd dev.\tW/n 20% of ave\t' + '\t'.join(header_fields[13:]))
+# def get_percent_val(v):
+#     return float(get_val(v[:-1])) if get_val(v[:-1]) else None
 
-        open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
-        while True:
-            lines_for_each_sample = [next(f, None) for f in open_tsv_files]
-            if not all(lines_for_each_sample):
-                break
+def get_val(v):
+    return v.strip() if v.strip() not in ['.', '-', ''] else None
 
-            if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-                shared_fields = lines_for_each_sample[0].split('\t')[1:9]
-                best_f.write('\t'.join(shared_fields) + '\t')  # chrom, start, end, symbol, strand, feature, biotype, size
 
-                min_depths, ave_depths, stddevs, withins = ([], [], [], [])
-                percents_by_col_num = {t: [] for t in range(threshold_num)}
+def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
+    # best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.tsv')
+    # best_metrics_fpath = join(output_dir, 'Best.targetSeq.details.gene.txt')
 
-                for l in lines_for_each_sample:
-                    fs = l.split('\t')
+    metric_storage = cov.get_detailed_metric_storage(depth_threshs)
+    metric_storage.remove_metric('Sample')
 
-                    val = ''.join(c for c in fs[9] if c.isdigit())  # skipping decimal dots and spaces
+    report = PerRegionSampleReport(sample=None, metric_storage=metric_storage)
+
+    # with open(best_metrics_fpath, 'w') as best_f:
+    # with open(samples[0].targetcov_detailed_tsv) as f:
+    #     header_fields = f.readline().split('\t')
+        # 0        1      2      3    4     5     6       7        8        9          10         11        12                  13...
+        # #Sample, Chrom, Start, End, Size, Gene, Strand, Feature, Biotype, Min Depth, Avg Depth, Std Dev., Within 20% of Mean, 1x...
+
+    # threshold_num = len(header_fields[13:])
+
+    open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
+    while True:
+        lines_for_each_sample = [next(f, None) for f in open_tsv_files]
+        if not all(lines_for_each_sample):
+            break
+
+        if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
+            shared_fields = lines_for_each_sample[0].split('\t')[1:9]
+            reg = report.add_region()
+            reg.add_record('Chr', shared_fields[0])
+            reg.add_record('Start', get_int_val(shared_fields[1]))
+            reg.add_record('End', get_int_val(shared_fields[2]))
+            reg.add_record('Size', get_int_val(shared_fields[3]))
+            reg.add_record('Gene', shared_fields[4])
+            reg.add_record('Strand', shared_fields[5])
+            reg.add_record('Feature', shared_fields[6])
+            reg.add_record('Biotype', shared_fields[7])
+
+            min_depths, ave_depths, stddevs, withins = ([], [], [], [])
+            percents_by_threshs = {t: [] for t in depth_threshs}
+
+            for l in lines_for_each_sample:
+                fs = l.split('\t')
+
+                val = ''.join(c for c in fs[9] if c.isdigit())  # skipping decimal dots and spaces
+                if val not in ['', '.', '-']:
+                    min_depths.append(int(val))
+
+                val = fs[10]
+                if val not in ['', '.', '-']:
+                    ave_depths.append(float(val))
+
+                val = fs[11]
+                if val not in ['', '.', '-']:
+                    stddevs.append(float(val))
+
+                val = fs[12][:-1]  # skipping "%" sign
+                if val not in ['', '.', '-']:
+                    withins.append(float(val))
+
+                for t, f in zip(depth_threshs, fs[13:]):
+                    val = f.strip()[:-1]  # skipping "%" sign
                     if val not in ['', '.', '-']:
-                        min_depths.append(int(val))
+                        percents_by_threshs[t].append(float(val))
 
-                    val = fs[10]
-                    if val not in ['', '.', '-']:
-                        ave_depths.append(float(val))
+            # counting bests
+            min_depth = max(min_depths) if min_depths else '.'
+            ave_depth = max(ave_depths) if ave_depths else '.'
+            stddev = min(stddevs) if stddevs else '.'
+            within = max(withins) if withins else '.'
+            percent_by_col_num = dict()
+            for col_num, values in percents_by_threshs.iteritems():
+                percent_by_col_num[col_num] = max(values) if values else '.'
 
-                    val = fs[11]
-                    if val not in ['', '.', '-']:
-                        stddevs.append(float(val))
+            best_f.write('{:,}\t'.format(min_depth) if min_depth != '.' else '.\t')
+            best_f.write('{:.2f}\t'.format(ave_depth) if ave_depth != '.' else '.\t')
+            best_f.write('{:.2f}\t'.format(stddev) if stddev != '.' else '.\t')
+            best_f.write('{:.2f}%\t'.format(within) if within != '.' else '.\t')
+            for col_num, val in percent_by_col_num.iteritems():
+                best_f.write('{:.2f}%\t'.format(val) if val != '.' else '.\t')
+            best_f.write('\n')
 
-                    val = fs[12][:-1]  # skipping "%" sign
-                    if val not in ['', '.', '-']:
-                        withins.append(float(val))
-
-                    for col_num, f in enumerate(fs[13:]):
-                        val = f.strip()[:-1]  # skipping "%" sign
-                        if val not in ['', '.', '-']:
-                            percents_by_col_num[col_num].append(float(val))
-
-                # counting bests
-                min_depth = max(min_depths) if min_depths else '.'
-                ave_depth = max(ave_depths) if ave_depths else '.'
-                stddev = min(stddevs) if stddevs else '.'
-                within = max(withins) if withins else '.'
-                percent_by_col_num = dict()
-                for col_num, values in percents_by_col_num.iteritems():
-                    percent_by_col_num[col_num] = max(values) if values else '.'
-
-                best_f.write('{:,}\t'.format(min_depth) if min_depth != '.' else '.\t')
-                best_f.write('{:.2f}\t'.format(ave_depth) if ave_depth != '.' else '.\t')
-                best_f.write('{:.2f}\t'.format(stddev) if stddev != '.' else '.\t')
-                best_f.write('{:.2f}%\t'.format(within) if within != '.' else '.\t')
-                for col_num, val in percent_by_col_num.iteritems():
-                    best_f.write('{:.2f}%\t'.format(val) if val != '.' else '.\t')
-                best_f.write('\n')
-
-        for f in open_tsv_files:
-            f.close()
+    for f in open_tsv_files:
+        f.close()
 
     return best_metrics_fpath

@@ -25,11 +25,11 @@ class Record:
         self.meta = meta or dict()
         self.html_fpath = html_fpath
 
-    def format(self):
-        return self.metric.format(self.value)
+    def format(self, human_readable=True):
+        return self.metric.format(self.value, human_readable=human_readable)
 
     def __repr__(self):
-        return self.metric.name + ' ' + self.metric.format(self.value)
+        return self.metric.name + ' ' + self.metric.format(self.value, human_readable=True)
 
     @staticmethod
     def load(data):
@@ -52,11 +52,11 @@ class Metric:
         self.common = common
         self.unit = unit
 
-    def format(self, value, human_readable=False):
-        return Metric.format_value(value, unit=self.unit)
+    def format(self, value, human_readable=True):
+        return Metric.format_value(value, unit=self.unit, human_readable=human_readable)
 
     @staticmethod
-    def format_value(value, unit=''):
+    def format_value(value, unit='', human_readable=True):
         if value is None:
             return '-'
 
@@ -68,21 +68,32 @@ class Metric:
                     value = float(value)
                 except ValueError:
                     # assert False, 'Strange value ' + str(value)
-                    return '{value}{unit}'.format(**locals())
+                    if human_readable:
+                        return '{value}{unit}'.format(**locals())
+                    else:
+                        return value
 
         if isinstance(value, int):
             if value == 0:
                 return '0'
-            return '{value:,}{unit}'.format(**locals())
+            if human_readable:
+                return '{value:,}{unit}'.format(**locals())
+            else:
+                return str(value)
 
         if isinstance(value, float):
             if value == 0:
                 return '0'
-            presision = 2
-            for i in range(10, 2, -1):
-                if value < 1./(10**i):
-                    presision = i + 1
-            return '{value:.{presision}f}{unit}'.format(**locals())
+            if human_readable:
+                presision = 2
+                for i in range(10, 2, -1):
+                    if value < 1./(10**i):
+                        presision = i + 1
+                return '{value:.{presision}f}{unit}'.format(**locals())
+            else:
+                if unit == '%':
+                    value /= 100
+                return str(value)
 
         if isinstance(value, list):
             return ','.join(list)
@@ -99,11 +110,11 @@ class Metric:
 
 # noinspection PyClassHasNoInit
 class Report:
-    def flatten(self, sections=None):
+    def flatten(self, sections=None, human_readable=True):
         raise NotImplementedError()
 
     def save_txt(self, output_dirpath, base_fname, sections=None):
-        return write_txt_rows(self.flatten(sections), output_dirpath, base_fname)
+        return write_txt_rows(self.flatten(sections, human_readable=True), output_dirpath, base_fname)
 
     def save_json(self, output_dirpath, base_fname, sections=None):
         fpath = join(output_dirpath, base_fname + '.json')
@@ -111,7 +122,7 @@ class Report:
         return fpath
 
     def save_tsv(self, output_dirpath, base_fname, sections=None):
-        return write_tsv_rows(self.flatten(sections), output_dirpath, base_fname)
+        return write_tsv_rows(self.flatten(sections, human_readable=False), output_dirpath, base_fname)
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
         class Encoder(JSONEncoder):
@@ -165,22 +176,25 @@ class SampleReport(Report):
         assert metric, metric_name
         rec = Record(metric, value, meta)
         self.records.append(rec)
-        info(metric_name + ': ' + rec.format())
+        info(metric_name + ': ' + rec.format(human_readable=True))
         return rec
 
-    def flatten(self, sections=None):
+    def flatten(self, sections=None, human_readable=True):
         rows = []
 
         for m in self.metric_storage.general_section.metrics:
             r = Report._find_record(self.records, m)
             if r:
-                rows.append(['## ' + m.name + '=' + r.format()])
+                if human_readable:
+                    rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
+                else:
+                    rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
 
         rows.append(['Sample', self.display_name])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             rec = Report._find_record(self.records, metric)
-            row.append(rec.format() if rec else '-')
+            row.append(rec.format(human_readable=human_readable) if rec else '-')
             rows.append(row)
         return rows
 
@@ -222,12 +236,12 @@ class PerRegionSampleReport(SampleReport):
         self.__regions.append(region)
         return region
 
-    def flatten(self, sections=None):
+    def flatten(self, sections=None, human_readable=True):
         rows = []
 
         for r, m in zip(self.records, self.metric_storage.general_section.metrics):
             assert r.metric == m
-            rows.append(['## ' + m.name + '=' + r.format()])
+            rows.append(['## ' + m.name + '=' + r.format(human_readable=human_readable)])
 
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
@@ -239,7 +253,7 @@ class PerRegionSampleReport(SampleReport):
             row = []
             for r, m in zip(reg.records, ms):
                 assert r.metric == m
-                row.append(r.format())
+                row.append(r.format(human_readable=human_readable))
             rows.append(row)
 
         # next_list_value = next((r.value for r in self.records if isinstance(r.value, list)), None)
@@ -325,7 +339,7 @@ class FullReport(Report):
                     common_records.append(record)
         return common_records
 
-    def flatten(self, sections=None):
+    def flatten(self, sections=None, human_readable=True):
         if len(self.sample_reports) == 0:
             err('No sample reports found: summary will not be produced.')
             return []
@@ -336,7 +350,7 @@ class FullReport(Report):
         for m in self.metric_storage.general_section.metrics:
             rec = Report._find_record(some_rep.records, m)
             if rec:
-                rows.append(['## ' + m.name + '=' + rec.format()])
+                rows.append(['## ' + m.name + '=' + rec.format(human_readable=human_readable)])
 
         rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 
@@ -344,7 +358,7 @@ class FullReport(Report):
             row = [metric.name]
             for sr in self.sample_reports:
                 rec = Report._find_record(sr.records, metric)
-                row.append(rec.format() if rec else '-')
+                row.append(rec.format(human_readable=human_readable) if rec else '-')
             rows.append(row)
         return rows
 
@@ -396,6 +410,10 @@ class ReportSection:
     def add_metric(self, metric):
         self.metrics.append(metric)
         self.metrics_by_name[metric.name] = metric
+
+    def remove_metric(self, metric_name):
+        metric = self.metrics_by_name[metric_name]
+        self.metrics.remove(metric)
 
     def __repr__(self):
         return self.name + ', ' + self.title
