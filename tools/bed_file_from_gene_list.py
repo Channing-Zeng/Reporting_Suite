@@ -8,7 +8,7 @@ if len(sys.argv) < 2:
 
 genes = set(open(sys.argv[1]).read().split())
 
-exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed'
+exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.bed'
 if len(sys.argv) > 2:
     exons_fpath = sys.argv[2]
 
