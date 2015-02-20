@@ -9,7 +9,7 @@ from optparse import OptionParser
 
 from source import logger
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources, set_up_log, set_up_work_dir
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources
 from source.logger import info, err, warn, critical
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
@@ -45,9 +45,9 @@ def main():
     if not cnf.project_name:
         cnf.project_name = basename(cnf.output_dir)
     info('Project name: ' + cnf.project_name)
-    cnf.name = 'TargQC_' + cnf.project_name
 
     set_up_dirs(cnf)
+    cnf.name = 'TargQC_' + cnf.project_name
 
     check_genome_resources(cnf)
 

@@ -558,7 +558,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             break
 
         if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-            shared_fields = lines_for_each_sample[0].split('\t')[1:9]
+            shared_fields = lines_for_each_sample[0].split('\t')[0:8]
             reg = report.add_region()
             reg.add_record('Chr', shared_fields[0])
             reg.add_record('Start', get_int_val(shared_fields[1]))
@@ -575,11 +575,11 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             for l in lines_for_each_sample:
                 fs = l.split('\t')
 
-                min_depths.append(get_int_val(fs[9]))
-                ave_depths.append(get_float_val(fs[10]))
-                stddevs.append(get_float_val(fs[11]))
-                withins.append(get_float_val(fs[12]))
-                for t, f in zip(depth_threshs, fs[13:]):
+                min_depths.append(get_int_val(fs[8]))
+                ave_depths.append(get_float_val(fs[9]))
+                stddevs.append(get_float_val(fs[10]))
+                withins.append(get_float_val(fs[11]))
+                for t, f in zip(depth_threshs, fs[12:]):
                     percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests
