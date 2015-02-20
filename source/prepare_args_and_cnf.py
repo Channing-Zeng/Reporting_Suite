@@ -184,7 +184,7 @@ def set_up_log(cnf):
     logger.address = remove_quotes(cnf.email) if cnf.email else ''
     logger.smtp_host = cnf.smtp_host
 
-    log_fname = (cnf.proc_name + '_' if cnf.proc_name else '') + cnf.name + '_log.txt'
+    log_fname = (cnf.proc_name + '_' if cnf.proc_name else '') + (cnf.name + '_' if cnf.name else '') + '_log.txt'
     log_fpath = join(cnf.log_dir, log_fname)
 
     if not cnf.proc_name:

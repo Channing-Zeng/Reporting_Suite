@@ -46,6 +46,7 @@ def main():
         cnf.project_name = basename(cnf.output_dir)
     info('Project name: ' + cnf.project_name)
 
+    cnf.proc_name = 'TargQC_' + cnf.project_name
     set_up_dirs(cnf)
     cnf.name = 'TargQC_' + cnf.project_name
 
