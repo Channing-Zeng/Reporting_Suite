@@ -15,19 +15,19 @@ def to_dict_by_name(objects):
 
 
 class Record:
-    def __init__(self,
-                 metric=None,
-                 value=None,
-                 __value=None,
-                 meta=None,
-                 html_fpath=None):
+    def __init__(
+            self,
+            metric=None,
+            value=None,
+            meta=None,
+            html_fpath=None):
         self.metric = metric
         self.set_value(value)
         self.meta = meta or dict()
         self.html_fpath = html_fpath
 
     def get_value(self):
-        return self.__value
+        return self.value
 
     def set_value(self, value):
         if value is None:
@@ -40,10 +40,10 @@ class Record:
                     value = float(value)
                 except ValueError:
                     pass
-        self.__value = value
+        self.value = value
 
     def del_value(self):
-        del self.__value
+        del self.value
 
     value = property(get_value, set_value, del_value, 'value')
 
@@ -56,9 +56,6 @@ class Record:
     @staticmethod
     def load(data):
         data['metric'] = Metric.load(data['metric'])
-        if '_Record__value' in data:
-            data['value'] = data['_Record__value']
-            del data['_Record__value']
         return Record(**data)
 
 
