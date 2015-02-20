@@ -69,13 +69,20 @@ def get_chr_len_fpath(cnf):
     if not genome_seq_fpath:
         return None
 
-    info('Reading genome to get chromosome lengths')
     chr_lengths = dict()
-    with open(genome_seq_fpath, 'r') as handle:
-        from Bio import SeqIO
-        reference_records = SeqIO.parse(handle, 'fasta')
-        for record in reference_records:
-            chr_lengths[record.id] = len(record.seq)
+    if verify_file(genome_seq_fpath + '.fai'):
+        info('Reading genome index file (.fai) to get chromosome lengths')
+        with open(genome_seq_fpath + '.fai', 'r') as handle:
+            for line in handle:
+                chr, length = line.split()[0], line.split()[1]
+                chr_lengths[chr] = length
+    else:
+        info('Reading genome sequence (.fa) to get chromosome lengths')
+        with open(genome_seq_fpath, 'r') as handle:
+            from Bio import SeqIO
+            reference_records = SeqIO.parse(handle, 'fasta')
+            for record in reference_records:
+                chr_lengths[record.id] = len(record.seq)
     with open(chr_len_fpath, 'w') as handle:
         for chr_name in sorted(chr_lengths, key=chr_lengths.get, reverse=True):
             handle.write(chr_name + '\t' + str(chr_lengths[chr_name]) + '\n')

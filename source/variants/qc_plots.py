@@ -61,7 +61,7 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
         if rec.CHROM not in variants_distribution:
             variants_distribution['OTHER'] += 1
         else:
-            region_id = min((rec.POS - 1) / plot_scale, len(variants_distribution[chr_name]) - 1)
+            region_id = min((rec.POS - 1) / plot_scale, len(variants_distribution[rec.CHROM]) - 1)
             variants_distribution[rec.CHROM][region_id] += 1
         # for substitution and indel plots
         for alt in rec.ALT:
