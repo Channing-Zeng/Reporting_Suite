@@ -18,6 +18,7 @@ class Record:
     def __init__(self,
                  metric=None,
                  value=None,
+                 __value=None,
                  meta=None,
                  html_fpath=None):
         self.metric = metric
@@ -55,6 +56,9 @@ class Record:
     @staticmethod
     def load(data):
         data['metric'] = Metric.load(data['metric'])
+        if '_Record__value' in data:
+            data['value'] = data['_Record__value']
+            del data['_Record__value']
         return Record(**data)
 
 
