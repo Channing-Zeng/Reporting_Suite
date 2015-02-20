@@ -21,6 +21,7 @@ from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
+from source.utils import get_numeric_value
 from sub_scripts.targetcov import Sample
 
 
@@ -121,7 +122,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     return txt_fpath, html_fpath
 
 
-def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpath):
+def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpath=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     for sample in samples:
@@ -162,9 +163,10 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
     info('Best stats for regions saved in:')
     info('  ' + best_for_regions_fpath)
 
-    info()
-    info('Best normalized depths for oncomine saved in:')
-    info('  ' + norm_best_var_fpath)
+    if norm_best_var_fpath:
+        info()
+        info('Best normalized depths for oncomine saved in:')
+        info('  ' + norm_best_var_fpath)
 
 
 def get_ave_coverage(cnf, report_fpath):
@@ -542,10 +544,10 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
     def get_int_val(v):
-        return int(get_val(v)) if get_val(v) else None
+        return int(get_numeric_value(get_val(v))) if get_val(v) else None
 
     def get_float_val(v):
-        return float(get_val(v)) if get_val(v) else None
+        return float(get_numeric_value(get_val(v))) if get_val(v) else None
 
     def get_val(v):
         return v.strip() if v.strip() not in ['.', '-', ''] else None
@@ -558,7 +560,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             break
 
         if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-            shared_fields = lines_for_each_sample[0].split('\t')[0:8]
+            shared_fields = lines_for_each_sample[0].split('\t')[1:9]
             reg = report.add_region()
             reg.add_record('Chr', shared_fields[0])
             reg.add_record('Start', get_int_val(shared_fields[1]))

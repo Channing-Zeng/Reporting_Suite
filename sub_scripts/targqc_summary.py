@@ -14,7 +14,8 @@ def main():
 
     cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.targqc_name, BCBioStructure.targqc_summary_dir)
 
-    summarize_targqc(cnf, cnf.output_dir, bcbio_structure.samples, bcbio_structure.bed)
+    summarize_targqc(cnf, cnf.output_dir, bcbio_structure.samples, bcbio_structure.bed,
+                     cnf.exons if cnf.exons else cnf.genome.exons)
 
 
 if __name__ == '__main__':

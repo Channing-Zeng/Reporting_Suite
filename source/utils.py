@@ -131,3 +131,15 @@ def median(values):
         return values[(len(values) - 1) / 2]
     else:  # even number of values - take the avg of central
         return (values[len(values) / 2] + values[len(values) / 2 - 1]) / 2
+
+
+def get_numeric_value(string_value):
+    '''
+    parses string_value and returns only number-like part
+    '''
+    num_chars = ['.', '+', '-']
+    number = ''
+    for c in string_value:
+        if c.isdigit() or c in num_chars:
+            number += c
+    return number
