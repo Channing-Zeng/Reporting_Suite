@@ -287,8 +287,8 @@ def _prep_comb_report(metric_storage, samples, shared_general_metrics, shared_me
 
     comb_metrics = shared_metrics[:]
     for s in samples:
-        comb_metrics.append(Metric(s.name + ' depth', short_name=s.name))
-        comb_metrics.append(Metric(s.name + ' norm depth', short_name='Norm depth'))
+        comb_metrics.append(Metric(s.name + ' depth', short_name='DP'))
+        comb_metrics.append(Metric(s.name + ' norm depth', short_name='Norm DP'))
 
     comb_report_metric_storage = MetricStorage(
         general_section=ReportSection('general_section', metrics=comb_general_metrics),
@@ -379,33 +379,29 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
         for (chrom, start, end, symbol, strand, feature, biotype), variants in vars_by_region_per_sample[sample.name].iteritems():
             total_regions += 1
 
-            rep_region = report.add_region()
-            rep_region.add_record('Chr', chrom)
-            rep_region.add_record('Start', start)
-            rep_region.add_record('End', end)
-            rep_region.add_record('Symbol', symbol)
-            rep_region.add_record('Strand', strand)
-            rep_region.add_record('Feature', feature)
-            rep_region.add_record('Biotype', biotype)
-            rep_region.add_record('Var pos', '')
-            rep_region.add_record('Ref', '')
-            rep_region.add_record('Alt', '')
-            rep_region.add_record('Depth', '')
-            rep_region.add_record('Norm depth', '')
-
-            for var in variants:
+            for i, var in enumerate(variants):
                 total_variants += 1
                 if total_variants % 10000 == 0:
                     info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
 
                 rep_region = report.add_region()
-                rep_region.add_record('Chr', '')
-                rep_region.add_record('Start', '')
-                rep_region.add_record('End', '')
-                rep_region.add_record('Symbol', symbol)
-                rep_region.add_record('Strand', '')
-                rep_region.add_record('Feature', '')
-                rep_region.add_record('Biotype', '')
+                if i == 0:
+                    rep_region.add_record('Chr', chrom)
+                    rep_region.add_record('Start', start)
+                    rep_region.add_record('End', end)
+                    rep_region.add_record('Symbol', symbol)
+                    rep_region.add_record('Strand', strand)
+                    rep_region.add_record('Feature', feature)
+                    rep_region.add_record('Biotype', biotype)
+                else:
+                    rep_region.add_record('Chr', '')
+                    rep_region.add_record('Start', '')
+                    rep_region.add_record('End', '')
+                    rep_region.add_record('Symbol', symbol)
+                    rep_region.add_record('Strand', '')
+                    rep_region.add_record('Feature', '')
+                    rep_region.add_record('Biotype', '')
+
                 rep_region.add_record('Var pos', var.pos)
                 rep_region.add_record('Ref', var.ref)
                 rep_region.add_record('Alt', var.alt)
