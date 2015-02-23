@@ -75,6 +75,9 @@ class Metric:
         self.common = common
         self.unit = unit
 
+    def display_name(self):
+        return self.short_name if self.short_name is not None else self.name
+
     def format(self, value, human_readable=True):
         return Metric.format_value(value, unit=self.unit, human_readable=human_readable)
 
@@ -202,13 +205,13 @@ class SampleReport(Report):
             r = Report.find_record(self.records, m.name)
             if r:
                 if human_readable:
-                    rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
+                    rows.append(['## ' + m.display_name() + ': ' + r.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
+                    rows.append(['##' + m.display_name() + '=' + r.format(human_readable=False)])
 
         rows.append(['Sample', self.display_name])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
-            row = [metric.name]
+            row = [metric.display_name()]
             rec = Report.find_record(self.records, metric.name)
             row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
@@ -262,14 +265,14 @@ class PerRegionSampleReport(SampleReport):
             rec = Report.find_record(self.records, m.name)
             if rec:
                 if human_readable:
-                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
+                    rows.append(['## ' + m.display_name() + ': ' + rec.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
+                    rows.append(['##' + m.display_name() + '=' + rec.format(human_readable=False)])
 
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
         for i, m in enumerate(ms):
-            header_row.append(('#' if i == 0 else '') + m.name)
+            header_row.append(('#' if i == 0 else '') + m.display_name())
         rows.append(header_row)
 
         for reg in self.__regions:
@@ -378,14 +381,14 @@ class FullReport(Report):
             rec = Report.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
-                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
+                    rows.append(['## ' + m.display_name() + ': ' + rec.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
+                    rows.append(['##' + m.display_name() + '=' + rec.format(human_readable=False)])
 
         rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
-            row = [metric.name]
+            row = [metric.display_name()]
             for sr in self.sample_reports:
                 rec = Report.find_record(sr.records, metric.name)
                 row.append(rec.format(human_readable=human_readable) if rec else '.')
