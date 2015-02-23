@@ -359,8 +359,10 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
     ############################ Best ############################
     info()
     info('*' * 70)
-    info('Saving best values.')
+    info('Saving for all samples: combined and best values.')
     report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
+    # comb_report = PerRegionSampleReport(sample='Combined', metric_storage=metric_storage)
+
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
     m = metric_storage.get_metric('Average sample depth')
@@ -544,32 +546,52 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
     def get_int_val(v):
-        return int(get_numeric_value(get_val(v))) if get_val(v) else None
+        v = _get_num(v)
+        return int(v) if v else None
 
     def get_float_val(v):
-        return float(get_numeric_value(get_val(v))) if get_val(v) else None
+        v = _get_num(v)
+        return float(v) if v else None
+
+    def _get_num(v):
+        v = get_val(v)
+        return ''.join(c for c in v if c.isdigit() or c == '.') if v else None
 
     def get_val(v):
         return v.strip() if v.strip() not in ['.', '-', ''] else None
 
     total_regions = 0
     open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
+
+    i = 0
+    while True:
+        lines_for_each_sample = [next(f, None) for f in open_tsv_files]
+        if not all(lines_for_each_sample):
+            break
+        l = lines_for_each_sample[0]
+        if l.startswith('##'):
+            continue
+        if l.startswith('#'):
+            if l.startswith('#Sample'):
+                i = 1
+                break
+
     while True:
         lines_for_each_sample = [next(f, None) for f in open_tsv_files]
         if not all(lines_for_each_sample):
             break
 
         if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-            shared_fields = lines_for_each_sample[0].split('\t')[1:9]
+            shared_fields = lines_for_each_sample[0].split('\t')[i:i+8]
             reg = report.add_region()
-            reg.add_record('Chr', shared_fields[0])
+            reg.add_record('Chr', get_val(shared_fields[0]))
             reg.add_record('Start', get_int_val(shared_fields[1]))
             reg.add_record('End', get_int_val(shared_fields[2]))
             reg.add_record('Size', get_int_val(shared_fields[3]))
-            reg.add_record('Gene', shared_fields[4])
-            reg.add_record('Strand', shared_fields[5])
-            reg.add_record('Feature', shared_fields[6])
-            reg.add_record('Biotype', shared_fields[7])
+            reg.add_record('Gene', get_val(shared_fields[4]))
+            reg.add_record('Strand', get_val(shared_fields[5]))
+            reg.add_record('Feature', get_val(shared_fields[6]))
+            reg.add_record('Biotype', get_val(shared_fields[7]))
 
             min_depths, ave_depths, stddevs, withins = ([], [], [], [])
             percents_by_threshs = {t: [] for t in depth_threshs}
@@ -577,11 +599,11 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             for l in lines_for_each_sample:
                 fs = l.split('\t')
 
-                min_depths.append(get_int_val(fs[8]))
-                ave_depths.append(get_float_val(fs[9]))
-                stddevs.append(get_float_val(fs[10]))
-                withins.append(get_float_val(fs[11]))
-                for t, f in zip(depth_threshs, fs[12:]):
+                min_depths.append(get_int_val(fs[i+8]))
+                ave_depths.append(get_float_val(fs[i+9]))
+                stddevs.append(get_float_val(fs[i+10]))
+                withins.append(get_float_val(fs[i+11]))
+                for t, f in zip(depth_threshs, fs[i+12:]):
                     percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests

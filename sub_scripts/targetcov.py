@@ -67,7 +67,9 @@ def main(args):
         genes_fpath = None
 
     info('Using alignement ' + cnf['bam'])
-    info('Using amplicons/capture panel ' + cnf['bed'])
+
+    bed_fpath = cnf.bed or cnf.genome.az_exome or exons_bed_fpath
+    info('Using amplicons/capture panel ' + bed_fpath)
 
     run_one(cnf, process_one, finalize_one, multiple_samples=False, output_dir=cnf.output_dir, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
 

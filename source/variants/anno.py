@@ -7,7 +7,6 @@ import sys
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
-from source.targetcov.bam_file import index_bam
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
 from source.variants.tsv import make_tsv

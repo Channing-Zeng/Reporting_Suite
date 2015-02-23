@@ -19,19 +19,13 @@ import source
 
 
 def _get_exons_and_genes(cnf, sample):
-    exons_bed_fpath, genes_fpath = None, None
-
-    if cnf.exons:
-        exons_bed_fpath = adjust_path(cnf.exons)
-    else:
-        exons_bed_fpath = adjust_path(cnf.genomes[sample.genome].exons)
+    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genomes[sample.genome].exons)
     info('Exons: ' + exons_bed_fpath)
 
+    genes_fpath = None
     if cnf.genes:
         genes_fpath = adjust_path(cnf.genes)
-        info('Custom genes list: ' + exons_bed_fpath)
-    else:
-        genes_fpath = None
+        info('Custom genes list: ' + genes_fpath)
 
     return exons_bed_fpath, genes_fpath
 
