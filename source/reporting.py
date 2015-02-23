@@ -33,13 +33,14 @@ class Record:
         if value is None:
             pass
         else:
-            try:
-                value = int(value)
-            except ValueError:
+            if isinstance(value, basestring):
                 try:
-                    value = float(value)
+                    value = int(value)
                 except ValueError:
-                    pass
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
         self.value = value
 
     def del_value(self):
@@ -205,13 +206,13 @@ class SampleReport(Report):
             r = Report.find_record(self.records, m.name)
             if r:
                 if human_readable:
-                    rows.append(['## ' + m.display_name() + ': ' + r.format(human_readable=True)])
+                    rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.display_name() + '=' + r.format(human_readable=False)])
+                    rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
 
         rows.append(['Sample', self.display_name])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
-            row = [metric.display_name()]
+            row = [metric.name]
             rec = Report.find_record(self.records, metric.name)
             row.append(rec.format(human_readable=human_readable) if rec else '.')
             rows.append(row)
@@ -265,9 +266,9 @@ class PerRegionSampleReport(SampleReport):
             rec = Report.find_record(self.records, m.name)
             if rec:
                 if human_readable:
-                    rows.append(['## ' + m.display_name() + ': ' + rec.format(human_readable=True)])
+                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.display_name() + '=' + rec.format(human_readable=False)])
+                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
@@ -381,9 +382,9 @@ class FullReport(Report):
             rec = Report.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
-                    rows.append(['## ' + m.display_name() + ': ' + rec.format(human_readable=True)])
+                    rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
                 else:
-                    rows.append(['##' + m.display_name() + '=' + rec.format(human_readable=False)])
+                    rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
         rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 

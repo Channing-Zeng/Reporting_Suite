@@ -116,10 +116,11 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
     txt_fpath = targqc_full_report.save_txt(output_dir, BCBioStructure.targqc_name)
+    tsv_fpath = targqc_full_report.save_tsv(output_dir, BCBioStructure.targqc_name)
     html_fpath = targqc_full_report.save_html(output_dir, BCBioStructure.targqc_name,
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
-    return txt_fpath, html_fpath
+    return txt_fpath, tsv_fpath, html_fpath
 
 
 def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpath=None):
@@ -149,7 +150,7 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
     #     if sample.name in qualimap_htmls_by_sample:
     #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
 
-    txt_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
     norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, 'oncomine', bed_fpath)
 
