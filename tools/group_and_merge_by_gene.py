@@ -108,9 +108,9 @@ def main():
     num_bed_cols = count_bed_cols(sys.argv[1])
     if num_bed_cols < 3:
         sys.exit('Incorrect number of fields: ' + str(num_bed_cols) + '. Should be at least 3.')
-    if num_bed_cols == 3:
+    if num_bed_cols < 7:
         summarize_by_genes = False
-        sys.stderr.write('3 columns in BED; no summarizing by genes\n')
+        sys.stderr.write('less than 7 columns in BED; no summarizing by genes\n')
 
     gene_by_chrom_and_name = OrderedDict()
 
@@ -136,6 +136,8 @@ def main():
                     if feature:
                         feature_counter[feature] += 1
 
+                    if gname == 'RP11-763B22.9':
+                        pass
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
                         gene = Gene(gname, chrom, strand)
@@ -183,6 +185,9 @@ def main():
     sys.stderr.write('Merging regions...\n')
     final_regions = []
     for gene in sorted(genes, key=lambda g: g.get_key()):
+        if gene.name == 'RP11-763B22.9':
+            pass
+
         if summarize_by_genes and gene.name != '.':
             final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
 

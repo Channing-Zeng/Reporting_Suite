@@ -237,12 +237,13 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
             fs = l[:-1].split('\t')
             chrom, pos, _, ref, alt, _, _, info_fields = fs[:8]
             depth, overlap = fs[-2:]
-            var = Variant(chrom, pos, ref, alt)
-            variants.append(var)
-            if depth != '.':
-                depth, overlap = int(depth), int(overlap)
-                for i in range(overlap):
-                    depths_per_var[var].append(depth)
+            if 'om_MutClassPC=Hotspot' in info_fields:
+                var = Variant(chrom, pos, ref, alt)
+                variants.append(var)
+                if depth != '.':
+                    depth, overlap = int(depth), int(overlap)
+                    for i in range(overlap):
+                        depths_per_var[var].append(depth)
 
     # getting avarage depth of coverage of each variant (exactly for those parts that were in BED)
     var_by_locus = dict()
