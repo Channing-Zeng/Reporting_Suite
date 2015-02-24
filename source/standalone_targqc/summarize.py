@@ -451,8 +451,8 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
     best_report_basename = 'Best.' + source.targetseq_name  + '_' + vcf_key
     comb_report_basename = 'Comb.' + source.targetseq_name  + '_' + vcf_key
     best_targetcov_norm_depth_vcf_txt = best_report.save_txt(output_dir, best_report_basename)
-    comb_targetcov_norm_depth_vcf_txt = comb_report.save_txt(output_dir, comb_report_basename)
     best_targetcov_norm_depth_vcf_tsv = best_report.save_tsv(output_dir, best_report_basename)
+    comb_targetcov_norm_depth_vcf_txt = comb_report.save_txt(output_dir, comb_report_basename)
     comb_targetcov_norm_depth_vcf_tsv = comb_report.save_tsv(output_dir, comb_report_basename)
     info('')
     info('Depths for Oncomine variants (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants))
