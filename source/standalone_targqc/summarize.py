@@ -635,7 +635,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
         l = lines_for_each_sample[0]
         if l.startswith('##'):
             continue
-        if l.startswith('#'):
+        elif l.startswith('#'):
             if l.startswith('#Sample'):
                 first_col = 1
             break
