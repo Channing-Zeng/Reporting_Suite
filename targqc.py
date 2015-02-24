@@ -52,8 +52,10 @@ def main():
 
     check_genome_resources(cnf)
 
-    bed_fpath = cnf.bed
-    info('Using amplicons/capture panel ' + abspath(bed_fpath))
+    if not verify_bed(cnf.bed):
+        sys.exit(1)
+    bed_fpath = adjust_path(cnf.bed)
+    info('Using amplicons/capture panel ' + bed_fpath)
 
     exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
     info('Exons: ' + exons_bed_fpath)
@@ -67,9 +69,6 @@ def main():
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
         if not verify_file(cnf.qsub_runner): sys.exit(1)
-
-        if not verify_bed(bed_fpath):
-            sys.exit(1)
 
     info('*' * 70)
     info()
