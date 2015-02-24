@@ -105,14 +105,14 @@ class Metric:
             if value == 0:
                 return '0'
             if human_readable:
+                if unit == '%':
+                    value *= 100
                 presision = 2
                 for i in range(10, 2, -1):
                     if value < 1./(10**i):
                         presision = i + 1
                 return '{value:.{presision}f}{unit}'.format(**locals())
             else:
-                if unit == '%':
-                    value /= 100
                 return str(value)
 
         if isinstance(value, list):

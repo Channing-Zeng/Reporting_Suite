@@ -57,7 +57,7 @@ def _read_regions(gene_report_fpath):
                 size=int(''.join([c for c in size if c.isdigit()])),
                 avg_depth=float(avg_depth),
                 std_dev=float(std_dev),
-                percent_within_normal=float(percent_within_normal[:-1])
+                rate_within_normal=float(percent_within_normal[:-1])
             )
 
             percents = []

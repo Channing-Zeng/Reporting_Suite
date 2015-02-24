@@ -263,7 +263,7 @@ def seq2c_seq2cov(cnf, sample, amplicons_bed):
     bam = sample.bam
     samtools = get_system_path(cnf, 'samtools')
 
-    cmdline = '{seq2cov} -w {samtools} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
+    cmdline = '{seq2cov} -m {samtools} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
     res = call(cnf, cmdline, seq2c_output)
     if not res:
         err('Could not run seq2cov.pl for ' + sample.name)
@@ -386,8 +386,8 @@ def generate_summary_report(
 
     info('Getting number of mapped reads...')
     v_mapped_reads = number_of_mapped_reads(cnf, sample.bam)
-    v_percent_mapped = 100.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
-    v_percent_unmapped = 100.0 * (v_number_of_reads - v_mapped_reads) / v_number_of_reads if v_number_of_reads else None
+    v_percent_mapped = 1.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
+    v_percent_unmapped = 1.0 * (v_number_of_reads - v_mapped_reads) / v_number_of_reads if v_number_of_reads else None
     report.add_record('Mapped reads', v_mapped_reads)
     report.add_record('Percentage of mapped reads', v_percent_mapped)
     report.add_record('Unmapped reads', v_number_of_reads - v_mapped_reads)
@@ -407,7 +407,7 @@ def generate_summary_report(
     v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
 
-    v_percent_covered_bases_in_targ = 100.0 * v_covered_bases_in_targ / target_info.bases_num \
+    v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num \
         if target_info.bases_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
 
@@ -415,7 +415,7 @@ def generate_summary_report(
     v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, sample.bam)
     report.add_record('Reads mapped on target', v_mapped_reads_on_target)
 
-    v_percent_mapped_on_target = 100.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
+    v_percent_mapped_on_target = 1.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on target ', v_percent_mapped_on_target)
 
     info('Making bed file for padded regions...')
@@ -425,7 +425,7 @@ def generate_summary_report(
     v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, sample.bam)
     report.add_record('Reads mapped on padded target', v_reads_on_padded_targ)
 
-    v_percent_mapped_on_padded_target = 100.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
+    v_percent_mapped_on_padded_target = 1.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
 
     v_read_bases_on_targ = int(target_info.bases_num * combined_region.avg_depth)  # sum of all coverages
@@ -435,10 +435,10 @@ def generate_summary_report(
     report.add_record('Average target coverage depth', combined_region.avg_depth)
     report.add_record('Std. dev. of target coverage depth', combined_region.std_dev)
     report.add_record('Maximum target coverage depth', max_depth)
-    report.add_record('Percentage of target within 20% of mean depth', combined_region.percent_within_normal)
+    report.add_record('Percentage of target within 20% of mean depth', combined_region.rate_within_normal)
 
     for depth, bases in combined_region.bases_within_threshs.items():
-        percent_val = 100.0 * bases / target_info.bases_num if target_info.bases_num else 0
+        percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
 
     info()
@@ -606,7 +606,7 @@ def _parse_picard_dup_report(dup_report_fpath):
                         if fields[0] == 'Unknown':
                             ind += 1
                         if len(fields) > ind:
-                            dup_rate = 100.0 * float(fields[ind])
+                            dup_rate = 1.0 * float(fields[ind])
                             return dup_rate
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
@@ -864,22 +864,22 @@ def _make_flat_region_report(sample, regions, depth_threshs):
         rep_region.add_record('Min depth', region.min_depth)
         rep_region.add_record('Ave depth', region.avg_depth)
         rep_region.add_record('Std dev', region.std_dev)
-        rep_region.add_record('W/n 20% of ave depth', region.percent_within_normal)
+        rep_region.add_record('W/n 20% of ave depth', region.rate_within_normal)
 
         for thresh in depth_threshs:
-            percent = None
+            rate = None
             if region.bases_within_threshs is None:
                 err('Error: no bases_within_threshs for ' + str(region))
             else:
                 bases = region.bases_within_threshs.get(thresh)
                 if bases is not None and region.get_size() > 0:
-                    percent = 100.0 * bases / region.get_size()
-                    if percent > 100:
+                    rate = 1.0 * bases / region.get_size()
+                    if rate > 1:
                         critical(
-                            'Error: percent = ' + str(percent) + ', bases = ' + str(bases) +
+                            'Error: rate = ' + str(rate) + ', bases = ' + str(bases) +
                             ', size = ' + str(region.get_size()) +
                             ', start = ' + str(region.start) + ', end = ' + str(region.end))
-            rep_region.add_record('{}x'.format(thresh), percent)
+            rep_region.add_record('{}x'.format(thresh), rate)
 
         # except:
         #     err('Err in region ' + ' '.join(map(str, [region.sample_name, region.chrom, region.start,
@@ -1120,15 +1120,15 @@ def get_padded_bed_file(cnf, bed, genome, padding):
     return output_fpath
 
 
-def _bases_by_depth(depth_vals, depth_thresholds):
-    bases_by_min_depth = {depth: 0 for depth in depth_thresholds}
-
-    for depth_value in depth_vals:
-        for threshold in depth_thresholds:
-            if depth_value >= threshold:
-                bases_by_min_depth[threshold] += 1
-
-        return [100.0 * bases_by_min_depth[thres] / len(depth_vals) if depth_vals else 0
-                for thres in depth_thresholds]
+# def _bases_by_depth(depth_vals, depth_thresholds):
+#     bases_by_min_depth = {depth: 0 for depth in depth_thresholds}
+#
+#     for depth_value in depth_vals:
+#         for threshold in depth_thresholds:
+#             if depth_value >= threshold:
+#                 bases_by_min_depth[threshold] += 1
+#
+#         return [1.0 * bases_by_min_depth[thres] / len(depth_vals) if depth_vals else 0
+#                 for thres in depth_thresholds]
 
 

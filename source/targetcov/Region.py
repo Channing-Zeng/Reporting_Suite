@@ -11,7 +11,7 @@ class Region:
     def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None, biotype=None,
                  feature=None, extra_fields=list(),
                  chrom=None, start=None, end=None, size=None, min_depth=None,
-                 avg_depth=None, std_dev=None, percent_within_normal=None, bases_by_depth=None):
+                 avg_depth=None, std_dev=None, rate_within_normal=None, bases_by_depth=None):
 
         self.sample_name = sample_name
         self.gene_name = gene_name
@@ -31,7 +31,7 @@ class Region:
         # Calculated once on "sum_up()", when all self.bases_by_depth are there:
         self.avg_depth = avg_depth
         self.std_dev = std_dev
-        self.percent_within_normal = percent_within_normal
+        self.rate_within_normal = rate_within_normal
         self.bases_within_threshs = None    # OrderedDict((depth, 0) for depth in depth_thresholds)
         self.percent_within_threshs = None  # defaultdict(float)
 
@@ -131,12 +131,12 @@ class Region:
             self.std_dev = math.sqrt(float(sum_of_sq_var) / self.get_size())
             return self.std_dev
 
-    def calc_percent_within_normal(self, avg_depth):
+    def calc_rate_within_normal(self, avg_depth):
         if avg_depth is None:
             return None
 
-        if self.percent_within_normal is not None:
-            return self.percent_within_normal
+        if self.rate_within_normal is not None:
+            return self.rate_within_normal
 
         if self.bases_by_depth:
             bases_within_normal = sum(
@@ -145,20 +145,20 @@ class Region:
                 in self.bases_by_depth.items()
                 if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
 
-            self.percent_within_normal = 100.0 * bases_within_normal / self.get_size() \
+            self.rate_within_normal = 1.0 * bases_within_normal / self.get_size() \
                 if self.get_size() else None
-            return self.percent_within_normal
+            return self.rate_within_normal
 
     def sum_up(self, depth_thresholds):
         self.calc_avg_depth()
         self.calc_std_dev(self.avg_depth)
         self.calc_bases_within_threshs(depth_thresholds)
-        self.calc_percent_within_normal(self.avg_depth)
+        self.calc_rate_within_normal(self.avg_depth)
         return self.bases_within_threshs,\
                self.bases_by_depth, \
                self.avg_depth, \
                self.std_dev, \
-               self.percent_within_normal
+               self.rate_within_normal
 
     def intersect(self, reg2):
         return self.chrom == reg2.chrom and \
