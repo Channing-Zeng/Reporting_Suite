@@ -261,7 +261,9 @@ def seq2c_seq2cov(cnf, sample, amplicons_bed):
         source.seq2c_seq2cov_ending)
     sample_name = sample.name
     bam = sample.bam
-    cmdline = '{seq2cov} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
+    samtools = get_system_path(cnf, 'samtools')
+
+    cmdline = '{seq2cov} -w {samtools} -z -b {bam} -N {sample_name} {amplicons_bed}'.format(**locals())
     res = call(cnf, cmdline, seq2c_output)
     if not res:
         err('Could not run seq2cov.pl for ' + sample.name)
