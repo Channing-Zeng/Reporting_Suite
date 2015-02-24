@@ -627,7 +627,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
     total_regions = 0
     open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
 
-    i = 0
+    first_col = 0
     while True:
         lines_for_each_sample = [next(f, None) for f in open_tsv_files]
         if not all(lines_for_each_sample):
@@ -637,8 +637,8 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             continue
         if l.startswith('#'):
             if l.startswith('#Sample'):
-                i = 1
-                break
+                first_col = 1
+            break
 
     while True:
         lines_for_each_sample = [next(f, None) for f in open_tsv_files]
@@ -646,7 +646,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             break
 
         if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
-            shared_fields = lines_for_each_sample[0].split('\t')[i:i+8]
+            shared_fields = lines_for_each_sample[0].split('\t')[first_col:first_col+8]
             reg = report.add_region()
             reg.add_record('Chr', get_val(shared_fields[0]))
             reg.add_record('Start', get_int_val(shared_fields[1]))
@@ -663,11 +663,11 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
             for l in lines_for_each_sample:
                 fs = l.split('\t')
 
-                min_depths.append(get_int_val(fs[i+8]))
-                ave_depths.append(get_float_val(fs[i+9]))
-                stddevs.append(get_float_val(fs[i+10]))
-                withins.append(get_float_val(fs[i+11]))
-                for t, f in zip(depth_threshs, fs[i+12:]):
+                min_depths.append(get_int_val(fs[first_col+8]))
+                ave_depths.append(get_float_val(fs[first_col+9]))
+                stddevs.append(get_float_val(fs[first_col+10]))
+                withins.append(get_float_val(fs[first_col+11]))
+                for t, f in zip(depth_threshs, fs[first_col+12:]):
                     percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests
