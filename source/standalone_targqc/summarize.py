@@ -241,6 +241,7 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
             depth, overlap = fs[-2:]
             if any('om_MutClassPC=' + t in info_fields or 'om_MutClass=' + t
                     in info_fields for t in ['Hotspot', 'Deleterious']):
+                info('Something is in ' + info_fields)
                 var = Variant(chrom, pos, ref, alt)
                 variants.append(var)
                 if depth != '.':
