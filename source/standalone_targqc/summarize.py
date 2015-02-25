@@ -123,7 +123,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     return txt_fpath, tsv_fpath, html_fpath
 
 
-def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpath=None):
+def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons_fpath, genes_fpath=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     for sample in samples:
@@ -152,7 +152,8 @@ def summarize_targqc(cnf, output_dir, samples, bed_fpath, exons_fpath, genes_fpa
 
     txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
-    norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, 'oncomine', bed_fpath)
+    norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
+        cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
 
     info()
     info('*' * 70)
@@ -200,7 +201,7 @@ class Variant:
         self.depth = None
 
 
-def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_fpath, bed_fpath, vcf_fpath):
+def _get_depth_for_each_variant(cnf, samtools, bedtools, sample_name, bam_fpath, bed_fpath, vcf_fpath):
     info()
     info('Processing sample ' + sample_name)
 
@@ -210,8 +211,6 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
     # /opt/az/local/tabix/tabix-0.2.6/tabix -h -p vcf oncomine.az_key.vcf.gz
     # samtools view -b TRF004223.sorted.bam -L Exons.az_key.bed | bedtools genomecov -ibam stdin -bg > coverage.bg
     # bedtools intersect -a oncomine.az_key.vcf.gz -b coverage.bg -wa | cut -f1,2,4,5,8,11,12,13,14 > oncomine.az_key.depth_numbers.vcf
-
-    cnf = CallCnf(cnf_dict)
 
     info()
     info('Depth of coverage for regions in BED ' + bed_fpath)
@@ -328,7 +327,7 @@ def _prep_best_report(metric_storage, samples):
     return report
 
 
-def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_key, bed_fpath):
+def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_dir, samples, vcf_key, bed_fpath):
     step_greetings('Normalized coverage for ' + vcf_key + ' hotspots')
     vcf_fpath = cnf.genome.get(vcf_key)
     if not vcf_fpath:
@@ -343,8 +342,9 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
     samtools = get_system_path(cnf, 'samtools')
     bedtools = get_system_path(cnf, 'bedtools')
 
-    vars_by_region_per_sample = OrderedDict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
-        cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, vcf_fpath) for s in samples))
+    vars_by_region_per_sample = OrderedDict(Parallel(n_jobs=summary_threads)
+        (delayed(_get_depth_for_each_variant)(
+         CallCnf(cnf.__dict__), samtools, bedtools, s.name, s.bam, bed_fpath, vcf_fpath) for s in samples))
 
     ############################ For each sample ############################
     # Building metrics storages

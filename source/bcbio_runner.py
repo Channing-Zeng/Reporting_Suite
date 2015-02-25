@@ -71,8 +71,9 @@ class BCBioRunner:
 
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
-        self.max_threads = self.cnf.threads or 40
+        self.max_threads = self.cnf.threads
         total_samples = len(self.bcbio_structure.samples) * len(self.bcbio_structure.variant_callers)
+        self.summary_threads = min(self.max_threads, len(total_samples))
         self.threads_per_sample = max(self.max_threads / total_samples, 1)
 
         self.steps = Steps()
@@ -135,7 +136,7 @@ class BCBioRunner:
 
         summaries_cmdline_params = \
             basic_params + \
-            ' -t ' + str(self.max_threads) + \
+            ' -t ' + str(self.summary_threads) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
             ' --log-dir ' + self.bcbio_structure.log_dirpath
 
@@ -340,6 +341,8 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, suf)
         qsub = get_system_path(self.cnf, 'qsub')
+        if threads > 1:
+            threads += 1
         threads = str(threads)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
@@ -474,7 +477,8 @@ class BCBioRunner:
                     for v in self.bcbio_structure.variant_callers.values()
                     for s in v.samples
                     if self.varannotate in self.steps],
-                create_dir=False)
+                create_dir=False,
+                threads=self.summary_threads)
 
         # TargetSeq reports
         if self.abnormal_regions in self.steps:
@@ -554,8 +558,8 @@ class BCBioRunner:
             wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
             self._submit_job(
                 self.targqc_summary,
-                wait_for_steps=wait_for_steps
-            )
+                wait_for_steps=wait_for_steps,
+                threads=self.summary_threads)
 
         if self.fastqc_summary in self.steps:
             self._submit_job(self.fastqc_summary)
@@ -574,8 +578,7 @@ class BCBioRunner:
             wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
             self._submit_job(
                 self.combined_report,
-                wait_for_steps=wait_for_steps
-            )
+                wait_for_steps=wait_for_steps)
 
         # if self.mongo_loader in self.steps:
         #     for sample in self.bcbio_structure.samples:

@@ -42,7 +42,7 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
     return vcf_fpath
 
 
-def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, sample_min_freq):
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, sample_min_freq, threads_num):
     # info()
     # info('Keeping only first sample info in VCFs...')
     # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
@@ -64,8 +64,8 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
 
     info()
     info('Preparing VCFs for vcf2txt')
-    prep_vcf_fpaths = Parallel(
-        n_jobs=cnf.threads)(delayed(prep_vcf)(fpath, s, caller.name)
+    prep_vcf_fpaths = Parallel(n_jobs=threads_num) \
+       (delayed(prep_vcf)(fpath, s, caller.name)
         for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
 
     caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
@@ -79,7 +79,8 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
         err('pickLine run returned non-0')
         return None
 
-    write_vcfs(cnf, sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath, caller.pickline_res_fpath)
+    write_vcfs(cnf, sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath,
+        caller.pickline_res_fpath, threads_num)
 
     return res
 
@@ -167,7 +168,7 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
     bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
-def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath):
+def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath, threads_num):
     info('')
     info('-' * 70)
     info('Writing VCFs')
@@ -196,7 +197,7 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
 
     info()
     info('Writing filtered VCFs')
-    Parallel(n_jobs=cnf.threads) \
+    Parallel(n_jobs=threads_num) \
         (delayed(postprocess_vcf) \
             (next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
             for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
@@ -227,7 +228,8 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     #         sample.min_af = 0
     #     cnfs_for_sample_names[sample.name] = cnf_copy
 
-    info('Number of threads for filtering: ' + str(cnf.threads))
+    threads_num = min(len(vcf_by_sample), cnf.threads)
+    info('Number of threads for filtering: ' + str(threads_num))
 
     vcf_fpaths = vcf_by_sample.values()
     sample_names = vcf_by_sample.keys()
@@ -242,7 +244,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
-    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, caller.samples[0].min_af)
+    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, caller.samples[0].min_af, threads_num)
     if not res:
         return None
 

@@ -20,9 +20,10 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
         StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
 
-    max_threads = cnf.threads or 40
+    max_threads = cnf.threads
     threads_per_sample = 1  # max(max_threads / len(samples), 1)
     summary_threads = min(len(samples), max_threads)
+    info('summary_threads: ' + str(summary_threads))
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
@@ -57,7 +58,7 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
 
     else:
         info('Making targqc summary')
-        summarize_targqc(cnf, cnf.output_dir, samples, bed_fpath, exons_fpath, genes_fpath)
+        summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, bed_fpath, exons_fpath, genes_fpath)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpath, bed_fpath, main_script_name):
