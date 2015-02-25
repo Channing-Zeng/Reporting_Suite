@@ -14,7 +14,8 @@ from source import logger
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
-from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
+    total_merge_bed, count_bed_cols
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
@@ -165,8 +166,15 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, combined_region, max_depth, total_bed_size = bedcoverage_hist_stats(
-        cnf, sample.name, sample.bam, amplicons_bed)
+    amplicons, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, sample.bam, amplicons_bed)
+    info()
+    info('Merging capture BED file to get total target cov statistics...')
+    total_merged_ampl_bed = total_merge_bed(cnf, amplicons_bed)
+    info()
+    info('Calculation of coverage statistics for total target...')
+    _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, total_merged_ampl_bed)
+
+    total_bed_size = get_total_bed_size(cnf, amplicons_bed)
 
     target_info = TargetInfo(
         fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
@@ -191,7 +199,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     info()
     info('Calculating coverage statistics for exons...')
-    exons_with_optional_genes, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_no_genes_bed)
+    exons_with_optional_genes, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, exons_no_genes_bed)
     for exon_or_gene in exons_with_optional_genes:
         exon_or_gene.sample_name = sample.name
 
@@ -387,7 +395,9 @@ def generate_summary_report(
     info('Getting number of mapped reads...')
     v_mapped_reads = number_of_mapped_reads(cnf, sample.bam)
     v_percent_mapped = 1.0 * v_mapped_reads / v_number_of_reads if v_number_of_reads else None
+    assert v_percent_mapped <= 1.0 or v_percent_mapped is None, str(v_percent_mapped)
     v_percent_unmapped = 1.0 * (v_number_of_reads - v_mapped_reads) / v_number_of_reads if v_number_of_reads else None
+    assert v_percent_unmapped <= 1.0 or v_percent_unmapped is None, str(v_percent_unmapped)
     report.add_record('Mapped reads', v_mapped_reads)
     report.add_record('Percentage of mapped reads', v_percent_mapped)
     report.add_record('Unmapped reads', v_number_of_reads - v_mapped_reads)
@@ -410,6 +420,7 @@ def generate_summary_report(
     v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num \
         if target_info.bases_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
+    assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
 
     info('Getting number of mapped reads on target...')
     v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, sample.bam)
@@ -417,6 +428,7 @@ def generate_summary_report(
 
     v_percent_mapped_on_target = 1.0 * v_mapped_reads_on_target / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on target ', v_percent_mapped_on_target)
+    assert v_percent_mapped_on_target <= 1.0 or v_percent_mapped_on_target is None, str(v_percent_mapped_on_target)
 
     info('Making bed file for padded regions...')
     padded_bed = get_padded_bed_file(cnf, sample.bed, chr_len_fpath, padding)
@@ -427,6 +439,7 @@ def generate_summary_report(
 
     v_percent_mapped_on_padded_target = 1.0 * v_reads_on_padded_targ / v_mapped_reads if v_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
+    assert v_percent_mapped_on_padded_target <= 1.0 or v_percent_mapped_on_padded_target is None, str(v_percent_mapped_on_padded_target)
 
     v_read_bases_on_targ = int(target_info.bases_num * combined_region.avg_depth)  # sum of all coverages
     report.add_record('Read bases mapped on target', v_read_bases_on_targ)
@@ -436,10 +449,12 @@ def generate_summary_report(
     report.add_record('Std. dev. of target coverage depth', combined_region.std_dev)
     report.add_record('Maximum target coverage depth', max_depth)
     report.add_record('Percentage of target within 20% of mean depth', combined_region.rate_within_normal)
+    assert combined_region.rate_within_normal <= 1.0 or combined_region.rate_within_normal is None, str(combined_region.rate_within_normal)
 
     for depth, bases in combined_region.bases_within_threshs.items():
         percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
         report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
+        assert percent_val <= 1.0 or percent_val is None, str(percent_val)
 
     info()
 
@@ -467,6 +482,7 @@ def generate_summary_report(
 
         if res == dup_metrics_txt:
             dup_rate = _parse_picard_dup_report(dup_metrics_txt)
+            assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
             if dup_rate:
                 report.add_record('Duplication rate (picard)', dup_rate)
 
@@ -900,6 +916,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
         if not bed: err('BED file is required.')
         sys.exit(1)
 
+    cols = count_bed_cols(bed)
+
     regions, max_depth, total_bed_size = [], 0, 0
 
     bedtools = get_system_path(cnf, 'bedtools')
@@ -935,7 +953,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                 extra_fields = ()
             else:
                 start, end = map(int, line_tokens[1:3])
-                gene_name = line_tokens[3]
+                gene_name = line_tokens[3] if cols > 3 else None
                 extra_fields = tuple(line_tokens[4:-4])
 
             line_region_key_tokens = (sample_name, chrom, start, end, gene_name, extra_fields)
@@ -968,7 +986,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     # info('Sorting genes...')
     # regions = sorted(regions[:-1], key=Region.get_order_key)
 
-    return regions, total_region, max_depth, total_bed_size
+    return regions, total_region, max_depth
 
 
 # def _fix_amplicons_gene_names(cnf, amplicons_fpath):

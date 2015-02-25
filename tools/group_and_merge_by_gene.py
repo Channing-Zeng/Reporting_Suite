@@ -19,17 +19,20 @@ class Exon:
         self.biotype = biotype
         self.feature = feature
 
+    def __repr__(self):
+        return str(self.start) + '-' + str(self.end) + ',' + str(self.biotype) + ', ' + str(self.feature)
+
 
 class Gene:
-    def __init__(self, name, chrom, strand=None, feature=None):
+    def __init__(self, name, chrom, strand=None, feature=None, biotype=None):
         self.name = name
         self.chrom = chrom
         self.__chrom_key = self.__make_chrom_key()
         self.strand = strand
-        self.biotype = None
         self.start = None
         self.end = None
         self.feature = feature
+        self.biotype = biotype
         self.already_met_gene_feature_for_this_gene = False  # some BED files can contain '*Gene' features, so we can take start and end from them
 
         self.regions = []
@@ -138,7 +141,7 @@ def main():
 
                     gene = gene_by_chrom_and_name.get((chrom, gname))
                     if gene is None:
-                        gene = Gene(gname, chrom, strand)
+                        gene = Gene(gname, chrom, strand, 'Gene', biotype)
                         gene_by_chrom_and_name[(chrom, gname)] = gene
 
                     if feature in ['Gene', 'Multi_Gene']:  # in fact '*Gene' features in BED files are optional
@@ -186,7 +189,8 @@ def main():
         if summarize_by_genes and gene.name != '.':
             final_regions.append((gene.chrom, gene.start, gene.end, gene.name, gene.strand, gene.feature, gene.biotype))
 
-        for r in gene.merge_regions():
+        merged_regions = gene.merge_regions()
+        for r in merged_regions:
             final_regions.append((gene.chrom, r.start, r.end, gene.name, gene.strand, r.feature, r.biotype))
 
     sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')

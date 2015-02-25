@@ -127,3 +127,28 @@ def sort_bed(cnf, bed_fpath):
     call(cnf, cmdline, output_fpath)
     return output_fpath
 
+
+def total_merge_bed(cnf, bed_fpath):
+    bedtools = get_system_path(cnf, 'bedtools')
+    cmdline = '{bedtools} merge -i {bed_fpath}'.format(**locals())
+    output_fpath = intermediate_fname(cnf, bed_fpath, 'total_merged')
+    call(cnf, cmdline, output_fpath)
+    return output_fpath
+
+
+def calc_sum_of_regions(bed_fpath):
+    total_bed_size = 0
+
+    with open(bed_fpath) as f:
+        for l in f:
+            l = l.strip()
+            if not l.startswith('#'):
+                start, end = [int(f) for f in l.split('\t')[1:3]]
+                total_bed_size += end - start
+
+    return total_bed_size
+
+
+def get_total_bed_size(cnf, bed_fpath):
+    merged_bed = total_merge_bed(cnf, bed_fpath)
+    return calc_sum_of_regions(merged_bed)

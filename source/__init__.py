@@ -64,21 +64,21 @@ class BaseSample:
         if verify_file(self.targetcov_json_fpath) \
            and verify_file(self.targetcov_html_fpath) \
            and verify_file(self.targetcov_detailed_tsv):
-            info(self.targetcov_json_fpath + ', ' +
-                 self.targetcov_html_fpath + ', and ' +
-                 self.targetcov_detailed_tsv + ' exist.')
+            # info(self.targetcov_json_fpath + ', ' +
+            #      self.targetcov_html_fpath + ', and ' +
+            #      self.targetcov_detailed_tsv + ' exist.')
             return True
         return False
 
     def ngscat_done(self):
         if verify_file(self.ngscat_html_fpath):
-            info(self.ngscat_html_fpath + ' exists.')
+            # info(self.ngscat_html_fpath + ' exists.')
             return True
         return False
 
     def qualimap_done(self):
         if verify_file(self.qualimap_html_fpath):
-            info(self.qualimap_html_fpath + ' exists.')
+            # info(self.qualimap_html_fpath + ' exists.')
             return True
         return False
 
