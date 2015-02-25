@@ -262,6 +262,7 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
 
     bed_columns_num = count_bed_cols(bed_fpath)
 
+    regions = []
     vars_by_region = defaultdict(list)
     with open(vcf_bed_intersect) as f:
         for l in f:
@@ -275,9 +276,10 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
             assert chrom == chrom_b, l
             var = var_by_locus.get((chrom, pos, ref, alt))
             if var:
+                regions.append((chrom, start_b, end_b, symbol, strand, feature, biotype))
                 vars_by_region[(chrom, start_b, end_b, symbol, strand, feature, biotype)].append(var)
 
-    return sample_name, vars_by_region
+    return sample_name, (vars_by_region, regions)
 
 
 def _prep_comb_report(metric_storage, samples, shared_general_metrics, shared_metrics):
@@ -335,7 +337,7 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
     samtools = get_system_path(cnf, 'samtools')
     bedtools = get_system_path(cnf, 'bedtools')
 
-    vars_by_region_per_sample = dict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
+    vars_by_region_per_sample = OrderedDict(Parallel(n_jobs=cnf.threads)(delayed(_get_depth_for_each_variant)(
         cnf.__dict__, samtools, bedtools, s.name, s.bam, bed_fpath, vcf_fpath) for s in samples))
 
     ############################ For each sample ############################
@@ -377,31 +379,31 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
 
         total_variants = 0
         total_regions = 0
-        for (chrom, start, end, symbol, strand, feature, biotype), variants in vars_by_region_per_sample[sample.name].iteritems():
+        vars_by_region, regions = vars_by_region_per_sample[sample.name]
+        for r in regions:
             total_regions += 1
 
-            for i, var in enumerate(variants):
+            (chrom, start, end, symbol, strand, feature, biotype) = r
+            for i, var in enumerate(vars_by_region[r]):
                 total_variants += 1
                 if total_variants % 10000 == 0:
                     info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
 
                 rep_region = report.add_region()
-                if i == 0:
-                    rep_region.add_record('Chr', chrom)
-                    rep_region.add_record('Start', start)
-                    rep_region.add_record('End', end)
-                    rep_region.add_record('Symbol', symbol)
-                    rep_region.add_record('Strand', strand)
-                    rep_region.add_record('Feature', feature)
-                    rep_region.add_record('Biotype', biotype)
-                else:
-                    rep_region.add_record('Chr', '')
-                    rep_region.add_record('Start', '')
-                    rep_region.add_record('End', '')
-                    rep_region.add_record('Symbol', symbol)
-                    rep_region.add_record('Strand', '')
-                    rep_region.add_record('Feature', '')
-                    rep_region.add_record('Biotype', '')
+                rep_region.add_record('Chr', chrom)
+                rep_region.add_record('Start', start)
+                rep_region.add_record('End', end)
+                rep_region.add_record('Symbol', symbol)
+                rep_region.add_record('Strand', strand)
+                rep_region.add_record('Feature', feature)
+                rep_region.add_record('Biotype', biotype)
+                    # rep_region.add_record('Chr', '')
+                    # rep_region.add_record('Start', '')
+                    # rep_region.add_record('End', '')
+                    # rep_region.add_record('Symbol', symbol)
+                    # rep_region.add_record('Strand', '')
+                    # rep_region.add_record('Feature', '')
+                    # rep_region.add_record('Biotype', '')
 
                 rep_region.add_record('Var pos', var.pos)
                 rep_region.add_record('Ref', var.ref)
