@@ -262,7 +262,8 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
 
     bed_columns_num = count_bed_cols(bed_fpath)
 
-    regions = []
+    regions_in_order = []
+    regions_set = set()
     vars_by_region = defaultdict(list)
     with open(vcf_bed_intersect) as f:
         for l in f:
@@ -274,12 +275,15 @@ def _get_depth_for_each_variant(cnf_dict, samtools, bedtools, sample_name, bam_f
             if bed_columns_num == 4:
                 chrom_b, start_b, end_b, symbol, _ = fs[-5:]
             assert chrom == chrom_b, l
+            r = chrom, start_b, end_b, symbol, strand, feature, biotype
+            if r not in regions_set:
+                regions_set.add(r)
+                regions_in_order.append(r)
             var = var_by_locus.get((chrom, pos, ref, alt))
             if var:
-                regions.append((chrom, start_b, end_b, symbol, strand, feature, biotype))
-                vars_by_region[(chrom, start_b, end_b, symbol, strand, feature, biotype)].append(var)
+                vars_by_region[r].append(var)
 
-    return sample_name, (vars_by_region, regions)
+    return sample_name, (vars_by_region, regions_in_order)
 
 
 def _prep_comb_report(metric_storage, samples, shared_general_metrics, shared_metrics):
@@ -384,6 +388,20 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, samples, vcf_k
             total_regions += 1
 
             (chrom, start, end, symbol, strand, feature, biotype) = r
+            rep_region = report.add_region()
+            rep_region.add_record('Chr', chrom)
+            rep_region.add_record('Start', start)
+            rep_region.add_record('End', end)
+            rep_region.add_record('Symbol', symbol)
+            rep_region.add_record('Strand', strand)
+            rep_region.add_record('Feature', feature)
+            rep_region.add_record('Biotype', biotype)
+            rep_region.add_record('Var pos', None)
+            rep_region.add_record('Ref', None)
+            rep_region.add_record('Alt', None)
+            rep_region.add_record('Depth', None)
+            rep_region.add_record('Norm depth', None)
+
             for i, var in enumerate(vars_by_region[r]):
                 total_variants += 1
                 if total_variants % 10000 == 0:
