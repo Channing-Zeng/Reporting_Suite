@@ -2,6 +2,15 @@ import sys
 import itertools
 from source import verify_file
 from source.fastqc.html_parser_fastqc import get_graphs
+from os.path import join, dirname, abspath
+
+
+def get_real_path(path):
+    return join(dirname(abspath(__file__)), path)
+
+static_dirname = '../html_reporting/static'
+static_dirpath = get_real_path(static_dirname)
+jquery_fname = 'jquery-1.8.2.min.js'
 
 
 def print_html(a_outfile, samples):
@@ -77,13 +86,17 @@ def links_show_hide(outfile, s_names):
 
 
 def print_js():
-    return """
-    <script src="../../combined_report/html_aux/jquery-1.8.2.min.js"
-        type="text/javascript"></script>
+    l_tag = '<script type="text/javascript" name="{}">'
+    r_tag = '    </script>'
+
+    with open(join(static_dirpath, jquery_fname)) as f:
+        contents = f.read()
+        contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
+        jquery_script = l_tag.format(jquery_fname) + '\n' + contents + '\n' + r_tag
+
+    return jquery_script + """
+
     <script>
-
-
-
     $(document).ready(function(){
       $("img.indented").click(function resize() {
             if ($("img.indented").height() == 500) {
