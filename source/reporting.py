@@ -97,7 +97,10 @@ class Metric:
             if value == 0:
                 return '0'
             if human_readable:
-                return '{value:,}{unit}'.format(**locals())
+                if value <= 9999:
+                    return str(value)
+                else:
+                    return '{value:,}{unit}'.format(**locals())
             else:
                 return str(value)
 
@@ -116,7 +119,7 @@ class Metric:
                 return str(value)
 
         if isinstance(value, list):
-            return ','.join(list)
+            return ','.join(Metric.format_value(v, unit, human_readable) for v in list)
 
         return '.'
 
