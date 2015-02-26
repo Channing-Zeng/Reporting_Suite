@@ -301,7 +301,7 @@ def _prep_best_report(metric_storage, samples):
 class VariantsMetric(Metric):
     def format(self, value, human_readable=True):
         variants = value
-        fmt_pos = lambda pos: Metric.format_value(pos, human_readable=True)
+        fmt_pos = lambda pos: Metric.format_value(int(pos), human_readable=True)
         return '  '.join('{pos}:{var.ref}/{var.alt}'.format(pos=fmt_pos(var.pos), var=var)
             for var in variants)
 
@@ -310,7 +310,9 @@ class DepthsMetric(Metric):
     def format(self, value, human_readable=True):
         depth_tuples = value
         fmt = lambda dp: Metric.format_value(dp, human_readable=True)
-        return '  '.join('{depth}/{norm_depth}'.format(depth=fmt(depth), norm_depth=fmt(norm_depth))
+        return '  '.join('{depth}/{norm_depth}'.format(
+            depth=fmt(int(depth) if depth is not None else None),
+            norm_depth=fmt(float(norm_depth) if norm_depth is not None else None))
             for (depth, norm_depth) in depth_tuples)
 
 
