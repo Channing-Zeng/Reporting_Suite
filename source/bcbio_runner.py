@@ -72,9 +72,9 @@ class BCBioRunner:
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
         self.max_threads = self.cnf.threads
-        total_samples = len(self.bcbio_structure.samples) * len(self.bcbio_structure.variant_callers)
-        self.summary_threads = min(self.max_threads, len(total_samples))
-        self.threads_per_sample = max(self.max_threads / total_samples, 1)
+        total_samples_num = len(self.bcbio_structure.samples) * len(self.bcbio_structure.variant_callers)
+        self.summary_threads = min(self.max_threads, total_samples_num)
+        self.threads_per_sample = max(self.max_threads / total_samples_num, 1)
 
         self.steps = Steps()
         self._set_up_steps(cnf, self.run_id)

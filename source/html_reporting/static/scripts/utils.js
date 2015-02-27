@@ -41,6 +41,9 @@ function isFractional(num) {
 }
 
 function toPrettyString(num, unit) {
+    if (unit == '%')
+        num *= 100;
+
     var str,
         frac_digits = 0;
 
