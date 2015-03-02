@@ -13,7 +13,7 @@ import source
 from source import logger, BaseSample
 from source.logger import info, err, critical, warn
 from source.calling_process import call
-from source.config import load_yaml_config, Config
+from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.ngscat.bed_file import verify_bed, verify_bam
 from source.prepare_args_and_cnf import add_post_bcbio_args, set_up_log, set_up_work_dir, \
@@ -144,7 +144,7 @@ def _set_run_config(config_dirpath, opts):
         # alright, in commandline. copying over to config dir.
         opts.run_cnf = provided_cnf_fpath
         project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(provided_cnf_fpath)))
-        if provided_cnf_fpath != project_run_cnf_fpath:
+        if not os.path.samefile(provided_cnf_fpath, project_run_cnf_fpath):
             info('Using ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
                 try:
@@ -549,7 +549,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(name=sample_info['description'].replace('.', '_'), final_dir=self.final_dirpath)
+        sample = BCBioSample(name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
