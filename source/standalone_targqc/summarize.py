@@ -439,8 +439,6 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
 
             variants, depths = [], []
             for var in sorted(vars_by_region[r].values(), key=lambda v: v.pos):
-                if var.cls != 'Hotspot':
-                    continue
                 variants.append(var)
 
                 depth = depth_by_var.get((var.get_site()))

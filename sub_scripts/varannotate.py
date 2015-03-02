@@ -89,7 +89,7 @@ def process_one(cnf):
 
     # Replacing so the main sample goes first (if it is not already)
     main_idx = get_sample_column_index(sample.vcf, sample.name)
-    if main_idx != 0:
+    if main_idx:
         info('Moving the main sample column (' + sample.name + ') to the first place.')
         def fn(line, i):
             if line and not line.startswith('##'):
