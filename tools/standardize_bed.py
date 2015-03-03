@@ -44,7 +44,7 @@ def _read_args(args):
     work_dirpath = abspath(args[1])
     log('Working directory: ' + work_dirpath)
     if not exists(work_dirpath):
-        os.mkdir(work_dirpath)
+        os.makedirs(work_dirpath)
 
     key_genes_fpath = '/gpfs/ngs/oncology/Analysis/dev/Dev_0075_PanelExomeFMComparison/bed/az_key_genes.txt'
     if len(args) > 2:
@@ -141,7 +141,7 @@ def _preprocess(bed_fpath, work_dirpath):
     with open(bed_fpath, 'r') as in_f:
         with open(output_fpath, 'w') as out_f:
             for line in in_f:
-                if line.startswith('#'):  # header
+                if line.startswith('#') or line.startswith('track') or line.startswith('browser'):  # header
                     bed_params.header.append(line)
                 else:
                     cur_ncn = BedParams.calc_n_cols_needed(line)
