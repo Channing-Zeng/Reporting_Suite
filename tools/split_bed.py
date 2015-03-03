@@ -12,36 +12,31 @@ from operator import attrgetter
 
 
 """ Input: Sorted and annotated BED file (i.e. at least 4 columns), File with list of key genes
-    Ouput:
+    Output:
         BED file with no overlapped version of regions from input. In case of overlap scripts prefers 1) key gene,
         2) most upstream gene.
 
-    Usage: python split_bed Input_BED_file Key_genes_file > Split_BED_file
+    Usage: python split_bed Input_BED_file [Key_genes_file] > Split_BED_file
 """
 
 
 def _read_args(args):
     if len(args) < 1:
         log('Usage:\n')
-        log('  ' + __file__ + ' Input_BED_file Key_genes_file > Split_BED_file\n')
+        log('  ' + __file__ + ' Input_BED_file [Key_genes_file] > Split_BED_file\n')
         sys.exit(1)
 
     input_bed_fpath = abspath(args[0])
     log('Input: ' + input_bed_fpath)
 
     key_genes_fpath = '/gpfs/ngs/oncology/Analysis/dev/Dev_0075_PanelExomeFMComparison/bed/az_key_genes.txt'
-    bedtools = 'bedtools'
     if len(args) > 1:
         if args[1]:
             key_genes_fpath = abspath(args[1])
             log('Over-set key genes fpath: ' + key_genes_fpath)
-
-    if len(args) > 2:
-        bedtools = args[2]
-        log('Over-set bedtools: ' + bedtools)
     log()
 
-    return input_bed_fpath, key_genes_fpath, bedtools
+    return input_bed_fpath, key_genes_fpath
 
 
 def log(msg=''):
@@ -88,7 +83,7 @@ class Region:
 
 
 def main():
-    input_bed_fpath, key_genes_fpath, bedtools = _read_args(sys.argv[1:])
+    input_bed_fpath, key_genes_fpath = _read_args(sys.argv[1:])
 
     key_genes = []
     with open(key_genes_fpath, 'r') as f:

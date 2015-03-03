@@ -17,7 +17,7 @@ from collections import defaultdict, OrderedDict
 
 usage = """
     Input: Any BED file
-    Ouput:
+    Output:
         BED file with regions from input, followed by symbol from best gene overlap from Ensembl.
         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
         If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
