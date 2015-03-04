@@ -55,7 +55,7 @@ class Gene:
         return None
 
     def get_key(self):
-        return self.__chrom_key, self.start, self.end, self.name
+        return self.__chrom_key, self.start, (0 if 'Gene' in self.feature else 1), self.end, self.name
 
     def sort_regions(self):
         self.regions = sorted(self.regions, key=lambda r: (r.start, r.end))
