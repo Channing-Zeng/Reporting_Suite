@@ -33,10 +33,11 @@ def draw_plots(cnf, vcf_fpath):
         info('  Substitutions: ' + substs_plot_fpath)
     if indels_plot_fpath:
         info('  Indels:        ' + indels_plot_fpath)
-    variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variants_per_kbp)
+    variants_distribution_plot_fpath = _draw_variants_distribution(cnf, variants_distribution, chr_lengths,
+                                                                   variants_per_kbp)
     if variants_distribution_plot_fpath:
         info('  Variant distr: ' + variants_distribution_plot_fpath)
-    return [variants_distribution_plot_fpath, substs_plot_fpath, indels_plot_fpath]
+    return [x for x in [variants_distribution_plot_fpath, substs_plot_fpath, indels_plot_fpath] if x is not None]
 
 
 def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
@@ -54,8 +55,8 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
         for nucl2 in nucleotides:
             if nucl1 != nucl2:
                 substituitions[nucl1][nucl2] = 0
-    indel_lengths = []
 
+    indel_lengths = []
     for rec in reader:
         # for variants distribution plot
         if rec.CHROM not in variants_distribution:
@@ -95,6 +96,8 @@ def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variant
             del variants_distribution[chr_name]
     if empty_chr:
         info('  Chromosomes without variants: ' + ', '.join(human_sorted(empty_chr)))
+    if len(variants_distribution.keys()) == 0:
+        return None
 
     nplots = len(variants_distribution.keys())
     ncols = min(4, nplots)
@@ -167,6 +170,8 @@ def _draw_substitutions(cnf, substituitions):
             counts.append(count)
             labels.append('%s>%s' % (nucl1, nucl2))
     total = sum(counts)
+    if not total:
+        return None
 
     def __to_percents(x):
         return float(x) * 100 / total
@@ -197,8 +202,10 @@ def _draw_substitutions(cnf, substituitions):
 
 
 def _draw_indel_lengths(cnf, indel_lengths):
-    plot_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + indels_plot_ending)
+    if not indel_lengths:
+        return None
 
+    plot_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + indels_plot_ending)
     bins = list(numpy.arange(min(indel_lengths) - 0.5, max(indel_lengths) + 1.0, 1.0))
     matplotlib.pyplot.hist(indel_lengths, bins=bins, color='#CC0000')
     matplotlib.pyplot.title('Indel length distribution')
