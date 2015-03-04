@@ -28,7 +28,7 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
             _prep_steps(cnf, threads_per_sample, summary_threads,
-                samples, cnf.output_dir, bed_fpath, main_script_name)
+                samples, bed_fpath, exons_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -61,7 +61,7 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
         summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, bed_fpath, exons_fpath, genes_fpath)
 
 
-def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpath, bed_fpath, main_script_name):
+def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
     run_id = path_hash + '_' + cnf.project_name
@@ -82,8 +82,8 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpat
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.targetseq_name) + \
         ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.targetseq_name) + \
         ' --bam {bam}' + \
-        ' --bed ' + cnf.bed + \
-       (' --exons ' + cnf.exons if cnf.exons else '') + \
+        ' --bed ' + bed_fpath + \
+       (' --exons ' + exons_fpath if exons_fpath else '') + \
        (' --reannotate ' if cnf.reannotate else '')
 
     targetcov_step = Step(cnf, run_id,
@@ -98,7 +98,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, output_dirpat
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.ngscat_name) + \
         ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.ngscat_name) + \
         ' --bam {bam}' + \
-        ' --bed ' + cnf.bed + \
+        ' --bed ' + bed_fpath + \
         ' --saturation y '
 
     ngscat_step = Step(cnf, run_id,
