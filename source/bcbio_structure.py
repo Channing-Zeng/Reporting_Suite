@@ -156,7 +156,7 @@ def _set_run_config(config_dirpath, opts):
                 run_info_fpaths_in_config = [
                     abspath(join(config_dirpath, fname))
                     for fname in os.listdir(config_dirpath)
-                    if fname.startswith('run_info') and fname.endswith('.yaml')]
+                    if (fname.startswith('run_info') or 'post' in fname) and fname.endswith('.yaml')]
 
                 if len(run_info_fpaths_in_config) > 0:
                     warn('Warning: there are run_info files in config directory ' + config_dirpath + '. '
@@ -168,7 +168,7 @@ def _set_run_config(config_dirpath, opts):
         run_info_fpaths_in_config = [
             abspath(join(config_dirpath, fname))
             for fname in os.listdir(config_dirpath)
-            if fname.startswith('run_info') and fname.endswith('.yaml')]
+            if (fname.startswith('run_info') or 'post' in fname) and fname.endswith('.yaml')]
 
         if len(run_info_fpaths_in_config) > 1:
             critical('More than one YAML file containing run_info in name found in the config '
@@ -422,7 +422,7 @@ class BCBioStructure:
             bcbio_project_dirname = basename(dirname(self.final_dirpath))
             bcbio_project_parent_dirname = basename(dirname(dirname(self.final_dirpath)))
             self.project_name = self.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
-            self.date_dirpath = join(self.final_dirpath, self['fc_date'] + '_' + self.project_name)
+            self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + self.project_name)
 
         else:
             self.project_name = self.project_name or bcbio_cnf['fc_name']
