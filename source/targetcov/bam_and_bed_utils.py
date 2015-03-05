@@ -86,7 +86,7 @@ def group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
 
 def cut(cnf, fpath, col_num):
     cut_fpath = intermediate_fname(cnf, fpath, 'cut')
-    cmdline = 'cut -f' + ','.join(range(1, col_num + 1))
+    cmdline = 'cut -f' + ','.join(map(str, range(1, col_num + 1)))
     call(cnf, cmdline, cut_fpath)
     return cut_fpath
 
