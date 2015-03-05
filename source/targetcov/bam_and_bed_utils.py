@@ -37,6 +37,8 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
     info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
     exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
 
+    amplicons_bed = cut(cnf, amplicons_bed, 4)
+
     info()
     info('bedtools-sotring amplicons...')
     amplicons_bed = sort_bed(cnf, amplicons_bed)
@@ -82,24 +84,32 @@ def group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
     return output_fpath
 
 
+def cut(cnf, fpath, col_num):
+    cut_fpath = intermediate_fname(cnf, fpath, 'cut')
+    cmdline = 'cut -f' + ','.join(range(1, col_num + 1))
+    call(cnf, cmdline, cut_fpath)
+    return cut_fpath
+
+
 def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
     info()
     info('Preparing BED file for seq2c...')
 
-    if count_bed_cols(seq2c_bed) < 4:
+    cols = count_bed_cols(seq2c_bed)
+
+    if cols < 4:
         seq2c_bed = amplicons_bed
 
-    elif count_bed_cols(seq2c_bed) > 4:
-        cmdline = 'cut -f1,2,3,4 ' + seq2c_bed
-        seq2c_bed = intermediate_fname(cnf, seq2c_bed, 'cut')
-        call(cnf, cmdline, seq2c_bed)
+    elif 8 > cols > 4:
+        seq2c_bed = cut(cnf, seq2c_bed, 4)
+
+    elif cols > 8:
+        seq2c_bed = cut(cnf, seq2c_bed, 8)
 
     # removing regions with no gene annotation
     def f(l, i):
-        if l.split('\t')[3].strip() == '.':
-            return None
-        else:
-            return l
+        if l.split('\t')[3].strip() == '.': return None
+        else: return l
     seq2c_bed = iterate_file(cnf, seq2c_bed, f, 'filt')
 
     info('Done: ' + seq2c_bed)

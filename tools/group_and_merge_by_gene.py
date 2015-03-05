@@ -34,7 +34,7 @@ def main():
         for l in inp:
             if not l:
                 pass
-            elif l.startswith('#'):
+            elif l.startswith('#') or '\t' not in l:
                 sys.stdout.write(l)
             else:
                 fields = l[:-1].split('\t')

@@ -82,7 +82,7 @@ class BedParams:
         GRCh_to_hg[str(i)] = 'chr' + str(i)
     hg_to_GRCh = {v: k for k, v in GRCh_to_hg.items()}
 
-    def __init__(self, header=[], GRCh_names=None, n_cols_needed=None):
+    def __init__(self, header=list(), GRCh_names=None, n_cols_needed=None):
         self.header = header
         self.GRCh_names = GRCh_names
         self.n_cols_needed = n_cols_needed
