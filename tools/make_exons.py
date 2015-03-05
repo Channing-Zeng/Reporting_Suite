@@ -36,7 +36,7 @@ def parse_hgnc_chrom(chrom):
                 return 'chrM'
             return 'chr' + c
 
-    sys.stderr.write('Cannot parse chromosome ' + chrom + '\n')
+    sys.stderr.write('  Cannot parse chromosome ' + chrom + '\n')
     return None
 
 
@@ -59,6 +59,7 @@ def read_approved_genes(synonyms_fpath):
     approved_gnames_by_prev_gname = defaultdict(list)
     approved_gnames_by_synonym = defaultdict(list)
 
+    sys.stderr.write('Parsing HGNC database ' + synonyms_fpath + '...\n')
     with open(synonyms_fpath) as f:
         i = 0
         for l in f:
@@ -78,7 +79,7 @@ def read_approved_genes(synonyms_fpath):
                     if gn:
                         approved_gnames_by_synonym[gn].append(approved_gene)
             i += 1
-        sys.stderr.write('Processed ' + str(i) + ' lines from ' + synonyms_fpath + '\n')
+        sys.stderr.write('  Processed ' + str(i) + ' lines from ' + synonyms_fpath + '\n')
         sys.stderr.write('\n')
 
     return approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym
@@ -104,7 +105,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
             return approved_gene_by_name[gene_symbol].name, None
 
-    # sys.stderr.write('Gene name ' + gene_symbol + ' is not approved, searching for an approved verion.\n')
+    sys.stderr.write('Gene name ' + gene_symbol + ' is not approved, searching for an approved verion.\n')
 
     def _get_approved_genes_by_kind(approved_genes, kind):
         if not approved_genes:

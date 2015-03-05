@@ -12,95 +12,6 @@ from collections import OrderedDict, defaultdict
 from source.targetcov.bam_and_bed_utils import count_bed_cols
 
 
-class Exon:
-    def __init__(self, start, end, biotype=None, feature=None):
-        self.start = start
-        self.end = end
-        self.biotype = biotype
-        self.feature = feature
-
-    def __repr__(self):
-        return str(self.start) + '-' + str(self.end) + ',' + str(self.biotype) + ', ' + str(self.feature)
-
-
-class Gene:
-    def __init__(self, name, chrom, strand=None, feature=None, biotype=None):
-        self.name = name
-        self.chrom = chrom
-        self.__chrom_key = self.__make_chrom_key()
-        self.strand = strand
-        self.start = None
-        self.end = None
-        self.feature = feature
-        self.biotype = biotype
-        self.already_met_gene_feature_for_this_gene = False  # some BED files can contain '*Gene' features, so we can take start and end from them
-
-        self.regions = []
-
-    def __make_chrom_key(self):
-        CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
-        for i in range(22, 0, -1):
-            CHROMS.append((str(i), i))
-
-        chr_remainder = self.chrom
-        if self.chrom.startswith('chr'):
-            chr_remainder = self.chrom[3:]
-        for (c, i) in CHROMS:
-            if chr_remainder == c:
-                return i
-            elif chr_remainder.startswith(c):
-                return i + 24
-
-        sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
-        return None
-
-    def get_key(self):
-        return self.__chrom_key, self.start, (0 if 'Gene' in self.feature else 1), self.end, self.name
-
-    def sort_regions(self):
-        self.regions = sorted(self.regions, key=lambda r: (r.start, r.end))
-        if self.start is None or self.end is None:
-            if not self.regions:
-                return None  # no coordinates and no exons to infer coordinates
-            else:
-                self.start = self.regions[0].start
-                self.end = self.regions[-1].end
-        return self.regions
-
-    def merge_regions(self):
-        if len(self.regions) == 0:
-            sys.stderr.write('Error: no sub-regions of ' + str(self) + '\n')
-            sys.exit(1)
-
-        non_overlapping_regions = [self.regions[0]]
-
-        for r in self.regions[1:]:
-            if r.start > non_overlapping_regions[-1].end:
-                non_overlapping_regions.append(r)
-            else:
-                prev_r = non_overlapping_regions[-1]
-                prev_r.end = r.end
-                prev_r.biotype = merge_fields(prev_r.biotype, r.biotype)
-                prev_r.feature = merge_fields(prev_r.feature, r.feature)
-
-        self.regions = non_overlapping_regions
-        return non_overlapping_regions
-
-    def __repr__(self):
-        return self.chrom + ':' + str(self.start) + '-' + str(self.end) + ',' + str(self.name)
-
-    def __str__(self):
-        return self.__repr__()
-
-
-def merge_fields(consensus_field, other_field):
-    if not consensus_field:
-        consensus_field = other_field
-    else:
-        consensus_field = ','.join(set(consensus_field.split(',')) | set(other_field.split(',')))
-    return consensus_field
-
-
 def main():
     if len(sys.argv) < 2:
         sys.exit('Usage: ' + __file__ + ' bed_file > merged_bed_file')
@@ -199,6 +110,95 @@ def main():
         fs = [chrom, str(start), str(end), gname, '.', strand or '.', feature or '.', biotype or '.']
         sys.stdout.write('\t'.join(fs[:num_bed_cols]) + '\n')
     sys.stderr.write('Saved\n')
+
+
+class Exon:
+    def __init__(self, start, end, biotype=None, feature=None):
+        self.start = start
+        self.end = end
+        self.biotype = biotype
+        self.feature = feature
+
+    def __repr__(self):
+        return str(self.start) + '-' + str(self.end) + ',' + str(self.biotype) + ', ' + str(self.feature)
+
+
+class Gene:
+    def __init__(self, name, chrom, strand=None, feature=None, biotype=None):
+        self.name = name
+        self.chrom = chrom
+        self.__chrom_key = self.__make_chrom_key()
+        self.strand = strand
+        self.start = None
+        self.end = None
+        self.feature = feature
+        self.biotype = biotype
+        self.already_met_gene_feature_for_this_gene = False  # some BED files can contain '*Gene' features, so we can take start and end from them
+
+        self.regions = []
+
+    def __make_chrom_key(self):
+        CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
+        for i in range(22, 0, -1):
+            CHROMS.append((str(i), i))
+
+        chr_remainder = self.chrom
+        if self.chrom.startswith('chr'):
+            chr_remainder = self.chrom[3:]
+        for (c, i) in CHROMS:
+            if chr_remainder == c:
+                return i
+            elif chr_remainder.startswith(c):
+                return i + 24
+
+        sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
+        return None
+
+    def get_key(self):
+        return self.__chrom_key, self.start, (0 if 'Gene' in self.feature else 1), self.end, self.name
+
+    def sort_regions(self):
+        self.regions = sorted(self.regions, key=lambda r: (r.start, r.end))
+        if self.start is None or self.end is None:
+            if not self.regions:
+                return None  # no coordinates and no exons to infer coordinates
+            else:
+                self.start = self.regions[0].start
+                self.end = self.regions[-1].end
+        return self.regions
+
+    def merge_regions(self):
+        if len(self.regions) == 0:
+            sys.stderr.write('Error: no sub-regions of ' + str(self) + '\n')
+            sys.exit(1)
+
+        non_overlapping_regions = [self.regions[0]]
+
+        for r in self.regions[1:]:
+            if r.start > non_overlapping_regions[-1].end:
+                non_overlapping_regions.append(r)
+            else:
+                prev_r = non_overlapping_regions[-1]
+                prev_r.end = r.end
+                prev_r.biotype = merge_fields(prev_r.biotype, r.biotype)
+                prev_r.feature = merge_fields(prev_r.feature, r.feature)
+
+        self.regions = non_overlapping_regions
+        return non_overlapping_regions
+
+    def __repr__(self):
+        return self.chrom + ':' + str(self.start) + '-' + str(self.end) + ',' + str(self.name)
+
+    def __str__(self):
+        return self.__repr__()
+
+
+def merge_fields(consensus_field, other_field):
+    if not consensus_field:
+        consensus_field = other_field
+    else:
+        consensus_field = ','.join(set(consensus_field.split(',')) | set(other_field.split(',')))
+    return consensus_field
 
 
 if __name__ == '__main__':

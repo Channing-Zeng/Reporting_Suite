@@ -55,6 +55,43 @@ def _read_args(args):
     return input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools
 
 
+def main():
+    input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools = _read_args(sys.argv[1:])
+
+    ref_bed_no_genes_fpath, ref_bed_genes_fpath = _split_reference(work_dirpath, ref_bed_fpath)
+
+    log('Annotating based on CDS and exons...')
+    annotated, off_targets = _annotate(bedtools, input_bed_fpath, ref_bed_no_genes_fpath)
+
+    if off_targets:
+        off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
+        log('Saved off target1 to ' + str(off_target_fpath))
+
+        log()
+        log('Trying to annotate based on genes rather than CDS and exons...')
+        annotated_2, off_targets = _annotate(bedtools, off_target_fpath, ref_bed_genes_fpath)
+
+        for a in annotated_2:
+            a.feature = 'UTR/Intron/Decay'
+        annotated.extend(annotated_2)
+
+        annotated.extend(off_targets)
+
+    log()
+    log('Saving annotated regions...')
+    for region in sorted(annotated, key=lambda r: r.get_key()):
+        sys.stdout.write(str(region))
+
+        # for r, overlap_size in overlaps:
+        #     sys.stdout.write('\t' + '\t'.join([
+        #         r.chrom, '{:,}'.format(r.start), '{:,}'.format(r.end), r.gene, r.exon, str(r.strand), r.feature, r.biotype,
+        #         str(overlap_size),
+        #         '{:.2f}%'.format(100.0 * overlap_size / (r.end - r.start))
+        #     ]))
+        # sys.stdout.write('\n')
+    log('Done.')
+
+
 def log(msg=''):
     sys.stderr.write(msg + '\n')
 
@@ -98,43 +135,6 @@ class Region:
 
     def get_key(self):
         return self.__chrom_key, self.start, self.end, self.symbol
-
-
-def main():
-    input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools = _read_args(sys.argv[1:])
-
-    ref_bed_no_genes_fpath, ref_bed_genes_fpath = _split_reference(work_dirpath, ref_bed_fpath)
-
-    log('Annotating based on CDS and exons...')
-    annotated, off_targets = _annotate(bedtools, input_bed_fpath, ref_bed_no_genes_fpath)
-
-    if off_targets:
-        off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
-        log('Saved off target1 to ' + str(off_target_fpath))
-
-        log()
-        log('Trying to annotate based on genes rather than CDS and exons...')
-        annotated_2, off_targets = _annotate(bedtools, off_target_fpath, ref_bed_genes_fpath)
-
-        for a in annotated_2:
-            a.feature = 'UTR/Intron/Decay'
-        annotated.extend(annotated_2)
-
-        annotated.extend(off_targets)
-
-    log()
-    log('Saving annotated regions...')
-    for region in sorted(annotated, key=lambda r: r.get_key()):
-        sys.stdout.write(str(region))
-
-        # for r, overlap_size in overlaps:
-        #     sys.stdout.write('\t' + '\t'.join([
-        #         r.chrom, '{:,}'.format(r.start), '{:,}'.format(r.end), r.gene, r.exon, str(r.strand), r.feature, r.biotype,
-        #         str(overlap_size),
-        #         '{:.2f}%'.format(100.0 * overlap_size / (r.end - r.start))
-        #     ]))
-        # sys.stdout.write('\n')
-    log('Done.')
 
 
 def merge_fields(consensus_field, other_field):
