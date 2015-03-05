@@ -86,13 +86,13 @@ def read_approved_genes(synonyms_fpath):
 
 
 def _check_gene_symbol(approved_gene, gene_symbol, db_id, chrom):
-    if db_id != approved_gene.db_id:
+    if db_id and db_id != approved_gene.db_id:
         # sys.stderr.write('Discordant db ids for ' + gene_symbol + ': db id = ' + str(db_id) + ', in HGNC it is ' + str(approved_gene.db_id) + '\n')
         pass
     # else:
         # sys.stderr.write('Accordant db ids for ' + gene_symbol + ': db id = ' + str(db_id) + ', in HGNC it is ' + str(approved_gene.db_id) + '\n')
 
-    if chrom != approved_gene.chrom:
+    if chrom and chrom != approved_gene.chrom:
         # sys.stderr.write('Discordant chroms for ' + gene_symbol + ': chrom = ' + chrom + ', in HGNC chrom is ' + approved_gene.chrom + '\n')
         return None
 
@@ -100,7 +100,7 @@ def _check_gene_symbol(approved_gene, gene_symbol, db_id, chrom):
 
 
 def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-                              gene_symbol, db_id=None, db_chrom=None):
+                              gene_symbol, db_id='', db_chrom=''):
     if gene_symbol in approved_gene_by_name:
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
             return approved_gene_by_name[gene_symbol].name, None

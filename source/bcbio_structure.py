@@ -595,6 +595,9 @@ class BCBioStructure:
 
         to_exit = False
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
+        if 'ensemble' in sample_info['algorithm']:
+            variantcallers.append('ensemble')
+            
         if isinstance(variantcallers, basestring):
             variantcallers = [variantcallers]
 

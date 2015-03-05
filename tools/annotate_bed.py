@@ -146,7 +146,6 @@ def merge_fields(consensus_field, other_field):
 
 
 def _resolve_ambiguities(annotated_by_loc_by_gene):
-
     annotated = []
     for (chrom, start, end), overlaps_by_gene in annotated_by_loc_by_gene.iteritems():
         for g_name, overlaps in overlaps_by_gene.iteritems():
