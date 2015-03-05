@@ -13,8 +13,8 @@ from source.logger import err, is_local
 
 
 class ApprovedGene:
-    def __init__(self, gname, prev_names, synonyms, chrom, ucsc_id=None, ensembl_id=None):
-        self.gname = gname
+    def __init__(self, name, prev_names, synonyms, chrom, ucsc_id=None, ensembl_id=None):
+        self.name = name
         self.prev_names = prev_names
         self.synonyms = synonyms
         self.chrom = chrom
@@ -54,7 +54,7 @@ def parse_ensembl_chrom(chrom):
     return None
 
 
-def _read_approved_genes(synonyms_fpath):
+def read_approved_genes(synonyms_fpath):
     approved_gene_by_name = dict()
     approved_gnames_by_prev_gname = defaultdict(list)
     approved_gnames_by_synonym = defaultdict(list)
@@ -98,11 +98,11 @@ def _check_gene_symbol(approved_gene, gene_symbol, db_id, chrom):
     return approved_gene
 
 
-def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-                              gene_symbol, db_id, db_chrom):
+def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
+                              gene_symbol, db_id=None, db_chrom=None):
     if gene_symbol in approved_gene_by_name:
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
-            return approved_gene_by_name[gene_symbol].gname, None
+            return approved_gene_by_name[gene_symbol].name, None
 
     # sys.stderr.write('Gene name ' + gene_symbol + ' is not approved, searching for an approved verion.\n')
 
@@ -114,27 +114,27 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
             approved_genes_same_ucsc = [g for g in approved_genes if g.db_id == db_id]
 
             if len(approved_genes_same_ucsc) > 1:
-                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
+                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.name for g in approved_genes_same_ucsc) + '\n')
                 return 'AMBIGOUS'
 
             if len(approved_genes_same_ucsc) == 1:
                 if _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, db_id, db_chrom):
                     sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + '\n')
-                    return approved_genes_same_ucsc[0].gname
+                    return approved_genes_same_ucsc[0].name
 
             # Ok, no genes with same ucsc id, or not the same chromosome for them.
 
             approved_genes_same_chrom = [g for g in approved_genes if g.chrom == db_chrom]
 
             if len(approved_genes_same_chrom) > 1:
-                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.gname for g in approved_genes_same_ucsc) + '\n')
+                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.name for g in approved_genes_same_ucsc) + '\n')
                 return 'AMBIGOUS'
 
             if len(approved_genes_same_chrom) == 1:
                 g = approved_genes_same_chrom[0]
-                sys.stderr.write('  Only ' + g.gname + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it\n')
+                sys.stderr.write('  Only ' + g.name + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it\n')
                 if _check_gene_symbol(g, gene_symbol, db_id, db_chrom):
-                    return g.gname
+                    return g.name
                 else:
                     return 'NOT FOUND'
 
@@ -145,7 +145,7 @@ def _get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gna
         if len(approved_genes) == 1:
             if _check_gene_symbol(approved_genes[0], gene_symbol, db_id, db_chrom):
                 sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ')\n')
-                return approved_genes[0].gname
+                return approved_genes[0].name
 
         return 'NOT FOUND'
 
@@ -173,7 +173,7 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
         if l and not l.startswith('#'):
             ucsc_id, ucsc_chrom, strand, txStart, txEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
 
-            approved_gene_symbol, status = _get_approved_gene_symbol(
+            approved_gene_symbol, status = get_approved_gene_symbol(
                 approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
                 geneSymbol, ucsc_id, ucsc_chrom)
 
@@ -235,6 +235,15 @@ class Exon:
 
 def _rm_quotes(l):
     return l[1:-1]
+
+
+def is_approved_symbol(gname, approved_gene_by_name):
+    if gname not in approved_gene_by_name:
+        gname2 = gname.split('.')[0]
+        if gname != gname2:
+            if gname2 not in approved_gene_by_name:
+                return False
+    return True
 
 
 def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym):
@@ -362,90 +371,11 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if len(g.exons) == 0:
             continue
 
-        approved_gname, status = _get_approved_gene_symbol(
-            approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-            g.name, g.db_id, g.chrom)
-
-        if not approved_gname:
-            gname2 = g.name.split('.')[0]
-            if gname2 != g.name:
-                approved_gname, status2 = _get_approved_gene_symbol(
-                    approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-                    gname2, g.db_id, g.chrom)
-
-        if not approved_gname:
-            assert g.name not in not_approved_gene_names
-            not_approved_gene_names[g.name] = status
-            g.approved_gname = approved_gname
-            total_not_approved += 1
-
-        else:
+        if is_approved_symbol(g.name, approved_gene_by_name):
+            gene_after_approving_by_name[g.name] = g
             total_approved += 1
-
-        #     if g.approved_gname in gene_after_approving_by_name:
-        #         # Duplicated gene. what do we do with it?
-        #         sys.stderr.write('\nApproved name ' + g.approved_gname + ' is duplicated for ' + g.name + ': ' + str(g))
-        #
-        #         if g.name != g.approved_gname:
-        #             # If the original gene name was not already-approved, we can try take the original name back.
-        #             sys.stderr.write('Original was not approved, so trying to take an original instead of the approved version.\n')
-        #
-        #             if g.name in gene_after_approving_by_name:
-        #                 # someone's approved name was already picked, so non-approved g.name is in gene_after_approving_by_name. chossing longest of both.
-        #                 prev_g = gene_after_approving_by_name[g.name]
-        #                 sys.stderr.write('Prev gene with this name was approved as non-approved original, so picking the longest - ')
-        #                 if int(g.end) - int(g.start) > int(prev_g.end) - int(prev_g.start):
-        #                     del gene_after_approving_by_name[g.name]
-        #                     sys.stderr.write('the new one\n')
-        #                 else:
-        #                     sys.stderr.write('the previous one\n')
-        #                     sys.stderr.write('\n')
-        #                     continue
-        #             else:
-        #                 prev_g = gene_after_approving_by_name[g.approved_gname]
-        #
-        #                 if prev_g.name == prev_g.approved_gname:
-        #                     # previous gene name with this approved name was already approved - we have to keep it, thus reporting this one with the original name
-        #                     sys.stderr.write('Previous gene name with this approved name ' + g.approved_gname + ' was already approved - we have to keep it, thus reporting this one with the original name\n')
-        #                 else:
-        #                     # previous was not initally approved, thus keeping both under orignial names
-        #                     sys.stderr.write('Previous was not initally approved, thus keeping both under orignial names: ' + g.name + ' and ' + prev_g.name + '\n')
-        #                     assert prev_g.name not in gene_after_approving_by_name, 'Prev : ' + prev_g.name + ' -> ' + prev_g.approved_gname
-        #
-        #                     del gene_after_approving_by_name[prev_g.approved_gname]
-        #                     prev_g.approved_gname = prev_g.name
-        #                     gene_after_approving_by_name[prev_g.approved_gname] = prev_g
-        #
-        #             g.approved_gname = g.name
-        #
-        #             sys.stderr.write('\n')
-        #
-        #         else:
-        #             # If the original name was already approved, maybe check the original for the one we already met?
-        #             prev_g = gene_after_approving_by_name[g.approved_gname]
-        #             if prev_g.name != g.approved_gname:
-        #                 if prev_g.name not in gene_after_approving_by_name:
-        #                     sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
-        #                                      ' which is not duplicated, so picking original instead.\n')
-        #                     del gene_after_approving_by_name[prev_g.approved_gname]
-        #                     prev_g.approved_gname = prev_g.name
-        #                     gene_after_approving_by_name[prev_g.approved_gname] = prev_g
-        #                 else:
-        #                     sys.stderr.write('Prev gene with this approved name had original name ' + prev_g.name +
-        #                                      ' that was already met. So just keeping ours, removing prev...\n')
-        #             else:
-        #                 sys.stderr.write('Prev gene with this approved name had approved original name, so picking the longest - ')
-        #                 if int(g.end) - int(g.start) > int(prev_g.end) - int(prev_g.start):
-        #                     del gene_after_approving_by_name[g.approved_gname]
-        #                     sys.stderr.write('the new one\n')
-        #                 else:
-        #                     sys.stderr.write('the previous one\n')
-        #                     sys.stderr.write('\n')
-        #                     continue
-        #
-        #         sys.stderr.write('\n')
-        #
-        #     gene_after_approving_by_name[g.approved_gname] = g
+        else:
+            total_not_approved += 1
 
         j += 1
         if j % 1000 == 0:
@@ -463,7 +393,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
     biotypes_counter = defaultdict(int)
     no_exon_gene_num = 0
 
-    for g in gene_by_name.values():
+    for g in gene_after_approving_by_name.values():
         if len(g.exons) == 0:
             no_exon_gene_num += 1
         else:
@@ -533,7 +463,7 @@ def main():
         sys.stderr.write('\n')
 
     synonyms_fpath = sys.argv[1]
-    approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = _read_approved_genes(synonyms_fpath)
+    approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = read_approved_genes(synonyms_fpath)
 
     input_fpath = sys.argv[2]
     output_fpath = sys.argv[3]
@@ -545,8 +475,8 @@ def main():
         else:
             not_approved_gene_names = _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym)
 
-    sys.stderr.write('\n')
-    sys.stderr.write('Not approved by HGNC - ' + str(len(not_approved_gene_names.keys())) + ' genes.\n')
+    # sys.stderr.write('\n')
+    # sys.stderr.write('Not approved by HGNC - ' + str(len(not_approved_gene_names.keys())) + ' genes.\n')
     # if not_approved_fpath:
     #     with open(not_approved_fpath, 'w') as f:
     #         f.write('#Searched as\tStatus\n')
