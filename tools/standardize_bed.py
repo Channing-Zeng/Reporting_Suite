@@ -46,7 +46,7 @@ def _read_args(args):
     if not exists(work_dirpath):
         os.makedirs(work_dirpath)
 
-    key_genes_fpath = '/gpfs/ngs/oncology/Analysis/dev/Dev_0075_PanelExomeFMComparison/bed/az_key_genes.txt'
+    key_genes_fpath = '/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt'
     if len(args) > 2:
         if args[2]:
             key_genes_fpath = abspath(args[2])
