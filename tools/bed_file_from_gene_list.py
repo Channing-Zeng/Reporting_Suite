@@ -44,7 +44,10 @@ def main():
                         approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym, gname2)
 
             if approved_gname:
-                log(gname + ' found' + ((' as ' + approved_gname) if approved_gname else ''))
+                if gname != approved_gname:
+                    log(gname + ' found as ' + approved_gname)
+                else:
+                    log(gname)
                 genes.add(approved_gname)
 
             else:
