@@ -240,10 +240,10 @@ def _rm_quotes(l):
 
 def is_approved_symbol(gname, approved_gene_by_name):
     if gname not in approved_gene_by_name:
-        gname2 = gname.split('.')[0]
-        if gname != gname2:
-            if gname2 not in approved_gene_by_name:
-                return False
+        # gname2 = gname.split('.')[0]
+        # if gname != gname2:
+        #     if gname2 not in approved_gene_by_name:
+        return False
     return True
 
 
