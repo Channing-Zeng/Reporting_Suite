@@ -310,8 +310,10 @@ class VariantCaller:
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
 
-        self.pickline_res_fpath = None
-        self.vcf2txt_res_fpath = None
+        self.single_mut_res_fpath = None
+        self.paired_mut_res_fpath = None
+        self.single_vcf2txt_res_fpath = None
+        self.paired_vcf2txt_res_fpath = None
 
     def find_fpaths_by_sample(self, dir_name, name, ext):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
@@ -484,8 +486,11 @@ class BCBioStructure:
 
         for b in self.batches.values():
             if b.normal and b.tumor:
-                self.paired = True
-                info('Paired')
+                b.paired = True
+                info('Batch ' + b.name + ' is paired')
+            else:
+                b.paired = False
+                info('Batch ' + b.name + ' is single')
 
         if not self.samples:
             critical('No directory for any sample. Exiting.')
@@ -582,6 +587,8 @@ class BCBioStructure:
                 batch_names = [batch_names]
 
             for batch_name in batch_names:
+                self.batches[batch_name].name = batch_name
+
                 if sample.phenotype == 'normal':
                     if self.batches[batch_name].normal:
                         critical('Multiple normal samples for batch ' + batch_name)

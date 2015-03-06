@@ -189,23 +189,27 @@ def filter_all(cnf, bcbio_structure):
     # for sample in bcbio_structure.samples:
     #     finalize_one(cnf, bcbio_structure, sample, msg)
 
-    if any(c.pickline_res_fpath for c in bcbio_structure.variant_callers.values()):
+    if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
         info('Final variants:')
         msg.append('')
         msg.append('Combined variants for each variant caller:')
         for caller in bcbio_structure.variant_callers.values():
-            if caller.vcf2txt_res_fpath:
-                info('  ' + caller.name)
-                info('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
-                msg.append('  ' + caller.name)
-                msg.append('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
+            info('  ' + caller.name)
 
-            if caller.pickline_res_fpath:
-                info('  ' + caller.name + ' PASSed')
-                info('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
-                msg.append('  ' + caller.name)
-                msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
+            if caller.single_vcf2txt_res_fpath:
+                info('     Single: ' + caller.single_vcf2txt_res_fpath + ', ' + str(num_lines(caller.single_vcf2txt_res_fpath) - 1) + ' variants')
+            if caller.paired_vcf2txt_res_fpath:
+                info('     Paired: ' + caller.paired_vcf2txt_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants')
+                # msg.append('  ' + caller.name)
+                # msg.append('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
+
+            if caller.single_mut_res_fpath:
+                info('     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants')
+            if caller.paired_mut_res_fpath:
+                info('     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants')
+                # msg.append('  ' + caller.name)
+                # msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
 
                 if cnf.datahub_path:
                     copy_to_datahub(cnf, caller, cnf.datahub_path)

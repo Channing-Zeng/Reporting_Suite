@@ -20,7 +20,7 @@ from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
     get_sample_column_index, bgzip_and_tabix, vcf_merge, leave_main_sample
 from source.utils import mean
-from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, intermediate_fname
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import remove_rejected, vcf_is_empty, igvtools_index
 from source.logger import info
@@ -42,7 +42,8 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
     return vcf_fpath
 
 
-def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, sample_min_freq, threads_num):
+def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sample_by_name, caller_name,
+                        sample_min_freq, threads_num):
     # info()
     # info('Keeping only first sample info in VCFs...')
     # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
@@ -65,27 +66,25 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller
     info()
     info('Preparing VCFs for vcf2txt')
     prep_vcf_fpaths = Parallel(n_jobs=threads_num) \
-       (delayed(prep_vcf)(fpath, s, caller.name)
+       (delayed(prep_vcf)(fpath, s, caller_name)
         for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
 
-    caller.vcf2txt_res_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
-    res = run_vcf2txt(cnf, prep_vcf_fpaths, sample_by_name, caller.vcf2txt_res_fpath, sample_min_freq)
+    res = run_vcf2txt(cnf, prep_vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_freq)
     if not res:
         err('vcf2txt run returned non-0')
         return None
 
-    res = run_pickline(cnf, caller, caller.vcf2txt_res_fpath, sample_by_name)
+    res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name)
     if not res:
-        err('pickLine run returned non-0')
+        err('vardict2mut.pl run returned non-0')
         return None
 
-    write_vcfs(cnf, sample_by_name.keys(), vcf_fpaths, caller, caller.vcf2txt_res_fpath,
-        caller.pickline_res_fpath, threads_num)
+    write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
 
     return res
 
 
-def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
+def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name):
     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'))
     if not pick_line:
         sys.exit(1)
@@ -96,7 +95,7 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
         except ValueError:
             critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
 
-    caller.pickline_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
+    vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
 
     cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
@@ -107,8 +106,9 @@ def run_pickline(cnf, caller, vcf2txt_res_fpath, sample_by_name):
     if polymorphic_variants:
         poly_vars = abspath(polymorphic_variants)
         cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
+
     cmdline = cmdline.format(**locals())
-    res = call(cnf, cmdline, caller.pickline_res_fpath, exit_on_error=False)
+    res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
     if not res:
         return None
     else:
@@ -168,7 +168,7 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
     bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
-def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pickline_res_fpath, threads_num):
+def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):
     info('')
     info('-' * 70)
     info('Writing VCFs')
@@ -177,7 +177,7 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
     passed_variants = set()
 
     info('Collecting passed variants...')
-    with open(pickline_res_fpath) as puckline_res_f:
+    with open(mut_res_fpath) as puckline_res_f:
         for l in puckline_res_f:
             ts = l.split('\t')
             s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
@@ -199,73 +199,46 @@ def write_vcfs(cnf, sample_names, anno_vcf_fpaths, caller, vcf2txt_res_fpath, pi
     info('Writing filtered VCFs')
     Parallel(n_jobs=threads_num) \
         (delayed(postprocess_vcf) \
-            (next(s for s in caller.samples if s.name == s_name), caller.name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
+            (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
             for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 
-    vcf_by_sample = caller.find_anno_vcf_by_sample()
-    # only those samples that were found
-
-    if len(vcf_by_sample) == 0:
+    all_vcf_by_sample = caller.find_anno_vcf_by_sample()
+    if len(all_vcf_by_sample) == 0:
         err('No vcfs for ' + caller.name + '. Skipping.')
         return caller
 
-    info('*' * 70)
-    info('Samples (total ' + str(len(vcf_by_sample)) + '):')
+    def fill_in(batches):
+        vcf_by_sample = OrderedDict()
+        for b in batches:
+            if b.normal:
+                vcf_fpath = all_vcf_by_sample.get(b.normal.name)
+                if vcf_fpath: vcf_by_sample[b.normal.name] = vcf_fpath
+            assert len(b.tumor) <= 1, caller.name + ': ' + str(len(b.tumor)) + ' tumor samples'
+            if len(b.tumor) > 0:
+                vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
+                if vcf_fpath: vcf_by_sample[b.tumor[0].name] = vcf_fpath
+        return vcf_by_sample
 
-    # Set up cnfs for each sample
-    # global cnfs_for_sample_names
-    # for sample in caller.samples:
-    #     info(sample.name)
-    #     cnf_copy = cnf.copy()
-    #     cnf_copy['name'] = sample.name
-    #     if cnf_copy['variant_filtering'].get('min_freq') is not None:
-    #         sample.min_af = cnf_copy['variant_filtering']['min_freq']
-    #     elif sample.min_af is None:
-    #         sample.min_af = 0
-    #     cnfs_for_sample_names[sample.name] = cnf_copy
+    single_vcf_by_sample = fill_in([b for b in bcbio_structure.batches.values() if not b.paired])
+    paired_vcf_by_sample = fill_in([b for b in bcbio_structure.batches.values() if b.paired])
 
-    threads_num = min(len(vcf_by_sample), cnf.threads)
-    info('Number of threads for filtering: ' + str(threads_num))
+    if single_vcf_by_sample:
+        info('*' * 70)
+        info('Single samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, False)
+        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
+        caller.single_mut_res_fpath = mut_fpath
 
-    vcf_fpaths = vcf_by_sample.values()
-    sample_names = vcf_by_sample.keys()
-    sample_by_name = OrderedDict((sn, next(s for s in caller.samples if s.name == sn)) for sn in sample_names)
-
-    # global filtering
-    # filtering = Filtering(cnf, bcbio_structure, caller)
-
-    # info('Filtering by impact')
-    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(impact_round)(vcf_fpath, s) for vcf_fpath, s in zip(vcf_fpaths, sample_names))
-
-    info()
-    info('-' * 70)
-    info('Filtering using vcf2txt...')
-    res = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, sample_by_name, caller, caller.samples[0].min_af, threads_num)
-    if not res:
-        return None
-
-    # symlinking
-    pass_txt_basefname = basename(caller.pickline_res_fpath)
-    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
-
-    if islink(pass_txt_fpath_symlink):
-        try:
-            os.unlink(pass_txt_fpath_symlink)
-        except OSError:
-            pass
-    if isfile(pass_txt_fpath_symlink):
-        try:
-            os.remove(pass_txt_fpath_symlink)
-        except OSError:
-            pass
-    try:
-        os.symlink(caller.pickline_res_fpath, pass_txt_fpath_symlink)
-    except OSError:
-        err('Cannot symlink ' + caller.pickline_res_fpath + ' -> ' + pass_txt_fpath_symlink)
+    if paired_vcf_by_sample:
+        info('*' * 70)
+        info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, True)
+        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
+        caller.single_mut_res_fpath = mut_fpath
 
     for sample in caller.samples:
         filt_vcf = sample.find_filt_vcf_by_callername(caller.name)
@@ -293,6 +266,46 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info()
 
     return caller
+
+
+def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, is_paired):
+    threads_num = min(len(vcf_fpaths), cnf.threads)
+    info('Number of threads for filtering: ' + str(threads_num))
+
+    sample_names = vcf_fpaths.keys()
+    sample_by_name = OrderedDict((sn, next(s for s in bcbio_structure.samples if s.name == sn)) for sn in sample_names)
+
+    info()
+    info('-' * 70)
+    info('Filtering using vcf2txt...')
+    vcf2txt_res_fpath = join(bcbio_structure.var_dirpath,
+         caller_name + '_' + ('paired' if is_paired else 'single') + '.txt')
+
+    mut_fpath = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths.values(), vcf2txt_res_fpath, sample_by_name, caller_name,
+         bcbio_structure.samples[0].min_af, threads_num)
+    if not mut_fpath:
+        return None
+
+    # symlinking
+    pass_txt_basefname = basename(mut_fpath)
+    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
+
+    if islink(pass_txt_fpath_symlink):
+        try:
+            os.unlink(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    if isfile(pass_txt_fpath_symlink):
+        try:
+            os.remove(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    try:
+        os.symlink(mut_fpath, pass_txt_fpath_symlink)
+    except OSError:
+        err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
+
+    return vcf2txt_res_fpath, mut_fpath
 
 
 def combine_mafs(cnf, maf_fpaths, output_basename):
