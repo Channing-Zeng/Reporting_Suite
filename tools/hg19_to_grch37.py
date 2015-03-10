@@ -2,8 +2,18 @@
 
 import sys
 
-with open(sys.argv[1]) as inp, open(sys.argv[2], 'w') as out:
-    for l in inp:
-        if l and not l.startswith('#') and l.startswith('chr'):
-            l = l[3:]
-        out.write(l)
+inp = sys.stdin
+if len(sys.argv) > 1:
+    inp = open(sys.argv[1])
+
+out = sys.stdout
+if len(sys.argv) > 2:
+    out = open(sys.argv[2], 'w')
+
+for l in inp:
+    if l and not l.startswith('#') and l.startswith('chr'):
+        l = l[3:]
+    out.write(l)
+
+inp.close()
+out.close()
