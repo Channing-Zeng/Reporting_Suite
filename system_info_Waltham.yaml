@@ -53,7 +53,7 @@ genomes:
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
-  hg19:
+  GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf

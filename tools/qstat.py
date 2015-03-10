@@ -9,6 +9,24 @@ from itertools import repeat, izip, count
 import subprocess
 import sys
 
+
+new_example = '''job-ID     prior   name       user         state submit/start at     queue                          jclass                         slots ja-task-ID
+------------------------------------------------------------------------------------------------------------------------------------------------
+      1157 1.25000 VA_BPmZGg= klpf990      r     03/10/2015 07:43:20 batch.q@orr                                                      21
+      1159 1.25000 VA_BPmZGg= klpf990      r     03/10/2015 07:44:05 batch.q@chara                                                    21
+      1158 0.00000 VQ_BPmZGg= klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1160 0.00000 VQ_BPmZGg= klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1161 0.00000 VQS_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                   1
+      1162 0.00000 VFS_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                   3
+      1163 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1164 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1165 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1166 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
+      1167 0.00000 VQAS_BPmZG klpf990      hqw   03/10/2015 07:41:51                                                                   1
+      1171 0.00000 CR_BPmZGg= klpf990      hqw   03/10/2015 07:41:52                                                                   1
+'''
+
+
 f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
 # f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
