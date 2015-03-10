@@ -53,6 +53,21 @@ genomes:
     polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
+  hg19:
+    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
+    cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf
+    1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_latest.vcf
+    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
+    oncomine: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine.vcf
+
+    exons: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
+    az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/AZ_Exome.bed
+
+    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
+
 queue: batch.q
 
 qsub_runner: sub_scripts/runner_Waltham.sh
