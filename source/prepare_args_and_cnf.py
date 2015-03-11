@@ -30,7 +30,7 @@ def add_post_bcbio_args(parser):
 
 def check_genome_resources(cnf):
     if not cnf.genomes:
-        critical('"genomes" section is not specified in system config.')
+        critical('"genomes" section is not specgetified in system config.')
 
     info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
     info()
