@@ -8,7 +8,7 @@ addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
-from operator import attrgetter
+from source.utils import human_sorted
 
 
 """ Input: Sorted and annotated BED file (i.e. at least 4 columns), File with list of key genes
@@ -29,7 +29,7 @@ def _read_args(args):
     input_bed_fpath = abspath(args[0])
     log('Input: ' + input_bed_fpath)
 
-    key_genes_fpath = '/gpfs/ngs/oncology/Analysis/dev/Dev_0075_PanelExomeFMComparison/bed/az_key_genes.txt'
+    key_genes_fpath = '/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt'
     if len(args) > 1:
         if args[1]:
             key_genes_fpath = abspath(args[1])
@@ -55,7 +55,7 @@ class Region:
         return Region([self.chrom, start if start else self.start, end if end else self.end, self.symbol, self.rest])
 
     def __str__(self):
-        return '\t'.join([self.chrom, str(self.start), str(self.end), self.symbol, self.rest])
+        return '\t'.join([self.chrom, str(self.start), str(self.end), self.symbol, self.rest]) + '\n'
 
     def overlaps(self, other):  # assume 0-based coordinates!
         if self.chrom == other.chrom and self.end > other.start:
@@ -81,6 +81,18 @@ class Region:
             else:
                 return Region.non_empty_list([self, other.subregion(start=self.end)])
 
+    def get_key(self):
+        return '\t'.join([self.chrom, str(self.start), str(self.end)])
+
+    def __lt__(self, other):
+        # special case: chrM goes to the end
+        if self.chrom != other.chrom and (self.chrom == 'chrM' or other.chrom == 'chrM'):
+            return True if other.chrom == 'chrM' else False
+        sorted_pair = human_sorted([self.get_key(), other.get_key()])
+        if sorted_pair[0] == self.get_key() and sorted_pair[1] != self.get_key():
+            return True
+        return False
+
 
 def main():
     input_bed_fpath, key_genes_fpath = _read_args(sys.argv[1:])
@@ -99,15 +111,14 @@ def main():
                 log("ERROR: Input_BED_file should be annotated (i.e. has at least 4 columns)!")
                 sys.exit(1)
             input_regions.append(Region(line.strip().split('\t')))
-    sorted_regions = sorted(input_regions, key=attrgetter('chrom', 'start', 'end'))
 
     prev_regions = []
-    for cur_region in sorted_regions:
+    for cur_region in sorted(input_regions):
         # remove all previous regions before (i.e. not overlapping) cur_region
         while prev_regions:
             if not prev_regions[0].overlaps(cur_region):
                 region = prev_regions.pop(0)
-                print(region)
+                sys.stdout.write(str(region))
             else:
                 break
         if prev_regions:
@@ -129,7 +140,7 @@ def main():
         else:
             prev_regions = [cur_region]
     for region in prev_regions:
-        print(region)
+        sys.stdout.write(str(region))
 
 
 if __name__ == '__main__':
