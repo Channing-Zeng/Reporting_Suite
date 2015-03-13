@@ -72,7 +72,7 @@ def links_show_hide(outfile, s_names):
     print >> outfile, '<table>'
     i = 0
 
-    list_of_chunks = list(chunks([s.fastqc_html_fpath for s in s_names if verify_file(s.fastqc_html_fpath)], 6))
+    list_of_chunks = list(chunks([s.name for s in s_names if verify_file(s.fastqc_html_fpath)], 6))
    
     for s_names in list_of_chunks:
         print >> outfile, '<tr>'
