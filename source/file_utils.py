@@ -700,8 +700,8 @@ def add_suffix(fname, suf):
     return base + '.' + suf + ext
 
 
-def intermediate_fname(cnf, fname, suf):
-    output_fname = add_suffix(fname, suf)
+def intermediate_fname(cnf, fpath, suf):
+    output_fname = add_suffix(fpath, suf)
     return join(cnf.work_dir, basename(output_fname))
 
 
