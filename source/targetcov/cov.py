@@ -42,7 +42,7 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Duplication rate', short_name='Dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
             ]),
 
-            ReportSection('target_metrics', 'Target', [
+            ReportSection('target_metrics', 'Target (duplicate reads are not counted)', [
                 Metric('Covered bases in target', short_name='Covered in trg', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
@@ -55,7 +55,7 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
             ]),
 
-            ReportSection('depth_metrics', 'Target coverage depth', [
+            ReportSection('depth_metrics', 'Target coverage depth (duplicate reads are not counted)', [
                 Metric('Average target coverage depth', short_name='Avg'),
                 Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
                 Metric('Maximum target coverage depth', short_name='Max'),
