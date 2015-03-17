@@ -433,7 +433,8 @@ def get_records_by_metrics(records, metrics):
 def generate_summary_report(
         cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
         total_reads, total_mapped_reads, total_dup_mapped_reads,
-        depth_thresholds, padding, combined_region, max_depth, target_info):
+        depth_thresholds, padding,
+        combined_region, max_depth, target_info):
 
     report = SampleReport(sample, metric_storage=get_header_metric_storage(depth_thresholds))
 
@@ -1126,7 +1127,7 @@ def number_of_dup_reads(cnf, bam):
 def number_of_dup_unmapped_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, cnf.name + '_num_dup_unmapped_reads')
-    cmdline = '{samtools} view -c -f 1028 {bam}'.format(**locals())
+    cmdline = '{samtools} view -c -f 1028 {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -1135,7 +1136,7 @@ def number_of_dup_unmapped_reads(cnf, bam):
 def remove_dups(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = intermediate_fname(cnf, bam, 'dedup')
-    cmdline = '{samtools} view -b -f 1024 {bam}'.format(**locals())
+    cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (not) 1024 (dup)
     call(cnf, cmdline, output_fpath)
     if not isfile(output_fpath + '.bai'):
         info('Indexing bam ' + output_fpath)
