@@ -137,7 +137,7 @@ calc_record_cell_contents = (rec, font) ->
             rec.cell_contents = toPrettyString value, rec.metric.unit
             num_html = toPrettyString value
 
-        else if /^-?.?[0-9]/.test(value)
+        else if /^-?.?[0-9]/.test value
             result = /([0-9\.]+)(.*)/.exec value
             rec.num = parseFloat result[1]
             rec.cell_contents = toPrettyString(rec.num, rec.metric.unit) + result[2]

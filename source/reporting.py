@@ -2,8 +2,8 @@ from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
 from os.path import join, relpath
 from json import load, dump, JSONEncoder, dumps
-import datetime
 from source import verify_file
+import datetime
 
 from source.bcbio_structure import VariantCaller, BCBioSample
 from source.logger import critical, info, err
@@ -105,7 +105,7 @@ class Metric:
                 return str(value)
 
         elif isinstance(value, float):
-            if value == 0:
+            if value == 0.0:
                 return '0'
             if human_readable:
                 if unit == '%':
@@ -217,7 +217,7 @@ class SampleReport(Report):
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             rec = Report.find_record(self.records, metric.name)
-            row.append(rec.format(human_readable=human_readable) if rec else '.')
+            row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
             rows.append(row)
         return rows
 
@@ -395,7 +395,7 @@ class FullReport(Report):
             row = [metric.display_name()]
             for sr in self.sample_reports:
                 rec = Report.find_record(sr.records, metric.name)
-                row.append(rec.format(human_readable=human_readable) if rec else '.')
+                row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
             rows.append(row)
         return rows
 
