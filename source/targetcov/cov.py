@@ -43,7 +43,7 @@ def get_header_metric_storage(depth_thresholds):
             ]),
 
             ReportSection('target_metrics', 'Target (duplicate reads are not counted)', [
-                Metric('Covered bases in target', short_name='Covered in trg', unit='bp'),
+                Metric('Covered bases in target', short_name='Trg covered', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
                 Metric('Reads mapped on target', short_name='Reads on trg'),
@@ -161,49 +161,31 @@ class TargetInfo:
         self.genes_num = genes_num
 
 
-    # picard = get_system_path(cnf, 'java', 'picard')
-    # if picard:
-    #     info('Picard duplication metrics for "' + basename(sample.bam) + '"')
-    #     bam_fpath = sample.bam
-    #
-    #     dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
-    #
-    #     cmdline = '{picard} MarkDuplicates' \
-    #               ' I={bam_fpath}' \
-    #               ' O=/dev/null' \
-    #               ' METRICS_FILE={dup_metrics_txt}' \
-    #               ' VALIDATION_STRINGENCY=LENIENT'
-    #     res = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
-    #         stdout_to_outputfile=False, exit_on_error=False)
-    #
-    #     if res != dup_metrics_txt:  # error occurred, try to correct BAM and restart
-    #         warn('Picard duplication metrics failed for "' + basename(sample.bam) + '". '
-    #              'Trying to fix the file and restart Picard.')
-    #         bam_fpath = _fix_bam_for_picard(cnf, sample.bam)
-    #         res = call(cnf, cmdline.format(**locals()), output_fpath=dup_metrics_txt,
-    #             stdout_to_outputfile=False, exit_on_error=False)
-    #
-    #     if res == dup_metrics_txt:
-    #         dup_rate = _parse_picard_dup_report(dup_metrics_txt)
-    #         assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
-    #         if dup_rate:
-    #             report.add_record('Duplication rate (picard)', dup_rate)
-
-
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     bam_fpath, exons_bed, amplicons_bed, seq2c_bed = _prep_files(cnf, sample, exons_bed)
 
     exons_bed, amplicons_bed, gene_by_name = _get_genes_and_filter(cnf, sample.name, amplicons_bed, exons_bed, genes_fpath)
 
     total_reads = number_of_reads(cnf, bam_fpath)
+    info('Total reads: ' + Metric.format_value(total_reads))
     total_mapped_reads = number_of_mapped_reads(cnf, bam_fpath)
+    info('Total mapped reads: ' + Metric.format_value(total_mapped_reads))
     total_dup_reads = number_of_dup_reads(cnf, bam_fpath)
-    info('Total dup reads: ' + str(total_dup_reads))
+    info('Total dup reads: ' + Metric.format_value(total_dup_reads))
     total_dup_unmapped_reads = number_of_dup_unmapped_reads(cnf, bam_fpath)
-    info('Total dup unmapped reads: ' + str(total_dup_unmapped_reads))
+    info('Total dup unmapped reads: ' + Metric.format_value(total_dup_unmapped_reads))
     total_dup_mapped_reads = total_dup_reads - total_dup_unmapped_reads
-    info('Total dup mapped reads: ' + str(total_dup_mapped_reads))
-    bam_fpath = remove_dups(cnf, bam_fpath)
+    info('Total dup mapped reads: ' + Metric.format_value(total_dup_mapped_reads))
+
+    dedup_bam_fpath = remove_dups(cnf, bam_fpath)
+    info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath)))
+    info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
+
+    picard_bam_fpath = remove_dups_picard(cnf, bam_fpath)
+    info('Total reads after dedup (picard): ' + Metric.format_value(number_of_reads(cnf, picard_bam_fpath)))
+    info('Total mapped reads after dedup (picard): ' + Metric.format_value(number_of_mapped_reads(cnf, picard_bam_fpath)))
+
+    bam_fpath = picard_bam_fpath
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -1141,6 +1123,37 @@ def remove_dups(cnf, bam):
     if not isfile(output_fpath + '.bai'):
         info('Indexing bam ' + output_fpath)
         index_bam(cnf, output_fpath)
+    return output_fpath
+
+
+def remove_dups_picard(cnf, bam_fpath):
+    picard = get_system_path(cnf, 'java', 'picard')
+    if not picard:
+        critical('No picard in the system')
+
+    info('Running picard dedup for "' + basename(bam_fpath) + '"')
+
+    dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
+    output_fpath = intermediate_fname(cnf, bam_fpath, 'pcd_dedup')
+
+    cmdline = '{picard} MarkDuplicates' \
+              ' I={bam_fpath}' \
+              ' O={output_fpath}' \
+              ' METRICS_FILE={dup_metrics_txt}' \
+              ' REMOVE_DUPLICATES=True' \
+              ' VALIDATION_STRINGENCY=LENIENT'
+    res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath, exit_on_error=False)
+
+    if res != output_fpath:  # error occurred, try to correct BAM and restart
+        warn('Picard deduplication failed for "' + basename(bam_fpath) + '". Fixing BAM and restarting Picard...')
+        bam_fpath = _fix_bam_for_picard(cnf, bam_fpath)
+        res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath)
+
+    if res == output_fpath:
+        dup_rate = _parse_picard_dup_report(dup_metrics_txt)
+        assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
+        info('Duplication rate (picard): ' + str(dup_rate))
+
     return output_fpath
 
 

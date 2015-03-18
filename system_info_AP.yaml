@@ -16,6 +16,8 @@ resources:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
   picard:
     path: ext_tools/picard/picard.jar
+  qsub:
+    path: /apps/sge61/bin/lx24-amd64/qsub
 
 genomes:
   hg19:
