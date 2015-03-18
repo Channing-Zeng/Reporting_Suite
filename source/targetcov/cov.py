@@ -1142,12 +1142,13 @@ def remove_dups_picard(cnf, bam_fpath):
               ' METRICS_FILE={dup_metrics_txt}' \
               ' REMOVE_DUPLICATES=True' \
               ' VALIDATION_STRINGENCY=LENIENT'
-    res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath, exit_on_error=False)
+    res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
+        stdout_to_outputfile=False, exit_on_error=False)
 
     if res != output_fpath:  # error occurred, try to correct BAM and restart
         warn('Picard deduplication failed for "' + basename(bam_fpath) + '". Fixing BAM and restarting Picard...')
         bam_fpath = _fix_bam_for_picard(cnf, bam_fpath)
-        res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath)
+        res = call(cnf, cmdline.format(**locals()), stdout_to_outputfile=False, output_fpath=output_fpath)
 
     if res == output_fpath:
         dup_rate = _parse_picard_dup_report(dup_metrics_txt)
