@@ -11,7 +11,7 @@ from source.calling_process import call_subprocess, call_pipe, call
 from source.file_utils import verify_file, adjust_path
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.reporting import write_tsv_rows, Record, SampleReport
-from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports
+from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
@@ -189,7 +189,8 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
     bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
     with open(bam2reads_list_of_bams_fpath, 'w') as f:
         for sample in samples:
-            f.write(sample.name + '\t' + sample.bam + '\n')
+            dedup_bam_fpath = remove_dups(cnf, sample.bam)
+            f.write(sample.name + '\t' + dedup_bam_fpath + '\n')
 
     samtools = get_system_path(cnf, 'samtools')
     read_stats_fpath = join(cnf.work_dir, 'seq2c_read_stats.txt')
