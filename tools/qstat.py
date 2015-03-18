@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import getpass
 import sys
 if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
     sys.exit('Python 2, versions 2.7 and higher is supported '
@@ -10,48 +11,60 @@ import subprocess
 import sys
 
 
-new_example = '''job-ID     prior   name       user         state submit/start at     queue                          jclass                         slots ja-task-ID
-------------------------------------------------------------------------------------------------------------------------------------------------
-      1157 1.25000 VA_BPmZGg= klpf990      r     03/10/2015 07:43:20 batch.q@orr                                                      21
-      1159 1.25000 VA_BPmZGg= klpf990      r     03/10/2015 07:44:05 batch.q@chara                                                    21
-      1158 0.00000 VQ_BPmZGg= klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1160 0.00000 VQ_BPmZGg= klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1161 0.00000 VQS_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                   1
-      1162 0.00000 VFS_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                   3
-      1163 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1164 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1165 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1166 0.00000 VQA_BPmZGg klpf990      hqw   03/10/2015 07:41:51                                                                  21
-      1167 0.00000 VQAS_BPmZG klpf990      hqw   03/10/2015 07:41:51                                                                   1
-      1171 0.00000 CR_BPmZGg= klpf990      hqw   03/10/2015 07:41:52                                                                   1
-'''
+# job-ID     prior   name       user         state submit/start at     queue                          jclass                         slots ja-task-ID
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+#       9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204                                                    5
+#        Full jobname:     VFS_BxAUAg=_bcbio
+#        Master Queue:     batch.q@bn0204
+#        Requested PE:     smp 5
+#        Granted PE:       smp 5
+#        Hard Resources:
+#        Soft Resources:
+#        Hard requested queues: batch.q
+#        Predecessor Jobs (request): _
+#        Binding:          NONE
+#       9670 0.00000 TARGQC_0G6 klpf990      hqw   03/18/2015 11:37:00                                                                   4
+#        Full jobname:     TARGQC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup
+#        Requested PE:     smp 4
+#        Hard Resources:
+#        Soft Resources:
+#        Hard requested queues: batch.q
+#        Predecessor Jobs (request): TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready
+#        Predecessor Jobs: 9662, 9668
+#        Binding:          NONE
 
 
 f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
 # f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
+header_fields = []
+cur_fields, full_name, pred_jobs = None, None, None
 
-cur_tokens = None
 for i, l in enumerate(f):
     if i == 0:
-        rows.append(l.split())
+        header_fields = [f for f in l.split() if f not in ['jclass', 'ja-task-ID']]
+        rows.append(header_fields + ['Pred jobs'])  # job-ID  prior  name  user  state  submit/start at  queue  slots
+        continue
+    if i == 1:  # ----------------...
         continue
 
-    if i == 1:
-        continue
+    l = l.strip()
 
-    if l[0] != ' ' and l.strip().split()[3] == 'klpf990':
-        cur_tokens = l.split()
+    if getpass.getuser() in l.strip():  # 9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204
+        cur_fields = l.split()
+        # job_id, prior, name, user, state, date = l.split()
 
-    elif cur_tokens and l.strip().startswith('Full jobname:'):
-        full_name = l.strip().split()[2]
+    elif cur_fields:
+        if l.startswith('Full jobname:'):
+            full_name = l.split(': ')[1].strip()
 
-        if len(cur_tokens) == 8:
-            rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:7] + [''] + cur_tokens[7:])
-        else:
-            rows.append(cur_tokens[:2] + [full_name] + cur_tokens[3:])
-        cur_tokens = None
+        elif l.startswith('Predecessor Jobs:'):
+            pred_jobs = l.split(': ')[1].strip()
+
+        rows.append(cur_fields[:2] + [full_name] + cur_fields[3:8] + [pred_jobs])
+        cur_fields, full_name, pred_jobs = None, None, None
+
 
 col_widths = repeat(0)
 
