@@ -11,59 +11,64 @@ import subprocess
 import sys
 
 
-# job-ID     prior   name       user         state submit/start at     queue                          jclass                         slots ja-task-ID
-# ------------------------------------------------------------------------------------------------------------------------------------------------
-#       9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204                                                    5
-#        Full jobname:     VFS_BxAUAg=_bcbio
-#        Master Queue:     batch.q@bn0204
-#        Requested PE:     smp 5
-#        Granted PE:       smp 5
-#        Hard Resources:
-#        Soft Resources:
-#        Hard requested queues: batch.q
-#        Predecessor Jobs (request): _
-#        Binding:          NONE
-#       9670 0.00000 TARGQC_0G6 klpf990      hqw   03/18/2015 11:37:00                                                                   4
-#        Full jobname:     TARGQC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup
-#        Requested PE:     smp 4
-#        Hard Resources:
-#        Soft Resources:
-#        Hard requested queues: batch.q
-#        Predecessor Jobs (request): TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready
-#        Predecessor Jobs: 9662, 9668
-#        Binding:          NONE
+example_lines = '''job-ID     prior   name       user         state submit/start at     queue                          jclass                         slots ja-task-ID
+------------------------------------------------------------------------------------------------------------------------------------------------
+      9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204                                                    5
+       Full jobname:     VFS_BxAUAg=_bcbio
+       Master Queue:     batch.q@bn0204
+       Requested PE:     smp 5
+       Granted PE:       smp 5
+       Hard Resources:
+       Soft Resources:
+       Hard requested queues: batch.q
+       Predecessor Jobs (request): _
+       Binding:          NONE
+      9670 0.00000 TARGQC_0G6 klpf990      hqw   03/18/2015 11:37:00                                                                   4
+       Full jobname:     TARGQC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup
+       Requested PE:     smp 4
+       Hard Resources:
+       Soft Resources:
+       Hard requested queues: batch.q
+       Predecessor Jobs (request): TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready
+       Predecessor Jobs: 9662, 9668
+       Binding:          NONE'''.split('\n')
 
-
-f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
+# f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
 # f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
 header_fields = []
-cur_fields, full_name, pred_jobs = None, None, None
+cur_fields, full_name, pred_jobs = None, '', ''
 
-for i, l in enumerate(f):
+for i, l in enumerate(example_lines):
     if i == 0:
+        l = l.replace('submit/start', 'submit/date')
         header_fields = [f for f in l.split() if f not in ['jclass', 'ja-task-ID']]
-        rows.append(header_fields + ['Pred jobs'])  # job-ID  prior  name  user  state  submit/start at  queue  slots
+        rows.append(header_fields + ['pred_jobs'])  # job-ID  prior  name  user  state  submit/start  at  queue  slots
         continue
     if i == 1:  # ----------------...
         continue
 
     l = l.strip()
-
     if getpass.getuser() in l.strip():  # 9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204
         cur_fields = l.split()
-        # job_id, prior, name, user, state, date = l.split()
 
     elif cur_fields:
-        if l.startswith('Full jobname:'):
+        if l.startswith('Full jobname: '):
             full_name = l.split(': ')[1].strip()
 
-        elif l.startswith('Predecessor Jobs:'):
-            pred_jobs = l.split(': ')[1].strip()
+        elif l.startswith('Predecessor Jobs: '):
+            pred_jobs = ' '.join(l.split(': ')[1].strip().split(', '))
 
-        rows.append(cur_fields[:2] + [full_name] + cur_fields[3:8] + [pred_jobs])
-        cur_fields, full_name, pred_jobs = None, None, None
+            if len(cur_fields) >= 9:
+                job_id, prior, name, user, state, date, time, queue, slots = cur_fields[:9]
+            else:
+                job_id, prior, name, user, state, date, time, slots = cur_fields[:8]
+                queue = ''
+
+            rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
+
+            cur_fields, full_name, pred_jobs = None, '', ''
 
 
 col_widths = repeat(0)
