@@ -284,7 +284,7 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, is_paired):
     mut_fpath = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths.values(), vcf2txt_res_fpath, sample_by_name, caller_name,
          bcbio_structure.samples[0].min_af, threads_num)
     if not mut_fpath:
-        return None
+        return None, None
 
     # symlinking
     pass_txt_basefname = basename(mut_fpath)

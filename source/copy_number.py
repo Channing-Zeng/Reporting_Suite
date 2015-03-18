@@ -76,11 +76,11 @@ def _get_whole_genes_and_amlicons(report_fpath):
         for i, line in enumerate(f):
             if 'Capture' in line or 'Whole-Gene' in line:
                 ts = line.split('\t')
-                # #Sample  Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave
-                ts = ts[:4] +               ts[5:6] + ts[7:8] + ts[4:5] + ts[10:11]
-                # sample_name, chrom, s, e, gene,     tag,      size,     cov
-                gene_summary_lines.append(ts)
-
+                # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave
+                chrom, s, e, size, gene, strand, feature = ts[:7]
+                ave_depth = ts[9]
+                # chrom, s, e, gene,     feature,  size,     cov
+                gene_summary_lines.append([chrom, s, e, size, gene, feature, ave_depth])
     if not gene_summary_lines:
         critical('No Capture or Whole-Gene is not found in ' + report_fpath)
 
@@ -206,11 +206,10 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
 
     for sample in bcbio_structure.samples:
         for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
-            sample_name, chrom, s, e, size, gene, tag, cov = tokens
-            s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, cov]]
+            chrom, s, e, size, gene, feature, ave_depth = tokens
+            s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, ave_depth]]
             if cov != '.' and float(cov) != 0:
-                reordered = sample_name, gene, chrom, s, e, tag, size, cov
-                coverage_info.append(reordered)
+                coverage_info.append([sample.name, gene, chrom, s, e, feature, size, cov])
 
         with open(sample.targetcov_json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
