@@ -33,14 +33,23 @@ example_lines = '''job-ID     prior   name       user         state submit/start
        Predecessor Jobs: 9662, 9668
        Binding:          NONE'''.split('\n')
 
-# f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
+f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
 # f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
 header_fields = []
 cur_fields, full_name, pred_jobs = None, '', ''
 
-for i, l in enumerate(example_lines):
+def add_row(cur_fields, full_name, pred_jobs):
+    if len(cur_fields) >= 9:
+        job_id, prior, name, user, state, date, time, queue, slots = cur_fields[:9]
+    else:
+        job_id, prior, name, user, state, date, time, slots = cur_fields[:8]
+        queue = ''
+    rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
+    return None, '', ''
+
+for i, l in enumerate(f):
     if i == 0:
         l = l.replace('submit/start', 'submit/date')
         header_fields = [f for f in l.split() if f not in ['jclass', 'ja-task-ID']]
@@ -51,6 +60,8 @@ for i, l in enumerate(example_lines):
 
     l = l.strip()
     if getpass.getuser() in l.strip():  # 9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204
+        if cur_fields:
+            cur_fields, full_name, pred_jobs = add_row(cur_fields, full_name, pred_jobs)
         cur_fields = l.split()
 
     elif cur_fields:
@@ -60,15 +71,8 @@ for i, l in enumerate(example_lines):
         elif l.startswith('Predecessor Jobs: '):
             pred_jobs = ' '.join(l.split(': ')[1].strip().split(', '))
 
-            if len(cur_fields) >= 9:
-                job_id, prior, name, user, state, date, time, queue, slots = cur_fields[:9]
-            else:
-                job_id, prior, name, user, state, date, time, slots = cur_fields[:8]
-                queue = ''
-
-            rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
-
-            cur_fields, full_name, pred_jobs = None, '', ''
+if cur_fields:
+    add_row(cur_fields, full_name, pred_jobs)
 
 
 col_widths = repeat(0)
