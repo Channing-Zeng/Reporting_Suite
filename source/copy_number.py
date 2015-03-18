@@ -108,11 +108,11 @@ def _seq2c(cnf, bcbio_structure):
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
     cnv_gene_ampl_report_fpath__mine = join(cnf.work_dir, BCBioStructure.seq2c_name + '.mine.tsv')
 
-    cnv_gene_ampl_report_fpath = cnv_gene_ampl_report_fpath__mine
+    cnv_gene_ampl_report_fpath__mine = cnv_gene_ampl_report_fpath
 
     # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
     # cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath)
+    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
 
     # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
 
