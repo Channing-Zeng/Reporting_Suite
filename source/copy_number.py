@@ -93,13 +93,13 @@ def _seq2c(cnf, bcbio_structure):
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
 
-    info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
-    read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
-    info()
-
-    if not read_stats_fpath or not combined_gene_depths_fpath:
-        err('Error: no read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
-        return None, None
+    # info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
+    # read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
+    # info()
+    #
+    # if not read_stats_fpath or not combined_gene_depths_fpath:
+    #     err('Error: no read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
+    #     return None, None
 
     info('Getting old way reads and cov stats, but with amplicons')
     read_stats_fpath__mine, combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(cnf.work_dir, bcbio_structure)
@@ -108,9 +108,11 @@ def _seq2c(cnf, bcbio_structure):
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
     cnv_gene_ampl_report_fpath__mine = join(cnf.work_dir, BCBioStructure.seq2c_name + '.mine.tsv')
 
+    cnv_gene_ampl_report_fpath = cnv_gene_ampl_report_fpath__mine
+
     # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
+    # cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
+    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath)
 
     # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
 

@@ -182,10 +182,10 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
 
     picard_bam_fpath = remove_dups_picard(cnf, bam_fpath)
-    info('Total reads after dedup (picard): ' + Metric.format_value(number_of_reads(cnf, picard_bam_fpath)))
-    info('Total mapped reads after dedup (picard): ' + Metric.format_value(number_of_mapped_reads(cnf, picard_bam_fpath)))
-
-    bam_fpath = picard_bam_fpath
+    if picard_bam_fpath:
+        info('Total reads after dedup (picard): ' + Metric.format_value(number_of_reads(cnf, picard_bam_fpath)))
+        info('Total mapped reads after dedup (picard): ' + Metric.format_value(number_of_mapped_reads(cnf, picard_bam_fpath)))
+        bam_fpath = picard_bam_fpath
 
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -1148,14 +1148,16 @@ def remove_dups_picard(cnf, bam_fpath):
     if res != output_fpath:  # error occurred, try to correct BAM and restart
         warn('Picard deduplication failed for "' + basename(bam_fpath) + '". Fixing BAM and restarting Picard...')
         bam_fpath = _fix_bam_for_picard(cnf, bam_fpath)
-        res = call(cnf, cmdline.format(**locals()), stdout_to_outputfile=False, output_fpath=output_fpath)
+        res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
+            stdout_to_outputfile=False, exit_on_error=False)
 
     if res == output_fpath:
         dup_rate = _parse_picard_dup_report(dup_metrics_txt)
         assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
         info('Duplication rate (picard): ' + str(dup_rate))
-
-    return output_fpath
+        return output_fpath
+    else:
+        return None
 
 
 def number_mapped_reads_on_target(cnf, bed, bam):
