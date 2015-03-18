@@ -59,7 +59,7 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Average target coverage depth', short_name='Avg'),
                 Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
                 Metric('Maximum target coverage depth', short_name='Max'),
-                Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%', quality='Less is better')
+                Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
             ]),
         ])
 
