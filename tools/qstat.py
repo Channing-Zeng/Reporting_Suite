@@ -30,11 +30,9 @@ example_lines = '''job-ID     prior   name       user         state submit/start
        Soft Resources:
        Hard requested queues: batch.q
        Predecessor Jobs (request): TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Acrometrix-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Colo829-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Horizon-ready, TC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, NC_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready, QM_0G6ozA=_IDT-PanCancer_AZ1-IDT-Evaluation_nodup_Promega-ready
-       Predecessor Jobs: 9662, 9668
+       Predecessor Jobs: 9662, 9668, 9244, 9544
        Binding:          NONE'''.split('\n')
 
-f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
-# f = open('/Users/vladsaveliev/vagrant/reporting_suite/test/qstat')
 
 rows = []
 header_fields = []
@@ -49,6 +47,9 @@ def add_row(cur_fields, full_name, pred_jobs):
     rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
     return None, '', ''
 
+
+un = getpass.getuser()
+f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
 for i, l in enumerate(f):
     if i == 0:
         l = l.replace('submit/start', 'submit/date')
@@ -59,7 +60,7 @@ for i, l in enumerate(f):
         continue
 
     l = l.strip()
-    if getpass.getuser() in l.strip():  # 9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204
+    if un in l.strip():  # 9606 0.86405 VFS_BxAUAg klpf990      r     03/18/2015 11:30:23 batch.q@bn0204
         if cur_fields:
             cur_fields, full_name, pred_jobs = add_row(cur_fields, full_name, pred_jobs)
         cur_fields = l.split()
@@ -75,17 +76,19 @@ if cur_fields:
     add_row(cur_fields, full_name, pred_jobs)
 
 
-col_widths = repeat(0)
+if len(rows) > 0:
+    col_widths = repeat(0)
+    for row in rows:
+        col_widths = [max(len(v), w) for v, w in izip(row[:-1], col_widths)]
 
-for row in rows:
-    col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
-
-for i, row in enumerate(rows):
     line = ''
-    for val, w in izip(row, col_widths):
-        cell = val + (' ' * (w - len(val) + 2))
-        sys.stdout.write(cell)
-        line += cell
-    sys.stdout.write('\n')
-    if i == 0:
-        sys.stdout.write('-' * len(line[:-2]) + '\n')
+    for i, row in enumerate(rows):
+        if i == 1:
+            sys.stdout.write('-' * len(line) + '\n')
+        for val, w in izip(row[:-1], col_widths):
+            cell = val + (' ' * (w - len(val) + 2))
+            sys.stdout.write(cell)
+            line += cell
+        sys.stdout.write(row[-1])
+        line += row[-1]
+        sys.stdout.write('\n')
