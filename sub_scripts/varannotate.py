@@ -66,7 +66,7 @@ def process_one(cnf):
     sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     # this method will also gunzip the vcf file
-    sample.vcf = fix_chromosome_names(cnf, sample.vcf)
+    # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
 
     if cnf.get('filter_reject'):
         sample.vcf = remove_rejected(cnf, sample.vcf)

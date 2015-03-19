@@ -43,10 +43,10 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
     info('bedtools-sotring amplicons...')
     amplicons_bed = sort_bed(cnf, amplicons_bed)
 
-    if cnf.reannotate or (seq2c_bed and count_bed_cols(seq2c_bed)) < 4:
-        info()
-        info('Annotating amplicons with gene names from Ensembl...')
-        amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
+    # if cnf.reannotate or (seq2c_bed and count_bed_cols(seq2c_bed)) < 4:
+    info()
+    info('Annotating amplicons with gene names from Ensembl...')
+    amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     if seq2c_bed:
         seq2c_bed = _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)

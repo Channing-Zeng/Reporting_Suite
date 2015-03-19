@@ -519,7 +519,14 @@ def get_trasncripts_fpath(cnf):
 
 
 def fix_chromosome_names(cnf, vcf_fpath):
-    step_greetings('Fixing chromosome names...')
+    with open(vcf_fpath) as f:
+        for l in f:
+            if not l.startswith('#'):
+                if l.startswith('chr'):
+                    info('Chomosome names are hg19, no need to fix.')
+                    return vcf_fpath
+
+    step_greetings('Fixing chromosome names')
 
     def _proc_rec(rec):
         if not rec.CHROM.startswith('chr'):
