@@ -1,11 +1,11 @@
 resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /ngs/RDI/PROGRAMS/snpEff4.0/snpEff.jar
-    config: /ngs/RDI/PROGRAMS/snpEff4.0/snpEff.config
+    path: /ngs/RDI/PROGRAMS/snpEff/snpEff.jar
+    config: /ngs/RDI/PROGRAMS/snpEff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /ngs/RDI/PROGRAMS/snpEff4.0/SnpSift.jar
+    path: /ngs/RDI/PROGRAMS/snpEff/SnpSift.jar
   vcfannotate:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
