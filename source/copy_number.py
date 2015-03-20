@@ -74,7 +74,7 @@ def _get_whole_genes_and_amlicons(report_fpath):
 
     with open(report_fpath, 'r') as f:
         for i, line in enumerate(f):
-            if 'Capture' in line or 'Whole-Gene' in line:
+            if 'Capture' in line or 'Whole-Gene' in line:  # TODO: this is incorect. We need to get Whole-Gene of Capture, not of CDSs!
                 ts = line.split('\t')
                 # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave
                 chrom, s, e, size, gene, strand, feature = ts[:7]
@@ -92,33 +92,28 @@ def _seq2c(cnf, bcbio_structure):
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
-
-    # info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
-    # read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
-    # info()
-    #
-    # if not read_stats_fpath or not combined_gene_depths_fpath:
-    #     err('Error: no read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
-    #     return None, None
-
-    info('Getting old way reads and cov stats, but with amplicons')
-    read_stats_fpath__mine, combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(cnf.work_dir, bcbio_structure)
-    info()
-
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
     cnv_gene_ampl_report_fpath__mine = join(cnf.work_dir, BCBioStructure.seq2c_name + '.mine.tsv')
 
-    cnv_gene_ampl_report_fpath__mine = cnv_gene_ampl_report_fpath
+    info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
+    read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
+    info()
+    if not read_stats_fpath or not combined_gene_depths_fpath:
+        err('Error: no read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
+    else:
+        cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
 
+    # info('Getting old way reads and cov stats, but with amplicons')
+    # combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(cnf.work_dir, bcbio_structure)
+    # info()
     # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    # cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath__mine, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
+    # cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
 
     # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
 
     # save_results_separate_for_samples(results)
 
-    return [cnv_gene_ampl_report_fpath, cnv_gene_ampl_report_fpath__mine]
+    return [cnv_gene_ampl_report_fpath, None]
 
 
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
@@ -142,6 +137,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
         return None
 
     return res
+
 
 # def __cov2cnv2(cnf, mapped_reads_by_sample, cov_info, output_fpath):
 #     mapped_read_fpath, gene_depths_fpath = __get_mapped_reads_and_cov(
@@ -194,7 +190,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
 
     samtools = get_system_path(cnf, 'samtools')
     read_stats_fpath = join(cnf.work_dir, 'seq2c_read_stats.txt')
-    cmdline = '{bam2reads} {bam2reads_list_of_bams_fpath} -m {samtools}'.format(**locals())
+    cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_bams_fpath}'.format(**locals())
     if not call(cnf, cmdline, read_stats_fpath): return None, None
 
     return read_stats_fpath, combined_gene_depths_fpath
@@ -202,7 +198,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
 
 def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
     coverage_info = []
-    mapped_reads_by_sample = OrderedDict()
+    # mapped_reads_by_sample = OrderedDict()
 
     for sample in bcbio_structure.samples:
         for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
@@ -215,24 +211,24 @@ def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
             data = load(f, object_pairs_hook=OrderedDict)
         sample = next((s for s in bcbio_structure.samples if s.name == sample.name), None)
         if not sample: continue
-        cov_report = SampleReport.load(data, sample, bcbio_structure)
+        # cov_report = SampleReport.load(data, sample, bcbio_structure)
 
-        mapped_reads_by_sample[sample.name] = int(next(
-            rec.value for rec in cov_report.records
-            if rec.metric.name == 'Mapped reads'))
+        # mapped_reads_by_sample[sample.name] = int(next(
+        #     rec.value for rec in cov_report.records
+        #     if rec.metric.name == 'Mapped reads'))
 
     # Writing results
-    mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
-    with open(mapped_read_fpath, 'w') as f:
-        for sample_name, mapped_reads in mapped_reads_by_sample.items():
-            f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+    # mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
+    # with open(mapped_read_fpath, 'w') as f:
+    #     for sample_name, mapped_reads in mapped_reads_by_sample.items():
+    #         f.write(sample_name + '\t' + str(mapped_reads) + '\n')
 
     gene_depths_fpath = join(work_dir, 'gene_depths.txt')
     with open(gene_depths_fpath, 'w') as f:
         for tokens in coverage_info:
             f.write('\t'.join(tokens) + '\n')
 
-    return mapped_read_fpath, gene_depths_fpath
+    return gene_depths_fpath
 
 
 
