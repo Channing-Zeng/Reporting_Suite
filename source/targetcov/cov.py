@@ -177,6 +177,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     total_dup_mapped_reads = total_dup_reads - total_dup_unmapped_reads
     info('Total dup mapped reads: ' + Metric.format_value(total_dup_mapped_reads))
 
+    dup_bam_fpath = bam_fpath
     dedup_bam_fpath = remove_dups(cnf, bam_fpath)
     info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath)))
     info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
@@ -278,24 +279,31 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     info()
     info('Running seq2cov.pl for ' + sample.name)
-    seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed)
+    seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed, join(
+        cnf.output_dir,
+        sample.name + '.' +
+        source.targetseq_name + '_' +
+        source.seq2c_seq2cov_ending))
+
+    info('Running seq2cov.pl with dups (to compare) for ' + sample.name)
+    seq2c_seq2cov(cnf, sample, dup_bam_fpath, seq2c_bed, join(
+        cnf.output_dir,
+        sample.name + '.' +
+        source.targetseq_name + '_dups_' +
+        source.seq2c_seq2cov_ending))
 
     return general_rep_fpath, per_gene_rep_fpath
 
 
-def seq2c_seq2cov(cnf, sample, bam_fpath, amplicons_bed):
+def seq2c_seq2cov(cnf, sample, bam_fpath, amplicons_bed, seq2c_output):
     seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'))
     if not seq2cov: sys.exit(1)
 
     def fn(l, i): return '\t'.join(l.split('\t')[:4])
     amplicons_bed = iterate_file(cnf, amplicons_bed, fn, suffix='4col')
 
-    seq2c_output = join(
-        cnf.output_dir,
-        sample.name + '.' +
-        source.targetseq_name + '_' +
-        source.seq2c_seq2cov_ending)
     sample_name = sample.name
+
     samtools = get_system_path(cnf, 'samtools')
 
     cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())

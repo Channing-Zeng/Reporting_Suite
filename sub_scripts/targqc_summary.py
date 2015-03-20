@@ -28,7 +28,7 @@ def main():
         info('Custom genes list: ' + genes_fpath)
 
     summarize_targqc(cnf, cnf.threads or len(bcbio_structure.samples),
-                     cnf.output_dir, bcbio_structure.samples, bed_fpath, exons_bed_fpath, genes_fpath)
+        cnf.output_dir, bcbio_structure.samples, bed_fpath, exons_bed_fpath, genes_fpath)
 
 
 if __name__ == '__main__':
