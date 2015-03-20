@@ -93,7 +93,7 @@ def _seq2c(cnf, bcbio_structure):
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-    cnv_gene_ampl_report_dups_fpath = join(cnf.work_dir, BCBioStructure.seq2c_name + '.dups.tsv')
+    cnv_gene_ampl_report_dups_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.dups.tsv')
 
     info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
     combined_gene_depths_fpath, combined_gene_depths_dups_fpath = \
