@@ -112,11 +112,11 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     if 'tsv_fields' in cnf.annotation:
         tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
         if not tsv_fpath:
-            critical('TSV convertion didn\'t work')
-
-        if isfile(final_tsv_fpath):
-            os.remove(final_tsv_fpath)
-        shutil.copy(tsv_fpath, final_tsv_fpath)
+            err('TSV convertion didn\'t work')
+        else:
+            if isfile(final_tsv_fpath):
+                os.remove(final_tsv_fpath)
+            shutil.copy(tsv_fpath, final_tsv_fpath)
     else:
         final_tsv_fpath = None
 
@@ -250,7 +250,7 @@ def _snpeff(cnf, input_fpath):
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
-    stats_fpath = join(cnf.output_dir, cnf.name + '.snpEff_summary.html')
+    stats_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.snpEff_summary.html')
 
     ref_name = cnf.genome.name
     if ref_name == 'GRCh37': ref_name += '.75'
