@@ -59,14 +59,12 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             vcf_fpath = res
             annotated = True
 
-            if isfile(join(cnf['output_dir'], summary_fpath)):
-                os.remove(join(cnf['output_dir'], summary_fpath))
-            if isfile(join(cnf['output_dir'], genes_fpath)):
-                os.remove(join(cnf['output_dir'], genes_fpath))
-            if file_exists(summary_fpath):
-                shutil.move(summary_fpath, cnf['output_dir'])
-            if file_exists(genes_fpath):
-                shutil.move(genes_fpath, cnf['output_dir'])
+            final_summary_fpath = join(cnf.output_dir, basename(summary_fpath))
+            final_genes_fpath = join(cnf.output_dir, basename(genes_fpath))
+            if isfile(final_summary_fpath): os.remove(final_summary_fpath)
+            if isfile(final_genes_fpath): os.remove(final_genes_fpath)
+            if file_exists(summary_fpath): shutil.move(summary_fpath, final_summary_fpath)
+            if file_exists(genes_fpath): shutil.move(genes_fpath, final_genes_fpath)
 
     if cnf.annotation.get('tracks'):
         for track in cnf.annotation['tracks']:
@@ -250,7 +248,7 @@ def _snpeff(cnf, input_fpath):
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
-    stats_fpath = join(cnf.output_dir, cnf.name + '-' + cnf.caller + '.snpEff_summary.html')
+    stats_fpath = join(cnf.work_dir, cnf.name + '-' + cnf.caller + '.snpEff_summary.html')
 
     ref_name = cnf.genome.name
     if ref_name == 'GRCh37': ref_name += '.75'

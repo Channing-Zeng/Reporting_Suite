@@ -73,7 +73,7 @@ _Filter = collections.namedtuple('Filter', ['id', 'desc'])
 _Alt = collections.namedtuple('Alt', ['id', 'desc'])
 _Format = collections.namedtuple('Format', ['id', 'num', 'type', 'desc'])
 _SampleInfo = collections.namedtuple('SampleInfo', ['samples', 'gt_bases', 'gt_types', 'gt_phases'])
-_Contig = collections.namedtuple('Contig', ['id'])
+_Contig = collections.namedtuple('Contig', ['id', 'length'])
 
 
 class _vcf_metadata_parser(object):
@@ -101,6 +101,12 @@ class _vcf_metadata_parser(object):
             Description="(?P<desc>.*)"
             >''', re.VERBOSE)
         self.contig_pattern = re.compile(r'''\#\#contig=<
+            ID=(?P<id>[^,]+),
+            .*
+            length=(?P<length>-?\d+)
+            .*
+            >''', re.VERBOSE)
+        self.contig_no_length_pattern = re.compile(r'''\#\#contig=<
             ID=(?P<id>[^,]+)
             .*
             >''', re.VERBOSE)
@@ -167,13 +173,16 @@ class _vcf_metadata_parser(object):
     def read_contig(self, contig_string):
         '''Read a meta-contigrmation INFO line.'''
         match = self.contig_pattern.match(contig_string)
+        length = None
         if not match:
-            raise SyntaxError(
-                "One of the contig lines is malformed: %s" % contig_string)
+            match = self.contig_no_length_pattern.match(contig_string)
+            if not match:
+                raise SyntaxError(
+                    "One of the contig lines is malformed: %s" % contig_string)
+        else:
+            length = self.vcf_field_count(match.group('length'))
 
-        # length = self.vcf_field_count(match.group('length'))
-
-        contig = _Contig(match.group('id'))
+        contig = _Contig(match.group('id'), length)
 
         return (match.group('id'), contig)
 
@@ -679,7 +688,10 @@ class Writer(object):
         for line in template.alts.itervalues():
             stream.write(two.format(key="ALT", *line))
         for line in template.contigs.itervalues():
-            stream.write('##contig=<ID={0},length={1}>\n'.format(*line))
+            if line[1] is None:
+                stream.write('##contig=<ID={0}>\n'.format(*line[0]))
+            else:
+                stream.write('##contig=<ID={0},length={1}>\n'.format(*line))
 
         self._write_header()
 
