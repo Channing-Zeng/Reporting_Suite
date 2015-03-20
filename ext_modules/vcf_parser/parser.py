@@ -73,7 +73,7 @@ _Filter = collections.namedtuple('Filter', ['id', 'desc'])
 _Alt = collections.namedtuple('Alt', ['id', 'desc'])
 _Format = collections.namedtuple('Format', ['id', 'num', 'type', 'desc'])
 _SampleInfo = collections.namedtuple('SampleInfo', ['samples', 'gt_bases', 'gt_types', 'gt_phases'])
-_Contig = collections.namedtuple('Contig', ['id', 'length'])
+_Contig = collections.namedtuple('Contig', ['id'])
 
 
 class _vcf_metadata_parser(object):
@@ -101,9 +101,7 @@ class _vcf_metadata_parser(object):
             Description="(?P<desc>.*)"
             >''', re.VERBOSE)
         self.contig_pattern = re.compile(r'''\#\#contig=<
-            ID=(?P<id>[^,]+),
-            .*
-            length=(?P<length>-?\d+)
+            ID=(?P<id>[^,]+)
             .*
             >''', re.VERBOSE)
         self.meta_pattern = re.compile(r'''##(?P<key>.+?)=(?P<val>.+)''')
@@ -173,9 +171,9 @@ class _vcf_metadata_parser(object):
             raise SyntaxError(
                 "One of the contig lines is malformed: %s" % contig_string)
 
-        length = self.vcf_field_count(match.group('length'))
+        # length = self.vcf_field_count(match.group('length'))
 
-        contig = _Contig(match.group('id'), length)
+        contig = _Contig(match.group('id'))
 
         return (match.group('id'), contig)
 
