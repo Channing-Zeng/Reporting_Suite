@@ -96,15 +96,15 @@ def _seq2c(cnf, bcbio_structure):
     cnv_gene_ampl_report_fpath__mine = join(cnf.work_dir, BCBioStructure.seq2c_name + '.mine.tsv')
 
     info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
-    read_stats_fpath, combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
+    combined_gene_depths_fpath = __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
+    mapped_reads_fpath = __get_mapped_reads(cnf.work_dir, bcbio_structure)
     info()
-    if not read_stats_fpath or not combined_gene_depths_fpath:
+    if not mapped_reads_fpath or not combined_gene_depths_fpath:
         err('Error: no read_stats_fpath or combined_gene_depths_fpath by Seq2C, making ours...')
     else:
-        cnv_gene_ampl_report_fpath = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
+        cnv_gene_ampl_report_fpath = __new_seq2c(cnf, mapped_reads_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
 
     # info('Getting old way reads and cov stats, but with amplicons')
-    # combined_gene_depths_fpath__mine = __get_mapped_reads_and_cov(cnf.work_dir, bcbio_structure)
     # info()
     # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
     # cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
@@ -176,6 +176,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
 
     info('Saved to ' + combined_gene_depths_fpath)
     info()
+    return combined_gene_depths_fpath
 
     # READ STATS
     info('Getting read counts...')
@@ -196,39 +197,48 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
     return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads_and_cov(work_dir, bcbio_structure):
-    coverage_info = []
-    # mapped_reads_by_sample = OrderedDict()
+def __get_mapped_reads(work_dir, bcbio_structure):
+    # coverage_info = []
+    mapped_reads_by_sample = OrderedDict()
 
     for sample in bcbio_structure.samples:
-        for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
-            chrom, s, e, size, gene, feature, ave_depth = tokens
-            s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, ave_depth]]
-            if cov != '.' and float(cov) != 0:
-                coverage_info.append([sample.name, gene, chrom, s, e, feature, size, cov])
+        # for tokens in _get_whole_genes_and_amlicons(sample.targetcov_detailed_tsv):
+        #     chrom, s, e, size, gene, feature, ave_depth = tokens
+        #     s, e, size, cov = [''.join(c for c in l if c != ',') for l in [s, e, size, ave_depth]]
+        #     if cov != '.' and float(cov) != 0:
+        #         coverage_info.append([sample.name, gene, chrom, s, e, feature, size, cov])
 
         with open(sample.targetcov_json_fpath) as f:
             data = load(f, object_pairs_hook=OrderedDict)
         sample = next((s for s in bcbio_structure.samples if s.name == sample.name), None)
         if not sample: continue
-        # cov_report = SampleReport.load(data, sample, bcbio_structure)
+        cov_report = SampleReport.load(data, sample, bcbio_structure)
 
-        # mapped_reads_by_sample[sample.name] = int(next(
-        #     rec.value for rec in cov_report.records
-        #     if rec.metric.name == 'Mapped reads'))
+        mapped_reads = int(next(
+            rec.value for rec in cov_report.records
+            if rec.metric.name == 'Mapped reads'))
+        dup_rate = float(next(
+            rec.value for rec in cov_report.records
+            if rec.metric.name == 'Duplication rate'))
+
+        info(sample.name + ': ')
+        info('Mapped reads: ' + str(mapped_reads))
+        info('Dup rate: ' + str(dup_rate))
+        mapped_reads_by_sample[sample.name] = int(float(mapped_reads) * (1 - dup_rate))
+        info('Mapped not dup reads: ' + str(mapped_reads_by_sample[sample.name]))
 
     # Writing results
-    # mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
-    # with open(mapped_read_fpath, 'w') as f:
-    #     for sample_name, mapped_reads in mapped_reads_by_sample.items():
-    #         f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+    mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
+    with open(mapped_read_fpath, 'w') as f:
+        for sample_name, mapped_reads in mapped_reads_by_sample.items():
+            f.write(sample_name + '\t' + str(mapped_reads) + '\n')
 
-    gene_depths_fpath = join(work_dir, 'gene_depths.txt')
-    with open(gene_depths_fpath, 'w') as f:
-        for tokens in coverage_info:
-            f.write('\t'.join(tokens) + '\n')
+    # gene_depths_fpath = join(work_dir, 'gene_depths.txt')
+    # with open(gene_depths_fpath, 'w') as f:
+    #     for tokens in coverage_info:
+    #         f.write('\t'.join(tokens) + '\n')
 
-    return gene_depths_fpath
+    return mapped_read_fpath
 
 
 
