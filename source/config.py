@@ -38,7 +38,7 @@ defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
 
 defaults_yaml_fpath = abspath(join(cur_dirpath, pardir, 'RUNINFO_DEFAULTS.yaml'))
-if not verify_file(defaults_yaml_fpath): sys.exit(1)
+verify_file(defaults_yaml_fpath, is_critical=True)
 run_info_defaults = load_yaml(open(defaults_yaml_fpath), Loader=Loader)
 for k, v in run_info_defaults.items():
     defaults[k] = v
@@ -143,8 +143,7 @@ class CallCnf:
 
 
 def load_yaml_config(fpath):
-    if not verify_file(fpath):
-        sys.exit(1)
+    verify_file(fpath, is_critical=True)
     dic = load_yaml(open(fpath), Loader=Loader)
     return dic
 
@@ -179,22 +178,18 @@ def _check_paths(sys_cnf, run_cnf):
     info('Run configuration file:    ' + run_cnf)
     info()
 
-    for fn in [sys_cnf, run_cnf]:
-        if not verify_file(fn, 'Config'):
-            to_exit = True
-    if to_exit:
-        sys.exit(1)
+    verify_file(sys_cnf, 'System config', is_critical=True)
+    verify_file(run_cnf, 'Run config', is_critical=True)
 
     sys_cnf_path = adjust_path(sys_cnf)
     run_cnf_path = adjust_path(run_cnf)
 
+    errors = []
     for fn in [sys_cnf_path, run_cnf_path]:
         if not fn.endswith('.yaml'):
-            err(fn + ' does not end with .yaml, maybe incorrect parameter?')
-            err()
-            to_exit = True
-    if to_exit:
-        sys.exit(1)
+            errors.append(fn + ' does not end with .yaml, maybe incorrect parameter?')
+    if errors:
+        critical(errors)
 
     return sys_cnf_path, run_cnf_path
 

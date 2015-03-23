@@ -7,7 +7,7 @@ import os
 from os.path import join, pardir, basename, dirname, islink, isdir
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
-from source.logger import info, err
+from source.logger import info, err, send_email
 from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines
 
@@ -181,40 +181,43 @@ def filter_all(cnf, bcbio_structure):
     info('-' * 70)
 
     for _, caller in bcbio_structure.variant_callers.items():
-        # if caller.name == 'vardict':
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
-    msg = ['Filtering finished.']
+    email_msg = ['Variant filtering finished.']
     info('Results:')
-    # for sample in bcbio_structure.samples:
-    #     finalize_one(cnf, bcbio_structure, sample, msg)
 
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
         info('Final variants:')
-        msg.append('')
-        msg.append('Combined variants for each variant caller:')
+        email_msg.append('')
+        email_msg.append('Combined variants for each variant caller:')
         for caller in bcbio_structure.variant_callers.values():
             info('  ' + caller.name)
+            email_msg.append('  ' + caller.name)
 
             if caller.single_vcf2txt_res_fpath:
-                info('     Single: ' + caller.single_vcf2txt_res_fpath + ', ' + str(num_lines(caller.single_vcf2txt_res_fpath) - 1) + ' variants')
+                msg = '     Single: ' + caller.single_vcf2txt_res_fpath + ', ' + str(num_lines(caller.single_vcf2txt_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
             if caller.paired_vcf2txt_res_fpath:
-                info('     Paired: ' + caller.paired_vcf2txt_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants')
-                # msg.append('  ' + caller.name)
-                # msg.append('     ' + caller.vcf2txt_res_fpath + ', ' + str(num_lines(caller.vcf2txt_res_fpath) - 1) + ' variants')
+                msg = '     Paired: ' + caller.paired_vcf2txt_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
 
             if caller.single_mut_res_fpath:
+                msg = '     Paired passed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
                 info('     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants')
             if caller.paired_mut_res_fpath:
                 info('     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants')
-                # msg.append('  ' + caller.name)
-                # msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
+                email_msg.append('  ' + caller.name)
+                email_msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
 
                 if cnf.datahub_path:
                     copy_to_datahub(cnf, caller, cnf.datahub_path)
 
-        # send_email('\n'.join(msg))
+        send_email('\n'.join(email_msg))
 
 
 def copy_to_datahub(cnf, caller, datahub_dirpath):

@@ -4,7 +4,7 @@ import re
 import sys
 import string
 import numpy
-from source.logger import err, info
+from source.logger import err, info, critical
 import os
 
 biopython_error = False
@@ -175,11 +175,10 @@ def gcbias_lite(coveragefile, bedfilename, reference, fileout, graphtitle=None, 
             region_ids = coverage.keys()
 
             if not len(gccontent):
-                err('ERROR: G+C content values can not be calculated. Probably the provided reference file ' +
+                critical('ERROR: G+C content values can not be calculated. Probably the provided reference file ' +
                     reference + ' does not match with the target file ' + bedfilename + '.\n' + \
                     'That is, sequences of regions in the target file are probably not included ' + \
                     'within the reference file.')
-                sys.exit(1)
 
         else:
             err('ERROR: unexpected ngsCAT error! Should not be here!')

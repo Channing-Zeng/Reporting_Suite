@@ -18,7 +18,7 @@ import fnmatch
 import time
 from ext_modules import yaml
 
-from source.logger import info, err, warn
+from source.logger import info, err, warn, critical
 
 
 try:
@@ -61,10 +61,10 @@ def safe_mkdir(dirpath, descriptive_name=''):
         return dirpath
 
     if not dirpath:
-        sys.exit(descriptive_name + ' path is empty.')
+        critical(descriptive_name + ' path is empty.')
 
     if isfile(dirpath):
-        sys.exit(descriptive_name + ' ' + dirpath + ' is a file.')
+        critical(descriptive_name + ' ' + dirpath + ' is a file.')
 
     num_tries = 0
     max_tries = 5
@@ -574,16 +574,22 @@ def file_exists(fpath):
     return fpath and exists(adjust_path(fpath)) and getsize(adjust_path(fpath)) > 0
 
 
-def verify_obj_by_path(path, description='', silent=False):
+def _log(msg, silent, is_critical):
+    if is_critical:
+        critical(msg)
+    if not silent:
+        err(msg)
+
+def verify_obj_by_path(path, description='', silent=False, is_critical=False):
     if not path:
-        if not silent:
-            warn((description + ': f' if description else 'N') + 'ame is empty.')
+        msg = (description + ': f' if description else 'N') + 'ame is empty.'
+        _log(msg, silent, is_critical)
         return path
 
     path = adjust_path(path)
     if not exists(path):
-        if not silent:
-            warn((description + ': ' if description else '') + path + ' does not exist.')
+        msg = (description + ': ' if description else '') + path + ' does not exist.'
+        _log(msg, silent, is_critical)
         return None
 
     if isfile(path):
@@ -591,51 +597,49 @@ def verify_obj_by_path(path, description='', silent=False):
     elif isdir(path):
         return verify_dir(path, description, silent)
     else:
-        if not silent:
-            err((description + ': ' if description else '') + path + ' is not a file or a directory.')
+        msg = (description + ': ' if description else '') + path + ' is not a file or a directory.'
+        _log(msg, silent, is_critical)
         return None
 
-
-def verify_file(fpath, description='', silent=False):
+def verify_file(fpath, description='', silent=False, is_critical=False):
     if not fpath:
-        if not silent:
-            warn((description + ': f' if description else 'F') + 'ile name is empty.')
+        msg = (description + ': f' if description else 'F') + 'ile name is empty.'
+        _log(msg, silent, is_critical)
         return fpath
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        if not silent:
-            warn((description + ': ' if description else '') + fpath + ' does not exist.')
+        msg = (description + ': ' if description else '') + fpath + ' does not exist.'
+        _log(msg, silent, is_critical)
         return None
 
     if not isfile(fpath):
-        if not silent:
-            err((description + ': ' if description else '') + fpath + ' is not a file.')
+        msg = (description + ': ' if description else '') + fpath + ' is not a file.'
+        _log(msg, silent, is_critical)
         return None
 
     if getsize(fpath) <= 0:
-        if not silent:
-            err((description + ': ' if description else '') + fpath + ' is empty.')
+        msg = (description + ': ' if description else '') + fpath + ' is empty.'
+        _log(msg, silent, is_critical)
         return None
 
     return fpath
 
-
-def verify_dir(fpath, description='', silent=False):
+def verify_dir(fpath, description='', silent=False, is_critical=False):
     if not fpath:
-        if not silent:
-            warn((description + ': d' if description else 'D') + 'ir name is empty.')
+        msg = (description + ': d' if description else 'D') + 'ir name is empty.'
+        _log(msg, silent, is_critical)
         return None
 
     fpath = adjust_path(fpath)
     if not exists(fpath):
-        if not silent:
-            warn((description + ': ' if description else '') + fpath + ' does not exist.')
+        msg = (description + ': ' if description else '') + fpath + ' does not exist.'
+        _log(msg, silent, is_critical)
         return None
 
     if not isdir(fpath):
-        if not silent:
-            err((description + ': ' if description else '') + fpath + ' is not a directory.')
+        msg = (description + ': ' if description else '') + fpath + ' is not a directory.'
+        _log(msg, silent, is_critical)
         return None
 
     return fpath
@@ -740,8 +744,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
     if suffix:
         info('Saved to ' + output_fpath)
 
-    if not verify_file(output_fpath):
-        sys.exit(1)
+    verify_file(output_fpath, is_critical=True)
     return output_fpath
 
 

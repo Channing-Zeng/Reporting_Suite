@@ -164,8 +164,7 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwa
 
     safe_mkdir(dirname(log_fpath))
 
-    tool_cmdline = get_system_path(cnf, step.interpreter, step.script)
-    if not tool_cmdline: sys.exit(1)
+    tool_cmdline = get_system_path(cnf, step.interpreter, step.script, is_critical=True)
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
 
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])

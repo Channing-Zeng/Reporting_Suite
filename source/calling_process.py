@@ -175,7 +175,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
                 if exit_on_error:
                     clean()
-                    sys.exit(1)
+                    critical(msg)
                 else:
                     if return_err_code:
                         return ret_code
@@ -230,11 +230,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if stderr_dump:
                     msg += 'Stderr:\n'
                     msg += stderr_dump
-                # send_email(msg)
 
                 if exit_on_error:
                     clean()
-                    sys.exit(1)
+                    critical(msg)
                 else:
                     return None
             else:

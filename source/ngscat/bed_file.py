@@ -5,41 +5,43 @@ from source.calling_process import call
 from source.file_utils import verify_file, intermediate_fname, adjust_path
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists
-from source.logger import err
+from source.logger import err, critical
 from source.utils import get_chr_lengths
 
 import config
 
 
-def verify_bam(fpath, description=''):
-    if not verify_file(fpath, description):
+def verify_bam(fpath, description='', is_critical=False):
+    if not verify_file(fpath, description, is_critical=is_critical):
         return None
 
     fpath = adjust_path(fpath)
 
+    logfn = critical if is_critical else err
     if not fpath.endswith('.bam'):
-        err('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
+        logfn('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
             'extension. Please, make sure you pass proper file.')
         return None
 
     textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
     is_binary_string = lambda baitiki: bool(baitiki.translate(None, textchars))
     if not is_binary_string(open(fpath).read(3)):
-        err('The BAM file ' + fpath + ' must be a binary file.')
+        logfn('The BAM file ' + fpath + ' must be a binary file.')
         return None
 
     return fpath
 
 
-def verify_bed(fpath, description=''):
-    if not verify_file(fpath, description):
+def verify_bed(fpath, description='', is_critical=False):
+    if not verify_file(fpath, description, is_critical=is_critical):
         return None
 
     fpath = adjust_path(fpath)
 
     error = BedFile(fpath).checkformat()
     if error:
-        err('Error: incorrect bed file format (' + fpath + '): ' + str(error) + '\n')
+        fn = critical if is_critical else err
+        fn('Error: incorrect bed file format (' + fpath + '): ' + str(error) + '\n')
         return None
 
     return fpath

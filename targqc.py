@@ -35,9 +35,14 @@ def main():
 
     if len(args) == 0:
         critical('No BAMs provided to input.')
-    bam_fpaths = [abspath(a) for a in args]
-    if any(not verify_bam(fpath) for fpath in bam_fpaths):
-        sys.exit(1)
+    bam_fpaths = list(set([abspath(a) for a in args]))
+
+    bad_bam_fpaths = []
+    for fpath in bam_fpaths:
+        if not verify_bam(fpath):
+            bad_bam_fpaths.append(fpath)
+    if bad_bam_fpaths:
+        critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
 
     determine_cnf_files(opts)
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
@@ -52,8 +57,7 @@ def main():
 
     check_genome_resources(cnf)
 
-    if not verify_bed(cnf.bed):
-        sys.exit(1)
+    verify_bed(cnf.bed, is_critical=True)
     bed_fpath = adjust_path(cnf.bed)
     info('Using amplicons/capture panel ' + bed_fpath)
 
@@ -68,7 +72,7 @@ def main():
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
-        if not verify_file(cnf.qsub_runner): sys.exit(1)
+        verify_file(cnf.qsub_runner, is_critical=True)
 
     info('*' * 70)
     info()

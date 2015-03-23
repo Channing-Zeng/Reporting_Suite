@@ -2,6 +2,7 @@
 
 from os.path import abspath, dirname, realpath, join, exists
 from site import addsitedir
+from source.logger import critical
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
@@ -28,9 +29,8 @@ usage = """
 
 def _read_args(args):
     if len(args) < 2:
-        log('Usage:')
-        log('  ' + __file__ + ' Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file')
-        sys.exit(1)
+        critical(['Usage:',
+        '  ' + __file__ + ' Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file'])
 
     input_bed_fpath = abspath(args[0])
     log('Input: ' + input_bed_fpath)

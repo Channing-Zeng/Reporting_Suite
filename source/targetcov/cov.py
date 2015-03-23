@@ -296,8 +296,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
 
 def seq2c_seq2cov(cnf, sample, bam_fpath, amplicons_bed, seq2c_output):
-    seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'))
-    if not seq2cov: sys.exit(1)
+    seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'), is_critical=True)
 
     def fn(l, i): return '\t'.join(l.split('\t')[:4])
     amplicons_bed = iterate_file(cnf, amplicons_bed, fn, suffix='4col')
@@ -928,10 +927,12 @@ def _make_flat_region_report(sample, regions, depth_threshs):
 
 def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     if not bam or not bed:
-        err()
-        if not bam: err('BAM file is required.')
-        if not bed: err('BED file is required.')
-        sys.exit(1)
+        info()
+        msgs = []
+        if not bam: msgs.append('BAM file is required.')
+        if not bed: msgs.append('BED file is required.')
+        if msgs:
+            critical(msgs)
 
     cols = count_bed_cols(bed)
 

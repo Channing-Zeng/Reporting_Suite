@@ -62,18 +62,18 @@ def check_genome_resources(cnf):
 
 
 def check_keys(cnf, required_keys):
-    to_exit = False
+    errors = []
 
     for key in required_keys:
         if key not in cnf or not cnf[key]:
             to_exit = True
-            err('Error: "' + key + '" must be provided in options or '
+            errors.append('Error: "' + key + '" must be provided in options or '
                 'in ' + cnf.run_cnf + '.')
-    return not to_exit
+    return errors
 
 
 def check_inputs(cnf, file_keys=list(), dir_keys=list()):
-    to_exit = False
+    errors = []
 
     def _verify_input_file(_key):
         cnf[_key] = adjust_path(cnf[_key])
@@ -88,7 +88,7 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
     for key in file_keys:
         if key and key in cnf and cnf[key]:
             if not _verify_input_file(key):
-                to_exit = True
+                errors.append('File ' + cnf[key] + ' is empty or cannot be found')
             else:
                 cnf[key] = adjust_path(cnf[key])
 
@@ -96,11 +96,11 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
         if key and key in cnf and cnf[key]:
             cnf[key] = adjust_system_path(cnf[key])
             if not verify_dir(cnf[key], key):
-                to_exit = True
+                errors.append('Directory ' + cnf[key] + ' is empty or cannot be found')
             else:
                 cnf[key] = abspath(expanduser(cnf[key]))
 
-    return not to_exit
+    return errors
 
 
 def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
@@ -207,11 +207,11 @@ def set_up_log(cnf):
 
 def determine_cnf_files(opts):
     opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
-    if not verify_file(opts.sys_cnf): sys.exit(1)
+    verify_file(opts.sys_cnf, is_critical=True)
     info('Using ' + opts.sys_cnf)
 
     opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
-    if not verify_file(opts.run_cnf): sys.exit(1)
+    verify_file(opts.run_cnf, is_critical=True)
     info('Using ' + opts.run_cnf)
 
 

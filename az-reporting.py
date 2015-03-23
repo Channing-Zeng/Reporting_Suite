@@ -21,7 +21,7 @@ def main():
 
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=defaults['load_mongo'], help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
-    # parser.add_option('--email', dest='email', help='Email to send notifications on errors and finished jobs.')
+    parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
 
     cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)

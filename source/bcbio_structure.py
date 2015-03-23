@@ -53,8 +53,7 @@ def process_post_bcbio_args(parser):
 
     dir_arg = args[0] if len(args) > 0 else os.getcwd()
     dir_arg = adjust_path(dir_arg)
-    if not verify_dir(dir_arg):
-        sys.exit(1)
+    verify_dir(dir_arg, is_critical=True)
 
     bcbio_project_dirpath, final_dirpath, config_dirpath = _set_bcbio_dirpath(dir_arg)
 
@@ -66,8 +65,9 @@ def process_post_bcbio_args(parser):
 
     if 'qsub_runner' in cnf:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-    if not check_inputs(cnf, file_keys=['qsub_runner']):
-        sys.exit(1)
+    errors = check_inputs(cnf, file_keys=['qsub_runner'])
+    if errors:
+        critical(errors)
 
     bcbio_cnf = load_bcbio_cnf(cnf, config_dirpath)
 
@@ -105,8 +105,7 @@ def _set_sys_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.sys_cnf)
     # provided in commandline?
     if provided_cnf_fpath:
-        if not verify_file(provided_cnf_fpath):
-            sys.exit(1)
+        verify_file(provided_cnf_fpath, is_critical=True)
         # alright, in commandline.
         opts.sys_cnf = provided_cnf_fpath
 
@@ -123,8 +122,7 @@ def _set_sys_config(config_dirpath, opts):
 
         elif len(fpaths_in_config) == 1:
             opts.sys_cnf = fpaths_in_config[0]
-            if not verify_file(opts.sys_cnf):
-                sys.exit(1)
+            verify_file(opts.sys_cnf, is_critical=True)
             # alright, in config dir.
 
         else:
@@ -138,8 +136,7 @@ def _set_run_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.run_cnf)
     # provided in commandline?
     if provided_cnf_fpath:
-        if not verify_file(provided_cnf_fpath):
-            sys.exit(1)
+        verify_file(provided_cnf_fpath, is_critical=True)
 
         # alright, in commandline. copying over to config dir.
         opts.run_cnf = provided_cnf_fpath
@@ -176,8 +173,7 @@ def _set_run_config(config_dirpath, opts):
 
         elif len(run_info_fpaths_in_config) == 1:
             opts.run_cnf = run_info_fpaths_in_config[0]
-            if not verify_file(opts.run_cnf):
-                sys.exit(1)
+            verify_file(opts.run_cnf, is_critical=True)
             # alright, in config dir.
 
         elif len(run_info_fpaths_in_config) == 0:
@@ -600,7 +596,6 @@ class BCBioStructure:
         sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
-        to_exit = False
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
         if 'ensemble' in sample_info['algorithm']:
             variantcallers.append('ensemble')
@@ -618,9 +613,6 @@ class BCBioStructure:
             self.variant_callers[caller_name].samples.append(sample)
             sample.vcf_by_callername[caller_name] = vcf_fpath
 
-        if to_exit:
-            sys.exit(1)
-
         info()
         return sample
 
@@ -630,8 +622,7 @@ class BCBioStructure:
         elif 'upload' in bcbio_cnf and 'dir' in bcbio_cnf['upload']:
             final_dirname = bcbio_cnf['upload']['dir']
             self.final_dirpath = adjust_path(join(bcbio_project_dirpath, 'config', final_dirname))
-            if not verify_dir(self.final_dirpath, 'upload directory specified in the bcbio config'):
-                sys.exit(1)
+            verify_dir(self.final_dirpath, 'upload directory specified in the bcbio config', is_critical=True)
         else:
             self.final_dirpath = join(bcbio_project_dirpath, 'final')
             if not verify_dir(self.final_dirpath):
@@ -642,12 +633,10 @@ class BCBioStructure:
         bed = None
         if self.cnf.bed:  # Custom BED provided in command line?
             bed = adjust_path(self.cnf.bed)
-            if not verify_bed(bed):
-                sys.exit(1)
+            verify_bed(bed, is_critical=True)
         elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
             bed = adjust_path(sample_info['algorithm']['variant_regions'])
-            if not verify_bed(bed):
-                sys.exit(1)
+            verify_bed(bed, is_critical=True)
         # elif self.cnf.genomes[sample.genome].exons:
         #     warn('Warning: no amplicon BED file provided, using exons instead.')
         #     bed = self.cnf.genomes[sample.genome].exons
@@ -680,22 +669,22 @@ class BCBioStructure:
         var_vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
 
         if isfile(vcf_fpath_gz):
-            if not verify_file(vcf_fpath_gz): sys.exit(1)
+            verify_file(vcf_fpath_gz, is_critical=True)
             info('Found VCF ' + vcf_fpath_gz)
             return vcf_fpath_gz
 
         if isfile(var_vcf_fpath_gz):
-            if not verify_file(var_vcf_fpath_gz): sys.exit(1)
+            verify_file(var_vcf_fpath_gz, is_critical=True)
             info('Found VCF in the var/ dir ' + var_vcf_fpath_gz)
             return var_vcf_fpath_gz
 
         if isfile(vcf_fpath):
-            if not verify_file(vcf_fpath): sys.exit(1)
+            verify_file(vcf_fpath, is_critical=True)
             info('Found uncompressed VCF ' + var_vcf_fpath)
             return vcf_fpath
 
         if isfile(var_vcf_fpath):
-            if not verify_file(var_vcf_fpath): sys.exit(1)
+            verify_file(var_vcf_fpath, is_critical=True)
             info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
             return var_vcf_fpath
 

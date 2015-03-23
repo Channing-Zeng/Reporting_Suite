@@ -6,15 +6,14 @@ import string
 import config
 from source.calling_process import call_check_output, call
 from source.file_utils import intermediate_fname, tmpfile, verify_file
-from source.logger import info, err
+from source.logger import info, err, critical
 from source.tools_from_cnf import get_system_path
 from source.utils import human_sorted
 
 try:
     import numpy
 except ImportError:
-    err('ERROR: module numpy was not loaded.')
-    sys.exit(1)
+    critical('ERROR: module numpy was not loaded.')
 
 import xlwt
 
@@ -120,14 +119,15 @@ class BamFile(pysam.Samfile):
             except StopIteration:
                 readsavailable = False
             except TypeError:
+                msgs = []
                 if read.is_unmapped:
-                    err('ERROR: unmapped reads found at ' + self.filename)
+                    msgs.append('ERROR: unmapped reads found at ' + self.filename)
                 else:
-                    err('ERROR: incorrect bam format')
-                err('Read position: ' + str(rc))
-                err('Alignment entry: ' + str(read))
-                err('Exiting.')
-                sys.exit(1)
+                    msgs.append('ERROR: incorrect bam format')
+                msgs.append('Read position: ' + str(rc))
+                msgs.append('Alignment entry: ' + str(read))
+                msgs.append('Exiting.')
+                critical(msgs)
             rc += 1
 
         info('\tDone.')
@@ -638,8 +638,7 @@ class BamFile(pysam.Samfile):
                 currentChromosome = self.getrname(currentRead.tid)
             except ValueError:
                 if (currentRead.tid < 0):
-                    err("ERROR: Please, check that BAM file has only mapped reads")
-                    sys.exit(1)
+                    critical("ERROR: Please, check that BAM file has only mapped reads")
             if (currentChromosome != previousChromosome):
                 #				print "Examining Chromosome "+str(currentChromosome)+'... \n'
                 if (thereisInfo):  # A new chromosome is started. Store information about previous chromosome

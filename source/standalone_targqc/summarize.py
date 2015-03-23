@@ -128,7 +128,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
 
     for sample in samples:
         if not sample.targetcov_done():
-            sys.exit(1)
+            critical('Error: target coverage is not done (json, html, or detail tsv are not there)')
         if not sample.ngscat_done():
             sample.ngscat_html_fpath = None
         if not sample.qualimap_done():

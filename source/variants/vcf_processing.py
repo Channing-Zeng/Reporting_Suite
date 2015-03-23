@@ -15,6 +15,7 @@ from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
+from source.ngscat.bed_file import verify_bam
 from source.tools_from_cnf import get_java_tool_cmdline, get_system_path, get_script_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
@@ -348,8 +349,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
         if 'vcf' not in one_item_cnf:
             critical('ERROR: A section in details does not contain field "var".')
         one_item_cnf['vcf'] = adjust_path(one_item_cnf['vcf'])
-        if not verify_file(one_item_cnf['vcf'], 'Input file'):
-            sys.exit(1)
+        verify_file(one_item_cnf['vcf'], 'Input file', is_critical=True)
 
         join_parent_conf(one_item_cnf, common_cnf)
 
@@ -387,8 +387,7 @@ def read_samples_info_and_split(common_cnf, options, inputs):
 
             if 'bam' in cnf:
                 cnf['bam'] = adjust_path(cnf['bam'])
-                if not verify_file(cnf['bam']):
-                    sys.exit(1)
+                verify_bam(cnf['bam'], is_critical=True)
 
             cnf['name'] = splitext_plus(basename(cnf['vcf']))[0]
 

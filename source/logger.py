@@ -1,3 +1,4 @@
+from collections import namedtuple
 from os import environ
 import socket
 import sys
@@ -22,6 +23,11 @@ is_local = 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUF
 smtp_host = None  # set up in source/config.py and system_info.yaml
 
 
+error_msgs = []
+warning_msgs = []
+critical_msgs = []
+
+
 def timestamp():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
 
@@ -33,22 +39,19 @@ def step_greetings(name):
     info('-' * 70)
 
 
-def info(msg='', ending='\n', print_date=True):
-    _log(sys.stdout, msg, ending, print_date)
+def info(msg='', ending='\n', print_date=True, severity='info'):
+    _log(sys.stdout, msg, ending, print_date, severity=severity)
 
 
-def warn(msg='', ending='\n', print_date=True):
-    _log(sys.stderr, msg, ending, print_date)
+def warn(msg='', ending='\n', print_date=True, severity='warning'):
+    _log(sys.stderr, msg, ending, print_date, severity=severity)
 
 
-def err(msg='', ending='\n', print_date=True):
-    warn(msg, ending, print_date)
-    # if msg:
-    #     send_email(msg)
+def err(msg='', ending='\n', print_date=True, severity='error'):
+    warn(msg, ending, print_date, severity=severity)
 
 
 def send_email(msg='', subj=''):
-    return
 
     if msg and smtp_host:
         addresses = [my_address]
@@ -101,16 +104,28 @@ def send_email(msg='', subj=''):
 
 
 def critical(msg=''):
-    if msg:
-        err(msg)
+    if isinstance(msg, basestring):
+        err(msg, severity='critical')
+    else:
+        if not msg:
+            return
+        for m in msg:
+            err(m, severity='critical')
     sys.exit(1)
 
 
-def _log(out, msg='', ending='\n', print_date=True):
+def _log(out, msg='', ending='\n', print_date=True, severity=None):
     if print_date:
         msg = timestamp() + msg
 
     out.write(msg + ending)
+
+    if severity == 'critical':
+        critical_msgs.append(msg)
+    if severity == 'error':
+        error_msgs.append(msg)
+    if severity == 'warning':
+        warning_msgs.append(msg)
 
     sys.stdout.flush()
     sys.stderr.flush()

@@ -85,9 +85,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
 
 
 def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name):
-    pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'))
-    if not pick_line:
-        sys.exit(1)
+    pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
 
     with open(vcf2txt_res_fpath) as f:
         try:
@@ -229,14 +227,22 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     if single_vcf_by_sample:
         info('*' * 70)
         info('Single samples (total ' + str(len(paired_vcf_by_sample)) + '):')
-        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, False)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
+        if paired_vcf_by_sample:
+            vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'single')
+
+        mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
 
     if paired_vcf_by_sample:
         info('*' * 70)
         info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
-        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, True)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
+        if single_vcf_by_sample:
+            vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'paired')
+
+        mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
 
@@ -268,7 +274,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     return caller
 
 
-def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, is_paired):
+def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res_fpath):
     threads_num = min(len(vcf_fpaths), cnf.threads)
     info('Number of threads for filtering: ' + str(threads_num))
 
@@ -278,8 +284,6 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, is_paired):
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
-    vcf2txt_res_fpath = join(bcbio_structure.var_dirpath,
-         caller_name + '_' + ('paired' if is_paired else 'single') + '.txt')
 
     mut_fpath = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths.values(), vcf2txt_res_fpath, sample_by_name, caller_name,
          bcbio_structure.samples[0].min_af, threads_num)
@@ -339,10 +343,7 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_fre
     info()
     info('Running VarDict vcf2txt...')
 
-    vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'))
-
-    if not vcf2txt:
-        sys.exit(1)
+    vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'), is_critical=True)
 
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq

@@ -334,8 +334,8 @@ class BCBioRunner:
         safe_mkdir(dirname(log_fpath))
         safe_mkdir(dirname(out_fpath))
 
-        tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script)
-        if not tool_cmdline: sys.exit(1)
+        tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
+        if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
         params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
         cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 

@@ -85,20 +85,21 @@ def read_opts_and_cnfs(extra_opts,
     determine_cnf_files(opts)
     cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-    if not check_keys(cnf, required_keys):
+    errors = check_keys(cnf, required_keys)
+    if errors:
         parser.print_help()
-        sys.exit(1)
-
-    if not check_inputs(cnf, file_keys, dir_keys):
-        sys.exit(1)
+        critical(errors)
+    errors = check_inputs(cnf, file_keys, dir_keys)
+    if errors:
+        critical(errors)
 
     if cnf.name:
         cnf.name = remove_quotes(cnf.name)
     else:
         if not key_for_sample_name or not cnf[key_for_sample_name]:
             if cnf.name:
-                critical('Error: ' + (key_for_sample_name or 'key_for_sample_name') + ' must be provided '
-                         'in options or in ' + cnf.run_cnf + '.')
+                critical('Error: ' + (key_for_sample_name or 'key_for_sample_name') +
+                    ' must be provided in options or in ' + cnf.run_cnf + '.')
         key_fname = basename(cnf[key_for_sample_name])
         cnf.name = key_fname.split('.')[0]
 

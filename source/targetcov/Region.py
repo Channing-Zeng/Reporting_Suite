@@ -234,8 +234,7 @@ def save_regions_to_bed(cnf, regions, f_basename, save_original_fields=False):
 
     if isfile(bed_fpath):
         if cnf.reuse_intermediate:
-            if not verify_bed(bed_fpath):
-                sys.exit(1)
+            verify_bed(bed_fpath, is_critical=True)
             return bed_fpath
         else:
             os.remove(bed_fpath)

@@ -177,8 +177,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             err('Please, privide a path to ' + dbname + ' in the run config '
                 '("path:" field), or in the "genomes" section in the system config')
             return
-        if not verify_file(db_path):
-            sys.exit(1)
+        verify_file(db_path, is_critical=True)
 
     anno_line = ''
     if annotations:

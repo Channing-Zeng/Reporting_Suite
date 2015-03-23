@@ -11,9 +11,7 @@ def index_bam(cnf, bam_fpath):
     indexed_bam = bam_fpath + '.bai'
     if not isfile(bam_fpath + '.bai'):
         info('Indexing to ' + indexed_bam + '...')
-        samtools = get_system_path(cnf, 'samtools')
-        if not samtools:
-            sys.exit(1)
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
         cmdline = '{samtools} index {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
     info('Index: ' + indexed_bam)
