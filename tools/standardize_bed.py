@@ -41,10 +41,15 @@ def _read_args(args_list):
             help='list of HGNC approved genes (they are preferable when choosing one of multiple annotations)',
             default='/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt')
          ),
-        (['-r', '--reference-bed'], dict(
-            dest='ref_bed_fpath',
-            help='reference BED file for annotation',
+        (['-e', '--ensembl-bed'], dict(
+            dest='ensembl_bed_fpath',
+            help='reference BED file for annotation (Ensembl)',
             default='/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed')
+         ),
+        (['-r', '--refseq-bed'], dict(
+            dest='refseq_bed_fpath',
+            help='reference BED file for annotation (RefSeq)',
+            default='/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq.bed')
          ),
         (['-b', '--bedtools'], dict(
             dest='bedtools',
@@ -219,15 +224,43 @@ def _preprocess(bed_fpath, work_dirpath):
 
 
 def _annotate(bed_fpath, work_dirpath, cnf):
-    output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann')
-    log('annotating: ' + bed_fpath + ' --> ' + output_fpath)
-    annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
-    cmdline = '{annotate_bed_py} {bed_fpath} {work_dirpath} {cnf.ref_bed_fpath} {cnf.bedtools}'.format(**locals())
-    __call(cnf, cmdline, output_fpath)
-    return output_fpath
+    annotated_files = []
+    input_fpath = bed_fpath
+    references = [('RefSeq', cnf.refseq_bed_fpath), ('Ensembl', cnf.ensembl_bed_fpath)]
+
+    for id, (db_name, db_bed_fpath) in enumerate(references):
+        output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())
+        log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
+        annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
+        cmdline = '{annotate_bed_py} {input_fpath} {work_dirpath} {db_bed_fpath} {cnf.bedtools}'.format(**locals())
+        __call(cnf, cmdline, output_fpath)
+        if id < len(references) - 1:
+            if cnf.debug:
+                log("filtering annotated and not annotated regions into separate files:")
+            only_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'only_ann_' + db_name.lower())
+            not_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'not_ann_' + db_name.lower())
+            with open(only_annotated_bed, 'w') as out:
+                cmdline = 'grep -v ".\t.\t.\t.\t." {output_fpath}'.format(**locals())
+                if cnf.debug:
+                    log(cmdline + ' > ' + only_annotated_bed)
+                subprocess.call(cmdline, shell=True, stdout=out)
+            with open(not_annotated_bed, 'w') as out:
+                cmdline = 'grep ".\t.\t.\t.\t." {output_fpath}'.format(**locals())
+                if cnf.debug:
+                    log(cmdline + ' > ' + not_annotated_bed)
+                subprocess.call(cmdline, shell=True, stdout=out)
+            if not cnf.debug:
+                _remove_files(output_fpath)
+            output_fpath = only_annotated_bed
+            input_fpath = not_annotated_bed
+        annotated_files.append(output_fpath)
+        if id != 0 and not cnf.debug:
+            _remove_files(input_fpath)
+
+    return annotated_files
 
 
-def _postprocess(input_fpath, annotated_fpath, bed_params, cnf):
+def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
     '''
     1. Sorts.
     1. Chooses appropriate number of columns (4 or 8 for BEDs with primers).
@@ -250,9 +283,10 @@ def _postprocess(input_fpath, annotated_fpath, bed_params, cnf):
         for line in f:
             input_regions.add(Region(line))
     annotated_regions = []
-    with open(annotated_fpath) as f:
-        for line in f:
-            annotated_regions.append(Region(line))
+    for annotated_fpath in annotated_fpaths:
+        with open(annotated_fpath) as f:
+            for line in f:
+                annotated_regions.append(Region(line))
 
     # starting to output result
     for line in bed_params.header:
@@ -322,10 +356,10 @@ def main():
     input_bed_fpath, work_dirpath, cnf = _read_args(sys.argv[1:])
 
     preprocessed_fpath, bed_params = _preprocess(input_bed_fpath, work_dirpath)
-    annotated_fpath = _annotate(preprocessed_fpath, work_dirpath, cnf)
-    _postprocess(preprocessed_fpath, annotated_fpath, bed_params, cnf)
+    annotated_fpaths = _annotate(preprocessed_fpath, work_dirpath, cnf)
+    _postprocess(preprocessed_fpath, annotated_fpaths, bed_params, cnf)
     if not cnf.debug:
-        _remove_files([preprocessed_fpath, annotated_fpath])
+        _remove_files([preprocessed_fpath] + annotated_fpaths)
 
 if __name__ == '__main__':
     main()
