@@ -282,12 +282,22 @@ class BCBioSample(BaseSample):
     #         for k, v in self.__dict__.items())
 
     def key_to_sort(self):
-        m = re.search(r'\d+$', self.name)  # split_name_and_number
-        if m:
-            num = m.group()
-            return self.name.split(num)[0], int(num)
-        else:
-            return self.name, 0
+        parts = []
+
+        cur_part = []
+        prev_was_num = False
+
+        for c in self.name:
+            if prev_was_num == c.isdigit():
+                cur_part.append(c)
+            else:
+                part = ''.join(cur_part)
+                if prev_was_num:
+                    part = int(part)
+                parts.append(part)
+                cur_part = []
+
+        return parts
 
     @staticmethod
     def load(data, bcbio_structure):
@@ -469,17 +479,28 @@ class BCBioStructure:
         info()
         info('-' * 70)
 
+        # reading sampels
         for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
             if sample.dirpath is None:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
             else:
                 self.samples.append(sample)
 
+        if not self.samples:
+            critical('No directory for any sample. Exiting.')
+
+        # sorting samples
+        self.samples.sort(key=lambda _s: _s.key_to_sort())
+        for caller in self.variant_callers.values():
+            caller.samples.sort(key=lambda _s: _s.key_to_sort())
+
+        # setting bed files for samples
         bed_files_used = [s.bed for s in self.samples]
         if len(set(bed_files_used)) > 2:
             critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
         self.bed = bed_files_used[0] if bed_files_used else None
 
+        # setting up batch properties
         for b in self.batches.values():
             if b.normal and b.tumor:
                 b.paired = True
@@ -488,16 +509,9 @@ class BCBioStructure:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
 
-        if not self.samples:
-            critical('No directory for any sample. Exiting.')
-
         for b in self.batches.values():
             for t_sample in b.tumor:
                 t_sample.normal_match = b.normal
-
-        self.samples.sort(key=lambda s: s.key_to_sort())
-        for caller in self.variant_callers.values():
-            caller.samples.sort(key=lambda s: s.key_to_sort())
 
         if not self.cnf.verbose:
             info('', ending='')
