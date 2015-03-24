@@ -28,7 +28,7 @@ metric_storage = MetricStorage(
         # ]),
 
         ReportSection('reads', 'Reads', [
-            Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
+            # Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
             Metric('Read min length',                               'Min len',                     'Read min length'),
             Metric('Read max length',                               'Max len',                     'Read max length'),
             Metric('Read mean length',                              'Ave len',                     'Read mean length'),

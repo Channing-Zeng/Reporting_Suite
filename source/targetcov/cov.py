@@ -39,7 +39,10 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Unmapped reads', short_name='Unmapped', quality='Less is better', description='samtools view -c -f 4'),
                 Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
 
+                Metric('Properly paired reads percent', short_name='Paired %', unit='%', description='Pecent of properly paired mapped reads (-f 2).'),
+
                 Metric('Duplication rate', short_name='Dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
+                Metric('Dedupped reads', short_name='Dedupped', description='Mapped reads (-F 4), not makred as duplicates (-f 1024)'),
             ]),
 
             ReportSection('target_metrics', 'Target (duplicate reads are not counted)', [
@@ -48,6 +51,8 @@ def get_header_metric_storage(depth_thresholds):
 
                 Metric('Reads mapped on target', short_name='Reads on trg'),
                 Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+
+                Metric('Percentage of reads mapped off target', short_name='% off trg', unit='%', quality='Less is better'),
 
                 Metric('Reads mapped on padded target', 'On padded trg'),
                 Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
@@ -172,10 +177,10 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Total mapped reads: ' + Metric.format_value(total_mapped_reads))
     total_dup_reads = number_of_dup_reads(cnf, bam_fpath)
     info('Total dup reads: ' + Metric.format_value(total_dup_reads))
-    total_dup_unmapped_reads = number_of_dup_unmapped_reads(cnf, bam_fpath)
-    info('Total dup unmapped reads: ' + Metric.format_value(total_dup_unmapped_reads))
-    total_dup_mapped_reads = total_dup_reads - total_dup_unmapped_reads
+    total_dup_mapped_reads = number_of_dup_mapped_reads(cnf, bam_fpath)
     info('Total dup mapped reads: ' + Metric.format_value(total_dup_mapped_reads))
+    total_paired_reads = number_of_properly_paired_reads(cnf, bam_fpath)
+    info('Total properly paired reads: ' + Metric.format_value(total_paired_reads))
 
     dup_bam_fpath = bam_fpath
     dedup_bam_fpath = remove_dups(cnf, bam_fpath)
@@ -209,7 +214,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info()
     general_rep_fpath = make_and_save_general_report(
         cnf, sample, bam_fpath,
-        total_reads, total_mapped_reads, total_dup_mapped_reads,
+        total_reads, total_mapped_reads, total_dup_mapped_reads, total_paired_reads,
         combined_region, max_depth, target_info)
 
     info()
@@ -314,7 +319,7 @@ def seq2c_seq2cov(cnf, sample, bam_fpath, amplicons_bed, seq2c_output):
 
 def make_and_save_general_report(
         cnf, sample, bam_fpath,
-        total_reads, total_mapped_reads, total_dup_mapped_reads,
+        total_reads, total_mapped_reads, total_dup_mapped_reads, total_paired_reads,
         combined_region, max_depth, target_info):
 
     step_greetings('Target coverage summary report')
@@ -323,7 +328,7 @@ def make_and_save_general_report(
     ref_fapth = cnf.genome.seq
 
     summary_report = generate_summary_report(cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
-        total_reads, total_mapped_reads, total_dup_mapped_reads,
+        total_reads, total_mapped_reads, total_dup_mapped_reads, total_paired_reads,
         cnf.coverage_reports.depth_thresholds, cnf.padding,
         combined_region, max_depth, target_info)
 
@@ -423,7 +428,7 @@ def get_records_by_metrics(records, metrics):
 
 def generate_summary_report(
         cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
-        total_reads, total_mapped_reads, total_dup_mapped_reads,
+        total_reads, total_mapped_reads, total_dup_mapped_reads, total_paired_reads,
         depth_thresholds, padding,
         combined_region, max_depth, target_info):
 
@@ -441,44 +446,47 @@ def generate_summary_report(
     report.add_record('Percentage of mapped reads', percent_mapped)
     report.add_record('Unmapped reads', total_reads - total_mapped_reads)
     report.add_record('Percentage of unmapped reads', percent_unmapped)
+    total_paired_reads_pecent = 1.0 * total_paired_reads / total_reads if total_reads else None
+    assert total_paired_reads_pecent <= 1.0 or total_paired_reads_pecent is None, str(total_paired_reads_pecent)
+    report.add_record('Properly paired reads percent', total_paired_reads_pecent)
     info('')
 
+    dedupped_reads = total_mapped_reads - total_dup_mapped_reads
     dup_rate = 1.0 * total_dup_mapped_reads / total_mapped_reads if total_mapped_reads else None
     report.add_record('Duplication rate', dup_rate)
+    report.add_record('Dedupped reads', dedupped_reads)
 
     info('* Target coverage statistics *')
     report.add_record('Target', target_info.fpath)
     report.add_record('Regions in target', target_info.regions_num)
     report.add_record('Bases in target', target_info.bases_num)
-    if target_info.genes_fpath:
-        report.add_record('Genes', target_info.genes_fpath)
+    if target_info.genes_fpath: report.add_record('Genes', target_info.genes_fpath)
     report.add_record('Genes in target', target_info.genes_num)
 
     combined_region.sum_up(depth_thresholds)
-
     v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
-
-    v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num \
-        if target_info.bases_num else None
+    v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num if target_info.bases_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
     assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
 
     info('Getting number of mapped reads on target...')
     v_mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, bam_fpath)
     report.add_record('Reads mapped on target', v_mapped_reads_on_target)
-
-    v_percent_mapped_on_target = 1.0 * v_mapped_reads_on_target / total_mapped_reads if total_mapped_reads else None
+    v_percent_mapped_on_target = 1.0 * v_mapped_reads_on_target / dedupped_reads if dedupped_reads else None
     report.add_record('Percentage of reads mapped on target ', v_percent_mapped_on_target)
     assert v_percent_mapped_on_target <= 1.0 or v_percent_mapped_on_target is None, str(v_percent_mapped_on_target)
 
+    v_mapped_reads_off_target = dedupped_reads - v_mapped_reads_on_target
+    v_percent_mapped_off_target = 1.0 * v_mapped_reads_off_target / dedupped_reads if dedupped_reads else None
+    report.add_record('Percentage of reads mapped off target ', v_percent_mapped_off_target)
+    assert v_percent_mapped_off_target <= 1.0 or v_percent_mapped_off_target is None, str(v_percent_mapped_off_target)
+
     info('Making bed file for padded regions...')
     padded_bed = get_padded_bed_file(cnf, sample.bed, chr_len_fpath, padding)
-
     info('Getting number of mapped reads on padded target...')
     v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, sample.bam)
     report.add_record('Reads mapped on padded target', v_reads_on_padded_targ)
-
     v_percent_mapped_on_padded_target = 1.0 * v_reads_on_padded_targ / total_mapped_reads if total_mapped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
     assert v_percent_mapped_on_padded_target <= 1.0 or v_percent_mapped_on_padded_target is None, str(v_percent_mapped_on_padded_target)
@@ -1108,6 +1116,15 @@ def number_of_mapped_reads(cnf, bam):
         return int(f.read().strip())
 
 
+def number_of_properly_paired_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, cnf.name + '_num_paired_reads')
+    cmdline = '{samtools} view -c -f 2 {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
 def number_of_dup_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, cnf.name + '_num_dup_reads')
@@ -1117,10 +1134,10 @@ def number_of_dup_reads(cnf, bam):
         return int(f.read().strip())
 
 
-def number_of_dup_unmapped_reads(cnf, bam):
+def number_of_dup_mapped_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
     output_fpath = join(cnf.work_dir, cnf.name + '_num_dup_unmapped_reads')
-    cmdline = '{samtools} view -c -f 1028 {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
+    cmdline = '{samtools} view -c -F 4 -f 1024 {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
