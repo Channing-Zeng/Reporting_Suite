@@ -218,21 +218,22 @@ def _preprocess(bed_fpath, work_dirpath):
                     if bed_params.n_cols_needed is not None and cur_ncn != bed_params.n_cols_needed:
                         err('number and type of columns should be the same on all lines!')
                     bed_params.n_cols_needed = cur_ncn
-                    if Region(line).is_control():
-                        bed_params.controls.append(Region(line))
-                        continue
                     if line.startswith('chr'):
                         if bed_params.GRCh_names is not None and bed_params.GRCh_names:
                             err('mixing of GRCh and hg chromosome names!')
                         bed_params.GRCh_names = False
-                        out_f.write(line)
+                        processed_line = line
                     elif line.split('\t')[0] in BedParams.GRCh_to_hg:  # GRCh chr names
                         if bed_params.GRCh_names is not None and not bed_params.GRCh_names:
                             err('mixing of GRCh and hg chromosome names!')
                         bed_params.GRCh_names = True
-                        out_f.write('\t'.join([BedParams.GRCh_to_hg[line.split('\t')[0]]] + line.split('\t')[1:]))
+                        processed_line = '\t'.join([BedParams.GRCh_to_hg[line.split('\t')[0]]] + line.split('\t')[1:])
                     else:
                         err('incorrect chromosome name!')
+                    if Region(processed_line).is_control():
+                        bed_params.controls.append(Region(processed_line))
+                    else:
+                        out_f.write(processed_line)
     return output_fpath, bed_params
 
 
