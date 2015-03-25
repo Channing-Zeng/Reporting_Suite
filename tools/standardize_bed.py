@@ -151,14 +151,27 @@ class BedParams:
 class Region:
     GRCh_names = False
     n_cols_needed = 4
+    approved_genes = []
+    key_genes = []
 
     def __init__(self, bed_line):
         entries = bed_line.strip().split('\t')
         self.chrom = entries[0]
         self.start = int(entries[1])
         self.end = int(entries[2])
-        self.symbol = entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(self.chrom, self.start, self.end)
+        self.symbol = None
+        self.type = None
+        self.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(self.chrom, self.start, self.end))
         self.rest = entries[4:]
+
+    def set_symbol(self, symbol):
+        self.symbol = symbol
+        if self.symbol in self.key_genes:
+            self.type = 'key'
+        elif self.symbol in self.approved_genes:
+            self.type = 'approved'
+        else:
+            self.type = 'not_approved'
 
     def __str__(self):
         fs = [BedParams.hg_to_GRCh[self.chrom] if self.GRCh_names else self.chrom,
@@ -278,6 +291,19 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
         for line in f:
             approved_genes.append(line.split('\t')[0])
 
+    Region.GRCh_names = bed_params.GRCh_names
+    if cnf.output_grch:
+        Region.GRCh_names = True
+        if cnf.debug and not bed_params.GRCh_names:
+            log('Changing chromosome names from hg-style to GRCh-style.')
+    if cnf.output_hg:
+        Region.GRCh_names = False
+        if cnf.debug and bed_params.GRCh_names:
+            log('Changing chromosome names from GRCh-style to hg-style.')
+    Region.n_cols_needed = bed_params.n_cols_needed
+    Region.key_genes = key_genes
+    Region.approved_genes = approved_genes
+
     input_regions = set()  # we want only unique regions
     with open(input_fpath) as f:
         for line in f:
@@ -291,16 +317,6 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
     # starting to output result
     for line in bed_params.header:
         sys.stdout.write(line)
-    Region.GRCh_names = bed_params.GRCh_names
-    if cnf.output_grch:
-        Region.GRCh_names = True
-        if cnf.debug and not bed_params.GRCh_names:
-            log('Changing chromosome names from hg-style to GRCh-style.')
-    if cnf.output_hg:
-        Region.GRCh_names = False
-        if cnf.debug and bed_params.GRCh_names:
-            log('Changing chromosome names from GRCh-style to hg-style.')
-    Region.n_cols_needed = bed_params.n_cols_needed
 
     annotated_regions.sort()
     i = 0
@@ -310,20 +326,25 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
         if not ready_region.is_control():
             assert annotated_regions[i] == in_region, str(in_region) + ' != ' + str(annotated_regions[i]) + '(i=%d)' % i
             if annotated_regions[i].symbol != '.':
-                ready_region.symbol = annotated_regions[i].symbol
+                ready_region.set_symbol(annotated_regions[i].symbol)
             else:
                 if prev_chr != ready_region.chrom or not prev_symbol.startswith("not_a_gene"):
                     not_a_gene_count += 1
-                ready_region.symbol = "not_a_gene_%d" % not_a_gene_count
+                ready_region.set_symbol("not_a_gene_%d" % not_a_gene_count)
             i += 1
             while i < len(annotated_regions) and annotated_regions[i] == in_region:  # processing duplicates
-                if annotated_regions[i].symbol != '.':
-                    if annotated_regions[i].symbol in approved_genes and ready_region.symbol not in approved_genes:
+                if annotated_regions[i].symbol != '.' and annotated_regions[i].symbol != ready_region.symbol:
+                    if annotated_regions[i].type == 'approved' and not ready_region.type == 'not_approved':
                         ready_region.symbol = annotated_regions[i].symbol
-                    if annotated_regions[i].symbol in key_genes and ready_region.symbol not in key_genes:
+                    elif annotated_regions[i].type == 'key' and ready_region.type != 'key':
                         ready_region.symbol = annotated_regions[i].symbol
                         if cnf.debug:
                             log('key gene priority over approved gene was used')
+                    elif annotated_regions[i].type == ready_region.type:
+                        if annotated_regions[i].symbol == prev_symbol:
+                            ready_region.set_symbol(annotated_regions[i].symbol)
+                            if cnf.debug:
+                                log('previous gene name was preferred among several ambiguous names')
                 i += 1
         sys.stdout.write(str(ready_region))  # automatically output correct number of columns and GRCh/hg names
         prev_chr = ready_region.chrom

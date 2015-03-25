@@ -11,6 +11,7 @@ import subprocess
 import sys
 import os
 
+from source.logger import critical
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 from os.path import getsize
@@ -167,15 +168,20 @@ def _resolve_ambiguities(annotated_by_loc_by_gene):
 
 
 def _annotate(bedtools, bed_fpath, ref_fpath):
+    if getsize(bed_fpath) <= 0:
+        log('Warning: input BED file is empty: ' + bed_fpath + '.')
+        return [], []
+
     if getsize(ref_fpath) <= 0:
         log('Warning: reference BED file is empty: ' + ref_fpath + '; all regions are marked as not annotated.')
-        annotated = []
         off_targets = []
         with open(bed_fpath) as f:
             for l in f:
+                if l.startswith('#'):
+                    continue
                 a_chr, a_start, a_end = l.strip().split('\t')[:3]
                 off_targets.append(Region(a_chr, int(a_start), int(a_end)))
-        return annotated, off_targets
+        return [], off_targets
 
     cmdline = 'cut -f1,2,3 ' + bed_fpath
     sys.stderr.write(cmdline)

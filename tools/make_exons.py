@@ -105,7 +105,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
             return approved_gene_by_name[gene_symbol].name, None
 
-    sys.stderr.write('Gene name ' + gene_symbol + ' is not approved, searching for an approved verion.\n')
+    sys.stderr.write('Gene name ' + gene_symbol + ' is not approved, searching for an approved version.\n')
 
     def _get_approved_genes_by_kind(approved_genes, kind):
         if not approved_genes:
@@ -116,7 +116,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 
             if len(approved_genes_same_ucsc) > 1:
                 sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.name for g in approved_genes_same_ucsc) + '\n')
-                return 'AMBIGOUS'
+                return 'AMBIGUOUS'
 
             if len(approved_genes_same_ucsc) == 1:
                 if _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, db_id, db_chrom):
@@ -129,7 +129,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 
             if len(approved_genes_same_chrom) > 1:
                 sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.name for g in approved_genes_same_ucsc) + '\n')
-                return 'AMBIGOUS'
+                return 'AMBIGUOUS'
 
             if len(approved_genes_same_chrom) == 1:
                 g = approved_genes_same_chrom[0]
@@ -151,11 +151,11 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
         return 'NOT FOUND'
 
     res = _get_approved_genes_by_kind(approved_gnames_by_prev_gname.get(gene_symbol), 'prev')
-    if res == 'AMBIGOUS':
-        return None, 'AMBIGOUS\tAS PREV'
+    if res == 'AMBIGUOUS':
+        return None, 'AMBIGUOUS\tAS PREV'
     elif res == 'NOT FOUND':
         res = _get_approved_genes_by_kind(approved_gnames_by_synonym.get(gene_symbol), 'synonym')
-        if res == 'AMBIGOUS':
+        if res == 'AMBIGUOUS':
             return None, res + '\tAS SYNONYM'
         if res == 'NOT FOUND':
             return None, res
@@ -172,19 +172,24 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
 
     for l in inp:
         if l and not l.startswith('#'):
-            ucsc_id, ucsc_chrom, strand, txStart, txEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
+            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
 
             approved_gene_symbol, status = get_approved_gene_symbol(
                 approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
                 geneSymbol, ucsc_id, ucsc_chrom)
 
             if approved_gene_symbol:
-                out.write('\t'.join([ucsc_chrom, txStart, txEnd,  # TODO: discuss whether it is needed
-                                     approved_gene_symbol, '.', strand, 'Multi_Gene', '.']) + '\n')
+                # out.write('\t'.join([ucsc_chrom, txStart, txEnd,  # TODO: discuss whether it is needed
+                #                      approved_gene_symbol, '.', strand, 'Multi_Gene', '.']) + '\n')
                 for j, s, e in zip(range(int(exonCount)),
-                   [e for e in exonStarts.split(',') if e], [
+                   [s for s in exonStarts.split(',') if s], [
                     e for e in exonEnds.split(',') if e]):
-                    out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+                    if e <= cdsStart or s > cdsEnd:
+                        continue  # non-coding exon
+                    s = max(s, cdsStart)
+                    e = min(e, cdsEnd)
+                    if s < e:  # s == e  means region of size 0
+                        out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
             else:
                 not_approved_gene_names.append(geneSymbol + '\t' + status)
 
