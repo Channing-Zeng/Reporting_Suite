@@ -185,11 +185,16 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
                    [s for s in exonStarts.split(',') if s], [
                     e for e in exonEnds.split(',') if e]):
                     if e <= cdsStart or s > cdsEnd:
-                        continue  # non-coding exon
-                    s = max(s, cdsStart)
-                    e = min(e, cdsEnd)
-                    if s < e:  # s == e  means region of size 0
-                        out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
+                        out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+                    else:
+                        if max(s, cdsStart) != s:
+                            out.write('\t'.join([ucsc_chrom, s, cdsStart, approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+                            s = cdsStart
+                        if min(e, cdsEnd) != e:
+                            out.write('\t'.join([ucsc_chrom, cdsEnd, e, approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+                            e = cdsEnd
+                        if s < e:  # s == e  means region of size 0
+                            out.write('\t'.join([ucsc_chrom, s, e, approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
             else:
                 not_approved_gene_names.append(geneSymbol + '\t' + status)
 
