@@ -321,35 +321,83 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
 
     annotated_regions.sort()
     i = 0
-    prev_symbol, prev_chr, not_a_gene_count = "", "", 0
-    for in_region in sorted(list(input_regions) + bed_params.controls):
-        ready_region = in_region
-        if not ready_region.is_control():
-            assert annotated_regions[i] == in_region, str(in_region) + ' != ' + str(annotated_regions[i]) + '(i=%d)' % i
+    prev_region = None
+    not_a_gene_count = 0
+    solid_regions = []
+    prev_is_solid = False
+    all_regions = []
+    for cur_region in sorted(list(input_regions) + bed_params.controls):
+        if not cur_region.is_control():
+            assert annotated_regions[i] == cur_region, str(cur_region) + ' != ' + str(annotated_regions[i]) + '(i=%d)' % i
             if annotated_regions[i].symbol != '.':
-                ready_region.set_symbol(annotated_regions[i].symbol)
+                cur_region.set_symbol(annotated_regions[i].symbol)
             else:
-                if prev_chr != ready_region.chrom or not prev_symbol.startswith("not_a_gene"):
+                if prev_region is None or \
+                   prev_region.chrom != cur_region.chrom or not prev_region.symbol.startswith("not_a_gene"):
                     not_a_gene_count += 1
-                ready_region.set_symbol("not_a_gene_%d" % not_a_gene_count)
+                cur_region.set_symbol("not_a_gene_%d" % not_a_gene_count)
             i += 1
-            while i < len(annotated_regions) and annotated_regions[i] == in_region:  # processing duplicates
-                if annotated_regions[i].symbol != '.' and annotated_regions[i].symbol != ready_region.symbol:
-                    if annotated_regions[i].type == 'approved' and ready_region.type == 'not_approved':
-                        ready_region.set_symbol(annotated_regions[i].symbol)
-                    elif annotated_regions[i].type == 'key' and ready_region.type != 'key':
-                        ready_region.set_symbol(annotated_regions[i].symbol)
+            ambiguous_regions = [cur_region]
+            while i < len(annotated_regions) and annotated_regions[i] == cur_region:  # processing duplicates
+                if annotated_regions[i].symbol != '.' and annotated_regions[i].symbol != cur_region.symbol:
+                    duplicate = Region(str(cur_region))  # TODO: check whether better way of cloning exists; TODO: GRCh
+                    duplicate.set_symbol(annotated_regions[i].symbol)
+                    if duplicate.type == 'approved' and cur_region.type == 'not_approved':
+                        cur_region = duplicate
+                        ambiguous_regions = [cur_region]
+                    elif annotated_regions[i].type == 'key' and cur_region.type != 'key':
+                        cur_region = duplicate
+                        ambiguous_regions = [cur_region]
                         if cnf.debug:
                             log('key gene priority over approved gene was used')
-                    elif annotated_regions[i].type == ready_region.type:
-                        if annotated_regions[i].symbol == prev_symbol:
-                            ready_region.set_symbol(annotated_regions[i].symbol)
-                            if cnf.debug:
-                                log('previous gene name was preferred among several ambiguous names')
+                    elif annotated_regions[i].type == cur_region.type:
+                        ambiguous_regions.append(duplicate)
                 i += 1
-        sys.stdout.write(str(ready_region))  # automatically output correct number of columns and GRCh/hg names
-        prev_chr = ready_region.chrom
-        prev_symbol = ready_region.symbol
+            if len(ambiguous_regions) == 1:
+                if not prev_is_solid:
+                    solid_regions.append(cur_region)
+                prev_is_solid = True
+                all_regions.append(cur_region)
+            else:
+                if prev_is_solid:
+                    solid_regions.append(prev_region)
+                prev_is_solid = False
+                all_regions.append(ambiguous_regions)
+        else:
+            all_regions.append(cur_region)
+        prev_region = cur_region
+
+    # outputting results
+    cur_solid_id = -1
+    for entry in all_regions:
+        if isinstance(entry, list):  # list of ambiguous regions
+            cur_region = entry[0]
+            while cur_solid_id + 1 < len(solid_regions) and cur_region > solid_regions[cur_solid_id + 1]:
+                cur_solid_id += 1
+            found = False
+            if cur_solid_id >= 0 and cur_region > solid_regions[cur_solid_id] \
+                    and cur_region.chrom == solid_regions[cur_solid_id].chrom:
+                prev_solid = solid_regions[cur_solid_id]
+                for cur_region in entry:
+                    if cur_region.symbol == prev_solid.symbol:
+                        found = True
+                        if cnf.debug:
+                            log('gene name was chosen based on previous solid region')
+                        break
+            if not found and cur_solid_id + 1 < len(solid_regions) and cur_region < solid_regions[cur_solid_id + 1] \
+                    and cur_region.chrom == solid_regions[cur_solid_id + 1].chrom:
+                next_solid = solid_regions[cur_solid_id + 1]
+                for cur_region in entry:
+                    if cur_region.symbol == next_solid.symbol:
+                        found = True
+                        if cnf.debug:
+                            log('gene name was chosen based on next solid region')
+                        break
+            if not found:
+                cur_region = entry[0]
+        else:
+            cur_region = entry
+        sys.stdout.write(str(cur_region))  # automatically outputs correct number of columns and GRCh/hg names
 
 
 def __intermediate_fname(work_dir, fname, suf):
