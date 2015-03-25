@@ -84,7 +84,8 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
         ' --bam {bam}' + \
         ' --bed ' + bed_fpath + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
-       (' --reannotate ' if cnf.reannotate else '')
+       (' --reannotate ' if cnf.reannotate else '') + \
+       (' --count-dups ' if cnf.count_dups else '')
 
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',
