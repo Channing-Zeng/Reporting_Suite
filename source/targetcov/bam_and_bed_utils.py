@@ -47,7 +47,7 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
     amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
 
     if seq2c_bed:
-        seq2c_bed = _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)
+        seq2c_bed = prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)
 
     info()
     info('Merging amplicons...')
@@ -89,7 +89,7 @@ def cut(cnf, fpath, col_num):
     return cut_fpath
 
 
-def _prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
+def prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
     info()
     info('Preparing BED file for seq2c...')
 

@@ -578,7 +578,7 @@ def _log(msg, silent, is_critical):
     if is_critical:
         critical(msg)
     if not silent:
-        err(msg)
+        warn(msg)
 
 def verify_obj_by_path(path, description='', silent=False, is_critical=False):
     if not path:

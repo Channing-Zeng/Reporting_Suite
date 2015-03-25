@@ -31,6 +31,12 @@ def main(args):
                 action='store_true',
                 default=False)
              ),
+            (['--count-dups'], dict(
+                dest='count_dups',
+                help='count duplicates when calculating coverage metrics',
+                action='store_true',
+                default=False)
+             ),
             (['--exons', '--exome'], dict(
                 dest='exons',
                 help='a BED file with real CDS regions (default Ensembl is in system_config)')

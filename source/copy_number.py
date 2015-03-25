@@ -8,42 +8,21 @@ import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
-from source.file_utils import verify_file, adjust_path
+from source.file_utils import verify_file, adjust_path, iterate_file
 from source.logger import info, err, step_greetings, critical, send_email, warn
+from source.ngscat.bed_file import verify_bed
 from source.reporting import write_tsv_rows, Record, SampleReport
-from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
+from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
+    group_and_merge_regions_by_gene
+from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups, seq2c_seq2cov
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
 import source
 
 
-def _get_exons_and_genes(cnf, sample):
-    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genomes[sample.genome].exons)
-    info('Exons: ' + exons_bed_fpath)
-
-    genes_fpath = None
-    if cnf.genes:
-        genes_fpath = adjust_path(cnf.genes)
-        info('Custom genes list: ' + genes_fpath)
-
-    return exons_bed_fpath, genes_fpath
-
-
 def cnv_reports(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
-
-    for sample in bcbio_structure.samples:
-        if not verify_file(sample.targetcov_json_fpath) or not verify_file(sample.targetcov_detailed_tsv):
-            exons_bed_fpath, genes_fpath = _get_exons_and_genes(cnf, sample)
-
-            # TargetSeq was not run but needed, thus running.
-            proc_name, name, output_dir = cnf.proc_name, cnf.name, cnf.output_dir
-            cnf.proc_name, cnf.name, cnf.output_dir = source.targetseq_name, sample.name, join(sample.dirpath, source.targetseq_name)
-
-            make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
-
-            cnf.proc_name, cnf.name, cnf.output_dir = proc_name, name, output_dir
 
     info('Calculating normalized coverages for CNV...')
     cnv_report_fpath, cnv_report_dups_fpath = _seq2c(cnf, bcbio_structure)
@@ -92,13 +71,13 @@ def _seq2c(cnf, bcbio_structure):
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
+    # Output fpaths:
     cnv_gene_ampl_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
     cnv_gene_ampl_report_dups_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.dups.tsv')
 
     info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
-    combined_gene_depths_fpath, combined_gene_depths_dups_fpath = \
-        __get_mapped_reads_and_cov_by_seq2c_itself(cnf, bcbio_structure.samples)
-    mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf.work_dir, bcbio_structure)
+    combined_gene_depths_fpath, combined_gene_depths_dups_fpath = __cov2cnv(cnf, bcbio_structure.samples)
+    mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf, bcbio_structure)
     info()
     if not mapped_reads_fpath or not combined_gene_depths_fpath:
         err('Error: no mapped_reads_fpath or combined_gene_depths_fpath by Seq2C')
@@ -156,58 +135,84 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
 #         return output_fpath
 
 
-def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
-    # GENE DEPTHS
+def __prep_bed(cnf, bed_fpath, exons_bed):
+    info()
+    info('Preparing BED file for seq2c...')
+
+    info()
+    info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
+    exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
+
+    info()
+    info('bedtools-sotring BED file...')
+    bed_fpath = sort_bed(cnf, bed_fpath)
+    cols = count_bed_cols(bed_fpath)
+
+    if cols < 4:
+        info('Annotating amplicons with gene names from Ensembl...')
+        bed_fpath = annotate_amplicons(cnf, bed_fpath, exons_bed)
+
+    elif 8 > cols > 4:
+        bed_fpath = cut(cnf, bed_fpath, 4)
+
+    elif cols > 8:
+        bed_fpath = cut(cnf, bed_fpath, 8)
+
+    # removing regions with no gene annotation
+    def f(l, i):
+        if l.split('\t')[3].strip() == '.': return None
+        else: return l
+    bed_fpath = iterate_file(cnf, bed_fpath, f, 'filt')
+
+    info('Done: ' + bed_fpath)
+    return bed_fpath
+
+
+
+def __cov2cnv(cnf, samples):
     info()
     info('Combining gene depths...')
 
-    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
-    with open(combined_gene_depths_fpath, 'w') as out:
-        for i, sample in enumerate(samples):
-            seq2c_output = join(
-                sample.dirpath,
-                BCBioStructure.targetseq_dir,
-                sample.name + '.' + \
-                BCBioStructure.targetseq_name + '_' + \
-                BCBioStructure.seq2c_seq2cov_ending)
-            if not verify_file(seq2c_output):
-                combined_gene_depths_fpath = None
-                break
-            with open(seq2c_output) as inp:
-                for l in inp:
-                    if l.startswith('Sample\tGene\tChr\t'):
-                        if i == 0:
-                            out.write(l)
-                    else:
-                        out.write(l)
-    if combined_gene_depths_fpath:
-        info('Saved to ' + combined_gene_depths_fpath)
-        info()
+    result = []
+    seq2c_bed_fpath = None
 
-    info('Then for the version with duplicates...')
-    combined_gene_depths_dups_fpath = join(cnf.work_dir, 'gene_depths.seq2c.dups.txt')
-    with open(combined_gene_depths_dups_fpath, 'w') as out:
-        for i, sample in enumerate(samples):
-            seq2c_output = join(
-                sample.dirpath,
-                BCBioStructure.targetseq_dir,
-                sample.name + '.' + \
-                BCBioStructure.targetseq_name + '_dups_' + \
-                BCBioStructure.seq2c_seq2cov_ending)
-            if not verify_file(seq2c_output):
-                combined_gene_depths_dups_fpath = None
-                break
-            with open(seq2c_output) as inp:
-                for l in inp:
-                    if l.startswith('Sample\tGene\tChr\t'):
-                        if i == 0:
+    for suf in '', '_dup':
+        info('Running first for the de-dupped version, then for the original version...')
+        combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c' + suf + '.txt')
+        with open(combined_gene_depths_fpath, 'w') as out:
+            for i, sample in enumerate(samples):
+                seq2c_output = join(
+                    sample.dirpath,
+                    BCBioStructure.targetseq_dir,
+                    sample.name + '.' + \
+                    BCBioStructure.targetseq_name + suf + '_' + \
+                    BCBioStructure.seq2c_seq2cov_ending)
+                if not verify_file(seq2c_output):
+                    bam_fpath = sample.bam
+                    if suf == '':
+                        bam_fpath = remove_dups(cnf, sample.bam)
+                    if seq2c_bed_fpath is None:
+                        exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+                        bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
+                        verify_bed(bed_fpath, is_critical=True)
+                        seq2c_bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
+                    seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed_fpath, seq2c_output)
+                if not verify_file(seq2c_output):
+                    combined_gene_depths_fpath = None
+                    break
+                with open(seq2c_output) as inp:
+                    for l in inp:
+                        if l.startswith('Sample\tGene\tChr\t'):
+                            if i == 0:
+                                out.write(l)
+                        else:
                             out.write(l)
-                    else:
-                        out.write(l)
-    if combined_gene_depths_dups_fpath:
-        info('Saved to ' + combined_gene_depths_dups_fpath)
-        info()
-    return combined_gene_depths_fpath, combined_gene_depths_dups_fpath
+        result.append(combined_gene_depths_fpath)
+        if combined_gene_depths_fpath:
+            info('Saved to ' + combined_gene_depths_fpath)
+            info()
+
+    return result
 
     # # READ STATS
     # info('Getting read counts...')
@@ -228,7 +233,7 @@ def __get_mapped_reads_and_cov_by_seq2c_itself(cnf, samples):
     # return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads(work_dir, bcbio_structure):
+def __get_mapped_reads(cnf, bcbio_structure):
     # coverage_info = []
     mapped_reads_by_sample = OrderedDict()
     mapped_reads_by_sample_dup = OrderedDict()
@@ -240,47 +245,63 @@ def __get_mapped_reads(work_dir, bcbio_structure):
         #     if cov != '.' and float(cov) != 0:
         #         coverage_info.append([sample.name, gene, chrom, s, e, feature, size, cov])
 
-        with open(sample.targetcov_json_fpath) as f:
-            data = load(f, object_pairs_hook=OrderedDict)
-        sample = next((s for s in bcbio_structure.samples if s.name == sample.name), None)
-        if not sample: continue
-        cov_report = SampleReport.load(data, sample, bcbio_structure)
+        if verify_file(sample.targetcov_json_fpath):
+            with open(sample.targetcov_json_fpath) as f:
+                data = load(f, object_pairs_hook=OrderedDict)
+            sample = next((s for s in bcbio_structure.samples if s.name == sample.name), None)
+            if not sample: continue
+            cov_report = SampleReport.load(data, sample, bcbio_structure)
 
-        mapped_reads = int(next(
-            rec.value for rec in cov_report.records
-            if rec.metric.name == 'Mapped reads'))
-
-        try:
-            dup_rate = float(next(
+            mapped_reads = int(next(
                 rec.value for rec in cov_report.records
-                if rec.metric.name == 'Duplication rate'))
-        except StopIteration:
-            dup_rate = float(next(
-                rec.value for rec in cov_report.records
-                if rec.metric.name == 'Duplication rate (picard)'))
+                if rec.metric.name == 'Mapped reads'))
 
-        info(sample.name + ': ')
-        info('  Mapped reads: ' + str(mapped_reads))
-        info('  Dup rate: ' + str(dup_rate))
-        mapped_reads_by_sample[sample.name] = int(float(mapped_reads) * (1 - dup_rate))
-        mapped_reads_by_sample_dup[sample.name] = mapped_reads
-        info('  Mapped not dup reads: ' + str(mapped_reads_by_sample[sample.name]))
+            try:
+                dup_rate = float(next(
+                    rec.value for rec in cov_report.records
+                    if rec.metric.name == 'Duplication rate'))
+            except StopIteration:
+                dup_rate = float(next(
+                    rec.value for rec in cov_report.records
+                    if rec.metric.name == 'Duplication rate (picard)'))
 
-    # Writing results
-    mapped_read_fpath = join(work_dir, 'mapped_reads_by_sample.txt')
-    with open(mapped_read_fpath, 'w') as f:
-        for sample_name, mapped_reads in mapped_reads_by_sample.items():
-            f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+            info(sample.name + ': ')
+            info('  Mapped reads: ' + str(mapped_reads))
+            info('  Dup rate: ' + str(dup_rate))
+            mapped_reads_by_sample[sample.name] = int(float(mapped_reads) * (1 - dup_rate))
+            mapped_reads_by_sample_dup[sample.name] = mapped_reads
+            info('  Mapped not dup reads: ' + str(mapped_reads_by_sample[sample.name]))
 
-    mapped_read_dup_fpath = join(work_dir, 'mapped_reads_by_sample_dups.txt')
-    with open(mapped_read_dup_fpath, 'w') as f:
-        for sample_name, mapped_reads in mapped_reads_by_sample_dup.items():
-            f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+    mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
+    mapped_read_dup_fpath = join(cnf.work_dir, 'mapped_reads_by_sample_dups.txt')
 
-    # gene_depths_fpath = join(work_dir, 'gene_depths.txt')
-    # with open(gene_depths_fpath, 'w') as f:
-    #     for tokens in coverage_info:
-    #         f.write('\t'.join(tokens) + '\n')
+    if len(mapped_reads_by_sample.keys()) == len(bcbio_structure.samples):
+    # TargetSeq was run correctly; writing results
+        with open(mapped_read_fpath, 'w') as f:
+            for sample_name, mapped_reads in mapped_reads_by_sample.items():
+                f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+
+        with open(mapped_read_dup_fpath, 'w') as f:
+            for sample_name, mapped_reads in mapped_reads_by_sample_dup.items():
+                f.write(sample_name + '\t' + str(mapped_reads) + '\n')
+
+    else:
+        info('Getting read counts...')
+        bam2reads = get_script_cmdline(cnf, 'perl', join('Seq2C', 'bam2reads.pl'), is_critical=True)
+
+        bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
+        bam2reads_list_of_dup_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_dup_bams.txt')
+        with open(bam2reads_list_of_bams_fpath, 'w') as f, open(bam2reads_list_of_dup_bams_fpath, 'w') as fd:
+            for sample in bcbio_structure.samples:
+                fd.write(sample.name + '\t' + sample.bam + '\n')
+                dedup_bam_fpath = remove_dups(cnf, sample.bam)
+                f.write(sample.name + '\t' + dedup_bam_fpath + '\n')
+
+        samtools = get_system_path(cnf, 'samtools')
+        cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_bams_fpath}'.format(**locals())
+        if not call(cnf, cmdline, mapped_read_fpath): return None, None
+        cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_dup_bams_fpath}'.format(**locals())
+        if not call(cnf, cmdline, mapped_read_dup_fpath): return None, None
 
     return mapped_read_fpath, mapped_read_dup_fpath
 

@@ -30,6 +30,7 @@ def main():
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
+    parser.add_option('--count-dups', dest='count_dups', action='store_true', default=False, help='count duplicates in coverage metrics')
 
     (opts, args) = parser.parse_args()
 

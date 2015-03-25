@@ -183,10 +183,11 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Total properly paired reads: ' + Metric.format_value(total_paired_reads))
 
     dup_bam_fpath = bam_fpath
-    dedup_bam_fpath = remove_dups(cnf, bam_fpath)
-    info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath)))
-    info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
-    bam_fpath = dedup_bam_fpath
+    if not cnf.count_dups:
+        dedup_bam_fpath = remove_dups(cnf, bam_fpath)
+        info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath)))
+        info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
+        bam_fpath = dedup_bam_fpath
 
     # picard_bam_fpath = remove_dups_picard(cnf, bam_fpath)
     # if picard_bam_fpath:

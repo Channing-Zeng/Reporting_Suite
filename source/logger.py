@@ -52,7 +52,6 @@ def err(msg='', ending='\n', print_date=True, severity='error'):
 
 
 def send_email(msg='', subj=''):
-
     if msg and smtp_host:
         addresses = [my_address]
         if address:

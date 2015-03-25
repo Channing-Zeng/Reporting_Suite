@@ -192,6 +192,8 @@ class BCBioRunner:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
+        if cnf.count_dups:
+            targetcov_params += '--count-dups'
 
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targetseq_name, short_name='tc',
@@ -609,7 +611,7 @@ class BCBioRunner:
 
             for job in self.jobs:
                 msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
-            send_email('\n'.join(msg))
+            # send_email('\n'.join(msg))
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name, threads,
                      steps=None, job_names_to_wait=None):
