@@ -334,10 +334,10 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
             i += 1
             while i < len(annotated_regions) and annotated_regions[i] == in_region:  # processing duplicates
                 if annotated_regions[i].symbol != '.' and annotated_regions[i].symbol != ready_region.symbol:
-                    if annotated_regions[i].type == 'approved' and not ready_region.type == 'not_approved':
-                        ready_region.symbol = annotated_regions[i].symbol
+                    if annotated_regions[i].type == 'approved' and ready_region.type == 'not_approved':
+                        ready_region.set_symbol(annotated_regions[i].symbol)
                     elif annotated_regions[i].type == 'key' and ready_region.type != 'key':
-                        ready_region.symbol = annotated_regions[i].symbol
+                        ready_region.set_symbol(annotated_regions[i].symbol)
                         if cnf.debug:
                             log('key gene priority over approved gene was used')
                     elif annotated_regions[i].type == ready_region.type:
