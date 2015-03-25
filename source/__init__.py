@@ -95,7 +95,25 @@ class BaseSample:
     #     return False
 
     def __cmp__(self, other):
-        return cmp(self.name, other.name)
+        return cmp(self.key_to_sort(), other.key_to_sort())
+
+    def key_to_sort(self):
+        parts = []
+
+        cur_part = []
+        prev_was_num = False
+
+        for c in self.name:
+            if prev_was_num == c.isdigit():
+                cur_part.append(c)
+            else:
+                part = ''.join(cur_part)
+                if prev_was_num:
+                    part = int(part)
+                parts.append(part)
+                cur_part = []
+
+        return parts
 
 
 class SingleSample(BaseSample):

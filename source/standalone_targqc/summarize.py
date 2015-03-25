@@ -171,6 +171,8 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
         info('        ' + norm_comb_var_fpath)
         info('  Best: ' + norm_best_var_fpath)
 
+    return html_fpath
+
 
 def get_ave_coverage(cnf, report_fpath):
     if verify_file(report_fpath):

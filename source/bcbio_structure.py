@@ -281,24 +281,6 @@ class BCBioSample(BaseSample):
     #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
     #         for k, v in self.__dict__.items())
 
-    def key_to_sort(self):
-        parts = []
-
-        cur_part = []
-        prev_was_num = False
-
-        for c in self.name:
-            if prev_was_num == c.isdigit():
-                cur_part.append(c)
-            else:
-                part = ''.join(cur_part)
-                if prev_was_num:
-                    part = int(part)
-                parts.append(part)
-                cur_part = []
-
-        return parts
-
     @staticmethod
     def load(data, bcbio_structure):
         data['bcbio_structure'] = bcbio_structure

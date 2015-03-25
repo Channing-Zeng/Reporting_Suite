@@ -10,7 +10,7 @@ from optparse import OptionParser
 from source import logger
 from source.config import Config, defaults
 from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources
-from source.logger import info, err, warn, critical
+from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
 from source.main import determine_cnf_files, set_up_dirs
@@ -52,7 +52,7 @@ def main():
         cnf.project_name = basename(cnf.output_dir)
     info('Project name: ' + cnf.project_name)
 
-    cnf.proc_name = 'TargQC_' + cnf.project_name
+    cnf.proc_name = 'TargQC'
     set_up_dirs(cnf)
     cnf.name = 'TargQC_' + cnf.project_name
 
@@ -78,7 +78,9 @@ def main():
     info('*' * 70)
     info()
 
-    run_targqc(cnf, bam_fpaths, basename(__file__), bed_fpath, exons_bed_fpath, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, bam_fpaths, basename(__file__), bed_fpath, exons_bed_fpath, genes_fpath)
+    if targqc_html_fpath:
+        send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 
 
 if __name__ == '__main__':

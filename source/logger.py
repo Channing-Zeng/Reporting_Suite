@@ -57,14 +57,30 @@ def send_email(msg='', subj=''):
         if address:
             addresses.append(address)
 
+        msg += '\n'
+        msg += '\n'
+        if critical_msgs:
+            msg += 'Critical errors during the processing:\n'
+            for m in critical_msgs:
+                msg += '  ' + m + '\n'
+            msg += '\n'
+
+        if error_msgs:
+            if critical_msgs:
+                msg += 'Other e'
+            else:
+                msg += 'E'
+            msg += 'rrors during the processing:\n'
+            for m in error_msgs:
+                msg += '  ' + m + '\n'
+            msg += '\n'
+
         msg = MIMEText(msg)
         subject = ''
         if project_name:
             subject += project_name
         else:
             subject += 'Reporting'
-        if project_fpath:
-            subject += ' - ' + project_fpath
         if proc_name:
             subject += ' - ' + proc_name
         if subj:
