@@ -272,9 +272,6 @@ class BCBioSample(BaseSample):
                     self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
 
     # ...other
-    def __str__(self):
-        return self.name
-
     def for_json(self):
         return dict((k, v) for k, v in self.__dict__.items() if k != 'bcbio_structure')
     #     return dict(

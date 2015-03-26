@@ -106,16 +106,32 @@ class BaseSample:
         prev_was_num = False
 
         for c in self.name:
-            if prev_was_num == c.isdigit():
+            if prev_was_num == c.isdigit() and c not in ['-', '.']:  # same type of symbol, but not - or .
                 cur_part.append(c)
             else:
-                part = ''.join(cur_part)
-                if prev_was_num:
-                    part = int(part)
-                parts.append(part)
-                cur_part = []
+                if cur_part:
+                    part = ''.join(cur_part)
+                    if prev_was_num:
+                        part = int(part)
+                    parts.append(part)
+                    cur_part = []
 
-        return parts
+                if c in ['-', '.']:
+                    pass
+                else:
+                    if c.isdigit():
+                        prev_was_num = True
+                    else:
+                        prev_was_num = False
+                    cur_part.append(c)
+
+        return tuple(parts)
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
 
 
 class SingleSample(BaseSample):
