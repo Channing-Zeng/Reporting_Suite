@@ -4,17 +4,19 @@ import math
 from collections import defaultdict, OrderedDict
 import os
 from os.path import join, splitext, basename
+from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
+from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, iterate_file
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.ngscat.bed_file import verify_bed
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
     group_and_merge_regions_by_gene
-from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups, seq2c_seq2cov
+from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
@@ -66,6 +68,19 @@ def _get_whole_genes_and_amlicons(report_fpath):
     return gene_summary_lines
 
 
+def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2c_output):
+    def fn(l, i): return '\t'.join(l.split('\t')[:4])
+    amplicons_bed = iterate_file(cnf, amplicons_bed, fn, suffix='4col')
+
+    sample_name = sample.name
+
+    cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())
+    res = call(cnf, cmdline, seq2c_output)
+    if not res:
+        err('Could not run seq2cov.pl for ' + sample.name)
+        return None
+
+
 def _seq2c(cnf, bcbio_structure):
     """
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
@@ -76,8 +91,13 @@ def _seq2c(cnf, bcbio_structure):
     cnv_gene_ampl_report_dups_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.dups.tsv')
 
     info('Getting reads and cov stats with seq2cov.pl and bam2readsl.pl')
-    combined_gene_depths_fpath, combined_gene_depths_dups_fpath = __cov2cnv(cnf, bcbio_structure.samples)
-    mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf, bcbio_structure)
+
+    samtools = get_system_path(cnf, 'samtools')
+    dedupped_bam_by_sample = dict(zip((s.name for s in bcbio_structure.samples), Parallel(n_jobs=cnf.threads) \
+        (delayed(remove_dups)(CallCnf(cnf.__dict__), s.bam, samtools) for s in bcbio_structure.samples)))
+
+    combined_gene_depths_fpath, combined_gene_depths_dups_fpath = __cov2cnv(cnf, bcbio_structure.samples, dedupped_bam_by_sample)
+    mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample)
     info()
     if not mapped_reads_fpath or not combined_gene_depths_fpath:
         err('Error: no mapped_reads_fpath or combined_gene_depths_fpath by Seq2C')
@@ -168,45 +188,52 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
     return bed_fpath
 
 
+def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_sample):
+    if not verify_file(sample.seq2cov_output_fpath):
+        seq2c_seq2cov(cnf, seq2cov, samtools, sample, sample.bam, bed_fpath, sample.seq2cov_output_fpath)
 
-def __cov2cnv(cnf, samples):
+    if not verify_file(sample.seq2cov_output_dup_fpath):
+        seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
+
+
+def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     info()
     info('Combining gene depths...')
 
     result = []
-    seq2c_bed_fpath = None
+    bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
+    for s in samples:
+        if not verify_file(s.seq2cov_output_fpath, silent=True):
+            exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+            verify_bed(bed_fpath, is_critical=True)
+            bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
+            break
+
+    info('Running first for the de-dupped version, then for the original version.')
+    seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'), is_critical=True)
+    samtools = get_system_path(cnf, 'samtools')
+    Parallel(n_jobs=cnf.threads) \
+        (delayed(_run_cov2cnv)(CallCnf(cnf.__dict__), seq2cov, samtools, s, bed_fpath, dedupped_bam_by_sample)
+            for s in samples)
 
     for suf in '', '_dup':
-        info('Running first for the de-dupped version, then for the original version...')
         combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c' + suf + '.txt')
+
         with open(combined_gene_depths_fpath, 'w') as out:
             for i, sample in enumerate(samples):
-                seq2c_output = join(
-                    sample.dirpath,
-                    BCBioStructure.targetseq_dir,
-                    sample.name + '.' + \
-                    BCBioStructure.targetseq_name + suf + '_' + \
-                    BCBioStructure.seq2c_seq2cov_ending)
-                if not verify_file(seq2c_output):
-                    bam_fpath = sample.bam
-                    if suf == '':
-                        bam_fpath = remove_dups(cnf, sample.bam)
-                    if seq2c_bed_fpath is None:
-                        exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-                        bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
-                        verify_bed(bed_fpath, is_critical=True)
-                        seq2c_bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
-                    seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed_fpath, seq2c_output)
-                if not verify_file(seq2c_output):
+                seq2cov_fpath = sample.seq2cov_output_dup_fpath if suf else sample.seq2cov_output_fpath
+
+                if not verify_file(seq2cov_fpath):
                     combined_gene_depths_fpath = None
                     break
-                with open(seq2c_output) as inp:
+                with open(seq2cov_fpath) as inp:
                     for l in inp:
                         if l.startswith('Sample\tGene\tChr\t'):
                             if i == 0:
                                 out.write(l)
                         else:
                             out.write(l)
+
         result.append(combined_gene_depths_fpath)
         if combined_gene_depths_fpath:
             info('Saved to ' + combined_gene_depths_fpath)
@@ -233,7 +260,7 @@ def __cov2cnv(cnf, samples):
     # return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads(cnf, bcbio_structure):
+def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample):
     # coverage_info = []
     mapped_reads_by_sample = OrderedDict()
     mapped_reads_by_sample_dup = OrderedDict()
@@ -294,8 +321,7 @@ def __get_mapped_reads(cnf, bcbio_structure):
         with open(bam2reads_list_of_bams_fpath, 'w') as f, open(bam2reads_list_of_dup_bams_fpath, 'w') as fd:
             for sample in bcbio_structure.samples:
                 fd.write(sample.name + '\t' + sample.bam + '\n')
-                dedup_bam_fpath = remove_dups(cnf, sample.bam)
-                f.write(sample.name + '\t' + dedup_bam_fpath + '\n')
+                f.write(sample.name + '\t' + dedupped_bam_by_sample[sample.name] + '\n')
 
         samtools = get_system_path(cnf, 'samtools')
         cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_bams_fpath}'.format(**locals())

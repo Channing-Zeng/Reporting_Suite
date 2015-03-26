@@ -283,39 +283,22 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     # amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
     #                                     save_original_fields=True)
 
-    info()
-    info('Running seq2cov.pl for ' + sample.name)
-    seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed, join(
-        cnf.output_dir,
-        sample.name + '.' +
-        source.targetseq_name + '_' +
-        source.seq2c_seq2cov_ending))
-
-    info('Running seq2cov.pl with dups (to compare) for ' + sample.name)
-    seq2c_seq2cov(cnf, sample, dup_bam_fpath, seq2c_bed, join(
-        cnf.output_dir,
-        sample.name + '.' +
-        source.targetseq_name + '_dups_' +
-        source.seq2c_seq2cov_ending))
+    # info()
+    # info('Running seq2cov.pl for ' + sample.name)
+    # seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed, join(
+    #     cnf.output_dir,
+    #     sample.name + '.' +
+    #     source.targetseq_name + '_' +
+    #     source.seq2c_seq2cov_ending))
+    #
+    # info('Running seq2cov.pl with dups (to compare) for ' + sample.name)
+    # seq2c_seq2cov(cnf, sample, dup_bam_fpath, seq2c_bed, join(
+    #     cnf.output_dir,
+    #     sample.name + '.' +
+    #     source.targetseq_name + '_dups_' +
+    #     source.seq2c_seq2cov_ending))
 
     return general_rep_fpath, per_gene_rep_fpath
-
-
-def seq2c_seq2cov(cnf, sample, bam_fpath, amplicons_bed, seq2c_output):
-    seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'), is_critical=True)
-
-    def fn(l, i): return '\t'.join(l.split('\t')[:4])
-    amplicons_bed = iterate_file(cnf, amplicons_bed, fn, suffix='4col')
-
-    sample_name = sample.name
-
-    samtools = get_system_path(cnf, 'samtools')
-
-    cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())
-    res = call(cnf, cmdline, seq2c_output)
-    if not res:
-        err('Could not run seq2cov.pl for ' + sample.name)
-        return None
 
 
 def make_and_save_general_report(
@@ -1144,8 +1127,8 @@ def number_of_dup_mapped_reads(cnf, bam):
         return int(f.read().strip())
 
 
-def remove_dups(cnf, bam):
-    samtools = get_system_path(cnf, 'samtools')
+def remove_dups(cnf, bam, samtools=None):
+    samtools = samtools or get_system_path(cnf, 'samtools')
     output_fpath = intermediate_fname(cnf, bam, 'dedup')
     cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (not) 1024 (dup)
     call(cnf, cmdline, output_fpath)
