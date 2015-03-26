@@ -39,7 +39,7 @@ def main():
             else:
                 fields = l[:-1].split('\t')
                 if len(fields) != num_bed_cols:
-                    sys.stderr.write('Error: number of fields inconsitent. Expected ' + str(num_bed_cols) + ', got ' + str(len(fields)) + ' at + ' + ' | '.join(fields) + '\n')
+                    sys.stderr.write('Error: number of fields inconsistent. Expected ' + str(num_bed_cols) + ', got ' + str(len(fields)) + ' at + ' + ' | '.join(fields) + '\n')
                     sys.exit(1)
                 else:
                     chrom, start, end = fields[:3]
@@ -50,19 +50,19 @@ def main():
                     if feature:
                         feature_counter[feature] += 1
 
-                    gene = gene_by_chrom_and_name.get((chrom, gname))
+                    gene = gene_by_chrom_and_name.get((chrom, gname, strand))
                     if gene is None:
                         gene = Gene(gname, chrom, strand, 'Gene', biotype)
-                        gene_by_chrom_and_name[(chrom, gname)] = gene
+                        gene_by_chrom_and_name[(chrom, gname, strand)] = gene
 
                     if feature in ['Gene', 'Multi_Gene']:  # in fact '*Gene' features in BED files are optional
                         if gene.already_met_gene_feature_for_this_gene:
-                            sys.stderr.write(gene.name + ' is duplicating: ' + str(gene) + '\n')
-                            sys.exit(1)
+                            # sys.stderr.write(gene.name + ' is duplicating: ' + str(gene) + '\n')
+                            # sys.exit(1)
                             # miltiple records for gene, picking the lowest start and the biggest end
-                            # gene.start = min(gene.start, start)
-                            # gene.end = max(gene.end, end)
-                            # gene.biotype = merge_fields(gene.biotype, biotype)
+                            gene.start = min(gene.start, start)
+                            gene.end = max(gene.end, end)
+                            gene.biotype = merge_fields(gene.biotype, biotype)
                             # assert gene.strand == strand, 'Prev gene strand is ' + gene.strand + ', new strand is ' + strand + ' gene is ' + gene.name
 
                         assert gene.strand == strand, str(gene) + ' strand is not ' + strand
@@ -81,7 +81,7 @@ def main():
                 sys.stderr.write('processed ' + str(total_lines) + ' lines\n')
                 sys.stderr.flush()
 
-    sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' uniq genes.\n')
+    sys.stderr.write('Processed ' + str(total_lines) + ' lines, found ' + str(len(gene_by_chrom_and_name)) + ' unique genes.\n')
     if feature_counter:
         sys.stderr.write('Features:\n')
         for ft, cnt in feature_counter.items():

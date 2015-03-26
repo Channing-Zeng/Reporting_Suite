@@ -179,8 +179,10 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
                 geneSymbol, ucsc_id, ucsc_chrom)
 
             if approved_gene_symbol:
-                # out.write('\t'.join([ucsc_chrom, txStart, txEnd,  # TODO: discuss whether it is needed
-                #                      approved_gene_symbol, '.', strand, 'Multi_Gene', '.']) + '\n')
+                txStart = exonStarts.split(',')[0]
+                txEnd = exonEnds.split(',')[int(exonCount) - 1]
+                out.write('\t'.join([ucsc_chrom, min(txStart, cdsStart), max(txEnd, cdsEnd),
+                                     approved_gene_symbol, '.', strand, 'Gene', '.']) + '\n')
                 for j, s, e in zip(range(int(exonCount)),
                    [s for s in exonStarts.split(',') if s], [
                     e for e in exonEnds.split(',') if e]):
