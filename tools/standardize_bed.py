@@ -11,6 +11,7 @@ import sys
 import os
 import annotate_bed
 import subprocess
+import copy
 from source.file_utils import add_suffix, _remove_files
 from source.utils import human_sorted
 from optparse import OptionParser
@@ -340,7 +341,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, cnf):
             ambiguous_regions = [cur_region]
             while i < len(annotated_regions) and annotated_regions[i] == cur_region:  # processing duplicates
                 if annotated_regions[i].symbol != '.' and annotated_regions[i].symbol != cur_region.symbol:
-                    duplicate = Region(str(cur_region))  # TODO: check whether better way of cloning exists; TODO: GRCh
+                    duplicate = copy.deepcopy(cur_region)
                     duplicate.set_symbol(annotated_regions[i].symbol)
                     if duplicate.type == 'approved' and cur_region.type == 'not_approved':
                         cur_region = duplicate
