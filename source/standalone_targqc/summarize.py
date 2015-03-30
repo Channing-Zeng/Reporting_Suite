@@ -18,7 +18,7 @@ from source.ngscat import report_parser as ngscat_report_parser
 from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
-from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname
+from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
 from source.utils import get_numeric_value
@@ -74,7 +74,7 @@ def _make_targetcov_symlinks(samples):
             basename(sample.targetcov_detailed_txt))
         if exists(new_link):
             os.unlink(new_link)
-        os.symlink(sample.targetcov_detailed_txt, new_link)
+        symlink_plus(sample.targetcov_detailed_txt, new_link)
         info('TargetCov TXT symlink saved to ' + new_link)
 
 

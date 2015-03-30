@@ -184,7 +184,7 @@ def filter_all(cnf, bcbio_structure):
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     email_msg = ['Variant filtering finished.']
-    info('Results:')
+    # info('Results:')
 
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
@@ -205,14 +205,13 @@ def filter_all(cnf, bcbio_structure):
                 email_msg.append(msg)
 
             if caller.single_mut_res_fpath:
-                msg = '     Paired passed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants'
+                msg = '     Paired PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
-                info('     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants')
             if caller.paired_mut_res_fpath:
-                info('     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants')
-                email_msg.append('  ' + caller.name)
-                email_msg.append('     ' + caller.pickline_res_fpath + ', ' + str(num_lines(caller.pickline_res_fpath) - 1) + ' variants')
+                msg = '     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
 
                 if cnf.datahub_path:
                     copy_to_datahub(cnf, caller, cnf.datahub_path)

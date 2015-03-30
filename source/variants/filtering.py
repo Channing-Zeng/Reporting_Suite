@@ -20,7 +20,7 @@ from source.variants.anno import _snpsift_annotate
 from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
     get_sample_column_index, bgzip_and_tabix, vcf_merge, leave_main_sample
 from source.utils import mean
-from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, intermediate_fname
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, intermediate_fname, symlink_plus
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import remove_rejected, vcf_is_empty, igvtools_index
 from source.logger import info
@@ -231,7 +231,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         if paired_vcf_by_sample:
             vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'single')
 
-        mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, vcf2txt_fpath)
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
 
@@ -242,7 +242,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         if single_vcf_by_sample:
             vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'paired')
 
-        mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, vcf2txt_fpath)
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
 
@@ -262,7 +262,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
                     except OSError:
                         pass
                 try:
-                    os.symlink(filt_vcf, link)
+                    symlink_plus(filt_vcf, link)
                 except OSError:
                     err('Cannot symlink ' + filt_vcf + ' -> ' + link)
 
@@ -305,7 +305,7 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res
         except OSError:
             pass
     try:
-        os.symlink(mut_fpath, pass_txt_fpath_symlink)
+        symlink_plus(mut_fpath, pass_txt_fpath_symlink)
     except OSError:
         err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
 
