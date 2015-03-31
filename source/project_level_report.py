@@ -1,11 +1,11 @@
 from os.path import join, relpath
 from collections import OrderedDict
 import getpass
-from ext_modules.paramiko import SSHClient
+from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
 
 from source.bcbio_structure import BCBioStructure
-from source.logger import info, step_greetings, send_email, warn, err
-from source.file_utils import verify_file, file_transaction
+from source.logger import info, step_greetings, send_email, warn, err, is_local
+from source.file_utils import verify_file, file_transaction, adjust_path
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
 
@@ -36,7 +36,8 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    copy_to_ngs_website(cnf.work_dir, bcbio_structure.final_dirpath, final_summary_report_fpath, bcbio_structure.project_name)
+    if not is_local:
+        copy_to_ngs_website(cnf.work_dir, bcbio_structure.final_dirpath, final_summary_report_fpath, bcbio_structure.project_name)
 
     info()
     info('*' * 70)
@@ -51,17 +52,27 @@ def copy_to_ngs_website(work_dir, final_dirpath, html_report_fpath, project_name
     username = 'klpf990'
     password = '123werasd'
     project_list_fpath = '/ngs/oncology/NGS.Project.csv'
+    rsa_key_path = adjust_path('~/.ssh/id_rsa')
 
+    ssh = SSHClient()
+    ssh.load_system_host_keys()
+    # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+    # ssh.set_missing_host_key_policy(AutoAddPolicy())
     try:
-        client = SSHClient()
-        client.connect(server_url, username=username, password=password)
+        key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
     except Exception, e:
-        warn('Cannot connect to ' + server_url + ':')
-        warn(str(e))
+        warn('Cannot create RSAKey from ' + rsa_key_path)
+        warn('  ' + str(e))
     else:
-        client.exec_command('cd ' + server_path)
-        client.exec_command('ln -s ' + final_dirpath + ' ' + project_name)
-        client.close()
+        try:
+            ssh.connect(server_url, username=username, password=password, pkey=key)
+        except Exception, e:
+            warn('Cannot connect to ' + server_url + ':')
+            warn('  ' + str(e))
+        else:
+            ssh.exec_command('cd ' + server_path)
+            ssh.exec_command('ln -s ' + final_dirpath + ' ' + project_name)
+            ssh.close()
 
     if verify_file(project_list_fpath, 'Project list'):
         info('Reading project list ' + project_list_fpath)
@@ -83,13 +94,13 @@ def copy_to_ngs_website(work_dir, final_dirpath, html_report_fpath, project_name
 
         if project_name not in pids:
             values = {'PID': project_name, 'HTML report path': html_report_fpath, 'Updated By': getpass.getuser()}
-            lines.append(','.join(values.get(f, '') for f in fields))
+            lines.append(','.join(values.get(f, '') for f in fields) + '\n')
 
             with file_transaction(work_dir, project_list_fpath) as tx_fpath:
                 with open(tx_fpath, 'w') as f:
                     for l in lines:
                         if l.strip():
-                            f.write(l + '\n')
+                            f.write(l)
 
 
 def _add_summary_reports(bcbio_structure, general_section):
@@ -238,3 +249,6 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
 
     return write_static_html_report({"common": common_dict, "main": main_dict},
                                     output_dirpath, report_base_name)
+
+
+
