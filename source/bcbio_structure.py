@@ -1,4 +1,3 @@
-from distutils import file_util
 import os
 import shutil
 import sys
@@ -8,6 +7,7 @@ from genericpath import isdir, isfile
 from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
 from optparse import OptionParser
+from distutils import file_util
 
 import source
 from source import logger, BaseSample

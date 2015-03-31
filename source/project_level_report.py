@@ -1,7 +1,7 @@
 import getpass
 from os.path import join, relpath
 from collections import OrderedDict
-import paramiko
+from ext_modules import paramiko
 import base64
 
 from source.bcbio_structure import BCBioStructure
