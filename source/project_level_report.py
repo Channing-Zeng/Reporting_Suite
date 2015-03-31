@@ -1,8 +1,7 @@
-import getpass
 from os.path import join, relpath
 from collections import OrderedDict
-from ext_modules import paramiko
-import base64
+import getpass
+from ext_modules.paramiko import SSHClient
 
 from source.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, send_email, warn, err
@@ -54,11 +53,11 @@ def copy_to_ngs_website(final_dirpath, html_report_fpath, project_name):
     project_list_fpath = '/ngs/oncology/NGS.Project.csv'
 
     try:
-        client = paramiko.SSHClient()
+        client = SSHClient()
         client.connect(server_url, username=username, password=password)
-    except:
-        warn('Cannot connect to ' + server_url)
-        pass
+    except Exception, e:
+        warn('Cannot connect to ' + server_url + ':')
+        warn(str(e))
     else:
         client.exec_command('cd ' + server_path)
         client.exec_command('ln -s ' + final_dirpath + ' ' + project_name)
