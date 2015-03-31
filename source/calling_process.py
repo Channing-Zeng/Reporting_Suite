@@ -267,7 +267,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     res = None  # = proc or output_fpath
     if output_fpath and not output_is_dir:
-        with file_transaction(cnf, output_fpath) as tx_out_fpath:
+        with file_transaction(cnf.work_dir, output_fpath) as tx_out_fpath:
             res = do_handle_oserror(cmdline, tx_out_fpath)
     else:
         res = do_handle_oserror(cmdline)

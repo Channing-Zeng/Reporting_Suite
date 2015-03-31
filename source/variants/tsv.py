@@ -142,7 +142,7 @@ def _extract_fields(cnf, main_sample_index, vcf_fpath):
                         #     col_counts.append(0)
                         col_counts[i] += 1
 
-    with file_transaction(cnf, tsv_fpath) as tx:
+    with file_transaction(cnf.work_dir, tsv_fpath) as tx:
         with open(tx, 'w') as out, open(tsv_fpath) as f:
             for i, l in enumerate(f):
                 values = [v for v in l.split('\t')]
@@ -196,7 +196,7 @@ def _rename_fields(cnf, inp_tsv_fpath, field_map):
     else:
         out_tsv_fpath = inp_tsv_fpath
 
-    with file_transaction(cnf, out_tsv_fpath) as tx_out_fpath:
+    with file_transaction(cnf.work_dir, out_tsv_fpath) as tx_out_fpath:
         with open(tx_out_fpath, 'w') as out:
             out.write(new_first_line + '\n')
             with open(inp_tsv_fpath) as f:

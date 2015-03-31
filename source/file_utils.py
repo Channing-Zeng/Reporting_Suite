@@ -733,7 +733,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
     else:
         info('Writing to ' + output_fpath)
 
-    with file_transaction(cnf, output_fpath) as tx_fpath:
+    with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
         with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
             convert_file_fn(inp_f, out_f)
 
@@ -805,11 +805,11 @@ def _remove_files(fnames):
 #################################################
 ######## Transaction ############################
 @contextlib.contextmanager
-def file_transaction(cnf, *rollback_files):
+def file_transaction(work_dir, *rollback_files):
     """Wrap file generation in a transaction, moving to output if finishes.
     """
     exts = {".vcf": ".idx", ".bam": ".bai", "vcf.gz": ".tbi"}
-    safe_fpaths, orig_names = _flatten_plus_safe(cnf.work_dir, rollback_files)
+    safe_fpaths, orig_names = _flatten_plus_safe(work_dir, rollback_files)
     _remove_files(safe_fpaths)  # remove any half-finished transactions
     try:
         if len(safe_fpaths) == 1:
