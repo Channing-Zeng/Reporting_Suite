@@ -1,3 +1,4 @@
+import getpass
 from os.path import join, relpath
 from collections import OrderedDict
 import paramiko
@@ -64,10 +65,18 @@ def copy_to_ngs_website(final_dirpath, html_report_fpath, project_name):
         client.close()
 
     if verify_file(project_list_fpath, 'Project list'):
-        with open(project_list_fpath, 'a') as f:
-            header = 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-            values = {'PID': project_name, 'HTML report path': html_report_fpath}
-            f.write('\n' + ','.join(values.get(f, '') for f in header.split(',')))
+        pids = set()
+        with open(project_list_fpath) as f:
+            fields = f.readline().strip().split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+            index_of_pid = fields.index('PID')
+            for l in f:
+                values = l.strip().split(',')
+                pids.add(values[index_of_pid])
+
+        if project_name not in pids:
+            with open(project_list_fpath, 'a') as f:
+                values = {'PID': project_name, 'HTML report path': html_report_fpath, 'Updated By': getpass.getuser()}
+                f.write('\n' + ','.join(values.get(f, '') for f in fields))
 
 
 def _add_summary_reports(bcbio_structure, general_section):
