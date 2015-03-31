@@ -14,7 +14,7 @@ with open('__comparison_keygenes_out.txt', 'w') as f:
                     sn = '-'.join(sn.split('.')[:-1])
                 fl += sn + ', '
             fl += '\n'
-            # f.write(fl)
+            f.write(fl)
         else:
             c, s, e, sz, g, _, ft, bt, md, ad, sd, wn, x1, x5, x10, x25, x50, x100, x500, x1000, x5000, x10000, x50000 = l.strip().split('\t')
             if not l.startswith('#'):
@@ -23,7 +23,7 @@ with open('__comparison_keygenes_out.txt', 'w') as f:
 
     lns.sort(key=lambda l: l[0])
     for l in lns:
-        f.write('\t'.join(l[0:]) + '\n')
+        f.write('\t'.join(l[6:]) + '\n')
 
 
 

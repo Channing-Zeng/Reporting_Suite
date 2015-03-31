@@ -403,18 +403,27 @@ class BCBioStructure:
         self.project_name = None
         if cnf.project_name:
             self.project_name = cnf.project_name
+        else:
+            # path is like /ngs/oncology/analysis/bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
+            if '/ngs/oncology/analysis/' in bcbio_project_dirpath:
+                short_path = bcbio_project_dirpath.split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
+                self.project_name = '_'.join(short_path.split('/')[1:])  # Bio_0031_Heme_MRL_DLBCL_IRAK4_bcbio_Dev_0079
+
+        bcbio_project_dirname = basename(bcbio_project_dirpath)  # bcbio_Dev_0079
+        bcbio_project_parent_dirname = basename(dirname(bcbio_project_dirpath))  # Bio_0031_Heme_MRL_DLBCL_IRAK4
+        if not self.project_name:
+            self.project_name = bcbio_project_parent_dirname + '_' + bcbio_project_dirname
 
         if 'fc_date' not in bcbio_cnf:
-            err('Error: fc_date not in bcbio config!')
-            bcbio_project_dirname = basename(dirname(self.final_dirpath))
-            bcbio_project_parent_dirname = basename(dirname(dirname(self.final_dirpath)))
-            self.project_name = self.project_name or bcbio_project_parent_dirname + '_' + bcbio_project_dirname
-            self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + self.project_name)
+            critical('Error: fc_date not in bcbio config!')
 
-        else:
-            self.project_name = self.project_name or bcbio_cnf['fc_name']
+        if 'fc_name' in bcbio_cnf:
+            if not self.project_name:
+                self.project_name = bcbio_cnf['fc_name']
             # Date dirpath is from bcbio and named after fc_name, not our own project name
             self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + bcbio_cnf['fc_name'])
+        else:
+            self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + self.project_name)
 
         if not verify_dir(self.date_dirpath):
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)

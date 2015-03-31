@@ -1,8 +1,10 @@
 from os.path import join, relpath
 from collections import OrderedDict
-from source.bcbio_structure import BCBioStructure
+import paramiko
+import base64
 
-from source.logger import info, step_greetings, send_email
+from source.bcbio_structure import BCBioStructure
+from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
@@ -34,16 +36,38 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
+    copy_to_ngs_website(bcbio_structure.final_dirpath, final_summary_report_fpath, bcbio_structure.project_name)
+
     info()
     info('*' * 70)
     info('Project-level report saved in: ')
     info('  ' + final_summary_report_fpath)
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + final_summary_report_fpath)
 
+
+def copy_to_ngs_website(final_dirpath, html_report_fpath, project_name):
+    server_url = 'ngs.usbod.astrazeneca.net'
     server_path = '/opt/lampp/htdocs/reports'
     username = 'klpf990'
     password = '123werasd'
-    # ls -n final_dir to server_path/project_name
+    project_list_fpath = '/ngs/oncology/NGS.Project.csv'
+
+    try:
+        client = paramiko.SSHClient()
+        client.connect(server_url, username=username, password=password)
+    except:
+        warn('Cannot connect to ' + server_url)
+        pass
+    else:
+        client.exec_command('cd ' + server_path)
+        client.exec_command('ln -s ' + final_dirpath + ' ' + project_name)
+        client.close()
+
+    if verify_file(project_list_fpath, 'Project list'):
+        with open(project_list_fpath, 'a') as f:
+            header = 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+            values = {'PID': project_name, 'HTML report path': html_report_fpath}
+            f.write('\n' + ','.join(values.get(f, '') for f in header.split(',')))
 
 
 def _add_summary_reports(bcbio_structure, general_section):
