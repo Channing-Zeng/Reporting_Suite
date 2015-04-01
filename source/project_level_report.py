@@ -104,7 +104,6 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
             fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
             index_of_pid = fields.index('PID')
             if index_of_pid == -1: index_of_pid = 1
-            info('index if PID: ' + str(index_of_pid))
             for l in lines[1:]:
                 l = l.strip()
                 if l:
@@ -122,7 +121,9 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
                     'Analyses directory US': dirname(bcbio_structure.final_dirpath),
                     'Sample Number': str(len(bcbio_structure.samples)),
                 }
-                lines.append(','.join(values.get(f, '') for f in fields) + '\n')
+                new_line = ','.join(values.get(f, '') for f in fields)
+                info('adding new line:' + new_line)
+                lines.append(new_line + '\n')
 
                 with file_transaction(work_dir, project_list_fpath) as tx_fpath:
                     with open(tx_fpath, 'w') as f:

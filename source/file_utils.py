@@ -786,14 +786,19 @@ def dots_to_empty_cells(config, tsv_fpath):
     return iterate_file(config, tsv_fpath, proc_line, 'dots')
 
 
-def _remove_tmpdirs(fnames):
+def __remove_tmpdirs(fnames):
+    if isinstance(fnames, basestring):
+        fnames = [fnames]
     for x in fnames:
         xdir = os.path.dirname(os.path.abspath(x))
         if xdir and os.path.exists(xdir):
             shutil.rmtree(xdir, ignore_errors=True)
 
 
-def _remove_files(fnames):
+def __remove_files(fnames):
+    if isinstance(fnames, basestring):
+        fnames = [fnames]
+
     for x in fnames:
         if x and os.path.exists(x):
             if os.path.isfile(x):
@@ -810,14 +815,14 @@ def file_transaction(work_dir, *rollback_files):
     """
     exts = {".vcf": ".idx", ".bam": ".bai", "vcf.gz": ".tbi"}
     safe_fpaths, orig_names = _flatten_plus_safe(work_dir, rollback_files)
-    _remove_files(safe_fpaths)  # remove any half-finished transactions
+    __remove_files(safe_fpaths)  # remove any half-finished transactions
     try:
         if len(safe_fpaths) == 1:
             yield safe_fpaths[0]
         else:
             yield tuple(safe_fpaths)
     except:  # failure -- delete any temporary files
-        _remove_files(safe_fpaths)
+        __remove_files(safe_fpaths)
         raise
     else:  # worked -- move the temporary files to permanent location
         for safe, orig in zip(safe_fpaths, orig_names):

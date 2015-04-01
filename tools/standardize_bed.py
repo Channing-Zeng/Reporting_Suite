@@ -12,7 +12,7 @@ import os
 import annotate_bed
 import subprocess
 import copy
-from source.file_utils import add_suffix, _remove_files
+from source.file_utils import add_suffix
 from source.utils import human_sorted
 from optparse import OptionParser
 
@@ -247,8 +247,10 @@ def _annotate(bed_fpath, work_dirpath, cnf):
         output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())
         log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
         annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
+
         cmdline = '{annotate_bed_py} {input_fpath} {work_dirpath} {db_bed_fpath} {cnf.bedtools}'.format(**locals())
         __call(cnf, cmdline, output_fpath)
+
         if id < len(references) - 1:
             if cnf.debug:
                 log("filtering annotated and not annotated regions into separate files:")
@@ -265,12 +267,12 @@ def _annotate(bed_fpath, work_dirpath, cnf):
                     log(cmdline + ' > ' + not_annotated_bed)
                 subprocess.call(cmdline, shell=True, stdout=out)
             if not cnf.debug:
-                _remove_files(output_fpath)
+                os.remove(output_fpath)
             output_fpath = only_annotated_bed
             input_fpath = not_annotated_bed
         annotated_files.append(output_fpath)
         if id != 0 and not cnf.debug:
-            _remove_files(input_fpath)
+            os.remove(input_fpath)
 
     return annotated_files
 
@@ -430,7 +432,8 @@ def main():
     annotated_fpaths = _annotate(preprocessed_fpath, work_dirpath, cnf)
     _postprocess(preprocessed_fpath, annotated_fpaths, bed_params, cnf)
     if not cnf.debug:
-        _remove_files([preprocessed_fpath] + annotated_fpaths)
+        for f in [preprocessed_fpath] + annotated_fpaths:
+            os.remove(f)
 
 if __name__ == '__main__':
     main()
