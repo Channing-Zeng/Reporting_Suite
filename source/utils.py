@@ -149,20 +149,16 @@ def get_numeric_value(string_value):
 
 def is_uk():
     hostname = socket.gethostname()
-    info('hostname: ' + hostname)
     return 'ukap' in hostname
 
 def is_china():
     hostname = socket.gethostname()
-    info('hostname: ' + hostname)
     return 'cniclhpc' in hostname
 
 def is_local():
     hostname = socket.gethostname()
-    info('hostname: ' + hostname)
     return 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUFFERED')
 
 def is_us():
     hostname = socket.gethostname()
-    info('hostname: ' + hostname)
     return any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod'])

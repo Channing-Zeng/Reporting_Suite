@@ -38,7 +38,7 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    if not is_local() and '/ngs/oncology/analysis/' in bcbio_structure.final_dirpath:
+    if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
         copy_to_ngs_website(cnf.work_dir, bcbio_structure, final_summary_report_fpath)
 
     info()
@@ -51,6 +51,7 @@ def make_project_level_report(cnf, bcbio_structure):
 def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
     if is_uk():
         server_path = '/ngs/oncology/reports'
+        info('UK, symlinking to ' + server_path)
         link_fpath = join(server_path, bcbio_structure.project_name)
         cmd = 'rm ' + link_fpath + '; ln -s ' + bcbio_structure.final_dirpath + ' ' + link_fpath
         info(cmd)
