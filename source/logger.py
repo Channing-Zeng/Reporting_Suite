@@ -16,16 +16,17 @@ proc_name = None
 my_address = 'Vlad.Saveliev@astrazeneca.com'
 address = None
 
-import socket
-hostname = socket.gethostname()
-is_local = 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUFFERED')
-
 smtp_host = None  # set up in source/config.py and system_info.yaml
 
 
 error_msgs = []
 warning_msgs = []
 critical_msgs = []
+
+
+def is_local():
+    hostname = socket.gethostname()
+    return 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUFFERED')
 
 
 def timestamp():
@@ -144,7 +145,7 @@ def _log(out, msg='', ending='\n', print_date=True, severity=None):
 
     sys.stdout.flush()
     sys.stderr.flush()
-    if is_local:
+    if is_local():
         sleep(0.01)
 
     if log_fpath:

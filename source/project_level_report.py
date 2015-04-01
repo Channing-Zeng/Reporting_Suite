@@ -1,13 +1,15 @@
-from os.path import join, relpath
+import os
+from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
 from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
 
 from source.bcbio_structure import BCBioStructure
-from source.logger import info, step_greetings, send_email, warn, err, is_local
+from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
+from utils import is_local, is_uk
 
 
 def make_project_level_report(cnf, bcbio_structure):
@@ -36,8 +38,8 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    if not is_local:
-        copy_to_ngs_website(cnf.work_dir, bcbio_structure.final_dirpath, final_summary_report_fpath, bcbio_structure.project_name)
+    if not is_local() and '/ngs/oncology/analysis/' in bcbio_structure.final_dirpath:
+        copy_to_ngs_website(cnf.work_dir, bcbio_structure, final_summary_report_fpath)
 
     info()
     info('*' * 70)
@@ -46,61 +48,84 @@ def make_project_level_report(cnf, bcbio_structure):
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + final_summary_report_fpath)
 
 
-def copy_to_ngs_website(work_dir, final_dirpath, html_report_fpath, project_name):
-    server_url = 'ngs.usbod.astrazeneca.net'
-    server_path = '/opt/lampp/htdocs/reports'
-    username = 'klpf990'
-    password = '123werasd'
-    project_list_fpath = '/ngs/oncology/NGS.Project.csv'
-    rsa_key_path = adjust_path('~/.ssh/id_rsa')
-
-    ssh = SSHClient()
-    ssh.load_system_host_keys()
-    # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-    # ssh.set_missing_host_key_policy(AutoAddPolicy())
-    try:
-        key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-    except Exception, e:
-        warn('Cannot create RSAKey from ' + rsa_key_path)
-        warn('  ' + str(e))
-    else:
+def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
+    if is_uk():
+        server_path = '/ngs/oncology/reports'
+        link_fpath = join(server_path, bcbio_structure.project_name)
+        cmd = 'rm ' + link_fpath + '; ln -s ' + bcbio_structure.final_dirpath + ' ' + link_fpath
+        info(cmd)
         try:
-            ssh.connect(server_url, username=username, password=password, pkey=key)
+            os.system(cmd)
         except Exception, e:
-            warn('Cannot connect to ' + server_url + ':')
+            warn('Cannot create symlink')
+            warn('  ' + str(e))
+    else:
+        server_url = 'ngs'
+        server_path = '/opt/lampp/htdocs/reports'
+        username = 'klpf990'
+        password = '123werasd'
+        project_list_fpath = '/ngs/oncology/NGS.Project.csv'
+        rsa_key_path = adjust_path('~/.ssh/id_rsa')
+
+        ssh = SSHClient()
+        ssh.load_system_host_keys()
+        # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+        # ssh.set_missing_host_key_policy(AutoAddPolicy())
+        try:
+            key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
+        except Exception, e:
+            warn('Cannot read RSAKey from ' + rsa_key_path)
             warn('  ' + str(e))
         else:
-            ssh.exec_command('cd ' + server_path)
-            ssh.exec_command('ln -s ' + final_dirpath + ' ' + project_name)
-            ssh.close()
+            info('Succesfully read RSAKey from ' + rsa_key_path)
+            try:
+                ssh.connect(server_url, username=username, password=password, pkey=key)
+            except Exception, e:
+                warn('Cannot connect to ' + server_url + ':')
+                warn('  ' + str(e))
+            else:
+                info('Succesfully connected to ' + server_url)
+                final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
+                link_path = join(server_path, bcbio_structure.project_name)
+                cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
+                ssh.exec_command(cmd)
+                info('  ' + cmd)
+                ssh.close()
 
-    if verify_file(project_list_fpath, 'Project list'):
-        info('Reading project list ' + project_list_fpath)
-        pids = set()
-        with open(project_list_fpath) as f:
-            lines = f.readlines()
+        if verify_file(project_list_fpath, 'Project list'):
+            info('Reading project list ' + project_list_fpath)
+            pids = set()
+            with open(project_list_fpath) as f:
+                lines = f.readlines()
 
-        header = lines[0].strip()
-        info('header: ' + header)
-        fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-        index_of_pid = fields.index('PID')
-        if index_of_pid == -1: index_of_pid = 1
-        info('index if PID: ' + str(index_of_pid))
-        for l in lines[1:]:
-            l = l.strip()
-            if l:
-                values = l.split(',')
-                pids.add(values[index_of_pid])
+            header = lines[0].strip()
+            info('header: ' + header)
+            fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+            index_of_pid = fields.index('PID')
+            if index_of_pid == -1: index_of_pid = 1
+            info('index if PID: ' + str(index_of_pid))
+            for l in lines[1:]:
+                l = l.strip()
+                if l:
+                    values = l.split(',')
+                    pids.add(values[index_of_pid])
 
-        if project_name not in pids:
-            values = {'PID': project_name, 'HTML report path': html_report_fpath, 'Updated By': getpass.getuser()}
-            lines.append(','.join(values.get(f, '') for f in fields) + '\n')
+            if bcbio_structure.project_name not in pids:
+                values = {
+                    'Updated By': getpass.getuser(),
+                    'PID': bcbio_structure.project_name,
+                    'Name': bcbio_structure.project_name,
+                    'HTML report path': html_report_fpath,
+                    'Analyses directory US': dirname(bcbio_structure.final_dirpath),
+                    'Sample Number': str(len(bcbio_structure.samples)),
+                }
+                lines.append(','.join(values.get(f, '') for f in fields) + '\n')
 
-            with file_transaction(work_dir, project_list_fpath) as tx_fpath:
-                with open(tx_fpath, 'w') as f:
-                    for l in lines:
-                        if l.strip():
-                            f.write(l)
+                with file_transaction(work_dir, project_list_fpath) as tx_fpath:
+                    with open(tx_fpath, 'w') as f:
+                        for l in lines:
+                            if l.strip():
+                                f.write(l)
 
 
 def _add_summary_reports(bcbio_structure, general_section):

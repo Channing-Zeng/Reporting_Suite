@@ -11,6 +11,9 @@ from source.config import defaults, Config
 from source.logger import info, critical, warn, err
 from source.file_utils import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
+from source.utils import is_uk, is_us
+from source.utils import is_china
+from source.utils import is_local
 
 
 def add_post_bcbio_args(parser):
@@ -216,16 +219,13 @@ def determine_cnf_files(opts):
 
 
 def detect_sys_cnf(opts):
-    import socket
-    hostname = socket.gethostname()
-    info('hostname: ' + hostname)
     opts.sys_cnf = defaults['sys_cnfs']['us']
-    if 'ukap' in hostname:
+    if is_uk():
         opts.sys_cnf = defaults['sys_cnfs']['uk']
-    elif 'cniclhpc' in hostname:
+    elif is_china():
         opts.sys_cnf = defaults['sys_cnfs']['china']
-    elif 'local' in hostname or 'Home' in hostname:
+    elif is_local():
         opts.sys_cnf = defaults['sys_cnfs']['local']
-    elif any(name in hostname for name in ['rask', 'blue', 'chara', 'usbod']):
+    elif is_us():
         opts.sys_cnf = defaults['sys_cnfs']['us']
     return opts.sys_cnf

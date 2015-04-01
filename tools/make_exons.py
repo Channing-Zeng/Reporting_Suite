@@ -9,7 +9,7 @@ import sub_scripts.__check_python_version  # do not remove it: checking for pyth
 
 from collections import defaultdict, OrderedDict
 import sys
-from source.logger import err, is_local
+from source.logger import err
 
 
 class ApprovedGene:
@@ -273,9 +273,9 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if l and not l.startswith('#'):
             chrom, biotype, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
 
-            if is_local:
-                if chrom != '21':
-                    continue
+            # if is_local():
+            #     if chrom != '21':
+            #         continue
 
             total_lines += 1
             if total_lines % 1000 == 0:
@@ -473,9 +473,9 @@ def main():
         sys.stderr.write('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons+with+approved+HUGO+gene+symbols\n')
         sys.exit(1)
 
-    if is_local:
-        sys.stderr.write('Local: will run only for chr21\n')
-        sys.stderr.write('\n')
+    # if is_local():
+    #     sys.stderr.write('Local: will run only for chr21\n')
+    #     sys.stderr.write('\n')
 
     synonyms_fpath = sys.argv[1]
     approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = read_approved_genes(synonyms_fpath)
