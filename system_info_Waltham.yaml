@@ -74,4 +74,4 @@ queue: batch.q
 
 qsub_runner: sub_scripts/runner_Waltham.sh
 
-#smtp_host: 'uw26.usuwb.astrazeneca.net'
+smtp_host: 'uw26.usuwb.astrazeneca.net'
