@@ -111,11 +111,13 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
                     pids.add(values[index_of_pid])
 
             if bcbio_structure.project_name not in pids:
+                html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
+                    relpath(html_report_fpath, bcbio_structure.final_dirpath)
                 values = {
                     'Updated By': getpass.getuser(),
                     'PID': bcbio_structure.project_name,
                     'Name': bcbio_structure.project_name,
-                    'HTML report path': html_report_fpath,
+                    'HTML report path': html_report_url,
                     'Analyses directory US': dirname(bcbio_structure.final_dirpath),
                     'Sample Number': str(len(bcbio_structure.samples)),
                 }
