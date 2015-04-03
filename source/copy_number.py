@@ -3,14 +3,14 @@ from genericpath import isfile
 import math
 from collections import defaultdict, OrderedDict
 import os
-from os.path import join, splitext, basename
+from os.path import join, splitext, basename, dirname
 from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
 from source.config import CallCnf
-from source.file_utils import verify_file, adjust_path, iterate_file
+from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.ngscat.bed_file import verify_bed
 from source.reporting import write_tsv_rows, Record, SampleReport
@@ -190,9 +190,11 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
 
 def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_sample):
     if not verify_file(sample.seq2cov_output_fpath):
+        safe_mkdir(dirname(sample.seq2cov_output_fpath))
         seq2c_seq2cov(cnf, seq2cov, samtools, sample, sample.bam, bed_fpath, sample.seq2cov_output_fpath)
 
     if not verify_file(sample.seq2cov_output_dup_fpath):
+        safe_mkdir(dirname(sample.seq2cov_output_dup_fpath))
         seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
 
 
