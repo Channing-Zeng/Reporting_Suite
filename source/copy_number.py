@@ -96,6 +96,9 @@ def _seq2c(cnf, bcbio_structure):
     dedupped_bam_by_sample = dict(zip((s.name for s in bcbio_structure.samples), Parallel(n_jobs=cnf.threads) \
         (delayed(remove_dups)(CallCnf(cnf.__dict__), s.bam, samtools) for s in bcbio_structure.samples)))
 
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+        
     combined_gene_depths_fpath, combined_gene_depths_dups_fpath = __cov2cnv(cnf, bcbio_structure.samples, dedupped_bam_by_sample)
     mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample)
     info()

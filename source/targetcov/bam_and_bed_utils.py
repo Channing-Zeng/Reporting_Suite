@@ -7,11 +7,12 @@ from source.logger import info, critical, warn
 from source.tools_from_cnf import get_system_path
 
 
-def index_bam(cnf, bam_fpath):
+def index_bam(cnf, bam_fpath, samtools=None):
     indexed_bam = bam_fpath + '.bai'
     if not isfile(bam_fpath + '.bai'):
         info('Indexing to ' + indexed_bam + '...')
-        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+        if samtools is None:
+            samtools = get_system_path(cnf, 'samtools', is_critical=True)
         cmdline = '{samtools} index {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
     info('Index: ' + indexed_bam)

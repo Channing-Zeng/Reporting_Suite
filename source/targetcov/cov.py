@@ -1130,11 +1130,13 @@ def number_of_dup_mapped_reads(cnf, bam):
 def remove_dups(cnf, bam, samtools=None):
     samtools = samtools or get_system_path(cnf, 'samtools')
     output_fpath = intermediate_fname(cnf, bam, 'dedup')
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
     cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (not) 1024 (dup)
     call(cnf, cmdline, output_fpath)
     if not isfile(output_fpath + '.bai'):
         info('Indexing bam ' + output_fpath)
-        index_bam(cnf, output_fpath)
+        index_bam(cnf, output_fpath, samtools)
     return output_fpath
 
 

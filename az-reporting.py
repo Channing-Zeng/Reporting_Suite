@@ -1,1 +1,1 @@
-bcbio_postproc.py
+bcbio_postproc
