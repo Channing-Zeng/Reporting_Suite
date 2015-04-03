@@ -185,8 +185,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     dup_bam_fpath = bam_fpath
     if not cnf.count_dups:
         dedup_bam_fpath = remove_dups(cnf, bam_fpath)
-        info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath)))
-        info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath)))
+        info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_reads(cnf, dedup_bam_fpath, suf='dedup_')))
+        info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath, suf='dedup_')))
         bam_fpath = dedup_bam_fpath
 
     # picard_bam_fpath = remove_dups_picard(cnf, bam_fpath)
@@ -1082,18 +1082,18 @@ def intersect_bed(cnf, bed1, bed2):
     return output_fpath
 
 
-def number_of_reads(cnf, bam):
+def number_of_reads(cnf, bam, suf=''):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_reads')
+    output_fpath = join(cnf.work_dir, cnf.name + '_' + suf + 'num_reads')
     cmdline = '{samtools} view -c {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
 
 
-def number_of_mapped_reads(cnf, bam):
+def number_of_mapped_reads(cnf, bam, suf=''):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_mapped_reads')
+    output_fpath = join(cnf.work_dir, cnf.name + '_' + suf + 'num_mapped_reads')
     cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
