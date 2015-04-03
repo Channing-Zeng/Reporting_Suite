@@ -548,10 +548,7 @@ class BCBioRunner:
         if self.seq2c in self.steps:
             self._submit_job(
                 self.seq2c,
-                wait_for_steps=[
-                    self.targetcov.job_name(s.name)
-                    for s in self.bcbio_structure.samples
-                    if self.targetcov in self.steps],
+                wait_for_steps=[],
                 genome=self.bcbio_structure.samples[0].genome)
 
         if self.targqc_summary in self.steps:
