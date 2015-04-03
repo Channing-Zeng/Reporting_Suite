@@ -165,7 +165,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     ('. Log saved to ' + cnf.log if cnf.log is not None else '.'))
 
                 msg = 'Command returned status ' + str(ret_code)
-                if cnf.log: msg += 'Log saved to ' + cnf.log
+                if cnf.log: msg += '. Log saved to ' + cnf.log
                 msg += '\n'
                 msg += '\n'
                 if stderr_dump:
@@ -224,7 +224,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     ('. Log saved to ' + cnf.log if 'log' in cnf else '.'))
 
                 msg = 'Command returned status. ' + str(ret_code)
-                if cnf.log: msg += 'Log saved to ' + cnf.log
+                if cnf.log: msg += '. Log saved to ' + cnf.log
                 msg += '\n'
                 msg += '\n'
                 if stderr_dump:
