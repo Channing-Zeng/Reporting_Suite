@@ -38,17 +38,20 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
+    html_report_url = ''
     if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
-        copy_to_ngs_website(cnf.work_dir, bcbio_structure, final_summary_report_fpath)
+        html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
+            relpath(final_summary_report_fpath, bcbio_structure.final_dirpath)
+        copy_to_ngs_website(cnf.work_dir, bcbio_structure, html_report_url)
 
     info()
     info('*' * 70)
     info('Project-level report saved in: ')
     info('  ' + final_summary_report_fpath)
-    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + final_summary_report_fpath)
+    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
 
 
-def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
+def copy_to_ngs_website(work_dir, bcbio_structure, html_report_url):
     if is_uk():
         server_path = '/ngs/oncology/reports'
         info('UK, symlinking to ' + server_path)
@@ -111,8 +114,6 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
                     pids.add(values[index_of_pid])
 
             if bcbio_structure.project_name not in pids:
-                html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
-                    relpath(html_report_fpath, bcbio_structure.final_dirpath)
                 values = {
                     'Updated By': getpass.getuser(),
                     'PID': bcbio_structure.project_name,

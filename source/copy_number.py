@@ -96,9 +96,6 @@ def _seq2c(cnf, bcbio_structure):
     dedupped_bam_by_sample = dict(zip((s.name for s in bcbio_structure.samples), Parallel(n_jobs=cnf.threads) \
         (delayed(remove_dups)(CallCnf(cnf.__dict__), s.bam, samtools) for s in bcbio_structure.samples)))
 
-    if samtools is None:
-        samtools = get_system_path(cnf, 'samtools', is_critical=True)
-        
     combined_gene_depths_fpath, combined_gene_depths_dups_fpath = __cov2cnv(cnf, bcbio_structure.samples, dedupped_bam_by_sample)
     mapped_reads_fpath, mapped_reads_dup_fpath = __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample)
     info()
@@ -205,12 +202,10 @@ def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
 
     result = []
     bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
-    for s in samples:
-        if not verify_file(s.seq2cov_output_fpath, silent=True):
-            exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-            verify_bed(bed_fpath, is_critical=True)
-            bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
-            break
+    if any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples):
+        exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+        verify_bed(bed_fpath, is_critical=True)
+        bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
 
     info('Running first for the de-dupped version, then for the original version.')
     seq2cov = get_script_cmdline(cnf, 'perl', join('Seq2C', 'seq2cov.pl'), is_critical=True)
