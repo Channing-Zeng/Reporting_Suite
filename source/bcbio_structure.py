@@ -39,7 +39,7 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
     bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
 
     cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
-    cnf.work_dir = bcbio_structure.work_dir
+    cnf.work_dir = join(bcbio_structure.work_dir, cnf.name)
     set_up_work_dir(cnf)
 
     info('*' * 70)

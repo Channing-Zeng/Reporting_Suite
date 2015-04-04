@@ -212,13 +212,21 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     def fill_in(batches):
         vcf_by_sample = OrderedDict()
         for b in batches:
+            info('Batch ' + b.name)
             if b.normal:
+                info('  normal sample: ' + b.normal.name)
                 vcf_fpath = all_vcf_by_sample.get(b.normal.name)
-                if vcf_fpath: vcf_by_sample[b.normal.name] = vcf_fpath
-            assert len(b.tumor) <= 1, caller.name + ': ' + str(len(b.tumor)) + ' tumor samples'
+                if vcf_fpath:
+                    vcf_by_sample[b.normal.name] = vcf_fpath
+                    info('  normal VCF: ' + vcf_fpath)
+            if len(b.tumor) > 1:
+                err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) + ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
             if len(b.tumor) > 0:
+                info('  tumor sample: ' + b.tumor[0].name)
                 vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
-                if vcf_fpath: vcf_by_sample[b.tumor[0].name] = vcf_fpath
+                if vcf_fpath:
+                    vcf_by_sample[b.tumor[0].name] = vcf_fpath
+                    info('  tumor VCF: ' + vcf_fpath)
         return vcf_by_sample
 
     single_vcf_by_sample = fill_in([b for b in bcbio_structure.batches.values() if not b.paired])
