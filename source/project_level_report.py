@@ -40,9 +40,7 @@ def make_project_level_report(cnf, bcbio_structure):
 
     html_report_url = ''
     if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
-        html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
-            relpath(final_summary_report_fpath, bcbio_structure.final_dirpath)
-        copy_to_ngs_website(cnf.work_dir, bcbio_structure, html_report_url)
+        html_report_url = copy_to_ngs_website(cnf.work_dir, bcbio_structure, final_summary_report_fpath)
 
     info()
     info('*' * 70)
@@ -51,7 +49,10 @@ def make_project_level_report(cnf, bcbio_structure):
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
 
 
-def copy_to_ngs_website(work_dir, bcbio_structure, html_report_url):
+def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
+    html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
+        relpath(html_report_fpath, bcbio_structure.final_dirpath)
+
     if is_uk():
         server_path = '/ngs/oncology/reports'
         info('UK, symlinking to ' + server_path)
@@ -63,6 +64,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_url):
         except Exception, e:
             warn('Cannot create symlink')
             warn('  ' + str(e))
+            html_report_url = None
     else:
         server_url = 'ngs'
         server_path = '/opt/lampp/htdocs/reports'
@@ -87,6 +89,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_url):
             except Exception, e:
                 warn('Cannot connect to ' + server_url + ':')
                 warn('  ' + str(e))
+                html_report_url = None
             else:
                 info('Succesfully connected to ' + server_url)
                 final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
@@ -131,6 +134,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_url):
                         for l in lines:
                             if l.strip():
                                 f.write(l)
+    return html_report_url
 
 
 def _add_summary_reports(bcbio_structure, general_section):
