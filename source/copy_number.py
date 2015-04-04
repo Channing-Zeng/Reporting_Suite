@@ -69,9 +69,6 @@ def _get_whole_genes_and_amlicons(report_fpath):
 
 
 def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2c_output):
-    def fn(l, i): return '\t'.join(l.split('\t')[:4])
-    amplicons_bed = iterate_file(cnf, amplicons_bed, fn, suffix='4col')
-
     sample_name = sample.name
 
     cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())
