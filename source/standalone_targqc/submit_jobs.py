@@ -44,12 +44,12 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
 
             if not cnf.reuse_intermediate or not sample.ngscat_done():
                 info('NgsCat for "' + basename(sample.bam) + '"')
-                _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+                _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
                 summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
             if not cnf.reuse_intermediate or not sample.qualimap_done():
                 info('Qualimap "' + basename(sample.bam) + '"')
-                _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+                _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
                 summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
 
             info('Done ' + basename(sample.bam))
@@ -156,7 +156,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step
 
 
-def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwargs):
+def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):
     log_fpath = join(cnf.log_dir, (step.name + ('_' + sample_name if sample_name else '') + '.log'))
 
     if isfile(log_fpath):
@@ -167,7 +167,10 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, **kwa
 
     safe_mkdir(dirname(log_fpath))
 
-    tool_cmdline = get_system_path(cnf, step.interpreter, step.script, is_critical=True)
+    tool_cmdline = get_system_path(cnf, step.interpreter, step.script, is_critical=is_critical)
+    if not tool_cmdline:
+        return False
+
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
 
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
