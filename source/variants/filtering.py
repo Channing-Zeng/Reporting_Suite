@@ -148,7 +148,7 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
                         ts[6] = ''
                         filter_value = variants.get((sample.name, chrom, pos, alt))
                         if filter_value is None:
-                            warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
+                            # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
                             ts[6] += 'vcf2txt'
                         elif filter_value == 'TRUE':
                             ts[6] += 'EFFECT'
