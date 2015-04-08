@@ -223,7 +223,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('sub_scripts', 'qualimap.py'),
             dir_name=BCBioStructure.qualimap_dir,
-            paramln=params_for_one_sample + ' --bam {bam} {qualimap_gff} -o {output_dir}',
+            paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
         )
         #############
         # Summaries #
@@ -434,10 +434,10 @@ class BCBioRunner:
                     if self.qualimap in self.steps:
                         qualimap_gff = ''
                         if sample.bed:
-                            qualimap_gff = ' -gff ' + sample.qualimap_bed + ' '
+                            qualimap_gff = ' --bed ' + sample.qualimap_bed + ' '
                         self._submit_job(
                             self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                            genome=sample.genome, qualimap_gff=qualimap_gff, threads=self.threads_per_sample)
+                            genome=sample.genome, bed=qualimap_gff, threads=self.threads_per_sample)
 
             # Processing VCFs: QC, annotation
             for caller in self.bcbio_structure.variant_callers.values():
