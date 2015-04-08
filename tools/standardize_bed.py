@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+from os.path import abspath, dirname, realpath, join
+from site import addsitedir
+project_dir = abspath(dirname(dirname(realpath(__file__))))
+addsitedir(join(project_dir))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
@@ -10,6 +14,7 @@ import copy
 from source.file_utils import add_suffix
 from source.utils import human_sorted
 from optparse import OptionParser
+from os.path import exists, basename
 
 
 """ Input: Any BED file

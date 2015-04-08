@@ -15,6 +15,7 @@ from source.logger import critical
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 from os.path import getsize
+from source.file_utils import verify_file
 
 
 usage = """
@@ -248,14 +249,20 @@ def _split_reference(work_dirpath, ref_bed_fpath):
     log('Splitting reference file into genes and non-genes:')
     ref_bed_no_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__no_whole_genes')
     ref_bed_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__whole_genes')
-    with open(ref_bed_no_genes_fpath, 'w') as out:
-        cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
-        log(cmdline + ' > ' + ref_bed_no_genes_fpath)
-        subprocess.call(cmdline, shell=True, stdout=out)
-    with open(ref_bed_genes_fpath, 'w') as out:
-        cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
-        log(cmdline + ' > ' + ref_bed_genes_fpath)
-        subprocess.call(cmdline, shell=True, stdout=out)
+    if verify_file(ref_bed_no_genes_fpath, silent=True, is_critical=False):
+        log('Reusing existing ' + ref_bed_no_genes_fpath)
+    else:
+        with open(ref_bed_no_genes_fpath, 'w') as out:
+            cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
+            log(cmdline + ' > ' + ref_bed_no_genes_fpath)
+            subprocess.call(cmdline, shell=True, stdout=out)
+    if verify_file(ref_bed_genes_fpath, silent=True, is_critical=False):
+        log('Reusing existing ' + ref_bed_genes_fpath)
+    else:
+        with open(ref_bed_genes_fpath, 'w') as out:
+            cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
+            log(cmdline + ' > ' + ref_bed_genes_fpath)
+            subprocess.call(cmdline, shell=True, stdout=out)
     log()
 
     return ref_bed_no_genes_fpath, ref_bed_genes_fpath
