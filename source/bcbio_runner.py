@@ -271,16 +271,14 @@ class BCBioRunner:
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         )
-        self.targqc_summary = Step(
-            cnf, run_id,
+        self.targqc_summary = Step(cnf, run_id,
             name=BCBioStructure.targqc_name, short_name='targqc',
             interpreter='python',
             script=join('sub_scripts', 'targqc_summary.py'),
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
-        self.fastqc_summary = Step(
-            cnf, run_id,
+        self.fastqc_summary = Step(cnf, run_id,
             name=BCBioStructure.fastqc_name, short_name='fastqc',
             interpreter='python',
             script=join('sub_scripts', 'fastqc_summary.py'),
@@ -548,7 +546,8 @@ class BCBioRunner:
             self._submit_job(
                 self.seq2c,
                 wait_for_steps=[],
-                genome=self.bcbio_structure.samples[0].genome)
+                genome=self.bcbio_structure.samples[0].genome,
+                threads=self.summary_threads)
 
         if self.targqc_summary in self.steps:
             wait_for_steps = []
