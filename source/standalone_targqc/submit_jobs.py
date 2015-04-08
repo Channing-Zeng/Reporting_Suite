@@ -115,21 +115,18 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
 
     qualimap_params = \
-        ' bamqc' + \
-        ' -nt ' + str(threads_per_sample) + \
-        ' --java-mem-size=24G' + \
-        ' -nr 5000 ' + \
-        ' -bam {bam}' + \
-        ' -outdir ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name) + \
-        ' -gff ' + qualimap_bed_fpath + \
-        ' -c' + \
-        ' -gd HUMAN'
+        params_for_one_sample +\
+        ' --bam {bam}' \
+        ' --bed ' + qualimap_bed_fpath + \
+        ' -o ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name)
 
     qualimap_step = Step(cnf, run_id,
         name=source.qualimap_name, short_name='qm',
-        script='qualimap',
-        paramln=qualimap_params
+        interpreter='python',
+        script=join('sub_scripts', 'qualimap.py'),
+        paramln=qualimap_params,
     )
+
 
     #######################################
     # Summary
