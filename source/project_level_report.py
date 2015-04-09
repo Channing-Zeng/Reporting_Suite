@@ -66,7 +66,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
             warn('  ' + str(e))
             html_report_url = None
     else:
-        server_url = 'ngs'
+        server_url = '172.18.47.33'  # ngs
         server_path = '/opt/lampp/htdocs/reports'
         username = 'klpf990'
         password = '123werasd'
@@ -76,7 +76,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
         ssh = SSHClient()
         ssh.load_system_host_keys()
         # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-        # ssh.set_missing_host_key_policy(AutoAddPolicy())
+        ssh.set_missing_host_key_policy(AutoAddPolicy())
         try:
             key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
         except Exception, e:
