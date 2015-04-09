@@ -71,7 +71,7 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
         username = 'klpf990'
         password = '123werasd'
         project_list_fpath = '/ngs/oncology/NGS.Project.csv'
-        rsa_key_path = adjust_path('~/.ssh/id_rsa')
+        rsa_key_path = adjust_path('/users/klpf990/.ssh/id_rsa')
 
         ssh = SSHClient()
         ssh.load_system_host_keys()
