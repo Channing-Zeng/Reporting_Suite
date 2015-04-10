@@ -1,11 +1,11 @@
 from collections import defaultdict, OrderedDict
-import copy
 import math
 import os
 from os.path import isfile, join
-import sys
+
 from source.logger import info, err
 from source.ngscat.bed_file import verify_bed
+
 
 class Region:
     def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None, biotype=None,

@@ -1,1 +1,0 @@
-detail_gene_report_baseending = '.details.gene'

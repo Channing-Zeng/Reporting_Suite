@@ -14,7 +14,7 @@ from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
 from source.main import determine_cnf_files, set_up_dirs
-from source.standalone_targqc.submit_jobs import run_targqc
+from source.targetcov.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
 
 

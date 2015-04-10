@@ -74,7 +74,6 @@ def send_email(msg='', subj=''):
             msg += 'rrors during the processing:\n'
             for m in error_msgs:
                 msg += '  ' + m + '\n'
-            msg += '\n'
 
         msg = MIMEText(msg)
         subject = ''

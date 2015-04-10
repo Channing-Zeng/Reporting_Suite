@@ -11,8 +11,12 @@ from source.bcbio_runner import Step, fix_bed_for_qualimap
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.utils import get_system_path
 from source.calling_process import call
-from source.standalone_targqc.summarize import summarize_targqc
-from source.standalone_targqc import StandaloneSample
+from source.targetcov.summarize import summarize_targqc
+
+
+class StandaloneSample(source.BaseSample):
+    def __init__(self, name, dirpath, *args, **kwargs):
+        source.BaseSample.__init__(self, name, dirpath, '{dirpath}/{sample}_{name}/', *args, **kwargs)
 
 
 def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_fpath):
@@ -24,7 +28,7 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
     max_threads = cnf.threads
     threads_per_sample = 1  # max(max_threads / len(samples), 1)
     summary_threads = min(len(samples), max_threads)
-    info('summary_threads: ' + str(summary_threads))
+    info('Number of threads to run summary: ' + str(summary_threads))
 
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
@@ -37,8 +41,6 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
             info('Processing ' + basename(sample.bam))
 
             info('TargetSeq for "' + basename(sample.bam) + '"')
-            # if not sample.targetcov_done():
-            #     reuse = False
             _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
             summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 

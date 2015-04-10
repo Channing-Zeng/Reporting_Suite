@@ -728,7 +728,7 @@ def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
     for f in open_tsv_files:
         f.close()
 
-    gene_report_basename = 'Best.' + source.targetseq_name + source.targetcov.detail_gene_report_baseending
+    gene_report_basename = 'Best.' + source.targetseq_name + source.detail_gene_report_baseending
     txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
     tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
     info('')

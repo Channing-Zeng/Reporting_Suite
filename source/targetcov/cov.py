@@ -1,8 +1,5 @@
 # coding=utf-8
 
-import os
-import sys
-import traceback
 from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath
 
@@ -10,7 +7,6 @@ import source
 import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile
-from source import logger
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
@@ -189,13 +185,6 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
         info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(number_of_mapped_reads(cnf, dedup_bam_fpath, suf='dedup_')))
         bam_fpath = dedup_bam_fpath
 
-    # picard_bam_fpath = remove_dups_picard(cnf, bam_fpath)
-    # if picard_bam_fpath:
-    #     info('Total reads after dedup (picard): ' + Metric.format_value(number_of_reads(cnf, picard_bam_fpath)))
-    #     info('Total mapped reads after dedup (picard): ' + Metric.format_value(number_of_mapped_reads(cnf, picard_bam_fpath)))
-    #     bam_fpath = picard_bam_fpath
-    #     index_bam(cnf, picard_bam_fpath)
-
     info()
     info('Calculation of coverage statistics for the regions in the input BED file...')
     amplicons, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, amplicons_bed)
@@ -222,13 +211,6 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Filtering exon bed file to have only non-gene records...')
     exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes')
     call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
-
-    # with open(exons_only_genes_bed) as f:
-    #     for l in f:
-    #         l = l.strip()
-    #         if l and not l.startswith('#'):
-    #             fs = l.split('\t')
-    #             chrom =
 
     un_annotated_amplicons = []
 
@@ -268,35 +250,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
 
-    # per_gene_rep_fpath, genes_by_name = make_and_save_region_report(
-    #     cnf, exons_bed_fpath, sample, amplicons, amplicons_bed, gene_names)
-
     per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name,
          gene_by_name.values(), un_annotated_amplicons)
-
-    # info()
-    # info('Sorting amplicons')
-    # amplicons = sorted((a for a in amplicons if a.gene_name), key=Region.get_order_key)
-
-    # info()
-    # info('Saving only amplicons overlapped with exons, updated with a gene name')
-    # amplicons_bed = save_regions_to_bed(cnf, amplicons, 'targeted_amplicons_with_gene_names',
-    #                                     save_original_fields=True)
-
-    # info()
-    # info('Running seq2cov.pl for ' + sample.name)
-    # seq2c_seq2cov(cnf, sample, bam_fpath, seq2c_bed, join(
-    #     cnf.output_dir,
-    #     sample.name + '.' +
-    #     source.targetseq_name + '_' +
-    #     source.seq2c_seq2cov_ending))
-    #
-    # info('Running seq2cov.pl with dups (to compare) for ' + sample.name)
-    # seq2c_seq2cov(cnf, sample, dup_bam_fpath, seq2c_bed, join(
-    #     cnf.output_dir,
-    #     sample.name + '.' +
-    #     source.targetseq_name + '_dups_' +
-    #     source.seq2c_seq2cov_ending))
 
     return general_rep_fpath, per_gene_rep_fpath
 
@@ -345,60 +300,6 @@ def _get_gene_names(exons_bed, gene_index=3):
                     gene_names_list.append(gn)
 
     return gene_names_set, gene_names_list
-
-
-# def make_and_save_region_report(cnf, exons_bed, sample, amplicons, gene_names):
-#     step_greetings('Analysing regions.')
-#
-#     ampli_bed_fpath = save_regions_to_bed(cnf, exons, sample.name + '_exons_by_gene_name')
-#     exons_bed_fpath = save_regions_to_bed(cnf, amplicons, sample.name + '_amplicons_by_gene_name')
-#
-#     info('Groupping exons by gene, getting GeneInfo instances, adding exons to genes...')
-#
-#     # gene_infos_by_name = _get_exons_combined_by_genes(exons, gene_names)
-#
-#     info()
-#     info('Finding amplicons overlap with exons, adding gene names to amplicons and adding amplicons to genes...')
-#
-#     amplicons_by_gene_name = _combine_amplicons_by_genes(cnf, sample, ampli_bed_fpath, exons_bed_fpath, gene_names)
-#     for gene_name, ampls in amplicons_by_gene_name.items():
-#         gene = genes_by_name[gene_name]
-#         for a in ampls:
-#             gene.add_amplicon(a)
-#
-#     non_overlapping_exons = [e for g in gene_infos_by_name.values() for e in g.non_overlapping_exons]
-#
-#     info()
-#     non_overlapping_exons_bed_fpath = save_regions_to_bed(cnf, non_overlapping_exons, 'non_overlapping_exons')
-#     info()
-#     info('Calculating coverage statistics for whole genes, getting Region instances for Genes...')
-#     non_overlapping_exons_2, _, _, _ = bedcoverage_hist_stats(cnf, sample.name, sample.bam, non_overlapping_exons_bed_fpath)
-#     genes = []
-#     for non_overlapping_exon in non_overlapping_exons_2:
-#         gene_info = gene_infos_by_name[non_overlapping_exon.gene_name]
-#         for d, bs in non_overlapping_exon.bases_by_depth.items():
-#             gene_info.bases_by_depth[d] += bs
-#         genes.append(gene_info)
-#
-#     info()
-#     info('Building region coverage report.')
-#     gene_report_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name, genes)
-#
-#     return gene_report_fpath, gene_infos_by_name
-
-
-# def _add_other_exon_of_genes(cnf, gene_names, exons_bed, overlapped_exons_bed):
-#     new_overlp_exons_bed = intermediate_fname(cnf, overlapped_exons_bed, 'by_genes')
-#     # finding exons for our genes that did not overlapped with amplicons, and adding them too
-#     with open(exons_bed) as exons_f, \
-#          open(new_overlp_exons_bed, 'w') as new_overl_f:
-#         for line in exons_f:
-#             if not line or not line.strip() or line.startswith('#') or len(line.split()) < 4:
-#                 new_overl_f.write(line)
-#             elif line.split()[3] in gene_names:
-#                 new_overl_f.write(line)
-#
-#     return sort_bed(cnf, new_overlp_exons_bed)
 
 
 def get_records_by_metrics(records, metrics):
@@ -591,7 +492,7 @@ def _fix_bam_for_picard(cnf, bam_fpath):
         fixed_file = open(fixed_sam_fpath, 'w')
     else:
         input_file = pysam.Samfile(bam_fpath, 'rb')
-        fixed_file = pysam.Samfile(fixed_bam_fpath, "wb", template=input_file)
+        fixed_file = pysam.Samfile(fixed_bam_fpath, 'wb', template=input_file)
     for line in input_file:
         if without_pysam and line.startswith('@'):  # header
             fixed_file.write(line)
@@ -662,20 +563,10 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
             info('Processed {0:,} regions.'.format(i))
         region.sum_up(cnf.coverage_reports.depth_thresholds)
 
-    # info('Sorting...')
-    # sorted_regions = sorted(regions, lambda r: (r.start, r.end))
-    # info('Saving sorted version...')
-    # sorted_regions_fpath = join(cnf.work_dir, (sample.name + '.' + BCBioStructure.detail_sorted_gene_report_baseending))
-    # with open(sorted_regions_fpath, 'w') as f:
-    #     for r in sorted_regions:
-    #         f.write('\t'.join(map(str, [
-    #             r.chr, r.start, r.end, r.gene, r.feature,
-    #             r.size, r.avg_depth, r.std_dev, r.percent_within_normal])) + '\n')
-
     info('Saving report...')
     report = _make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
 
-    gene_report_basename = sample.name + '.' + source.targetseq_name + source.targetcov.detail_gene_report_baseending
+    gene_report_basename = sample.name + '.' + source.targetseq_name + source.detail_gene_report_baseending
     txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
     tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
     info('')
@@ -683,162 +574,6 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
     info('  ' + txt_rep_fpath)
 
     return txt_rep_fpath
-
-
-# def _combine_amplicons_by_genes(cnf, sample, exons_bed_fpath, ampli_bed_fpath, gene_names):
-#     exons_ovelaps_with_amplicons_fpath = join(cnf.work_dir, sample.name + '_exons_amplicons_ovelaps.bed')
-#     bedtools = get_system_path(cnf, 'bedtools')
-#     cmdline = '{bedtools} intersect -wao -a {ampli_bed_fpath} -b {exons_bed_fpath}'.format(**locals())
-#     call(cnf, cmdline, output_fpath=exons_ovelaps_with_amplicons_fpath)
-#     info()
-#
-#     amplicons_by_site = defaultdict(list)
-#     for a in amplicons:
-#         amplicons_by_site[(a.chrom, a.get_start(), a.get_end())].append(a)
-#
-#     amplicons_by_gene_name = defaultdict(list)
-#
-#     info()
-#     info('Groupping amplicons by genes...')
-#     i = 0
-#     with open(exons_ovelaps_with_amplicons_fpath) as f:
-#         for line in f:
-#             a_chrom, a_start, a_end, a_gene_name, a_feature, \
-#             e_chrom, e_start, e_end, e_gene_name, e_feature, \
-#             overlap_size = line.split('\t')
-#
-#             if e_gene_name != '.' or a_gene_name != '.':
-#                 gene_name = None
-#
-#                 if e_gene_name != '.':  # hit
-#                     if a_gene_name != '.' and a_gene_name != e_gene_name:
-#                         err('Capture gene name != exon gene name for line: ' + line.strip())
-#                     if e_gene_name not in gene_names:
-#                         err(e_gene_name + ' from exons not in gene_names from exons and amplicons')
-#                         print str(gene_names)
-#                         continue
-#                     gene_name = e_gene_name
-#
-#                 elif a_gene_name != '.':  # not hit, but a_gene_name != '.', so amplicons gene names provided
-#                     if a_gene_name not in gene_names:
-#                         err(a_gene_name + ' from amplicons not in gene_names from exons and amplicons')
-#                         continue
-#                     gene_name = a_gene_name
-#
-#                 for a in amplicons_by_site[(a_chrom, int(a_start), int(a_end))]:
-#                     amplicons_by_gene_name.append(a)
-#
-#             if i and i % 10000 == 0:
-#                 info('  Processed {0:,} regions, current gene {1}'.format(i, e_gene_name))
-#             i += 1
-#     info('  Processed {0:,} regions.'.format(i))
-#     return amplicons_by_gene_name
-
-    # if exon_gene_summary.intersect(amplicon):
-    #     # if amplicon.gene_name and exon_gene.gene_name != amplicon.gene_name:
-    #     #     warn('Warning: for ' + str(amplicon) )
-    #     amplicon_gene_summary = amplicon_genes_by_name.get(exon_gene_summary.gene_name)
-    #     if amplicon_gene_summary is None:
-    #         amplicon_gene_summary = SummaryRegion(
-    #             sample_name=amplicon.sample_name, chrom=amplicon.chrom,
-    #             start=amplicon.start, end=amplicon.end, size=0,
-    #             feature='Gene-' + amplicon.feature,
-    #             gene_name=exon_gene_summary.gene_name)
-    #         amplicon_genes_by_name[amplicon_gene_summary.gene_name] = amplicon_gene_summary
-    #     # amplicon_copy = copy.copy(amplicon)
-    #     amplicon_gene_summary.add_subregion(amplicon)
-    #     # amplicon_copy.gene_name = amplicon_gene_summary.gene_name
-
-
-# def _get_exons_combined_by_genes(exons, ampl_gene_names):
-#     genes_by_name = OrderedDict()
-#     # for gn in ampl_gene_names:
-#     #     genes_by_name[gn] = GeneInfo(sample_name=exon.sample_name, gene_name=exon.gene_name,
-#     #         chrom=exon.chrom, strand=exon.strand)  # TODO: create genes from amplicons that are not in exons
-#
-#     i = 0
-#     for exon in exons:
-#         if not exon.gene_name:
-#             info()
-#             err('  No gene name info in the record: ' + str(exon) + '. Skipping.')
-#             continue
-#
-#         if i and i % 10000 == 0:
-#             info('  Processed {0:,} exons, current gene {1}'.format(i, exon.gene_name))
-#         i += 1
-#
-#         gene = genes_by_name.get(exon.gene_name)
-#         if gene is None:
-#             gene = GeneInfo(
-#                 sample_name=exon.sample_name, gene_name=exon.gene_name,
-#                 chrom=exon.chrom, strand=exon.strand)
-#             genes_by_name[exon.gene_name] = gene
-#         gene.add_exon(exon)
-#
-#     info('  Processed {0:,} exons.'.format(i))
-#     return genes_by_name
-
-
-# def _make_region_report(sample, regions, depth_threshs):
-#     metrics = [
-#         Metric('Sample'),
-#         Metric('Chr'),
-#         Metric('Start'),
-#         Metric('End'),
-#         Metric('Gene'),
-#         Metric('Feature'),
-#         Metric('Size'),
-#         Metric('Mean Depth'),
-#         Metric('Std Dev', description='Coverage depth standard deviation'),
-#         Metric('Wn 20% of Mean Depth', description='Persentage of the region that lies within 20% of an avarage depth.'),
-#         Metric('Depth/Median', description='Average depth of coveraege of the region devided by median coverage of the sample'),
-#     ]
-#     for thres in depth_threshs:
-#         metrics.append(Metric('{}x'.format(thres), description='Bases covered by at least {} reads'.format(thres)))
-#
-#     region_metric_storage = MetricStorage(sections=[ReportSection(metrics=metrics)])
-#
-#     report = SquareSampleReport(sample, metric_storage=region_metric_storage,
-#         report_name='Amplicons and exons coverage statistics.')
-#
-#     i = 0
-#     for region in regions:
-#         i += 1
-#         if i % 10000 == 0:
-#             info('Processed {0:,} regions.'.format(i))
-#
-#         region.sum_up(depth_threshs)
-#         report.add_row('Sample', region.sample)
-#
-#         # row = map(str, [region.sample,
-#         # row = map(str, [region.sample,
-#
-#         # report
-#         row = map(str, [region.sample,
-#                         region.chrom,
-#                         region.start,
-#                         region.end,
-#                         region.gene_name])
-#         row += [region.feature]
-#         row += [str(region.get_size())]
-#         row += ['{0:.2f}'.format(region.avg_depth)]
-#         row += ['{0:.2f}'.format(region.std_dev)]
-#         row += ['{0:.2f}%'.format(region.percent_within_normal) if region.percent_within_normal is not None else '-']
-#         if print_cov_factor:
-#             row += ['{0:.2f}%'.format(region.cov_factor)]
-#
-#         for depth_thres, bases in region.bases_within_threshs.items():
-#             if int(region.get_size()) == 0:
-#                 percent_str = '-'
-#             else:
-#                 percent = 100.0 * bases / region.get_size()
-#                 percent_str = '{0:.2f}%'.format(percent)
-#             row.append(percent_str)
-#
-#         all_rows.append(row)
-#         # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
-#     info('Processed {0:,} regions.'.format(i))
-#     return all_rows
 
 
 def get_detailed_metric_storage(depth_threshs):
@@ -904,14 +639,6 @@ def _make_flat_region_report(sample, regions, depth_threshs):
                             ', size = ' + str(region.get_size()) +
                             ', start = ' + str(region.start) + ', end = ' + str(region.end))
             rep_region.add_record('{}x'.format(thresh), rate)
-
-        # except:
-        #     err('Err in region ' + ' '.join(map(str, [region.sample_name, region.chrom, region.start,
-        #                                               region.end, region.gene_name, region.exon_num])))
-        #     traceback.print_exc()
-        # else:
-
-        # max_lengths = map(max, izip(max_lengths, chain(map(len, line_fields), repeat(0))))
 
     info('Processed {0:,} regions.'.format(i))
     return report
@@ -997,42 +724,6 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     # regions = sorted(regions[:-1], key=Region.get_order_key)
 
     return regions, total_region, max_depth
-
-
-# def _fix_amplicons_gene_names(cnf, amplicons_fpath):
-#     output_fpath = intermediate_fname(cnf, amplicons_fpath, 'fixedgenenames')
-#
-#     with open(amplicons_fpath) as f, open(output_fpath, 'w') as out:
-#         prev_end = None
-#         prev_chr = None
-#
-#         for line in f:
-#             if not line.strip() or line.startswith('#'):
-#                 out.write(line)
-#                 continue
-#
-#             ts = line.split()
-#             assert len(ts) >= 3
-#
-#             # cur_chr = ts[0]
-#             # if prev_chr is not None and prev_chr == cur_chr and prev_end is not None:
-#             #     cur_start = int(ts[1])
-#                 # if prev_end > cur_start:
-#                 #     err(line + ': prev region end ' + str(prev_end) + ' is more then current start ' + str(cur_start))
-#             # prev_end = int(ts[2])
-#             # prev_chr = cur_chr
-#
-#             if len(ts) >= 4:
-#                 if ':' in ts[3]:
-#                     ts[3] = ts[3].split(':')[-1]
-#                 if len(ts) < 8:
-#                     ts = ts[:4]
-#                 if len(ts) > 8:
-#                     ts = ts[:8]
-#             out.write('\t'.join(ts) + '\n')
-#
-#     info('Saved to ' + output_fpath)
-#     return output_fpath
 
 
 def _unique_longest_exons(cnf, exons_bed_fpath):

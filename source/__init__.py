@@ -4,6 +4,8 @@ from source.file_utils import verify_file
 from source.logger import info
 from source import targetcov
 
+detail_gene_report_baseending = '.details.gene'
+
 varfilter_name           = 'varFilter'
 varannotate_name         = 'varAnnotate'
 targetseq_name           = 'targetSeq'
@@ -45,8 +47,8 @@ class BaseSample:
 
         self.targetcov_html_fpath          = self.make_fpath(path_base + '{sample}.{name}.html', name=targetseq_name)
         self.targetcov_json_fpath          = self.make_fpath(path_base + '{sample}.{name}.json', name=targetseq_name)
-        self.targetcov_detailed_txt        = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.txt', name=targetseq_name)
-        self.targetcov_detailed_tsv        = self.make_fpath(path_base + '{sample}.{name}' + targetcov.detail_gene_report_baseending + '.tsv', name=targetseq_name)
+        self.targetcov_detailed_txt        = self.make_fpath(path_base + '{sample}.{name}' + detail_gene_report_baseending + '.txt', name=targetseq_name)
+        self.targetcov_detailed_tsv        = self.make_fpath(path_base + '{sample}.{name}' + detail_gene_report_baseending + '.tsv', name=targetseq_name)
         self.targetcov_norm_depth_vcf_txt  = None
         self.targetcov_norm_depth_vcf_tsv  = None
         self.picard_ins_size_hist_fpath    = self.make_fpath(path_base + 'picard_ins_size_hist.txt', name=targetseq_name)
