@@ -10,7 +10,7 @@ from source.file_utils import add_suffix, verify_file
 
 from source.logger import info, err
 from source.reporting import Metric, MetricStorage, ReportSection, Record, PerRegionSampleReport
-from source import targetcov
+import source
 from source.targetcov.Region import Region, proc_regions, save_regions_to_bed
 from source.tools_from_cnf import get_system_path
 from source.utils import median
@@ -23,7 +23,7 @@ def make_flagged_regions_reports(cnf, targetseq_dir, sample, filtered_vcf_by_cal
 
     detail_gene_rep_fpath = join(
         cnf.output_dir,
-        sample.name + '.' + targetseq_dir + targetcov.detail_gene_report_baseending + '.tsv')
+        sample.name + '.' + targetseq_dir + source.detail_gene_report_baseending + '.tsv')
 
     info('Reading regions from ' + detail_gene_rep_fpath)
     regions = _read_regions(detail_gene_rep_fpath)

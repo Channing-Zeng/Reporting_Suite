@@ -250,10 +250,14 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
 
-    per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir, sample.name,
-         gene_by_name.values(), un_annotated_amplicons)
+    per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir,
+        gene_by_name.values(), un_annotated_amplicons)
 
-    return general_rep_fpath, per_gene_rep_fpath
+    info('Generating flagged regions report...')
+    flagged_report_fpath = _generate_flagged_regions_report(cnf.output_dir, sample,
+        combined_region.avg_depth, gene_by_name.values(), cnf.coverage_reports.depth_thresholds)
+
+    return general_rep_fpath, per_gene_rep_fpath, flagged_report_fpath
 
 
 def make_and_save_general_report(
@@ -536,7 +540,7 @@ def _parse_picard_dup_report(dup_report_fpath):
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 
-def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_annotated_amplicons):
+def _generate_region_cov_report(cnf, sample, output_dir, genes, un_annotated_amplicons):
     final_regions = []
     info('Combining all regions for final report...')
     i = 0
@@ -564,7 +568,7 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
         region.sum_up(cnf.coverage_reports.depth_thresholds)
 
     info('Saving report...')
-    report = _make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
+    report = make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
 
     gene_report_basename = sample.name + '.' + source.targetseq_name + source.detail_gene_report_baseending
     txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
@@ -574,6 +578,61 @@ def _generate_region_cov_report(cnf, sample, output_dir, sample_name, genes, un_
     info('  ' + txt_rep_fpath)
 
     return txt_rep_fpath
+
+
+def _generate_flagged_regions_report(output_dir, sample, average_coverage, genes, depth_threshs):
+    report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
+    report.add_record('Sample', sample.name)
+
+    ''' 1. Detect depth threshold (ave sample coverage/4 but > 25x)
+        2. Select regions covered in less than 100% at threshold
+        3. Sort by % at threshold
+        4. Select those prats where % = 0, save to BED
+        5. Find OH at those regions
+        6. Intersect OH with tracks
+    '''
+
+    regions = []
+    for gene in genes:
+        regions.extend(gene.get_exons())
+
+    depth_cutoff = max(average_coverage / 4, 25)
+    for thresh in depth_threshs[::-1]:
+        if thresh < depth_cutoff:
+            depth_cutoff = thresh
+            break
+
+    sorted_by_thresh = sorted(regions, key=lambda r: [r.rates_within_threshs[t] for t in depth_threshs])
+
+    low_cov_regions = [r for r in sorted_by_thresh if r.rates_within_threshs[depth_cutoff] < 1]
+
+    selected_regions = low_cov_regions
+
+    report = make_flat_region_report(sample, selected_regions, depth_threshs)
+
+    gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
+    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
+    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    info('')
+    info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
+    info('  ' + txt_rep_fpath)
+
+    return txt_rep_fpath
+
+
+
+# sample_depths = [100, 120, 110, 130, 100, 90, 110, 200]
+# med_sample_depth = median(sample_depths)
+# mad = median(abs(med_sample_depth - v) for v in sample_depths)
+
+# print med_sample_depth
+# print mad
+
+# z_scores = [(d - med_sample_depth) / mad for d in sample_depths]
+
+# for d, z in zip(sample_depths, z_scores):
+# 	print '{d}: {z}'.format(**locals())
+
 
 
 def get_detailed_metric_storage(depth_threshs):
@@ -601,7 +660,7 @@ def get_detailed_metric_storage(depth_threshs):
         ])])
 
 
-def _make_flat_region_report(sample, regions, depth_threshs):
+def make_flat_region_report(sample, regions, depth_threshs):
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
     report.add_record('Sample', sample.name)
 
@@ -626,19 +685,18 @@ def _make_flat_region_report(sample, regions, depth_threshs):
         rep_region.add_record('W/n 20% of ave depth', region.rate_within_normal)
 
         for thresh in depth_threshs:
-            rate = None
-            if region.bases_within_threshs is None:
-                err('Error: no bases_within_threshs for ' + str(region))
+            if region.rates_within_threshs is None:
+                err('Error: no rates_within_threshs for ' + str(region))
             else:
-                bases = region.bases_within_threshs.get(thresh)
-                if bases is not None and region.get_size() > 0:
-                    rate = 1.0 * bases / region.get_size()
-                    if rate > 1:
-                        critical(
-                            'Error: rate = ' + str(rate) + ', bases = ' + str(bases) +
-                            ', size = ' + str(region.get_size()) +
-                            ', start = ' + str(region.start) + ', end = ' + str(region.end))
-            rep_region.add_record('{}x'.format(thresh), rate)
+                # bases = region.bases_within_threshs.get(thresh)
+                # if bases is not None and region.get_size() > 0:
+                #     rate = 1.0 * bases / region.get_size()
+                #     if rate > 1:
+                #         critical(
+                #             'Error: rate = ' + str(rate) + ', bases = ' + str(bases) +
+                #             ', size = ' + str(region.get_size()) +
+                #             ', start = ' + str(region.start) + ', end = ' + str(region.end))
+                rep_region.add_record('{}x'.format(thresh), region.rates_within_threshs[thresh])
 
     info('Processed {0:,} regions.'.format(i))
     return report

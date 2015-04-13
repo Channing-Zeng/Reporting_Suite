@@ -3,7 +3,7 @@ import math
 import os
 from os.path import isfile, join
 
-from source.logger import info, err
+from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bed
 
 
@@ -33,7 +33,7 @@ class Region:
         self.std_dev = std_dev
         self.rate_within_normal = rate_within_normal
         self.bases_within_threshs = None    # OrderedDict((depth, 0) for depth in depth_thresholds)
-        self.percent_within_threshs = None  # defaultdict(float)
+        self.rates_within_threshs = None    # defaultdict(float)
 
         self.missed_by_db = dict()
         self.var_num = None
@@ -98,10 +98,24 @@ class Region:
             err('Error: self.bases_by_depth is None for ' + str(self))
 
         self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
+        self.rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
+
         for depth, bases in self.bases_by_depth.iteritems():
-            for depth_thres in depth_thresholds:
-                if depth >= depth_thres:
-                    self.bases_within_threshs[depth_thres] += bases
+            for t in depth_thresholds:
+                if depth >= t:
+                    self.bases_within_threshs[t] += bases
+        for t in depth_thresholds:
+            sz = self.get_size()
+            bs = self.bases_within_threshs[t]
+            if sz > 0:
+                rate = 1.0 * self.bases_within_threshs[t] / sz
+                if rate > 1:
+                    critical(
+                        'Error: rate = ' + str(rate) + ', bases = ' + str(bs) +
+                        ', size = ' + str(sz) +
+                        ', start = ' + str(self.start) + ', end = ' + str(self.end))
+                self.rates_within_threshs[t] = rate
+
         return self.bases_within_threshs
 
     def calc_avg_depth(self):

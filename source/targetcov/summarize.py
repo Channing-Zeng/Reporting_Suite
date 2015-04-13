@@ -16,6 +16,7 @@ from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
 from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
+from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus
@@ -136,21 +137,17 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
 
     _make_targetcov_symlinks(samples)
 
-    best_for_regions_fpath = _save_best_detailed_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
     exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
 
-    # all_htmls_by_sample = OrderedDict()
-    # for sample in samples:
-    #     all_htmls_by_sample[sample.name] = OrderedDict()
-    #     if sample.name in targetcov_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['targetcov'] = relpath(targetcov_htmls_by_sample[sample.name], output_dir)
-    #     if sample.name in ngscat_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['ngscat'] =    relpath(ngscat_htmls_by_sample[sample.name], output_dir)
-    #     if sample.name in qualimap_htmls_by_sample:
-    #         all_htmls_by_sample[sample.name]['qualimap'] =  relpath(qualimap_htmls_by_sample[sample.name], output_dir)
-
-    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
+    best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
+    ''' 1. best_regions = get_best_regions()
+        2. best_for_regions_fpath = save_per_region_report()
+        3. calc median coverage across best regions
+        4. flagged_regions_report_fpath = _generate_flagged_regions_report(
+              output_dir, 'Best', average_coverage, genes, depth_threshs)
+    '''
 
     norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
         cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
@@ -172,6 +169,50 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
         info('  Best: ' + norm_best_var_fpath)
 
     return html_fpath
+
+
+def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
+    report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
+    report.add_record('Sample', sample.name)
+
+    ''' 1. Detect depth threshold (ave sample coverage/4 but > 25x)
+        2. Select regions covered in less than 100% at threshold
+        3. Sort by % at threshold
+        4. Select those prats where % = 0, save to BED
+        5. Find OH at those regions
+        6. Intersect OH with tracks
+    '''
+
+    ave_coverages_per_sample = {
+        s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
+        for s in samples if verify_file(s.targetcov_json_fpath)}
+
+    regions = []
+    for gene in genes:
+        regions.extend(gene.get_exons())
+
+    depth_cutoff = max(average_coverage / 4, 25)
+    for thresh in depth_threshs[::-1]:
+        if thresh < depth_cutoff:
+            depth_cutoff = thresh
+            break
+
+    sorted_by_thresh = sorted(regions, key=lambda r: [r.rates_within_threshs[t] for t in depth_threshs])
+
+    low_cov_regions = [r for r in sorted_by_thresh if r.rates_within_threshs[depth_cutoff] < 1]
+
+    selected_regions = low_cov_regions
+
+    report = make_flat_region_report(sample, selected_regions, depth_threshs)
+
+    gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
+    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
+    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    info('')
+    info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
+    info('  ' + txt_rep_fpath)
+
+    return txt_rep_fpath
 
 
 def get_ave_coverage(cnf, report_fpath):
@@ -648,7 +689,7 @@ def select_best(values, fn=max):
     return fn(vs) if len(vs) > 0 else None
 
 
-def _save_best_detailed_for_each_gene(depth_threshs, samples, output_dir):
+def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
     metric_storage = cov.get_detailed_metric_storage(depth_threshs)
 
     report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)

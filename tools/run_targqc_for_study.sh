@@ -1,3 +1,5 @@
+#!/bin/sh
+
 dir=$(readlink $1)
 project="$(basename($(dirname $dir))_$(basename $dir)"
 
@@ -10,4 +12,3 @@ if [ -f $dir/../capture.bed ];
 then
 	$TARGQC $dir/*.bam --bed $dir/../capture.bed -o $dir/tq_keygenes $FLAGS
 fi
-

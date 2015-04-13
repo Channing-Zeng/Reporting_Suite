@@ -93,7 +93,7 @@ def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
     return make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
 
 
-def finalize_one(cnf, summary_report_txt_path, gene_report_fpath):
+def finalize_one(cnf, summary_report_txt_path, gene_report_fpath, selected_regions_fpath):
     msg = ['TargetSeq reprots finished for ' + cnf.name + ':']
 
     if summary_report_txt_path:
@@ -104,12 +104,10 @@ def finalize_one(cnf, summary_report_txt_path, gene_report_fpath):
         msg.append('Per-region report: ' + gene_report_fpath)
         info('Per-region report:')
         info('  ' + gene_report_fpath)
-    # if abnormal_regions_reports:
-    #     msg.append('Abnormal region reports: ')
-    #     info('Abnormal region reports:')
-    #     for rep in abnormal_regions_reports:
-    #         msg.append('  ' + rep)
-    #         info('  ' + rep)
+    if selected_regions_fpath:
+        msg.append('Selected region reports: ')
+        info('Selected region reports:')
+        info('  ' + selected_regions_fpath)
 
     # send_email('\n'.join(msg))
 

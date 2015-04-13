@@ -60,7 +60,7 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
 def annotate_amplicons(cnf, amplicons_bed, exons_bed):
     output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
 
-    annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'annotate_bed.py'))
+    annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')
 
     cmdline = '{annotate_bed_py} {amplicons_bed} {cnf.work_dir} {exons_bed} {bedtools}'.format(**locals())
@@ -72,7 +72,7 @@ def annotate_amplicons(cnf, amplicons_bed, exons_bed):
 def group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
 
-    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'group_and_merge_by_gene.py'))
+    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'group_and_merge_by_gene.py'))
 
     cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
     if not keep_genes:
