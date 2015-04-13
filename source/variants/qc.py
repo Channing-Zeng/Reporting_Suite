@@ -58,7 +58,7 @@ def make_report(cnf, vcf_fpath, sample):
         for rec in (vcf_processing.Record(rec, vcf_fpath, i) for i, rec in enumerate(reader)):
             total_with_rejected += 1
 
-            if rec.FILTER == [] or rec.FILTER == 'PASS':
+            if not rec.FILTER or rec.FILTER == 'PASS':
                 if rec.FILTER:
                     warn('Warn: ' + rec.get_variant() + ' FILTER=' + str(rec.FILTER))
 

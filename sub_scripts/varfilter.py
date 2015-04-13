@@ -4,12 +4,15 @@ import __check_python_version
 
 import sys
 import os
+from joblib import Parallel, delayed
 from os.path import join, pardir, basename, dirname, islink, isdir
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
 from source.logger import info, err, send_email
 from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines
+from source.variants.vcf_processing import igvtools_index
+from source.variants.vcf_processing import bgzip_and_tabix
 
 
 def main():
@@ -176,12 +179,34 @@ def main():
     filter_all(cnf, bcbio_structure)
 
 
+glob_cnf = None
+
+
+def index_vcf(sample, caller_name):
+    global glob_cnf
+    cnf = glob_cnf
+
+    info()
+    info(sample.name + ', ' + caller_name + ': indexing')
+    igvtools_index(cnf, sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False))
+    igvtools_index(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
+    bgzip_and_tabix(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
+
+
 def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
 
     for _, caller in bcbio_structure.variant_callers.items():
         filter_for_variant_caller(caller, cnf, bcbio_structure)
+
+    global glob_cnf
+    glob_cnf = cnf
+
+    threads_num = min(len(bcbio_structure.samples) * len(bcbio_structure.variant_callers), cnf.threads)
+    Parallel(n_jobs=threads_num) \
+        (delayed(index_vcf)(sample, caller.name)
+            for caller in bcbio_structure.variant_callers.values() for sample in caller.samples)
 
     email_msg = ['Variant filtering finished.']
     # info('Results:')

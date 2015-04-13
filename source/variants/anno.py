@@ -24,7 +24,12 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
                     rec.ID = None
             else:
                 rec.ID = [id for id in rec.ID if not id.startswith('rs') and not id.startswith('COS')]
+
+        if not rec.FILTER:
+            rec.FILTER = 'PASS'
+
         return rec
+
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
     dbs = [(dbname, cnf.annotation[dbname])
@@ -273,7 +278,7 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.extra_options:
         opts += ''
 
-    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
+    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} -formatEff '
                '-csvStats -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
 

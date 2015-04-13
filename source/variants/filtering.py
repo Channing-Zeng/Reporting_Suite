@@ -36,6 +36,7 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
         if rec.FILTER and rec.FILTER != 'PASS':
             return None
 
+        rec.FILTER = 'PASS'
         return rec
 
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, fix_fields, 'vcf2txt')
@@ -78,6 +79,27 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
     if not res:
         err('vardict2mut.pl run returned non-0')
         return None
+
+    mut_fpath = res
+
+    # symlinking
+    pass_txt_basefname = basename(mut_fpath)
+    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
+
+    if islink(pass_txt_fpath_symlink):
+        try:
+            os.unlink(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    if isfile(pass_txt_fpath_symlink):
+        try:
+            os.remove(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    try:
+        symlink_plus(mut_fpath, pass_txt_fpath_symlink)
+    except OSError:
+        err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
 
     write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
 
@@ -157,13 +179,6 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
                     filt_f.write('\t'.join(ts))
 
     info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
-
-    # Indexing
-    info()
-    info(sample.name + ', ' + caller_name + ': indexing')
-    igvtools_index(cnf, pass_filt_vcf_fpath)
-    igvtools_index(cnf, filt_vcf_fpath)
-    bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
 def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):
@@ -297,25 +312,6 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res
          bcbio_structure.samples[0].min_af, threads_num)
     if not mut_fpath:
         return None, None
-
-    # symlinking
-    pass_txt_basefname = basename(mut_fpath)
-    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
-
-    if islink(pass_txt_fpath_symlink):
-        try:
-            os.unlink(pass_txt_fpath_symlink)
-        except OSError:
-            pass
-    if isfile(pass_txt_fpath_symlink):
-        try:
-            os.remove(pass_txt_fpath_symlink)
-        except OSError:
-            pass
-    try:
-        symlink_plus(mut_fpath, pass_txt_fpath_symlink)
-    except OSError:
-        err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
 
     return vcf2txt_res_fpath, mut_fpath
 
