@@ -5,6 +5,3 @@ steps:
 - VarQC_postVarFilter
 - TargetCov
 - Seq2C
-- ngsCAT
-- QualiMap
-#- MongoLoader
