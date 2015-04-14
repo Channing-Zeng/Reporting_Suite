@@ -28,7 +28,7 @@ genomes:
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
-    oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
+    oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/mutation_details.vcf
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
     # snpeff: /home/klpf990/snpeff/data  #/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
@@ -47,7 +47,7 @@ genomes:
     cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
-    oncomine: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine.vcf
+    oncomine: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine/mutation_details.vcf
 
     exons: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/AZ_Exome.bed

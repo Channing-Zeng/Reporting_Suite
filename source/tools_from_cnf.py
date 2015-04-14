@@ -1,14 +1,11 @@
-from genericpath import isfile, isdir, exists
-import os
-import sys
 import subprocess
-from os.path import join, dirname, abspath, pardir
+from genericpath import exists
+from os.path import join
 from distutils.version import LooseVersion
-from source.file_utils import verify_file, code_base_path, adjust_system_path, verify_dir, verify_obj_by_path, \
-    safe_mkdir
 
+from source.file_utils import code_base_path, adjust_system_path, verify_obj_by_path
 from source.logger import info, err, critical
-from source.file_utils import file_exists, which
+from source.file_utils import which
 
 
 def get_system_path(cnf, interpreter, name=None, extra_warning='',
@@ -77,13 +74,15 @@ def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
 
 
 def get_java_tool_cmdline(cnf, script, extra_warning='', suppress_warn=False, is_critical=False):
+    jvm_opts = None
     if (cnf.resources and
         script in cnf.resources and
         'jvm_opts' in cnf.resources[script]):
         jvm_opts = cnf.resources[script]['jvm_opts']
     else:
         jvm_opts = ['-Xms750m', '-Xmx3g']
-    jvm_opts.append('-Djava.io.tmpdir=' + join(cnf.work_dir))
+    if not '-Djava.io.tmpdir=' + join(cnf.work_dir) in jvm_opts:
+        jvm_opts.append('-Djava.io.tmpdir=' + join(cnf.work_dir))
 
     return get_script_cmdline(
         cnf, 'java', script,

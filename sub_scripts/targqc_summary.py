@@ -7,7 +7,7 @@ from os.path import abspath
 from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.file_utils import adjust_path
 from source.logger import info
-from source.standalone_targqc.summarize import summarize_targqc
+from source.targetcov.summarize import summarize_targqc
 
 
 def main():

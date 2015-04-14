@@ -80,8 +80,6 @@ annotation:
     - ESP6500_AA_AF
     - ESP6500_EA_AF
 
-
-
   dbsnp:
     all-annotations: False
     annotations:
@@ -108,6 +106,7 @@ annotation:
   oncomine:
     all-annotations: False
     annotations:
+#    - om
     - om_Cancer
     - om_PATIENT
     - om_MutClass
@@ -163,6 +162,7 @@ annotation:
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic
+#  - om                            : Oncomine
   - om_Cancer                     : OncomineCancer
   - om_PATIENT                    : OncominePatient
   - om_MutClass                   : OncomineMutClass

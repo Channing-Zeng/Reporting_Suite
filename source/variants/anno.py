@@ -191,7 +191,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                                   stdout_to_outputfile=True, exit_on_error=False)
+        stdout_to_outputfile=True, exit_on_error=False)
     if not output_fpath:
         err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
         return output_fpath
@@ -202,6 +202,8 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         if not line.startswith('#'):
             line = line.replace(' ', '_')
             assert ' ' not in line
+        elif line.startswith('##INFO=<ID=om'):
+            line = line.replace(' ', '')
         return line
 
     output_fpath = iterate_file(cnf, output_fpath, proc_line, suffix='f')
@@ -209,9 +211,6 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
 
 def _snpsift_db_nsfp(cnf, input_fpath):
-    if 'dbnsfp' not in cnf:
-        return None
-
     step_greetings('DB SNFP')
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')

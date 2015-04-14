@@ -135,7 +135,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
         if not sample.qualimap_done():
             sample.qualimap_html_fpath = None
 
-    _make_targetcov_symlinks(samples)
+    # _make_targetcov_symlinks(samples)
 
     txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
@@ -497,8 +497,8 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
             rep_region.add_record('Hotspots depths/norm depths', depths)
 
         best_report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
-        sample.targetcov_norm_depth_vcf_txt = sample.report.save_txt(sample.dirpath, best_report_basename)
-        sample.targetcov_norm_depth_vcf_tsv = sample.report.save_tsv(sample.dirpath, best_report_basename)
+        sample.targetcov_norm_depth_vcf_txt = sample.report.save_txt(join(sample.dirpath, source.targetseq_name), best_report_basename)
+        sample.targetcov_norm_depth_vcf_tsv = sample.report.save_tsv(join(sample.dirpath, source.targetseq_name), best_report_basename)
         info('')
         info('Oncomine variants coverage report (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants, total_regions))
         info('  ' + sample.targetcov_norm_depth_vcf_txt)

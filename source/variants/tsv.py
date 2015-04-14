@@ -8,7 +8,7 @@ from source.file_utils import intermediate_fname, verify_file, splitext_plus
 from source.tools_from_cnf import get_java_tool_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import file_exists
-from source.logger import step_greetings, info, err, critical
+from source.logger import step_greetings, info, err, critical, warn
 from source.variants.vcf_processing import read_sample_names_from_vcf, leave_main_sample, vcf_one_per_line, \
     get_sample_column_index
 
@@ -82,11 +82,34 @@ def _extract_fields(cnf, main_sample_index, vcf_fpath):
 
     # broken_format_column_vcf_fpath = iterate_file(cnf, vcf_fpath, proc_line, 'split_format_fields')
 
+    fields = None
+
     _manual_tsv_fields = cnf.annotation['tsv_fields']
     if _manual_tsv_fields:
-        fields = [
-            rec.keys()[0] for rec
-            in _manual_tsv_fields]
+        fields = []
+
+        with open(vcf_fpath) as inp:
+            reader = vcf.Reader(inp)
+            infos = reader.infos
+            formats = reader.formats
+
+            for f in [rec.keys()[0] for rec in _manual_tsv_fields]:
+                if f.startswith('GEN'):
+                    _f = f.split('.')[1]
+                    if _f in formats:
+                        fields.append(f)
+                    else:
+                        warn('Warning: ' + f + ' is not in VCF header FORMAT records')
+
+                elif f.startswith('EFF') or f in ['CHROM', 'POS', 'REF', 'ALT', 'ID', 'FILTER', 'QUAL']:
+                    fields.append(f)
+
+                else:
+                    if f in infos:
+                        fields.append(f)
+                    else:
+                        warn('Warning: ' + f + ' is not in VCF header INFO records')
+
     # else:
         # first_line = next(l.strip()[1:].split() for l in open(vcf_fpath)
         #   if l.strip().startswith('#CHROM'))
