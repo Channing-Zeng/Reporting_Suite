@@ -92,9 +92,13 @@ def parse_qualimap_sample_report(report_fpath):
                 metric.unit = val_unit
             try:
                 val = int(val_num)
+                if val_unit == '%':
+                    val = float(val) / 100
             except ValueError:
                 try:
                     val = float(val_num)
+                    if val_unit == '%':
+                        val /= 100
                 except ValueError:  # it is a string
                     val = val_num + val_unit
 
