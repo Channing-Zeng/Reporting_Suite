@@ -7,7 +7,6 @@ steps:
 - Seq2C
 - ngsCAT
 - QualiMap
-#- MongoLoader
 
 
 variant_filtering:
