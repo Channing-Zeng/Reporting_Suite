@@ -413,6 +413,7 @@ class BCBioStructure:
         bcbio_project_parent_dirname = basename(dirname(bcbio_project_dirpath))  # Bio_0031_Heme_MRL_DLBCL_IRAK4
         if not self.project_name:
             self.project_name = bcbio_project_parent_dirname + '_' + bcbio_project_dirname
+        cnf.project_name = self.project_name
 
         if 'fc_date' not in bcbio_cnf:
             critical('Error: fc_date not in bcbio config!')

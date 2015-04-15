@@ -1,4 +1,5 @@
 from collections import namedtuple
+import getpass
 from os import environ
 import socket
 import sys
@@ -59,6 +60,8 @@ def send_email(msg='', subj=''):
             addresses.append(address)
 
         msg += '\n'
+        msg += '\n'
+        msg += 'Run by ' + getpass.getuser() + '\n'
         msg += '\n'
         if critical_msgs:
             msg += 'Critical errors during the processing:\n'
