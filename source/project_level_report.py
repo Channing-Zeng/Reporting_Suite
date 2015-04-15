@@ -9,6 +9,7 @@ from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
+from source.tools_from_cnf import get_system_path
 from utils import is_local, is_uk
 
 
@@ -40,7 +41,7 @@ def make_project_level_report(cnf, bcbio_structure):
 
     html_report_url = ''
     if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
-        html_report_url = copy_to_ngs_website(cnf.work_dir, bcbio_structure, final_summary_report_fpath)
+        html_report_url = copy_to_ngs_website(cnf, cnf.work_dir, bcbio_structure, final_summary_report_fpath)
 
     info()
     info('*' * 70)
@@ -49,7 +50,7 @@ def make_project_level_report(cnf, bcbio_structure):
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
 
 
-def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
+def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
     html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
         relpath(html_report_fpath, bcbio_structure.final_dirpath)
 
@@ -71,33 +72,33 @@ def copy_to_ngs_website(work_dir, bcbio_structure, html_report_fpath):
         username = 'klpf990'
         password = '123werasd'
         project_list_fpath = '/ngs/oncology/NGS.Project.csv'
-        rsa_key_path = adjust_path('/users/klpf990/.ssh/id_rsa')
-
-        ssh = SSHClient()
-        ssh.load_system_host_keys()
-        # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-        ssh.set_missing_host_key_policy(AutoAddPolicy())
-        try:
-            key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-        except Exception, e:
-            warn('Cannot read RSAKey from ' + rsa_key_path)
-            warn('  ' + str(e))
-        else:
-            info('Succesfully read RSAKey from ' + rsa_key_path)
+        rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
+        if rsa_key_path:
+            ssh = SSHClient()
+            ssh.load_system_host_keys()
+            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+            ssh.set_missing_host_key_policy(AutoAddPolicy())
             try:
-                ssh.connect(server_url, username=username, password=password, pkey=key)
+                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
             except Exception, e:
-                warn('Cannot connect to ' + server_url + ':')
+                warn('Cannot read RSAKey from ' + rsa_key_path)
                 warn('  ' + str(e))
-                html_report_url = None
             else:
-                info('Succesfully connected to ' + server_url)
-                final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
-                link_path = join(server_path, bcbio_structure.project_name)
-                cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
-                ssh.exec_command(cmd)
-                info('  ' + cmd)
-                ssh.close()
+                info('Succesfully read RSAKey from ' + rsa_key_path)
+                try:
+                    ssh.connect(server_url, username=username, password=password, pkey=key)
+                except Exception, e:
+                    warn('Cannot connect to ' + server_url + ':')
+                    warn('  ' + str(e))
+                    html_report_url = None
+                else:
+                    info('Succesfully connected to ' + server_url)
+                    final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
+                    link_path = join(server_path, bcbio_structure.project_name)
+                    cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
+                    ssh.exec_command(cmd)
+                    info('  ' + cmd)
+                    ssh.close()
 
         if verify_file(project_list_fpath, 'Project list'):
             info('Reading project list ' + project_list_fpath)
