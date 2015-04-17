@@ -137,15 +137,20 @@ class Report:
         raise NotImplementedError()
 
     def save_txt(self, output_dirpath, base_fname, sections=None):
-        return write_txt_rows(self.flatten(sections, human_readable=True), output_dirpath, base_fname)
+        fpath = write_txt_rows(self.flatten(sections, human_readable=True), output_dirpath, base_fname)
+        self.txt_fpath = fpath
+        return fpath
 
     def save_json(self, output_dirpath, base_fname, sections=None):
         fpath = join(output_dirpath, base_fname + '.json')
         self.dump(fpath)
+        self.json_fpath = fpath
         return fpath
 
     def save_tsv(self, output_dirpath, base_fname, sections=None):
-        return write_tsv_rows(self.flatten(sections, human_readable=False), output_dirpath, base_fname)
+        fpath = write_tsv_rows(self.flatten(sections, human_readable=False), output_dirpath, base_fname)
+        self.tsv_fpath = fpath
+        return fpath
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
         class Encoder(JSONEncoder):
@@ -160,7 +165,9 @@ class Report:
             report=self,
             type_=None,
         ), separators=(',', ':'), cls=Encoder)
-        return write_html_report(json, output_dirpath, base_fname, caption)
+        fpath = write_html_report(json, output_dirpath, base_fname, caption)
+        self.html_fpath = fpath
+        return fpath
 
     def dump(self, fpath):
         with open(fpath, 'w') as f:
@@ -252,15 +259,12 @@ class PerRegionSampleReport(SampleReport):
     def __init__(self, *args, **kwargs):
         SampleReport.__init__(self, *args, **kwargs)
         self.records = []
-        self.__regions = []
+        self.regions = []
 
     def add_region(self):
         region = PerRegionSampleReport.Region(self)
-        self.__regions.append(region)
+        self.regions.append(region)
         return region
-
-    def get_regions(self):
-        return self.__regions
 
     def flatten(self, sections=None, human_readable=True):
         rows = []
@@ -279,7 +283,7 @@ class PerRegionSampleReport(SampleReport):
             header_row.append(('#' if i == 0 else '') + m.display_name())
         rows.append(header_row)
 
-        for reg in self.__regions:
+        for reg in self.regions:
             row = []
             for m in self.metric_storage.get_metrics(sections, skip_general_section=True):
                 rec = Report.find_record(reg.records, m.name)

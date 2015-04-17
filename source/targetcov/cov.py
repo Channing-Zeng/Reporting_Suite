@@ -1,14 +1,15 @@
 # coding=utf-8
 
 from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile, abspath, realpath
+from os.path import join, basename, isfile, abspath, realpath, splitext
 
 import source
 import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile
 from source.logger import step_greetings, critical, info, err, warn
-from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows
+from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows, \
+    load_records
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
     total_merge_bed, count_bed_cols
@@ -202,7 +203,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
         genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
     info()
-    general_rep_fpath = make_and_save_general_report(
+    summary_report = make_and_save_general_report(
         cnf, sample, bam_fpath,
         total_reads, total_mapped_reads, total_dup_mapped_reads, total_paired_reads,
         combined_region, max_depth, target_info)
@@ -250,14 +251,10 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
 
-    per_gene_rep_fpath = _generate_region_cov_report(cnf, sample, cnf.output_dir,
+    per_gene_report = _generate_region_cov_report(cnf, sample, cnf.output_dir,
         gene_by_name.values(), un_annotated_amplicons)
 
-    info('Generating flagged regions report...')
-    flagged_report_fpath = _generate_flagged_regions_report(cnf.output_dir, sample,
-        combined_region.avg_depth, gene_by_name.values(), cnf.coverage_reports.depth_thresholds)
-
-    return general_rep_fpath, per_gene_rep_fpath, flagged_report_fpath
+    return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
 
 
 def make_and_save_general_report(
@@ -275,14 +272,14 @@ def make_and_save_general_report(
         cnf.coverage_reports.depth_thresholds, cnf.padding,
         combined_region, max_depth, target_info)
 
-    summary_report_json_fpath = summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
-    summary_report_txt_fpath  = summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
-    summary_report_html_fpath = summary_report.save_html(cnf.output_dir, sample.name + '.' + source.targetseq_name,
+    summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report.save_html(cnf.output_dir, sample.name + '.' + source.targetseq_name,
         caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
-    info('  ' + summary_report_txt_fpath)
-    return summary_report_txt_fpath
+    info('  ' + summary_report.txt_fpath)
+    return summary_report
 
 
 def _get_gene_names(exons_bed, gene_index=3):
@@ -571,68 +568,13 @@ def _generate_region_cov_report(cnf, sample, output_dir, genes, un_annotated_amp
     report = make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
 
     gene_report_basename = sample.name + '.' + source.targetseq_name + source.detail_gene_report_baseending
-    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
-    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    report.save_txt(output_dir, gene_report_basename)
+    report.save_tsv(output_dir, gene_report_basename)
     info('')
     info('Regions (total ' + str(len(final_regions)) + ') saved into:')
-    info('  ' + txt_rep_fpath)
+    info('  ' + report.txt_fpath)
 
-    return txt_rep_fpath
-
-
-def _generate_flagged_regions_report(output_dir, sample, average_coverage, genes, depth_threshs):
-    report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
-    report.add_record('Sample', sample.name)
-
-    ''' 1. Detect depth threshold (ave sample coverage/4 but > 25x)
-        2. Select regions covered in less than 100% at threshold
-        3. Sort by % at threshold
-        4. Select those prats where % = 0, save to BED
-        5. Find OH at those regions
-        6. Intersect OH with tracks
-    '''
-
-    regions = []
-    for gene in genes:
-        regions.extend(gene.get_exons())
-
-    depth_cutoff = max(average_coverage / 4, 25)
-    for thresh in depth_threshs[::-1]:
-        if thresh < depth_cutoff:
-            depth_cutoff = thresh
-            break
-
-    sorted_by_thresh = sorted(regions, key=lambda r: [r.rates_within_threshs[t] for t in depth_threshs])
-
-    low_cov_regions = [r for r in sorted_by_thresh if r.rates_within_threshs[depth_cutoff] < 1]
-
-    selected_regions = low_cov_regions
-
-    report = make_flat_region_report(sample, selected_regions, depth_threshs)
-
-    gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
-    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
-    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
-    info('')
-    info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
-    info('  ' + txt_rep_fpath)
-
-    return txt_rep_fpath
-
-
-
-# sample_depths = [100, 120, 110, 130, 100, 90, 110, 200]
-# med_sample_depth = median(sample_depths)
-# mad = median(abs(med_sample_depth - v) for v in sample_depths)
-
-# print med_sample_depth
-# print mad
-
-# z_scores = [(d - med_sample_depth) / mad for d in sample_depths]
-
-# for d, z in zip(sample_depths, z_scores):
-# 	print '{d}: {z}'.format(**locals())
-
+    return report
 
 
 def get_detailed_metric_storage(depth_threshs):

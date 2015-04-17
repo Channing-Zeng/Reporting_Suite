@@ -10,6 +10,7 @@ from source.config import defaults
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
+from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.utils import info
 from source.file_utils import adjust_path
 
@@ -34,6 +35,12 @@ def main(args):
             (['--count-dups'], dict(
                 dest='count_dups',
                 help='count duplicates when calculating coverage metrics',
+                action='store_true',
+                default=False)
+             ),
+            (['-e', '--extended'], dict(
+                dest='extended',
+                help='extended - flagged regions and missed variants',
                 action='store_true',
                 default=False)
              ),
@@ -90,26 +97,32 @@ class Sample(BaseSample):
 
 def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
     sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
-    return make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
+
+    avg_depth, gene_by_name, reports = make_targetseq_reports(cnf, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
+
+    if cnf.extended:
+        info('Generating flagged regions report...')
+        flagged_report = generate_flagged_regions_report(cnf.output_dir, sample,
+            avg_depth, gene_by_name, cnf.coverage_reports.depth_thresholds)
+        reports.append(flagged_report)
+
+    return reports
 
 
-def finalize_one(cnf, summary_report_txt_path, gene_report_fpath, selected_regions_fpath):
-    msg = ['TargetSeq reprots finished for ' + cnf.name + ':']
+def finalize_one(cnf, *args):
+    summary_report, gene_report = args[:2]
 
-    if summary_report_txt_path:
-        msg.append('Summary TXT:  ' + summary_report_txt_path)
-        # msg.append('Summary HTML: ' + summary_report_html_path)
-        info('Summary report: ' + summary_report_txt_path)
-    if gene_report_fpath:
-        msg.append('Per-region report: ' + gene_report_fpath)
-        info('Per-region report:')
-        info('  ' + gene_report_fpath)
-    if selected_regions_fpath:
-        msg.append('Selected region reports: ')
-        info('Selected region reports:')
-        info('  ' + selected_regions_fpath)
+    if summary_report.txt_fpath:
+        info('Summary report: ' + summary_report.txt_fpath)
 
-    # send_email('\n'.join(msg))
+    if gene_report.txt_fpath:
+        info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
+
+    if len(args) >= 3:
+        selected_regions_report = args[2]
+        if selected_regions_report.txt_fpath:
+            info('Selected regions: ' + selected_regions_report.txt_fpath +
+                 ' (' + str(len(selected_regions_report.regions)) + ' regions)')
 
 
 if __name__ == '__main__':

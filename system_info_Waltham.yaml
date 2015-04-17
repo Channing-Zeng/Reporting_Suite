@@ -52,8 +52,14 @@ genomes:
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
 
-    polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
+    filter_common_snp: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/filter_common_snp.txt
+    polymorphic_variants: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/snpeffect_export_Polymorphic.txt
+    filter_common_artifacts: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/filter_common_artifacts.txt
+    actionable_hotspot: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/actionable_hotspot.txt
+    actionable: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/actionable.txt
+    comprednia_hotspots: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/Compendia.MS7.Hotspot.txt
+
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa

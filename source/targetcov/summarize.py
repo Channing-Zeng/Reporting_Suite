@@ -12,11 +12,11 @@ from source.config import CallCnf
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
     Record, PerRegionSampleReport, Report
 from source.logger import step_greetings, info, send_email, critical, warn, err
-from source.targetcov import cov
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
 from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
-from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage
+from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage, get_header_metric_storage
+from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus
@@ -80,7 +80,7 @@ def _make_targetcov_symlinks(samples):
 
 
 def _make_tarqc_html_report(cnf, output_dir, samples):
-    header_storage = cov.get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
+    header_storage = get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', header_storage),
@@ -146,11 +146,12 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
         2. best_for_regions_fpath = save_per_region_report()
         3. calc median coverage across best regions
         4. flagged_regions_report_fpath = _generate_flagged_regions_report(
-              output_dir, 'Best', average_coverage, genes, depth_threshs)
+             output_dir, 'Best', average_coverage, genes, depth_threshs)
     '''
 
-    norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
-        cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
+    # if cnf.extended:
+    #     norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
+    #         cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
 
     info()
     info('*' * 70)
@@ -162,11 +163,12 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
     info('Best stats for regions saved in:')
     info('  ' + best_for_regions_fpath)
 
-    if norm_best_var_fpath:
-        info()
-        info('Normalized depths for oncomine saved in:')
-        info('        ' + norm_comb_var_fpath)
-        info('  Best: ' + norm_best_var_fpath)
+    # if cnf.extended:
+    #     if norm_best_var_fpath:
+    #         info()
+    #         info('Normalized depths for oncomine saved in:')
+    #         info('        ' + norm_comb_var_fpath)
+    #         info('  Best: ' + norm_best_var_fpath)
 
     return html_fpath
 
@@ -215,12 +217,6 @@ def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
     return txt_rep_fpath
 
 
-def get_ave_coverage(cnf, report_fpath):
-    if verify_file(report_fpath):
-        records = load_records(report_fpath)
-        return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
-
-
 def _clip_vcf_by_bed(cnf, vcf_fpath, bed_fpath):
     info('Clipping VCF ' + vcf_fpath + ' using BED ' + bed_fpath)
 
@@ -233,22 +229,6 @@ def _clip_vcf_by_bed(cnf, vcf_fpath, bed_fpath):
     clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, clipped_vcf_fpath)
 
     return clipped_gz_vcf_fpath
-
-
-class Variant(object):
-    def __init__(self, chrom, pos, ref, alt, cls):
-        self.chrom = chrom
-        self.pos = pos
-        self.ref = ref
-        self.alt = alt
-        self.cls = cls
-
-    def get_site(self):
-        return self.chrom, self.pos, self.ref, self.alt
-
-    def __repr__(self):
-        fmt_pos = lambda pos: Metric.format_value(pos, human_readable=True)
-        return '{pos} {var.ref}/{var.alt} {var.cls[0]}'.format(pos=fmt_pos(int(self.pos)), var=self)
 
 
 def _get_depth_for_each_variant(cnf, samtools, bedtools,
@@ -341,211 +321,73 @@ def _prep_best_report(metric_storage, samples):
     return report
 
 
-class VariantsMetric(Metric):
-    def format(self, value, human_readable=True):
-        variants = value
-        fmt_pos = lambda pos: Metric.format_value(int(pos), human_readable=True)
-        return '  '.join('{pos}:{var.ref}/{var.alt}'.format(pos=fmt_pos(var.pos), var=var)
-            for var in variants)
-
-
-class DepthsMetric(Metric):
-    def format(self, value, human_readable=True):
-        depth_tuples = value
-        fmt = lambda dp: Metric.format_value(dp, human_readable=True)
-        return '  '.join('{depth}/{norm_depth}'.format(
-            depth=fmt(int(depth) if depth is not None else None),
-            norm_depth=fmt(float(norm_depth) if norm_depth is not None else None))
-            for (depth, norm_depth) in depth_tuples)
-
-
-def _read_vars_per_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath):
-    info()
-    info('Intersecting VCF ' + vcf_fpath + ' using BED ' + bed_fpath)
-
-    vcf_columns_num = count_bed_cols(vcf_fpath)
-    bed_columns_num = count_bed_cols(bed_fpath)
-
-    vcf_bed_intersect = join(cnf.work_dir, splitext(basename(vcf_fpath))[0] + '_vcf_bed.intersect')
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} intersect -header -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
-
-    regions_in_order = []
-    regions_set = set()
-    vars_by_region = defaultdict(dict)
-    var_by_site = dict()
-
-    clipped_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'clip')
-
-    with open(vcf_bed_intersect) as f, open(clipped_vcf_fpath, 'w') as clip_vcf:
-        for l in f:
-            l = l.strip()
-            if not l or l.startswith('#'):
-                clip_vcf.write(l + '\n')
-                continue
-            fs = l.split('\t')
-            chrom, pos, id_, ref, alt, qual, filt, info_fields = fs[:8]
-            chrom_b, start_b, end_b, symbol, strand, feature, biotype = None, None, None, None, None, None, None
-            if bed_columns_num == 8:
-                chrom_b, start_b, end_b, symbol, _, strand, feature, biotype, _ = fs[-9:]
-            if bed_columns_num == 4:
-                chrom_b, start_b, end_b, symbol, _ = fs[-5:]
-            assert chrom == chrom_b, l
-            r = chrom, start_b, end_b, symbol, strand, feature, biotype
-            if r not in regions_set:
-                regions_set.add(r)
-                regions_in_order.append(r)
-
-            cls = None
-            if '=Hotspot' in info_fields: cls = 'Hotspot'
-            if '=Deleterious' in info_fields: cls = 'Deleterious'
-            if cls:
-                var = Variant(chrom, pos, ref, alt, cls)
-                vars_by_region[r][(chrom, pos, ref, alt)] = var
-                var_by_site[(chrom, pos, ref, alt)] = var
-                clip_vcf.write('\t'.join([chrom, pos, id_, ref, alt, qual, filt, info_fields]) + '\n')
-
-    clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, clipped_vcf_fpath)
-
-    return clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site
-
-
 def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_dir, samples, vcf_key, bed_fpath):
-    step_greetings('Normalized coverage for ' + vcf_key + ' hotspots')
-    vcf_fpath = cnf.genome.get(vcf_key)
-    if not vcf_fpath:
-        err('Error: no ' + vcf_key + ' for ' + cnf.genome.name + ' VCF fpath specified in ' + cnf.sys_cnf)
-        return None
+    step_greetings('Combined normalized coverage for ' + vcf_key + ' hotspots')
 
-    ave_coverages_per_sample = {
-        s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
-        for s in samples if verify_file(s.targetcov_json_fpath)}
-
-    clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site = \
-        _read_vars_per_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath)
-
-    samtools = get_system_path(cnf, 'samtools')
-    bedtools = get_system_path(cnf, 'bedtools')
-
-    vars_by_region_per_sample = OrderedDict(Parallel(n_jobs=summary_threads)
-       (delayed(_get_depth_for_each_variant)(
-            CallCnf(cnf.__dict__), samtools, bedtools, var_by_site, clipped_gz_vcf_fpath, bed_fpath,
-            s.name, s.bam)
-        for s in samples))
-
-    shared_metrics = [
-        Metric('Chr'),
-        Metric('Start'),
-        Metric('End'),
-        Metric('Strand'),
-        Metric('Feature'),
-        Metric('Biotype'),
-        Metric('Symbol'),
-        Metric('Hotspots num', short_name='#HS'),
-        VariantsMetric('Hotspots list', short_name='Hotspots')]
-
-    shared_general_metrics = [Metric('Sample', short_name='Sample', common=True)]
-
-    single_report_metric_storage = MetricStorage(
-        general_section=ReportSection('general_section', '', metrics=shared_general_metrics + [
-            Metric('Average sample depth', short_name='Ave depth', common=True)
-        ]),
-        sections=[ReportSection(metrics=shared_metrics + [
-            DepthsMetric('Hotspots depths/norm depths', short_name='DP/Norm_DP')
-        ])])
-
-    for sample in samples:
-        info()
-        info('Saving report for sample ' + sample.name)
-
-        sample.report = PerRegionSampleReport(sample=sample, metric_storage=single_report_metric_storage)
-        sample.report.add_record('Sample', sample.name)
-        ave_sample_depth = ave_coverages_per_sample[sample.name]
-        sample.report.add_record('Average sample depth', ave_sample_depth)
-
-        total_variants = 0
-        total_regions = 0
-        depth_by_var = vars_by_region_per_sample[sample.name]
-        for r in regions_in_order:
-            total_regions += 1
-
-            (chrom, start, end, symbol, strand, feature, biotype) = r
-            rep_region = sample.report.add_region()
-            rep_region.add_record('Chr', chrom)
-            rep_region.add_record('Start', start)
-            rep_region.add_record('End', end)
-            rep_region.add_record('Symbol', symbol)
-            rep_region.add_record('Strand', strand)
-            rep_region.add_record('Feature', feature)
-            rep_region.add_record('Biotype', biotype)
-
-            variants, depths = [], []
-            for var in sorted(vars_by_region[r].values(), key=lambda v: v.pos):
-                variants.append(var)
-
-                depth = depth_by_var.get((var.get_site()))
-                norm_depth = depth / ave_sample_depth if depth and ave_sample_depth > 0 else None
-                depths.append((depth, norm_depth))
-
-                total_variants += 1
-                if total_variants % 10000 == 0:
-                    info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
-
-            rep_region.add_record('Hotspots num', len(variants))
-            rep_region.add_record('Hotspots list', variants)
-            rep_region.add_record('Hotspots depths/norm depths', depths)
-
-        best_report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
-        sample.targetcov_norm_depth_vcf_txt = sample.report.save_txt(join(sample.dirpath, source.targetseq_name), best_report_basename)
-        sample.targetcov_norm_depth_vcf_tsv = sample.report.save_tsv(join(sample.dirpath, source.targetseq_name), best_report_basename)
-        info('')
-        info('Oncomine variants coverage report (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants, total_regions))
-        info('  ' + sample.targetcov_norm_depth_vcf_txt)
+    # vcf_fpath = cnf.genome.get(vcf_key)
+    # if not vcf_fpath:
+    #     err('Error: no ' + vcf_key + ' for ' + cnf.genome.name + ' VCF fpath specified in ' + cnf.sys_cnf)
+    #     return None
+    #
+    # ave_coverages_per_sample = {
+    #     s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
+    #     for s in samples if verify_file(s.targetcov_json_fpath)}
+    #
+    # clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site = \
+    #     _read_vars_per_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath)
+    #
+    # samtools = get_system_path(cnf, 'samtools')
+    # bedtools = get_system_path(cnf, 'bedtools')
+    #
+    # vars_by_region_per_sample = OrderedDict(Parallel(n_jobs=summary_threads)
+    #    (delayed(_get_depth_for_each_variant)(
+    #         CallCnf(cnf.__dict__), samtools, bedtools, var_by_site, clipped_gz_vcf_fpath, bed_fpath,
+    #         s.name, s.bam)
+    #     for s in samples))
 
     ############################ Combined ############################
-    info()
-    info('*' * 70)
-    info('Saving for all samples: combined reports.')
-    # best_report = _prep_best_report(single_report_metric_storage, samples)
-    comb_report = _prep_comb_report(single_report_metric_storage, samples, shared_general_metrics, shared_metrics)
-
-    total_variants = 0
-    nth_regions_from_each_sample = [s.report.get_regions() for s in samples]
-    while True:
-        nth_region_from_each_sample = [rs[total_variants] for rs in nth_regions_from_each_sample if total_variants < len(rs)]
-        total_variants += 1
-        if len(nth_region_from_each_sample) == 0:
-            break
-        assert len(nth_region_from_each_sample) == len(nth_regions_from_each_sample), 'Region files for samples are not euqal size'
-
-        # best_report_reg = best_report.add_region()
-        comb_report_reg = comb_report.add_region()
-        rand_line = nth_region_from_each_sample[0]
-        for i in range(9):
-            # best_report_reg.records.append(rand_line.records[i])
-            comb_report_reg.records.append(rand_line.records[i])
-
-        # best_depth = select_best(r.records[10].value for r in nth_region_from_each_sample)
-        # best_norm_depth = select_best(r.records[11].value for r in nth_region_from_each_sample)
-        # best_report_reg.add_record('Depth', best_depth)
-        # best_report_reg.add_record('Norm depth', best_norm_depth)
-
-        for s, r in zip(samples, nth_region_from_each_sample):
-            comb_report_reg.add_record(s.name + ' hotspots depths/norm depths', r.records[9].value)
-
-    best_report_basename = 'Best.' + source.targetseq_name  + '_' + vcf_key
-    comb_report_basename = 'Comb.' + source.targetseq_name  + '_' + vcf_key
-    # best_targetcov_norm_depth_vcf_txt = best_report.save_txt(output_dir, best_report_basename)
-    # best_targetcov_norm_depth_vcf_tsv = best_report.save_tsv(output_dir, best_report_basename)
-    comb_targetcov_norm_depth_vcf_txt = comb_report.save_txt(output_dir, comb_report_basename)
-    comb_targetcov_norm_depth_vcf_tsv = comb_report.save_tsv(output_dir, comb_report_basename)
-    info('')
-    info('Depths for Oncomine variants (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants))
-    # info('  Best:     ' + best_targetcov_norm_depth_vcf_txt)
-    info('  Combined: ' + comb_targetcov_norm_depth_vcf_txt)
-
-    return None, comb_targetcov_norm_depth_vcf_txt
+    # info()
+    # info('*' * 70)
+    # info('Saving for all samples: combined reports.')
+    # # best_report = _prep_best_report(single_report_metric_storage, samples)
+    # comb_report = _prep_comb_report(single_report_metric_storage, samples, shared_general_metrics, shared_metrics)
+    #
+    # total_variants = 0
+    # nth_regions_from_each_sample = [s.report.get_regions() for s in samples]
+    # while True:
+    #     nth_region_from_each_sample = [rs[total_variants] for rs in nth_regions_from_each_sample if total_variants < len(rs)]
+    #     total_variants += 1
+    #     if len(nth_region_from_each_sample) == 0:
+    #         break
+    #     assert len(nth_region_from_each_sample) == len(nth_regions_from_each_sample), 'Region files for samples are not euqal size'
+    #
+    #     # best_report_reg = best_report.add_region()
+    #     comb_report_reg = comb_report.add_region()
+    #     rand_line = nth_region_from_each_sample[0]
+    #     for i in range(9):
+    #         # best_report_reg.records.append(rand_line.records[i])
+    #         comb_report_reg.records.append(rand_line.records[i])
+    #
+    #     # best_depth = select_best(r.records[10].value for r in nth_region_from_each_sample)
+    #     # best_norm_depth = select_best(r.records[11].value for r in nth_region_from_each_sample)
+    #     # best_report_reg.add_record('Depth', best_depth)
+    #     # best_report_reg.add_record('Norm depth', best_norm_depth)
+    #
+    #     for s, r in zip(samples, nth_region_from_each_sample):
+    #         comb_report_reg.add_record(s.name + ' hotspots depths/norm depths', r.records[9].value)
+    #
+    # best_report_basename = 'Best.' + source.targetseq_name  + '_' + vcf_key
+    # comb_report_basename = 'Comb.' + source.targetseq_name  + '_' + vcf_key
+    # # best_targetcov_norm_depth_vcf_txt = best_report.save_txt(output_dir, best_report_basename)
+    # # best_targetcov_norm_depth_vcf_tsv = best_report.save_tsv(output_dir, best_report_basename)
+    # comb_targetcov_norm_depth_vcf_txt = comb_report.save_txt(output_dir, comb_report_basename)
+    # comb_targetcov_norm_depth_vcf_tsv = comb_report.save_tsv(output_dir, comb_report_basename)
+    # info('')
+    # info('Depths for Oncomine variants (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants))
+    # # info('  Best:     ' + best_targetcov_norm_depth_vcf_txt)
+    # info('  Combined: ' + comb_targetcov_norm_depth_vcf_txt)
+    #
+    return None, None  # comb_targetcov_norm_depth_vcf_txt
 
 
 def _get_targqc_metric(metric, header_metric_storage, report_type='targetcov'):  # report type is in ['targetcov', 'qualimap', 'ngscat']
@@ -690,7 +532,7 @@ def select_best(values, fn=max):
 
 
 def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
-    metric_storage = cov.get_detailed_metric_storage(depth_threshs)
+    metric_storage = get_detailed_metric_storage(depth_threshs)
 
     report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
