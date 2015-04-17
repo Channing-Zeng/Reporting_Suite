@@ -209,7 +209,7 @@ def set_up_log(cnf):
 
 
 def determine_cnf_files(opts):
-    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf(opts)
+    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf_by_location(opts)
     verify_file(opts.sys_cnf, is_critical=True)
     info('Using ' + opts.sys_cnf)
 
@@ -218,7 +218,7 @@ def determine_cnf_files(opts):
     info('Using ' + opts.run_cnf)
 
 
-def detect_sys_cnf(opts):
+def detect_sys_cnf_by_location(opts):
     opts.sys_cnf = defaults['sys_cnfs']['us']
     if is_uk():
         opts.sys_cnf = defaults['sys_cnfs']['uk']

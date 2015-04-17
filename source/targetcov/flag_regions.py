@@ -25,7 +25,7 @@ def get_ave_sample_coverage(cnf, report_fpath):
     return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
 
 
-def generate_flagged_regions_report(output_dir, sample, average_coverage, gene_by_name, depth_threshs):
+def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_name, depth_threshs):
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
     report.add_record('Sample', sample.name)
 
@@ -40,7 +40,7 @@ def generate_flagged_regions_report(output_dir, sample, average_coverage, gene_b
             sort them by part where % = 0
     '''
 
-    depth_cutoff = max(average_coverage / 4, 25)
+    depth_cutoff = max(ave_depth / 4, 25)
     for thresh in depth_threshs[::-1]:
         if thresh < depth_cutoff:
             depth_cutoff = thresh
@@ -66,6 +66,13 @@ def generate_flagged_regions_report(output_dir, sample, average_coverage, gene_b
         final_regions.extend(gene.get_amplicons())
         final_regions.extend(gene.get_exons())
         final_regions.append(gene)
+
+    bed_fpath = save_regions_to_bed(cnf, final_regions, 'selected_regions')
+    # TODO: extract only those subregions where cov is 0
+
+    # variants
+    _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_depth, 'oncomine',
+                                                 bed_fpath, depth_cutoff)
 
     report = make_flat_region_report(sample, final_regions, depth_threshs)
 
@@ -249,14 +256,13 @@ single_report_metric_storage = MetricStorage(
     ])])
 
 
-def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_dir, sample, vcf_key, bed_fpath):
+def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sample_depth, vcf_key,
+                                                 bed_fpath, depth_cutoff):
     step_greetings('Normalized coverage for ' + vcf_key + ' hotspots')
     vcf_fpath = cnf.genome.get(vcf_key)
     if not vcf_fpath:
         err('Error: no ' + vcf_key + ' for ' + cnf.genome.name + ' VCF fpath specified in ' + cnf.sys_cnf)
         return None
-
-    ave_sample_depth = get_ave_sample_coverage(cnf, sample.targetcov_json_fpath)
 
     clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site = \
         _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath)
@@ -266,11 +272,12 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
     info()
     info('Saving report for sample ' + sample.name)
 
-    sample.report = PerRegionSampleReport(sample=sample, metric_storage=single_report_metric_storage)
-    sample.report.add_record('Sample', sample.name)
-    sample.report.add_record('Average sample depth', ave_sample_depth)
+    report = PerRegionSampleReport(sample=sample, metric_storage=single_report_metric_storage)
+    report.add_record('Sample', sample.name)
+    report.add_record('Average sample depth', ave_sample_depth)
 
     total_variants = 0
+    total_variants_below_cutoff = 0
     total_regions = 0
     for r in regions_in_order:
         total_regions += 1
@@ -287,9 +294,15 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
 
         variants, depths = [], []
         for var in sorted(vars_by_region[r].values(), key=lambda v: v.pos):
-            variants.append(var)
+            total_variants += 1
 
             depth = depth_by_var.get((var.get_site()))
+            if depth_cutoff >= depth_cutoff:
+                continue
+
+            total_variants_below_cutoff += 1
+            variants.append(var)
+
             norm_depth = depth / ave_sample_depth if depth and ave_sample_depth > 0 else None
             depths.append((depth, norm_depth))
 
@@ -297,18 +310,20 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
             if total_variants % 10000 == 0:
                 info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
 
-        rep_region.add_record('Hotspots num', len(variants))
+        rep_region.add_record('Total hotspots num in regions', len(variants))
+        rep_region.add_record('Hotspots num with depth less than ' + total_variants_below_cutoff)
         rep_region.add_record('Hotspots list', variants)
         rep_region.add_record('Hotspots depths/norm depths', depths)
 
     best_report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
-    sample.targetcov_norm_depth_vcf_txt = sample.report.save_txt(join(sample.dirpath, source.targetseq_name), best_report_basename)
-    sample.targetcov_norm_depth_vcf_tsv = sample.report.save_tsv(join(sample.dirpath, source.targetseq_name), best_report_basename)
+    report.save_txt(join(sample.dirpath, source.targetseq_name), best_report_basename)
+    report.save_tsv(join(sample.dirpath, source.targetseq_name), best_report_basename)
     info('')
-    info('Oncomine variants coverage report (total: {0:,} variants, {0:,} regions) saved into:'.format(total_variants, total_regions))
-    info('  ' + sample.targetcov_norm_depth_vcf_txt)
+    info('Oncomine variants coverage report (total: {0:,} variants, {0:,} variants below cut-off {0}, {0:,} regions) '
+         'saved into:'.format(total_variants, total_variants_below_cutoff, depth_cutoff, total_regions))
+    info('  ' + report.txt_fpath)
 
-    return sample.targetcov_norm_depth_vcf_txt
+    return report
 
 
 # def make_flagged_regions_reports(cnf, targetseq_dir, sample, filtered_vcf_by_callername=None):

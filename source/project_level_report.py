@@ -2,7 +2,10 @@ import os
 from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
-from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+try:
+    from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+except ImportError:
+    pass
 
 from source.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, send_email, warn, err

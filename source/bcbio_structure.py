@@ -17,7 +17,7 @@ from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.ngscat.bed_file import verify_bed, verify_bam
 from source.prepare_args_and_cnf import add_post_bcbio_args, set_up_log, set_up_work_dir, \
-    detect_sys_cnf, check_genome_resources, check_inputs
+    detect_sys_cnf_by_location, check_genome_resources, check_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
@@ -31,52 +31,82 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--dir', dest='dir_name', default=dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
     parser.add_option('--name', dest='name', default=name, help='Procedure name')
+    parser.add_option('-o', dest='output_dir', metavar='DIR')
+
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
-    cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths = process_post_bcbio_args(parser)
 
-    bcbio_structure = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
+    cnf_project_name = cnf.project_name
+    if len(bcbio_project_dirpaths) > 1:
+        cnf.project_name = None
 
-    cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
-    cnf.work_dir = join(bcbio_structure.work_dir, cnf.name)
-    set_up_work_dir(cnf)
+    bcbio_structures = []
+    for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
+        bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name))
 
-    info('*' * 70)
-    info()
+    # Single project, running as usually
+    if len(bcbio_structures) == 1:
+        bcbio_structure = bcbio_structures[0]
+        cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
+        cnf.work_dir = join(bcbio_structure.work_dir, cnf.name)
+        set_up_work_dir(cnf)
 
-    return cnf, bcbio_structure
+        info('*' * 70)
+        info()
+
+        return cnf, bcbio_structure
+
+    # Special case: multiple projects input. Need to join summary reports instead.
+    else:
+        if cnf_project_name:
+            cnf.project_name = cnf_project_name
+        else:
+            cnf.project_name == '_'.join([bs.project_name for bs in bcbio_structures])
+
+        if cnf.output_dir is None:
+            cnf.output_dir = join(os.getcwd(), cnf.project_name)
+
+        return cnf, bcbio_structures
 
 
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
 
-    dir_arg = args[0] if len(args) > 0 else os.getcwd()
-    dir_arg = adjust_path(dir_arg)
-    verify_dir(dir_arg, is_critical=True)
+    dir_args = args if len(args) > 0 else os.getcwd()
+    dir_args = [adjust_path(da) for da in dir_args]
+    [verify_dir(da, is_critical=True) for da in dir_args]
 
-    bcbio_project_dirpath, final_dirpath, config_dirpath = _set_bcbio_dirpath(dir_arg)
+    cnf = None
+    bcbio_project_dirpaths = []
+    bcbio_cnfs = []
+    final_dirpaths = []
 
-    _set_sys_config(config_dirpath, opts)
+    for dir_arg in dir_args:
+        bcbio_project_dirpath, final_dirpath, config_dirpath = _detect_bcbio_dirpath(dir_arg)
+        bcbio_project_dirpaths.append(bcbio_project_dirpath)
+        final_dirpaths.append(final_dirpath)
 
-    _set_run_config(config_dirpath, opts)
+        if cnf is None:
+            _detect_sys_config(config_dirpath, opts)
+            _detect_move_run_config(config_dirpath, opts)
 
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+            cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+            check_genome_resources(cnf)
 
-    if 'qsub_runner' in cnf:
-        cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-    errors = check_inputs(cnf, file_keys=['qsub_runner'])
-    if errors:
-        critical(errors)
+            if 'qsub_runner' in cnf:
+                cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
+            errors = check_inputs(cnf, file_keys=['qsub_runner'])
+            if errors:
+                critical(errors)
 
-    bcbio_cnf = load_bcbio_cnf(cnf, config_dirpath)
+        bcbio_cnfs.append(load_bcbio_cnf(cnf, config_dirpath))
 
-    check_genome_resources(cnf)
-
-    return cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath
+    return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths
 
 
-def _set_bcbio_dirpath(dir_arg):
+def _detect_bcbio_dirpath(dir_arg):
     final_dirpath, bcbio_project_dirpath, config_dirpath = None, None, None
 
     if isdir(join(dir_arg, 'config')):
@@ -101,7 +131,7 @@ def _set_bcbio_dirpath(dir_arg):
     return bcbio_project_dirpath, final_dirpath, config_dirpath
 
 
-def _set_sys_config(config_dirpath, opts):
+def _detect_sys_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.sys_cnf)
     # provided in commandline?
     if provided_cnf_fpath:
@@ -127,12 +157,12 @@ def _set_sys_config(config_dirpath, opts):
 
         else:
             # detect system and use default system config
-            detect_sys_cnf(opts)
+            detect_sys_cnf_by_location(opts)
 
     info('Using ' + opts.sys_cnf)
 
 
-def _set_run_config(config_dirpath, opts):
+def _detect_move_run_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.run_cnf)
     # provided in commandline?
     if provided_cnf_fpath:
@@ -392,7 +422,7 @@ class BCBioStructure:
     def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
         self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
 
-        self.bcbio_cnf = cnf.bcbio_cnf
+        self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
         self.paired = False

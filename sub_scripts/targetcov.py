@@ -102,7 +102,7 @@ def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
 
     if cnf.extended:
         info('Generating flagged regions report...')
-        flagged_report = generate_flagged_regions_report(cnf.output_dir, sample,
+        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample,
             avg_depth, gene_by_name, cnf.coverage_reports.depth_thresholds)
         reports.append(flagged_report)
 
