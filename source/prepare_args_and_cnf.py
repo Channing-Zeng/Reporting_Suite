@@ -180,17 +180,17 @@ def set_up_work_dir(cnf):
     safe_mkdir(cnf.work_dir, 'working directory')
 
 
-def set_up_log(cnf):
-    logger.proc_name = cnf.proc_name
-    logger.project_name = cnf.project_name
-    logger.project_fpath = cnf.project_fpath or cnf.output_dir
+def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, output_dir=None):
+    logger.proc_name = proc_name
+    logger.project_name = project_name
+    logger.project_fpath = project_fpath or output_dir
     logger.address = remove_quotes(cnf.email) if cnf.email else ''
     logger.smtp_host = cnf.smtp_host
 
-    log_fname = (cnf.proc_name + '_' if cnf.proc_name else '') + (cnf.name + '_' if cnf.name else '') + '_log.txt'
+    log_fname = (proc_name + '_' if proc_name else '') + (cnf.name + '_' if cnf.name else '') + '_log.txt'
     log_fpath = join(cnf.log_dir, log_fname)
 
-    if not cnf.proc_name:
+    if not proc_name:
         i = 1
         if file_exists(log_fpath):
             bak_fpath = log_fpath + '.' + str(i)

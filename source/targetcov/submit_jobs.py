@@ -11,7 +11,7 @@ from source.bcbio_runner import Step, fix_bed_for_qualimap
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.utils import get_system_path
 from source.calling_process import call
-from source.targetcov.summarize import summarize_targqc
+from source.targetcov.summarize_targetcov import summarize_targqc
 
 
 class StandaloneSample(source.BaseSample):

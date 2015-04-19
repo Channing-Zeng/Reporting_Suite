@@ -443,7 +443,6 @@ class BCBioStructure:
         bcbio_project_parent_dirname = basename(dirname(bcbio_project_dirpath))  # Bio_0031_Heme_MRL_DLBCL_IRAK4
         if not self.project_name:
             self.project_name = bcbio_project_parent_dirname + '_' + bcbio_project_dirname
-        cnf.project_name = self.project_name
 
         if 'fc_date' not in bcbio_cnf:
             critical('Error: fc_date not in bcbio config!')
@@ -463,12 +462,12 @@ class BCBioStructure:
         info('Project name: ' + self.project_name)
         self.cnf.name = proc_name or self.project_name
 
-        self.log_dirpath = self.cnf.log_dir = join(self.date_dirpath, 'log')
+        self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log')
         info('log_dirpath: ' + self.log_dirpath)
         safe_mkdir(self.log_dirpath)
         info('cnf.name: ' + self.cnf.name)
-        cnf.project_fpath = self.final_dirpath
-        set_up_log(self.cnf)
+
+        set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 
         self.work_dir = self.cnf.work_dir = abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         set_up_work_dir(cnf)
@@ -667,17 +666,21 @@ class BCBioStructure:
         if self.cnf.bed:  # Custom BED provided in command line?
             bed = adjust_path(self.cnf.bed)
             verify_bed(bed, is_critical=True)
+
         elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
             bed = adjust_path(sample_info['algorithm']['variant_regions'])
             verify_bed(bed, is_critical=True)
+
         # elif self.cnf.genomes[sample.genome].exons:
         #     warn('Warning: no amplicon BED file provided, using exons instead.')
         #     bed = self.cnf.genomes[sample.genome].exons
         #     if not verify_bed(bed):
         #         sys.exit(1)
+
         else:
             err('No BED file for sample and no variant BED file'
                 ' - assuming WGS')
+
         sample.bed = bed
         if sample.bed:
             info('BED file for ' + sample.name + ': ' + sample.bed)

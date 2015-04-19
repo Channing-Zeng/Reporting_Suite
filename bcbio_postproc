@@ -1,17 +1,21 @@
 #!/usr/bin/env python
-import os
-from string import join
-
 import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
+
+import os
 import sys
+from os.path import join
 from optparse import OptionParser
+
+from source.targetcov import summarize_targetcov
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
+from source.variants import summarize_qc
 from source.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
 from source.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources
 from source.variants.vcf_processing import get_trasncripts_fpath
-from utils import safe_mkdir
+from source.file_utils import safe_mkdir
 
 
 def main():
@@ -61,7 +65,7 @@ def main():
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
-            cnf.project_name == '_'.join([bs.project_name for bs in bcbio_structures])
+            cnf.project_name = '_'.join([bs.project_name for bs in bcbio_structures])
 
         if cnf.output_dir is None:
             cnf.output_dir = join(os.getcwd(), cnf.project_name)
@@ -72,6 +76,10 @@ def main():
 def combine_projects(cnf, bcbio_structures):
     safe_mkdir(cnf.output_dir)
 
+    samples = [s for bs in bcbio_structures for s in bs.samples]
+
+    # summarize_qc.make_summary_reports()
+    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), cnf.output_dir, samples)
 
 
 if __name__ == '__main__':

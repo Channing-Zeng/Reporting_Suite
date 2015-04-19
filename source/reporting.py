@@ -441,6 +441,19 @@ class FullReport(Report):
         return self.name
 
 
+def parse_tsv(tsv_fpath):
+    values = []
+
+    with open(tsv_fpath, 'r') as f:
+        for line in f:
+            values.append(line.split('\t'))
+
+    if not values:
+        critical('Data not found in ' + tsv_fpath)
+
+    return values
+
+
 class ReportSection:
     def __init__(self, name='', title='', metrics=None, **kwargs):
         self.name = name
@@ -611,19 +624,6 @@ def write_tsv_rows(rows, output_dirpath, base_fname):
             out.write('\t'.join([val for val in row]) + '\n')
 
     return output_fpath
-
-
-def parse_tsv(tsv_fpath):
-    report = []
-
-    with open(tsv_fpath, 'r') as f:
-        for line in f:
-            report.append(line.split('\t'))
-
-    if not report:
-        critical('Data not found in ' + tsv_fpath)
-
-    return report
 
 
 def parse_value(string):

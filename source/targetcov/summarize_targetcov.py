@@ -5,7 +5,6 @@ import os
 from os import listdir
 from os.path import relpath, join, exists, dirname, basename, splitext
 from collections import OrderedDict, defaultdict
-from joblib import Parallel, delayed
 
 import source
 from source.config import CallCnf
@@ -19,7 +18,7 @@ from source.targetcov.cov import make_flat_region_report, get_detailed_metric_st
 from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
-from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus
+from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
 from source.utils import get_numeric_value
@@ -124,7 +123,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     return txt_fpath, tsv_fpath, html_fpath
 
 
-def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons_fpath, genes_fpath=None):
+def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, genes_fpath=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     for sample in samples:
@@ -139,8 +138,6 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
 
     txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
 
-    exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
-
     best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
     ''' 1. best_regions = get_best_regions()
         2. best_for_regions_fpath = save_per_region_report()
@@ -149,9 +146,14 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath, exons
              output_dir, 'Best', average_coverage, genes, depth_threshs)
     '''
 
-    # if cnf.extended:
-    #     norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
-    #         cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
+    if cnf.extended:
+        if not exons_fpath or not bed_fpath:
+            err('For the extended analysis, capture and exons beds are required!')
+        else:
+            exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
+
+            #norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
+            #    cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
 
     info()
     info('*' * 70)
@@ -619,3 +621,19 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
     info('  ' + txt_rep_fpath)
 
     return txt_rep_fpath
+
+
+def get_bed_targqc_inputs(cnf, bed_fpath=None):
+    exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
+    info('Exons: ' + exons_bed_fpath)
+
+    bed_fpath = adjust_path(bed_fpath or cnf.genome.az_exome or exons_bed_fpath)
+    info('Using amplicons/capture panel ' + bed_fpath)
+
+    genes_fpath = None
+    if cnf.genes:
+        genes_fpath = adjust_path(cnf.genes)
+        info('Custom genes list: ' + genes_fpath)
+
+    return bed_fpath, exons_bed_fpath, genes_fpath
+

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 
 import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
 
@@ -59,17 +60,7 @@ def main():
 
     check_genome_resources(cnf)
 
-    verify_bed(cnf.bed, is_critical=True)
-    bed_fpath = adjust_path(cnf.bed)
-    info('Using amplicons/capture panel ' + bed_fpath)
-
-    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    info('Exons: ' + exons_bed_fpath)
-
-    genes_fpath = None
-    if cnf.genes:
-        genes_fpath = adjust_path(cnf.genes)
-        info('Custom genes list: ' + genes_fpath)
+    bed_fpath, exons_bed_fpath, genes_fpath = get_bed_targqc_inputs(cnf, verify_bed(cnf.bed, is_critical=True))
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
