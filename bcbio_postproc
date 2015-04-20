@@ -83,7 +83,7 @@ def main():
         combine_projects(cnf, bcbio_structures)
 
 
-def combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name):
+def combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name):
     callers = []
     samples = []
 
@@ -96,12 +96,13 @@ def combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBi
     htmls_by_sample_by_caller = defaultdict(dict)
     for bc in bcbio_structures:
         for vc in bc.variant_callers.values():
-            jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dir, name, 'json', bc.final_dirpath)
-            htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dir, name, 'html', bc.final_dirpath)
+            jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dirname, name, 'json', bc.final_dirpath)
+            htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dirname, name, 'html', bc.final_dirpath)
             samples.extend(vc.samples)
 
-    output_dir = join(cnf.output_dir, dir)
+    output_dir = join(cnf.output_dir, dirname)
     safe_mkdir(output_dir)
+
     summarize_qc.make_summary_reports(cnf, 1, output_dir,
          callers, samples, jsons_by_sample_by_caller, htmls_by_sample_by_caller)
 
@@ -109,12 +110,17 @@ def combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBi
 def combine_projects(cnf, bcbio_structures):
     samples = [s for bs in bcbio_structures for s in bs.samples]
 
-    combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
-    combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
+    reuse = cnf.reuse_intermediate
+    cnf.reuse_intermediate = True
+
+    combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
+    combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
 
     output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
     safe_mkdir(output_dir)
     summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples)
+
+    cnf.reuse_intermediate = reuse
 
 
 if __name__ == '__main__':

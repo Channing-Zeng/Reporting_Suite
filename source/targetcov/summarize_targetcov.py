@@ -18,7 +18,8 @@ from source.targetcov.cov import make_flat_region_report, get_detailed_metric_st
 from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
-from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path
+from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
+    file_transaction
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
 from source.utils import get_numeric_value
@@ -39,7 +40,7 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
 
             _correct_qualimap_genome_results(cnf, samples)
-            _correct_qualimap_insert_size_histogram(samples)
+            _correct_qualimap_insert_size_histogram(cnf, samples)
 
             safe_mkdir(qualimap_output_dir)
             rows = []
@@ -487,20 +488,22 @@ def _correct_qualimap_genome_results(cnf, samples):
     """
     for s in samples:
         if verify_file(s.qualimap_genome_results_fpath):
-            with open(s.qualimap_genome_results_fpath, 'r') as f:
-                content = f.readlines()
             fixed_fpath = intermediate_fname(cnf, s.qualimap_genome_results_fpath, 'fix')
-            with open(fixed_fpath, 'w') as f:
-                metrics_started = False
-                for line in content:
-                    if ">> Reference" in line:
-                        metrics_started = True
-                    if metrics_started:
-                        line = line.replace(',', '')
-                    f.write(line)
+            if not verify_file(fixed_fpath, silent=True) or not cnf.reuse_intermediate:
+                with open(s.qualimap_genome_results_fpath, 'r') as f:
+                    content = f.readlines()
+                with file_transaction(cnf.work_dir, fixed_fpath) as tx:
+                    with open(tx, 'w') as f:
+                        metrics_started = False
+                        for line in content:
+                            if ">> Reference" in line:
+                                metrics_started = True
+                            if metrics_started:
+                                line = line.replace(',', '')
+                            f.write(line)
 
 
-def _correct_qualimap_insert_size_histogram(samples):
+def _correct_qualimap_insert_size_histogram(cnf, samples):
     """ replacing Qualimap IS histogram with Picard one.
     """
     for s in samples:
@@ -522,9 +525,13 @@ def _correct_qualimap_insert_size_histogram(samples):
                         break
                     if line.startswith('## HISTOGRAM'):
                         one_line_to_stop = True
-                with open(s.qualimap_ins_size_hist_fpath, 'w') as qualimap_f:
-                    for line in picard_f:
-                        qualimap_f.write(line)
+
+                if not verify_file(s.qualimap_ins_size_hist_fpath, silent=True) or not cnf.reuse_intermediate:
+                    with file_transaction(cnf.work_dir, s.qualimap_ins_size_hist_fpath) as tx:
+                        with open(tx, 'w') as qualimap_f:
+                            for line in picard_f:
+                                qualimap_f.write(line)
+
         elif verify_file(s.qualimap_ins_size_hist_fpath):
             os.remove(s.qualimap_ins_size_hist_fpath)
 
