@@ -74,7 +74,7 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
 
-    dir_args = args if len(args) > 0 else os.getcwd()
+    dir_args = args if len(args) > 0 else [os.getcwd()]
     dir_args = [adjust_path(da) for da in dir_args]
     [verify_dir(da, is_critical=True) for da in dir_args]
 
