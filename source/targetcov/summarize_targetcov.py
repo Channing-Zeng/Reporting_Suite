@@ -38,7 +38,7 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
         if qualimap is not None and get_qualimap_type(qualimap) == 'full':
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
 
-            _correct_qualimap_genome_results(samples)
+            _correct_qualimap_genome_results(cnf, samples)
             _correct_qualimap_insert_size_histogram(samples)
 
             safe_mkdir(qualimap_output_dir)
