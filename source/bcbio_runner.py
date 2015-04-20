@@ -139,14 +139,14 @@ class BCBioRunner:
             basic_params + \
             ' -t ' + str(self.summary_threads) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
-            ' --log-dir ' + self.bcbio_structure.log_dirpath
+            ' --log-dir {log_dirpath}'
 
         # Params for those who doesn't call bcbio_structure
         params_for_one_sample = \
             basic_params + \
             ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
-            ' --log-dir ' + self.bcbio_structure.log_dirpath + \
+            ' --log-dir {log_dirpath}' + \
             ' --genome {genome}' + \
             ' --project-name ' + self.bcbio_structure.project_name + ' '
 
@@ -305,16 +305,19 @@ class BCBioRunner:
              (step.name + ('_' + sample_name if sample_name else '') +
                           ('_' + caller if caller else '')) + '.log')
 
-        return output_dirpath, log_fpath
+        log_dirpath = join(self.bcbio_structure.log_dirpath, step.name)
+
+        return output_dirpath, log_fpath, log_dirpath
 
 
     def _submit_job(self, step, sample_name='', suf=None, create_dir=True,
                     out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
 
-        output_dirpath, log_fpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
+        output_dirpath, log_fpath, log_dirpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
         if output_dirpath and not isdir(output_dirpath) and create_dir:
             safe_mkdir(join(output_dirpath, pardir))
             safe_mkdir(output_dirpath)
+            safe_mkdir(log_dirpath)
 
         out_fpath = out_fpath or log_fpath
 
@@ -335,7 +338,8 @@ class BCBioRunner:
 
         tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
-        params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
+        params = dict({'output_dir': output_dirpath, 'log_dirpath': log_dirpath}.items() +
+                      self.__dict__.items() + kwargs.items())
         cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])

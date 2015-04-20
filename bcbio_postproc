@@ -5,6 +5,7 @@ import os
 import sys
 from os.path import join
 from optparse import OptionParser
+from collections import OrderedDict, defaultdict
 
 from source.targetcov import summarize_targetcov
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -12,10 +13,10 @@ from source.variants import summarize_qc
 from source.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
-from source.bcbio_structure import BCBioStructure, process_post_bcbio_args
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources
+from source.bcbio_structure import BCBioStructure, process_post_bcbio_args, VariantCaller
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources, set_up_log, set_up_work_dir
 from source.variants.vcf_processing import get_trasncripts_fpath
-from source.file_utils import safe_mkdir
+from source.file_utils import safe_mkdir, adjust_path
 
 
 def main():
@@ -38,14 +39,6 @@ def main():
     if len(bcbio_project_dirpaths) > 1:
         cnf.project_name = None
 
-    if cnf.min_freq is not None:
-        info('Min freq for filtering is %f' % cnf.min_freq)
-
-    if cnf.steps and cnf.load_mongo and 'MongoLoader' not in cnf.steps:
-        cnf.steps.append('MongoLoader')
-
-    check_system_resources(cnf, required=['qsub'], optional='transcripts_fpath')
-
     info()
     info('*' * 70)
 
@@ -53,15 +46,22 @@ def main():
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
         bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name))
 
-    # Single project, running as usually
     if len(bcbio_structures) == 1:
+        if cnf.min_freq is not None:
+            info('Min freq for filtering is %f' % cnf.min_freq)
+
+        if cnf.steps and cnf.load_mongo and 'MongoLoader' not in cnf.steps:
+            cnf.steps.append('MongoLoader')
+
+        check_system_resources(cnf, required=['qsub'], optional='transcripts_fpath')
+
         bcbio_structure = bcbio_structures[0]
 
         bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
         bcbio_runner.post_jobs()
 
-    # Special case: multiple projects input. Need to join summary reports instead.
     else:
+        # Special case: multiple projects input. Need to join summary reports instead.
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
@@ -70,26 +70,53 @@ def main():
         if cnf.output_dir is None:
             cnf.output_dir = join(os.getcwd(), cnf.project_name)
 
+        safe_mkdir(cnf.output_dir)
+
+        cnf.log_dir = join(cnf.output_dir, 'log')
+        info('log_dirpath: ' + cnf.log_dir)
+        safe_mkdir(cnf.log_dir)
+        set_up_log(cnf, 'miltiple_projects', cnf.project_name, cnf.output_dir)
+
+        cnf.work_dir = adjust_path(join(cnf.output_dir, 'work'))
+        safe_mkdir(cnf.work_dir)
+
         combine_projects(cnf, bcbio_structures)
 
 
-def combine_projects(cnf, bcbio_structures):
-    safe_mkdir(cnf.output_dir)
+def combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name):
+    callers = []
+    samples = []
 
+    for bc in bcbio_structures:
+        for vc in bc.variant_callers.values():
+            if vc.name not in [c.name for c in callers]:
+                callers.append(vc)
+
+    jsons_by_sample_by_caller = defaultdict(dict)
+    htmls_by_sample_by_caller = defaultdict(dict)
+    for bc in bcbio_structures:
+        for vc in bc.variant_callers.values():
+            jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dir, name, 'json', bc.final_dirpath)
+            htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dir, name, 'html', bc.final_dirpath)
+            samples.extend(vc.samples)
+
+    output_dir = join(cnf.output_dir, dir)
+    safe_mkdir(output_dir)
+    summarize_qc.make_summary_reports(cnf, 1, output_dir,
+         callers, samples, jsons_by_sample_by_caller, htmls_by_sample_by_caller)
+
+
+def combine_projects(cnf, bcbio_structures):
     samples = [s for bs in bcbio_structures for s in bs.samples]
 
-    # summarize_qc.make_summary_reports()
-    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), cnf.output_dir, samples)
+    combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
+    combine_varqc(cnf, bcbio_structures, dir=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
+
+    output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
+    safe_mkdir(output_dir)
+    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples)
 
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
 

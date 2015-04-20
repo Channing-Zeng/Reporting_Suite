@@ -309,15 +309,16 @@ class BCBioSample(BaseSample):
     #         for k, v in self.__dict__.items())
 
     @staticmethod
-    def load(data, bcbio_structure):
-        data['bcbio_structure'] = bcbio_structure
+    def load(data, bcbio_structure=None):
+        if bcbio_structure:
+            data['bcbio_structure'] = bcbio_structure
         sample = BCBioSample(**data)
         sample.__dict__ = data
         return sample
 
 
 class VariantCaller:
-    def __init__(self, bcbio_structure, name):
+    def __init__(self, name, bcbio_structure=None):
         self.name = self.suf = name
         self.bcbio_structure = bcbio_structure
         self.samples = []
@@ -330,8 +331,8 @@ class VariantCaller:
         self.single_vcf2txt_res_fpath = None
         self.paired_vcf2txt_res_fpath = None
 
-    def find_fpaths_by_sample(self, dir_name, name, ext):
-        return self._find_files_by_sample(dir_name, '.' + name + '.' + ext)
+    def find_fpaths_by_sample(self, dir_name, name, ext, final_dirpaths=None):
+        return self._find_files_by_sample(dir_name, '.' + name + '.' + ext, final_dirpaths)
 
     def find_anno_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
@@ -342,26 +343,33 @@ class VariantCaller:
     def find_pass_filt_vcf_by_sample(self):
         return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
 
-    def _find_files_by_sample(self, dir_name, ending):
+    def _find_files_by_sample(self, dir_name, ending, final_dirpaths=None):
+        if final_dirpaths is None:
+            final_dirpaths = [self.bcbio_structure.final_dirpath]
+
+        if isinstance(final_dirpaths, basestring):
+            final_dirpaths = [final_dirpaths]
+
         files_by_sample = OrderedDict()
 
         for s in self.samples:
-            fpath = join(
-                self.bcbio_structure.final_dirpath,
-                s.name,
-                dir_name,
-                s.name + '-' + self.suf + ending + '.gz')
+            for final_dirpath in final_dirpaths:
+                fpath = join(
+                    final_dirpath,
+                    s.name,
+                    dir_name,
+                    s.name + '-' + self.suf + ending + '.gz')
 
-            if isfile(fpath):
-                if verify_file(fpath):
-                    files_by_sample[s.name] = fpath
-            else:
-                fpath = fpath[:-3]
                 if isfile(fpath):
                     if verify_file(fpath):
                         files_by_sample[s.name] = fpath
-                elif s.phenotype != 'normal':
-                    info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
+                else:
+                    fpath = fpath[:-3]
+                    if isfile(fpath):
+                        if verify_file(fpath):
+                            files_by_sample[s.name] = fpath
+                    elif s.phenotype != 'normal':
+                        info('Warning: no ' + fpath + ' for ' + s.name + ', ' + self.name)
 
         return files_by_sample
 
@@ -639,7 +647,7 @@ class BCBioStructure:
             info(caller_name)
             caller = self.variant_callers.get(caller_name)
             if not caller:
-                self.variant_callers[caller_name] = VariantCaller(self, caller_name)
+                self.variant_callers[caller_name] = VariantCaller(caller_name, self)
 
             vcf_fpath = self._set_vcf_file(caller_name, sample)
             self.variant_callers[caller_name].samples.append(sample)
