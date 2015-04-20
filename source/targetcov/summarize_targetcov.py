@@ -482,14 +482,15 @@ def _get_targqc_records(records_by_report_type, header_storage):
     return targqc_records
 
 
-def _correct_qualimap_genome_results(samples):
+def _correct_qualimap_genome_results(cnf, samples):
     """ fixing java.lang.Double.parseDouble error on entries like "6,082.49"
     """
     for s in samples:
         if verify_file(s.qualimap_genome_results_fpath):
             with open(s.qualimap_genome_results_fpath, 'r') as f:
                 content = f.readlines()
-            with open(s.qualimap_genome_results_fpath, 'w') as f:
+            fixed_fpath = intermediate_fname(cnf, s.qualimap_genome_results_fpath, 'fix')
+            with open(fixed_fpath, 'w') as f:
                 metrics_started = False
                 for line in content:
                     if ">> Reference" in line:
