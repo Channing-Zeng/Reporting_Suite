@@ -645,13 +645,15 @@ class BCBioStructure:
 
         for caller_name in variantcallers:
             info(caller_name)
-            caller = self.variant_callers.get(caller_name)
-            if not caller:
-                self.variant_callers[caller_name] = VariantCaller(caller_name, self)
-
             vcf_fpath = self._set_vcf_file(caller_name, sample)
-            self.variant_callers[caller_name].samples.append(sample)
-            sample.vcf_by_callername[caller_name] = vcf_fpath
+
+            if vcf_fpath:
+                caller = self.variant_callers.get(caller_name)
+                if not caller:
+                    self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+
+                self.variant_callers[caller_name].samples.append(sample)
+                sample.vcf_by_callername[caller_name] = vcf_fpath
 
         info()
         return sample
