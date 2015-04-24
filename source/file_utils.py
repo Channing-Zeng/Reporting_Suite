@@ -4,7 +4,7 @@
 import shutil
 import os
 from os.path import isfile, isdir, getsize, exists, basename, join, abspath, splitext, islink, dirname, \
-    pardir
+    pardir, realpath
 import gzip
 import tempfile
 import contextlib
@@ -510,6 +510,9 @@ def adjust_path(path):
     path = abspath(path)
     if path is None: return None
 
+    path = realpath(path)
+    if path is None: return None
+
     return path
 
 
@@ -527,7 +530,12 @@ def adjust_system_path(path):
     path = join(code_base_path, path)  # will only join if the tool_path is not absolute:
     if path is None: return None
 
+    path = realpath(path)
+    if path is None: return None
+
     path = abspath(path)
+    if path is None: return None
+
     return path
 
 

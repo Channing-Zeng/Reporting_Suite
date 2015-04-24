@@ -271,9 +271,12 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
 
     for sample in caller.samples:
         filt_vcf = sample.find_filt_vcf_by_callername(caller.name)
+        fname = link_fname = basename(filt_vcf)
+        if not fname.endswith('.gz'):
+            link_fname += '.gz'
         if filt_vcf:
-            for link in [join(sample.dirpath, basename(filt_vcf)),
-                         join(bcbio_structure.var_dirpath, basename(filt_vcf))]:
+            for link in [join(sample.dirpath, link_fname),
+                         join(bcbio_structure.var_dirpath, link_fname)]:
                 if islink(link):
                     try:
                         os.unlink(link)
