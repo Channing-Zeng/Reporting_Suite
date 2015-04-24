@@ -269,40 +269,6 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
 
-    info()
-    info('Symlinking final VCFs:')
-    to_exit = False
-    for sample in caller.samples:
-        info(sample.name)
-        filt_vcf = sample.find_filt_vcf_by_callername(caller.name)
-        if not verify_file(filt_vcf):
-            to_exit = True
-
-        fname = link_fname = basename(filt_vcf)
-        if not fname.endswith('.gz'):
-            link_fname += '.gz'
-        if filt_vcf:
-            for link in [join(sample.dirpath, link_fname),
-                         join(bcbio_structure.var_dirpath, link_fname)]:
-                if islink(link):
-                    try:
-                        os.unlink(link)
-                    except OSError:
-                        pass
-                if isfile(link):
-                    try:
-                        os.remove(link)
-                    except OSError:
-                        pass
-                try:
-                    symlink_plus(filt_vcf, link)
-                except OSError:
-                    err('Cannot symlink ' + filt_vcf + ' -> ' + link)
-
-        BCBioStructure.move_vcfs_to_var(sample)
-    if to_exit:
-        exit(1)
-
     info('-' * 70)
     info()
 

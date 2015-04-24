@@ -5,12 +5,12 @@ import __check_python_version
 import sys
 import os
 from joblib import Parallel, delayed
-from os.path import join, pardir, basename, dirname, islink, isdir
+from os.path import join, pardir, basename, dirname, islink, isdir, isfile
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
 from source.logger import info, err, send_email
 from source.bcbio_structure import BCBioStructure, summary_script_proc_params
-from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines
+from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines, verify_file
 from source.variants.vcf_processing import igvtools_index
 from source.variants.vcf_processing import bgzip_and_tabix
 
@@ -182,22 +182,13 @@ def main():
 glob_cnf = None
 
 
-def index_vcf(sample, caller_name):
-    global glob_cnf
-    cnf = glob_cnf
-
-    info()
-    info(sample.name + ', ' + caller_name + ': indexing')
-    igvtools_index(cnf, sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False))
-    igvtools_index(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
-    bgzip_and_tabix(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
-
-
 def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
 
-    for _, caller in bcbio_structure.variant_callers.items():
+    callers = bcbio_structure.variant_callers.items()
+
+    for _, caller in callers:
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     global glob_cnf
@@ -205,11 +196,13 @@ def filter_all(cnf, bcbio_structure):
 
     threads_num = min(len(bcbio_structure.samples) * len(bcbio_structure.variant_callers), cnf.threads)
     Parallel(n_jobs=threads_num) \
-        (delayed(index_vcf)(sample, caller.name)
+        (delayed(_index_vcf)(sample, caller.name)
             for caller in bcbio_structure.variant_callers.values() for sample in caller.samples)
 
     email_msg = ['Variant filtering finished.']
     # info('Results:')
+
+    _symlink_vcfs(callers, bcbio_structure.var_dirpath)
 
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in bcbio_structure.variant_callers.values()):
         info()
@@ -230,7 +223,7 @@ def filter_all(cnf, bcbio_structure):
                 email_msg.append(msg)
 
             if caller.single_mut_res_fpath:
-                msg = '     Paired PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants'
+                msg = '     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
             if caller.paired_mut_res_fpath:
@@ -239,54 +232,97 @@ def filter_all(cnf, bcbio_structure):
                 email_msg.append(msg)
 
                 if cnf.datahub_path:
-                    copy_to_datahub(cnf, caller, cnf.datahub_path)
-
-        # send_email('\n'.join(email_msg))
+                    _copy_to_datahub(cnf, caller, cnf.datahub_path)
 
 
-def copy_to_datahub(cnf, caller, datahub_dirpath):
+def _symlink_vcfs(callers, datestamp_var_dirpath):
+    info()
+    info('Symlinking final VCFs:')
+    to_exit = False
+    for caller in callers:
+        info(caller.name)
+        for sample in caller.samples:
+            info(sample.name)
+
+            filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+            if not verify_file(filt_vcf_fpath):
+                to_exit = True
+
+            base_filt_fpath = filt_vcf_fpath[:-3] if filt_vcf_fpath.endswith('.gz') else filt_vcf_fpath
+            for fpath in [base_filt_fpath + '.gz',
+                          base_filt_fpath + '.idx',
+                          base_filt_fpath + '.gz.tbi']:
+                if verify_file(fpath):
+                    _symlink_to_dir(fpath, sample.dirpath)
+                    _symlink_to_dir(fpath, datestamp_var_dirpath)
+
+            BCBioStructure.move_vcfs_to_var(sample)
+    if to_exit:
+        exit(1)
+
+
+def _symlink_to_dir(fpath, dirpath):
+    if not isdir(dirpath):
+        safe_mkdir(dirpath)
+
+    dst_path = join(dirpath, basename(fpath))
+
+    if islink(dst_path) or isfile(dst_path):
+        try:
+            os.remove(dst_path)
+        except OSError:
+            err('Cannot symlink ' + fpath + ' -> ' + dst_path + ': cannot remove ' + dst_path)
+            return
+
+    try:
+        symlink_plus(fpath, dst_path)
+    except OSError:
+        err('Cannot symlink ' + fpath + ' -> ' + dst_path)
+
+
+def _index_vcf(sample, caller_name):
+    global glob_cnf
+    cnf = glob_cnf
+
+    info()
+    info(sample.name + ', ' + caller_name + ': indexing')
+    igvtools_index(cnf, sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False))
+    igvtools_index(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
+    bgzip_and_tabix(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
+
+
+def _copy_to_datahub(cnf, caller, datahub_dirpath):
     info('Copying to DataHub...')
     cmdl1 = 'ssh klpf990@ukapdlnx115.ukapd.astrazeneca.net \'bash -c ""\' '
     cmdl2 = 'scp {fpath} klpf990@ukapdlnx115.ukapd.astrazeneca.net:' + datahub_dirpath
     # caller.combined_filt_maf_fpath
 
 
-def symlink_to_dir(fpath, dirpath):
-    if not isdir(dirpath):
-        safe_mkdir(dirpath)
-
-    dst_path = join(dirpath, basename(fpath))
-    if islink(dst_path):
-        os.unlink(dst_path)
-
-    symlink_plus(fpath, dst_path)
-
-
-def finalize_one(cnf, bcbio_structure, sample, msg):
-    info(sample.name + ':')
-    msg.append(sample.name + ':')
-
-    for caller_name, caller in bcbio_structure.variant_callers.items():
-        msg.append('  ' + caller_name)
-        for fpath in [
-            sample.get_filt_vcf_fpath_by_callername(caller_name, gz=True),
-            sample.get_filt_tsv_fpath_by_callername(caller_name),
-            sample.get_filt_tsv_fpath_by_callername(caller_name) + '.idx',
-            sample.get_filt_tsv_fpath_by_callername(caller_name) + '.gz.tbi',
-        ]:
-
-            if not file_exists(fpath):
-                if sample.phenotype == 'normal':
-                    continue
-                else:
-                    err('Phenotype is ' + sample.phenotype + ', and ' + fpath +
-                        ' for ' + sample.name + ', ' + caller_name + ' does not exist.')
-                    continue
-
-            info('  ' + caller_name + ': ' + fpath)
-            msg.append('    ' + fpath)
-            symlink_to_dir(fpath, join(dirname(fpath), pardir))
-            symlink_to_dir(fpath, join(bcbio_structure.date_dirpath, BCBioStructure.var_dir))
+# def finalize_one(cnf, bcbio_structure, sample, msg):
+#     info(sample.name + ':')
+#     msg.append(sample.name + ':')
+#
+#     for caller_name, caller in bcbio_structure.variant_callers.items():
+#         msg.append('  ' + caller_name)
+#         for fpath in [
+#             sample.get_filt_vcf_fpath_by_callername(caller_name, gz=True),
+#             sample.get_filt_tsv_fpath_by_callername(caller_name),
+#             sample.get_filt_vcf_fpath_by_callername(caller_name) + '.idx',
+#             sample.get_filt_vcf_fpath_by_callername(caller_name) + '.gz.tbi',
+#         ]:
+#
+#             if not file_exists(fpath):
+#                 if sample.phenotype == 'normal':
+#                     continue
+#                 else:
+#                     err('Phenotype is ' + sample.phenotype + ', and ' + fpath +
+#                         ' for ' + sample.name + ', ' + caller_name + ' does not exist.')
+#                     continue
+#
+#             info('  ' + caller_name + ': ' + fpath)
+#             msg.append('    ' + fpath)
+#             symlink_to_dir(fpath, join(dirname(fpath), pardir))
+#             symlink_to_dir(fpath, join(bcbio_structure.var_dirpath))
 
 
 if __name__ == '__main__':
