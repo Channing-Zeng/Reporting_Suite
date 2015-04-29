@@ -285,12 +285,15 @@ class BCBioRunner:
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
+        project_level_report_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+        if cnf.jira:
+            project_level_report_cmdline += ' --jira ' + cnf.jira
         self.combined_report = Step(cnf, run_id,
             name='ProjectLevelReport', short_name='cr',
             interpreter='python',
             script=join('sub_scripts', 'combined_report.py'),
             dir_name=self.bcbio_structure.date_dirpath,
-            paramln=summaries_cmdline_params + ' ' + self.final_dir
+            paramln=project_level_report_cmdline
         )
 
     def step_output_dir_and_log_paths(self, step, sample_name, caller=None):

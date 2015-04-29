@@ -125,6 +125,7 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
                     'Updated By': getpass.getuser(),
                     'PID': bcbio_structure.project_name,
                     'Name': bcbio_structure.project_name,
+                    'JIRA URL': cnf.jira,
                     'HTML report path': html_report_url,
                     'Analyses directory US': dirname(bcbio_structure.final_dirpath),
                     'Sample Number': str(len(bcbio_structure.samples)),
@@ -138,6 +139,10 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
                         for l in lines:
                             if l.strip():
                                 f.write(l)
+
+            else:  # TODO: if this line already there, - just update fields
+                pass
+
     return html_report_url
 
 

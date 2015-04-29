@@ -186,9 +186,9 @@ def filter_all(cnf, bcbio_structure):
     info('Starting variant filtering.')
     info('-' * 70)
 
-    callers = bcbio_structure.variant_callers.items()
+    callers = bcbio_structure.variant_callers.values()
 
-    for _, caller in callers:
+    for caller in callers:
         filter_for_variant_caller(caller, cnf, bcbio_structure)
 
     global glob_cnf
