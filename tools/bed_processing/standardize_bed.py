@@ -188,9 +188,9 @@ class Region:
         return False
 
     def __lt__(self, other):
-        # special case: chrM goes to the end
+        # special case: chrM goes to the end (in GRCh reference) or to the beginning (in hg reference)
         if self.chrom != other.chrom and (self.chrom == 'chrM' or other.chrom == 'chrM'):
-            return True if other.chrom == 'chrM' else False
+            return True ^ (not self.GRCh_names) if other.chrom == 'chrM' else False ^ (not self.GRCh_names)
         sorted_pair = human_sorted([self.get_key(), other.get_key()])
         if sorted_pair[0] == self.get_key() and sorted_pair[1] != self.get_key():
             return True
