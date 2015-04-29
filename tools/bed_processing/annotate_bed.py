@@ -154,6 +154,9 @@ def _resolve_ambiguities(annotated_by_loc_by_gene):
             consensus = Region(chrom, start, end, symbol=g_name, exon='', strand='', feature='', biotype='')
             for r, overlap_size in overlaps:
                 if consensus.strand:
+                    if consensus.feature == r.feature == 'Gene':
+                    # e.g. RefSeq has overlapping genes from different strands with the same gene name
+                        continue
                     assert consensus.strand == r.strand, 'Consensus strand is ' + \
                          consensus.strand + ', region strand is ' + r.strand
                 else:
