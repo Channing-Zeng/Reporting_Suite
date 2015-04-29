@@ -10,7 +10,7 @@ import sys
 import os
 import subprocess
 import copy
-from source.file_utils import add_suffix
+from source.file_utils import add_suffix, verify_file, which
 from source.utils import human_sorted
 from optparse import OptionParser
 from os.path import exists, basename
@@ -103,10 +103,13 @@ def _read_args(args_list):
 
     # process configuration
     for k, v in opts.__dict__.iteritems():
-        if k.endswith('fpath'):
-            opts.__dict__[k] = abspath(v)
+        if k.endswith('fpath') and verify_file(v, is_critical=True):
+            opts.__dict__[k] = verify_file(v)
     if opts.output_grch and opts.output_hg:
         err('you cannot specify --output-hg and --output-grch simultaneously!')
+    if not which(opts.bedtools):
+        err('bedtools executable not found, please specify correct path (current is %s)! '
+            'Did you forget to execute "module load bedtools"?' % opts.bedtools)
 
     if opts.debug:
         log('Configuration: ')
@@ -130,7 +133,7 @@ class BedParams:
     GRCh_to_hg = {'MT': 'chrM', 'X': 'chrX', 'Y': 'chrY'}
     for i in range(1, 23):
         GRCh_to_hg[str(i)] = 'chr' + str(i)
-    hg_to_GRCh = {v: k for k, v in GRCh_to_hg.items()}
+    hg_to_GRCh = dict((v, k) for k, v in GRCh_to_hg.items())
 
     def __init__(self, header=list(), controls=list(), GRCh_names=None, n_cols_needed=None):
         self.header = header
