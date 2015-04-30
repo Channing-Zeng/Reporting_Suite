@@ -30,7 +30,6 @@ def main():
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=defaults['load_mongo'], help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
-    parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
     parser.add_option('--count-dups', dest='count_dups', action='store_true', default=False, help='count duplicates in coverage metrics')
 

@@ -98,6 +98,76 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
 # for d, z in zip(sample_depths, z_scores):
 # 	print '{d}: {z}'.format(**locals())
 
+##########################################
+################# RORY ###################
+##########################################
+import numpy
+import scipy.stats as stats
+
+def outlier_resistant(coverage):
+  median = float(numpy.median(coverage))
+  deviations = [abs(x - median) for x in coverage]
+  # median absolute deviation estimator of the standard deviation
+  mad = 1.4826 * float(numpy.median(deviations))
+  return int(median), int(mad)
+
+def modified_zscore(coverage):
+  median, mad = outlier_resistant(coverage)
+  z_scores = [float(x - median) / mad for x in coverage]
+  return z_scores
+
+example = [20,30,40,50,10,10,11,12,13,14,5,100,300,20,30,40]
+
+print modified_zscore(example)
+
+p_values = stats.norm.sf(modified_zscore(example))
+
+def keep_outliers(p_values, cutoff=0.05):
+    return [(x, y) for x, y in zip(example, p_values) if y < cutoff]
+
+print keep_outliers(p_values)
+
+# you can see this flags only a couple of the samples as outliers with p-value < 0.05
+
+def FDR(x):
+    """
+    Copied from p.adjust function from R (ripped from
+    http://stackoverflow.com/questions/7450957/how-to-implement-rs-p-adjust-in-python)
+    """
+    o = [i[0] for i in sorted(enumerate(x), key=lambda v:v[1],reverse=True)]
+    ro = [i[0] for i in sorted(enumerate(o), key=lambda v:v[1])]
+    q = sum([1.0/i for i in xrange(1, len(x)+1)])
+    l = [q*len(x)/i*x[j] for i, j in zip(reversed(xrange(1, len(x)+1)),o)]
+    l = [l[k] if l[k] < 1.0 else 1.0 for k in ro]
+    return l
+
+# the 50 one has a pretty marginal p-value though, 0.01. if we FDR adjust it and
+# filter on FDR < 0.05:
+
+fdr_values = FDR(p_values)
+
+print keep_outliers(fdr_values)
+
+def questionable_coverages(coverage, min_coverage=15, fdr_cutoff=0.05):
+    fdr_values = FDR(stats.norm.sf(modified_zscore(coverage)))
+    return [x for x, y in zip(coverage, fdr_values) if x < min_coverage or y < fdr_cutoff]
+
+print questionable_coverages(example, 10)
+
+def original_implementation(coverage):
+    coverage = sorted(coverage)
+    q1 = coverage[4]
+    q3 = coverage[12]
+    d = abs(q1 - q3)
+    bottom = q1 - 3 * d
+    top = q3 + 3 * d
+    return [x for x in coverage if x < bottom or x > top]
+
+print original_implementation(example)
+##########################################
+################# RORY ###################
+##########################################
+
 
 def _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpath, bam_fpath):
     # http://www.1000genomes.org/faq/what-depth-coverage-your-phase1-variants
