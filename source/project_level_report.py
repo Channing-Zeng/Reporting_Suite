@@ -53,11 +53,52 @@ def make_project_level_report(cnf, bcbio_structure):
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
 
 
-def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
-    html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
-        relpath(html_report_fpath, bcbio_structure.final_dirpath)
+def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure):
+    if verify_file(project_list_fpath, 'Project list'):
+        info('Reading project list ' + project_list_fpath)
+        pids = set()
+        with open(project_list_fpath) as f:
+            lines = f.readlines()
 
+        header = lines[0].strip()
+        info('header: ' + header)
+        fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+        index_of_pid = fields.index('PID')
+        if index_of_pid == -1: index_of_pid = 1
+        for l in lines[1:]:
+            l = l.strip()
+            if l:
+                values = l.split(',')
+                pids.add(values[index_of_pid])
+
+        if bcbio_structure.project_name not in pids:
+            values = {
+                'Updated By': getpass.getuser(),
+                'PID': bcbio_structure.project_name,
+                'Name': bcbio_structure.project_name,
+                'JIRA URL': cnf.jira,
+                'HTML report path': html_report_url,
+                'Analyses directory US': dirname(bcbio_structure.final_dirpath),
+                'Sample Number': str(len(bcbio_structure.samples)),
+            }
+            new_line = ','.join(values.get(f, '') for f in fields)
+            info('adding new line:' + new_line)
+            lines.append(new_line + '\n')
+
+            with file_transaction(cnf.work_dir, project_list_fpath) as tx_fpath:
+                with open(tx_fpath, 'w') as f:
+                    for l in lines:
+                        if l.strip():
+                            f.write(l)
+    else:  # TODO: if this line already there, - just update fields
+        pass
+
+
+def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
     if is_uk():
+        html_report_url = 'http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/' + bcbio_structure.project_name + '/' + \
+            relpath(html_report_fpath, bcbio_structure.final_dirpath)
+
         server_path = '/ngs/oncology/reports'
         info('UK, symlinking to ' + server_path)
         link_fpath = join(server_path, bcbio_structure.project_name)
@@ -69,12 +110,17 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
             warn('Cannot create symlink')
             warn('  ' + str(e))
             html_report_url = None
+
+        _write_to_csv_file(cnf, '/ngs/oncology/reports/NGS.Project.csv', html_report_url, bcbio_structure)
+
     else:
+        html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
+            relpath(html_report_fpath, bcbio_structure.final_dirpath)
+
         server_url = '172.18.47.33'  # ngs
         server_path = '/opt/lampp/htdocs/reports'
         username = 'klpf990'
         password = '123werasd'
-        project_list_fpath = '/ngs/oncology/NGS.Project.csv'
         rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
         if rsa_key_path:
             ssh = SSHClient()
@@ -103,45 +149,7 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
                     info('  ' + cmd)
                     ssh.close()
 
-        if verify_file(project_list_fpath, 'Project list'):
-            info('Reading project list ' + project_list_fpath)
-            pids = set()
-            with open(project_list_fpath) as f:
-                lines = f.readlines()
-
-            header = lines[0].strip()
-            info('header: ' + header)
-            fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-            index_of_pid = fields.index('PID')
-            if index_of_pid == -1: index_of_pid = 1
-            for l in lines[1:]:
-                l = l.strip()
-                if l:
-                    values = l.split(',')
-                    pids.add(values[index_of_pid])
-
-            if bcbio_structure.project_name not in pids:
-                values = {
-                    'Updated By': getpass.getuser(),
-                    'PID': bcbio_structure.project_name,
-                    'Name': bcbio_structure.project_name,
-                    'JIRA URL': cnf.jira,
-                    'HTML report path': html_report_url,
-                    'Analyses directory US': dirname(bcbio_structure.final_dirpath),
-                    'Sample Number': str(len(bcbio_structure.samples)),
-                }
-                new_line = ','.join(values.get(f, '') for f in fields)
-                info('adding new line:' + new_line)
-                lines.append(new_line + '\n')
-
-                with file_transaction(work_dir, project_list_fpath) as tx_fpath:
-                    with open(tx_fpath, 'w') as f:
-                        for l in lines:
-                            if l.strip():
-                                f.write(l)
-
-            else:  # TODO: if this line already there, - just update fields
-                pass
+        _write_to_csv_file(cnf, '/ngs/oncology/NGS.Project.csv', html_report_url, bcbio_structure)
 
     return html_report_url
 
