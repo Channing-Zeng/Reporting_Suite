@@ -58,7 +58,7 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
         info('Reading project list ' + project_list_fpath)
         pids = set()
         with open(project_list_fpath) as f:
-            lines = f.readlines()
+            lines = [l for l in f.readlines() if not l.startswith('#')]
 
         header = lines[0].strip()
         info('header: ' + header)
@@ -71,7 +71,7 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
                 values = l.split(',')
                 pids.add(values[index_of_pid])
 
-        if bcbio_structure.project_name not in pids:
+        with file_transaction(cnf.work_dir, project_list_fpath) as tx_fpath:
             values = {
                 'Updated By': getpass.getuser(),
                 'PID': bcbio_structure.project_name,
@@ -83,13 +83,16 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
             }
             new_line = ','.join(values.get(f, '') for f in fields)
             info('adding new line:' + new_line)
-            lines.append(new_line + '\n')
 
-            with file_transaction(cnf.work_dir, project_list_fpath) as tx_fpath:
-                with open(tx_fpath, 'w') as f:
-                    for l in lines:
-                        if l.strip():
+            with open(tx_fpath, 'w') as f:
+                for l in lines:
+                    if l.strip():
+                        if ',' + bcbio_structure.project_name + ',' in l:
+                            info('Old csv line: ' + l)
+                        else:
                             f.write(l)
+                f.write(new_line + '\n')
+
     else:  # TODO: if this line already there, - just update fields
         pass
 
