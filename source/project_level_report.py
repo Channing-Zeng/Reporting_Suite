@@ -58,14 +58,15 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
         info('Reading project list ' + project_list_fpath)
         pids = set()
         with open(project_list_fpath) as f:
-            lines = [l for l in f.readlines() if not l.startswith('#')]
+            lines = f.readlines()
+        uncom_lines = [l for l in lines if not l.startswith('#')]
 
-        header = lines[0].strip()
+        header = uncom_lines[0].strip()
         info('header: ' + header)
         fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
         index_of_pid = fields.index('PID')
         if index_of_pid == -1: index_of_pid = 1
-        for l in lines[1:]:
+        for l in uncom_lines[1:]:
             l = l.strip()
             if l:
                 values = l.split(',')
@@ -81,14 +82,19 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
                 'Analyses directory US': dirname(bcbio_structure.final_dirpath),
                 'Sample Number': str(len(bcbio_structure.samples)),
             }
-            new_line = ','.join(values.get(f, '') for f in fields)
-            info('adding new line:' + new_line)
+            new_line = ','.join(values.get(f) or '' for f in fields)
+            info('adding the new line:' + new_line)
 
             with open(tx_fpath, 'w') as f:
                 for l in lines:
-                    if l.strip():
+                    if not l:
+                        pass
+                    if l.startswith('#'):
+                        f.write(l)
+                    else:
                         if ',' + bcbio_structure.project_name + ',' in l:
                             info('Old csv line: ' + l)
+                            # f.write('#' + l)
                         else:
                             f.write(l)
                 f.write(new_line + '\n')

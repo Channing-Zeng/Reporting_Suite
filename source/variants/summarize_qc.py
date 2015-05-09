@@ -6,7 +6,7 @@ from source.reporting import FullReport, SampleReport
 def make_summary_reports(cnf, threads, output_dir, callers, samples, jsons_by_sample_by_caller,
                          htmls_by_sample_by_caller):
     if len(jsons_by_sample_by_caller) == 1:
-        report = _full_report_for_caller(cnf, samples, jsons_by_sample_by_caller.values()[0],
+        report = _full_report_for_caller(cnf, samples, output_dir, jsons_by_sample_by_caller.values()[0],
             htmls_by_sample_by_caller.values()[0])
 
         full_summary_fpaths = report.save_into_files(
