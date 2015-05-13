@@ -127,13 +127,17 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
 def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, genes_fpath=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
+    correct_samples = []
+
     for sample in samples:
         if not sample.targetcov_done():
-            critical('Error: target coverage is not done (json, html, or detail tsv are not there)')
-        if not sample.ngscat_done():
-            sample.ngscat_html_fpath = None
-        if not sample.qualimap_done():
-            sample.qualimap_html_fpath = None
+            err('Error: target coverage is not done (json, html, or detail tsv are not there)')
+        else:
+            correct_samples.append(sample)
+            if not sample.ngscat_done():
+                sample.ngscat_html_fpath = None
+            if not sample.qualimap_done():
+                sample.qualimap_html_fpath = None
 
     # _make_targetcov_symlinks(samples)
 
