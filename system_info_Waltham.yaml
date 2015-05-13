@@ -21,7 +21,8 @@ resources:
   java:
     path: /usr/bin/java
   python:
-    path: /opt/az/local/psf/python/64_2.7.3/python
+    path: /group/ngs/src/bcbio-nextgen/0.8.7/rhel6-x64/anaconda/bin/python
+    # path: /opt/az/local/psf/python/64_2.7.3/python
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
