@@ -2,10 +2,7 @@ import os
 from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
-try:
-    from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
-except ImportError:
-    pass
+from traceback import print_exc
 
 from source.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, send_email, warn, err
@@ -132,31 +129,37 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
         password = '123werasd'
         rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
         if rsa_key_path:
-            ssh = SSHClient()
-            ssh.load_system_host_keys()
-            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-            ssh.set_missing_host_key_policy(AutoAddPolicy())
             try:
-                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-            except Exception, e:
-                warn('Cannot read RSAKey from ' + rsa_key_path)
-                warn('  ' + str(e))
+                from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+            except ImportError as e:
+                print_exc()
+                err('Cannot improt SSHClient - skipping trasnferring project to the ngs-website')
             else:
-                info('Succesfully read RSAKey from ' + rsa_key_path)
+                ssh = SSHClient()
+                ssh.load_system_host_keys()
+                # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+                ssh.set_missing_host_key_policy(AutoAddPolicy())
                 try:
-                    ssh.connect(server_url, username=username, password=password, pkey=key)
+                    key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
                 except Exception, e:
-                    warn('Cannot connect to ' + server_url + ':')
+                    warn('Cannot read RSAKey from ' + rsa_key_path)
                     warn('  ' + str(e))
-                    html_report_url = None
                 else:
-                    info('Succesfully connected to ' + server_url)
-                    final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
-                    link_path = join(server_path, bcbio_structure.project_name)
-                    cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
-                    ssh.exec_command(cmd)
-                    info('  ' + cmd)
-                    ssh.close()
+                    info('Succesfully read RSAKey from ' + rsa_key_path)
+                    try:
+                        ssh.connect(server_url, username=username, password=password, pkey=key)
+                    except Exception, e:
+                        warn('Cannot connect to ' + server_url + ':')
+                        warn('  ' + str(e))
+                        html_report_url = None
+                    else:
+                        info('Succesfully connected to ' + server_url)
+                        final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
+                        link_path = join(server_path, bcbio_structure.project_name)
+                        cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
+                        ssh.exec_command(cmd)
+                        info('  ' + cmd)
+                        ssh.close()
 
         _write_to_csv_file(cnf, '/ngs/oncology/NGS.Project.csv', html_report_url, bcbio_structure)
 

@@ -15,7 +15,7 @@ from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
 from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
 from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage, get_header_metric_storage
-from source.targetcov.flag_regions import DepthsMetric
+# from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
@@ -138,6 +138,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
                 sample.ngscat_html_fpath = None
             if not sample.qualimap_done():
                 sample.qualimap_html_fpath = None
+    samples = correct_samples
 
     # _make_targetcov_symlinks(samples)
 
@@ -508,7 +509,7 @@ def _correct_qualimap_genome_results(cnf, samples):
 
 
 def _correct_qualimap_insert_size_histogram(cnf, samples):
-    """ replacing Qualimap IS histogram with Picard one.
+    """ replacing Qualimap insert size histogram with Picard one.
     """
     for s in samples:
         qualimap1_dirname = dirname(s.qualimap_ins_size_hist_fpath).replace('raw_data_qualimapReport', 'raw_data')
@@ -521,23 +522,23 @@ def _correct_qualimap_insert_size_histogram(cnf, samples):
         elif not exists(qualimap2_dirname):
             continue  # no data from both Qualimap v.1 and Qualimap v.2
 
-        if verify_file(s.picard_ins_size_hist_fpath):
-            with open(s.picard_ins_size_hist_fpath, 'r') as picard_f:
-                one_line_to_stop = False
-                for line in picard_f:
-                    if one_line_to_stop:
-                        break
-                    if line.startswith('## HISTOGRAM'):
-                        one_line_to_stop = True
+        # if qualimap histogram exits and reuse_intermediate, skip
+        if verify_file(s.qualimap_ins_size_hist_fpath, silent=True) and cnf.reuse_intermediate:
+            pass
+        else:
+            if verify_file(s.picard_ins_size_hist_fpath):
+                with open(s.picard_ins_size_hist_fpath, 'r') as picard_f:
+                    one_line_to_stop = False
+                    for line in picard_f:
+                        if one_line_to_stop:
+                            break
+                        if line.startswith('## HISTOGRAM'):
+                            one_line_to_stop = True
 
-                if not verify_file(s.qualimap_ins_size_hist_fpath, silent=True) or not cnf.reuse_intermediate:
                     with file_transaction(cnf.work_dir, s.qualimap_ins_size_hist_fpath) as tx:
                         with open(tx, 'w') as qualimap_f:
                             for line in picard_f:
                                 qualimap_f.write(line)
-
-        elif verify_file(s.qualimap_ins_size_hist_fpath):
-            os.remove(s.qualimap_ins_size_hist_fpath)
 
 
 def select_best(values, fn=max):
