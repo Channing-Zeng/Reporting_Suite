@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 
 import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
 
@@ -17,6 +16,8 @@ from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, 
 from source.main import determine_cnf_files, set_up_dirs
 from source.targetcov.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
+
 
 
 def main():
