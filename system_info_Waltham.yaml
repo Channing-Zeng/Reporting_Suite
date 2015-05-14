@@ -36,9 +36,19 @@ resources:
     path: /opt/az/adm/univa/bin/lx-amd64/qsub
 
 genomes:
+  hg38:
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf.gz
+    cosmic: /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf.gz
+
+  hg38-noalt:
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf.gz
+    cosmic: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/CosmicV72CodingMuts.vcf.gz
+
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-#    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf
@@ -60,7 +70,6 @@ genomes:
     actionable_hotspot: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/actionable_hotspot.txt
     actionable: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/actionable.txt
     comprednia_hotspots: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/Compendia.MS7.Hotspot.txt
-
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa

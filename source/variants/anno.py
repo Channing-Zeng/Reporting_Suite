@@ -255,6 +255,7 @@ def _snpeff(cnf, input_fpath):
 
     ref_name = cnf.genome.name
     if ref_name == 'GRCh37': ref_name += '.75'
+    if ref_name.startwith('hg38'): ref_name = 'GRCh38.78'
 
     opts = ''
     if cnf.annotation.snpeff.cancer: opts += ' -cancer'
