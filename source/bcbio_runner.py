@@ -339,7 +339,8 @@ class BCBioRunner:
         safe_mkdir(dirname(log_fpath))
         safe_mkdir(dirname(out_fpath))
 
-        tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
+        interpreter = get_system_path(self.cnf, step.interpreter, is_critical=True)
+        tool_cmdline = get_system_path(self.cnf, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
         params = dict({'output_dir': output_dirpath, 'log_dirpath': log_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
@@ -354,7 +355,7 @@ class BCBioRunner:
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -S /bin/bash -q {queue} '
+            '{qsub} -pe smp {threads} -S ' + interpreter + ' -q {queue} '
             '-j n -o {out_fpath} -e {log_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} "{cmdline}"'.format(**locals()))
 

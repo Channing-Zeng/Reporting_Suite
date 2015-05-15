@@ -19,7 +19,6 @@ from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 
 
-
 def main():
     info(' '.join(sys.argv))
     info()
