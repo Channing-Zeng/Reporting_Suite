@@ -171,7 +171,7 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
         bed_fpath = cut(cnf, bed_fpath, 4)
 
     elif cols > 8:
-        bed_fpath = cut(cnf, bed_fpath, 8)
+        bed_fpath = cut(cnf, bed_fpath, 4)  # TODO: address 8-column bed-files for Seq2C
 
     # removing regions with no gene annotation
     def f(l, i):
@@ -195,11 +195,12 @@ def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_samp
 
 def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     info()
-    info('Combining gene depths...')
+    # info('Combining gene depths...')
 
     result = []
     bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
-    if any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples):
+    print any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples)
+    if any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples) or not cnf.reuse_intermediate:
         exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
         verify_bed(bed_fpath, is_critical=True)
         bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)

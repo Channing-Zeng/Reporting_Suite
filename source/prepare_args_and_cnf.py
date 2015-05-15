@@ -45,16 +45,16 @@ def check_genome_resources(cnf):
             if isinstance(genome_cnf[key], basestring):
                 genome_cnf[key] = adjust_system_path(genome_cnf[key])
 
-            if not verify_obj_by_path(genome_cnf[key], key):
-                if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
-                    gz_fpath = genome_cnf[key] + '.gz'
-                    if verify_file(gz_fpath):
-                        info(key + ': ' + gz_fpath)
-                        genome_cnf[key] = gz_fpath
+                if not verify_obj_by_path(genome_cnf[key], key):
+                    if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
+                        gz_fpath = genome_cnf[key] + '.gz'
+                        if verify_file(gz_fpath):
+                            info(key + ': ' + gz_fpath)
+                            genome_cnf[key] = gz_fpath
+                    else:
+                        err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
                 else:
-                    err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-            else:
-                info(key + ': ' + genome_cnf[key])
+                    info(key + ': ' + genome_cnf[key])
         info()
         genome_cnf['name'] = build_name
 
