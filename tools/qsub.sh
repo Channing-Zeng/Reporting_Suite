@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 runner=${18}
 params=${19}
 out=${11}
@@ -7,3 +8,4 @@ cmdline="${runner} \"${params}\" "
 echo "${params}"
 eval "${cmdline}"
 #>${out} 2>${err}
+set +x

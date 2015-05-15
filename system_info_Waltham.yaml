@@ -32,8 +32,10 @@ resources:
     path: /opt/az/local/tabix/tabix-0.2.6/bgzip
   picard:
     path: ext_tools/picard/picard.jar
+#  qsub:
+#    path: /opt/az/adm/univa/bin/lx-amd64/qsub
   qsub:
-    path: /opt/az/adm/univa/bin/lx-amd64/qsub
+    path: tools/qsub.sh
 
 genomes:
   hg38:

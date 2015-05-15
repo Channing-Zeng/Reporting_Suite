@@ -3,14 +3,14 @@ from genericpath import isfile
 import math
 from collections import defaultdict, OrderedDict
 import os
-from os.path import join, splitext, basename, dirname
+from os.path import join, splitext, basename, dirname, abspath
 from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
 from source.config import CallCnf
-from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir
+from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.ngscat.bed_file import verify_bed
 from source.reporting import write_tsv_rows, Record, SampleReport
@@ -210,21 +210,28 @@ def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     #         for s in samples)
 
     qsub = get_system_path(cnf, 'qsub')
+    runner_script = abspath(expanduser(cnf.qsub_runner))
     queue = cnf.queue
-    # qsub_runner = abspath(expanduser(cnf.qsub_runner))
-    seq2cov_wrap = get_system_path(cnf, join('Seq2C', 'seq2cov_wrap.sh'), is_critical=True)
+    bash = get_system_path(cnf, 'bash')
+
+    seq2cov_wrap = get_system_path(cnf, 'bash', join('Seq2C', 'seq2cov_wrap.sh'), is_critical=True)
     seq2cov      = get_system_path(cnf, join('Seq2C', 'seq2cov.pl'), is_critical=True)
     wait_vardict = get_system_path(cnf, 'perl', join('Seq2C', 'waitVardict.pl'), is_critical=True)
     samtools = get_system_path(cnf, 'samtools')
 
     need_to_redo = any(not verify_file(s.seq2cov_output_fpath) for s in samples) or not cnf.reuse_intermediate
     if need_to_redo:
-        for s in samples:
+        for i, s in enumerate(samples):
             safe_mkdir(dirname(s.seq2cov_output_fpath))
             bam_fpath = dedupped_bam_by_sample[s.name]
+            seq2cov_output_log = s.seq2cov_output_fpath + '.log'
+            seq2cov_output_err = s.seq2cov_output_fpath + '.err'
+            j = i + 1
+            cmdline = '{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {j} {seq2cov} {samtools} {s.seq2cov_output_fpath}'.format(**locals())
             qsub_cmdline = (
-                '{qsub} -pe smp 1 -q {queue} -V -N {cnf.project_name}_seq2cov_{s.name} '
-                '-S /bin/bash "{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {s.name} {seq2cov} {samtools} {s.seq2cov_output_fpath}"'
+                '{qsub} -pe smp 1 -S {bash} -q {queue} '
+                '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
+                '-N {cnf.project_name}_seq2cov_{s.name} {runner_script} "{cmdline}"'
             ).format(**locals())
 
             info('Sumbitting seq2cov.pl for ' + s.name)
