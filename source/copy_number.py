@@ -272,16 +272,14 @@ def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     # cat cov.txt.* > cov.txt
 
     # for suf in '', '_dup':
-    suf = ''
-    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c' + suf + '.txt')
+    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
 
     with open(combined_gene_depths_fpath, 'w') as out:
         for i, sample in enumerate(samples):
-            seq2cov_fpath = sample.seq2cov_output_dup_fpath if suf else sample.seq2cov_output_fpath
+            seq2cov_fpath = sample.seq2cov_output_fpath
 
             if not verify_file(seq2cov_fpath):
-                combined_gene_depths_fpath = None
-                break
+                return None
             with open(seq2cov_fpath) as inp:
                 for l in inp:
                     if l.startswith('Sample\tGene\tChr\t'):
