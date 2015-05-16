@@ -10,7 +10,7 @@ from ext_modules.simplejson import load
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
 from source.config import CallCnf
-from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser
+from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser, file_transaction
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.ngscat.bed_file import verify_bed
 from source.reporting import write_tsv_rows, Record, SampleReport
@@ -223,22 +223,28 @@ def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     need_to_redo = any(not verify_file(s.seq2cov_output_fpath) for s in samples) or not cnf.reuse_intermediate
     if need_to_redo:
         for i, s in enumerate(samples):
-            safe_mkdir(dirname(s.seq2cov_output_fpath))
-            bam_fpath = dedupped_bam_by_sample[s.name]
-            seq2cov_output_log = s.seq2cov_output_fpath + '.log'
-            seq2cov_output_err = s.seq2cov_output_fpath + '.err'
-            j = i + 1
-            cmdline = '{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {j} {seq2cov} {samtools} {s.seq2cov_output_fpath}'.format(**locals())
-            qsub_cmdline = (
-                '{qsub} -pe smp 1 -S {bash} -q {queue} '
-                '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
-                '-N {cnf.project_name}_seq2cov_{s.name} {runner_script} "{cmdline}"'
-            ).format(**locals())
+            if cnf.reuse_intermediate and verify_file(s.seq2cov_output_fpath, silent=True):
+                info(s.seq2cov_output_fpath + ' already exist, reusing')
+            else:
+                safe_mkdir(dirname(s.seq2cov_output_fpath))
+                bam_fpath = dedupped_bam_by_sample[s.name]
+                seq2cov_output_log = s.seq2cov_output_fpath + '.log'
+                seq2cov_output_err = s.seq2cov_output_fpath + '.err'
+                j = i + 1
+                with file_transaction(cnf.work_dir, s.seq2cov_output_fpath) as tx_fpath:
+                    cmdline = '{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {j} {seq2cov} {samtools} {tx_fpath}'.format(**locals())
+                    qsub_cmdline = (
+                        '{qsub} -pe smp 1 -S {bash} -q {queue} '
+                        '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
+                        '-N {cnf.project_name}_seq2cov_{s.name} {runner_script} "{cmdline}"'
+                    ).format(**locals())
 
-            info('Sumbitting seq2cov.pl for ' + s.name)
-            info(qsub_cmdline)
-            call(cnf, qsub_cmdline, silent=True)
-            info()
+                    info('Sumbitting seq2cov.pl for ' + s.name)
+                    info(qsub_cmdline)
+                    call(cnf, qsub_cmdline, silent=True)
+                verify_file(s.seq2cov_output_fpath, is_critical=True)
+                info('Saved to ' + s.seq2cov_output_fpath)
+                info()
 
         cnt = str(len(samples))
         cmdline = '{wait_vardict} seq2c {cnt}'.format(**locals())
