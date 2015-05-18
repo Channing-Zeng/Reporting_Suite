@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from os.path import abspath, dirname, realpath, join, exists
+from os.path import abspath, dirname, realpath, join, exists, splitext
 from site import addsitedir
-project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
+project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
@@ -10,16 +10,17 @@ from collections import defaultdict
 import os
 import sys
 from source import verify_file
+from source.logger import err
 
 
 class Sample:
     def __init__(self):
         self.name = None
-        self.bam = None
+        # self.bam = None
         self.patient = None
         self.is_normal = False
         self.is_blood = False
-        self.batch = None
+        self.batches = set()
 
     def __repr__(self):
         return self.name
@@ -30,6 +31,17 @@ class Batch:
         self.name = name
         self.normal = None
         self.tumour = None
+
+
+def get_bam_version(sample_name):
+    parts = sample_name.split('.')
+    if len(parts) > 1:
+        try:
+            version = int(parts[-1])
+        except ValueError:
+            return None
+        else:
+            return version
 
 
 def main():
@@ -57,20 +69,44 @@ def main():
             sample.name = os.path.splitext(fs[13])[0]
             sample.description = fs[1]
             sample.patient = '-'.join(barcode[:3])
+            sample.reason = fs[26]
 
             sample_type = int(barcode[3][:2])
             if sample_type >= 20 or sample_type <= 0:
                 continue
             sample.is_normal = 10 <= sample_type < 20
-            sample.is_blood = sample_type in [3, 4, 9, 10]
+            sample.is_blood = sample_type in [3, 4, 9, 10]  # https://tcga-data.nci.nih.gov/datareports/codeTablesReport.htm
 
-            samples_by_patient[sample.patient].append(sample)
+            if sample.description == 'TCGA-64-1676-10A-01D-0969-08':
+                pass
+            if any(s.description == sample.description for s in samples_by_patient[sample.patient]):
+                prev_sample = next(s for s in samples_by_patient[sample.patient] if s.description == sample.description)
+
+                # comp reason
+                # if 'Fileset modified' not in prev_sample.reason and 'Fileset modified' in sample.reason:
+                #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in old ' + prev_sample.name + ' over ' + sample.name)
+                #     pass
+                # elif 'Fileset modified' in prev_sample.reason and 'Fileset modified' not in sample.reason:
+                #     samples_by_patient[sample.patient].remove(prev_sample)
+                #     samples_by_patient[sample.patient].append(sample)
+                #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in new ' + sample.name + ' over ' + prev_sample.name)
+                # else:
+                # comp version
+                prev_v = get_bam_version(prev_sample.name)
+                v = get_bam_version(sample.name)
+                err('Duplicated sample: ' + sample.description + '  Resolving by version (' + ' over '.join(map(str, sorted([prev_v, v])[::-1])) + ')')
+                if v > prev_v:
+                    samples_by_patient[sample.patient].remove(prev_sample)
+                    samples_by_patient[sample.patient].append(sample)
+            else:
+                samples_by_patient[sample.patient].append(sample)
 
     batches = []
+    final_samples = set()
 
-    for patient, samples in samples_by_patient.iteritems():
-        tumours = [s for s in samples if not s.is_normal]
-        normals = [s for s in samples if s.is_normal]
+    for patient, patient_samples in samples_by_patient.iteritems():
+        tumours = [s for s in patient_samples if not s.is_normal]
+        normals = [s for s in patient_samples if s.is_normal]
 
         main_normal = None
         if len(normals) >= 1:
@@ -78,19 +114,27 @@ def main():
                 main_normal = next(n for n in normals if n.is_blood)
             else:
                 main_normal = normals[0]
+                if tumours:
+                    for n in normals[1:]:
+                        b = Batch(n.description + '-batch')
+                        b.tumour = n
+                        batches.append(b)
 
         for t in tumours:
             b = Batch(t.description + '-batch')
             b.tumour = t
+            t.batches.add(b)
+            final_samples.add(t)
             if main_normal:
                 b.normal = main_normal
+                main_normal.batches.add(b)
+                final_samples.add(main_normal)
             batches.append(b)
 
-    print 'sample\tdescription\tbatch\tphenotype'
-    for b in batches:
-        print b.tumour.name + '\t' + b.tumour.description + '\t' + b.name + '\ttumor'
-        if b.normal:
-            print b.normal.name + '\t' + b.normal.description + '\t' + b.name + '\tnormal'
+
+    print 'sample,description,batch,phenotype'
+    for s in sorted(final_samples, key=lambda s: s.name):
+        print ','.join([s.name, s.description, ';'.join(sorted(b.name for b in s.batches)), ('normal' if s.is_normal else 'tumor')])
 
 
 if __name__ == '__main__':
