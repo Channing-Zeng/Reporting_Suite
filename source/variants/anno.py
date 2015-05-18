@@ -260,8 +260,8 @@ def _snpeff(cnf, input_fpath):
     opts = ''
     if cnf.annotation.snpeff.cancer: opts += ' -cancer'
 
-    db_path = cnf.genome.snpeff
-    if db_path: opts += ' -dataDir ' + db_path
+    # db_path = cnf.genome.snpeff.reference
+    # if db_path and isinstance(db_path, basestring): opts += ' -dataDir ' + db_path
 
     if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
         opts += ' -canon '
