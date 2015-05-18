@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+from os.path import abspath, dirname, realpath, join, exists
+from site import addsitedir
+project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
+addsitedir(join(project_dir))
+addsitedir(join(project_dir, 'ext_modules'))
+import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
+
 from collections import defaultdict
 import os
 import sys
