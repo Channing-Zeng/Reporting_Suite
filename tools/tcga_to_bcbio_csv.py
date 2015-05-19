@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from os.path import abspath, dirname, realpath, join, exists, splitext
+from os.path import abspath, dirname, realpath, join, exists, splitext, relpath
 from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
@@ -11,6 +11,7 @@ import os
 import sys
 from source import verify_file
 from source.logger import err
+from source.file_utils import verify_dir, safe_mkdir, adjust_path
 
 
 class Sample:
@@ -45,61 +46,64 @@ def get_bam_version(sample_name):
 
 
 def main():
-    inp = sys.stdin
-    if len(sys.argv) > 1:
-        inp_fpath = sys.argv[1]
-        verify_file(inp_fpath, is_critical=True)
-        inp = open(inp_fpath)
+    if len(sys.argv) <= 3:
+        sys.exit('Usage ' + __file__ + ' input.tsv dir_with_bams dir_with_filtered_bam_symlinks > output.tsv')
+
+    inp_fpath = verify_file(sys.argv[1], is_critical=True)
+    bams_dirpath = verify_dir(sys.argv[2], is_critical=True)
+    filtered_bams_dirpath = adjust_path(sys.argv[3])
+    verify_dir(join(filtered_bams_dirpath, os.pardir), is_critical=True)
 
     columns_names = 'study	barcode	disease	disease_name	sample_type	sample_type_name	analyte_type	library_type	center	center_name	platform	platform_name	assembly	filename	 files_size 	checksum	analysis_id	aliquot_id	participant_id	sample_id	tss_id	sample_accession	published	uploaded	modified	state	reason'
 
     samples_by_patient = defaultdict(list)
 
-    for i, l in enumerate(inp):
-        if not l.strip():
-            continue
-
-        fs = l.split('\t')
-        if fs[0] == 'study':
-            pass
-        else:
-            barcode = fs[1].split('-')  # TCGA-05-4244-01A-01D-1105-08
-
-            sample = Sample()
-            sample.name = os.path.splitext(fs[13])[0]
-            sample.description = fs[1]
-            sample.patient = '-'.join(barcode[:3])
-            sample.reason = fs[26]
-
-            sample_type = int(barcode[3][:2])
-            if sample_type >= 20 or sample_type <= 0:
+    with open(inp_fpath) as f:
+        for i, l in enumerate(f):
+            if not l.strip():
                 continue
-            sample.is_normal = 10 <= sample_type < 20
-            sample.is_blood = sample_type in [3, 4, 9, 10]  # https://tcga-data.nci.nih.gov/datareports/codeTablesReport.htm
 
-            if sample.description == 'TCGA-64-1676-10A-01D-0969-08':
+            fs = l.split('\t')
+            if fs[0] == 'study':
                 pass
-            if any(s.description == sample.description for s in samples_by_patient[sample.patient]):
-                prev_sample = next(s for s in samples_by_patient[sample.patient] if s.description == sample.description)
-
-                # comp reason
-                # if 'Fileset modified' not in prev_sample.reason and 'Fileset modified' in sample.reason:
-                #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in old ' + prev_sample.name + ' over ' + sample.name)
-                #     pass
-                # elif 'Fileset modified' in prev_sample.reason and 'Fileset modified' not in sample.reason:
-                #     samples_by_patient[sample.patient].remove(prev_sample)
-                #     samples_by_patient[sample.patient].append(sample)
-                #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in new ' + sample.name + ' over ' + prev_sample.name)
-                # else:
-                # comp version
-                prev_v = get_bam_version(prev_sample.name)
-                v = get_bam_version(sample.name)
-                err('Duplicated sample: ' + sample.description + '  Resolving by version (' + ' over '.join(map(str, sorted([prev_v, v])[::-1])) + ')')
-                if v > prev_v:
-                    samples_by_patient[sample.patient].remove(prev_sample)
-                    samples_by_patient[sample.patient].append(sample)
             else:
-                samples_by_patient[sample.patient].append(sample)
+                barcode = fs[1].split('-')  # TCGA-05-4244-01A-01D-1105-08
+
+                sample = Sample()
+                sample.name = os.path.splitext(fs[13])[0]
+                sample.description = fs[1]
+                sample.patient = '-'.join(barcode[:3])
+                sample.reason = fs[26]
+
+                sample_type = int(barcode[3][:2])
+                if sample_type >= 20 or sample_type <= 0:
+                    continue
+                sample.is_normal = 10 <= sample_type < 20
+                sample.is_blood = sample_type in [3, 4, 9, 10]  # https://tcga-data.nci.nih.gov/datareports/codeTablesReport.htm
+
+                if sample.description == 'TCGA-64-1676-10A-01D-0969-08':
+                    pass
+                if any(s.description == sample.description for s in samples_by_patient[sample.patient]):
+                    prev_sample = next(s for s in samples_by_patient[sample.patient] if s.description == sample.description)
+
+                    # comp reason
+                    # if 'Fileset modified' not in prev_sample.reason and 'Fileset modified' in sample.reason:
+                    #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in old ' + prev_sample.name + ' over ' + sample.name)
+                    #     pass
+                    # elif 'Fileset modified' in prev_sample.reason and 'Fileset modified' not in sample.reason:
+                    #     samples_by_patient[sample.patient].remove(prev_sample)
+                    #     samples_by_patient[sample.patient].append(sample)
+                    #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in new ' + sample.name + ' over ' + prev_sample.name)
+                    # else:
+                    # comp version
+                    prev_v = get_bam_version(prev_sample.name)
+                    v = get_bam_version(sample.name)
+                    err('Duplicated sample: ' + sample.description + '  Resolving by version (' + ' over '.join(map(str, sorted([prev_v, v])[::-1])) + ')')
+                    if v > prev_v:
+                        samples_by_patient[sample.patient].remove(prev_sample)
+                        samples_by_patient[sample.patient].append(sample)
+                else:
+                    samples_by_patient[sample.patient].append(sample)
 
     batches = []
     final_samples = set()
@@ -131,6 +135,21 @@ def main():
                 final_samples.add(main_normal)
             batches.append(b)
 
+
+    safe_mkdir(filtered_bams_dirpath)
+
+    for fname in os.listdir(bams_dirpath):
+        if fname.endswith('.bam'):
+            basefname = fname.split('.bam')[0]
+
+            if basefname in [s.name for s in final_samples]:
+                src_fpath = join(bams_dirpath, fname)
+                dst_fpath = join(filtered_bams_dirpath, fname)
+                if not exists(dst_fpath):
+                    err('Symlinking ' + src_fpath + ' -> ' + dst_fpath)
+                    os.symlink(src_fpath, dst_fpath)
+                if not exists(dst_fpath + '.bai'):
+                    os.symlink(src_fpath + '.bai', dst_fpath + '.bai')
 
     print 'sample,description,batch,phenotype'
     for s in sorted(final_samples, key=lambda s: s.name):

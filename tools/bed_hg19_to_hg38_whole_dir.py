@@ -3,13 +3,13 @@
 import os
 from os.path import abspath, dirname, realpath, join, relpath, splitext, isfile, getsize
 from site import addsitedir
-project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
+project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
 from source.logger import critical, info, is_local, err
-from utils import safe_mkdir, adjust_path, verify_file
+from source.file_utils import adjust_path, safe_mkdir, verify_file
 
 liftover_fpath = '/group/ngs/src/liftOver/liftOver'
 chain_fpath = '/group/ngs/src/liftOver/hg19ToHg38.over.chain.gz'
