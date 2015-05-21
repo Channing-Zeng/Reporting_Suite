@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-from genericpath import isfile
 import math
 from collections import defaultdict, OrderedDict
 import os
-from os.path import join, splitext, basename, dirname, abspath
+from os.path import join, splitext, basename, dirname, abspath, isfile
+from time import sleep
 from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
@@ -121,15 +121,25 @@ def _seq2c(cnf, bcbio_structure):
 def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
     cov2lr = get_script_cmdline(cnf, 'perl', join('Seq2C', 'cov2lr.pl'), is_critical=True)
     cov2lr_output = join(cnf.work_dir, splitext(basename(output_fpath))[0] + '.cov2lr.tsv')
-    cmdline = '{cov2lr} -a {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
+
+    controls = ''
+    lr2gene_opt = ''
+    if cnf.controls:
+        controls = '-c ' + cnf.controls  # ':'.join([adjust_path(fpath) for fpath in cnf.controls.split(':')])
+        lr2gene_opt = '-c'
+    #Sakina, what is usually passed to Seq2C as controls? Samples that are part of the project, or something outside of the project?
+
+    cmdline = '{cov2lr} -a {controls} {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
     call(cnf, cmdline, cov2lr_output, exit_on_error=False)
     info()
 
     if not verify_file(cov2lr_output):
         return None
 
+    seq2c_opts = cnf.seq2c_opts or ''
+
     lr2gene = get_script_cmdline(cnf, 'perl', join('Seq2C', 'lr2gene.pl'), is_critical=True)
-    cmdline = lr2gene + ' ' + cov2lr_output
+    cmdline = '{lr2gene} {lr2gene_opt} {seq2c_opts} {cov2lr_output}'.format(**locals())
     res = call(cnf, cmdline, output_fpath, exit_on_error=False)
     info()
 
@@ -220,41 +230,56 @@ def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
     wait_vardict = get_system_path(cnf, 'perl', join('Seq2C', 'waitVardict.pl'), is_critical=True)
     samtools = get_system_path(cnf, 'samtools')
 
-    need_to_redo = any(not verify_file(s.seq2cov_output_fpath) for s in samples) or not cnf.reuse_intermediate
-    if need_to_redo:
-        for i, s in enumerate(samples):
-            if cnf.reuse_intermediate and verify_file(s.seq2cov_output_fpath, silent=True):
-                info(s.seq2cov_output_fpath + ' already exist, reusing')
-            else:
-                safe_mkdir(dirname(s.seq2cov_output_fpath))
-                bam_fpath = dedupped_bam_by_sample[s.name]
-                seq2cov_output_log = s.seq2cov_output_fpath + '.log'
-                seq2cov_output_err = s.seq2cov_output_fpath + '.err'
-                j = i + 1
-                # with file_transaction(cnf.work_dir, s.seq2cov_output_fpath) as tx_fpath:
-                cmdline = '{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {j} {seq2cov} {samtools} {s.seq2cov_output_fpath}'.format(**locals())
-                print str(cnf.project_name)
-                qsub_cmdline = (
-                    '{qsub} -pe smp 1 -S {bash} -q {queue} '
-                    '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
-                    '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} "{cmdline}"'
-                ).format(**locals())
+    to_redo_samples = []
+    for s in samples:
+        if verify_file(s.seq2cov_output_fpath, silent=True) and cnf.reuse_intermediate:
+            info(s.seq2cov_output_fpath + ' already exist, reusing')
+        else:
+            if isfile(s.seq2cov_output_fpath):
+                os.remove(s.seq2cov_output_fpath)
+            to_redo_samples.append(s)
 
-                info('Sumbitting seq2cov.pl for ' + s.name)
-                info(qsub_cmdline)
-                if isfile('seq2c.done.' + str(j)):
-                    os.remove('seq2c.done.' + str(j))
-                call(cnf, qsub_cmdline, silent=True)
-                info()
+    for i, s in enumerate(to_redo_samples):
+        safe_mkdir(dirname(s.seq2cov_output_fpath))
+        bam_fpath = dedupped_bam_by_sample[s.name]
+        seq2cov_output_log = s.seq2cov_output_fpath + '.log'
+        seq2cov_output_err = s.seq2cov_output_fpath + '.err'
+        tx_output_fpath = join(cnf.work_dir, s.seq2cov_output_fpath + '.tx')
+        done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
+        # with file_transaction(cnf.work_dir, s.seq2cov_output_fpath) as tx_fpath:
+        cmdline = (
+            '{seq2cov_wrap} {bam_fpath} {s.name} {bed_fpath} {s.name} {seq2cov} '
+            '{samtools} {tx_output_fpath} {done_marker}').format(**locals())
+        print str(cnf.project_name)
+        qsub_cmdline = (
+            '{qsub} -pe smp 1 -S {bash} -q {queue} '
+            '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
+            '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} "{cmdline}"'
+        ).format(**locals())
 
-        cnt = str(len(samples))
-        cmdline = '{wait_vardict} seq2c {cnt}'.format(**locals())
-        info('Sumbitting waitVardict.pl')
-        info(cmdline)
-        call(cnf, cmdline, silent=True)
-        for i, s in enumerate(samples):
-            verify_file(s.seq2cov_output_fpath, is_critical=True)
-            info('Saved to ' + s.seq2cov_output_fpath)
+        info('Sumbitting seq2cov.pl for ' + s.name)
+        info(qsub_cmdline)
+        if isfile(done_marker):
+            os.remove(done_marker)
+        call(cnf, qsub_cmdline, silent=True)
+        info()
+
+    # cnt = str(len(to_redo_samples))
+    # cmdline = '{wait_vardict} seq2c {cnt}'.format(**locals())
+    # info('Sumbitting waitVardict.pl')
+    # info(cmdline)
+    # call(cnf, cmdline, silent=True)
+    for s in to_redo_samples:
+        tx_output_fpath = join(cnf.work_dir, s.seq2cov_output_fpath + '.tx')
+        info('Waiting for ' + tx_output_fpath + ' to be written...')
+        done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
+        while not isfile(done_marker):
+            sleep(30)
+        verify_file(tx_output_fpath, is_critical=True)
+        os.rename(tx_output_fpath, s.seq2cov_output_fpath)
+        verify_file(s.seq2cov_output_fpath, is_critical=True)
+        info('Done and saved to ' + s.seq2cov_output_fpath)
+        os.remove(done_marker)
 
     # for s in samples:
     #     if not verify_file(s.seq2cov_output_dup_fpath):

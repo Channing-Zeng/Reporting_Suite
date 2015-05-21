@@ -13,7 +13,20 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.seq2c_name, BCBioStructure.cnv_summary_dir)
+    cnf, bcbio_structure = summary_script_proc_params(
+        BCBioStructure.seq2c_name,
+        BCBioStructure.cnv_summary_dir,
+        extra_opts=[
+           (['--controls', '-c'], dict(
+                dest='controls',
+                help='Optional control sample names for Seq2C. For multiple controls, separate them using :')
+            ),
+           (['--seq2c_opts'], dict(
+                dest='seq2c_opts',
+                help='Options for the final lr2gene.pl script.')
+            ),
+        ],
+    )
 
     cnv_reports(cnf, bcbio_structure)
 
