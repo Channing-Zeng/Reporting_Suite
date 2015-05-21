@@ -1,9 +1,12 @@
+import getpass
 import os
 import shutil
 import sys
 import hashlib
 import base64
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
+import datetime
+from time import sleep
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
@@ -51,10 +54,19 @@ class Steps(list):
 
 
 class JobRunning:
-    def __init__(self, name, log_fpath, qsub_cmdline):
-        self.name = name
+    def __init__(self, step, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker):
+        self.step = step
+        self.sample_name = sample_name
+        self.caller_suf = caller_suf
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
+        self.done_marker = done_marker
+        self.repr = step.name
+        if sample_name:
+            self.repr += ' for ' + sample_name
+        if caller_suf:
+            self.repr += ', ' + caller_suf
+        self.is_done = False
 
 
 # noinspection PyAttributeOutsideInit
@@ -63,11 +75,13 @@ class BCBioRunner:
         self.bcbio_structure = bcbio_structure
         self.final_dir = bcbio_structure.final_dirpath
         self.bcbio_cnf = bcbio_cnf
-
         self.cnf = cnf
         cnf.work_dir = bcbio_structure.work_dir
 
-        self.run_id = self.__generate_run_id(bcbio_structure)
+        user_prid = getpass.getuser()
+        timestamp = str(datetime.datetime.now())
+        self.run_id = self.__generate_run_id(self.final_dir, bcbio_structure.project_name, user_prid, timestamp)
+        info('User PRID: ' + user_prid + ', run_id: ' + self.run_id)
 
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
 
@@ -80,7 +94,7 @@ class BCBioRunner:
         self.steps = Steps()
         self._set_up_steps(cnf, self.run_id)
 
-        self.jobs = []
+        self.jobs_running = []
 
         normalize = lambda name: name.lower().replace('_', '').replace('-', '')
         contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
@@ -125,10 +139,10 @@ class BCBioRunner:
 
         self._symlink_cnv()
 
-    def __generate_run_id(self, bcbio_structure):
-        hasher = hashlib.sha1(self.final_dir)
+    def __generate_run_id(self, final_dir, project_name, prid='', timestamp=''):
+        hasher = hashlib.sha1(final_dir + prid + timestamp)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
-        return path_hash + '_' + bcbio_structure.project_name
+        return path_hash + '_' + project_name
 
     def _set_up_steps(self, cnf, run_id):
         basic_params = \
@@ -264,12 +278,17 @@ class BCBioRunner:
             dir_name='mongo_loader',
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
+        seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
+        if cnf.controls:
+            seq2c_cmdline += ' -c ' + cnf.controls
+        if cnf.seq2c_opts:
+            seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
             script=join('sub_scripts', 'seq2c.py'),
             dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
+            paramln=seq2c_cmdline
         )
         self.targqc_summary = Step(cnf, run_id,
             name=BCBioStructure.targqc_name, short_name='targqc',
@@ -296,7 +315,8 @@ class BCBioRunner:
             paramln=project_level_report_cmdline
         )
 
-    def step_output_dir_and_log_paths(self, step, sample_name, caller=None):
+
+    def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
         if sample_name:
             base_output_dirpath = abspath(join(self.final_dir, sample_name))
         else:
@@ -309,45 +329,52 @@ class BCBioRunner:
                           ('_' + caller if caller else '')) + '.log')
 
         log_dirpath = join(self.bcbio_structure.log_dirpath, step.name)
+        safe_mkdir(log_dirpath)
 
-        return output_dirpath, log_fpath, log_dirpath
+        done_markers_dirpath = join(self.bcbio_structure.work_dir, 'done_markers')
+        marker_fpath = join(done_markers_dirpath,
+             (step.name + '_' + step.run_id_ +
+              ('_' + sample_name if sample_name else '') +
+              ('_' + caller if caller else '')) + '.done')
+        safe_mkdir(done_markers_dirpath)
+
+        return output_dirpath, log_fpath, log_dirpath, marker_fpath
 
 
-    def _submit_job(self, step, sample_name='', suf=None, create_dir=True,
-                    out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
+    def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
+                    log_out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
 
-        output_dirpath, log_fpath, log_dirpath = self.step_output_dir_and_log_paths(step, sample_name, suf)
+        output_dirpath, log_err_fpath, log_dirpath, marker_fpath = \
+            self.step_log_marker_and_output_paths(step, sample_name, caller_suf)
+
         if output_dirpath and not isdir(output_dirpath) and create_dir:
             safe_mkdir(join(output_dirpath, pardir))
             safe_mkdir(output_dirpath)
-            safe_mkdir(log_dirpath)
 
-        out_fpath = out_fpath or log_fpath
+        log_out_fpath = log_out_fpath or log_err_fpath
+        safe_mkdir(dirname(log_out_fpath))
 
-        if isfile(out_fpath):
+        if isfile(log_out_fpath):
             try:
-                os.remove(out_fpath)
+                os.remove(log_out_fpath)
             except OSError:
-                err('Warning: cannot remove log file ' + out_fpath + ', probably permission denied.')
+                err('Warning: cannot remove log stdout file ' + log_out_fpath + ', probably permission denied.')
 
-        if log_fpath and isfile(log_fpath):
+        if log_err_fpath and isfile(log_err_fpath):
             try:
-                os.remove(log_fpath)
+                os.remove(log_err_fpath)
             except OSError:
-                err('Warning: cannot remove log file ' + log_fpath + ', probably permission denied.')
-
-        safe_mkdir(dirname(log_fpath))
-        safe_mkdir(dirname(out_fpath))
+                err('Warning: cannot remove log stderr file ' + log_err_fpath + ', probably permission denied.')
 
         # interpreter = get_system_path(self.cnf, step.interpreter, is_critical=True)
         tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
         params = dict({'output_dir': output_dirpath, 'log_dirpath': log_dirpath}.items() +
                       self.__dict__.items() + kwargs.items())
-        cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
+        cmdline = tool_cmdline + ' ' + step.param_line.format(**params) + ' --done-marker ' + marker_fpath
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
-        job_name = step.job_name(sample_name, suf)
+        job_name = step.job_name(sample_name, caller_suf)
         qsub = get_system_path(self.cnf, 'qsub')
         if threads > 1:
             threads += 1
@@ -357,8 +384,8 @@ class BCBioRunner:
         bash = get_system_path(self.cnf, 'bash')
         qsub_cmdline = (
             '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-            '-j n -o {out_fpath} -e {log_fpath} {hold_jid_line} '
-            '-N {job_name} {runner_script} "{cmdline}"'.format(**locals()))
+            '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
+            '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
 
         if self.cnf.verbose:
             info(step.name)
@@ -366,9 +393,11 @@ class BCBioRunner:
         else:
             print step.name,
 
+        if isfile(marker_fpath):
+            os.remove(marker_fpath)
+        job = JobRunning(step, sample_name, caller_suf, log_err_fpath, qsub_cmdline, marker_fpath)
+        self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars)
-
-        self.jobs.append(JobRunning(name=step.name, log_fpath=log_fpath, qsub_cmdline=qsub_cmdline))
 
         if self.cnf.verbose: info()
         return output_dirpath
@@ -383,6 +412,7 @@ class BCBioRunner:
             return qualimap_bed_fpath
         else:
             return bed_fpath
+
 
     def post_jobs(self):
         callers = self.bcbio_structure.variant_callers.values()
@@ -538,7 +568,7 @@ class BCBioRunner:
                                 ' Note that you need to run VarFilter first, and this step is not in config.')
                         else:
                             self._submit_job(
-                                self.varqc_after, sample.name, suf=caller.name, threads=self.threads_per_sample,
+                                self.varqc_after, sample.name, caller_suf=caller.name, threads=self.threads_per_sample,
                                 wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
                                 vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
 
@@ -600,22 +630,61 @@ class BCBioRunner:
         if not self.cnf.verbose:
             print ''
         if self.cnf.verbose:
-            info('Done.')
+            info('The following jobs were submitted:')
 
-        if not self.jobs:
+        if not self.jobs_running:
             info()
             info('No jobs submitted.')
         else:
-            msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name +
-                   '. Log files for each jobs to track:']
-            lengths = []
-            for job in self.jobs:
-                lengths.append(len(job.name))
-            max_length = max(lengths)
+            msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name + '. '
+                   'Log files for each jobs to track:']
+            # lengths = []
+            # for job in self.jobs_running:
+            #     lengths.append(len(job.name))
+            # max_length = max(lengths)
 
-            for job in self.jobs:
-                msg.append('  ' + job.name + ': ' + ' ' * (max_length - len(job.name)) + job.log_fpath)
-            # send_email('\n'.join(msg))
+            for job in self.jobs_running:
+                # msg += ' ' * (max_length - len(job.name)) + job.log_fpath)
+                info('  ' + job.repr)
+
+        info()
+        info('Waiting for the jobs to be proccesed on the GRID...')
+        while True:
+            for job in self.jobs_running:
+                if not job.is_done and isfile(job.done_marker):
+                    job.is_done = True
+                    info('Done ' + job.repr)
+
+            if not all(j.is_done for j in self.jobs_running):
+                sleep(30)
+            else:
+                break
+
+            final_report_job = next((j for j in self.jobs_running if j.step == self.combined_report), None)
+            if final_report_job.is_done:
+                with open(final_report_job.done_marker) as f:
+                    html_report_url = f.read()
+                info('Final report is saved to ' + html_report_url)
+                break
+
+        # Waiting for Seq2C if needed
+        not_done = [j for j in self.jobs_running if not j.is_done]
+        if not_done:
+            info('Waiting for:')
+            for job in not_done:
+                info('  ' + job.repr)
+
+            while True:
+                for job in not_done:
+                    if not job.is_done and isfile(job.done_marker):
+                        job.is_done = True
+                        info('  ' + job.repr)
+
+                if not all(j.is_done for j in self.jobs_running):
+                    sleep(30)
+                else:
+                    break
+
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name, threads,
                      steps=None, job_names_to_wait=None):
@@ -628,14 +697,14 @@ class BCBioRunner:
 
         if self.varannotate in steps:
             self._submit_job(
-                self.varannotate, sample.name, suf=caller_name, vcf=vcf_fpath, threads=threads,
+                self.varannotate, sample.name, caller_suf=caller_name, vcf=vcf_fpath, threads=threads,
                 bam_cmdline=bam_cmdline, sample=sample.name, caller=caller_name,
                 genome=sample.genome, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
         if self.varqc in steps:
             self._submit_job(
-                self.varqc, sample.name, suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
+                self.varqc, sample.name, caller_suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
                 threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)]
                                 if self.varannotate in self.steps else [])

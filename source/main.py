@@ -75,6 +75,7 @@ def read_opts_and_cnfs(extra_opts,
         (['--project-name'], dict(dest='project_name')),
         (['--genome'], dict(dest='genome', default=defaults['genome'])),
         (['--email'], dict(dest='email')),
+        (['--done-marker'], dict(dest='done_marker')),
     ]
 
     parser = OptionParser(description=description)

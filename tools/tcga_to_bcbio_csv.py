@@ -108,6 +108,9 @@ def main():
     batches = []
     final_samples = set()
 
+    bina_csv_dirpath = 'bina_projects'
+    safe_mkdir(bina_csv_dirpath)
+
     for patient, patient_samples in samples_by_patient.iteritems():
         tumours = [s for s in patient_samples if not s.is_normal]
         normals = [s for s in patient_samples if s.is_normal]
@@ -135,7 +138,27 @@ def main():
                 final_samples.add(main_normal)
             batches.append(b)
 
+        ##################
+        ###### Bina ######
+        bina_patient_dirpath = join(bina_csv_dirpath, patient)
+        safe_mkdir(bina_patient_dirpath)
+        normals_csv_fpath = join(bina_patient_dirpath, 'normals.csv')
+        tumours_csv_fpath = join(bina_patient_dirpath, 'tumors.csv')
 
+        if main_normal:
+            with open(normals_csv_fpath, 'w') as f:
+                f.write('name,bam\n')
+                f.write(main_normal.description + ',' + join(bams_dirpath, main_normal.name + '.bam') + '\n')
+
+        with open(tumours_csv_fpath, 'w') as f:
+            f.write('name,bam\n')
+            for t in tumours:
+                f.write(t.description + ',' + join(bams_dirpath, t.name + '.bam') + '\n')
+
+    err('Saved bina CSVs to ' + bina_csv_dirpath)
+
+    ############################
+    ###### Fixed BAM list ######
     safe_mkdir(filtered_bams_dirpath)
 
     for fname in os.listdir(bams_dirpath):
@@ -151,6 +174,10 @@ def main():
                 if not exists(dst_fpath + '.bai'):
                     os.symlink(src_fpath + '.bai', dst_fpath + '.bai')
 
+    err('Saved symlinks to BAMs to ' + filtered_bams_dirpath)
+
+    ###########################
+    ######## Bcbio CSV ########
     print 'sample,description,batch,phenotype'
     for s in sorted(final_samples, key=lambda s: s.name):
         print ','.join([s.name, s.description, ';'.join(sorted(b.name for b in s.batches)), ('normal' if s.is_normal else 'tumor')])

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+from time import sleep
 import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
 
 import os
 import sys
-from os.path import join
+from os.path import join, isfile
 from optparse import OptionParser
 from collections import OrderedDict, defaultdict
 
@@ -43,11 +44,11 @@ def main():
 
     info()
     info('*' * 70)
-
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
         bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name))
 
+    # Post-processing one bcbio project as usually
     if len(bcbio_structures) == 1:
         if cnf.min_freq is not None:
             info('Min freq for filtering is %f' % cnf.min_freq)
@@ -62,8 +63,9 @@ def main():
         bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
         bcbio_runner.post_jobs()
 
+
+    # Special case: multiple projects in input. No post-processing them, but rather combining summary reports together.
     else:
-        # Special case: multiple projects input. Need to join summary reports instead.
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
