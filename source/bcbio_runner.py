@@ -648,14 +648,19 @@ class BCBioRunner:
                 info('  ' + job.repr)
 
         info()
-        info('Waiting for the jobs to be proccesed on the GRID...')
+        waiting = False
         while True:
             for job in self.jobs_running:
                 if not job.is_done and isfile(job.done_marker):
                     job.is_done = True
                     info('Done ' + job.repr)
+                    waiting = False
 
             if not all(j.is_done for j in self.jobs_running):
+                info()
+                if not waiting:
+                    waiting = True
+                    info('Waiting for the jobs to be proccesed on the GRID (monitor with qstat)...')
                 sleep(30)
             else:
                 break
@@ -677,10 +682,14 @@ class BCBioRunner:
                 for job in not_done:
                     if not job.is_done and isfile(job.done_marker):
                         job.is_done = True
-                        info('  ' + job.repr)
+                        info('Done ' + job.repr)
+                        waiting = False
 
                 if not all(j.is_done for j in self.jobs_running):
                     sleep(30)
+                    if not waiting:
+                        waiting = True
+                        info('Waiting for the jobs to be proccesed on the GRID (monitor with qstat)...')
                 else:
                     break
 

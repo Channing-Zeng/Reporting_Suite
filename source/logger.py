@@ -94,10 +94,14 @@ def send_email(msg='', subj=''):
         msg['To'] = ','.join(addresses)
 
         def try_send(host):
-            s = smtplib.SMTP(host)
-            s.sendmail(msg['From'], addresses, msg.as_string())
-            s.quit()
-            info('Mail sent to ' + msg['To'] + ' using ' + host)
+            try:
+                s = smtplib.SMTP(host)
+                s.sendmail(msg['From'], addresses, msg.as_string())
+                s.quit()
+            except:
+                err(traceback.format_exc())
+            else:
+                info('Mail sent to ' + msg['To'] + ' using ' + host)
 
         def print_msg():
             for line in msg.as_string().split('\n'):

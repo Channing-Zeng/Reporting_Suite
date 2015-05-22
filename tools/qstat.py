@@ -41,10 +41,14 @@ cur_fields, full_name, pred_jobs = None, '', ''
 def add_row(cur_fields, full_name, pred_jobs):
     if len(cur_fields) >= 9:
         job_id, prior, name, user, state, date, time, queue, slots = cur_fields[:9]
+        rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
     else:
-        job_id, prior, name, user, state, date, time, slots = cur_fields[:8]
-        queue = ''
-    rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
+        if len(cur_fields) >= 8:
+            job_id, prior, name, user, state, date, time, slots = cur_fields[:8]
+            queue = ''
+            rows.append([job_id, prior, full_name, user, state, date, time, queue, slots, pred_jobs])
+        else:
+            sys.stderr.write('Line with small number of fields: ' + str(cur_fields) + '\n')
     return None, '', ''
 
 
