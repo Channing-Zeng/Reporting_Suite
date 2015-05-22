@@ -660,12 +660,11 @@ class BCBioRunner:
             else:
                 break
 
-            final_report_job = next((j for j in self.jobs_running if j.step == self.combined_report), None)
-            if final_report_job.is_done:
-                with open(final_report_job.done_marker) as f:
-                    html_report_url = f.read()
-                info('Final report is saved to ' + html_report_url)
-                break
+        final_report_job = next((j for j in self.jobs_running if j.step == self.combined_report), None)
+        if final_report_job.is_done:
+            with open(final_report_job.done_marker) as f:
+                html_report_url = f.read()
+            info('Final report is saved to ' + html_report_url)
 
         # Waiting for Seq2C if needed
         not_done = [j for j in self.jobs_running if not j.is_done]

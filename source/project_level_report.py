@@ -3,10 +3,11 @@ from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
 from traceback import print_exc
+import source
 
 from source.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, send_email, warn, err
-from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir
+from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
 from source.tools_from_cnf import get_system_path
@@ -17,7 +18,9 @@ def make_project_level_report(cnf, bcbio_structure):
     step_greetings('Project-level report')
 
     general_section = ReportSection('general_section', '', [])
-    general_records = _add_summary_reports(bcbio_structure, general_section)
+    general_records = []
+    general_records = _add_summary_reports(bcbio_structure, general_section, general_records)
+    general_records = _add_variants(bcbio_structure, general_section, general_records)
 
     individual_reports_section = ReportSection('individual_reports', '', [])
     sample_reports_records = _add_per_sample_reports(bcbio_structure, general_records, individual_reports_section)
@@ -47,11 +50,14 @@ def make_project_level_report(cnf, bcbio_structure):
     info('*' * 70)
     info('Project-level report saved in: ')
     info('  ' + final_summary_report_fpath)
+    if html_report_url:
+        info('  Web link: ' + html_report_url)
     send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
+
     if cnf.done_marker:
         safe_mkdir(dirname(cnf.done_marker))
         with open(cnf.done_marker, 'w') as f:
-            f.write(html_report_url)
+            f.write(html_report_url or final_summary_report_fpath)
 
 
 def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure):
@@ -170,13 +176,47 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
     return html_report_url
 
 
-def _add_summary_reports(bcbio_structure, general_section):
-    general_records = []
+def _add_variants(bcbio_structure, general_section, general_records):
+    val = OrderedDict()
+    single_val = OrderedDict()
+    paired_val = OrderedDict()
 
+    for caller in bcbio_structure.variant_callers.values():
+        mut_fname = add_suffix(source.mut_fname_template.format(caller_name=caller.name), source.mut_pass_suffix)
+        mut_fpath = join(bcbio_structure.date_dirpath, mut_fname)
+
+        if verify_file(mut_fpath, silent=True):
+            val[caller.name] = mut_fpath
+        else:
+            single_mut_fpath = add_suffix(mut_fpath, source.mut_single_suffix)
+            paired_mut_fpath = add_suffix(mut_fpath, source.mut_paired_suffix)
+            if verify_file(single_mut_fpath):
+                single_val[caller.name] = single_mut_fpath
+                # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
+            if verify_file(paired_mut_fpath):
+                paired_val[caller.name] = paired_mut_fpath
+                # _add_rec(paired_mut_fpath, caller.name + ' mutations for paired samples')
+
+    for val, metric_name in (
+         (val, 'Mutations'),
+         (single_val, 'Mutations for separate samples'),
+         (paired_val, 'Mutations for paired samples')):
+        if val:
+            metric = Metric(metric_name, common=True)
+            rec = Record(
+                metric=metric,
+                value=metric.name,
+                html_fpath=_convert_to_relpath(val, bcbio_structure.date_dirpath))
+            general_section.add_metric(metric)
+            general_records.append(rec)
+
+    return general_records
+
+
+def _add_summary_reports(bcbio_structure, general_section, general_records):
     for (name, repr_name, summary_dir) in [
             (BCBioStructure.fastqc_name,      BCBioStructure.fastqc_repr,      BCBioStructure.fastqc_summary_dir),
             (BCBioStructure.targqc_name,      BCBioStructure.targqc_repr,      BCBioStructure.targqc_summary_dir),
-            # ('filtered_variants',             'Filtered variants',             'filtered_variants'),
             (BCBioStructure.varqc_name,       BCBioStructure.varqc_repr,       BCBioStructure.varqc_summary_dir),
             (BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_repr, BCBioStructure.varqc_after_summary_dir)]:
 
@@ -190,6 +230,7 @@ def _add_summary_reports(bcbio_structure, general_section):
                        html_fpath=_convert_to_relpath(
                            summary_report_fpath,
                            bcbio_structure.date_dirpath)))
+
     return general_records
 
 
@@ -279,11 +320,14 @@ def _convert_to_relpath(value, base_dirpath):
 def _save_static_html(full_report, output_dirpath, report_base_name, project_name):
     # metric name in FullReport --> metric name in Static HTML
     metric_names = OrderedDict([
-        ('FastQC', 'FastQC'),
+        (BCBioStructure.fastqc_repr, 'FastQC'),
         # ('BAM', 'BAM'),
-        ('Target QC', 'SeqQC'),
-        ('Var QC', 'VarQC'),
-        ('Var QC after filtering', 'VarQC after filtering')])
+        (BCBioStructure.targqc_repr, 'SeqQC'),
+        ('Mutations', 'Mutations'),
+        ('Mutations for separate samples', 'Mutations for separate samples'),
+        ('Mutations for paired samples', 'Mutations for paired samples'),
+        (BCBioStructure.varqc_repr, 'VarQC'),
+        (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
 
     def _process_record(record):
         new_html_fpath = []
@@ -305,6 +349,9 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
     for record in sample_report.records:
         if record.metric.common:
             common_dict[_get_summary_report_name(record)] = record.__dict__
+            if 'Mutations' in record.metric.name:
+                common_dict[_get_summary_report_name(record)]['contents'] = (
+                    record.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in record.html_fpath.items()))
 
     # individual records
     main_dict = dict()

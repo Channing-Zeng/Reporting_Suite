@@ -29,6 +29,11 @@ fastqc_repr              = 'FastQC'
 seq2c_name               = 'Seq2C'
 seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
 
+mut_fname_template = '{caller_name}.txt'
+mut_single_suffix = 'single'
+mut_paired_suffix = 'paired'
+mut_pass_suffix = 'PASS'
+
 
 class BaseSample:
     def __init__(self, name, dirpath=None, path_base=None, bam=None, bed=None, vcf=None, genome=None):

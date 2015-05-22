@@ -1,28 +1,18 @@
 from collections import OrderedDict
-from genericpath import isdir, exists
 import os
-import shutil
-import pickle
-import operator
+from os.path import basename, join, isfile, dirname, islink, abspath, isdir
 
-from os.path import basename, join, isfile, dirname, splitext, islink, pardir, abspath
 from joblib import Parallel, delayed
-##from memory_profiler import profile
-import sys
+
+import source
 
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.config import defaults
-from source.tools_from_cnf import get_script_cmdline, get_system_path
-from source.variants.Effect import Effect
-from source.logger import step_greetings, info, critical, err, warn
-from source.variants.anno import _snpsift_annotate
-from source.variants.vcf_processing import iterate_vcf, vcf_one_per_line, \
-    get_sample_column_index, bgzip_and_tabix, vcf_merge, leave_main_sample
-from source.utils import mean
-from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, intermediate_fname, symlink_plus
-from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import remove_rejected, vcf_is_empty, igvtools_index
+from source.tools_from_cnf import get_script_cmdline
+from source.logger import critical, err, warn
+from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus
 from source.logger import info
 
 
@@ -115,7 +105,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name):
         except ValueError:
             critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
 
-    vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, 'PASS')
+    vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
     cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
@@ -250,9 +240,11 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     if single_vcf_by_sample:
         info('*' * 70)
         info('Single samples (total ' + str(len(paired_vcf_by_sample)) + '):')
-        vcf2txt_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
+
+        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if paired_vcf_by_sample:
-            vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'single')
+            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
 
         vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
@@ -261,13 +253,15 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     if paired_vcf_by_sample:
         info('*' * 70)
         info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
-        vcf2txt_fpath = join(bcbio_structure.var_dirpath, caller.name + '.txt')
+
+        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if single_vcf_by_sample:
-            vcf2txt_fpath = add_suffix(vcf2txt_fpath, 'paired')
+            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
 
         vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, vcf2txt_fpath)
-        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
-        caller.single_mut_res_fpath = mut_fpath
+        caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
+        caller.paired_mut_res_fpath = mut_fpath
 
     info('-' * 70)
     info()
@@ -294,31 +288,31 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res
     return vcf2txt_res_fpath, mut_fpath
 
 
-def combine_mafs(cnf, maf_fpaths, output_basename):
-    output_fpath = output_basename + '.maf'
-    output_pass_fpath = output_basename + '.pass.maf'
-
-    if isfile(output_fpath): os.remove(output_fpath)
-    if isfile(output_pass_fpath): os.remove(output_pass_fpath)
-
-    if not maf_fpaths:
-        warn('No MAFs - no combined MAF will be made.')
-        return None, None
-
-    if not isdir(dirname(output_fpath)): safe_mkdir(dirname(output_fpath))
-
-    with open(output_fpath, 'w') as out, \
-         open(output_pass_fpath, 'w') as out_pass:
-
-        for i, fpath in enumerate(maf_fpaths):
-            with open(fpath) as inp:
-                for j, line in enumerate(inp):
-                    if i > 0 and j in [0, 1]:
-                        continue
-                    out.write(line)
-                    if '\tInvalid\t' not in line:
-                        out_pass.write(line)
-    return output_fpath, output_pass_fpath
+# def combine_mafs(cnf, maf_fpaths, output_basename):
+#     output_fpath = output_basename + '.maf'
+#     output_pass_fpath = output_basename + '.pass.maf'
+#
+#     if isfile(output_fpath): os.remove(output_fpath)
+#     if isfile(output_pass_fpath): os.remove(output_pass_fpath)
+#
+#     if not maf_fpaths:
+#         warn('No MAFs - no combined MAF will be made.')
+#         return None, None
+#
+#     if not isdir(dirname(output_fpath)): safe_mkdir(dirname(output_fpath))
+#
+#     with open(output_fpath, 'w') as out, \
+#          open(output_pass_fpath, 'w') as out_pass:
+#
+#         for i, fpath in enumerate(maf_fpaths):
+#             with open(fpath) as inp:
+#                 for j, line in enumerate(inp):
+#                     if i > 0 and j in [0, 1]:
+#                         continue
+#                     out.write(line)
+#                     if '\tInvalid\t' not in line:
+#                         out_pass.write(line)
+#     return output_fpath, output_pass_fpath
 
 
 def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_freq=None):
