@@ -131,10 +131,15 @@ def check_system_resources(cnf, required=list(), optional=list()):
                 err(program + ' is required. Specify path in system config or in your environment.')
                 to_exit = True
             else:
-                data['path'] = adjust_system_path(data['path'])
-                if not isdir(data['path']) and not file_exists(data['path']):
-                    err(data['path'] + ' does not exist.')
-                    to_exit = True
+                if 'module' in data:
+                    os.system('module load ' + data['module'])
+                    # if 'path' not in data:
+                    #     data['path'] = program
+                elif 'path' in data:
+                    data['path'] = adjust_system_path(data['path'])
+                    if not isdir(data['path']) and not file_exists(data['path']):
+                        err(data['path'] + ' does not exist.')
+                        to_exit = True
 
     for program in optional:
         resources = cnf.get('resources')

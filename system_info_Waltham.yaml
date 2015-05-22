@@ -33,7 +33,8 @@ resources:
   picard:
     path: ext_tools/picard/picard.jar
   qsub:
-    path: /opt/az/adm/univa/bin/lx-amd64/qsub
+    module: sge
+
 #  qsub:
 #    path: tools/qsub.sh
 
