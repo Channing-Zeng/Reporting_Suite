@@ -52,7 +52,10 @@ def make_project_level_report(cnf, bcbio_structure):
     info('  ' + final_summary_report_fpath)
     if html_report_url:
         info('  Web link: ' + html_report_url)
-    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + html_report_url or final_summary_report_fpath)
+    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
+
+    info()
+    info('Done report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
 
     if cnf.done_marker:
         safe_mkdir(dirname(cnf.done_marker))
@@ -323,9 +326,9 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
         (BCBioStructure.fastqc_repr, 'FastQC'),
         # ('BAM', 'BAM'),
         (BCBioStructure.targqc_repr, 'SeqQC'),
-        ('Mutations', 'Mutations'),
-        ('Mutations for separate samples', 'Mutations for separate samples'),
-        ('Mutations for paired samples', 'Mutations for paired samples'),
+        # ('Mutations', 'Mutations'),
+        # ('Mutations for separate samples', 'Mutations for separate samples'),
+        # ('Mutations for paired samples', 'Mutations for paired samples'),
         (BCBioStructure.varqc_repr, 'VarQC'),
         (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
 
@@ -356,7 +359,8 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
     # individual records
     main_dict = dict()
     main_dict["sample_reports"] = []
-    main_dict["metric_names"] = metric_names.values()
+    main_dict["metric_names"] = [v for k, v in metric_names.items()
+                                 if k in [m.name for m in full_report.metric_storage.get_metrics(skip_general_section=True)]]
     for sample_report in full_report.sample_reports:
         new_records = [_process_record(record.__dict__) for record in sample_report.records
                        if record.metric.name in metric_names.keys()]

@@ -99,6 +99,7 @@ def send_email(msg='', subj=''):
                 s.sendmail(msg['From'], addresses, msg.as_string())
                 s.quit()
             except:
+                info('Could not send email to ' + msg['To'] + ' using ' + host)
                 err(traceback.format_exc())
             else:
                 info('Mail sent to ' + msg['To'] + ' using ' + host)
