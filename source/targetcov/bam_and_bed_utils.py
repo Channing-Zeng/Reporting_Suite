@@ -27,9 +27,21 @@ def count_bed_cols(bed_fpath):
     critical('Empty bed file: ' + bed_fpath)
 
 
+def remove_comments(cnf, bed_fpath):
+    def f(l):
+        if not l.startswith('#'):
+            return l
+        else:
+            return None
+    return iterate_file(cnf, bed_fpath, f, 'rm#')
+
+
 def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
     if abspath(exons_bed) == abspath(amplicons_bed):
         warn('Same file used for exons and amplicons: ' + exons_bed)
+
+    amplicons_bed = remove_comments(cnf, amplicons_bed)
+    seq2c_bed = remove_comments(cnf, seq2c_bed)
 
     # Exons
     info()

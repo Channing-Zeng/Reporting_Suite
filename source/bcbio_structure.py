@@ -175,7 +175,8 @@ def _detect_move_run_config(config_dirpath, opts):
         # alright, in commandline. copying over to config dir.
         opts.run_cnf = provided_cnf_fpath
         project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(provided_cnf_fpath)))
-        if not os.path.samefile(provided_cnf_fpath, project_run_cnf_fpath):
+
+        if not isfile(project_run_cnf_fpath) or not os.path.samefile(provided_cnf_fpath, project_run_cnf_fpath):
             info('Using ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
                 try:

@@ -14,19 +14,19 @@ if verify_module('yaml'):
 else:
     critical('Error: cannot import module yaml. ')
 
-cur_dirpath = dirname(abspath(__file__))
+this_script_dirpath = dirname(abspath(__file__))
 
 
 defaults = dict(
     sys_cnfs = dict(
-        us=abspath(join(cur_dirpath, pardir, 'system_info_Waltham.yaml')),
-        uk=abspath(join(cur_dirpath, pardir, 'system_info_AP.yaml')),
-        china=abspath(join(cur_dirpath, pardir, 'system_info_China.yaml')),
-        cloud=abspath(join(cur_dirpath, pardir, 'system_info_cloud.yaml')),
-        local=abspath(join(cur_dirpath, pardir, 'test', 'system_info.yaml')),
+        us=abspath(join(this_script_dirpath, pardir, 'system_info_Waltham.yaml')),
+        uk=abspath(join(this_script_dirpath, pardir, 'system_info_AP.yaml')),
+        china=abspath(join(this_script_dirpath, pardir, 'system_info_China.yaml')),
+        cloud=abspath(join(this_script_dirpath, pardir, 'system_info_cloud.yaml')),
+        local=abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
-    run_cnf = abspath(join(cur_dirpath, pardir, 'run_info.yaml')),
-    run_cnf_deep_seq = abspath(join(cur_dirpath, pardir, 'run_info_DeepSeq.yaml')),
+    run_cnf = abspath(join(this_script_dirpath, pardir, 'run_info.yaml')),
+    run_cnf_deep_seq = abspath(join(this_script_dirpath, pardir, 'run_info_DeepSeq.yaml')),
 
     load_mongo = False,  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh',
@@ -38,7 +38,7 @@ defaults = dict(
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
 
-defaults_yaml_fpath = abspath(join(cur_dirpath, pardir, 'RUNINFO_DEFAULTS.yaml'))
+defaults_yaml_fpath = abspath(join(this_script_dirpath, pardir, 'RUNINFO_DEFAULTS.yaml'))
 verify_file(defaults_yaml_fpath, is_critical=True)
 run_info_defaults = load_yaml(open(defaults_yaml_fpath), Loader=Loader)
 for k, v in run_info_defaults.items():
