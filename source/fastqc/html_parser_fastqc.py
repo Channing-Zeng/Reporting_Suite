@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import sys
 import os
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 import collections
 import itertools
 from source import verify_file
+from source.logger import err, info
 
 
 _header = ["Basic Statistics",
@@ -22,17 +23,30 @@ _header = ["Basic Statistics",
 
 
 def get_graphs(samples):
-    parsed_data = collections.OrderedDict()
+    parsed_data = collections.OrderedDict((h, list()) for h in _header)
+
     for s in samples:
         if verify_file(s.fastqc_html_fpath):
             with open(s.fastqc_html_fpath) as source_file_obj:
                 html = source_file_obj.read()
-                soup = BeautifulSoup(html)
-                #bam_file_name = soup.title.string.strip(" FastQC Report")
+                parts = [p.split('</div>')[0] for p in html.split('<div class="module">')[1:]]
+                # <h2><img/></h2><table></table></div>  OR  <h2><img/></h2><p><img/></p></div>
+                for i, part in enumerate(parts):
+                    info('Parsing ' + _header[i])
+                    info(str(part))
+                    table, graph = None, None
+                    ok_img = '<img ' + part.split('"><img ')[1].split('"/>')[0] + '"/>'
+                    if '<table>' in part:
+                        table = '<table>' + part.split('<table>')[1]
+                    if '<p><img ' in part:
+                        graph = '<img ' + part.split('<p><img ')[1].split('"/>')[0] + '"/>'
+                    parsed_data[_header[i]].append([s.name, ok_img, graph, table])
 
-                module_divs = soup.find_all("div", class_="module")
-                _sort_graph_by_type(parsed_data, module_divs, s.name)
-                soup.decompose()
+                # module_divs = soup.find_all("div", class_="module")
+                # _sort_graph_by_type(parsed_data, module_divs, s.name)
+                # soup.decompose()
+        else:
+            err('Could not find fastqc html fpath for sample ' + s.name + ': ' + str(s.fastqc_html_fpath))
 
     return parsed_data
 
@@ -50,6 +64,12 @@ def _sort_graph_by_type(parsed_data, divs, bam_file_name):
 
         if _header[i] not in parsed_data:
             parsed_data[_header[i]] = list()
+        print 'Graph for', bam_file_name
+        print graph
+        print ''
+        print 'Table'
+        print table
+        print ''
         parsed_data[_header[i]].append([bam_file_name, ok_img, graph, table])
         i += 1
 
@@ -74,8 +94,3 @@ if __name__ == "__main__":
             #print a
     #for a in group2(values, 3):
     #print  a[0][0]
-
-
-
-
-

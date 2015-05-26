@@ -29,8 +29,10 @@ def print_graphs(outfile, graphs):
     print >> outfile, '<table >'
 
     for graph_name, values in graphs.items():
-        print >> outfile, '<tr class="title" ><td colspan=" ' + str(
+        line = '<tr class="title" ><td colspan=" ' + str(
             len(values)) + '"><h2 >' + graph_name + '</h2><td></tr>'
+        # print line
+        print >> outfile, line
         print >> outfile, '<tr >'
         i = 0
         for div_contains in values:
@@ -38,8 +40,10 @@ def print_graphs(outfile, graphs):
             ok_img = div_contains[1]
             graph = div_contains[2]
             table = div_contains[3]
-            print >> outfile, '<td  name="tcol' + str(i) + '"  id="tcol' + str(i) + '"  class="data">' + str(
+            line = '<td  name="tcol' + str(i) + '"  id="tcol' + str(i) + '"  class="data">' + str(
                 ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(table) + '</td>'
+            # print line
+            print >> outfile, line
             i += 1
         print >> outfile, '</tr>'
 
@@ -351,4 +355,3 @@ def print_css():
 
 if __name__ == "__main__":
     print_html(sys.argv[1], sys.argv[2:])
-
