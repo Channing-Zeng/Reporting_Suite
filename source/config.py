@@ -26,6 +26,7 @@ defaults = dict(
         local=abspath(join(cur_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
     run_cnf = abspath(join(cur_dirpath, pardir, 'run_info.yaml')),
+    run_cnf_deep_seq = abspath(join(cur_dirpath, pardir, 'run_info_DeepSeq.yaml')),
 
     load_mongo = False,  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh',

@@ -34,7 +34,8 @@ def main():
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='Re-annotate BED file with gene names')
     parser.add_option('--count-dups', dest='count_dups', action='store_true', default=False, help='Count duplicates in coverage metrics')
     parser.add_option('--controls', '-c', dest='controls', help='Optional control sample names for Seq2C. For multiple controls, separate them using :')
-    parser.add_option('--seq2c_opts', dest='seq2c_opts', help='ptions for the final lr2gene.pl script.')
+    parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
+    parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='Use run_info_DeepSeq.yaml')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths = process_post_bcbio_args(parser)
 

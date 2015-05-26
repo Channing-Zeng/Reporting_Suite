@@ -164,6 +164,10 @@ def _detect_sys_config(config_dirpath, opts):
 
 def _detect_move_run_config(config_dirpath, opts):
     provided_cnf_fpath = adjust_path(opts.run_cnf)
+
+    if not provided_cnf_fpath and opts.deep_seq:
+        provided_cnf_fpath = defaults['run_cnf_deep_seq']
+
     # provided in commandline?
     if provided_cnf_fpath:
         verify_file(provided_cnf_fpath, is_critical=True)
