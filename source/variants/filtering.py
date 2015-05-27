@@ -234,8 +234,20 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
                     info('  tumor VCF: ' + vcf_fpath)
         return vcf_by_sample
 
-    single_vcf_by_sample = fill_in([b for b in bcbio_structure.batches.values() if not b.paired])
-    paired_vcf_by_sample = fill_in([b for b in bcbio_structure.batches.values() if b.paired])
+    paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
+    info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
+    paired_vcf_by_sample = fill_in(paired_batches)
+
+    single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
+    info('Single batches: ' + ', '.join(b.name for b in single_batches))
+    single_vcf_by_sample = fill_in(single_batches)
+
+    single_samples = [s for s in bcbio_structure.samples if s.name not in paired_vcf_by_sample and s.name not in single_vcf_by_sample]
+    for s in single_samples:
+        vcf_fpath = all_vcf_by_sample.get(s.name)
+        if vcf_fpath:
+            single_vcf_by_sample[s.name] = vcf_fpath
+            info('  ' + s.name + ' VCF: ' + vcf_fpath)
 
     if single_vcf_by_sample:
         info('*' * 70)

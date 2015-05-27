@@ -66,7 +66,7 @@ def main():
 
 
     # Special case: multiple projects in input. No post-processing them, but rather combining summary reports together.
-    else:
+    elif len(bcbio_structures) > 1:
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
