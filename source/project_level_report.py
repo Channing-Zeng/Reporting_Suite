@@ -96,6 +96,8 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
             info('adding the new line:' + new_line)
 
             with open(tx_fpath, 'w') as f:
+                os.umask(0002)
+                os.chmod(tx_fpath, 0666)
                 for l in lines:
                     if not l:
                         pass
@@ -371,6 +373,3 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
 
     return write_static_html_report({"common": common_dict, "main": main_dict},
                                     output_dirpath, report_base_name)
-
-
-

@@ -28,7 +28,7 @@ def count_bed_cols(bed_fpath):
 
 
 def remove_comments(cnf, bed_fpath):
-    def f(l):
+    def f(l, i):
         if not l.startswith('#'):
             return l
         else:
