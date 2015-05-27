@@ -89,7 +89,7 @@ class BCBioRunner:
         total_samples_num = len(self.bcbio_structure.samples)
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
         self.summary_threads = min(self.max_threads, total_samples_num)
-        self.threads_per_sample = max(self.max_threads / total_samples_num, 1)
+        self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self.steps = Steps()
         self._set_up_steps(cnf, self.run_id)
