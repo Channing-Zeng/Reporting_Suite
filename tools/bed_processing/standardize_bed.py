@@ -226,7 +226,10 @@ def _preprocess(bed_fpath, work_dirpath):
                         if bed_params.GRCh_names is not None and bed_params.GRCh_names:
                             err('mixing of GRCh and hg chromosome names!')
                         bed_params.GRCh_names = False
-                        processed_line = line
+                        if line.startswith('chrMT'):  # common misprint, correcting chrMT --> chrM
+                            processed_line = '\t'.join(['chrM'] + line.split('\t')[1:])
+                        else:
+                            processed_line = line
                     elif line.split('\t')[0] in BedParams.GRCh_to_hg:  # GRCh chr names
                         if bed_params.GRCh_names is not None and not bed_params.GRCh_names:
                             err('mixing of GRCh and hg chromosome names!')
