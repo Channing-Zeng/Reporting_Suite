@@ -71,7 +71,7 @@ genomes:
       transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
-    az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
+    az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ_V1.bed
 
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp: /group/cancer_informatics/tools_resources/NGS/genomes/hg19/Annotation/filter_common_snp.txt
