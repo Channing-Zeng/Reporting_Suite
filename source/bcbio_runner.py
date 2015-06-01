@@ -147,7 +147,8 @@ class BCBioRunner:
     def _set_up_steps(self, cnf, run_id):
         basic_params = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
-            ' --run-cnf ' + self.cnf.run_cnf
+            ' --run-cnf ' + self.cnf.run_cnf + \
+            ' --project-name ' + self.bcbio_structure.project_name + ' '
 
         summaries_cmdline_params = \
             basic_params + \
@@ -161,8 +162,7 @@ class BCBioRunner:
             ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
             ' --log-dir {log_dirpath}' + \
-            ' --genome {genome}' + \
-            ' --project-name ' + self.bcbio_structure.project_name + ' '
+            ' --genome {genome}'
 
         if cnf.email:
             summaries_cmdline_params += ' --email ' + remove_quotes(self.cnf.email) + ' '

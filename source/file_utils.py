@@ -67,7 +67,7 @@ def safe_mkdir(dirpath, descriptive_name=''):
         critical(descriptive_name + ' ' + dirpath + ' is a file.')
 
     num_tries = 0
-    max_tries = 5
+    max_tries = 10
 
     while not exists(dirpath):
         # we could get an error here if multiple processes are creating

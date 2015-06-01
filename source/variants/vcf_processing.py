@@ -676,7 +676,7 @@ def igvtools_index(cnf, vcf_fpath):
         igvtools = get_java_tool_cmdline(cnf, 'igvtools')
 
     cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
-    call(cnf, cmdline)
+    call(cnf, cmdline, exit_on_error=False)
     if exists('igv.log'):
         try:
             os.remove('igv.log')
@@ -704,11 +704,11 @@ def bgzip_and_tabix(cnf, vcf_fpath):
 
     info('BGzipping VCF')
     cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
-    call(cnf, cmdline, None)
+    call(cnf, cmdline, None, exit_on_error=False)
 
     info('Tabixing VCF')
     cmdline = '{tabix} {gzipped_fpath}'.format(**locals())
-    call(cnf, cmdline)
+    call(cnf, cmdline, exit_on_error=False)
 
     return gzipped_fpath
 

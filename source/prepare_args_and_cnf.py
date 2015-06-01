@@ -204,7 +204,10 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
             while isfile(bak_fpath):
                 bak_fpath = log_fpath + '.' + str(i)
                 i += 1
-            os.rename(log_fpath, bak_fpath)
+            try:
+                os.rename(log_fpath, bak_fpath)
+            except OSError:
+                pass
         elif isfile(log_fpath):
             try:
                 os.remove(log_fpath)
