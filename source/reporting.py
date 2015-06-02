@@ -396,7 +396,7 @@ class FullReport(Report):
         rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
-            row = [metric.display_name()]
+            row = [metric.name]
             for sr in self.sample_reports:
                 rec = Report.find_record(sr.records, metric.name)
                 row.append(rec.format(human_readable=human_readable) if rec is not None else '.')

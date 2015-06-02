@@ -178,10 +178,15 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_cr
     threads = str(threads)
     queue = cnf.queue
     runner_script = cnf.qsub_runner
+    bash = get_system_path(cnf, 'bash')
+
+    marker_fpath = join(cnf.work_dir, step.script + '_' + sample_name + '.done')
+    if isfile(marker_fpath):
+        os.remove(marker_fpath)
     qsub_cmdline = (
-        '{qsub} -pe smp {threads} -S /bin/bash -q {queue} '
+        '{qsub} -pe smp {threads} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
-        '-N {job_name} {runner_script} "{cmdline}"'.format(**locals()))
+        '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
 
     info(step.name)
     info(qsub_cmdline)
