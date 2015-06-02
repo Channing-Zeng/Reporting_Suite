@@ -112,9 +112,7 @@ class Region:
         self.total_merged = 0
 
     def __str__(self):
-        fs = [self.chrom, '{}'.format(self.start), '{}'.format(self.end),
-              self.symbol or '.', self.exon or '.', self.strand or '.',
-              self.feature or '.', self.biotype or '.']
+        fs = [self.chrom, '{}'.format(self.start), '{}'.format(self.end), self.symbol or '.']
 
         return '\t'.join(fs) + '\n'
 
