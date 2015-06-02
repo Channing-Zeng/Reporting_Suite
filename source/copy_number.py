@@ -127,7 +127,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
     if cnf.controls:
         controls = '-c ' + cnf.controls  # ':'.join([adjust_path(fpath) for fpath in cnf.controls.split(':')])
         lr2gene_opt = '-c'
-    #Sakina, what is usually passed to Seq2C as controls? Samples that are part of the project, or something outside of the project?
+    #TODO: Sakina, what is usually passed to Seq2C as controls? Samples that are part of the project, or something outside of the project?
 
     cmdline = '{cov2lr} -a {controls} {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
     call(cnf, cmdline, cov2lr_output, exit_on_error=False)

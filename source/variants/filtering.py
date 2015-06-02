@@ -11,6 +11,7 @@ from source.calling_process import call
 from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline
 from source.logger import critical, err, warn
+from source.utils import is_us
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus
 from source.logger import info
@@ -65,7 +66,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
         err('vcf2txt run returned non-0')
         return None
 
-    res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name)
+    res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name, sample_min_freq)
     if not res:
         err('vardict2mut.pl run returned non-0')
         return None
@@ -96,26 +97,36 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
     return res
 
 
-def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name):
-    pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
-
-    with open(vcf2txt_res_fpath) as f:
-        try:
-            pass_col_num = f.readline().split().index('PASS') + 1
-        except ValueError:
-            critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
-
+def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None):
     vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
+    cmdline = None
 
-    cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
-              'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
-              'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
-              'grep -v NON_CODING'
+    if is_us():
+        vardict2mut = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
 
-    polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
-    if polymorphic_variants:
-        poly_vars = abspath(polymorphic_variants)
-        cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
+        c = cnf.variant_filtering
+        min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
+
+        cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} {vcf2txt_res_fpath}'
+
+    else:
+        pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
+
+        with open(vcf2txt_res_fpath) as f:
+            try:
+                pass_col_num = f.readline().split().index('PASS') + 1
+            except ValueError:
+                critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
+
+        cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+                  'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
+                  'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
+                  'grep -v NON_CODING'
+
+        polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
+        if polymorphic_variants:
+            poly_vars = abspath(polymorphic_variants)
+            cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
 
     cmdline = cmdline.format(**locals())
     res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
