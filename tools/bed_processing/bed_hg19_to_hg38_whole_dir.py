@@ -3,6 +3,7 @@
 import os
 from os.path import abspath, dirname, realpath, join, relpath, splitext, isfile, getsize
 from site import addsitedir
+from source.targetcov.bam_and_bed_utils import count_bed_cols
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
@@ -12,12 +13,13 @@ from source.logger import critical, info, is_local, err
 from source.file_utils import adjust_path, safe_mkdir, verify_file
 
 liftover_fpath = '/group/ngs/src/liftOver/liftOver'
-chain_fpath = '/group/ngs/src/liftOver/hg19ToHg38.over.chain.gz'
+hg38_chain_fpath = '/group/ngs/src/liftOver/hg19ToHg38.over.chain.gz'
+grch37_chain_fpath = '/group/ngs/src/liftOver/hg19ToGRCh37.over.chain.gz'
 if is_local():
     liftover_fpath = '/Users/vladsaveliev/az/liftOver/liftOver'
-    chain_fpath = '/Users/vladsaveliev/az/liftOver/hg19ToHg38.over.chain.gz'
+    hg38_chain_fpath = '/Users/vladsaveliev/az/liftOver/hg19ToHg38.over.chain.gz'
 
-liftover_cmdline = liftover_fpath + ' "{inp_fpath}" ' + chain_fpath + ' "{out_fpath}" "{unlifted_fpath}"'
+liftover_cmdline = liftover_fpath + ' "{inp_fpath} {chain_fpath} {out_fpath}" "{unlifted_fpath}"'
 
 
 def main():
@@ -29,13 +31,15 @@ def main():
     out_root = adjust_path(sys.argv[2])
     safe_mkdir(out_root)
 
+    chain_fpath = hg38_chain_fpath
+
     for inp_dirpath, subdirs, files in os.walk(inp_root):
         for fname in files:
-            if fname.endswith('bed'):
-                print join(inp_dirpath, fname)
+            if fname.endswith('.bed'):
+                inp_fpath = join(inp_dirpath, fname)
+                print inp_fpath, count_bed_cols(fname) + ' columns'
                 out_dirpath = join(out_root, relpath(inp_dirpath, inp_root))
                 safe_mkdir(out_dirpath)
-                inp_fpath = join(inp_dirpath, fname)
                 out_fpath = join(out_dirpath, fname)
                 unlifted_fpath = join(out_dirpath, fname + '.unlifted')
 

@@ -72,3 +72,47 @@ cut -f8 subtraction.annotated.bed | sort -u
 
 bedtools intersect -a subtraction.back.bed -b Ensembl.fixedchr.transcripts.bed -wao > subtraction.back.annotated.bed
 cut -f7 subtraction.back.annotated.bed | sort -u
+
+
+
+
+
+
+
+#1. extract UTR from ensemble
+grep -v '^#' /ngs/reference_data/genomes/Hsapiens/hg19/bed.20150528/Exons/Ensembl.gtf | grep -w 'UTR' | grep 'protein_coding\|nonsense_mediated_decay\|IG_C_gene\|IG_D_gene\|IG_J_gene\|IG_V_gene\|TR_C_gene\|TR_D_gene\|TR_J_gene\|TR_V_gene' > UTR/Ensembl.utr.gtf
+grep -v '^#' /ngs/reference_data/genomes/Hsapiens/hg19/bed.20150528/Exons/Ensembl.gtf | grep -w 'CDS' | grep 'protein_coding\|nonsense_mediated_decay\|IG_C_gene\|IG_D_gene\|IG_J_gene\|IG_V_gene\|TR_C_gene\|TR_D_gene\|TR_J_gene\|TR_V_gene' > UTR/Ensembl.cds.gtf
+cut -f1,4,5 UTR/Ensembl.utr.gtf | bedtools slop -l 1 -r 0 -i - -g /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome > UTR/utr.prebed
+cut -f1,4,5 UTR/Ensembl.cds.gtf | bedtools slop -l 1 -r 0 -i - -g /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome > UTR/cds.prebed
+grch37_to_hg19.py UTR/utr.prebed | grep -v "^chrH" | grep -v "^chrG" > UTR/utr.bed
+grch37_to_hg19.py UTR/cds.prebed | grep -v "^chrH" | grep -v "^chrG" > UTR/cds.bed
+sort -k1,1 -k2,2n UTR/utr.bed | bedtools merge -i - > UTR/utr.merged.bed
+sort -k1,1 -k2,2n UTR/cds.bed | bedtools merge -i - > UTR/cds.merged.bed
+bedtools slop -b 50 -i UTR/cds.merged.bed -g /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome > UTR/cds.merged.sloped.bed
+bedtools subtract -a UTR/utr.merged.bed -b UTR/cds.merged.bed > UTR/utr_minus50.bed
+awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}' UTR/utr.merged.bed   # 49 149 068
+awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}' UTR/utr_minus50.bed  # 41 725 029
+
+#2. merge panels
+cat ../padded_panels/*.bed | sort -k1,1 -k2,2n | bedtools merge -i - > UTR/panels.bed
+awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}' UTR/panels.bed      # 151 322 313
+
+#3. subsctuct panels
+bedtools subtract -a UTR/utr_minus50.bed -b UTR/panels.bed > UTR/subtraction.bed
+awk -F'\t' 'BEGIN{SUM=0}{ SUM+=$3-$2 }END{print SUM}' UTR/subtraction.bed   # 5 575 267
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
