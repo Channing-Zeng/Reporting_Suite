@@ -12,13 +12,19 @@
 
 
 
+grep  Ensembl.transcrits.gtf > Ensembl.transcrits.protein_coding.gtf
+
+grep -wf gene_list.txt /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Ensembl.gtf | grep 'gene' | cut -f1,4,5 | bedtools slop -l 1 -r 0 -i - -g /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome | grch37_to_hg19.py  > genes.bed
+
+
+
 
 ###############
 # TRANSCRIPTS #
 ###############
 
 # get the union.bed
-grep -v '^#' /ngs/reference_data/genomes/Hsapiens/hg19/bed.20150528/Exons/Ensembl.gtf | grep -w 'transcript' > Ensembl.transcripts.gtf
+grep -v '^#' /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Ensembl.gtf | grep -w 'transcript' > Ensembl.transcripts.gtf
 grep 'protein_coding\|nonsense_mediated_decay\|miRNA\|IG_C_gene\|IG_D_gene\|IG_J_gene\|IG_V_gene\|TR_C_gene\|TR_D_gene\|TR_J_gene\|TR_V_gene' Ensembl.transcrits.gtf > Ensembl.transcrits.protein_coding.gtf
 cut -f1,4,5 Ensembl.transcrits.protein_coding.gtf > transcripts.txt
 bedtools slop -l 1 -r 0 -i transcripts.txt -g /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome > transcripts.bed
