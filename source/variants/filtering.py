@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import os
 from os.path import basename, join, isfile, dirname, islink, abspath, isdir
+import traceback
 
 from joblib import Parallel, delayed
 
@@ -211,10 +212,23 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
 
     info()
     info('Writing filtered VCFs')
-    Parallel(n_jobs=threads_num) \
-        (delayed(postprocess_vcf) \
-            (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
-            for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+    try:
+        Parallel(n_jobs=threads_num) \
+            (delayed(postprocess_vcf) \
+                (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
+                for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+    except OSError:
+        traceback.print_exc()
+        warn('Running sequencially instead')
+        try:
+            Parallel(n_jobs=1) \
+                (delayed(postprocess_vcf) \
+                    (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
+                    for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+        except OSError:
+            traceback.print_exc()
+            err('Cannot postprocess VCF - skipping')
+            err()
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
