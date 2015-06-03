@@ -649,49 +649,42 @@ class BCBioRunner:
 
         info()
         waiting = False
+        html_report_url = None
+        time_waited_after_final_report_finished = 30
         while True:
-            for job in self.jobs_running:
-                if not job.is_done and isfile(job.done_marker):
-                    job.is_done = True
-                    info('Done ' + job.repr)
+            # set flags for all done jobs
+            for j in self.jobs_running:
+                if not j.is_done and isfile(j.done_marker):
+                    j.is_done = True
+                    if waiting:
+                        info('', print_date=False)
+                    info('Done ' + j.repr)
                     waiting = False
 
+                    if j.step == self.combined_report:
+                        with open(j.done_marker) as f:
+                            html_report_url = f.read()
+                        info('Final report is saved to ' + html_report_url)
+                        time_waited_after_final_report_finished = 0
+
+            # check flags and wait if not all are done
             if not all(j.is_done for j in self.jobs_running):
-                info()
                 if not waiting:
                     waiting = True
-                    info('Waiting for the jobs to be proccesed on the GRID (monitor with qstat)...')
-                sleep(30)
+                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
+                         ', '.join(set([j.step.name for j in self.jobs_running])))
+                    info('', print_date=True, ending='')
+                sleep(10)
+                time_waited_after_final_report_finished += 10
+                info('.', print_date=False, ending='')
             else:
                 break
 
-        final_report_job = next((j for j in self.jobs_running if j.step == self.combined_report), None)
-        if final_report_job.is_done:
-            with open(final_report_job.done_marker) as f:
-                html_report_url = f.read()
-            info('Final report is saved to ' + html_report_url)
-
-        # Waiting for Seq2C if needed
-        not_done = [j for j in self.jobs_running if not j.is_done]
-        if not_done:
-            info('Waiting for:')
-            for job in not_done:
-                info('  ' + job.repr)
-
-            while True:
-                for job in not_done:
-                    if not job.is_done and isfile(job.done_marker):
-                        job.is_done = True
-                        info('Done ' + job.repr)
-                        waiting = False
-
-                if not all(j.is_done for j in self.jobs_running):
-                    sleep(30)
-                    if not waiting:
-                        waiting = True
-                        info('Waiting for the jobs to be proccesed on the GRID (monitor with qstat)...')
-                else:
-                    break
+        if time_waited_after_final_report_finished >= 30:
+            txt = 'Post-processing finished for ' + self.bcbio_structure.project_name
+            if html_report_url:
+                txt += '. The final report URL is ' + html_report_url
+            send_email(txt)
 
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name, threads,

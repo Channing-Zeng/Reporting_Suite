@@ -117,8 +117,8 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
 
     qualimap_params = \
-        params_for_one_sample +\
-        ' --bam {bam}' \
+        params_for_one_sample + \
+        ' --bam {bam}' + \
         ' --bed ' + qualimap_bed_fpath + \
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name)
 
@@ -186,7 +186,8 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_cr
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
-        '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
+        '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'
+        ''.format(**locals()))
 
     info(step.name)
     info(qsub_cmdline)
