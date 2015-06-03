@@ -3,14 +3,15 @@
 import os
 from os.path import abspath, dirname, realpath, join, relpath, splitext, isfile, getsize
 from site import addsitedir
-from source.targetcov.bam_and_bed_utils import count_bed_cols
-project_dir = abspath(dirname(dirname(realpath(__file__))))
+project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
+print project_dir
 addsitedir(join(project_dir))
 import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
 from source.logger import critical, info, is_local, err
-from source.file_utils import adjust_path, safe_mkdir, verify_file
+from source.file_utils import adjust_path, safe_mkdir, verify_file, add_suffix
+from source.targetcov.bam_and_bed_utils import count_bed_cols
 
 liftover_fpath = '/group/ngs/src/liftOver/liftOver'
 chains_dirpath = '/group/ngs/src/liftOver'
@@ -26,9 +27,6 @@ if is_local():
     )
 
 
-liftover_cmdline = liftover_fpath + ' "{inp_fpath}" {chain_fpath} "{out_fpath}" "{unlifted_fpath}"'
-
-
 def main(args):
     if len(args) < 2:
         critical('Usage: ' + __file__ + ' InputRootDirectory OutputRootDirectory [Build=hg38]')
@@ -41,7 +39,7 @@ def main(args):
     if len(args) >= 3:
         build = args[2]
 
-    chain_fpath = chains[build]
+    chain_fpath = chains[build.lower()]
 
     for inp_dirpath, subdirs, files in os.walk(inp_root):
         for fname in files:
@@ -50,12 +48,25 @@ def main(args):
             if fname.endswith('.bed'):
                 inp_fpath = adjust_path(join(inp_dirpath, fname))
                 print inp_fpath + ': ' + str(count_bed_cols(inp_fpath)) + ' columns'
+
                 out_dirpath = adjust_path(join(out_root, relpath(inp_dirpath, inp_root)))
                 safe_mkdir(out_dirpath)
                 out_fpath = adjust_path(join(out_dirpath, fname))
                 unlifted_fpath = adjust_path(join(out_dirpath, fname + '.unlifted'))
 
-                cmdline = liftover_cmdline.format(**locals())
+                cmdline = ''
+
+                with open(inp_fpath) as f:
+                    fs = f.readline().split('\t')
+                try:
+                    int(fs[6])
+                    int(fs[7])
+                except:
+                    info('Cutting ' + inp_fpath)
+                    cmdline += 'cut -f1,2,3,4 "{inp_fpath}" > __cut; '
+
+                cmdline += liftover_fpath + ' __cut {chain_fpath} "{out_fpath}" "{unlifted_fpath}"'
+                cmdline = cmdline.format(**locals())
                 info(cmdline)
                 os.system(cmdline)
                 verify_file(out_fpath)
