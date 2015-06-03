@@ -3,7 +3,7 @@ from os.path import isfile, join, abspath
 import sys
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file
-from source.logger import info, critical, warn
+from source.logger import info, critical, warn, err
 from source.tools_from_cnf import get_system_path
 
 
@@ -24,7 +24,8 @@ def count_bed_cols(bed_fpath):
             if l and l.strip() and not l.startswith('#'):
                 return len(l.split('\t'))
     # return len(next(dropwhile(lambda x: x.strip().startswith('#'), open(bed_fpath))).split('\t'))
-    critical('Empty bed file: ' + bed_fpath)
+    err('Empty bed file: ' + bed_fpath)
+    return None
 
 
 def remove_comments(cnf, bed_fpath):

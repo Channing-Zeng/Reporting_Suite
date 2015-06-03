@@ -13,35 +13,47 @@ from source.logger import critical, info, is_local, err
 from source.file_utils import adjust_path, safe_mkdir, verify_file
 
 liftover_fpath = '/group/ngs/src/liftOver/liftOver'
-hg38_chain_fpath = '/group/ngs/src/liftOver/hg19ToHg38.over.chain.gz'
-grch37_chain_fpath = '/group/ngs/src/liftOver/hg19ToGRCh37.over.chain.gz'
+chains_dirpath = '/group/ngs/src/liftOver'
+chains = dict(
+    hg38=join(chains_dirpath, 'hg19ToHg38.over.chain.gz'),
+    grch37=join(chains_dirpath, 'hg19ToGRCh37.over.chain.gz')
+)
 if is_local():
     liftover_fpath = '/Users/vladsaveliev/az/liftOver/liftOver'
-    hg38_chain_fpath = '/Users/vladsaveliev/az/liftOver/hg19ToHg38.over.chain.gz'
+    chains_dirpath = '/Users/vladsaveliev/az/liftOver'
+    chains = dict(
+        hg38=join(chains_dirpath, 'hg19ToHg38.over.chain.gz'),
+    )
 
-liftover_cmdline = liftover_fpath + ' "{inp_fpath} {chain_fpath} {out_fpath}" "{unlifted_fpath}"'
+
+liftover_cmdline = liftover_fpath + ' "{inp_fpath}" {chain_fpath} "{out_fpath}" "{unlifted_fpath}"'
 
 
-def main():
-    if len(sys.argv) <= 2:
-        critical('Usage: ' + __file__ + ' input_root_directory output_root_directory')
+def main(args):
+    if len(args) < 2:
+        critical('Usage: ' + __file__ + ' InputRootDirectory OutputRootDirectory [Build=hg38]')
         sys.exit(1)
 
-    inp_root = adjust_path(sys.argv[1])
-    out_root = adjust_path(sys.argv[2])
-    safe_mkdir(out_root)
+    inp_root = adjust_path(args[0])
+    out_root = adjust_path(args[1])
 
-    chain_fpath = hg38_chain_fpath
+    build = 'hg38'
+    if len(args) >= 3:
+        build = args[2]
+
+    chain_fpath = chains[build]
 
     for inp_dirpath, subdirs, files in os.walk(inp_root):
         for fname in files:
+            if fname == 'sample1-cn_mops.bed':
+                pass
             if fname.endswith('.bed'):
-                inp_fpath = join(inp_dirpath, fname)
-                print inp_fpath, count_bed_cols(fname) + ' columns'
-                out_dirpath = join(out_root, relpath(inp_dirpath, inp_root))
+                inp_fpath = adjust_path(join(inp_dirpath, fname))
+                print inp_fpath + ': ' + str(count_bed_cols(inp_fpath)) + ' columns'
+                out_dirpath = adjust_path(join(out_root, relpath(inp_dirpath, inp_root)))
                 safe_mkdir(out_dirpath)
-                out_fpath = join(out_dirpath, fname)
-                unlifted_fpath = join(out_dirpath, fname + '.unlifted')
+                out_fpath = adjust_path(join(out_dirpath, fname))
+                unlifted_fpath = adjust_path(join(out_dirpath, fname + '.unlifted'))
 
                 cmdline = liftover_cmdline.format(**locals())
                 info(cmdline)
@@ -55,4 +67,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
