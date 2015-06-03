@@ -45,7 +45,6 @@ genomes:
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf.gz
     snpeff:
       reference: GRCh38.78
-    # the rest is taken from hg19 crossmap
     exons: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 

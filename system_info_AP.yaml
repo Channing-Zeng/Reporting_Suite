@@ -24,15 +24,25 @@ genomes:
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf.gz
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf.gz
+    snpeff:
+      reference: GRCh38.78
+
+    exons: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
+    az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
   hg38-noalt:
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf.gz
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf.gz
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/CosmicV72CodingMuts.vcf.gz
+    snpeff:
+      reference: GRCh38.78
+
+    exons: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
+    az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
@@ -41,8 +51,9 @@ genomes:
     oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/mutation_details.vcf
     dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
-    # snpeff: /home/klpf990/snpeff/data  #/ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
-    snpeff_transcripts: /home/klpf990/transcripts.txt  # used if -canon is not set for snpEff
+    snpeff:
+      reference: hg19
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
     exons: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/AZ_Exome.bed
@@ -58,6 +69,8 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
     oncomine: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine/mutation_details.vcf
+    snpeff:
+      reference: GRCh37.75
 
     exons: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/AZ_Exome.bed
