@@ -278,7 +278,7 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.extra_options:
         opts += ''
 
-    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} -formatEff '
+    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
                '-csvStats -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
 

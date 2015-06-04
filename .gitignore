@@ -43,6 +43,8 @@ nosetests.xml
 
 # Extra
 ext_tools/snpEff/data
+ext_tools/snpEff_4.0
+ext_tools/snpEff/examples
 
 # Tests
 test/run_info.yaml
@@ -67,3 +69,4 @@ test/dropbox
 
 test/targqc_on_bams_test/
 test/targqc_small_test/
+
