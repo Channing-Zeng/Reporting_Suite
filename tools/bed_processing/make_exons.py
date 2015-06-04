@@ -11,7 +11,7 @@ import sys
 from traceback import format_exc
 
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
-do_approve = False
+do_approve = True
 
 
 def main():

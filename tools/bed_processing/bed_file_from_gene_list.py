@@ -10,7 +10,7 @@ addsitedir(join(project_dir, 'ext_modules'))
 # import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
-# from tools.bed_processing.make_exons import read_approved_genes, get_approved_gene_symbol
+from tools.bed_processing.make_exons import read_approved_genes, get_approved_gene_symbol
 
 
 def main():
@@ -26,8 +26,8 @@ def main():
     if len(sys.argv) > 3: exons_fpath = sys.argv[3]
     not_check = len(sys.argv) > 4
 
-    # approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = \
-    #     read_approved_genes(synonyms_fpath)
+    approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = \
+        read_approved_genes(synonyms_fpath)
 
     genes = set()
     with open(genes_list_fpath) as f:
