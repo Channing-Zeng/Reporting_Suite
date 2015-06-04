@@ -54,8 +54,9 @@ class Steps(list):
 
 
 class JobRunning:
-    def __init__(self, step, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker):
+    def __init__(self, step, job_name, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker):
         self.step = step
+        self.job_name = job_name
         self.sample_name = sample_name
         self.caller_suf = caller_suf
         self.log_fpath = log_fpath
@@ -395,7 +396,7 @@ class BCBioRunner:
 
         if isfile(marker_fpath):
             os.remove(marker_fpath)
-        job = JobRunning(step, sample_name, caller_suf, log_err_fpath, qsub_cmdline, marker_fpath)
+        job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline, marker_fpath)
         self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars)
 
@@ -427,264 +428,274 @@ class BCBioRunner:
                     s.bed = bed
                     s.qualimap_bed = qualimap_bed
 
-        for sample in self.bcbio_structure.samples:
-            if not (any(step in self.steps for step in
-                        [self.targetcov,
-                         self.seq2c,
-                         self.qualimap,
-                         self.ngscat,
-                         self.varqc,
-                         self.varqc_after,
-                         self.varannotate,
-                         self.mongo_loader,
-                         self.abnormal_regions])):
-                continue
-
-            info('Processing "' + sample.name + '"')
-            if not self.cnf.verbose:
-                info(ending='')
-
-            # BAMS
-            if any(step in self.steps for step in [
-                   self.targetcov,
-                   self.qualimap,
-                   self.ngscat]):
-                if not sample.bam or not verify_bam(sample.bam):
-                    err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
-                else:
-                    # TargetCov reports
-                    if self.targetcov in self.steps:
-                        info('Target coverage for "' + sample.name + '"')
-                        self._submit_job(
-                            self.targetcov, sample.name,
-                            bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons, sample=sample.name, genome=sample.genome,
-                            caller_names='', vcfs='', threads=self.threads_per_sample)
-
-                    # ngsCAT reports
-                    if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                        err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
-                    else:
-                        if self.ngscat in self.steps:
-                            self._submit_job(
-                                self.ngscat, sample.name, bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons,
-                                sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
-
-                    # Qualimap
-                    if self.qualimap in self.steps:
-                        qualimap_gff = ''
-                        if sample.bed:
-                            qualimap_gff = ' --bed ' + sample.qualimap_bed + ' '
-                        self._submit_job(
-                            self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                            genome=sample.genome, bed=qualimap_gff, threads=self.threads_per_sample)
-
-            # Processing VCFs: QC, annotation
-            for caller in self.bcbio_structure.variant_callers.values():
-                vcf_fpath = sample.vcf_by_callername.get(caller.name)
-                if not vcf_fpath:
-                    if sample.phenotype != 'normal':
-                        err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + '.')
-                else:
-                    self._process_vcf(sample, sample.bam, vcf_fpath, caller.name, threads=self.threads_per_sample)
-
-            if self.cnf.verbose:
-                info('-' * 70)
-            else:
-                print ''
-                info()
-
-        if not self.cnf.verbose:
-            info('', ending='')
-
-        # if self.vardict_steps:
-        #     self._sumbit_vardict(self.bcbio_structure.batches)
-
-        if self.varqc_summary in self.steps:
-            self._submit_job(
-                self.varqc_summary,
-                wait_for_steps=[
-                    self.varqc.job_name(s.name, v.name)
-                    for v in self.bcbio_structure.variant_callers.values()
-                    for s in v.samples
-                    if self.varqc in self.steps])
-
-        if self.varfilter_all in self.steps:
-            self._submit_job(
-                self.varfilter_all,
-                wait_for_steps=[
-                    self.varannotate.job_name(s.name, v.name)
-                    for v in self.bcbio_structure.variant_callers.values()
-                    for s in v.samples
-                    if self.varannotate in self.steps],
-                create_dir=False,
-                threads=self.summary_threads)
-
-        # TargetSeq reports
-        if self.abnormal_regions in self.steps:
+        try:
             for sample in self.bcbio_structure.samples:
+                if not (any(step in self.steps for step in
+                            [self.targetcov,
+                             self.seq2c,
+                             self.qualimap,
+                             self.ngscat,
+                             self.varqc,
+                             self.varqc_after,
+                             self.varannotate,
+                             self.mongo_loader,
+                             self.abnormal_regions])):
+                    continue
+
+                info('Processing "' + sample.name + '"')
                 if not self.cnf.verbose:
                     info(ending='')
 
-                if not sample.bed or not verify_file(sample.bed):
-                    err('Warning: no BED file, assuming WGS, thus running targetSeq reports '
-                        'only to generate Seq2C reports.')
-                    continue
-
-                callers_and_filtered_vcfs = [(c, f) for c, f in ((c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers) if f]
-                if callers_and_filtered_vcfs:
-                    caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
-                else:
-                    caller_names, filtered_vcfs = [], []
-
-                wait_for_steps = []
-                if self.varfilter_all in self.steps:
-                    wait_for_steps.extend([self.varfilter_all.job_name()])
-                if self.targetcov in self.steps:
-                    wait_for_steps.extend([self.targetcov.job_name(sample.name)])
-
-                self._submit_job(
-                    self.abnormal_regions, sample.name,
-                    wait_for_steps=wait_for_steps,
-                    sample=sample, threads=self.threads_per_sample, genome=sample.genome,
-                    caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
-                    vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
-
-        if self.varqc_after in self.steps:
-            info('VarQC_postVarFilter:')
-            for caller in self.bcbio_structure.variant_callers.values():
-                info('  ' + caller.name)
-                for sample in caller.samples:
-                    info('    ' + sample.name)
-                    raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
-                    if not raw_vcf_fpath:
-                        if sample.phenotype != 'normal':
-                            err('Error: raw VCF does not exist: sample ' + sample.name + ', caller "' +
-                                caller.name + '". Phenotype = ' + sample.phenotype + '.')
+                # BAMS
+                if any(step in self.steps for step in [
+                       self.targetcov,
+                       self.qualimap,
+                       self.ngscat]):
+                    if not sample.bam or not verify_bam(sample.bam):
+                        err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
                     else:
-                        filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
-                        if not self.varfilter_all and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath):
-                            err('Error: filtered VCF does not exist: sample ' + sample.name + ', caller "' +
-                                caller.name + '". Phenotype = ' + sample.phenotype + '.' +
-                                ' Note that you need to run VarFilter first, and this step is not in config.')
-                        else:
+                        # TargetCov reports
+                        if self.targetcov in self.steps:
+                            info('Target coverage for "' + sample.name + '"')
                             self._submit_job(
-                                self.varqc_after, sample.name, caller_suf=caller.name, threads=self.threads_per_sample,
-                                wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-                                vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
+                                self.targetcov, sample.name,
+                                bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons, sample=sample.name, genome=sample.genome,
+                                caller_names='', vcfs='', threads=self.threads_per_sample)
 
-        if self.varqc_after_summary in self.steps:
-            self._submit_job(
-                self.varqc_after_summary,
-                wait_for_steps=[
-                    self.varqc_after.job_name(s.name, v.name)
-                    for v in self.bcbio_structure.variant_callers.values()
-                    for s in v.samples
-                    if self.varqc_after in self.steps])
+                        # ngsCAT reports
+                        if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
+                            err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
+                        else:
+                            if self.ngscat in self.steps:
+                                self._submit_job(
+                                    self.ngscat, sample.name, bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons,
+                                    sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
-        if self.seq2c in self.steps:
-            self._submit_job(
-                self.seq2c,
-                wait_for_steps=[],
-                genome=self.bcbio_structure.samples[0].genome,
-                threads=self.summary_threads)
+                        # Qualimap
+                        if self.qualimap in self.steps:
+                            qualimap_gff = ''
+                            if sample.bed:
+                                qualimap_gff = ' --bed ' + sample.qualimap_bed + ' '
+                            self._submit_job(
+                                self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
+                                genome=sample.genome, bed=qualimap_gff, threads=self.threads_per_sample)
 
-        if self.targqc_summary in self.steps:
-            wait_for_steps = []
-            wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
-            wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-            wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
-            self._submit_job(
-                self.targqc_summary,
-                wait_for_steps=wait_for_steps,
-                threads=self.summary_threads)
+                # Processing VCFs: QC, annotation
+                for caller in self.bcbio_structure.variant_callers.values():
+                    vcf_fpath = sample.vcf_by_callername.get(caller.name)
+                    if not vcf_fpath:
+                        if sample.phenotype != 'normal':
+                            err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + '.')
+                    else:
+                        self._process_vcf(sample, sample.bam, vcf_fpath, caller.name, threads=self.threads_per_sample)
 
-        if self.fastqc_summary in self.steps:
-            self._submit_job(self.fastqc_summary)
+                if self.cnf.verbose:
+                    info('-' * 70)
+                else:
+                    print ''
+                    info()
 
-        if self.combined_report in self.steps:
-            wait_for_steps = []
-            # summaries
-            wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
-            wait_for_steps += [self.varqc_after_summary.job_name()] if self.varqc_after_summary in self.steps else []
-            wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
-            wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
-            # and individual reports too
-            wait_for_steps += [self.varqc.job_name(s.name) for s in self.bcbio_structure.samples if self.varqc in self.steps]
-            wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
-            wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-            wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
-            self._submit_job(
-                self.combined_report,
-                wait_for_steps=wait_for_steps)
+            if not self.cnf.verbose:
+                info('', ending='')
 
-        # if self.mongo_loader in self.steps:
-        #     for sample in self.bcbio_structure.samples:
-        #         for caller in self.bcbio_structure.variant_callers.values():
-        #             filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
-        #             self._submit_job(
-        #                 self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
-        #                 wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
-        #                 path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
-        #                 project=self.bcbio_structure.project_name)
+            # if self.vardict_steps:
+            #     self._sumbit_vardict(self.bcbio_structure.batches)
 
-        if not self.cnf.verbose:
-            print ''
-        if self.cnf.verbose:
-            info('The following jobs were submitted:')
+            if self.varqc_summary in self.steps:
+                self._submit_job(
+                    self.varqc_summary,
+                    wait_for_steps=[
+                        self.varqc.job_name(s.name, v.name)
+                        for v in self.bcbio_structure.variant_callers.values()
+                        for s in v.samples
+                        if self.varqc in self.steps])
 
-        if not self.jobs_running:
-            info()
-            info('No jobs submitted.')
-        else:
-            msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name + '. '
-                   'Log files for each jobs to track:']
-            # lengths = []
-            # for job in self.jobs_running:
-            #     lengths.append(len(job.name))
-            # max_length = max(lengths)
+            if self.varfilter_all in self.steps:
+                self._submit_job(
+                    self.varfilter_all,
+                    wait_for_steps=[
+                        self.varannotate.job_name(s.name, v.name)
+                        for v in self.bcbio_structure.variant_callers.values()
+                        for s in v.samples
+                        if self.varannotate in self.steps],
+                    create_dir=False,
+                    threads=self.summary_threads)
 
-            for job in self.jobs_running:
-                # msg += ' ' * (max_length - len(job.name)) + job.log_fpath)
-                info('  ' + job.repr)
+            # TargetSeq reports
+            if self.abnormal_regions in self.steps:
+                for sample in self.bcbio_structure.samples:
+                    if not self.cnf.verbose:
+                        info(ending='')
 
-        info()
-        waiting = False
-        html_report_url = None
-        time_waited_after_final_report_finished = 30
-        while True:
-            # set flags for all done jobs
-            for j in self.jobs_running:
-                if not j.is_done and isfile(j.done_marker):
-                    j.is_done = True
-                    if waiting:
-                        info('', print_date=False)
-                    info('Done ' + j.repr)
-                    waiting = False
+                    if not sample.bed or not verify_file(sample.bed):
+                        err('Warning: no BED file, assuming WGS, thus running targetSeq reports '
+                            'only to generate Seq2C reports.')
+                        continue
 
-                    if j.step == self.combined_report:
-                        with open(j.done_marker) as f:
-                            html_report_url = f.read()
-                        info('Final report is saved to ' + html_report_url)
-                        time_waited_after_final_report_finished = 0
+                    callers_and_filtered_vcfs = [(c, f) for c, f in ((c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers) if f]
+                    if callers_and_filtered_vcfs:
+                        caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
+                    else:
+                        caller_names, filtered_vcfs = [], []
 
-            # check flags and wait if not all are done
-            if not all(j.is_done for j in self.jobs_running):
-                if not waiting:
-                    waiting = True
-                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                         ', '.join(set([j.step.name for j in self.jobs_running])))
-                    info('', print_date=True, ending='')
-                sleep(10)
-                time_waited_after_final_report_finished += 10
-                info('.', print_date=False, ending='')
+                    wait_for_steps = []
+                    if self.varfilter_all in self.steps:
+                        wait_for_steps.extend([self.varfilter_all.job_name()])
+                    if self.targetcov in self.steps:
+                        wait_for_steps.extend([self.targetcov.job_name(sample.name)])
+
+                    self._submit_job(
+                        self.abnormal_regions, sample.name,
+                        wait_for_steps=wait_for_steps,
+                        sample=sample, threads=self.threads_per_sample, genome=sample.genome,
+                        caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
+                        vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
+
+            if self.varqc_after in self.steps:
+                info('VarQC_postVarFilter:')
+                for caller in self.bcbio_structure.variant_callers.values():
+                    info('  ' + caller.name)
+                    for sample in caller.samples:
+                        info('    ' + sample.name)
+                        raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
+                        if not raw_vcf_fpath:
+                            if sample.phenotype != 'normal':
+                                err('Error: raw VCF does not exist: sample ' + sample.name + ', caller "' +
+                                    caller.name + '". Phenotype = ' + sample.phenotype + '.')
+                        else:
+                            filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
+                            if not self.varfilter_all and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath):
+                                err('Error: filtered VCF does not exist: sample ' + sample.name + ', caller "' +
+                                    caller.name + '". Phenotype = ' + sample.phenotype + '.' +
+                                    ' Note that you need to run VarFilter first, and this step is not in config.')
+                            else:
+                                self._submit_job(
+                                    self.varqc_after, sample.name, caller_suf=caller.name, threads=self.threads_per_sample,
+                                    wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+                                    vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
+
+            if self.varqc_after_summary in self.steps:
+                self._submit_job(
+                    self.varqc_after_summary,
+                    wait_for_steps=[
+                        self.varqc_after.job_name(s.name, v.name)
+                        for v in self.bcbio_structure.variant_callers.values()
+                        for s in v.samples
+                        if self.varqc_after in self.steps])
+
+            if self.seq2c in self.steps:
+                self._submit_job(
+                    self.seq2c,
+                    wait_for_steps=[],
+                    genome=self.bcbio_structure.samples[0].genome,
+                    threads=self.summary_threads)
+
+            if self.targqc_summary in self.steps:
+                wait_for_steps = []
+                wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+                wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+                self._submit_job(
+                    self.targqc_summary,
+                    wait_for_steps=wait_for_steps,
+                    threads=self.summary_threads)
+
+            if self.fastqc_summary in self.steps:
+                self._submit_job(self.fastqc_summary)
+
+            if self.combined_report in self.steps:
+                wait_for_steps = []
+                # summaries
+                wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
+                wait_for_steps += [self.varqc_after_summary.job_name()] if self.varqc_after_summary in self.steps else []
+                wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
+                wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
+                # and individual reports too
+                wait_for_steps += [self.varqc.job_name(s.name) for s in self.bcbio_structure.samples if self.varqc in self.steps]
+                wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+                wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+                self._submit_job(
+                    self.combined_report,
+                    wait_for_steps=wait_for_steps)
+
+            # if self.mongo_loader in self.steps:
+            #     for sample in self.bcbio_structure.samples:
+            #         for caller in self.bcbio_structure.variant_callers.values():
+            #             filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+            #             self._submit_job(
+            #                 self.mongo_loader, sample.name, suf=caller.name, create_dir=False,
+            #                 wait_for_steps=([self.varfilter_all.job_name()] if self.varfilter_all in self.steps else []),
+            #                 path=filt_vcf_fpath, sample=sample.name, variantCaller=caller.name,
+            #                 project=self.bcbio_structure.project_name)
+
+            if not self.cnf.verbose:
+                print ''
+            if self.cnf.verbose:
+                info('The following jobs were submitted:')
+
+            if not self.jobs_running:
+                info()
+                info('No jobs submitted.')
             else:
-                break
+                msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name + '. '
+                       'Log files for each jobs to track:']
+                # lengths = []
+                # for job in self.jobs_running:
+                #     lengths.append(len(job.name))
+                # max_length = max(lengths)
 
-        if time_waited_after_final_report_finished >= 30:
-            txt = 'Post-processing finished for ' + self.bcbio_structure.project_name
-            if html_report_url:
-                txt += '. The final report URL is ' + html_report_url
-            send_email(txt)
+                for job in self.jobs_running:
+                    # msg += ' ' * (max_length - len(job.name)) + job.log_fpath)
+                    info('  ' + job.repr)
+
+            info()
+            waiting = False
+            html_report_url = None
+            time_waited_after_final_report_finished = 30
+            while True:
+                # set flags for all done jobs
+                for j in self.jobs_running:
+                    if not j.is_done and isfile(j.done_marker):
+                        j.is_done = True
+                        if waiting:
+                            info('', print_date=False)
+                        info('Done ' + j.repr)
+                        waiting = False
+
+                        if j.step == self.combined_report:
+                            with open(j.done_marker) as f:
+                                html_report_url = f.read()
+                            info('Final report is saved to ' + html_report_url)
+                            time_waited_after_final_report_finished = 0
+
+                # check flags and wait if not all are done
+                if not all(j.is_done for j in self.jobs_running):
+                    if not waiting:
+                        waiting = True
+                        info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
+                             ', '.join(set([j.step.name for j in self.jobs_running])))
+                        info('', print_date=True, ending='')
+                    sleep(10)
+                    time_waited_after_final_report_finished += 10
+                    info('.', print_date=False, ending='')
+                else:
+                    break
+
+            if time_waited_after_final_report_finished >= 30:
+                txt = 'Post-processing finished for ' + self.bcbio_structure.project_name
+                if html_report_url:
+                    txt += '. The final report URL is ' + html_report_url
+                send_email(txt)
+
+        except KeyboardInterrupt:
+            for j in self.jobs_running:
+                qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
+                if qdel:
+                    call(self.cnf, qdel + ' ' + j.job_name, exit_on_error=False)
+            info()
+            info('All running jobs for this project has been deleted from queue.')
+            sys.exit(0)
 
 
     def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller_name, threads,
