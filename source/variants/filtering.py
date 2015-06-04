@@ -57,7 +57,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
     glob_cnf = cnf
 
     info()
-    info('Preparing VCFs for vcf2txt')
+    info('Preparing VCFs for vcf2txt in ' + str(threads_num) + ' threads')
     prep_vcf_fpaths = Parallel(n_jobs=threads_num) \
        (delayed(prep_vcf)(fpath, s, caller_name)
         for fpath, s in zip(vcf_fpaths, sample_by_name.keys()))
@@ -211,7 +211,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
                 variants[(s_name, chrom, pos, alt)] = filt
 
     info()
-    info('Writing filtered VCFs')
+    info('Writing filtered VCFs in ' + str(threads_num) + ' threads')
     try:
         Parallel(n_jobs=threads_num) \
             (delayed(postprocess_vcf) \
@@ -219,7 +219,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
                 for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
     except OSError:
         traceback.print_exc()
-        warn('Running sequencially instead')
+        warn('Running sequencially instead in ' + str(threads_num) + ' threads')
         try:
             Parallel(n_jobs=1) \
                 (delayed(postprocess_vcf) \
