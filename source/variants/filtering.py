@@ -14,7 +14,7 @@ from source.tools_from_cnf import get_script_cmdline
 from source.logger import critical, err, warn
 from source.utils import is_us
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
-from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus, file_transaction
 from source.logger import info
 
 
@@ -140,7 +140,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
 glob_cnf = None
 
 
-def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, mutations, vcf2txt_res_fpath):
+def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mutations, vcf2txt_res_fpath):
     global glob_cnf
     cnf = glob_cnf
 
@@ -150,37 +150,40 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, mutations, vc
     pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
     safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
 
-    with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
-         open(filt_vcf_fpath, 'w') as filt_f, \
-         open(pass_filt_vcf_fpath, 'w') as pass_f:
+    if cnf.reuse_intermediate and verify_file(filt_vcf_fpath + '.gz') and verify_file(pass_filt_vcf_fpath):
+        info(filt_vcf_fpath + '.gz' + ' and ' + pass_filt_vcf_fpath + ' exist; reusing.')
+    else:
+        with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
+             file_transaction(work_dir, filt_vcf_fpath) as filt_tx, \
+             file_transaction(work_dir, pass_filt_vcf_fpath) as pass_tx:
+            with open(filt_tx, 'w') as filt_f, open(pass_tx, 'w') as pass_f:
+                info(sample.name + ', ' + caller_name + ': opened ' + anno_vcf_fpath + ', writing to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
 
-        info(sample.name + ', ' + caller_name + ': opened ' + anno_vcf_fpath + ', writing to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
-
-        for l in vcf_f:
-            if l.startswith('#'):
-                filt_f.write(l)
-                pass_f.write(l)
-            else:
-                ts = l.split('\t')
-                chrom, pos, alt = ts[0], ts[1], ts[4]
-                if (chrom, pos, alt) in mutations:
-                    ts[6] = 'PASS'
-                    filt_f.write('\t'.join(ts))
-                    pass_f.write('\t'.join(ts))
-                else:
-                    if ts[6] in ['', '.', 'PASS']:
-                        ts[6] = ''
-                        filter_value = variants.get((chrom, pos, alt))
-                        if filter_value is None:
-                            # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
-                            ts[6] += 'vcf2txt'
-                        elif filter_value == 'TRUE':
-                            ts[6] += 'vardict2mut'
+                for l in vcf_f:
+                    if l.startswith('#'):
+                        filt_f.write(l)
+                        pass_f.write(l)
+                    else:
+                        ts = l.split('\t')
+                        chrom, pos, alt = ts[0], ts[1], ts[4]
+                        if (chrom, pos, alt) in mutations:
+                            ts[6] = 'PASS'
+                            filt_f.write('\t'.join(ts))
+                            pass_f.write('\t'.join(ts))
                         else:
-                            ts[6] += filter_value
-                    filt_f.write('\t'.join(ts))
+                            if ts[6] in ['', '.', 'PASS']:
+                                ts[6] = ''
+                                filter_value = variants.get((chrom, pos, alt))
+                                if filter_value is None:
+                                    # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
+                                    ts[6] += 'vcf2txt'
+                                elif filter_value == 'TRUE':
+                                    ts[6] += 'vardict2mut'
+                                else:
+                                    ts[6] += filter_value
+                            filt_f.write('\t'.join(ts))
 
-    info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
+        info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
 
 
 def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):
@@ -215,7 +218,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
     try:
         Parallel(n_jobs=threads_num) \
             (delayed(postprocess_vcf) \
-                (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
+                (cnf.work_dir, next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
                  variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
                  for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
     except OSError:
@@ -224,7 +227,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
         try:
             Parallel(n_jobs=1) \
                 (delayed(postprocess_vcf) \
-                    (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
+                    (cnf.work_dir, next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
                      variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
                      for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
         except OSError:

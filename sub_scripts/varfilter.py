@@ -299,9 +299,26 @@ def _index_vcf(sample, caller_name):
 
     info()
     info(sample.name + ', ' + caller_name + ': indexing')
-    igvtools_index(cnf, sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False))
-    igvtools_index(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
-    bgzip_and_tabix(cnf, sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False))
+
+    pass_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
+    filt_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
+
+    for fpath in [pass_fpath, filt_fpath]:
+        if not cnf.reuse_intermediate and not verify_file(fpath):
+            err(fpath + ' does not exist - cannot IGV index')
+        else:
+            if cnf.reuse_intermediate and verify_file(fpath + '.idx'):
+                info('Reusing existing ' + fpath + '.idx')
+            else:
+                igvtools_index(cnf, fpath)
+
+    if not cnf.reuse_intermediate and not verify_file(filt_fpath):
+        err(filt_fpath + ' does not exist - cannot gzip and tabix')
+    else:
+        if cnf.reuse_intermediate and filt_fpath + '.gz' and filt_fpath + '.gz.tbi':
+            info(filt_fpath + '.gz and .gz.tbi exist; reusing')
+        else:
+            bgzip_and_tabix(cnf, filt_fpath)
 
 
 def _copy_to_datahub(cnf, caller, datahub_dirpath):
