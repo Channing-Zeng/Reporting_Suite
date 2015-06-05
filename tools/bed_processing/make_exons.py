@@ -11,7 +11,9 @@ import sys
 from traceback import format_exc
 
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
-do_approve = True
+
+DO_APPROVE = True
+ALL_EXONS = True
 
 
 def main():
@@ -367,7 +369,10 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             gene_biotype = _rm_quotes(_prop_dict['gene_biotype'])
             gene_source = _rm_quotes(_prop_dict['gene_source'])
 
-            if gene_biotype not in [
+            # if gene_symbol == 'PTENP1':
+            #     sys.stderr.write('PTENP1\n')
+
+            if not ALL_EXONS and gene_biotype not in [
                 'protein_coding',
                 'nonsense_mediated_decay',
                 'non_stop_decay',
@@ -382,6 +387,8 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 continue
 
             full_feature_list = ['gene', 'CDS', 'stop_codon', 'exon'] + additional_feature_list
+            if ALL_EXONS:
+                full_feature_list = ['gene', 'exon']
             # sys.stderr.write('Full feature list: ' + str(full_feature_list) + '\n')
             if feature not in full_feature_list:
                 continue
@@ -440,7 +447,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
                 gene_by_id[gene_id] = gene
 
             elif feature in ['CDS', 'stop_codon'] \
-                    or feature == 'exon' and 'RNA' in gene_biotype \
+                    or feature == 'exon' and ('RNA' in gene_biotype or ALL_EXONS) \
                     or feature in additional_feature_list:
                 assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + gene_symbol + ', ' + gene_id + '; gene_by_name: ' + str(gene_by_name.keys())
                 gene = gene_by_name[gene_symbol]
@@ -473,10 +480,10 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
         if len(g.exons) == 0:
             continue
 
-        if not do_approve:
+        if not DO_APPROVE:
             gene_after_approving_by_name[g.name] = g
         if not approved_gene_by_name or is_approved_symbol(g.name, approved_gene_by_name):
-            if do_approve:
+            if DO_APPROVE:
                 gene_after_approving_by_name[g.name] = g
             total_approved += 1
         else:
@@ -531,8 +538,11 @@ def _proc_ensembl(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname
             sys.stderr.write('    ' + bt + ': ' + str(cnt) + '\n')
 
     sys.stderr.write('\n')
-    sys.stderr.write('Also found {} CDS, {} stop codons, and {} ncRNA exons.\n'.format(
-        features_counter['CDS'], features_counter['stop_codon'], features_counter['exon']))
+    if ALL_EXONS:
+        sys.stderr.write('Found {} exons.\n'.format(features_counter['exon']))
+    else:
+        sys.stderr.write('Also found {} CDS, {} stop codons, and {} ncRNA exons.\n'.format(
+            features_counter['CDS'], features_counter['stop_codon'], features_counter['exon']))
 
     return not_approved_gene_names
 

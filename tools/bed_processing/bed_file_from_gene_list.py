@@ -15,27 +15,27 @@ from tools.bed_processing.make_exons import read_approved_genes, get_approved_ge
 
 def main():
     if len(sys.argv) < 2:
-        sys.stderr.write('Usage: ' + __file__ + ' genes.txt [HGNC_gene_synonyms.txt] [regions.bed] [--not-check] > regions_for_genes.txt')
+        sys.stderr.write('Usage: ' + __file__ + ' genes.txt [regions.bed] [HGNC_gene_synonyms.txt] [--not-check] > regions_for_genes.txt')
         sys.stderr.write('    the script filters regions to have gene names in genes.txt')
         sys.exit(1)
 
     genes_list_fpath = sys.argv[1]
     exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.bed'
     synonyms_fpath = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
-    if len(sys.argv) > 2: synonyms_fpath = sys.argv[2]
-    if len(sys.argv) > 3: exons_fpath = sys.argv[3]
+    if len(sys.argv) > 2: exons_fpath = sys.argv[2]
+    if len(sys.argv) > 3: synonyms_fpath = sys.argv[3]
     not_check = len(sys.argv) > 4
 
     approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym = \
         read_approved_genes(synonyms_fpath)
 
-    genes = set()
+    gnames = set()
     with open(genes_list_fpath) as f:
         for l in f:
             gname = l.strip()
 
             if not_check:
-                genes.add(gname)
+                gnames.add(gname)
             else:
                 approved_gname, status = get_approved_gene_symbol(
                     approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym, gname)
@@ -54,12 +54,12 @@ def main():
                         log(gname + ' found as ' + approved_gname)
                     else:
                         log(gname)
-                    genes.add(approved_gname)
+                    gnames.add(approved_gname)
 
                 else:
                     log(gname + ' not found, skipping...')
 
-    log('Found ' + str(len(genes)) + ' uniq gene names in ' + genes_list_fpath)
+    log('Found ' + str(len(gnames)) + ' uniq gene names in ' + genes_list_fpath)
     log()
 
     total_lines_written = 0
@@ -73,13 +73,14 @@ def main():
                     pass
                 else:
                     g = fs[3]
-                    if g in genes:
+                    if g in gnames:
                         total_lines_written += 1
                         genes_found_in_ref.add(g)
                         print '\t'.join(fs)
 
     log('Written ' + str(total_lines_written) + ' regions')
-    log('Found in reference ' + str(len(genes_found_in_ref)) + ' genes out of ' + str(len(genes)))
+    log('Found in reference ' + str(len(genes_found_in_ref)) + ' genes out of ' + str(len(gnames)))
+    log('Not found in reference: ' + ', '.join(gnames - genes_found_in_ref))
 
 
 def log(msg=''):

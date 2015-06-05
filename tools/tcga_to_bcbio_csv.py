@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from os.path import abspath, dirname, realpath, join, exists, splitext, relpath, basename
+import traceback
+import pysam
 from site import addsitedir
 project_dir = abspath(dirname(dirname(realpath(__file__))))
 addsitedir(join(project_dir))
@@ -9,6 +11,7 @@ import sub_scripts.__check_python_version  # do not remove it: checking for pyth
 from collections import defaultdict
 import os
 import sys
+from source.ngscat.bed_file import verify_bam
 from source import verify_file
 from source.logger import err
 from source.file_utils import verify_dir, safe_mkdir, adjust_path
@@ -16,15 +19,16 @@ from source.file_utils import verify_dir, safe_mkdir, adjust_path
 
 class Sample:
     def __init__(self):
-        self.name = None
+        self.bam_base_name = None
         self.bam = None
+        self.description = None
         self.patient = None
         self.is_normal = False
         self.is_blood = False
         self.batches = set()
 
     def __repr__(self):
-        return self.name
+        return self.description
 
 
 class Batch:
@@ -53,12 +57,12 @@ def main(args):
     verify_file(args[0], is_critical=True)
 
     out_fpath = args[1]
-    verify_dir(dirname(out_fpath), is_critical=True)
+    verify_dir(dirname(adjust_path(out_fpath)), is_critical=True)
 
     bam_dirpath = None
     if len(args) > 2:
-        verify_dir(args[2], is_critical=True)
         bam_dirpath = args[2]
+        verify_dir(adjust_path(bam_dirpath), is_critical=True)
 
     # bam_opt = args[2]
     # try:
@@ -72,7 +76,7 @@ def main(args):
     bina_dirpath = None
     if len(args) > 3:
         bina_dirpath = args[3]
-        verify_dir(dirname(bina_dirpath), is_critical=True)
+        verify_dir(dirname(adjust_path(bina_dirpath)), is_critical=True)
 
     # filtered_bams_dirpath = adjust_path(sys.argv[3])
     # verify_dir(join(filtered_bams_dirpath, os.pardir), is_critical=True)
@@ -112,7 +116,7 @@ def main(args):
 
             sample = Sample()
             sample.bam = fs[bam_col]
-            sample.name = basename(os.path.splitext(fs[bam_col])[0])
+            sample.bam_base_name = basename(os.path.splitext(fs[bam_col])[0])
             sample.description = fs[barcode_col]
             sample.patient = '-'.join(barcode[:3])
             if is_tcga_tsv:
@@ -137,10 +141,10 @@ def main(args):
                 #     err('Duplicated sample: ' + sample.description + '  Fileset modified not in new ' + sample.name + ' over ' + prev_sample.name)
                 # else:
                 # comp version
-                prev_v = get_bam_version(prev_sample.name)
-                v = get_bam_version(sample.name)
-                err('Duplicated sample: ' + sample.description + '  Resolving by version (' + ' over '.join(map(str, sorted([prev_v, v])[::-1])) + ')')
-                if v > prev_v:
+                prev_version = get_bam_version(prev_sample.bam_base_name)
+                version = get_bam_version(sample.bam_base_name)
+                err('Duplicated sample: ' + sample.description + '  Resolving by version (' + ' over '.join(map(str, sorted([prev_version, version])[::-1])) + ')')
+                if version > prev_version:
                     samples_by_patient[sample.patient].remove(prev_sample)
                     samples_by_patient[sample.patient].append(sample)
             else:
@@ -204,19 +208,28 @@ def main(args):
 
     ###########################
     ######## Bcbio CSV ########
+    print 'bcbio_nextgen.py -w template bcbio.yaml', out_fpath,
     with open(out_fpath, 'w') as out:
         out.write('sample,description,batch,phenotype\n')
-        for s in sorted(final_samples, key=lambda s: s.name):
-            out.write(','.join([s.name, s.description, ';'.join(sorted(b.name for b in s.batches)),
+        for s in sorted(final_samples, key=lambda s: s.bam_base_name):
+            out.write(','.join([s.bam_base_name, s.description, ';'.join(sorted(b.name for b in s.batches)),
                 ('normal' if s.is_normal else 'tumor')]) + '\n')
+            bam_fpath = join(bam_dirpath, s.bam) if bam_dirpath else s.bam
+
+            if verify_bam(bam_fpath, is_critical=False):
+                try:
+                    bam = pysam.Samfile(bam_fpath, "rb")
+                except ValueError:
+                    err(traceback.format_exc())
+                    err('Cannot read ' + bam_fpath)
+                    err()
+                    # n_rgs = max(1, len(bam.header.get("RG", [])))
+                else:
+                    print bam_fpath,
 
     ############################
     ###### Fixed BAM list ######
     # safe_mkdir(filtered_bams_dirpath)
-    bam_fpaths = []
-    for s in final_samples:
-        bam_fpaths.append(join(bam_dirpath, s.bam) if bam_dirpath else s.bam)
-
     # for fname in os.listdir(bams_dirpath):
     #     if fname.endswith('.bam'):
     #         basefname = fname.split('.bam')[0]
@@ -231,8 +244,6 @@ def main(args):
     #                 os.symlink(src_fpath + '.bai', dst_fpath + '.bai')
     #
     # err('Saved symlinks to BAMs to ' + filtered_bams_dirpath)
-
-    print 'bcbio_nextgen.py -w template bcbio.yaml ' + out_fpath + ' ' + ' '.join(bam_fpaths)
 
 
 if __name__ == '__main__':
