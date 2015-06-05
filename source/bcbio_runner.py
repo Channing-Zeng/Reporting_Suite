@@ -10,6 +10,7 @@ from time import sleep
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
+from source.project_level_report import make_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
@@ -605,21 +606,21 @@ class BCBioRunner:
             if self.fastqc_summary in self.steps:
                 self._submit_job(self.fastqc_summary)
 
-            if self.combined_report in self.steps:
-                wait_for_steps = []
-                # summaries
-                wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
-                wait_for_steps += [self.varqc_after_summary.job_name()] if self.varqc_after_summary in self.steps else []
-                wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
-                wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
-                # and individual reports too
-                wait_for_steps += [self.varqc.job_name(s.name) for s in self.bcbio_structure.samples if self.varqc in self.steps]
-                wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
-                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-                wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
-                self._submit_job(
-                    self.combined_report,
-                    wait_for_steps=wait_for_steps)
+            # if self.combined_report in self.steps:
+            #     wait_for_steps = []
+            #     # summaries
+            #     wait_for_steps += [self.varqc_summary.job_name()] if self.varqc_summary in self.steps else []
+            #     wait_for_steps += [self.varqc_after_summary.job_name()] if self.varqc_after_summary in self.steps else []
+            #     wait_for_steps += [self.targqc_summary.job_name()] if self.targqc_summary in self.steps else []
+            #     wait_for_steps += [self.fastqc_summary.job_name()] if self.fastqc_summary in self.steps else []
+            #     # and individual reports too
+            #     wait_for_steps += [self.varqc.job_name(s.name) for s in self.bcbio_structure.samples if self.varqc in self.steps]
+            #     wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+            #     wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+            #     wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+            #     self._submit_job(
+            #         self.combined_report,
+            #         wait_for_steps=wait_for_steps)
 
             # if self.mongo_loader in self.steps:
             #     for sample in self.bcbio_structure.samples:
@@ -665,11 +666,11 @@ class BCBioRunner:
                         info('Done ' + j.repr)
                         waiting = False
 
-                        if j.step == self.combined_report:
-                            with open(j.done_marker) as f:
-                                html_report_url = f.read()
-                            info('Final report is saved to ' + html_report_url)
-                            time_waited_after_final_report_finished = 0
+                        # if j.step == self.combined_report:
+                        #     with open(j.done_marker) as f:
+                        #         html_report_url = f.read()
+                        #     info('Final report is saved to ' + html_report_url)
+                        #     time_waited_after_final_report_finished = 0
 
                 # check flags and wait if not all are done
                 if not all(j.is_done for j in self.jobs_running):
@@ -683,6 +684,8 @@ class BCBioRunner:
                     info('.', print_date=False, ending='')
                 else:
                     break
+
+            html_report_url = make_project_level_report(self.cnf, self.bcbio_structure)
 
             if time_waited_after_final_report_finished >= 30:
                 txt = 'Post-processing finished for ' + self.bcbio_structure.project_name

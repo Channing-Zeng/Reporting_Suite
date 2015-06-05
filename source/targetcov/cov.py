@@ -128,6 +128,7 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
     info('Filtering exon bed file to have only gene records...')
     exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
     call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
+    info('Saved genes to ' + exons_only_genes_bed)
 
     info('Building the gene list')
     for gn in gene_names_list:

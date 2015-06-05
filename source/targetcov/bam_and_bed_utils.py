@@ -34,7 +34,7 @@ def remove_comments(cnf, bed_fpath):
             return l
         else:
             return None
-    return iterate_file(cnf, bed_fpath, f, 'rm#')
+    return iterate_file(cnf, bed_fpath, f, 'rmcmt')
 
 
 def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):

@@ -57,10 +57,12 @@ def make_project_level_report(cnf, bcbio_structure):
     info()
     info('Done report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
 
-    if cnf.done_marker:
-        safe_mkdir(dirname(cnf.done_marker))
-        with open(cnf.done_marker, 'w') as f:
-            f.write(html_report_url or final_summary_report_fpath)
+    # if cnf.done_marker:
+    #     safe_mkdir(dirname(cnf.done_marker))
+    #     with open(cnf.done_marker, 'w') as f:
+    #         f.write(html_report_url or final_summary_report_fpath)
+
+    return html_report_url or final_summary_report_fpath
 
 
 def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure):
