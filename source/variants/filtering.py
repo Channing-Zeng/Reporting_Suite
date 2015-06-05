@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 import os
 from os.path import basename, join, isfile, dirname, islink, abspath, isdir
 import traceback
@@ -140,7 +140,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
 glob_cnf = None
 
 
-def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath):
+def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, mutations, vcf2txt_res_fpath):
     global glob_cnf
     cnf = glob_cnf
 
@@ -163,19 +163,19 @@ def postprocess_vcf(sample, caller_name, anno_vcf_fpath, variants, passed_varian
             else:
                 ts = l.split('\t')
                 chrom, pos, alt = ts[0], ts[1], ts[4]
-                if (sample.name, chrom, pos, alt) in passed_variants:
+                if (chrom, pos, alt) in mutations:
                     ts[6] = 'PASS'
                     filt_f.write('\t'.join(ts))
                     pass_f.write('\t'.join(ts))
                 else:
                     if ts[6] in ['', '.', 'PASS']:
                         ts[6] = ''
-                        filter_value = variants.get((sample.name, chrom, pos, alt))
+                        filter_value = variants.get((chrom, pos, alt))
                         if filter_value is None:
                             # warn(chrom + ':' + str(pos) + ' ' + str(alt) + ' for ' + anno_vcf_fpath + ' is not at ' + vcf2txt_res_fpath)
                             ts[6] += 'vcf2txt'
                         elif filter_value == 'TRUE':
-                            ts[6] += 'EFFECT'
+                            ts[6] += 'vardict2mut'
                         else:
                             ts[6] += filter_value
                     filt_f.write('\t'.join(ts))
@@ -188,15 +188,15 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
     info('-' * 70)
     info('Writing VCFs')
 
-    variants = dict()
-    passed_variants = set()
+    variants_by_sample = defaultdict(dict)
+    mutations_by_sample = defaultdict(set)
 
     info('Collecting passed variants...')
-    with open(mut_res_fpath) as puckline_res_f:
-        for l in puckline_res_f:
+    with open(mut_res_fpath) as fh:
+        for l in fh:
             ts = l.split('\t')
             s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
-            passed_variants.add((s_name, chrom, pos, alt))
+            mutations_by_sample[s_name].add((chrom, pos, alt))
 
     info('Collecting all vcf2txt variants...')
     with open(vcf2txt_res_fpath) as vcf2txt_f:
@@ -208,23 +208,25 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
                 ts = l.split('\t')
                 s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
                 filt = ts[pass_col]
-                variants[(s_name, chrom, pos, alt)] = filt
+                variants_by_sample[s_name][(chrom, pos, alt)] = filt
 
     info()
     info('Writing filtered VCFs in ' + str(threads_num) + ' threads')
     try:
         Parallel(n_jobs=threads_num) \
             (delayed(postprocess_vcf) \
-                (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
-                for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+                (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
+                 variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
+                 for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
     except OSError:
         traceback.print_exc()
         warn('Running sequencially instead in ' + str(threads_num) + ' threads')
         try:
             Parallel(n_jobs=1) \
                 (delayed(postprocess_vcf) \
-                    (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath, variants, passed_variants, vcf2txt_res_fpath)
-                    for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+                    (next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
+                     variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
+                     for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
         except OSError:
             traceback.print_exc()
             err('Cannot postprocess VCF - skipping')
