@@ -212,17 +212,16 @@ def _annotate(bedtools, bed_fpath, ref_fpath):
         if (a_chr, a_start, a_end) not in met:
             total_uniq_lines += 1
 
-        if e_chr != '.':
-            annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
-                Region(e_chr, int(e_start), int(e_end), e_gene, e_exon, e_strand, e_feature, e_biotype),
-                int(overlap_size)))
-
+        if e_chr == '.':
+            off_targets.append(Region(a_chr, int(a_start), int(a_end)))
+        else:
             total_annotated += 1
             if (a_chr, a_start, a_end) not in met:
                 total_uniq_annotated += 1
 
-        else:
-            off_targets.append(Region(a_chr, int(a_start), int(a_end)))
+        annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
+            Region(e_chr, int(e_start), int(e_end), e_gene, e_exon, e_strand, e_feature, e_biotype),
+            int(overlap_size)))
 
         met.add((a_chr, a_start, a_end))
 

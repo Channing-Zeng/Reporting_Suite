@@ -174,7 +174,7 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
     cols = count_bed_cols(bed_fpath)
 
     if cols < 4:
-        info('Annotating amplicons with gene names from Ensembl...')
+        info(str(cols) + ' columns (Less than 4). Annotating amplicons with gene names from Ensembl...')
         bed_fpath = annotate_amplicons(cnf, bed_fpath, exons_bed)
 
     elif 8 > cols > 4:
