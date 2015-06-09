@@ -263,12 +263,12 @@ def _annotate(bed_fpath, work_dirpath, cnf):
             only_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'only_ann_' + db_name.lower())
             not_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'not_ann_' + db_name.lower())
             with open(only_annotated_bed, 'w') as out:
-                cmdline = 'grep -v -E ".$" {output_fpath}'.format(**locals())
+                cmdline = 'grep -v -E "\.$" {output_fpath}'.format(**locals())
                 if cnf.debug:
                     log(cmdline + ' > ' + only_annotated_bed)
                 subprocess.call(cmdline, shell=True, stdout=out)
             with open(not_annotated_bed, 'w') as out:
-                cmdline = 'grep -E ".$" {output_fpath}'.format(**locals())
+                cmdline = 'grep -E "\.$" {output_fpath}'.format(**locals())
                 if cnf.debug:
                     log(cmdline + ' > ' + not_annotated_bed)
                 subprocess.call(cmdline, shell=True, stdout=out)
