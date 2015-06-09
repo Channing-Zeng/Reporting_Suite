@@ -215,7 +215,7 @@ def filter_all(cnf, bcbio_structure):
     email_msg = ['Variant filtering finished.']
     # info('Results:')
 
-    _symlink_vcfs(callers, bcbio_structure.var_dirpath)
+    errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
 
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in callers):
         info()
@@ -247,11 +247,17 @@ def filter_all(cnf, bcbio_structure):
                 if cnf.datahub_path:
                     _copy_to_datahub(cnf, caller, cnf.datahub_path)
 
+    if errory:
+        err()
+        err('For some samples and callers annotated VCFs could not be read:')
+        for e in errory:
+            err('  ' + e)
+
 
 def _symlink_vcfs(callers, datestamp_var_dirpath):
     info()
     info('Symlinking final VCFs:')
-    to_exit = False
+    errory = []
     for caller in callers:
         info(caller.name)
         for sample in caller.samples:
@@ -259,19 +265,18 @@ def _symlink_vcfs(callers, datestamp_var_dirpath):
 
             filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
             if not verify_file(filt_vcf_fpath):
-                to_exit = True
-
-            base_filt_fpath = filt_vcf_fpath[:-3] if filt_vcf_fpath.endswith('.gz') else filt_vcf_fpath
-            for fpath in [base_filt_fpath + '.gz',
-                          base_filt_fpath + '.idx',
-                          base_filt_fpath + '.gz.tbi']:
-                if verify_file(fpath):
-                    _symlink_to_dir(fpath, sample.dirpath)
-                    _symlink_to_dir(fpath, datestamp_var_dirpath)
+                errory.append(filt_vcf_fpath)
+            else:
+                base_filt_fpath = filt_vcf_fpath[:-3] if filt_vcf_fpath.endswith('.gz') else filt_vcf_fpath
+                for fpath in [base_filt_fpath + '.gz',
+                              base_filt_fpath + '.idx',
+                              base_filt_fpath + '.gz.tbi']:
+                    if verify_file(fpath):
+                        _symlink_to_dir(fpath, sample.dirpath)
+                        _symlink_to_dir(fpath, datestamp_var_dirpath)
 
             BCBioStructure.move_vcfs_to_var(sample)
-    if to_exit:
-        exit(1)
+    return errory
 
 
 def _symlink_to_dir(fpath, dirpath):

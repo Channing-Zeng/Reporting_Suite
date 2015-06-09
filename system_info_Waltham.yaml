@@ -44,7 +44,7 @@ genomes:
   hg38:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf.gz
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf.gz
     snpeff:
@@ -55,7 +55,7 @@ genomes:
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf.gz
+    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf.gz
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/CosmicV72CodingMuts.vcf.gz
     snpeff:
