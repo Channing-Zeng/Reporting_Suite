@@ -152,11 +152,12 @@ def _resolve_ambiguities(annotated_by_loc_by_gene):
             consensus = Region(chrom, start, end, symbol=g_name, exon='', strand='', feature='', biotype='')
             for r, overlap_size in overlaps:
                 if consensus.strand:
-                    if consensus.feature == r.feature == 'Gene':
-                    # e.g. RefSeq has overlapping genes from different strands with the same gene name
-                        continue
-                    assert consensus.strand == r.strand, 'Consensus strand is ' + \
-                         consensus.strand + ', region strand is ' + r.strand
+                    # RefSeq has exons from different strands with the same gene name (e.g. CTAGE4 for hg19),
+                    # Such pair of exons may overlap with a single region, so taking strand from the first one
+                    if consensus.strand != r.strand:
+                        log('Warning: different strands between consensus and next region (gene: ' + g_name + ')')
+                    #assert consensus.strand == r.strand, 'Consensus strand is ' + \
+                    #     consensus.strand + ', region strand is ' + r.strand
                 else:
                     consensus.strand = r.strand
                 consensus.exon = merge_fields(consensus.exon, r.exon)
