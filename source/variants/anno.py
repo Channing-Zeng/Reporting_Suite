@@ -198,15 +198,23 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     # all_fields.extend(annotations)
 
-    def proc_line(line, i):
+
+    def _fix_after_snpsift(line, i, ctx):
         if not line.startswith('#'):
+            if not ctx['met_CHROM']:
+                return None
             line = line.replace(' ', '_')
             assert ' ' not in line
+
         elif line.startswith('##INFO=<ID=om'):
             line = line.replace(' ', '')
+
+        elif not ctx['met_CHROM'] and line.startswith('#CHROM'):
+            ctx['met_CHROM'] = True
+
         return line
 
-    output_fpath = iterate_file(cnf, output_fpath, proc_line, suffix='f')
+    output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='f', ctx=dict(met_CHROM=False))
     return output_fpath
 
 

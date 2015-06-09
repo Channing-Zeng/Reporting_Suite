@@ -726,7 +726,7 @@ def remove_quotes(s):
 
 
 def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
-                 overwrite=False, reuse_intermediate=True):
+                 overwrite=False, reuse_intermediate=True, ctx=None):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
     if output_fpath.endswith('.gz'):
@@ -743,7 +743,10 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
 
     with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
         with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
-            convert_file_fn(inp_f, out_f)
+            if ctx:
+                convert_file_fn(inp_f, out_f, ctx)
+            else:
+                convert_file_fn(inp_f, out_f)
 
     if overwrite or suffix is None:
         shutil.move(output_fpath, input_fpath)
@@ -757,7 +760,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
-    def _proc_file(inp_f, out_f):
+    def _proc_file(inp_f, out_f, ctx=None):
         max_bunch_size = 1000 * 1000
         written_lines = 0
         bunch = []
@@ -765,7 +768,10 @@ def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
         for i, line in enumerate(inp_f):
             clean_line = line.strip()
             if clean_line:
-                new_l = proc_line_fun(clean_line, i)
+                if ctx:
+                    new_l = proc_line_fun(clean_line, i, ctx)
+                else:
+                    new_l = proc_line_fun(clean_line, i)
                 if new_l is not None:
                     bunch.append(new_l + '\n')
                     written_lines += 1
