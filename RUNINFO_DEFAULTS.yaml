@@ -142,22 +142,41 @@ annotation:
   - FILTER                        : Filter
   - dbSNPBuildID                  : dbSNPBuildID
 
-  - "EFF[*].EFFECT"               : Effect
-  - "EFF[*].IMPACT"               : Impact
-  - "EFF[*].FUNCLASS"             : FunctionalClass
-  - "EFF[*].CODING"               : CodingRegion
-  - "EFF[*].GENE"                 : Gene
+#  - "EFF[*].EFFECT"               : Effect
+#  - "EFF[*].IMPACT"               : Impact
+#  - "EFF[*].FUNCLASS"             : FunctionalClass
+#  - "EFF[*].CODING"               : CodingRegion
+#  - "EFF[*].GENE"                 : Gene
   - dbNSFP_Ensembl_geneid         : EnsemblGeneID
   - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
   - dbNSFP_Uniprot_acc            : UniportAccNumber
-  - "EFF[*].CODON"                : Codon
-  - "EFF[*].AA"                   : AminoAcid
-  - "EFF[*].AA_LEN"               : AminoAcidLength
-  - "EFF[*].AA"                   : AminoAcid
-  - "EFF[*].AA_LEN"               : AminoAcidLength
-  - "EFF[*].TRID"                 : TranscriptID
-  - "EFF[*].BIOTYPE"              : TranscriptBioType
-  - "EFF[*].RANK"                 : Exon_Rank
+#  - "EFF[*].CODON"                : Codon
+#  - "EFF[*].AA"                   : AminoAcid
+#  - "EFF[*].AA_LEN"               : AminoAcidLength
+#  - "EFF[*].AA"                   : AminoAcid
+#  - "EFF[*].AA_LEN"               : AminoAcidLength
+#  - "EFF[*].TRID"                 : TranscriptID
+#  - "EFF[*].BIOTYPE"              : TranscriptBioType
+#  - "EFF[*].RANK"                 : Exon_Rank
+  - "ANN[*].EFFECT":              : Effect
+  - "ANN[*].IMPACT":              : Impact
+  - "ANN[*].FEATURE":             : Feature_Type
+  - "ANN[*].FEATUREID":           : Feature_ID
+  - "ANN[*].ALLELE":              : Allele
+  - "ANN[*].GENE":                : Gene
+  - "ANN[*].GENEID":              : Gene_ID
+  - "ANN[*].BIOTYPE":             : BioType
+  - "ANN[*].RANK":                : Exon_Rank
+  - "ANN[*].HGVS_C":              : HGVS.c
+  - "ANN[*].HGVS_P":              : HGVS.p
+  - "ANN[*].CDNA_POS":            : cDNA_pos
+  - "ANN[*].CDNA_LEN":            : cDNA_len
+  - "ANN[*].CDS_POS":             : CDS_pos
+  - "ANN[*].CDS_LEN":             : CDS_len
+  - "ANN[*].AA_POS":              : AA_pos
+  - "ANN[*].AA_LEN":              : AA_len
+  - "ANN[*].DISTANCE":            : Distance
+
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic

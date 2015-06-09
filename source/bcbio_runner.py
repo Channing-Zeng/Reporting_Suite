@@ -677,7 +677,7 @@ class BCBioRunner:
                     if not waiting:
                         waiting = True
                         info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                             ', '.join(set([j.step.name for j in self.jobs_running])))
+                             ', '.join(set([j.step.name for j in self.jobs_running if j.is_done])))
                         info('', print_date=True, ending='')
                     sleep(10)
                     time_waited_after_final_report_finished += 10
@@ -695,9 +695,10 @@ class BCBioRunner:
 
         except KeyboardInterrupt:
             for j in self.jobs_running:
-                qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
-                if qdel:
-                    call(self.cnf, qdel + ' ' + j.job_name, exit_on_error=False)
+                if not j.is_done:
+                    qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
+                    if qdel:
+                        call(self.cnf, qdel + ' ' + j.job_name, exit_on_error=False)
             info()
             info('All running jobs for this project has been deleted from queue.')
             sys.exit(0)

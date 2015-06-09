@@ -50,11 +50,15 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
 
     substituitions = OrderedDict()
     nucleotides = ['A', 'C', 'G', 'T']
-    for nucl1 in nucleotides:
-        substituitions[nucl1] = OrderedDict()
-        for nucl2 in nucleotides:
-            if nucl1 != nucl2:
-                substituitions[nucl1][nucl2] = 0
+
+    def _add_nuc(nuc):
+        substituitions[nuc] = OrderedDict()
+        for nuc2 in nucleotides:
+            if nuc != nuc2:
+                substituitions[nuc][nuc2] = 0
+
+    for nuc in nucleotides:
+        _add_nuc(nuc)
 
     indel_lengths = []
     for rec in reader:
@@ -67,6 +71,12 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
         # for substitution and indel plots
         for alt in rec.ALT:
             if rec.is_snp:
+                if rec.REF not in substituitions:
+                    nucleotides.append(rec.REF)
+                    _add_nuc(rec.REF)
+                if alt.sequence not in substituitions:
+                    nucleotides.append(alt.sequence)
+                    _add_nuc(alt.sequence)
                 substituitions[rec.REF][str(alt)] += 1
             elif rec.is_indel:
                 if alt is None:
