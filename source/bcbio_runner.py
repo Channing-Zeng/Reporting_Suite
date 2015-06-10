@@ -331,6 +331,7 @@ class BCBioRunner:
                           ('_' + caller if caller else '')) + '.log')
 
         log_dirpath = join(self.bcbio_structure.log_dirpath, step.name)
+        if caller: log_dirpath += '-' + caller
         safe_mkdir(log_dirpath)
 
         done_markers_dirpath = join(self.bcbio_structure.work_dir, 'done_markers')
