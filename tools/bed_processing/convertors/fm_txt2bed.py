@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 '''
-Convertor from Foundation Medicine TXT format into BED format
+Converter from Foundation Medicine TXT format into BED format
 
   example: input (txt):
 Target  interval

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 '''
-Convertor from BED + primer sequence files in TXT format into
+Converter from BED + primer sequence files in TXT format into
 traditional 8-column BED format
 
   example (BEDfile.txt, 1-based coordinates):
@@ -22,7 +22,7 @@ import sys
 import os
 
 if len(sys.argv) < 3:
-    print("Usage: " + sys.argv[0] + " <Base BED file.txt> <Primer Sequence File.txt> [output.bed]")
+    print("Usage: " + sys.argv[0] + " <Regions File.txt> <Primer Sequence File.txt> [output.bed]")
     exit(0)
 
 txt_bed_fname = sys.argv[1]

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 '''
-Convertor from primer sequence files in TXT format into
-BED format for amplicon-based mutation calling with vardict
+Converter from primer sequence files in TXT format into
+BED format for amplicon-based mutation calling with Vardict
 
   example (txt):
 chr1    160786646       160786723       ACCAGTTTCTTTCTGAGAACATC GCCTCTTACTGCACTTCATAAAG 1       _CONTROL_V2T4_
