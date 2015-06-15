@@ -201,7 +201,7 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
                 os.remove(filt_tsv_fpath)
             shutil.copy(tmp_tsv_fpath, filt_tsv_fpath)
 
-        info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
+        info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_tsv_fpath)
 
 
 def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):

@@ -32,7 +32,7 @@ def get_graphs(samples):
                 parts = [p.split('</div>')[0] for p in html.split('<div class="module">')[1:]]
                 # <h2><img/></h2><table></table></div>  OR  <h2><img/></h2><p><img/></p></div>
                 for i, part in enumerate(parts):
-                    info('Parsing ' + _header[i])
+                    # info('Parsing ' + _header[i])
                     info(str(part))
                     table, graph = None, None
                     ok_img = '<img ' + part.split('"><img ')[1].split('"/>')[0] + '"/>'

@@ -183,7 +183,6 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     # all_fields.extend(annotations)
 
-
     def _fix_after_snpsift(line, i, ctx):
         if not line.startswith('#'):
             if not ctx['met_CHROM']:

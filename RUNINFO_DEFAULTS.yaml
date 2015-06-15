@@ -137,22 +137,9 @@ annotation:
   - FILTER                        : Filter
   - dbSNPBuildID                  : dbSNPBuildID
 
-#  - "EFF[*].EFFECT"               : Effect
-#  - "EFF[*].IMPACT"               : Impact
-#  - "EFF[*].FUNCLASS"             : FunctionalClass
-#  - "EFF[*].CODING"               : CodingRegion
-#  - "EFF[*].GENE"                 : Gene
   - dbNSFP_Ensembl_geneid         : EnsemblGeneID
   - dbNSFP_Ensembl_transcriptid   : EnsemblTranscriptID
   - dbNSFP_Uniprot_acc            : UniportAccNumber
-#  - "EFF[*].CODON"                : Codon
-#  - "EFF[*].AA"                   : AminoAcid
-#  - "EFF[*].AA_LEN"               : AminoAcidLength
-#  - "EFF[*].AA"                   : AminoAcid
-#  - "EFF[*].AA_LEN"               : AminoAcidLength
-#  - "EFF[*].TRID"                 : TranscriptID
-#  - "EFF[*].BIOTYPE"              : TranscriptBioType
-#  - "EFF[*].RANK"                 : Exon_Rank
   - "ANN[*].EFFECT"               : Effect
   - "ANN[*].IMPACT"               : Impact
   - "ANN[*].FEATURE"              : Feature_Type
@@ -161,7 +148,6 @@ annotation:
   - "ANN[*].GENE"                 : Gene
   - "ANN[*].GENEID"               : Gene_ID
   - "ANN[*].BIOTYPE"              : BioType
-  - "ANN[*].RANK"                 : Exon_Rank
   - "ANN[*].HGVS_C"               : HGVS.c
   - "ANN[*].HGVS_P"               : HGVS.p
   - "ANN[*].CDNA_POS"             : cDNA_pos
@@ -175,12 +161,11 @@ annotation:
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic
-#  - om                            : Oncomine
   - om_Cancer                     : OncomineCancer
   - om_PATIENT                    : OncominePatient
   - om_MutClass                   : OncomineMutClass
   - om_MutClassPC                 : OncomineMutClassPC
-  - "EFF[*].RANK"                 : Rank
+  - "ANN[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore
   - GC                            : GC
@@ -194,19 +179,9 @@ annotation:
 
   ## FORMAT fields for the sample  # * will be replaced with the tumor sample ID
   - GEN[*].GT                     : Genotype
-  #- GEN[*].FT                     : GenotypeWasCalled
-  #- GEN[*].GL                     : GenotypeLikelihoods
-  #- GEN[*].GLE                    : GenotypeLikelihoodsOfHeterogeneousPloidy
   - GEN[*].PL                     : GenotypeLikelihoods
-  #- GEN[*].GP                     : GenotypePosteriorProbs_PhredScaled
   - GEN[*].GQ                     : ConditionalGenotypeQuality
-  #- GEN[*].HQ                     : HaplotypeQualities
-  #- GEN[*].PS                     : PhaseSet
-  #- GEN[*].PQ                     : PhasingQuality      ## phred-scaled probability that alleles are ordered incorrectly in a heterozygote
-  #- GEN[*].EC                     : ExpAlleleCounts
-  - GEN[*].AD                     : AllelicDepths
-  - GEN[*].FREQ                   : Mutect_FREQ
-  - GEN[*].AB                     : Freebayes_AlellicBalance
+  - GEN[*].VD                     : VariantDepth
   - GEN[*].AF                     : AlleleFrequency
   - GEN[*].AO                     : AlleleObservationCount
   - GEN[*].QA                     : QualitySumForAltObservations
@@ -219,7 +194,6 @@ annotation:
   - VC                            : VariationClass
   - TYPE                          : AlleleType
   - PM                            : VariantIsPrecious
-  # - MUT                         : CitedMutation
   - HD                            : PresentInDBGap
   - KGPROD                        : Has1000GenomeSubmission
   - PH3                           : HapMapValidated
@@ -228,7 +202,7 @@ annotation:
   - COMMON                        : CommonVariant
   - CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
-  # - MAF                         : GlobalMinorAlleleFrequency
+#  - GMAF                          : GlobalMinorAlleleFrequency
   # - CDA                         : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
