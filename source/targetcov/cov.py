@@ -372,9 +372,9 @@ def generate_summary_report(
     info('Making bed file for padded regions...')
     padded_bed = get_padded_bed_file(cnf, sample.bed, chr_len_fpath, padding)
     info('Getting number of mapped reads on padded target...')
-    v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, sample.bam)
+    v_reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
     report.add_record('Reads mapped on padded target', v_reads_on_padded_targ)
-    v_percent_mapped_on_padded_target = 1.0 * v_reads_on_padded_targ / total_mapped_reads if total_mapped_reads else None
+    v_percent_mapped_on_padded_target = 1.0 * v_reads_on_padded_targ / dedupped_reads if dedupped_reads else None
     report.add_record('Percentage of reads mapped on padded target', v_percent_mapped_on_padded_target)
     assert v_percent_mapped_on_padded_target <= 1.0 or v_percent_mapped_on_padded_target is None, str(v_percent_mapped_on_padded_target)
 
@@ -398,7 +398,7 @@ def generate_summary_report(
     picard = get_system_path(cnf, 'java', 'picard')
     if picard:
         info()
-        info('Picard ins size hist for "' + basename(sample.bam) + '"')
+        info('Picard ins size hist for "' + basename(dedupped_reads) + '"')
         picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
         picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
         cmdline = '{picard} CollectInsertSizeMetrics' \
