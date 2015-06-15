@@ -492,7 +492,7 @@ class BCBioStructure:
 
         # Moving raw variants in the date dir to var
         for fname in os.listdir(self.date_dirpath):
-            if '.vcf' in fname:
+            if '.vcf' in fname and '.anno.filt' not in fname:
                 if not isdir(self.var_dirpath):
                     safe_mkdir(self.var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
@@ -645,9 +645,9 @@ class BCBioStructure:
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
-        if 'ensemble' in sample_info['algorithm']:
+        if 'ensemble' in sample_info['algorithm'] and len(variantcallers) >= 2:
             variantcallers.append('ensemble')
-            
+
         if isinstance(variantcallers, basestring):
             variantcallers = [variantcallers]
 
