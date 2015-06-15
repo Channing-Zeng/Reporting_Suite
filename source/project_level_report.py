@@ -52,7 +52,7 @@ def make_project_level_report(cnf, bcbio_structure):
     info('  ' + final_summary_report_fpath)
     if html_report_url:
         info('  Web link: ' + html_report_url)
-    send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
+    # send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
 
     info()
     info('Done report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))

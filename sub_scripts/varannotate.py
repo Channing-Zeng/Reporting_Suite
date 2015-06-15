@@ -103,21 +103,14 @@ def process_one(cnf):
 
     annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
 
-    anno_vcf_fpath, anno_tsv_fpath = finialize_annotate_file(cnf, anno_vcf_fpath, sample.name, cnf.caller)
-
-    return anno_vcf_fpath, anno_tsv_fpath
+    return finialize_annotate_file(cnf, anno_vcf_fpath, sample.name, cnf.caller)
 
 
-def finalize_one(cnf, anno_vcf_fpath, anno_tsv_fpath):
+def finalize_one(cnf, anno_vcf_fpath):
     msg = ['Annoatation finished for ' + cnf.name + ':']
     if anno_vcf_fpath:
         msg.append('VCF: ' + anno_vcf_fpath)
         info('Saved final VCF to ' + anno_vcf_fpath)
-    if anno_tsv_fpath:
-        msg.append('TSV: ' + anno_tsv_fpath)
-        info('Saved final TSV to ' + anno_tsv_fpath)
-
-    # send_email('\n'.join(msg))
 
 
 def finalize_all(cnf, samples, results):

@@ -46,8 +46,20 @@ class Steps(list):
     def __init__(self):
         super(Steps, self).__init__()
 
+    @staticmethod
+    def normalize(name):
+        return name.lower().replace('_', '').replace('-', '')
+
+    @staticmethod
+    def contains(name_list, step_name):
+        return Steps.normalize(step_name) in [Steps.normalize(name) for name in name_list]
+
+    def __contains(self, step_name):
+        return Steps.contains([s.name for s in self], step_name)
+
     def add_step(self, step):
-        self.append(step)
+        if not self.__contains(step.name):
+            self.append(step)
 
     def extend(self, iterable):
         for step in iterable:
@@ -93,38 +105,37 @@ class BCBioRunner:
         self.summary_threads = min(self.max_threads, total_samples_num)
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
+        self._init_steps(cnf, self.run_id)
         self.steps = Steps()
-        self._set_up_steps(cnf, self.run_id)
 
-        self.jobs_running = []
-
-        normalize = lambda name: name.lower().replace('_', '').replace('-', '')
-        contains = lambda x, xs: normalize(x) in [normalize(y) for y in (xs or [])]
-
-        self.steps.extend([
-            self.varqc_summary,
-            self.varqc_after_summary,
-            self.fastqc_summary,
-            self.targqc_summary,
-            self.combined_report,
-        ])
-
-        self.steps.extend(
-            [s for s in [
-                self.varqc,
+        if 'Variants' in cnf.steps:
+            self.steps.extend([
                 self.varannotate,
+                self.varqc,
+                self.varqc_summary,
                 self.varfilter,
-                self.mongo_loader,
                 self.varqc_after,
-                self.targetcov,
-                self.abnormal_regions,
-                self.seq2c,
-                self.ngscat,
-                self.qualimap,
-            ] if contains(s.name, cnf.steps)])
+                self.varqc_after_summary])
+        if Steps.contains(cnf.steps, 'VarAnnotate'):
+            self.steps.extend([self.varannotate, self.varqc, self.varqc_summary])
+        if Steps.contains(cnf.steps, 'VarQC'):
+            self.steps.extend([self.varqc, self.varqc_summary, self.varqc_after, self.varqc_after_summary])
+        if Steps.contains(cnf.steps, 'VarFilter'):
+            self.steps.extend([self.varfilter, self.varqc_after, self.varqc_after_summary])
+        if Steps.contains(cnf.steps, 'VarQC_postVarFilter'):
+            self.steps.extend([self.varqc_after, self.varqc_after_summary])
 
-        if cnf.steps and 'TargetCov' in cnf.steps:
-            self.steps.append(self.targetcov)
+        if Steps.contains(cnf.steps, 'TargQC'):
+            self.steps.extend([self.targetcov, self.ngscat, self.qualimap, self.targqc_summary])
+        if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
+            self.steps.extend([self.targetcov, self.targqc_summary])
+
+        self.steps.extend([self.fastqc_summary])
+
+        if Steps.contains(cnf.steps, 'Seq2C'):
+            self.steps.append(self.seq2c)
+        if Steps.contains(cnf.steps, 'AbnormalCovReport'):
+            self.steps.append(self.abnormal_regions)
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -139,14 +150,14 @@ class BCBioRunner:
         #         self.varqc_after_summary
         # ] if contains(s.name, cnf.vardict_steps)])
 
-        self._symlink_cnv()
+        self.jobs_running = []
 
     def __generate_run_id(self, final_dir, project_name, prid='', timestamp=''):
         hasher = hashlib.sha1(final_dir + prid + timestamp)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
         return path_hash + '_' + project_name
 
-    def _set_up_steps(self, cnf, run_id):
+    def _init_steps(self, cnf, run_id):
         basic_params = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
             ' --run-cnf ' + self.cnf.run_cnf + \
@@ -309,13 +320,13 @@ class BCBioRunner:
         project_level_report_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if cnf.jira:
             project_level_report_cmdline += ' --jira ' + cnf.jira
-        self.combined_report = Step(cnf, run_id,
-            name='ProjectLevelReport', short_name='cr',
-            interpreter='python',
-            script=join('sub_scripts', 'combined_report.py'),
-            dir_name=self.bcbio_structure.date_dirpath,
-            paramln=project_level_report_cmdline
-        )
+        # self.combined_report = Step(cnf, run_id,
+        #     name='ProjectLevelReport', short_name='cr',
+        #     interpreter='python',
+        #     script=join('sub_scripts', 'combined_report.py'),
+        #     dir_name=self.bcbio_structure.date_dirpath,
+        #     paramln=project_level_report_cmdline
+        # )
 
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
@@ -418,6 +429,8 @@ class BCBioRunner:
 
 
     def post_jobs(self):
+        self._symlink_cnv()
+
         callers = self.bcbio_structure.variant_callers.values()
 
         if self.qualimap in self.steps:

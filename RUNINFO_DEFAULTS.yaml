@@ -1,12 +1,7 @@
 steps:
-- VarAnnotate
-- VarQC
-- VarFilter
-- VarQC_postVarFilter
-- TargetCov
+- Variants
+- TargQC
 - Seq2C
-- ngsCAT
-- QualiMap
 
 
 variant_filtering:

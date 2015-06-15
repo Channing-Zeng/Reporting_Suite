@@ -1,8 +1,10 @@
 steps:
-- VarAnnotate
-- VarQC
-- VarFilter
-- VarQC_postVarFilter
+- Variants
+- TargQC
+- Seq2C
+
+
+# reuse_intermediate: True
 
 
 variant_filtering:

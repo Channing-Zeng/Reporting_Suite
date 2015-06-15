@@ -5,7 +5,7 @@ import shutil
 from os.path import isfile, exists, join, islink
 import time
 
-from source.logger import info, err, warn, send_email, critical
+from source.logger import info, err, warn, critical, silent_err
 from source.file_utils import file_exists, file_transaction, verify_file
 
 
@@ -146,12 +146,12 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
                         if stderr == subprocess.STDOUT:
-                            err('   ' + line.strip())
+                            silent_err('   ' + line.strip())
                         else:
                             info('   ' + line.strip())
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
-                        warn('   ' + line.strip())
+                        silent_err('   ' + line.strip())
                         stderr_dump += line
                     info()
 

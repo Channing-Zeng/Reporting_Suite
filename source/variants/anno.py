@@ -100,9 +100,7 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
 
     final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
-    final_tsv_fname = samplename + '-' + callername + '.anno.tsv'
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
-    final_tsv_fpath = join(cnf.output_dir, final_tsv_fname)
 
     # Moving final VCF
     if isfile(final_vcf_fpath):
@@ -111,24 +109,12 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
         os.remove(final_vcf_fpath + '.gz')
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
-    # Converting to TSV
-    if 'tsv_fields' in cnf.annotation:
-        tsv_fpath = make_tsv(cnf, vcf_fpath, samplename)
-        if not tsv_fpath:
-            err('TSV convertion didn\'t work')
-        else:
-            if isfile(final_tsv_fpath):
-                os.remove(final_tsv_fpath)
-            shutil.copy(tsv_fpath, final_tsv_fpath)
-    else:
-        final_tsv_fpath = None
-
     # Indexing
     info()
     info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
     final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
 
-    return final_vcf_fpath, final_tsv_fpath
+    return [final_vcf_fpath]
 
 
 def _mongo(cnf, input_fpath):
@@ -274,7 +260,7 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
         opts += ' -canon '
     else:
-        custom_transcripts = cnf.genome.snpeff_transcripts
+        custom_transcripts = cnf.genome.snpeff.transcripts
         if custom_transcripts:
             if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
                 return None, None, None

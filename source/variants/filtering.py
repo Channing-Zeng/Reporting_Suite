@@ -4,6 +4,7 @@ from os.path import basename, join, isfile, dirname, islink, abspath, isdir
 import traceback
 
 from joblib import Parallel, delayed
+import shutil
 
 import source
 
@@ -13,6 +14,7 @@ from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline
 from source.logger import critical, err, warn
 from source.utils import is_us
+from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus, file_transaction
 from source.logger import info
@@ -150,6 +152,7 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
     pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
     safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
 
+    # Saving .anno.filt.vcf.gz and .anno.filt.pass.vcf
     if cnf.reuse_intermediate and verify_file(filt_vcf_fpath + '.gz') and verify_file(pass_filt_vcf_fpath):
         info(filt_vcf_fpath + '.gz' + ' and ' + pass_filt_vcf_fpath + ' exist; reusing.')
     else:
@@ -184,6 +187,21 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
                             filt_f.write('\t'.join(ts))
 
         info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
+
+    info()
+    info(sample.name + ', ' + caller_name + ': writing filtered TSVs')
+    filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller_name)
+    # Converting to TSV - saving .anno.filt.tsv
+    if 'tsv_fields' in cnf.annotation:
+        tmp_tsv_fpath = make_tsv(cnf, filt_vcf_fpath, sample.name)
+        if not tmp_tsv_fpath:
+            err('TSV convertion didn\'t work')
+        else:
+            if isfile(filt_tsv_fpath):
+                os.remove(filt_tsv_fpath)
+            shutil.copy(tmp_tsv_fpath, filt_tsv_fpath)
+
+        info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
 
 
 def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):

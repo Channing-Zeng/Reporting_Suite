@@ -49,6 +49,10 @@ def warn(msg='', ending='\n', print_date=True, severity='warning'):
     _log(sys.stderr, msg, ending, print_date, severity=severity)
 
 
+def silent_err(msg='', ending='\n', print_date=True, severity='silent_err'):
+    warn(msg, ending, print_date, severity=severity)
+
+
 def err(msg='', ending='\n', print_date=True, severity='error'):
     warn(msg, ending, print_date, severity=severity)
 
@@ -94,15 +98,10 @@ def send_email(msg='', subj=''):
         msg['To'] = ','.join(addresses)
 
         def try_send(host):
-            try:
-                s = smtplib.SMTP(host)
-                s.sendmail(msg['From'], addresses, msg.as_string())
-                s.quit()
-            except:
-                info('Could not send email to ' + msg['To'] + ' using ' + host)
-                err(traceback.format_exc())
-            else:
-                info('Mail sent to ' + msg['To'] + ' using ' + host)
+            s = smtplib.SMTP(host)
+            s.sendmail(msg['From'], addresses, msg.as_string())
+            s.quit()
+            info('Mail sent to ' + msg['To'] + ' using ' + host)
 
         def print_msg():
             for line in msg.as_string().split('\n'):
@@ -113,14 +112,14 @@ def send_email(msg='', subj=''):
             try_send(smtp_host)
         except socket.error:
             warn('Could not send email using the sever "' + smtp_host + '" with exception: ')
-            warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+            warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
             if smtp_host != 'localhost':
                 warn('Trying "localhost" as a server...')
                 try:
                     try_send('localhost')
                 except socket.error:
                     warn('Could not send email using the sever "localhost" with exception: ')
-                    warn('; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
+                    warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
                     print_msg()
             else:
                 print_msg()
