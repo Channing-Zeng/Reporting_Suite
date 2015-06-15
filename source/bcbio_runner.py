@@ -94,7 +94,7 @@ class BCBioRunner:
 
         user_prid = getpass.getuser()
         timestamp = str(datetime.datetime.now())
-        self.run_id = self.__generate_run_id(self.final_dir, bcbio_structure.project_name, user_prid, timestamp)
+        self.run_id = BCBioRunner.__generate_run_id(self.final_dir, bcbio_structure.project_name, user_prid, timestamp)
         info('User PRID: ' + user_prid + ', run_id: ' + self.run_id)
 
         self.qsub_runner = abspath(expanduser(cnf.qsub_runner))
@@ -150,9 +150,14 @@ class BCBioRunner:
         #         self.varqc_after_summary
         # ] if contains(s.name, cnf.vardict_steps)])
 
+        info('Final list of steps to run:')
+        for s in self.steps:
+            info('  ' + s.name)
+
         self.jobs_running = []
 
-    def __generate_run_id(self, final_dir, project_name, prid='', timestamp=''):
+    @staticmethod
+    def __generate_run_id(final_dir, project_name, prid='', timestamp=''):
         hasher = hashlib.sha1(final_dir + prid + timestamp)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
         return path_hash + '_' + project_name

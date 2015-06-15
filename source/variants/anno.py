@@ -9,7 +9,6 @@ from source.file_utils import iterate_file, intermediate_fname, verify_file
 from source.logger import step_greetings, critical, info, err, warn
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
-from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
 
 

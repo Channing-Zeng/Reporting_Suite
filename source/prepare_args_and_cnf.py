@@ -54,8 +54,8 @@ def check_genome_resources(cnf):
                             genome_cnf[key] = gz_fpath
                     else:
                         err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-                else:
-                    info(key + ': ' + genome_cnf[key])
+                # else:
+                #     info(key + ': ' + genome_cnf[key])
         info()
         genome_cnf['name'] = build_name
 
