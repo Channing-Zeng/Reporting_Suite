@@ -12,7 +12,7 @@ from source.reporting import Metric, SampleReport, MetricStorage, ReportSection,
     load_records
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
-    total_merge_bed, count_bed_cols
+    total_merge_bed, count_bed_cols, annotate_amplicons
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
@@ -113,8 +113,18 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
         gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
         info('Using genes from amplicons list, filtering exons with this genes.')
         exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+        if not verify_file(exons_bed):
+            warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
+            amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
+            info('Getting gene names again...')
+            gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
+            info('Using genes from amplicons list, filtering exons with this genes.')
+            exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+            if not verify_file(exons_bed):
+                critical('No gene symbols from the capture bed file was found in Ensemble.')
+    info()
 
-    info('Making uniq gene list without affecting the order')
+    info('Making unique gene list without affecting the order')
     fixed_gene_names_list = []
     added_gene_names_set = set()
     for i in range(len(gene_names_list)):

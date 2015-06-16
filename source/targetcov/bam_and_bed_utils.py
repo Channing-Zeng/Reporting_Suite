@@ -141,7 +141,7 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
             if new_gns:
                 return l.replace(fs[3], ','.join(new_gns))
 
-    return iterate_file(cnf, bed_fpath, fn, suffix='key')
+    return iterate_file(cnf, bed_fpath, fn, suffix='key', check_result=False)
 
 
 def sort_bed(cnf, bed_fpath):

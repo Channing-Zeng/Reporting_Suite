@@ -725,7 +725,7 @@ def remove_quotes(s):
     return s
 
 
-def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
+def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
                  overwrite=False, reuse_intermediate=True, ctx=None):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
@@ -755,11 +755,11 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None,
     if suffix:
         info('Saved to ' + output_fpath)
 
-    verify_file(output_fpath, is_critical=True)
+    verify_file(output_fpath, is_critical=check_result)
     return output_fpath
 
 
-def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
+def iterate_file(cnf, input_fpath, proc_line_fun, check_result=True, *args, **kwargs):
     def _proc_file(inp_f, out_f, ctx=None):
         max_bunch_size = 1000 * 1000
         written_lines = 0
@@ -787,7 +787,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun, *args, **kwargs):
         out_f.writelines(bunch)
         info('Written lines: ' + str(written_lines))
 
-    return convert_file(cnf, input_fpath, _proc_file, *args, **kwargs)
+    return convert_file(cnf, input_fpath, _proc_file, check_result=check_result, *args, **kwargs)
 
 
 def dots_to_empty_cells(config, tsv_fpath):
