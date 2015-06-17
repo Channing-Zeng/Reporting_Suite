@@ -662,7 +662,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
-    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -abam {bam} -b {bed} -hist'.format(**locals())
+    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
     bedcov_output = join(cnf.work_dir,
         splitext_plus(basename(bed))[0] + '_' +
         splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
