@@ -85,11 +85,11 @@ def annotate_amplicons(cnf, amplicons_bed, exons_bed):
 
 
 def group_and_merge_regions_by_gene(cnf, bed_fpath, keep_genes=False):
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'merge')
+    output_fpath = intermediate_fname(cnf, bed_fpath, 'grp_mrg')
 
-    merge_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'group_and_merge_by_gene.py'))
+    group_merge_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'group_and_merge_by_gene.py'))
 
-    cmdline = '{merge_bed_py} {bed_fpath}'.format(**locals())
+    cmdline = '{group_merge_bed_py} {bed_fpath}'.format(**locals())
     if not keep_genes:
         cmdline += ' | grep -vw Gene'
 
@@ -153,8 +153,8 @@ def sort_bed(cnf, bed_fpath):
 
 
 def total_merge_bed(cnf, bed_fpath):
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} merge -i {bed_fpath}'.format(**locals())
+    bedops = get_system_path(cnf, 'bedops')
+    cmdline = '{bedops} --merge {bed_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, bed_fpath, 'total_merged')
     call(cnf, cmdline, output_fpath)
     return output_fpath

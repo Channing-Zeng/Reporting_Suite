@@ -112,16 +112,17 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
     else:
         gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
         info('Using genes from amplicons list, filtering exons with this genes.')
-        exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-        if not verify_file(exons_bed):
+        exons_bed_2 = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+        if not verify_file(exons_bed_2):
             warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
             amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
             info('Getting gene names again...')
             gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
             info('Using genes from amplicons list, filtering exons with this genes.')
-            exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-            if not verify_file(exons_bed):
+            exons_bed_2 = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+            if not verify_file(exons_bed_2):
                 critical('No gene symbols from the capture bed file was found in Ensemble.')
+        exons_bed = exons_bed_2
     info()
 
     info('Making unique gene list without affecting the order')

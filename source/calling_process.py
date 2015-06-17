@@ -249,7 +249,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     def do_handle_oserror(cmdl, out_fpath=None):
         res_ = None
         counter = 0
-        max_number_of_tries = 3
+        max_number_of_tries = 200
         while True:
             try:
                 res_ = do(cmdl, out_fpath)
@@ -260,10 +260,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     break
                 err('OSError: ' + str(e))
                 err()
-                err('Waiting...')
-                time.sleep(5)
-                err('Retrying...')
-                err()
+                if 'Cannot allocate memory' not in str(e):
+                    break
+                else:
+                    err('Waiting...')
+                    time.sleep(30)
+                    err('Retrying...')
+                    err()
         return res_
 
     res = None  # = proc or output_fpath

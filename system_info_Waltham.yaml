@@ -36,6 +36,8 @@ resources:
     path: /opt/az/adm/univa/bin/lx-amd64/qsub
   qdel:
     path: /opt/az/adm/univa/bin/lx-amd64/qdel
+  bedops:
+    path: /opt/az/local/bedops/bin/bedops
 #    module: sge
 #  qsub:
 #    path: tools/qsub.sh
