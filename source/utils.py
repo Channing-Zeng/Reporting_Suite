@@ -71,7 +71,7 @@ def get_chr_len_fpath(cnf):
     if not genome_seq_fpath:
         return None
 
-    chr_lengths = dict()
+    chr_lengths = OrderedDict()
     if verify_file(genome_seq_fpath + '.fai'):
         info('Reading genome index file (.fai) to get chromosome lengths')
         with open(genome_seq_fpath + '.fai', 'r') as handle:
@@ -96,7 +96,7 @@ def get_chr_lengths(cnf):
     if not chr_len_fpath:
         return None
 
-    chr_lengths = dict()
+    chr_lengths = OrderedDict()
     with open(chr_len_fpath, 'r') as f:
         for line in f:
             if len(line.split()) == 2:

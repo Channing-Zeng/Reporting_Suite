@@ -148,7 +148,12 @@ def sort_bed(cnf, bed_fpath):
     sort = get_system_path(cnf, 'sort')
     cmdline = '{sort} -V -k1,1 -k2,2 {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
-    call(cnf, cmdline, output_fpath)
+    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+    if not res:
+        warn('Cannot sort, trying with bedtools')
+        bedtools = get_system_path(cnf, 'bedtools')
+        cmdline = '{bedtools} sort -i {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
+        res = call(cnf, cmdline, output_fpath)
     return output_fpath
 
 

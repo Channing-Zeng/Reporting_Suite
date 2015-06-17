@@ -219,9 +219,9 @@ def _annotate(bedtools, bed_fpath, ref_fpath):
             if (a_chr, a_start, a_end) not in met:
                 total_uniq_annotated += 1
 
-        annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
-            Region(e_chr, int(e_start), int(e_end), e_gene, e_exon, e_strand, e_feature, e_biotype),
-            int(overlap_size)))
+            annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
+                Region(e_chr, int(e_start), int(e_end), e_gene, e_exon, e_strand, e_feature, e_biotype),
+                int(overlap_size)))
 
         met.add((a_chr, a_start, a_end))
 
