@@ -1,4 +1,4 @@
-"""Part taken from bcbio-nextgen.
+"""Partly taken from bcbio-nextgen.
 """
 
 import shutil
@@ -244,7 +244,26 @@ def symlink_plus(orig, new):
                 os.symlink(os.path.relpath(orig_noext + sub_ext), os.path.basename(new_noext + sub_ext))
 
 def open_gzipsafe(f, mode='rb'):
-    return gzip.open(f, mode=mode) if f.endswith(".gz") else open(f, mode=mode)
+    if f.endswith('.gz'):
+        try:
+            h = gzip.open(f, mode=mode)
+        except IOError, e:
+            err('Error opening gzip ' + f + ': ' + str(e) + ', opening as plain text')
+            return open(f, mode=mode)
+        else:
+            try:
+                h.read(1)
+            except IOError, e:
+                err('Error opening gzip ' + f + ': ' + str(e) + ', opening as plain text')
+                h.close()
+                return open(f, mode=mode)
+            else:
+                h.close()
+                h = gzip.open(f, mode=mode)
+                return h
+    else:
+        return open(f, mode=mode)
+
 
 def append_stem(to_transform, word):
     """

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import gzip
+import os
 
 import __check_python_version
 
@@ -7,15 +9,15 @@ import shutil
 import source
 from source import SingleSample
 from source.bcbio_structure import BCBioStructure
-from source.file_utils import iterate_file
+from source.file_utils import iterate_file, open_gzipsafe
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.variants.vcf_processing import remove_rejected, fix_chromosome_names, iterate_vcf, \
-    read_sample_names_from_vcf, get_sample_column_index
+    read_sample_names_from_vcf, get_sample_column_index, bgzip_and_tabix
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
-from source.logger import err, send_email
+from source.logger import err, send_email, warn
 
 
 def main(args):
@@ -111,6 +113,37 @@ def finalize_one(cnf, anno_vcf_fpath):
     if anno_vcf_fpath:
         msg.append('VCF: ' + anno_vcf_fpath)
         info('Saved final VCF to ' + anno_vcf_fpath)
+
+        if is_gz(anno_vcf_fpath):
+            info(anno_vcf_fpath + ' is in correct gzip format')
+            open_gzipsafe(anno_vcf_fpath)
+        else:
+            warn('Not a gzip:' + anno_vcf_fpath)
+            anno_vcf_fpath_ungz = anno_vcf_fpath
+            anno_vcf_fpath_gz = anno_vcf_fpath + '.gz'
+            if anno_vcf_fpath.endswith('.gz'):
+                anno_vcf_fpath_ungz = anno_vcf_fpath.split('.gz')[0]
+                anno_vcf_fpath_gz = anno_vcf_fpath
+                os.rename(anno_vcf_fpath_gz, anno_vcf_fpath_ungz)
+            info('Compressing and indexing with bgzip+tabix again ' + anno_vcf_fpath_ungz)
+            anno_vcf_fpath_gz = bgzip_and_tabix(cnf, anno_vcf_fpath_ungz)
+            info('Saved VCF again to ' + anno_vcf_fpath_gz)
+
+
+def is_gz(fpath, mode='rb'):
+    try:
+        h = gzip.open(fpath)
+    except IOError, e:
+        return False
+    else:
+        try:
+            h.read(1)
+        except IOError, e:
+            h.close()
+            return False
+        else:
+            h.close()
+            return True
 
 
 def finalize_all(cnf, samples, results):

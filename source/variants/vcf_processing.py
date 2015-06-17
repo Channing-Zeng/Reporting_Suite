@@ -282,11 +282,13 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
 
 
 def vcf_is_empty(cnf, vcf_fpath):
-    with open_gzipsafe(vcf_fpath) as vcf:
-        reader = vcf_parser.Reader(vcf)
-        for rec in reader:
-            return False
-    return True
+    vcf = open_gzipsafe(vcf_fpath)
+    reader = vcf_parser.Reader(vcf)
+    result = True
+    for rec in reader:
+        result = False
+    vcf.close()
+    return result
 
 
 def remove_rejected(cnf, input_fpath):
@@ -554,8 +556,9 @@ def vcf_one_per_line(cnf, vcf_fpath):
 
 
 def read_sample_names_from_vcf(vcf_fpath):
+    f = open_gzipsafe(vcf_fpath)
     basic_fields = next(
-        (l.strip()[1:].split() for l in open_gzipsafe(vcf_fpath)
+        (l.strip()[1:].split() for l in f
         if l.strip().startswith('#CHROM')), None)
     if not basic_fields:
         critical('Error: no VCF header in ' + vcf_fpath)
