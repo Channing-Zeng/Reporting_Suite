@@ -12,7 +12,7 @@ resources:
     path: /group/ngs/src/samtools/samtools
     # path: /group/cancer_informatics/tools_resources/NGS/bin/samtools
   bedtools:
-    path: /group/ngs/src/bedtools/bin/bedtools
+    path: /opt/az/local/bedtools/bedtools2-2.24.0/bin/bedtools  #/group/ngs/src/bedtools/bin/bedtools
     # path: /opt/az/local/bedtools/bedtools2-2.21.0/bin/bedtools
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
@@ -66,7 +66,7 @@ genomes:
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-    # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
+    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
     cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf
