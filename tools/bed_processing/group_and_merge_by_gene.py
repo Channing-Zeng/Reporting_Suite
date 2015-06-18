@@ -106,7 +106,7 @@ def main():
 
     sys.stderr.write('Merged, regions after merge: ' + str(len(final_regions)) + ', saving...\n')
 
-    for chrom, start, end, gname, strand, feature, biotype in sorted(final_regions):
+    for chrom, start, end, gname, strand, feature, biotype in final_regions:
         fs = [chrom, str(start), str(end), gname, '.', strand or '.', feature or '.', biotype or '.']
         sys.stdout.write('\t'.join(fs[:num_bed_cols]) + '\n')
     sys.stderr.write('Saved\n')
@@ -121,6 +121,11 @@ class Exon:
 
     def __repr__(self):
         return str(self.start) + '-' + str(self.end) + ',' + str(self.biotype) + ', ' + str(self.feature)
+
+
+CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
+for i in range(22, 0, -1):
+    CHROMS.append((str(i), i))
 
 
 class Gene:
@@ -138,10 +143,6 @@ class Gene:
         self.regions = []
 
     def __make_chrom_key(self):
-        CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
-        for i in range(22, 0, -1):
-            CHROMS.append((str(i), i))
-
         chr_remainder = self.chrom
         if self.chrom.startswith('chr'):
             chr_remainder = self.chrom[3:]
