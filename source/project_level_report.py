@@ -68,33 +68,35 @@ def make_project_level_report(cnf, bcbio_structure):
 def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure):
     if verify_file(project_list_fpath, 'Project list'):
         info('Reading project list ' + project_list_fpath)
-        pids = set()
         with open(project_list_fpath) as f:
             lines = f.readlines()
-        uncom_lines = [l for l in lines if not l.startswith('#')]
+        uncom_lines = [l.strip() for l in lines if not l.strip().startswith('#')]
 
         header = uncom_lines[0].strip()
         info('header: ' + header)
-        fields = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-        index_of_pid = fields.index('PID')
+        keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+        index_of_pid = keys.index('PID')
         if index_of_pid == -1: index_of_pid = 1
+
+        values_by_keys_by_pid = OrderedDict()
         for l in uncom_lines[1:]:
-            l = l.strip()
             if l:
                 values = l.split(',')
-                pids.add(values[index_of_pid])
+                pid = values[index_of_pid]
+                values_by_keys_by_pid[pid] = OrderedDict(zip(keys, values))
 
+        pid = bcbio_structure.project_name
         with file_transaction(cnf.work_dir, project_list_fpath) as tx_fpath:
-            values = {
+            values_by_keys_by_pid[pid].update({
                 'Updated By': getpass.getuser(),
-                'PID': bcbio_structure.project_name,
+                'PID': pid,
                 'Name': bcbio_structure.project_name,
                 'JIRA URL': cnf.jira,
                 'HTML report path': html_report_url,
                 'Analyses directory US': dirname(bcbio_structure.final_dirpath),
                 'Sample Number': str(len(bcbio_structure.samples)),
-            }
-            new_line = ','.join(values.get(f) or '' for f in fields)
+            })
+            new_line = ','.join(values_by_keys_by_pid[pid].values())
             info('adding the new line:' + new_line)
 
             with open(tx_fpath, 'w') as f:

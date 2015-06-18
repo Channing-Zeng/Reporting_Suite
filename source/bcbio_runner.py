@@ -129,6 +129,10 @@ class BCBioRunner:
             self.steps.extend([self.targetcov, self.ngscat, self.qualimap, self.targqc_summary])
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
+        if Steps.contains(cnf.steps, 'Qualimap'):
+            self.steps.append(self.qualimap)
+        if Steps.contains(cnf.steps, 'ngsCAT'):
+            self.steps.append(self.ngscat)
 
         self.steps.extend([self.fastqc_summary])
 
@@ -136,6 +140,9 @@ class BCBioRunner:
             self.steps.append(self.seq2c)
         if Steps.contains(cnf.steps, 'AbnormalCovReport'):
             self.steps.append(self.abnormal_regions)
+
+        if Steps.contains(cnf.steps, 'Summary'):
+            pass
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -696,7 +703,7 @@ class BCBioRunner:
                     if not waiting:
                         waiting = True
                         info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                             ', '.join(set([j.step.name for j in self.jobs_running if j.is_done])))
+                             ', '.join(set([j.step.name for j in self.jobs_running if not j.is_done])))
                         info('', print_date=True, ending='')
                     sleep(10)
                     time_waited_after_final_report_finished += 10
