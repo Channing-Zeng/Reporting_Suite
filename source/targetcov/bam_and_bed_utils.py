@@ -46,8 +46,11 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
 
     # Exons
     info()
-    info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
+    info('Merging regions within genes...')
     exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
+
+    info('Sorting exons by (chrom, gene name, start)')
+    exons_bed = sort_bed(cnf, exons_bed)
 
     amplicons_bed = cut(cnf, amplicons_bed, 4)
 
@@ -68,6 +71,9 @@ def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
     info()
     info('Merging amplicons...')
     amplicons_bed = group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
+
+    info('Sorting exons by (chrom, gene name, start)')
+    amplicons_bed = sort_bed(cnf, amplicons_bed)
 
     return exons_bed, amplicons_bed, seq2c_bed
 

@@ -165,8 +165,11 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
     info('Preparing BED file for seq2c...')
 
     info()
-    info('Sorting exons by (chrom, gene name, start); and merging regions within genes...')
+    info('Merging regions within genes...')
     exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
+
+    info('Sorting exons by (chrom, gene name, start)')
+    exons_bed = sort_bed(cnf, exons_bed)
 
     info()
     info('bedtools-sotring BED file...')

@@ -12,7 +12,7 @@ from source.reporting import Metric, SampleReport, MetricStorage, ReportSection,
     load_records
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
-    total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene
+    total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
@@ -116,8 +116,10 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
         if not verify_file(exons_anno_bed):
             warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
             amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
-            info('Merging amplicons...')
+            info('Merging regions within genes...')
             amplicons_bed = group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
+            info('Sorting amplicons_bed by (chrom, gene name, start)')
+            amplicons_bed = sort_bed(cnf, amplicons_bed)
             info('Getting gene names again...')
             gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
             info('Using genes from amplicons list, filtering exons with this genes.')
