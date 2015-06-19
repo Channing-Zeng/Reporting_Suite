@@ -151,16 +151,25 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
 
 
 def sort_bed(cnf, bed_fpath):
+    output_fpath_1 = intermediate_fname(cnf, bed_fpath, 'sorted')
+
     sort = get_system_path(cnf, 'sort')
+    cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
+    res = call(cnf, cmdline, output_fpath_1, exit_on_error=False)
+    if res:
+        return output_fpath_1
+
+    warn('Cannot sort with -V, trying with -n')
     cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
-    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
-    if not res:
-        warn('Cannot sort, trying with bedtools')
-        bedtools = get_system_path(cnf, 'bedtools')
-        cmdline = '{bedtools} sort -i {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
-        res = call(cnf, cmdline, output_fpath)
-    return output_fpath
+    res = call(cnf, cmdline, output_fpath_1, exit_on_error=False)
+    if res:
+        return output_fpath_1
+
+    warn('Cannot uniq-sort, trying with bedtools')
+    bedtools = get_system_path(cnf, 'bedtools')
+    cmdline = '{bedtools} sort -i {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
+    res = call(cnf, cmdline, output_fpath_1)
+    return output_fpath_1
 
 
 def total_merge_bed(cnf, bed_fpath):
@@ -187,3 +196,4 @@ def calc_sum_of_regions(bed_fpath):
 def get_total_bed_size(cnf, bed_fpath):
     merged_bed = total_merge_bed(cnf, bed_fpath)
     return calc_sum_of_regions(merged_bed)
+
