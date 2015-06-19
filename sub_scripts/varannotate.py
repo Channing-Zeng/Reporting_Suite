@@ -65,12 +65,14 @@ def main(args):
 
 
 def process_one(cnf):
+    info('process_one')
     sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
 
     if cnf.get('filter_reject'):
+        info('Filtering rejected')
         sample.vcf = remove_rejected(cnf, sample.vcf)
         if sample.vcf is None:
             err('No variants left for ' + cnf.vcf + ': all rejected and removed.')
@@ -78,6 +80,7 @@ def process_one(cnf):
 
     # In mutect, running paired analysis on a single sample could lead
     # to a "none" sample column. Removing that column.
+    info('get_sample_column_index')
     none_idx = get_sample_column_index(sample.vcf, 'none', suppress_warn=True)
     if none_idx is not None:
         info('Removing the "none" column.')

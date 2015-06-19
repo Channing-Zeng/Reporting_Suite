@@ -13,6 +13,7 @@ from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotati
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
+    info('run_annotators')
     annotated = False
     original_vcf = cnf.vcf
 
@@ -29,6 +30,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 
         return rec
 
+    info('Removing previous rs and cosmic IDs')
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
     dbs = [(dbname, cnf.annotation[dbname])

@@ -746,10 +746,11 @@ def remove_quotes(s):
 
 def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
                  overwrite=False, reuse_intermediate=True, ctx=None):
+    info('inside convert_file: overwrite=' + str(overwrite))
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
-    # if output_fpath.endswith('.gz'):
-    #     output_fpath = output_fpath[:-3]
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
 
     if islink(output_fpath):
         os.unlink(output_fpath)
@@ -759,15 +760,18 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
         return output_fpath
     else:
         info('Writing to ' + output_fpath)
+    info('inside convert_file 2: overwrite=' + str(overwrite))
 
     with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
-        with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
+        with open_gzipsafe(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
             if ctx:
                 convert_file_fn(inp_f, out_f, ctx)
             else:
                 convert_file_fn(inp_f, out_f)
 
+    info('inside convert_file 3: overwrite=' + str(overwrite))
     if overwrite or suffix is None:
+        info('Overwriting (overwrite=' + str(overwrite) + ', suffix=' + str(suffix) + ')')
         shutil.move(output_fpath, input_fpath)
         output_fpath = input_fpath
 

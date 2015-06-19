@@ -52,7 +52,7 @@ def read_opts_and_cnfs(extra_opts,
              action='store_false')
          ),
         (['--reuse'], dict(
-             dest='reuse',
+             dest='reuse_intermediate',
              help='reuse intermediate non-empty files in the work dir from previous run',
              action='store_true')
          ),

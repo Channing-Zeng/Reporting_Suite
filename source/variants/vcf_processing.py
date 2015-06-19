@@ -246,8 +246,9 @@ class Record(_Record):
         return self._variant
 
 
-def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
+def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
+    info('iterate_vcf: overwrite=' + str(overwrite))
     def _convert_vcf(inp_f, out_f):
         max_bunch_size = 10000
         written_records = 0
@@ -277,8 +278,10 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None,
         bunch = []
         info('Written lines: ' + str(written_records))
 
+    info('before convert_file: overwrite=' + str(overwrite))
     return convert_file(
-        cnf, input_fpath, _convert_vcf, suffix, overwrite, reuse_intermediate)
+        cnf, input_fpath, _convert_vcf, suffix,
+        check_result=check_result, overwrite=overwrite, reuse_intermediate=reuse_intermediate)
 
 
 def vcf_is_empty(cnf, vcf_fpath):
