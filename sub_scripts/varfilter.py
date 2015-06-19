@@ -208,6 +208,7 @@ def filter_all(cnf, bcbio_structure):
     threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
     # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
 
+    info('Indexing final VCFs')
     Parallel(n_jobs=threads_num) \
         (delayed(_index_vcf)(sample, caller.name)
             for caller in callers for sample in caller.samples)
@@ -309,18 +310,18 @@ def _index_vcf(sample, caller_name):
     filt_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
 
     for fpath in [pass_fpath, filt_fpath]:
-        if not cnf.reuse_intermediate and not verify_file(fpath):
+        if not cnf.reuse_intermediate and not verify_file(fpath, silent=True):
             err(fpath + ' does not exist - cannot IGV index')
         else:
-            if cnf.reuse_intermediate and verify_file(fpath + '.idx'):
+            if cnf.reuse_intermediate and verify_file(fpath + '.idx', silent=True):
                 info('Reusing existing ' + fpath + '.idx')
             else:
                 igvtools_index(cnf, fpath)
 
-    if not cnf.reuse_intermediate and not verify_file(filt_fpath):
+    if not cnf.reuse_intermediate and not verify_file(filt_fpath, silent=True):
         err(filt_fpath + ' does not exist - cannot gzip and tabix')
     else:
-        if cnf.reuse_intermediate and filt_fpath + '.gz' and filt_fpath + '.gz.tbi':
+        if cnf.reuse_intermediate and verify_file(filt_fpath + '.gz', silent=True) and verify_file(filt_fpath + '.gz.tbi', silent=True):
             info(filt_fpath + '.gz and .gz.tbi exist; reusing')
         else:
             bgzip_and_tabix(cnf, filt_fpath)
