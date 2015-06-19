@@ -127,7 +127,10 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                 for _f in gt_fields:
                     if _f in rec.FORMAT:
                         d[tumor_gt + _f] = rec.samples[main_sample_index][_f]
-                        d[normal_gt + _f] = rec.samples[1 - main_sample_index][_f]
+                        if len(rec.samples) > 1 - main_sample_index:
+                            d[normal_gt + _f] = rec.samples[1 - main_sample_index][_f]
+                        else:
+                            d[normal_gt + _f] = ''
                     else:
                         d[tumor_gt + _f] = ''
                         d[normal_gt + _f] = ''
