@@ -748,8 +748,8 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
                  overwrite=False, reuse_intermediate=True, ctx=None):
 
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
+    # if output_fpath.endswith('.gz'):
+    #     output_fpath = output_fpath[:-3]
 
     if islink(output_fpath):
         os.unlink(output_fpath)

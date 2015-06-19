@@ -251,7 +251,7 @@ def filter_all(cnf, bcbio_structure):
         err()
         err('For some samples and callers annotated VCFs could not be read:')
         for e in errory:
-            err('  ' + e)
+            err('  ' + str(e))
 
 
 def _symlink_vcfs(callers, datestamp_var_dirpath):
