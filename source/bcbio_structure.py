@@ -529,10 +529,14 @@ class BCBioStructure:
             caller.samples.sort(key=lambda _s: _s.key_to_sort())
 
         # setting bed files for samples
-        bed_files_used = [s.bed for s in self.samples]
-        if len(set(bed_files_used)) > 2:
-            critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
-        self.bed = bed_files_used[0] if bed_files_used else None
+        if cnf.bed:
+            verify_file(cnf.bed)
+            self.bed = adjust_path(cnf.bed)
+        else:
+            bed_files_used = [s.bed for s in self.samples]
+            if len(set(bed_files_used)) > 2:
+                critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
+            self.bed = bed_files_used[0] if bed_files_used else None
 
         # setting up batch properties
         for b in self.batches.values():
@@ -848,4 +852,5 @@ def ungzip_if_needed(cnf, fpath):
 # def get_trailing_number(string):
 #     m = re.search(r'\d+$', string)
 #     return int(m.group()) if m else None
+
 

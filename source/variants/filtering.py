@@ -375,7 +375,7 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res
 #     return output_fpath, output_pass_fpath
 
 
-def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_freq=None):
+def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_freq=None):
     info()
     info('Running VarDict vcf2txt...')
 
@@ -401,6 +401,6 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, final_maf_fpath, sample_min_fre
 
     cmdline += ' ' + ' '.join(vcf_fpaths)
 
-    res = call(cnf, cmdline, final_maf_fpath, exit_on_error=False)
+    res = call(cnf, cmdline, vcf2txt_out_fpath, exit_on_error=False)
     return res
 

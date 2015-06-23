@@ -156,7 +156,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
         if not exons_fpath or not bed_fpath:
             err('For the extended analysis, capture and exons beds are required!')
         else:
-            exons_bed, bed_fpath, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
+            exons_bed, exons_no_genes_cut_bed, target_bed,  _ = prepare_beds(cnf, exons_fpath, bed_fpath)
 
             #norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
             #    cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)

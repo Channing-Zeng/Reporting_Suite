@@ -37,45 +37,62 @@ def remove_comments(cnf, bed_fpath):
     return iterate_file(cnf, bed_fpath, f, 'rmcmt')
 
 
-def prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed=None):
-    if abspath(exons_bed) == abspath(amplicons_bed):
+def prepare_beds(cnf, exons_bed=None, target_bed=None):
+    if exons_bed is None and target_bed is None:
+        warn('No bed specified (WGS?) and no exons in the system config; cannot run on target.')
+        return None, None
+
+    if exons_bed and target_bed and abspath(exons_bed) == abspath(target_bed):
         warn('Same file used for exons and amplicons: ' + exons_bed)
 
-    amplicons_bed = remove_comments(cnf, amplicons_bed)
-    seq2c_bed = remove_comments(cnf, seq2c_bed)
-
     # Exons
-    info()
-    info('Merging regions within genes...')
-    exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
-
-    info('Sorting exons by (chrom, gene name, start)')
-    exons_bed = sort_bed(cnf, exons_bed)
-
-    amplicons_bed = cut(cnf, amplicons_bed, 4)
-
-    info()
-    info('bedtools-sotring amplicons...')
-    amplicons_bed = sort_bed(cnf, amplicons_bed)
-
-    cols = count_bed_cols(amplicons_bed)
-    if cnf.reannotate or cols < 4:
+    exons_no_genes_bed = None
+    if exons_bed:
         info()
-        info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in amplicons bed is ' + str(cols) +
-             '. Annotating amplicons with gene names from Ensembl...')
-        amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
+        info('Merging regions within genes...')
+        exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
 
-    if seq2c_bed:
-        seq2c_bed = prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed)
+        info()
+        info('Sorting exons by (chrom, gene name, start)')
+        exons_bed = sort_bed(cnf, exons_bed)
 
-    info()
-    info('Merging amplicons...')
-    amplicons_bed = group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
+        info()
+        info('Filtering exon bed file to have only non-gene records...')
+        exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
+        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
 
-    info('Sorting exons by (chrom, gene name, start)')
-    amplicons_bed = sort_bed(cnf, amplicons_bed)
+    if target_bed:
+        info()
+        info('Remove comments in target...')
+        target_bed = remove_comments(cnf, target_bed)
 
-    return exons_bed, amplicons_bed, seq2c_bed
+        info()
+        info('Cut -f1,2,3,4 target...')
+        target_bed = cut(cnf, target_bed, 4)
+
+        info()
+        info('Sorting target...')
+        target_bed = sort_bed(cnf, target_bed)
+
+    if target_bed and exons_bed:
+        cols = count_bed_cols(target_bed)
+        if cnf.reannotate or cols < 4:
+            info()
+            info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in amplicons bed is ' + str(cols) +
+                 '. Annotating amplicons with gene names from Ensembl...')
+            target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
+
+    seq2c_bed = prep_bed_for_seq2c(cnf, target_bed or cut(cnf, exons_no_genes_bed, 4))
+
+    if target_bed:
+        info()
+        info('Merging amplicons...')
+        target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+
+        info('Sorting exons by (chrom, gene name, start)')
+        target_bed = sort_bed(cnf, target_bed)
+
+    return exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
 
 def annotate_amplicons(cnf, amplicons_bed, exons_bed):
@@ -111,20 +128,19 @@ def cut(cnf, fpath, col_num):
     return cut_fpath
 
 
-def prep_bed_for_seq2c(cnf, seq2c_bed, amplicons_bed):
+def prep_bed_for_seq2c(cnf, bed):
     info()
     info('Preparing BED file for seq2c...')
 
-    cols = count_bed_cols(seq2c_bed)
+    cols = count_bed_cols(bed)
 
-    if cols < 4:
-        seq2c_bed = amplicons_bed
+    seq2c_bed = bed
 
-    elif 8 > cols > 4:
-        seq2c_bed = cut(cnf, seq2c_bed, 4)
+    if 8 > cols > 4:
+        seq2c_bed = cut(cnf, bed, 4)
 
     elif cols > 8:
-        seq2c_bed = cut(cnf, seq2c_bed, 8)
+        seq2c_bed = cut(cnf, bed, 8)
 
     # removing regions with no gene annotation
     def f(l, i):
@@ -151,25 +167,28 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
 
 
 def sort_bed(cnf, bed_fpath):
-    output_fpath_1 = intermediate_fname(cnf, bed_fpath, 'sorted')
+    output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
 
     sort = get_system_path(cnf, 'sort')
-    cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
-    res = call(cnf, cmdline, output_fpath_1, exit_on_error=False)
-    if res:
-        return output_fpath_1
+    cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}'.format(**locals())
+    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+    if not res:
+        warn('Cannot sort with -V, trying with -n')
+        cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}'.format(**locals())
+        res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+        if not res:
+            warn('Cannot uniq-sort, trying with bedtools')
+            bedtools = get_system_path(cnf, 'bedtools')
+            cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
+            res = call(cnf, cmdline, output_fpath)
 
-    warn('Cannot sort with -V, trying with -n')
-    cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
-    res = call(cnf, cmdline, output_fpath_1, exit_on_error=False)
-    if res:
-        return output_fpath_1
+    if not res:
+        return None
 
-    warn('Cannot uniq-sort, trying with bedtools')
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} sort -i {bed_fpath}; grep "^chrM" {bed_fpath} > {bed_fpath}_1; grep -v "^chrM" {bed_fpath} >> {bed_fpath}_1; mv {bed_fpath}_1 {bed_fpath}'.format(**locals())
-    res = call(cnf, cmdline, output_fpath_1)
-    return output_fpath_1
+    cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
+    res = call(cnf, cmdline)
+
+    return output_fpath
 
 
 def total_merge_bed(cnf, bed_fpath):

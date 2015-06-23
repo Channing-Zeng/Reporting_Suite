@@ -82,19 +82,19 @@ def _prep_files(cnf, sample, exons_bed):
         info('Indexing bam ' + bam_fpath)
         index_bam(cnf, bam_fpath)
 
-    seq2c_bed = amplicons_bed = sample.bed
-    if not sample.bed:
-        err(sample.name + ': BED file was not provided. Using AZ-Exome as default: ' + cnf.genome.az_exome)
-        seq2c_bed = amplicons_bed = cnf.genome.az_exome
+    target_bed = sample.bed
+    # if not sample.bed:
+    #     info(sample.name + ': BED file was not provided. Using Exons as default: ' + exons_bed)
 
     if not exons_bed:
-        critical('Error: no exons specified for the genome in system config.')
+        err('Error: no exons specified for the genome in system config.')
 
-    exons_bed, amplicons_bed, seq2c_bed = prepare_beds(cnf, exons_bed, amplicons_bed, seq2c_bed)
-    return bam_fpath, exons_bed, amplicons_bed, seq2c_bed
+    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+
+    return bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
 
-def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpath):
+def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
     gene_by_name = OrderedDict()
 
     gene_names_set = set()
@@ -107,26 +107,31 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
             gene_names_list = [g.strip() for g in f.read().split('\n') if g]
             gene_names_set = set(gene_names_list)
         info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
-        amplicons_bed = filter_bed_with_gene_set(cnf, amplicons_bed, gene_names_set)
+        target_bed = filter_bed_with_gene_set(cnf, target_bed, gene_names_set)
         exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-    else:
-        gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
-        info('Using genes from amplicons list, filtering exons with this genes.')
-        exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-        if not verify_file(exons_anno_bed):
-            warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
-            amplicons_bed = annotate_amplicons(cnf, amplicons_bed, exons_bed)
-            info('Merging regions within genes...')
-            amplicons_bed = group_and_merge_regions_by_gene(cnf, amplicons_bed, keep_genes=False)
-            info('Sorting amplicons_bed by (chrom, gene name, start)')
-            amplicons_bed = sort_bed(cnf, amplicons_bed)
-            info('Getting gene names again...')
-            gene_names_set, gene_names_list = _get_gene_names(amplicons_bed)
-            info('Using genes from amplicons list, filtering exons with this genes.')
+
+    elif target_bed or exons_bed:
+        info()
+        gene_names_set, gene_names_list = _get_gene_names(target_bed or exons_bed)
+        info('Using genes from amplicons list, trying filtering exons with this genes.')
+        if target_bed and exons_bed:
             exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
             if not verify_file(exons_anno_bed):
-                critical('No gene symbols from the capture bed file was found in Ensemble.')
-        exons_bed = exons_anno_bed
+                info()
+                warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
+                target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
+                info('Merging regions within genes...')
+                target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+                info('Sorting amplicons_bed by (chrom, gene name, start)')
+                target_bed = sort_bed(cnf, target_bed)
+                info('Getting gene names again...')
+                gene_names_set, gene_names_list = _get_gene_names(target_bed)
+                info()
+                info('Using genes from amplicons list, filtering exons with this genes.')
+                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+                if not verify_file(exons_anno_bed):
+                    critical('No gene symbols from the capture bed file was found in Ensemble.')
+            exons_bed = exons_anno_bed
     info()
 
     info('Making unique gene list without affecting the order')
@@ -139,18 +144,22 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
             added_gene_names_set.add(gene_name)
     gene_names_list = fixed_gene_names_list
     info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
+
+    info('Building the gene list')
+    for gn in gene_names_list:
+        gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
+    info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
+
+    if not exons_bed:
+        return exons_bed, target_bed, gene_by_name
+
     info()
     info('Filtering exon bed file to have only gene records...')
     exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
     call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
     info('Saved genes to ' + exons_only_genes_bed)
 
-    info('Building the gene list')
-    for gn in gene_names_list:
-        gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
-    info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
     info()
-
     info('Setting start and end for the genes')
     i = 0
     with open(exons_only_genes_bed) as f:
@@ -167,12 +176,13 @@ def _get_genes_and_filter(cnf, sample_name, amplicons_bed, exons_bed, genes_fpat
     info('Processed ' + str(i) + ' genes')
     info()
 
-    return exons_bed, amplicons_bed, gene_by_name
+    return exons_bed, target_bed, gene_by_name
 
 
 class TargetInfo:
-    def __init__(self, fpath=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
-        self.fpath = realpath(fpath) if fpath else None
+    def __init__(self, fpath=None, bed=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
+        self.fpath = realpath(fpath) if fpath else None  # raw source file - to demonstrate were we took one
+        self.bed = bed                                   # processed (sorted, merged...), to do real calculations
         self.regions_num = regions_num
         self.bases_num = bases_num
         self.genes_fpath = realpath(genes_fpath) if genes_fpath else None
@@ -180,9 +190,8 @@ class TargetInfo:
 
 
 def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
-    bam_fpath, exons_bed, amplicons_bed, seq2c_bed = _prep_files(cnf, sample, exons_bed)
-
-    exons_bed, amplicons_bed, gene_by_name = _get_genes_and_filter(cnf, sample.name, amplicons_bed, exons_bed, genes_fpath)
+    bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+        _prep_files(cnf, sample, exons_bed)
 
     bam_stats = samtools_flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
@@ -192,86 +201,97 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     dup_bam_fpath = bam_fpath
     dedup_bam_stats = dict()
-    if not cnf.count_dups:
+    if not cnf.dedup:
         dedup_bam_fpath = remove_dups(cnf, bam_fpath)
         dedup_bam_stats = samtools_flag_stat(cnf, dedup_bam_fpath)
         info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['total']))
         info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['mapped']))
         bam_fpath = dedup_bam_fpath
 
-    info()
-    info('Calculation of coverage statistics for the regions in the input BED file...')
-    amplicons, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, amplicons_bed)
-    info()
-    info('Merging capture BED file to get total target cov statistics...')
-    total_merged_ampl_bed = total_merge_bed(cnf, amplicons_bed)
-    info()
-    info('Calculation of coverage statistics for total target...')
-    _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_ampl_bed)
+    target_info = None
+    max_depth = None  # TODO: calculate max_depth independently of target
+    targets, combined_region = [], None
+    if exons_bed or target_bed:
+        exons_bed, amplicons_bed, gene_by_name = \
+            _get_genes_and_filter(cnf, sample.name, target_bed, exons_bed, genes_fpath)
 
-    total_bed_size = get_total_bed_size(cnf, amplicons_bed)
+        info()
+        info('Calculation of coverage statistics for the regions in the input BED file...')
+        targets, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
+        info()
+        info('Merging capture BED file to get total target cov statistics...')
+        total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
+        info()
+        info('Calculation of coverage statistics for total target...')
+        _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_target_bed)
 
-    target_info = TargetInfo(
-        fpath=cnf.bed, regions_num=len(amplicons), bases_num=total_bed_size,
-        genes_fpath=genes_fpath, genes_num=len(gene_by_name))
+        total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
+
+        target_info = TargetInfo(
+            fpath=cnf.bed or cnf.exons or cnf.genome.exons, bed=target_bed or exons_no_genes_bed,
+            regions_num=len(targets), bases_num=total_bed_size,
+            genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
     info()
     summary_report = make_and_save_general_report(
         cnf, sample, bam_fpath, bam_stats, dedup_bam_stats,
         combined_region, max_depth, target_info)
 
-    info()
-    info('Filtering exon bed file to have only non-gene records...')
-    exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes')
-    call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
-
     un_annotated_amplicons = []
 
-    info()
-    info('Calculating coverage statistics for exons...')
-    exons_with_optional_genes, _, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, exons_no_genes_bed)
-    for exon_or_gene in exons_with_optional_genes:
-        exon_or_gene.sample_name = sample.name
-
-        ef = exon_or_gene.extra_fields
-        if ef:
-            exon_or_gene.exon_num = ef[0]
-            if len(ef) >= 2:
-                exon_or_gene.strand = ef[1]
-            if len(ef) >= 3:
-                exon_or_gene.feature = ef[2]
-            else:
-                exon_or_gene.feature = 'CDS'
-            if len(ef) >= 4:
-                exon_or_gene.biotype = ef[3]
-
-        if exon_or_gene.gene_name in gene_by_name:
-            gene = gene_by_name[exon_or_gene.gene_name]
-            gene.chrom = exon_or_gene.chrom
-            gene.strand = exon_or_gene.strand
-            gene.add_exon(exon_or_gene)
-
-    for ampl in amplicons:
-        ampl.feature = 'Capture'
-        ampl.sample_name = sample.name
-
-        if ampl.gene_name != '.':
-            gene = gene_by_name[ampl.gene_name]
-            gene.add_amplicon(ampl)
+    if exons_bed:
+        if not target_bed:
+            exons_with_optional_genes = targets
         else:
-            un_annotated_amplicons.append(ampl)
+            info()
+            info('Calculating coverage statistics for exons...')
+            exons_with_optional_genes, _, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, exons_no_genes_bed)
 
-    un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
+        for exon_or_gene in exons_with_optional_genes:
+            exon_or_gene.sample_name = sample.name
 
-    per_gene_report = _generate_region_cov_report(cnf, sample, cnf.output_dir,
-        gene_by_name.values(), un_annotated_amplicons)
+            ef = exon_or_gene.extra_fields
+            if ef:
+                exon_or_gene.exon_num = ef[0]
+                if len(ef) >= 2:
+                    exon_or_gene.strand = ef[1]
+                if len(ef) >= 3:
+                    exon_or_gene.feature = ef[2]
+                else:
+                    exon_or_gene.feature = 'CDS'
+                if len(ef) >= 4:
+                    exon_or_gene.biotype = ef[3]
+
+            if exon_or_gene.gene_name in gene_by_name:
+                gene = gene_by_name[exon_or_gene.gene_name]
+                gene.chrom = exon_or_gene.chrom
+                gene.strand = exon_or_gene.strand
+                gene.add_exon(exon_or_gene)
+
+        if target_bed:
+            for ampl in targets:
+                ampl.feature = 'Capture'
+                ampl.sample_name = sample.name
+
+                if ampl.gene_name != '.':
+                    gene = gene_by_name[ampl.gene_name]
+                    gene.add_amplicon(ampl)
+                else:
+                    un_annotated_amplicons.append(ampl)
+
+            un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
+
+    per_gene_report = None
+    if exons_bed or target_bed:
+        per_gene_report = _generate_region_cov_report(cnf, sample, cnf.output_dir,
+            gene_by_name.values(), un_annotated_amplicons)
 
     return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
 
 
 def make_and_save_general_report(
         cnf, sample, bam_fpath, bam_stats, dedup_bam_stats,
-        combined_region, max_depth, target_info):
+        combined_region=None, max_depth=None, target_info=None):
 
     step_greetings('Target coverage summary report')
 
@@ -281,7 +301,7 @@ def make_and_save_general_report(
     summary_report = generate_summary_report(cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
         cnf.coverage_reports.depth_thresholds, cnf.padding,
-        combined_region, max_depth, target_info)
+        combined_region=None, max_depth=None, target_info=None)
 
     summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
     summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
@@ -327,7 +347,7 @@ def generate_summary_report(
         cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
         depth_thresholds, padding,
-        combined_region, max_depth, target_info):
+        combined_region=None, max_depth=None, target_info=None):  # TODO: calculate max_depth independently of target
 
     report = SampleReport(sample, metric_storage=get_header_metric_storage(depth_thresholds))
     info('* General coverage statistics *')
@@ -345,58 +365,60 @@ def generate_summary_report(
     report.add_record('Properly paired reads percent', total_paired_reads_pecent)
     info('')
 
-    dup_rate = 1 - (1.0 * dedup_bam_stats['mapped'] / bam_stats['mapped']) if bam_stats['mapped'] else None
-    report.add_record('Duplication rate', dup_rate)
-    report.add_record('Dedupped mapped reads', dedup_bam_stats['mapped'])
+    if dedup_bam_stats:
+        dup_rate = 1 - (1.0 * dedup_bam_stats['mapped'] / bam_stats['mapped']) if bam_stats['mapped'] else None
+        report.add_record('Duplication rate', dup_rate)
+        report.add_record('Dedupped mapped reads', dedup_bam_stats['mapped'])
 
-    info('* Target coverage statistics *')
-    report.add_record('Target', target_info.fpath)
-    report.add_record('Regions in target', target_info.regions_num)
-    report.add_record('Bases in target', target_info.bases_num)
-    if target_info.genes_fpath: report.add_record('Genes', target_info.genes_fpath)
-    report.add_record('Genes in target', target_info.genes_num)
+    if target_info:
+        info('* Target coverage statistics *')
+        report.add_record('Target', target_info.fpath)
+        report.add_record('Regions in target', target_info.regions_num)
+        report.add_record('Bases in target', target_info.bases_num)
+        if target_info.genes_fpath: report.add_record('Genes', target_info.genes_fpath)
+        report.add_record('Genes in target', target_info.genes_num)
 
-    combined_region.sum_up(depth_thresholds)
-    v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
-    report.add_record('Covered bases in target', v_covered_bases_in_targ)
-    v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num if target_info.bases_num else None
-    report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
-    assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
+        combined_region.sum_up(depth_thresholds)
+        v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
+        report.add_record('Covered bases in target', v_covered_bases_in_targ)
+        v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num if target_info.bases_num else None
+        report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
+        assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
 
-    info('Getting number of mapped reads on target...')
-    mapped_reads_on_target = number_mapped_reads_on_target(cnf, sample.bed, bam_fpath)
-    report.add_record('Reads mapped on target', mapped_reads_on_target)
-    percent_mapped_on_target = 1.0 * mapped_reads_on_target / dedup_bam_stats['mapped'] if dedup_bam_stats['mapped'] else None
-    report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
-    assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
-    percent_mapped_off_target = 1.0 - percent_mapped_on_target
-    report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
+        info('Getting number of mapped reads on target...')
+        mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
+        report.add_record('Reads mapped on target', mapped_reads_on_target)
+        percent_mapped_on_target = 1.0 * mapped_reads_on_target / (dedup_bam_stats or bam_stats)['mapped'] if (dedup_bam_stats or bam_stats)['mapped'] else None
+        report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
+        assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
+        percent_mapped_off_target = 1.0 - percent_mapped_on_target
+        report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
 
-    info('Making bed file for padded regions...')
-    padded_bed = get_padded_bed_file(cnf, sample.bed, chr_len_fpath, padding)
-    info('Getting number of dedupped mapped reads on padded target...')
-    reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
-    report.add_record('Reads mapped on padded target', reads_on_padded_targ)
-    percent_mapped_on_padded_target = 1.0 * reads_on_padded_targ / dedup_bam_stats['mapped'] if dedup_bam_stats['mapped'] else None
-    report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
-    assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
+        info('Making bed file for padded regions...')
+        padded_bed = get_padded_bed_file(cnf, target_info.bed, chr_len_fpath, padding)
+        info('Getting number of dedupped mapped reads on padded target...')
+        reads_on_padded_targ = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
+        report.add_record('Reads mapped on padded target', reads_on_padded_targ)
+        percent_mapped_on_padded_target = 1.0 * reads_on_padded_targ / (dedup_bam_stats or bam_stats)['mapped'] if (dedup_bam_stats or bam_stats)['mapped'] else None
+        report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
+        assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
-    read_bases_on_targ = int(target_info.bases_num * combined_region.avg_depth)  # sum of all coverages
-    report.add_record('Read bases mapped on target', read_bases_on_targ)
+        read_bases_on_targ = int(target_info.bases_num * combined_region.avg_depth)  # sum of all coverages
+        report.add_record('Read bases mapped on target', read_bases_on_targ)
 
-    info('')
-    report.add_record('Average target coverage depth', combined_region.avg_depth)
-    report.add_record('Std. dev. of target coverage depth', combined_region.std_dev)
-    report.add_record('Maximum target coverage depth', max_depth)
-    report.add_record('Percentage of target within 20% of mean depth', combined_region.rate_within_normal)
-    assert combined_region.rate_within_normal <= 1.0 or combined_region.rate_within_normal is None, str(combined_region.rate_within_normal)
+        info('')
+        report.add_record('Average target coverage depth', combined_region.avg_depth)
+        report.add_record('Std. dev. of target coverage depth', combined_region.std_dev)
+        report.add_record('Maximum target coverage depth', max_depth)
+        report.add_record('Percentage of target within 20% of mean depth', combined_region.rate_within_normal)
+        assert combined_region.rate_within_normal <= 1.0 or combined_region.rate_within_normal is None, str(combined_region.rate_within_normal)
 
-    for depth, bases in combined_region.bases_within_threshs.items():
-        percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
-        report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
-        assert percent_val <= 1.0 or percent_val is None, str(percent_val)
+        for depth, bases in combined_region.bases_within_threshs.items():
+            percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
+            report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
+            assert percent_val <= 1.0 or percent_val is None, str(percent_val)
 
-    info()
+        info()
 
     picard = get_system_path(cnf, 'java', 'picard')
     if picard:
@@ -673,12 +695,15 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     # else:
     res = call(cnf, cmdline, bedcov_output, exit_on_error=False)
     if not res:
+        info()
         warn('Could not run bedtools, maybe old version, trying without -sorted -g [genome]')
-        cmdline = cmdline.replace(' -sorted -g ' + chr_lengths, '')
+        cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+        info()
         res = call(cnf, cmdline, bedcov_output)
 
     _total_regions_count = 0
 
+    info()
     info('Anylising bedcoverage output...')
     with open(bedcov_output) as f:
         for next_line in f:

@@ -25,7 +25,6 @@ def add_post_bcbio_args(parser):
     # parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + defaults['qsub_runner'])
     parser.add_option('--project-name', '--project', dest='project_name')
     parser.add_option('--done-marker', dest='done_marker')
-    parser.add_option('--jira', dest='jira', help='JIRA case path')
     # parser.add_option('--email', dest='email')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
@@ -46,14 +45,17 @@ def check_genome_resources(cnf):
             if isinstance(genome_cnf[key], basestring):
                 genome_cnf[key] = adjust_system_path(genome_cnf[key])
 
-                if not verify_obj_by_path(genome_cnf[key], key):
-                    if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz'):
+                if not verify_obj_by_path(genome_cnf[key], key, silent=True):
+                    if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz', silent=True):
                         gz_fpath = genome_cnf[key] + '.gz'
-                        if verify_file(gz_fpath):
+                        if verify_file(gz_fpath, silent=True):
                             info(key + ': ' + gz_fpath)
                             genome_cnf[key] = gz_fpath
                     else:
-                        err('   err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
+                        if build_name == cnf.genome:
+                            err('   Err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
+                        else:
+                            warn('   Warn: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
                 # else:
                 #     info(key + ': ' + genome_cnf[key])
         info()

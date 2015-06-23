@@ -32,8 +32,8 @@ def main(args):
                 action='store_true',
                 default=False)
              ),
-            (['--count-dups'], dict(
-                dest='count_dups',
+            (['--dedup'], dict(
+                dest='dedup',
                 help='count duplicates when calculating coverage metrics',
                 action='store_true',
                 default=False)
@@ -59,7 +59,7 @@ def main(args):
                 type='int')
              ),
         ],
-        required_keys=['bam', 'bed'],
+        required_keys=['bam'],
         file_keys=['bam', 'bed'],
         key_for_sample_name='bam')
 
@@ -81,8 +81,11 @@ def main(args):
 
     info('Using alignement ' + cnf['bam'])
 
-    bed_fpath = cnf.bed or cnf.genome.az_exome or exons_bed_fpath
-    info('Using amplicons/capture panel ' + bed_fpath)
+    bed_fpath = cnf.bed
+    if bed_fpath:
+        info('Using amplicons/capture panel ' + bed_fpath)
+    elif exons_bed_fpath:
+        info('WGS, taking CDS as target')
 
     run_one(cnf, process_one, finalize_one, multiple_samples=False, output_dir=cnf.output_dir, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
 

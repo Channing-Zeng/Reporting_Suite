@@ -193,8 +193,8 @@ class BCBioRunner:
             summaries_cmdline_params += ' --email ' + remove_quotes(self.cnf.email) + ' '
             params_for_one_sample += ' --email ' + remove_quotes(self.cnf.email) + ' '
 
-        if cnf.bed:
-            summaries_cmdline_params += ' --bed ' + cnf.bed
+        if self.bcbio_structure.bed:
+            summaries_cmdline_params += ' --bed ' + self.bcbio_structure.bed
 
         anno_paramline = params_for_one_sample + ('' +
             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
@@ -225,14 +225,14 @@ class BCBioRunner:
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
-        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' ' \
+        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' {bed} -o \'{output_dir}\' ' \
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         if cnf.exons:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
-        if cnf.count_dups:
-            targetcov_params += '--count-dups'
+        if cnf.dedup:
+            targetcov_params += '--dedup'
 
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targetseq_name, short_name='tc',
@@ -287,6 +287,8 @@ class BCBioRunner:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
         if cnf.min_freq is not None:
             varfilter_paramline += ' --freq ' + str(cnf.min_freq)
+        if not self.bcbio_structure.bed:
+            varfilter_paramline.replace(' -t ' + str(self.summary_threads), ' -t 1')
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',
@@ -445,15 +447,9 @@ class BCBioRunner:
 
         callers = self.bcbio_structure.variant_callers.values()
 
-        if self.qualimap in self.steps:
-            bed_by_sample = dict((s.name, s.bed) for s in self.bcbio_structure.samples if s.bed)
-            beds = set(bed_by_sample.values())
-            samples_by_bed = dict((b, (s for s in self.bcbio_structure.samples if s.bed and s.bed == b)) for b in beds)
-            for bed, samples in samples_by_bed.items():
-                qualimap_bed = self._qualimap_bed(bed)
-                for s in samples:
-                    s.bed = bed
-                    s.qualimap_bed = qualimap_bed
+        qualimap_bed = None
+        if self.qualimap in self.steps and self.bcbio_structure.bed:
+            qualimap_bed = self._qualimap_bed(self.bcbio_structure.bed)
 
         try:
             for sample in self.bcbio_structure.samples:
@@ -486,7 +482,7 @@ class BCBioRunner:
                             info('Target coverage for "' + sample.name + '"')
                             self._submit_job(
                                 self.targetcov, sample.name,
-                                bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons, sample=sample.name, genome=sample.genome,
+                                bam=sample.bam, bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''), sample=sample.name, genome=sample.genome,
                                 caller_names='', vcfs='', threads=self.threads_per_sample)
 
                         # ngsCAT reports
@@ -500,12 +496,12 @@ class BCBioRunner:
 
                         # Qualimap
                         if self.qualimap in self.steps:
-                            qualimap_gff = ''
-                            if sample.bed:
-                                qualimap_gff = ' --bed ' + sample.qualimap_bed + ' '
+                            qualimap_gff_cmdl = ''
+                            if self.bcbio_structure.bed:
+                                qualimap_gff_cmdl = ' --bed ' + qualimap_bed + ' '
                             self._submit_job(
                                 self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                                genome=sample.genome, bed=qualimap_gff, threads=self.threads_per_sample)
+                                genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():

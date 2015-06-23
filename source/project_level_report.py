@@ -44,6 +44,7 @@ def make_project_level_report(cnf, bcbio_structure):
 
     html_report_url = ''
     if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
+        info()
         html_report_url = copy_to_ngs_website(cnf, cnf.work_dir, bcbio_structure, final_summary_report_fpath)
 
     info()
@@ -74,8 +75,8 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
 
         header = uncom_lines[0].strip()
         info('header: ' + header)
-        keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-        index_of_pid = keys.index('PID')
+        header_keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+        index_of_pid = header_keys.index('PID')
         if index_of_pid == -1: index_of_pid = 1
 
         values_by_keys_by_pid = OrderedDict()
@@ -83,12 +84,17 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
             if l:
                 values = l.split(',')
                 pid = values[index_of_pid]
-                values_by_keys_by_pid[pid] = OrderedDict(zip(keys, values))
+                values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, values))
 
         pid = bcbio_structure.project_name
         with file_transaction(cnf.work_dir, project_list_fpath) as tx_fpath:
+            if pid not in values_by_keys_by_pid:
+                info('Adding new record for ' + pid)
+                values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, [''] * len(header_keys)))
+                values_by_keys_by_pid[pid]['Updated By'] = getpass.getuser()
+            else:
+                info('Updating existing record for ' + pid)
             values_by_keys_by_pid[pid].update({
-                'Updated By': getpass.getuser(),
                 'PID': pid,
                 'Name': bcbio_structure.project_name,
                 'JIRA URL': cnf.jira,
@@ -97,7 +103,7 @@ def _write_to_csv_file(cnf, project_list_fpath, html_report_url, bcbio_structure
                 'Sample Number': str(len(bcbio_structure.samples)),
             })
             new_line = ','.join(values_by_keys_by_pid[pid].values())
-            info('adding the new line:' + new_line)
+            info('Adding the new line: ' + new_line)
 
             with open(tx_fpath, 'w') as f:
                 os.umask(0002)
@@ -152,7 +158,7 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
                 from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
             except ImportError as e:
                 print_exc()
-                err('Cannot improt SSHClient - skipping trasnferring project to the ngs-website')
+                err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
             else:
                 ssh = SSHClient()
                 ssh.load_system_host_keys()
@@ -180,6 +186,7 @@ def copy_to_ngs_website(cnf, work_dir, bcbio_structure, html_report_fpath):
                         info('  ' + cmd)
                         ssh.close()
 
+        info()
         _write_to_csv_file(cnf, '/ngs/oncology/NGS.Project.csv', html_report_url, bcbio_structure)
 
     return html_report_url
