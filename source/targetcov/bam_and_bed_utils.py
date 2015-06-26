@@ -193,10 +193,17 @@ def sort_bed(cnf, bed_fpath):
 
 def total_merge_bed(cnf, bed_fpath):
     bedops = get_system_path(cnf, 'bedops')
-    cmdline = '{bedops} --merge {bed_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'total_merged')
-    call(cnf, cmdline, output_fpath)
-    return output_fpath
+    if bedops:
+        cmdline = '{bedops} --merge {bed_fpath}'.format(**locals())
+        output_fpath = intermediate_fname(cnf, bed_fpath, 'total_merged')
+        call(cnf, cmdline, output_fpath)
+        return output_fpath
+    else:
+        bedtools = get_system_path(cnf, 'bedtools')
+        cmdline = '{bedtools} merge -i {bed_fpath}'.format(**locals())
+        output_fpath = intermediate_fname(cnf, bed_fpath, 'total_merged')
+        call(cnf, cmdline, output_fpath)
+        return output_fpath
 
 
 def calc_sum_of_regions(bed_fpath):
