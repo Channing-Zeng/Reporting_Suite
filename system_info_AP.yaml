@@ -18,6 +18,8 @@ resources:
     path: ext_tools/picard/picard.jar
   qsub:
     path: /apps/sge61/bin/lx24-amd64/qsub
+#  bedtools:
+#    path: /apps/bedtools/2.16.2/x64/bin/bedtools
 
 genomes:
   hg38:

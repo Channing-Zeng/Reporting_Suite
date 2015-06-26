@@ -76,7 +76,7 @@ def make_project_level_report(cnf, bcbio_structure):
     return html_report_url or final_summary_report_fpath
 
 
-def write_to_csv_file(work_dir, jira_case, project_list_fpath, location, project_name, samples_num=None,
+def write_to_csv_file(work_dir, jira_url, project_list_fpath, location, project_name, samples_num=None,
                       analysis_dirpath=None, html_report_url=None):
     info('Reading project list ' + project_list_fpath)
     with open(project_list_fpath) as f:
@@ -109,8 +109,8 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, location, project
 
         d['PID'] = pid
         d['Name'] = project_name
-        if jira_case:
-            d['JIRA URL'] = jira_case.url
+        if jira_url:
+            d['JIRA URL'] = jira_url
         if html_report_url:
             d['HTML report path'] = html_report_url
         if analysis_dirpath:
@@ -118,7 +118,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, location, project
         if samples_num:
             d['Sample Number'] = str(samples_num)
 
-        new_line = ','.join(d.values())
+        new_line = ','.join(v or '' for v in d.values())
         info('Adding the new line: ' + new_line)
 
         with open(tx_fpath, 'w') as f:
