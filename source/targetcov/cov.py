@@ -94,7 +94,7 @@ def _prep_files(cnf, sample, exons_bed):
     return bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
 
-def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
+def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
     gene_by_name = OrderedDict()
 
     gene_names_set = set()
@@ -107,8 +107,11 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
             gene_names_list = [g.strip() for g in f.read().split('\n') if g]
             gene_names_set = set(gene_names_list)
         info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
-        target_bed = filter_bed_with_gene_set(cnf, target_bed, gene_names_set)
-        exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+        if target_bed:
+            target_bed = filter_bed_with_gene_set(cnf, target_bed, gene_names_set)
+        if exons_bed:
+            exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+            exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
 
     elif target_bed or exons_bed:
         info()
@@ -118,7 +121,7 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
             exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
             if not verify_file(exons_anno_bed):
                 info()
-                warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating...')
+                warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
                 target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
                 info('Merging regions within genes...')
                 target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
@@ -132,6 +135,8 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
                 if not verify_file(exons_anno_bed):
                     critical('No gene symbols from the capture bed file was found in Ensemble.')
             exons_bed = exons_anno_bed
+            exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
+
     info()
 
     info('Making unique gene list without affecting the order')
@@ -150,33 +155,31 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, genes_fpath):
         gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
     info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
 
-    if not exons_bed:
-        return exons_bed, target_bed, gene_by_name
+    if exons_bed:
+        info()
+        info('Filtering exon bed file to have only gene records...')
+        exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
+        call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
+        info('Saved genes to ' + exons_only_genes_bed)
 
-    info()
-    info('Filtering exon bed file to have only gene records...')
-    exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
-    call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
-    info('Saved genes to ' + exons_only_genes_bed)
+        info()
+        info('Setting start and end for the genes')
+        i = 0
+        with open(exons_only_genes_bed) as f:
+            for l in f:
+                l = l.strip()
+                if l and not l.startswith('#'):
+                    fs = l.split('\t')
+                    chrom, start, end, symbol = fs[:4]
+                    gene_by_name[symbol].start = int(start)
+                    gene_by_name[symbol].end = int(end)
+                    if len(fs) >= 8:
+                        gene_by_name[symbol].biotype = fs[7]
+                    i += 1
+        info('Processed ' + str(i) + ' genes')
+        info()
 
-    info()
-    info('Setting start and end for the genes')
-    i = 0
-    with open(exons_only_genes_bed) as f:
-        for l in f:
-            l = l.strip()
-            if l and not l.startswith('#'):
-                fs = l.split('\t')
-                chrom, start, end, symbol = fs[:4]
-                gene_by_name[symbol].start = int(start)
-                gene_by_name[symbol].end = int(end)
-                if len(fs) >= 8:
-                    gene_by_name[symbol].biotype = fs[7]
-                i += 1
-    info('Processed ' + str(i) + ' genes')
-    info()
-
-    return exons_bed, target_bed, gene_by_name
+    return target_bed, exons_bed, exons_no_genes_bed, gene_by_name
 
 
 class TargetInfo:
@@ -212,8 +215,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     max_depth = None  # TODO: calculate max_depth independently of target
     targets, combined_region = [], None
     if exons_bed or target_bed:
-        exons_bed, amplicons_bed, gene_by_name = \
-            _get_genes_and_filter(cnf, sample.name, target_bed, exons_bed, genes_fpath)
+        target_bed, exons_bed, exons_no_genes_bed, gene_by_name = \
+            _get_genes_and_filter(cnf, sample.name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
         info()
         info('Calculation of coverage statistics for the regions in the input BED file...')
@@ -301,7 +304,7 @@ def make_and_save_general_report(
     summary_report = generate_summary_report(cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
         cnf.coverage_reports.depth_thresholds, cnf.padding,
-        combined_region=None, max_depth=None, target_info=None)
+        combined_region=combined_region, max_depth=max_depth, target_info=target_info)
 
     summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
     summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)

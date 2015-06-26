@@ -13,7 +13,7 @@ static_dirpath = get_real_path(static_dirname)
 jquery_fname = 'jquery-1.8.2.min.js'
 
 
-def print_html(a_outfile, samples):
+def write_fastqc_report(a_outfile, samples):
     graphs = get_graphs(samples)
     with open(a_outfile, 'w') as outfile:
         print >> outfile, """<html> <head> <title>FASTQC</title> """
@@ -354,4 +354,4 @@ def print_css():
 
 
 if __name__ == "__main__":
-    print_html(sys.argv[1], sys.argv[2:])
+    write_fastqc_report(sys.argv[1], sys.argv[2:])

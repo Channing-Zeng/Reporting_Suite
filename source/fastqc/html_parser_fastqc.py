@@ -33,7 +33,7 @@ def get_graphs(samples):
                 # <h2><img/></h2><table></table></div>  OR  <h2><img/></h2><p><img/></p></div>
                 for i, part in enumerate(parts):
                     # info('Parsing ' + _header[i])
-                    info(str(part))
+                    # info(str(part))
                     table, graph = None, None
                     ok_img = '<img ' + part.split('"><img ')[1].split('"/>')[0] + '"/>'
                     if '<table>' in part:
