@@ -10,18 +10,26 @@ resources:
     path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
     path: /ngs/RDI/SCRIPTS/qualimap/qualimap
-  python:
-    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
-  java:
-    path: /apps/java/x64/jdk1.7.0_45/bin/java
-  picard:
-    path: ext_tools/picard/picard.jar
-  qsub:
-    path: /apps/sge61/bin/lx24-amd64/qsub
   samtools:
     path: /apps/samtools/0.1.19/rhel6-x64/samtools
   bedtools:
     path: /apps/bedtools/2.16.2/x64/bin/bedtools
+  perl:
+    path: /usr/bin/perl
+  java:
+    path: /apps/java/x64/jdk1.7.0_45/bin/java
+  python:
+    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
+  tabix:
+    path: /apps/bcbio-nextgen/0.9.0/rhel6-x64/bin/tabix
+  bgzip:
+    path: /apps/bcbio-nextgen/0.9.0/rhel6-x64/bin/bgzip
+  picard:
+    path: ext_tools/picard/picard.jar
+  qsub:
+    path: /apps/sge61/bin/lx24-amd64/qsub
+  qdel:
+    path: /apps/sge61/bin/lx24-amd64/qdel
 
 genomes:
   hg38:

@@ -6,6 +6,8 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /group/ngs/src/snpEff/SnpSift.jar
+  vcfannotate:
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   qualimap:
     path: /group/ngs/src/qualimap_v2.0/qualimap
   samtools:
@@ -14,8 +16,6 @@ resources:
   bedtools:
     path: /opt/az/local/bedtools/bedtools2-2.24.0/bin/bedtools  #/group/ngs/src/bedtools/bin/bedtools
     # path: /opt/az/local/bedtools/bedtools2-2.21.0/bin/bedtools
-  vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   perl:
     path: /usr/bin/perl
   java:
