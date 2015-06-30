@@ -1,29 +1,38 @@
 #!/usr/bin/env python
+from itertools import imap
+from os.path import basename, splitext
 import sys
 import os
 # from bs4 import BeautifulSoup
-import collections
-import itertools
+from collections import OrderedDict, namedtuple
 from source import verify_file
 from source.logger import err, info
 
 
-_header = ["Basic Statistics",
-           "Per base sequence quality",
-           "Per tile sequence quality",
-           "Per sequence quality scores",
-           "Per base sequence content",
-           "Per sequence GC content",
-           "Per base N content",
-           "Sequence Length Distribution",
-           "Sequence Duplication Levels",
-           "Overrepresented sequences",
-           "Adapter Content",
-           "Kmer Content"]
+_header = ['Basic Statistics',
+           'Per base sequence quality',
+           'Per tile sequence quality',
+           'Per sequence quality scores',
+           'Per base sequence content',
+           'Per sequence GC content',
+           'Per base N content',
+           'Sequence Length Distribution',
+           'Sequence Duplication Levels',
+           'Overrepresented sequences',
+           'Adapter Content',
+           'Kmer Content']
 
 
-def get_graphs(samples):
-    parsed_data = collections.OrderedDict((h, list()) for h in _header)
+def main(args):
+    FastQ = namedtuple('FastQ', 'name fastqc_html_fpath')
+
+    samples = [FastQ(splitext(basename(fpath))[0], fpath) for fpath in args]
+
+    extract_graphs(samples)
+
+
+def extract_graphs(samples):  # Sample(name, fastq_fpath)
+    parsed_data = OrderedDict((h, list()) for h in _header)
 
     for s in samples:
         if verify_file(s.fastqc_html_fpath):
@@ -76,21 +85,8 @@ def _sort_graph_by_type(parsed_data, divs, bam_file_name):
 
 def _group2(iterator, count):
     if count > len(iterator): count = len(iterator)
-    return itertools.imap(None, *([iter(iterator)] * count))
+    return imap(None, *([iter(iterator)] * count))
 
 
-if __name__ == "__main__":
-    k = 0
-    d = collections.OrderedDict()
-    for i in sys.argv[1:]:
-        k += 1
-        d[k]=i
-    m = get_graphs(d)
-
-    #print m
-    #for keys, values in m.items():
-        #print keys
-        #for a, b in values:
-            #print a
-    #for a in group2(values, 3):
-    #print  a[0][0]
+if __name__ == '__main__':
+    main(sys.argv[1:])

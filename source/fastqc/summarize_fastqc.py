@@ -2,7 +2,7 @@ from os.path import join
 from source.logger import step_greetings, info, send_email
 import source
 
-from source.fastqc.html_template_fastqc import write_fastqc_report
+from source.fastqc.html_template_fastqc import write_fastqc_combo_report
 
 
 def summary_reports(cnf, bcbio_structure):
@@ -10,7 +10,7 @@ def summary_reports(cnf, bcbio_structure):
 
     final_summary_report_fpath = join(cnf.output_dir, source.fastqc_name + '.html')
 
-    write_fastqc_report(final_summary_report_fpath, bcbio_structure.samples)
+    write_fastqc_combo_report(final_summary_report_fpath, bcbio_structure.samples)
 
     info()
     info('*' * 70)

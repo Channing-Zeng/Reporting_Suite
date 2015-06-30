@@ -11,7 +11,8 @@ from source.file_utils import verify_file, verify_dir, adjust_path, remove_quote
 from source import logger
 from source.config import Config, defaults
 from source.logger import info, err, critical
-from source.prepare_args_and_cnf import set_up_dirs, check_inputs, determine_cnf_files, check_keys
+from source.prepare_args_and_cnf import set_up_dirs, check_inputs, check_keys, determine_run_cnf, \
+    determine_sys_cnf
 
 
 code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
@@ -83,8 +84,8 @@ def read_opts_and_cnfs(extra_opts,
         parser.add_option(*args, **kwargs)
 
     (opts, args) = parser.parse_args()
-    determine_cnf_files(opts)
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
 
     errors = check_keys(cnf, required_keys)
     if errors:

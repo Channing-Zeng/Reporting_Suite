@@ -220,24 +220,31 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
     logger.log_fpath = cnf.log = log_fpath
 
 
-def determine_cnf_files(opts):
-    opts.sys_cnf = adjust_path(opts.sys_cnf) if opts.sys_cnf else detect_sys_cnf_by_location(opts)
-    verify_file(opts.sys_cnf, is_critical=True)
-    info('Using ' + opts.sys_cnf)
+def determine_sys_cnf(opts):
+    if opts.sys_cnf:
+        return verify_file(opts.sys_cnf, is_critical=True)
+    else:
+        opts.sys_cnf = verify_file(detect_sys_cnf_by_location(), is_critical=True)
 
+    info('Using ' + opts.sys_cnf)
+    return opts.sys_cnf
+
+
+def determine_run_cnf(opts):
     opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
     verify_file(opts.run_cnf, is_critical=True)
     info('Using ' + opts.run_cnf)
+    return opts.run_cnf
 
 
-def detect_sys_cnf_by_location(opts):
-    opts.sys_cnf = defaults['sys_cnfs']['us']
+def detect_sys_cnf_by_location():
+    sys_cnf = defaults['sys_cnfs']['us']
     if is_uk():
-        opts.sys_cnf = defaults['sys_cnfs']['uk']
+        sys_cnf = defaults['sys_cnfs']['uk']
     elif is_china():
-        opts.sys_cnf = defaults['sys_cnfs']['china']
+        sys_cnf = defaults['sys_cnfs']['china']
     elif is_local():
-        opts.sys_cnf = defaults['sys_cnfs']['local']
+        sys_cnf = defaults['sys_cnfs']['local']
     elif is_us():
-        opts.sys_cnf = defaults['sys_cnfs']['us']
-    return opts.sys_cnf
+        sys_cnf = defaults['sys_cnfs']['us']
+    return sys_cnf

@@ -222,4 +222,3 @@ def calc_sum_of_regions(bed_fpath):
 def get_total_bed_size(cnf, bed_fpath):
     merged_bed = total_merge_bed(cnf, bed_fpath)
     return calc_sum_of_regions(merged_bed)
-

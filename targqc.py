@@ -9,11 +9,12 @@ from optparse import OptionParser
 
 from source import logger
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources, determine_run_cnf, \
+    determine_sys_cnf
 from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
-from source.main import determine_cnf_files, set_up_dirs
+from source.main import set_up_dirs
 from source.targetcov.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -47,8 +48,7 @@ def main():
     if bad_bam_fpaths:
         critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
 
-    determine_cnf_files(opts)
-    cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
 
     if not cnf.project_name:
         cnf.project_name = basename(cnf.output_dir)

@@ -52,7 +52,6 @@ class Config(object):
         self.level = 0
 
         if sys_cnf and run_cnf:
-
             sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
             loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
             for k, v in loaded_dict.items():

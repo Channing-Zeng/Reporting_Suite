@@ -162,3 +162,5 @@ def is_local():
 def is_us():
     hostname = socket.gethostname()
     return any(name in hostname for name in ['rask', 'chara', 'blue', 'green', 'espo', 'orr', 'usbod', 'bn0'])
+
+

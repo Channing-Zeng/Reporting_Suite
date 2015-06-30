@@ -16,6 +16,7 @@ import collections
 import sys
 import fnmatch
 import time
+import uuid
 from ext_modules import yaml
 
 from source.logger import info, err, warn, critical
@@ -244,7 +245,9 @@ def symlink_plus(orig, new):
                 os.symlink(os.path.relpath(orig_noext + sub_ext), os.path.basename(new_noext + sub_ext))
 
 def open_gzipsafe(f, mode='rb'):
-    if f.endswith('.gz'):
+    if f.endswith('.gz') or f.endswith('.gzip'):
+        if 'b' not in mode:
+            mode += 'b'
         try:
             h = gzip.open(f, mode=mode)
         except IOError, e:
@@ -701,7 +704,7 @@ def num_lines(fpath):
 
 
 def make_tmpfile(cnf, *args, **kwargs):
-    yield tempfile.mkstemp(dir=cnf['work_dir'], *args, **kwargs)
+    yield tempfile.mkstemp(dir=cnf.work_dir, *args, **kwargs)
 
 
 @contextlib.contextmanager
@@ -872,6 +875,35 @@ def file_transaction(work_dir, *rollback_files):
                             shutil.move(safe_idx, orig + check_idx)
 
 
+@contextlib.contextmanager
+def tx_tmpdir(base_dir, rollback_dirpath):
+    """Context manager to create and remove a transactional temporary directory.
+    """
+    # tmp_dir_base = join(base_dir, 'tx', str(uuid.uuid4()))
+    # unique_attempts = 0
+    # while os.path.exists(tmp_dir_base):
+    #     if unique_attempts > 5:
+    #         break
+    #     tmp_dir_base = join(base_dir, 'tx', str(uuid.uuid4()))
+    #     time.sleep(1)
+    #     unique_attempts += 1
+
+    # if base_dir is not None:
+    #     tmp_dir_base = os.path.join(base_dir, "tx")
+    # else:
+    #     tmp_dir_base = os.path.join(os.getcwd(), "tx")
+    if exists(rollback_dirpath):
+        critical(rollback_dirpath + ' already exists')
+
+    tmp_dir = tempfile.mkdtemp(dir=base_dir)
+    safe_mkdir(tmp_dir)
+    try:
+        yield tmp_dir
+    finally:
+        if tmp_dir and exists(tmp_dir):
+            os.rename(tmp_dir, rollback_dirpath)
+
+
 def _flatten_plus_safe(tmp_dir, rollback_files):
     """Flatten names of files and create temporary file names.
     """
@@ -880,10 +912,24 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
         if isinstance(fnames, basestring):
             fnames = [fnames]
         for fname in fnames:
-            tx_file = add_suffix(fname, 'tx')
+            tx_file = fname + '.tx'
             tx_fpath = join(tmp_dir, tx_file)
             tx_fpaths.append(tx_fpath)
             orig_files.append(fname)
     return tx_fpaths, orig_files
+
+
+@contextlib.contextmanager
+def chdir(new_dir):
+    """Context manager to temporarily change to a new directory.
+    http://lucentbeing.com/blog/context-managers-and-the-with-statement-in-python/
+    """
+    cur_dir = os.getcwd()
+    safe_mkdir(new_dir)
+    os.chdir(new_dir)
+    try:
+        yield
+    finally:
+        os.chdir(cur_dir)
 
 #################################################

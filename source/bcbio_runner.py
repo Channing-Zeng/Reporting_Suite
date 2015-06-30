@@ -404,8 +404,6 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, caller_suf)
         qsub = get_system_path(self.cnf, 'qsub')
-        if threads > 1:
-            threads += 1
         threads = str(threads)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
@@ -687,12 +685,6 @@ class BCBioRunner:
                             info('', print_date=False)
                         info('Done ' + j.repr)
                         waiting = False
-
-                        # if j.step == self.combined_report:
-                        #     with open(j.done_marker) as f:
-                        #         html_report_url = f.read()
-                        #     info('Final report is saved to ' + html_report_url)
-                        #     time_waited_after_final_report_finished = 0
 
                 # check flags and wait if not all are done
                 if not all(j.is_done for j in self.jobs_running):

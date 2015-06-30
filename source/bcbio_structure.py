@@ -157,7 +157,7 @@ def _detect_sys_config(config_dirpath, opts):
 
         else:
             # detect system and use default system config
-            detect_sys_cnf_by_location(opts)
+            opts.sys_cnf = detect_sys_cnf_by_location()
 
     info('Using ' + opts.sys_cnf)
 
