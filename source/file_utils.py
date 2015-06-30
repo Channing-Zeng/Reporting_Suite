@@ -704,7 +704,9 @@ def num_lines(fpath):
 
 
 def make_tmpfile(cnf, *args, **kwargs):
-    yield tempfile.mkstemp(dir=cnf.work_dir, *args, **kwargs)
+    """ Returns tuple (file descriptor and file path)
+    """
+    return tempfile.mkstemp(dir=cnf.work_dir, *args, **kwargs)
 
 
 @contextlib.contextmanager

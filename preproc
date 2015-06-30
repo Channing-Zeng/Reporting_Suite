@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from genericpath import isdir, exists
+import shutil
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.html_template_fastqc import write_fastqc_combo_report
@@ -9,7 +10,7 @@ import sub_scripts.__check_python_version  # checking for python version and add
 
 import os
 import sys
-from os.path import join, isfile, basename, dirname
+from os.path import join, isfile, basename, dirname, abspath
 from optparse import OptionParser
 from collections import OrderedDict, defaultdict, namedtuple
 from time import sleep
@@ -27,7 +28,8 @@ from source.bcbio_structure import BCBioStructure, process_post_bcbio_args, Vari
 from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources, set_up_log, set_up_work_dir, \
     check_genome_resources, determine_sys_cnf, determine_run_cnf
 from source.variants.vcf_processing import get_trasncripts_fpath
-from source.file_utils import safe_mkdir, adjust_path, verify_dir, verify_file, chdir, tx_tmpdir, make_tmpfile
+from source.file_utils import safe_mkdir, adjust_path, verify_dir, verify_file, chdir, tx_tmpdir, make_tmpfile, \
+    expanduser, open_gzipsafe
 
 
 DATASETS_ROOT_DIRPATH = '/ngs/oncology/datasets'
@@ -54,7 +56,6 @@ def main():
     base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
     project_name = args[1]
     dataset_dirpath = verify_dir(join(base_dirpath, project_name), is_critical=True)
-
     jira_url = args[2]
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
@@ -119,13 +120,13 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    marker_fpath = make_tmpfile(cnf)
+    f, marker_fpath = make_tmpfile(cnf)
     if isfile(marker_fpath): os.remove(marker_fpath)
     job_id = job_name + '_' + basename(marker_fpath)
     log_fpath = join(cnf.log_dir, job_id + '.log')
 
     queue = cnf.queue
-    runner_script = cnf.qsub_runner
+    runner_script = abspath(expanduser(cnf.qsub_runner))
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
@@ -138,19 +139,23 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
     return job
 
 
-def run_fastqc(cnf, sample, need_downsample=True):
+def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     fastqc_work_dir = join(cnf.work_dir, 'fastqc_' + sample.name)
     safe_mkdir(fastqc_work_dir)
 
     if need_downsample:
         l_fpath, r_fpath = downsample(fastqc_work_dir, sample.l_fpath, sample.r_fpath, 1e7)
 
-    with tx_tmpdir(fastqc_work_dir, sample.fastqc_out_dirpath) as fastqc_out_tx_dirpath:
-        with chdir(fastqc_out_tx_dirpath):
-            java = get_system_path(cnf, 'java', is_critical=True)
-            cmdline = '{fastqc} --extract -o {fastqc_out_tx_dirpath} -f fastq -j {java} --dir {fastqc_work_dir} ' \
-                      '{sample.l_fpath} {sample.r_fpath}'.format(**locals())
-            return submit_job(cnf, cmdline, 'FastQC_' + sample.name)
+    # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
+    fastqc = get_system_path(cnf, 'fastqc')
+    java = get_system_path(cnf, 'java', is_critical=True)
+    fastqc_fpath = join(fastqc_work_dir, sample.name + '.fq')
+    with open(fastqc_fpath, 'w') as out:
+        out.write(open_gzipsafe(sample.l_fpath).read())
+        out.write(open_gzipsafe(sample.r_fpath).read())
+    cmdline = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} ' \
+              '{fastqc_fpath}'.format(**locals())
+    return submit_job(cnf, cmdline, 'FastQC_' + sample.name)
 
     # parser = FastQCParser(fastqc_out, data["name"][-1])
     # stats = parser.get_fastqc_summary()
@@ -166,6 +171,7 @@ def wait_for_jobs(jobs):
         for j in jobs:
             if not j.is_done and isfile(j.done_marker):
                 j.is_done = True
+                os.remove(j.done_marker)
                 if waiting:
                     info('', print_date=False)
                 info('Done ' + j.repr)
@@ -184,7 +190,13 @@ def wait_for_jobs(jobs):
             break
 
 
-Sample = namedtuple('FastQ', 'name l_fpath r_fpath fastqc_out_dirpath fastqc_html_fpath')
+class Sample:
+    def __init__(self, name, l_fpath, r_fpath):
+        self.name = name
+        self.l_fpath = l_fpath
+        self.r_fpath = r_fpath
+        self.fastqc_html_fpath = None
+
 
 def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
     # FastQC
@@ -200,28 +212,40 @@ def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserv
         # safe_mkdir(fastqc_report_dirpath)
         sample = Sample(
             name=sn,
-            l_fpath=verify_file(join(fastq_dirpath, sn + '_R1_fastqc.html')),
-            r_fpath=verify_file(join(fastq_dirpath, sn + '_R2_fastqc.html')),
-            fastqc_out_dirpath=join(fastqc_dirpath, sn),
-            fastqc_html_fpath=None)
+            l_fpath=verify_file(join(fastq_dirpath, sn + '_R1.fq')),
+            r_fpath=verify_file(join(fastq_dirpath, sn + '_R2.fq')))
         samples.append(sample)
 
-    if not isdir(fastqc_dirpath):
-        fastqc = get_system_path(cnf, 'fastqc')
-        if not fastqc:
-            err('FastQC is not found, cannot make reports')
-        else:
-            safe_mkdir(fastqc_dirpath)
-            fastqc_jobs = []
-            for sample in samples:
-                j = run_fastqc(cnf, sample)
-                fastqc_jobs.append(j)
-            wait_for_jobs(fastqc_jobs)
+    if any(not sn.l_fpath or not sn.r_fpath for sn in samples):
+        critical('Error: for some samples, fastq files could not be found.')
 
-            for s in samples:
-                s.fastqc_html_fpath = _post_proc_fastqc(s, s.fastqc_out_dirpath)
+    if isdir(fastqc_dirpath):
+        if isdir(fastqc_dirpath + '.bak'):
+            try:
+                shutil.rmtree(fastqc_dirpath + '.bak')
+            except:
+                pass
+        if not isdir(fastqc_dirpath + '.bak'):
+            os.rename(fastqc_dirpath, fastqc_dirpath + '.bak')
+    if isdir(fastqc_dirpath):
+        err('Could not run and combine fastqc because it already exists and could not be moved to fastqc.bak')
+        return None
 
-    comb_fastqc_fpath = join(fastq_dirpath, 'FastQC.html')
+    fastqc = get_system_path(cnf, 'fastqc')
+    if not fastqc:
+        err('FastQC is not found, cannot make reports')
+    else:
+        safe_mkdir(fastqc_dirpath)
+        fastqc_jobs = []
+        for sample in samples:
+            j = run_fastqc(cnf, sample, fastqc_dirpath)
+            fastqc_jobs.append(j)
+        wait_for_jobs(fastqc_jobs)
+
+    for s in samples:
+        s.fastqc_html_fpath = _post_proc_fastqc(s, fastqc_dirpath)
+
+    comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
 
     write_fastqc_combo_report(comb_fastqc_fpath, samples)
 
@@ -230,13 +254,14 @@ def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserv
 
 
 def _post_proc_fastqc(sample, results_dirpath):
-    sample.fastqc_out_dirpath = join(results_dirpath, sample.name + '_fastqc.html')
+    sample.fastqc_html_fpath = join(results_dirpath, sample.name + '.fq_fastqc', 'fastqc_report.html')
 
-    # if os.path.exists(results_dirpath + '.zip'):
-    #     os.remove(results_dirpath + '.zip')
+    verify_file(sample.fastqc_html_fpath, is_critical=True, silent=True)
 
-    verify_file(sample.fastqc_out_dirpath, is_critical=True, silent=True)
-    return sample.fastqc_out_dirpath
+    if os.path.exists(results_dirpath + '.zip'):
+        os.remove(results_dirpath + '.zip')
+
+    return sample.fastqc_html_fpath
 
 
 def pre_proc(cnf, project_name, dataset_dirpath, jira_url):
@@ -264,10 +289,10 @@ def pre_proc(cnf, project_name, dataset_dirpath, jira_url):
     info('Symlinked SampleSheet to ' + safe_symlink_to(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath))
 
     # add to the NGS list
-    jira_case = retrieve_jira_info(jira_url)
+    # jira_case = retrieve_jira_info(jira_url)
 
-    write_to_csv_file(os.getcwd(), jira_case.url, '/ngs/oncology/NGS.Project.csv', 'US', project_name,
-                      samples_num=None, analysis_dirpath=None, html_report_url=None)
+    # write_to_csv_file(os.getcwd(), jira_case.url, '/ngs/oncology/NGS.Project.csv', 'US', project_name,
+    #                   samples_num=None, analysis_dirpath=None, html_report_url=None)
 
 
 class JiraCase:

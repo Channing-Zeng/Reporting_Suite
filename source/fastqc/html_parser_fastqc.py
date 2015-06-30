@@ -35,7 +35,7 @@ def extract_graphs(samples):  # Sample(name, fastq_fpath)
     parsed_data = OrderedDict((h, list()) for h in _header)
 
     for s in samples:
-        if verify_file(s.fastqc_html_fpath):
+        if verify_file(s.fastqc_html_fpath, 's.fastqc_html_fpath for ' + s.name):
             with open(s.fastqc_html_fpath) as source_file_obj:
                 html = source_file_obj.read()
                 parts = [p.split('</div>')[0] for p in html.split('<div class="module">')[1:]]
