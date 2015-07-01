@@ -1,35 +1,24 @@
 #!/usr/bin/env python
-from genericpath import isdir, exists
+import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
+import os
+import sys
+from os.path import join, isfile, basename, dirname, abspath, isdir
+from optparse import OptionParser
+from collections import OrderedDict, defaultdict, namedtuple
+from time import sleep
 import shutil
+from ext_modules.jira import JIRA
+from traceback import print_exc
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.html_template_fastqc import write_fastqc_combo_report
 from source.project_level_report import write_to_csv_file
 from source.tools_from_cnf import get_system_path
-import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
 
-import os
-import sys
-from os.path import join, isfile, basename, dirname, abspath
-from optparse import OptionParser
-from collections import OrderedDict, defaultdict, namedtuple
-from time import sleep
-
-from ext_modules.jira import JIRA
-
-import source
-from source.targetcov import summarize_targetcov
-from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
-from source.variants import summarize_qc
-from source.bcbio_runner import BCBioRunner
 from source.config import defaults, Config
-from source.logger import info, critical, err, is_local
-from source.bcbio_structure import BCBioStructure, process_post_bcbio_args, VariantCaller
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources, set_up_log, set_up_work_dir, \
-    check_genome_resources, determine_sys_cnf, determine_run_cnf
-from source.variants.vcf_processing import get_trasncripts_fpath
-from source.file_utils import safe_mkdir, adjust_path, verify_dir, verify_file, chdir, tx_tmpdir, make_tmpfile, \
-    expanduser, open_gzipsafe
+from source.logger import info, critical, err, is_local, warn
+from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources, determine_sys_cnf, determine_run_cnf
+from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, open_gzipsafe, adjust_system_path
 
 
 DATASETS_ROOT_DIRPATH = '/ngs/oncology/datasets'
@@ -50,13 +39,14 @@ def main():
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
     (opts, args) = parser.parse_args()
-    if len(args) < 3:
+    if len(args) < 2:
         critical('Please, provide dataset basic location dir, the project name, and the jira case as the first 3 positional argment')
 
-    base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
+    # base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
+    dataset_dirpath = verify_dir(args[0])
     project_name = args[1]
-    dataset_dirpath = verify_dir(join(base_dirpath, project_name), is_critical=True)
-    jira_url = args[2]
+    # dataset_dirpath = verify_dir(join(base_dirpath, project_name), is_critical=True)
+    jira_url = args[2] if len(args) > 2 else None
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
     # check_genome_resources(cnf)
@@ -90,7 +80,7 @@ def safe_symlink_to(fpath, dst_dirpath):
     return dst
 
 
-def expose_bcl2fastq_reports(unalign_dirpath, ngs_webserver_seqqc_proj_dirpath):
+def expose_bcl2fastq_reports(cnf, unalign_dirpath, ngs_webserver_seqqc_proj_dirpath):
     # demultiplex and bcl2fastq
     # ln -s $datasets/$data_loc/$project_name/Unalign/Basecall_Stats_*/Demultiplex_Stats.htm
     # /opt/lampp/htdocs/seqQC/$project_name/Demultiplex_Stats.htm
@@ -101,9 +91,16 @@ def expose_bcl2fastq_reports(unalign_dirpath, ngs_webserver_seqqc_proj_dirpath):
         err('No Basecall_Stats_* dirs found in unalign_dirpath')
     if len(basecall_stats_dirnames) == 1:
         basecall_stats_dirpath = join(unalign_dirpath, basecall_stats_dirnames[0])
-        for fpath in filter(None, (verify_file(join(basecall_stats_dirpath, html_fname), is_critical=False)
+        with _connect_ngs_server_us(cnf) as ssh:
+            for fpath in filter(None, (verify_file(join(basecall_stats_dirpath, html_fname), is_critical=False)
                                    for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])):
-            info('Symlinked ' + fpath + ' to ' + safe_symlink_to(fpath, ngs_webserver_seqqc_proj_dirpath))
+                dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(fpath))
+                for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
+                            'rm ' + dst_fpath,
+                            'ln -s ' + fpath + ' ' + dst_fpath]:
+                    ssh.exec_command(cmd)
+                    info('  ' + cmd)
+                info('Symlinked ' + fpath + ' to ' + dst_fpath)
 
 
 class JobRunning:
@@ -126,7 +123,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
     log_fpath = join(cnf.log_dir, job_id + '.log')
 
     queue = cnf.queue
-    runner_script = abspath(expanduser(cnf.qsub_runner))
+    runner_script = adjust_system_path(cnf.qsub_runner)
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
@@ -198,7 +195,7 @@ class Sample:
         self.fastqc_html_fpath = None
 
 
-def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
+def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
     # FastQC
     #for i in `cat $datasets/$data_loc/$project_name/Unalign/fastq/samples.list`
         # do ln -s $datasets/$data_loc/$project_name/Unalign/fastq/fastqc/${i}_R1_fastqc.html /opt/lampp/htdocs/seqQC/$project_name/FastQC/${i}_R1_fastq.html
@@ -206,14 +203,25 @@ def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserv
     # done
     fastqc_dirpath = join(fastq_dirpath, 'fastqc')
 
+    fastqs_list_fpath = join(fastq_dirpath, 'fastqs.list')
+    with open(fastqs_list_fpath) as f:
+        fastqs_fnames = [l.strip() for l in f]
+
     samples = []
     for sn in samples_names:
         # fastqc_report_dirpath = join(fastqc_dirpath, sn)
         # safe_mkdir(fastqc_report_dirpath)
+        fastq_fnames = [f for f in fastqs_fnames if f.startswith(sn + '_R')]
+        if len(fastq_fnames) == 0:
+            l_fpath = None
+            r_fpath = None
+        else:
+            l_fpath = verify_file(join(fastq_dirpath, fastq_fnames[0]))
+            r_fpath = verify_file(join(fastq_dirpath, fastq_fnames[0]))
         sample = Sample(
             name=sn,
-            l_fpath=verify_file(join(fastq_dirpath, sn + '_R1.fq')),
-            r_fpath=verify_file(join(fastq_dirpath, sn + '_R2.fq')))
+            l_fpath=l_fpath,
+            r_fpath=r_fpath)
         samples.append(sample)
 
     if any(not sn.l_fpath or not sn.r_fpath for sn in samples):
@@ -250,7 +258,9 @@ def run_and_expose_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserv
     write_fastqc_combo_report(comb_fastqc_fpath, samples)
 
     verify_file(comb_fastqc_fpath, is_critical=True)
-    info('Combined FastQC and symlinked to ' + safe_symlink_to(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath))
+    info('Combined FastQC saved to ' + comb_fastqc_fpath)
+
+    return comb_fastqc_fpath
 
 
 def _post_proc_fastqc(sample, results_dirpath):
@@ -264,35 +274,89 @@ def _post_proc_fastqc(sample, results_dirpath):
     return sample.fastqc_html_fpath
 
 
-def pre_proc(cnf, project_name, dataset_dirpath, jira_url):
+def pre_proc(cnf, project_name, dataset_dirpath, jira_url=None, expose_to_ngs_server=False):
     unalign_dirpath = join(dataset_dirpath, 'Unalign')
     fastq_dirpath = join(unalign_dirpath, 'fastq')
     verify_dir(unalign_dirpath, is_critical=True)
     verify_dir(fastq_dirpath, is_critical=True)
-    verify_dir(NGS_WEBSERVER_SEQQC_DIR)
     ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, project_name)
-    safe_mkdir(ngs_webserver_seqqc_proj_dirpath)
 
     sample_list_fpath = join(fastq_dirpath, 'samples.list')
     verify_file(sample_list_fpath, is_critical=True)
     with open(sample_list_fpath) as f:
         sample_names = [l.strip() for l in f]
 
-    run_and_expose_fastqc_reports(cnf, sample_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
+    comb_fastqc_fpath = run_fastqc_reports(cnf, sample_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
 
-    expose_bcl2fastq_reports(unalign_dirpath, ngs_webserver_seqqc_proj_dirpath)
+    if expose_to_ngs_server:
+        with _connect_ngs_server_us(cnf) as ssh:
+            dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(comb_fastqc_fpath))
+            for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
+                        'rm ' + dst_fpath,
+                        'ln -s ' + comb_fastqc_fpath + ' ' + dst_fpath]:
+                ssh.exec_command(cmd)
+                info('  ' + cmd)
+            info('Symlinked ' + comb_fastqc_fpath + ' to ' + dst_fpath)
 
-    # Sample sheet
-    # ln -s $datasets/$data_loc/$project_name/SampleSheet.csv /opt/lampp/htdocs/seqQC/$project_name/SampleSheet.csv
-    sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
-    verify_file(sample_sheet_csv_fpath, is_critical=True)
-    info('Symlinked SampleSheet to ' + safe_symlink_to(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath))
+        expose_bcl2fastq_reports(cnf, unalign_dirpath, ngs_webserver_seqqc_proj_dirpath)
 
-    # add to the NGS list
-    # jira_case = retrieve_jira_info(jira_url)
+        # Sample sheet
+        # ln -s $datasets/$data_loc/$project_name/SampleSheet.csv /opt/lampp/htdocs/seqQC/$project_name/SampleSheet.csv
+        sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
+        verify_file(sample_sheet_csv_fpath, is_critical=True)
+        with _connect_ngs_server_us(cnf) as ssh:
+            dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(sample_sheet_csv_fpath))
+            for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
+                        'rm ' + dst_fpath,
+                        'ln -s ' + sample_sheet_csv_fpath + ' ' + dst_fpath]:
+                ssh.exec_command(cmd)
+                info('  ' + cmd)
+            info('Symlinked ' + sample_sheet_csv_fpath + ' to ' + dst_fpath)
 
-    # write_to_csv_file(os.getcwd(), jira_case.url, '/ngs/oncology/NGS.Project.csv', 'US', project_name,
-    #                   samples_num=None, analysis_dirpath=None, html_report_url=None)
+        info('Symlinked SampleSheet to ' + dst_fpath)
+
+    if jira_url:
+        # add to the NGS list
+        jira_case = retrieve_jira_info(jira_url)
+
+        write_to_csv_file(os.getcwd(), jira_case.url, '/ngs/oncology/NGS.Project.csv', 'US', project_name,
+                          samples_num=None, analysis_dirpath=None, html_report_url=None)
+
+
+def _connect_ngs_server_us(cnf):
+    # html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
+    #     relpath(html_report_fpath, bcbio_structure.final_dirpath)
+
+    server_url = '172.18.47.33'  # ngs
+    username = 'klpf990'
+    password = '123werasd'
+    rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
+    if rsa_key_path:
+        try:
+            from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+        except ImportError as e:
+            print_exc()
+            err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
+        else:
+            ssh = SSHClient()
+            ssh.load_system_host_keys()
+            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+            ssh.set_missing_host_key_policy(AutoAddPolicy())
+            try:
+                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
+            except Exception, e:
+                warn('Cannot read RSAKey from ' + rsa_key_path)
+                warn('  ' + str(e))
+            else:
+                info('Succesfully read RSAKey from ' + rsa_key_path)
+                try:
+                    ssh.connect(server_url, username=username, password=password, pkey=key)
+                except Exception, e:
+                    warn('Cannot connect to ' + server_url + ':')
+                    warn('  ' + str(e))
+                else:
+                    info('Succesfully connected to ' + server_url)
+                    yield ssh
 
 
 class JiraCase:
