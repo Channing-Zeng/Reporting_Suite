@@ -55,14 +55,14 @@ def main():
     description = 'This script runs preprocessing.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-r1', dest='left_reads_fpath', help='Left reads fpath', optional=False)
-    parser.add_option('-r2', dest='right_reads_fpath', help='Right reads fpath', optional=False)
-    parser.add_option('-o', dest='output_dir', help='Output directory path', optional=False)
+    parser.add_option('-r1', dest='left_reads_fpath', help='Left reads fpath')
+    parser.add_option('-r2', dest='right_reads_fpath', help='Right reads fpath')
+    parser.add_option('-o', dest='output_dir', help='Output directory path')
     (opts, args) = parser.parse_args()
 
     left_reads_fpath = verify_file(opts.left_reads_fpath, is_critical=True)
     right_reads_fpath = verify_file(opts.right_reads_fpath, is_critical=True)
-    output_dir = opts.output_dir
+    output_dir = opts.output_dir if opts.output_dir else critical('Please, specify output directory with -o')
     verify_dir(dirname(output_dir), is_critical=True)
 
     sample_name = _get_sample_name(left_reads_fpath, right_reads_fpath)

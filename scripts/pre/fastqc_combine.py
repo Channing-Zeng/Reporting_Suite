@@ -25,10 +25,12 @@ def main():
     description = 'This script runs preprocessing.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-o', dest='output_fpath', help='Output file path', optional=False)
+    parser.add_option('-o', dest='output_fpath', help='Output file path')
     (opts, args) = parser.parse_args()
     if len(args) == 0:
         critical('Please, provide paths to fastqc HTML reports in arguments list.')
+    if not opts.output_fpath:
+        critical('Please, specify output html path with "-o result.html"')
 
     input_htmls = [verify_file(arg) for arg in args]
     if any(basename(fn1) == basename(fn2) for fn1 in input_htmls for fn2 in input_htmls):
