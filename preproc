@@ -14,7 +14,7 @@ from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.project_level_report import write_to_csv_file
-from source.tools_from_cnf import get_system_path
+from source.tools_from_cnf import get_system_path, get_script_cmdline
 
 from source.config import defaults, Config
 from source.logger import info, critical, err, is_local, warn
@@ -138,21 +138,9 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
 
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
-    fastqc_work_dir = join(cnf.work_dir, 'fastqc_' + sample.name)
-    safe_mkdir(fastqc_work_dir)
-
-    if need_downsample:
-        l_fpath, r_fpath = downsample(fastqc_work_dir, sample.l_fpath, sample.r_fpath, 1e7)
-
     # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
-    fastqc = get_system_path(cnf, 'fastqc')
-    java = get_system_path(cnf, 'java', is_critical=True)
-    fastqc_fpath = join(fastqc_work_dir, sample.name + '.fq')
-    with open(fastqc_fpath, 'w') as out:
-        out.write(open_gzipsafe(sample.l_fpath).read())
-        out.write(open_gzipsafe(sample.r_fpath).read())
-    cmdline = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} ' \
-              '{fastqc_fpath}'.format(**locals())
+    cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
+    cmdline += (' --sys-cnf {cnf.sys_cnf} -1 {l_fpath} -2 {r_fpath} -o {fastqc_dirpath}'.format(**locals()))
     return submit_job(cnf, cmdline, 'FastQC_' + sample.name)
 
     # parser = FastQCParser(fastqc_out, data["name"][-1])
@@ -266,11 +254,6 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
     info('Combined FastQC saved to ' + comb_fastqc_fpath)
 
     return comb_fastqc_fpath
-
-
-def _post_proc_fastqc(sample, results_dirpath):
-
-    return sample.fastqc_html_fpath
 
 
 def pre_proc(cnf, project_name, dataset_dirpath, jira_url=None, expose_to_ngs_server=False):

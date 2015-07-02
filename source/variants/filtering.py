@@ -12,7 +12,7 @@ from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline
-from source.logger import critical, err, warn
+from source.logger import critical, err, warn, is_local
 from source.utils import is_us
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
@@ -104,13 +104,23 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
     vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
     cmdline = None
 
-    if is_us():
+    if not is_local():
         vardict2mut = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
 
         c = cnf.variant_filtering
         min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
-        cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} {vcf2txt_res_fpath}'
+        cmdline = ('{vardict2mut} '
+            '-D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} '
+            '{vcf2txt_res_fpath} '
+            '--ruledir {cnf.genome.riledir} '
+            '--filter_common_snp {cnf.genome.filter_common_snp} '
+            '--snpeffect_export_polymorphic {cnf.genome.snpeffect_export_polymorphic} '
+            '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
+            '--actionable_hotspot {cnf.genome.actionable_hotspot} '
+            '--actionable {cnf.genome.actionable} '
+            '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
+        )
 
     else:
         pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
