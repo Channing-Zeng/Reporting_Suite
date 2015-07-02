@@ -32,8 +32,8 @@ def main():
     description = 'This script runs preprocessing.'
 
     parser = OptionParser(description=description)
-    parser.add_option('-r1', dest='left_reads_fpath', help='Left reads fpath')
-    parser.add_option('-r2', dest='right_reads_fpath', help='Right reads fpath')
+    parser.add_option('-1', dest='left_reads_fpath', help='Left reads fpath')
+    parser.add_option('-2', dest='right_reads_fpath', help='Right reads fpath')
     parser.add_option('-o', dest='output_dir', help='Output directory path')
     parser.add_option('--downsample-to', dest='downsample_to', default=1e7, type='int',
         help='Downsample reads to avoid excessive processing times with large files. '
@@ -44,8 +44,8 @@ def main():
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
     left_reads_fpath = verify_file(opts.left_reads_fpath, is_critical=True)
     right_reads_fpath = verify_file(opts.right_reads_fpath, is_critical=True)
-    output_dirpath = opts.output_dir if opts.output_dir else critical('Please, specify output directory with -o')
-    verify_dir(dirname(output_dirpath), is_critical=True)
+    output_dirpath = adjust_path(opts.output_dir) if opts.output_dir else critical('Please, specify output directory with -o')
+    verify_dir(dirname(output_dirpath), description='output_dir', is_critical=True)
 
     with workdir(cnf):
         sample_name = _get_sample_name(left_reads_fpath, right_reads_fpath)
@@ -63,15 +63,18 @@ def run_fastq(cnf, sample_name, l_r_fpath, r_r_fpath, output_dirpath, downsample
     java = get_system_path(cnf, 'java', is_critical=True)
 
     if downsample_to:
+        info('Downsampling to ' + str(downsample_to))
         l_fpath, r_fpath = downsample(cnf.work_dir, l_r_fpath, r_r_fpath, downsample_to)
 
     # Joining fastq files to run on a combination
     fastqc_fpath = join(cnf.work_dir, sample_name + '.fq')
+    info('Combining fastqs, writing to ' + fastqc_fpath)
     with open(fastqc_fpath, 'w') as out:
         out.write(open_gzipsafe(l_r_fpath).read())
         out.write(open_gzipsafe(r_r_fpath).read())
 
     # Running FastQC
+    info('Running FastQC')
     cmdline = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} ' \
               '{fastqc_fpath}'.format(**locals())
     call(cnf, cmdline)
