@@ -52,6 +52,6 @@ genomes:
 
 queue: all.q
 
-qsub_runner: sub_scripts/runner_AP.sh
+qsub_runner: scripts/runner_AP.sh
 
 #smtp_host: 'uw26.usuwb.astrazeneca.net'

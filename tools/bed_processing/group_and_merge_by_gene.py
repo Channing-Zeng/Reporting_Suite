@@ -1,12 +1,8 @@
 #!/usr/bin/env python
 
-from os.path import abspath, dirname, realpath, join
-from site import addsitedir
-project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
-addsitedir(join(project_dir))
-addsitedir(join(project_dir, 'ext_modules'))
-import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
+import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
+from os.path import abspath, dirname, realpath, join
 import sys
 from collections import OrderedDict, defaultdict
 from source.targetcov.bam_and_bed_utils import count_bed_cols

@@ -110,6 +110,6 @@ genomes:
 
 queue: ngs.q
 
-qsub_runner: sub_scripts/runner_AP.sh
+qsub_runner: scripts/runner_AP.sh
 
 smtp_host: 'localhost'

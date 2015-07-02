@@ -204,14 +204,14 @@ class BCBioRunner:
         self.varannotate = Step(cnf, run_id,
             name=BCBioStructure.varannotate_name, short_name='va',
             interpreter='python',
-            script=join('sub_scripts', 'varannotate.py'),
+            script=join('scripts', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
             name=BCBioStructure.varqc_name, short_name='vq',
             interpreter='python',
-            script=join('sub_scripts', 'varqc.py'),
+            script=join('scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_dir,
             paramln=params_for_one_sample + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\''
@@ -219,7 +219,7 @@ class BCBioRunner:
         self.varqc_after = Step(cnf, run_id,
             name=BCBioStructure.varqc_after_name, short_name='vqa',
             interpreter='python',
-            script=join('sub_scripts', 'varqc.py'),
+            script=join('scripts', 'varqc.py'),
             dir_name=BCBioStructure.varqc_after_dir,
             paramln=params_for_one_sample + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
@@ -237,14 +237,14 @@ class BCBioRunner:
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targetseq_name, short_name='tc',
             interpreter='python',
-            script=join('sub_scripts', 'targetcov.py'),
+            script=join('scripts', 'targetcov.py'),
             dir_name=BCBioStructure.targetseq_dir,
             paramln=targetcov_params,
         )
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
-            script=join('sub_scripts', 'abnormal_regions.py'),
+            script=join('scripts', 'abnormal_regions.py'),
             dir_name=BCBioStructure.targetseq_dir,
             paramln=params_for_one_sample + ' -o \'{output_dir}\' {caller_names} {vcfs} '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
@@ -252,7 +252,7 @@ class BCBioRunner:
         self.ngscat = Step(cnf, run_id,
             name=BCBioStructure.ngscat_name, short_name='nc',
             interpreter='python',
-            script=join('sub_scripts', 'ngscat.py'),
+            script=join('scripts', 'ngscat.py'),
             dir_name=BCBioStructure.ngscat_dir,
             paramln=params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
@@ -260,7 +260,7 @@ class BCBioRunner:
         self.qualimap = Step(cnf, run_id,
             name=BCBioStructure.qualimap_name, short_name='qm',
             interpreter='python',
-            script=join('sub_scripts', 'qualimap.py'),
+            script=join('scripts', 'qualimap.py'),
             dir_name=BCBioStructure.qualimap_dir,
             paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
         )
@@ -269,14 +269,14 @@ class BCBioRunner:
         self.varqc_summary = Step(cnf, run_id,
             name=BCBioStructure.varqc_name + '_summary', short_name='vqs',
             interpreter='python',
-            script=join('sub_scripts', 'varqc_summary.py'),
+            script=join('scripts', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.varqc_after_summary = Step(cnf, run_id,
             name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
             interpreter='python',
-            script=join('sub_scripts', 'varqc_summary.py'),
+            script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
                     ' --name ' + BCBioStructure.varqc_after_name +
@@ -293,7 +293,7 @@ class BCBioRunner:
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',
             interpreter='python',
-            script=join('sub_scripts', 'varfilter.py'),
+            script=join('scripts', 'post_bcbio', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
             paramln=varfilter_paramline
         )
@@ -313,21 +313,21 @@ class BCBioRunner:
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
-            script=join('sub_scripts', 'seq2c.py'),
+            script=join('scripts', 'post_bcbio', 'seq2c.py'),
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=seq2c_cmdline
         )
         self.targqc_summary = Step(cnf, run_id,
             name=BCBioStructure.targqc_name, short_name='targqc',
             interpreter='python',
-            script=join('sub_scripts', 'targqc_summary.py'),
+            script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.fastqc_summary = Step(cnf, run_id,
             name=BCBioStructure.fastqc_name, short_name='fastqc',
             interpreter='python',
-            script=join('sub_scripts', 'fastqc_summary.py'),
+            script=join('scripts', 'post_bcbio', 'fastqc_summary.py'),
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
@@ -337,7 +337,7 @@ class BCBioRunner:
         # self.combined_report = Step(cnf, run_id,
         #     name='ProjectLevelReport', short_name='cr',
         #     interpreter='python',
-        #     script=join('sub_scripts', 'combined_report.py'),
+        #     script=join('scripts', 'combined_report.py'),
         #     dir_name=self.bcbio_structure.date_dirpath,
         #     paramln=project_level_report_cmdline
         # )

@@ -5,7 +5,6 @@ import __check_python_version
 import sys
 import shutil
 from source import BaseSample
-from source.bcbio_structure import BCBioSample
 from source.file_utils import adjust_path
 from source.logger import send_email
 from source.prepare_args_and_cnf import check_system_resources

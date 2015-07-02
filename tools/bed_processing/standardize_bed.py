@@ -1,13 +1,10 @@
 #!/usr/bin/env python
 
-from os.path import abspath, dirname, realpath, join
-from site import addsitedir
-project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
-addsitedir(join(project_dir))
-import sub_scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
+import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
 import os
+from os.path import abspath, dirname, realpath, join
 import subprocess
 import copy
 from source.file_utils import add_suffix, verify_file, which

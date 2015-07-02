@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import sub_scripts.__check_python_version  # checking for python version and adding site dirs inside
+import __check_python_version  # checking for python version and adding site dirs inside
+
 import os
 import sys
 from os.path import join, isfile, basename, dirname, abspath, isdir
@@ -11,7 +12,7 @@ from ext_modules.jira import JIRA
 from traceback import print_exc
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
-from source.fastqc.html_template_fastqc import write_fastqc_combo_report
+from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.project_level_report import write_to_csv_file
 from source.tools_from_cnf import get_system_path
 
@@ -251,7 +252,11 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
         wait_for_jobs(fastqc_jobs)
 
     for s in samples:
-        s.fastqc_html_fpath = _post_proc_fastqc(s, fastqc_dirpath)
+        sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
+        s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
+        verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
+        if os.path.exists(sample_fastqc_dirpath + '.zip'):
+            os.remove(sample_fastqc_dirpath + '.zip')
 
     comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
 
@@ -264,12 +269,6 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
 
 
 def _post_proc_fastqc(sample, results_dirpath):
-    sample.fastqc_html_fpath = join(results_dirpath, sample.name + '.fq_fastqc', 'fastqc_report.html')
-
-    verify_file(sample.fastqc_html_fpath, is_critical=True, silent=True)
-
-    if os.path.exists(results_dirpath + '.zip'):
-        os.remove(results_dirpath + '.zip')
 
     return sample.fastqc_html_fpath
 

@@ -8,15 +8,16 @@ from source.logger import info, err, critical
 from source.file_utils import which
 
 
-def get_system_path(cnf, interpreter, name=None, extra_warning='',
+def get_system_path(cnf, interpreter_or_name, name=None, extra_warning='',
                     suppress_warn=False, is_critical=False):
     """ "name" can be:
         - key in system_into.yaml
         - relative path in the project (e.g. external/...)
         - anything in system path
     """
+    interpreter = interpreter_or_name
     if name is None:
-        name = interpreter
+        name = interpreter_or_name
         interpreter = None
 
     if interpreter:
@@ -27,7 +28,7 @@ def get_system_path(cnf, interpreter, name=None, extra_warning='',
             extra_warning=extra_warning, suppress_warn=suppress_warn, is_critical=is_critical)
 
     # IN SYSTEM CONFIG?
-    if (cnf.resources is not None and
+    if cnf and (cnf.resources is not None and
         name.lower() in cnf.resources and
         'path' in cnf.resources[name.lower()]):
 
@@ -75,7 +76,7 @@ def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
 
 def get_java_tool_cmdline(cnf, script, extra_warning='', suppress_warn=False, is_critical=False):
     jvm_opts = None
-    if (cnf.resources and
+    if cnf and (cnf.resources and
         script in cnf.resources and
         'jvm_opts' in cnf.resources[script]):
         jvm_opts = cnf.resources[script]['jvm_opts']

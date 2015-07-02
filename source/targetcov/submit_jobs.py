@@ -94,7 +94,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',
         interpreter='python',
-        script=join('sub_scripts', 'targetcov.py'),
+        script=join('scripts', 'targetcov.py'),
         paramln=targetcov_params
     )
 
@@ -109,7 +109,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     ngscat_step = Step(cnf, run_id,
         name=source.ngscat_name, short_name='nc',
         interpreter='python',
-        script=join('sub_scripts', 'ngscat.py'),
+        script=join('scripts', 'ngscat.py'),
         paramln=ngscat_params
     )
 
@@ -125,7 +125,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     qualimap_step = Step(cnf, run_id,
         name=source.qualimap_name, short_name='qm',
         interpreter='python',
-        script=join('sub_scripts', 'qualimap.py'),
+        script=join('scripts', 'qualimap.py'),
         paramln=qualimap_params,
     )
 

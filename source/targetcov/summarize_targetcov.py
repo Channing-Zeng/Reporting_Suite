@@ -1,20 +1,19 @@
-from copy import deepcopy
-import sys
 import shutil
 import os
 from os import listdir
-from os.path import relpath, join, exists, dirname, basename, splitext
+from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict, defaultdict
 
 import source
-from source.config import CallCnf
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, \
-    Record, PerRegionSampleReport, Report
-from source.logger import step_greetings, info, send_email, critical, warn, err
+
+    PerRegionSampleReport, Report
+from source.logger import step_greetings, info, warn, err
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
-from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
+from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage, get_header_metric_storage
+
 # from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
@@ -22,8 +21,6 @@ from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_
     file_transaction
 from source.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
-from source.utils import get_numeric_value
-from sub_scripts.targetcov import Sample
 
 
 def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
@@ -34,7 +31,7 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
 
     # Qualimap2 run for multi-sample plots
     if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]):
-        qualimap = get_system_path(cnf, interpreter=None, name='qualimap')
+        qualimap = get_system_path(cnf, interpreter_or_name=None, name='qualimap')
 
         if qualimap is not None and get_qualimap_type(qualimap) == 'full':
             qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
