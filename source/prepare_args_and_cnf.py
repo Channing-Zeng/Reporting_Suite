@@ -16,7 +16,7 @@ from source.utils import is_china
 from source.utils import is_local
 
 
-def add_post_bcbio_args(parser):
+def add_cnf_t_reuse_prjname_reuse_marker_genome(parser):
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf'])
     # parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
@@ -25,11 +25,9 @@ def add_post_bcbio_args(parser):
     # parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + defaults['qsub_runner'])
     parser.add_option('--project-name', '--project', dest='project_name')
     parser.add_option('--done-marker', dest='done_marker')
+    parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
     # parser.add_option('--email', dest='email')
-    parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
-    parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('--genome', dest='genome', help='Genome build.', default='hg19')
-    parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
 
 
 def check_genome_resources(cnf):

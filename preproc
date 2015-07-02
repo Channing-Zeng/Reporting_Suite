@@ -18,7 +18,7 @@ from source.tools_from_cnf import get_system_path
 
 from source.config import defaults, Config
 from source.logger import info, critical, err, is_local, warn
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_system_resources, determine_sys_cnf, determine_run_cnf
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, open_gzipsafe, adjust_system_path
 
 
@@ -34,7 +34,7 @@ def main():
     description = 'This script runs preprocessing.'
 
     parser = OptionParser(description=description)
-    add_post_bcbio_args(parser)
+    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     # parser.add_option('--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
@@ -232,7 +232,7 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
         if isdir(fastqc_dirpath + '.bak'):
             try:
                 shutil.rmtree(fastqc_dirpath + '.bak')
-            except:
+            except OSError:
                 pass
         if not isdir(fastqc_dirpath + '.bak'):
             os.rename(fastqc_dirpath, fastqc_dirpath + '.bak')

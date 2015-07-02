@@ -9,7 +9,7 @@ from optparse import OptionParser
 
 from source import logger
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_post_bcbio_args, check_genome_resources, determine_sys_cnf, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_genome_resources, determine_sys_cnf, \
     determine_run_cnf
 from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
@@ -25,13 +25,15 @@ def main():
 
     description = 'This script generates target QC reports for each BAM provided as an input.'
     parser = OptionParser(description=description)
-    add_post_bcbio_args(parser)
+    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='count duplicates in coverage metrics')
+    parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
+    parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
 
     (opts, args) = parser.parse_args()
 

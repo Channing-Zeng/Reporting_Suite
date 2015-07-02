@@ -680,27 +680,38 @@ def num_lines(fpath):
         return sum(1 for l in f)
 
 
-# def make_tmpdir(cnf, prefix='ngs_reporting_tmp', *args, **kwargs):
-#     base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
-#     if not verify_dir(base_dir, 'Base directory for temporary files'):
-#         sys.exit(1)
-#
-#     return tempfile.mkdtemp(dir=base_dir, prefix=prefix)
+def make_tmpdir():
+    # base_dir = cnf.tmp_base_dir or cnf.work_dir or os.getcwd()
+    # if not verify_dir(base_dir, 'Base directory for temporary files'):
+    #     sys.exit(1)
+    #
+    return tempfile.mkdtemp()
 
 
-# @contextlib.contextmanager
-# def tmpdir(cnf, *args, **kwargs):
-#     prev_tmp_dir = cnf.tmp_dir
-#
-#     cnf.tmp_dir = make_tmpdir(cnf, *args, **kwargs)
-#     try:
-#         yield cnf.tmp_dir
-#     finally:
-#         try:
-#             shutil.rmtree(cnf.tmp_dir)
-#         except OSError:
-#             pass
-#         cnf.tmp_dir = prev_tmp_dir
+@contextlib.contextmanager
+def tmpdir():
+    dirpath = make_tmpdir()
+    try:
+        yield dirpath
+    finally:
+        try:
+            shutil.rmtree(dirpath)
+        except OSError:
+            warn('Warning: cannot clean up temporary dir ' + dirpath)
+
+
+@contextlib.contextmanager
+def workdir(cnf):
+    if cnf.work_dir:
+        verify_dir(cnf.work_dir, is_critical=True)
+        yield cnf.work_dir
+    else:
+        cnf.work_dir = make_tmpdir()
+        yield cnf.work_dir
+        try:
+            shutil.rmtree(cnf.work_dir)
+        except OSError:
+            warn('Warning: cannot clean up temporary dir ' + cnf.work_dir)
 
 
 def make_tmpfile(cnf, *args, **kwargs):

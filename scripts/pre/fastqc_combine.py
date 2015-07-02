@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import __check_python_version
 
-from os.path import join, basename, dirname
+from os.path import join, basename, dirname, splitext
 import sys
 from source import info, verify_file
 from optparse import OptionParser
@@ -15,7 +15,7 @@ class Sample:
         self.name = name
         self.l_fpath = l_fpath
         self.r_fpath = r_fpath
-        self.fastqc_html_fpath = None
+        self.fastqc_html_fpath = fastqc_html_fpath
 
 
 def main():
@@ -33,12 +33,12 @@ def main():
         critical('Please, specify output html path with "-o result.html"')
 
     input_htmls = [verify_file(arg) for arg in args]
-    if any(basename(fn1) == basename(fn2) for fn1 in input_htmls for fn2 in input_htmls):
-        info('Taking base dirnames as sample names')
+    if len(set(input_htmls)) < len(input_htmls):
+        info('Some file names are equal; taking base dirnames as sample names')
         samples = [Sample(name=basename(dirname(fp)), fastqc_html_fpath=fp) for fp in input_htmls]
     else:
-        info('Taking file basenames as sample names')
-        samples = [Sample(name=basename(fp), fastqc_html_fpath=fp) for fp in input_htmls]
+        info('All file names are different, taking file basenames as sample names')
+        samples = [Sample(name=basename(fp).split('.fq_fastqc.html')[0].split('.htm')[0], fastqc_html_fpath=fp) for fp in input_htmls]
 
     res_fpath = adjust_path(opts.output_fpath)
     write_fastqc_combo_report(res_fpath, samples)

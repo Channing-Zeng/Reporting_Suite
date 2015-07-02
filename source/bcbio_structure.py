@@ -16,7 +16,7 @@ from source.calling_process import call
 from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.ngscat.bed_file import verify_bed, verify_bam
-from source.prepare_args_and_cnf import add_post_bcbio_args, set_up_log, set_up_work_dir, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, set_up_log, set_up_work_dir, \
     detect_sys_cnf_by_location, check_genome_resources, check_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
@@ -26,7 +26,7 @@ from source.utils import OrderedDefaultDict
 def summary_script_proc_params(name, dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
-    add_post_bcbio_args(parser)
+    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--dir', dest='dir_name', default=dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
@@ -50,7 +50,7 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
     if len(bcbio_structures) == 1:
         bcbio_structure = bcbio_structures[0]
         cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
-        cnf.work_dir = join(bcbio_structure.work_dir, cnf.name)
+        cnf.work_dir = cnf.work_dir or join(bcbio_structure.work_dir, cnf.name)
         set_up_work_dir(cnf)
 
         info('*' * 70)
@@ -485,7 +485,7 @@ class BCBioStructure:
 
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 
-        self.work_dir = self.cnf.work_dir = abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
+        self.work_dir = self.cnf.work_dir = self.cnf.work_dir or abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         set_up_work_dir(cnf)
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
