@@ -75,8 +75,7 @@ def run_fastq(cnf, sample_name, l_r_fpath, r_r_fpath, output_dirpath, downsample
 
     # Running FastQC
     info('Running FastQC')
-    cmdline = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} ' \
-              '{fastqc_fpath}'.format(**locals())
+    cmdline = '{fastqc} --extract -o {output_dirpath} -f fastq -j {java} {fastqc_fpath}'.format(**locals())
     call(cnf, cmdline)
 
     # Cleaning and getting report

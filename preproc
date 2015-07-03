@@ -11,7 +11,6 @@ import shutil
 from ext_modules.jira import JIRA
 from traceback import print_exc
 from source.calling_process import call
-from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.project_level_report import write_to_csv_file
 from source.tools_from_cnf import get_system_path, get_script_cmdline
