@@ -207,7 +207,7 @@ def _add_variants(bcbio_structure, general_section, general_records):
     paired_val = OrderedDict()
 
     for caller in bcbio_structure.variant_callers.values():
-        mut_fname = add_suffix(source.mut_fname_template.format(caller_name=caller.name), source.mut_pass_suffix)
+        mut_fname = source.mut_fname_template.format(caller_name=caller.name)
         mut_fpath = join(bcbio_structure.date_dirpath, mut_fname)
 
         if verify_file(mut_fpath, silent=True):
@@ -215,6 +215,8 @@ def _add_variants(bcbio_structure, general_section, general_records):
         else:
             single_mut_fpath = add_suffix(mut_fpath, source.mut_single_suffix)
             paired_mut_fpath = add_suffix(mut_fpath, source.mut_paired_suffix)
+            single_mut_fpath = add_suffix(single_mut_fpath, source.mut_pass_suffix)
+            paired_mut_fpath = add_suffix(paired_mut_fpath, source.mut_pass_suffix)
             if verify_file(single_mut_fpath):
                 single_val[caller.name] = single_mut_fpath
                 # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
