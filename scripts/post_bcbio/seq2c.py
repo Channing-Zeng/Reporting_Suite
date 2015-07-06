@@ -25,6 +25,10 @@ def main():
                 dest='seq2c_opts',
                 help='Options for the final lr2gene.pl script.')
             ),
+           (['--bed', '--capture', '--amplicons'], dict(
+                dest='bed',
+                help='BED file to run targetSeq and Seq2C analysis on.')
+            ),
         ],
     )
 
