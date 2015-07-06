@@ -14,7 +14,19 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.targqc_name, BCBioStructure.targqc_summary_dir)
+    cnf, bcbio_structure = summary_script_proc_params(
+        BCBioStructure.targqc_name,
+        BCBioStructure.targqc_summary_dir,
+        extra_opts=[
+           (['--bed', '--capture', '--amplicons'], dict(
+                dest='bed',
+                help='BED file to run targetSeq and Seq2C analysis on.')
+            ),
+           (['--exons', '--exome'], dict(
+                dest='exons',
+                help='Exons BED file to make targetSeq exon/amplicon regions reports.')
+            )
+        ])
 
     bed_fpath, exons_bed_fpath, genes_fpath = get_bed_targqc_inputs(cnf, bcbio_structure.bed)
 

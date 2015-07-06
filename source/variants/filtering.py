@@ -113,7 +113,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
         cmdline = ('{vardict2mut} '
             '-D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} '
             '{vcf2txt_res_fpath} '
-            '--ruledir {cnf.genome.riledir} '
+            '--ruledir {cnf.genome.ruledir} '
             '--filter_common_snp {cnf.genome.filter_common_snp} '
             '--snpeffect_export_polymorphic {cnf.genome.snpeffect_export_polymorphic} '
             '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
