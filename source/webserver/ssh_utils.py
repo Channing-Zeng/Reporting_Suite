@@ -125,13 +125,24 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         else:
             info('Updating existing record for ' + pid)
         d = values_by_keys_by_pid[pid]
-        if 'Updated By' not in d and jira_case:
-            d['Updated By'] = jira_case.assignee or getpass.getuser()
 
         d['PID'] = pid
         d['Name'] = project_name
         if jira_case:
             d['JIRA URL'] = jira_case.url
+            d['Updated By'] = getpass.getuser() if 'Updated By' not in d else d['Updated By']
+            if jira_case.data_hub:
+                d['Data Hub'] = jira_case.data_hub
+            if jira_case.type:
+                d['Type'] = jira_case.type
+            if jira_case.department:
+                d['Department'] = jira_case.department
+            if jira_case.division:
+                d['Division'] = jira_case.division
+            if jira_case.assignee:
+                d['Assignee'] = jira_case.assignee
+            if jira_case.reporter:
+                d['Reporter'] = jira_case.reporter
         if html_report_url:
             d['HTML report path'] = html_report_url
         if analysis_dirpath:
