@@ -1,46 +1,45 @@
 #!/usr/bin/env python
-import __check_python_version  # checking for python version and adding site dirs inside
+from collections import OrderedDict
 
 import os
 import sys
-from os.path import join, isfile, basename, dirname, abspath, isdir
 from optparse import OptionParser
-from collections import OrderedDict, defaultdict, namedtuple
+from os.path import join, isfile, basename, isdir
 from time import sleep
 import shutil
-from ext_modules.jira import JIRA
-from traceback import print_exc
+
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.project_level_report import write_to_csv_file
+from source.jira_utils import retrieve_jira_info
+from source.qsub_utils import submit_job, wait_for_jobs
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-
-from source.config import defaults, Config
+from source.config import Config
 from source.logger import info, critical, err, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf
-from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, open_gzipsafe, adjust_system_path
+from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path
+from source.webserver.ssh_utils import symlink_to_ngs, sync_with_ngs_server
 
 
-DATASETS_ROOT_DIRPATH = '/ngs/oncology/datasets'
 NGS_WEBSERVER_SEQQC_DIR = '/opt/lampp/htdocs/seqQC'
 if is_local():
     NGS_WEBSERVER_SEQQC_DIR = '/Users/vladsaveliev/Sites/seqQC'
 
 
-def main():
+def proc_opts():
     info(' '.join(sys.argv))
     info()
     description = 'This script runs preprocessing.'
 
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
-    # parser.add_option('--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
+    parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
+    parser.add_option('-e', '--expose', dest='expose_to_ngs_server', help='Add project to the webserver')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
     (opts, args) = parser.parse_args()
     if len(args) < 2:
-        critical('Please, provide dataset basic location dir, the project name, and the jira case as the first 3 positional argment')
+        critical('Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]')
 
     # base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
     dataset_dirpath = verify_dir(args[0])
@@ -62,78 +61,56 @@ def main():
     cnf.project_name = project_name
     info('Project name: ' + cnf.project_name)
 
-    pre_proc(cnf, project_name, dataset_dirpath, jira_url)
+    return cnf, dataset_dirpath, jira_url
+
+
+def main():
+    cnf, dataset_dirpath, jira_url = proc_opts()
+
+    unalign_dirpath = join(dataset_dirpath, 'Unalign')
+    fastq_dirpath = join(unalign_dirpath, 'fastq')
+    verify_dir(unalign_dirpath, is_critical=True)
+    verify_dir(fastq_dirpath, is_critical=True)
+    ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
+
+    sample_list_fpath = join(fastq_dirpath, 'samples.list')
+    verify_file(sample_list_fpath, is_critical=True)
+    with open(sample_list_fpath) as f:
+        sample_names = [l.strip() for l in f]
+
+    comb_fastqc_fpath = make_fastqc_reports(cnf, sample_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
+
+    if cnf.expose_to_ngs_server:
+        # FastQC
+        symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath)
+
+        # BaseCalls
+        basecall_stats_dirnames = [fname for fname in os.listdir(unalign_dirpath) if fname.startswith('Basecall_Stats_')]
+        if len(basecall_stats_dirnames) > 1:
+            err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
+        if len(basecall_stats_dirnames) == 0:
+            err('No Basecall_Stats_* dirs found in unalign_dirpath')
+        if len(basecall_stats_dirnames) == 1:
+            basecall_stats_dirpath = join(unalign_dirpath, basecall_stats_dirnames[0])
+            fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname) for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
+            symlink_to_ngs(fpaths, ngs_webserver_seqqc_proj_dirpath)
+
+        # Sample sheet
+        sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
+        verify_file(sample_sheet_csv_fpath, is_critical=True)
+        symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
+
+    jira_case = None
+    if jira_url:
+        # Add to the NGS list
+        jira_case = retrieve_jira_info(jira_url)
+
+    if cnf.expose_to_ngs_server:
+        sync_with_ngs_server(cnf, jira_case=jira_case,
+            project_name=cnf.project_name, sample_names=sample_names)
 
     info()
     info('*' * 70)
-
-
-# class PreprocSample(source.BaseSample):
-#     def __init__(self, name, *args, **kwargs):
-#         source.BaseSample.__init__(self, name, '', '', *args, **kwargs)
-
-
-def safe_symlink_to(fpath, dst_dirpath):
-    dst = join(dst_dirpath, basename(fpath))
-    if not isfile(dst):
-        os.symlink(fpath, dst)
-    return dst
-
-
-def expose_bcl2fastq_reports(cnf, unalign_dirpath, ngs_webserver_seqqc_proj_dirpath):
-    # demultiplex and bcl2fastq
-    # ln -s $datasets/$data_loc/$project_name/Unalign/Basecall_Stats_*/Demultiplex_Stats.htm
-    # /opt/lampp/htdocs/seqQC/$project_name/Demultiplex_Stats.htm
-    basecall_stats_dirnames = [fname for fname in os.listdir(unalign_dirpath) if fname.startswith('Basecall_Stats_')]
-    if len(basecall_stats_dirnames) > 1:
-        err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
-    if len(basecall_stats_dirnames) == 0:
-        err('No Basecall_Stats_* dirs found in unalign_dirpath')
-    if len(basecall_stats_dirnames) == 1:
-        basecall_stats_dirpath = join(unalign_dirpath, basecall_stats_dirnames[0])
-        with _connect_ngs_server_us(cnf) as ssh:
-            for fpath in filter(None, (verify_file(join(basecall_stats_dirpath, html_fname), is_critical=False)
-                                   for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])):
-                dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(fpath))
-                for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
-                            'rm ' + dst_fpath,
-                            'ln -s ' + fpath + ' ' + dst_fpath]:
-                    ssh.exec_command(cmd)
-                    info('  ' + cmd)
-                info('Symlinked ' + fpath + ' to ' + dst_fpath)
-
-
-class JobRunning:
-    def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker):
-        self.job_id = job_id
-        self.log_fpath = log_fpath
-        self.qsub_cmdline = qsub_cmdline
-        self.done_marker = done_marker
-        self.repr = job_id
-        self.is_done = False
-
-
-def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
-    qsub = get_system_path(cnf, 'qsub', is_critical=True)
-    bash = get_system_path(cnf, 'bash', is_critical=True)
-
-    f, marker_fpath = make_tmpfile(cnf)
-    if isfile(marker_fpath): os.remove(marker_fpath)
-    job_id = job_name + '_' + basename(marker_fpath)
-    log_fpath = join(cnf.log_dir, job_id + '.log')
-
-    queue = cnf.queue
-    runner_script = adjust_system_path(cnf.qsub_runner)
-    hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
-    qsub_cmdline = (
-        '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-        '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
-        '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
-    info(job_name)
-    info(qsub_cmdline)
-    job = JobRunning(job_id, log_fpath, qsub_cmdline, marker_fpath)
-    call(cnf, qsub_cmdline, silent=True)
-    return job
 
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
@@ -147,34 +124,6 @@ def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     # parser.save_sections_into_file()
 
 
-def wait_for_jobs(jobs):
-    info()
-    waiting = False
-    html_report_url = None
-    while True:
-        # set flags for all done jobs
-        for j in jobs:
-            if not j.is_done and isfile(j.done_marker):
-                j.is_done = True
-                os.remove(j.done_marker)
-                if waiting:
-                    info('', print_date=False)
-                info('Done ' + j.repr)
-                waiting = False
-
-        # check flags and wait if not all are done
-        if not all(j.is_done for j in jobs):
-            if not waiting:
-                waiting = True
-                info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                     ', '.join(set([j.repr for j in jobs if not j.is_done])))
-                info('', print_date=True, ending='')
-            sleep(10)
-            info('.', print_date=False, ending='')
-        else:
-            break
-
-
 class Sample:
     def __init__(self, name, l_fpath, r_fpath):
         self.name = name
@@ -183,38 +132,37 @@ class Sample:
         self.fastqc_html_fpath = None
 
 
-def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
-    # FastQC
-    #for i in `cat $datasets/$data_loc/$project_name/Unalign/fastq/samples.list`
-        # do ln -s $datasets/$data_loc/$project_name/Unalign/fastq/fastqc/${i}_R1_fastqc.html /opt/lampp/htdocs/seqQC/$project_name/FastQC/${i}_R1_fastq.html
-        # ln -s $datasets/$data_loc/$project_name/Unalign/fastq/fastqc/${i}_R2_fastqc.html /opt/lampp/htdocs/seqQC/$project_name/FastQC/${i}_R2_fastqc.html
-    # done
-    fastqc_dirpath = join(fastq_dirpath, 'fastqc')
+def find_fastq(fastq_dirpath, fastqs_list_fpath, samples_names):
+    fastq_by_sn = OrderedDict()
 
-    fastqs_list_fpath = join(fastq_dirpath, 'fastqs.list')
+    verify_file(fastqs_list_fpath, description='List of fastq files', is_critical=True)
     with open(fastqs_list_fpath) as f:
-        fastqs_fnames = [l.strip() for l in f]
+        fastq_fnames = [l.strip() for l in f]
 
+    for sn in samples_names:
+        fastq_fnames = [f for f in fastq_fnames if f.startswith(sn + '_R')]
+        if len(fastq_fnames) == 0:
+            err('Error: no fastq found for ' + sn)
+            fastq_by_sn[sn] = None
+        elif len(fastq_fnames) > 2:
+            critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(fastq_fnames))
+        elif len(fastq_fnames) == 1:
+            warn('Warning: only single fastq file is found for ' + sn + '. Treating as single reads.')
+            fastq_by_sn[sn] = verify_file(join(fastq_dirpath, fastq_fnames[0])), None
+        else:
+            fastq_by_sn[sn] = (verify_file(join(fastq_dirpath, fn)) for fn in fastq_fnames)
+
+    return fastq_by_sn
+
+
+def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
+    fastq_by_sn = find_fastq(samples_names, fastq_dirpath, join(fastq_dirpath, 'fastqs.list'))
     samples = []
     for sn in samples_names:
-        # fastqc_report_dirpath = join(fastqc_dirpath, sn)
-        # safe_mkdir(fastqc_report_dirpath)
-        fastq_fnames = [f for f in fastqs_fnames if f.startswith(sn + '_R')]
-        if len(fastq_fnames) == 0:
-            l_fpath = None
-            r_fpath = None
-        else:
-            l_fpath = verify_file(join(fastq_dirpath, fastq_fnames[0]))
-            r_fpath = verify_file(join(fastq_dirpath, fastq_fnames[0]))
-        sample = Sample(
-            name=sn,
-            l_fpath=l_fpath,
-            r_fpath=r_fpath)
-        samples.append(sample)
+        if fastq_by_sn[sn]:
+            samples.append(Sample(name=sn, l_fpath=fastq_by_sn[0], r_fpath=fastq_by_sn[1]))
 
-    if any(not sn.l_fpath or not sn.r_fpath for sn in samples):
-        critical('Error: for some samples, fastq files could not be found.')
-
+    fastqc_dirpath = join(fastq_dirpath, 'fastqc')
     if isdir(fastqc_dirpath):
         if isdir(fastqc_dirpath + '.bak'):
             try:
@@ -230,6 +178,8 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
     fastqc = get_system_path(cnf, 'fastqc')
     if not fastqc:
         err('FastQC is not found, cannot make reports')
+        return None
+
     else:
         safe_mkdir(fastqc_dirpath)
         fastqc_jobs = []
@@ -238,131 +188,18 @@ def run_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_pr
             fastqc_jobs.append(j)
         wait_for_jobs(fastqc_jobs)
 
-    for s in samples:
-        sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
-        s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
-        verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
-        if os.path.exists(sample_fastqc_dirpath + '.zip'):
-            os.remove(sample_fastqc_dirpath + '.zip')
+        for s in samples:
+            sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
+            s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
+            verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
+            if os.path.exists(sample_fastqc_dirpath + '.zip'):
+                os.remove(sample_fastqc_dirpath + '.zip')
 
-    comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
-
-    write_fastqc_combo_report(comb_fastqc_fpath, samples)
-
-    verify_file(comb_fastqc_fpath, is_critical=True)
-    info('Combined FastQC saved to ' + comb_fastqc_fpath)
-
-    return comb_fastqc_fpath
-
-
-def pre_proc(cnf, project_name, dataset_dirpath, jira_url=None, expose_to_ngs_server=False):
-    unalign_dirpath = join(dataset_dirpath, 'Unalign')
-    fastq_dirpath = join(unalign_dirpath, 'fastq')
-    verify_dir(unalign_dirpath, is_critical=True)
-    verify_dir(fastq_dirpath, is_critical=True)
-    ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, project_name)
-
-    sample_list_fpath = join(fastq_dirpath, 'samples.list')
-    verify_file(sample_list_fpath, is_critical=True)
-    with open(sample_list_fpath) as f:
-        sample_names = [l.strip() for l in f]
-
-    comb_fastqc_fpath = run_fastqc_reports(cnf, sample_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
-
-    if expose_to_ngs_server:
-        with _connect_ngs_server_us(cnf) as ssh:
-            dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(comb_fastqc_fpath))
-            for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
-                        'rm ' + dst_fpath,
-                        'ln -s ' + comb_fastqc_fpath + ' ' + dst_fpath]:
-                ssh.exec_command(cmd)
-                info('  ' + cmd)
-            info('Symlinked ' + comb_fastqc_fpath + ' to ' + dst_fpath)
-
-        expose_bcl2fastq_reports(cnf, unalign_dirpath, ngs_webserver_seqqc_proj_dirpath)
-
-        # Sample sheet
-        # ln -s $datasets/$data_loc/$project_name/SampleSheet.csv /opt/lampp/htdocs/seqQC/$project_name/SampleSheet.csv
-        sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
-        verify_file(sample_sheet_csv_fpath, is_critical=True)
-        with _connect_ngs_server_us(cnf) as ssh:
-            dst_fpath = join(ngs_webserver_seqqc_proj_dirpath, basename(sample_sheet_csv_fpath))
-            for cmd in ['mkdir ' + ngs_webserver_seqqc_proj_dirpath,
-                        'rm ' + dst_fpath,
-                        'ln -s ' + sample_sheet_csv_fpath + ' ' + dst_fpath]:
-                ssh.exec_command(cmd)
-                info('  ' + cmd)
-            info('Symlinked ' + sample_sheet_csv_fpath + ' to ' + dst_fpath)
-
-        info('Symlinked SampleSheet to ' + dst_fpath)
-
-    if jira_url:
-        # add to the NGS list
-        jira_case = retrieve_jira_info(jira_url)
-
-        write_to_csv_file(os.getcwd(), jira_case.url, '/ngs/oncology/NGS.Project.csv', 'US', project_name,
-                          samples_num=None, analysis_dirpath=None, html_report_url=None)
-
-
-def _connect_ngs_server_us(cnf):
-    # html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
-    #     relpath(html_report_fpath, bcbio_structure.final_dirpath)
-
-    server_url = '172.18.47.33'  # ngs
-    username = 'klpf990'
-    password = '123werasd'
-    rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
-    if rsa_key_path:
-        try:
-            from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
-        except ImportError as e:
-            print_exc()
-            err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
-        else:
-            ssh = SSHClient()
-            ssh.load_system_host_keys()
-            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-            ssh.set_missing_host_key_policy(AutoAddPolicy())
-            try:
-                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-            except Exception, e:
-                warn('Cannot read RSAKey from ' + rsa_key_path)
-                warn('  ' + str(e))
-            else:
-                info('Succesfully read RSAKey from ' + rsa_key_path)
-                try:
-                    ssh.connect(server_url, username=username, password=password, pkey=key)
-                except Exception, e:
-                    warn('Cannot connect to ' + server_url + ':')
-                    warn('  ' + str(e))
-                else:
-                    info('Succesfully connected to ' + server_url)
-                    yield ssh
-
-
-class JiraCase:
-    def __init__(self, url):
-        self.url = url
-
-
-def retrieve_jira_info(jira_url):
-    jira = JIRA(jira_url)  # https://jira.rd.astrazeneca.net/i#browse/NGSG-38
-                           # https://jira.rd.astrazeneca.net/browse/NGSG-196
-                           # https://jira.rd.astrazeneca.net/i#browse/NGSG-38?filter=-1
-    t = jira_url.split('NGSG-')
-    if len(t) == 1:
-        return None
-    case_id = t[1].split('?')[0]
-    issue = jira.issue('NGSG-' + case_id)
-    # retrieve everything
-    case = JiraCase(jira_url)
-    # print issue.fields.project.key             # 'JRA'
-    # print issue.fields.issuetype.name          # 'New Feature'
-    case.reporter = issue.fields.reporter.displayName    # 'Mike Cannon-Brookes [Atlassian]'
-    case.type = issue.fields.project.type
-    case.department = issue.fields.project.group
-    case.data_hub = issue.fields.data_hub_location
-    return case
+        comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
+        write_fastqc_combo_report(comb_fastqc_fpath, samples)
+        verify_file(comb_fastqc_fpath, is_critical=True)
+        info('Combined FastQC saved to ' + comb_fastqc_fpath)
+        return comb_fastqc_fpath
 
 
 if __name__ == '__main__':

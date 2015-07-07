@@ -945,4 +945,12 @@ def chdir(new_dir):
     finally:
         os.chdir(cur_dir)
 
+
+def safe_symlink_to(fpath, dst_dirpath):
+    dst = join(dst_dirpath, basename(fpath))
+    if not isfile(dst):
+        os.symlink(fpath, dst)
+    return dst
+
+
 #################################################

@@ -2,15 +2,15 @@ import os
 from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
-from traceback import print_exc
 import source
 
 from source.bcbio_structure import BCBioStructure
+from source.jira_utils import retrieve_jira_info, JiraCase
 from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
-from source.tools_from_cnf import get_system_path
+from source.webserver.ssh_utils import connect_ngs_server_us, sync_with_ngs_server
 from utils import is_local, is_uk
 
 
@@ -35,27 +35,20 @@ def make_project_level_report(cnf, bcbio_structure):
             metric_storage=metric_storage))
 
     full_report = FullReport(cnf.name, sample_reports, metric_storage=metric_storage)
-    # final_summary_report_fpath = full_report.save_html(
-    #     bcbio_structure.date_dirpath, bcbio_structure.project_name,
-    #     'Project-level report for ' + bcbio_structure.project_name)
     final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
+    if cnf.jira:
+        jira_case = retrieve_jira_info(cnf.jira)
+    else:
+        jira_case = JiraCase(cnf.jira)  # Slug
+
     html_report_url = ''
     if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
-        info()
-        csv_fpath = '/ngs/oncology/NGS.Project.csv'
-        location = 'US'
-        fn = _symlink_report_us
-        if is_uk():
-            csv_fpath = '/ngs/oncology/reports/NGS.Project.csv'
-            location = 'UK'
-            fn = _symlink_report_uk
-        html_report_url = fn(cnf, cnf.work_dir, bcbio_structure, final_summary_report_fpath)
-        if verify_file(csv_fpath, 'Project list'):
-            write_to_csv_file(cnf.work_dir, cnf.jira, csv_fpath, location, bcbio_structure.project_name, len(bcbio_structure.samples),
-                              dirname(bcbio_structure.final_dirpath), html_report_url)
+        html_report_url = sync_with_ngs_server(cnf, jira_case,
+            [s.name for s in bcbio_structure.samples], bcbio_structure.final_dirpath,
+            bcbio_structure.project_name, final_summary_report_fpath)
 
     info()
     info('*' * 70)
@@ -63,142 +56,11 @@ def make_project_level_report(cnf, bcbio_structure):
     info('  ' + final_summary_report_fpath)
     if html_report_url:
         info('  Web link: ' + html_report_url)
-    # send_email('Report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
 
     info()
     info('Done report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
 
-    # if cnf.done_marker:
-    #     safe_mkdir(dirname(cnf.done_marker))
-    #     with open(cnf.done_marker, 'w') as f:
-    #         f.write(html_report_url or final_summary_report_fpath)
-
     return html_report_url or final_summary_report_fpath
-
-
-def write_to_csv_file(work_dir, jira_url, project_list_fpath, location, project_name, samples_num=None,
-                      analysis_dirpath=None, html_report_url=None):
-    info('Reading project list ' + project_list_fpath)
-    with open(project_list_fpath) as f:
-        lines = f.readlines()
-    uncom_lines = [l.strip() for l in lines if not l.strip().startswith('#')]
-
-    header = uncom_lines[0].strip()
-    info('header: ' + header)
-    header_keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
-    index_of_pid = header_keys.index('PID')
-    if index_of_pid == -1: index_of_pid = 1
-
-    values_by_keys_by_pid = OrderedDict()
-    for l in uncom_lines[1:]:
-        if l:
-            values = l.split(',')
-            pid = values[index_of_pid]
-            values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, values))
-
-    pid = project_name
-    with file_transaction(work_dir, project_list_fpath) as tx_fpath:
-        if pid not in values_by_keys_by_pid:
-            info('Adding new record for ' + pid)
-            values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, [''] * len(header_keys)))
-        else:
-            info('Updating existing record for ' + pid)
-        d = values_by_keys_by_pid[pid]
-        if 'Updated By' not in d:
-            d['Updated By'] = getpass.getuser()
-
-        d['PID'] = pid
-        d['Name'] = project_name
-        if jira_url:
-            d['JIRA URL'] = jira_url
-        if html_report_url:
-            d['HTML report path'] = html_report_url
-        if analysis_dirpath:
-            d['Analyses directory ' + location] = analysis_dirpath
-        if samples_num:
-            d['Sample Number'] = str(samples_num)
-
-        new_line = ','.join(v or '' for v in d.values())
-        info('Adding the new line: ' + new_line)
-
-        with open(tx_fpath, 'w') as f:
-            os.umask(0002)
-            os.chmod(tx_fpath, 0666)
-            for l in lines:
-                if not l:
-                    pass
-                if l.startswith('#'):
-                    f.write(l)
-                else:
-                    if ',' + project_name + ',' in l:
-                        info('Old csv line: ' + l)
-                        # f.write('#' + l)
-                    else:
-                        f.write(l)
-            f.write(new_line + '\n')
-
-
-def _symlink_report_uk(cnf, work_dir, bcbio_structure, html_report_fpath):
-    html_report_url = 'http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/' + bcbio_structure.project_name + '/' + \
-        relpath(html_report_fpath, bcbio_structure.final_dirpath)
-
-    server_path = '/ngs/oncology/reports'
-    info('UK, symlinking to ' + server_path)
-    link_fpath = join(server_path, bcbio_structure.project_name)
-    cmd = 'rm ' + link_fpath + '; ln -s ' + bcbio_structure.final_dirpath + ' ' + link_fpath
-    info(cmd)
-    try:
-        os.system(cmd)
-    except Exception, e:
-        warn('Cannot create symlink')
-        warn('  ' + str(e))
-        html_report_url = None
-    return html_report_url
-
-
-def _symlink_report_us(cnf, work_dir, bcbio_structure, html_report_fpath):
-    html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
-        relpath(html_report_fpath, bcbio_structure.final_dirpath)
-
-    server_url = '172.18.47.33'  # ngs
-    server_path = '/opt/lampp/htdocs/reports'
-    username = 'klpf990'
-    password = '123werasd'
-    rsa_key_path = get_system_path(cnf, join('source', 'id_rsa'), is_critical=False)
-    if rsa_key_path:
-        try:
-            from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
-        except ImportError as e:
-            print_exc()
-            err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
-        else:
-            ssh = SSHClient()
-            ssh.load_system_host_keys()
-            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-            ssh.set_missing_host_key_policy(AutoAddPolicy())
-            try:
-                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-            except Exception, e:
-                warn('Cannot read RSAKey from ' + rsa_key_path)
-                warn('  ' + str(e))
-            else:
-                info('Succesfully read RSAKey from ' + rsa_key_path)
-                try:
-                    ssh.connect(server_url, username=username, password=password, pkey=key)
-                except Exception, e:
-                    warn('Cannot connect to ' + server_url + ':')
-                    warn('  ' + str(e))
-                    html_report_url = None
-                else:
-                    info('Succesfully connected to ' + server_url)
-                    final_dirpath_in_ngs = bcbio_structure.final_dirpath.split('/gpfs')[1]
-                    link_path = join(server_path, bcbio_structure.project_name)
-                    cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
-                    ssh.exec_command(cmd)
-                    info('  ' + cmd)
-                    ssh.close()
-    info()
-    return html_report_url
 
 
 def _add_variants(bcbio_structure, general_section, general_records):
