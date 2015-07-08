@@ -446,6 +446,7 @@ class BCBioStructure:
         self.variant_callers = OrderedDict()
 
         self.bed = None
+        self.sv_bed = None
         self.project_name = None
         if cnf.project_name:
             self.project_name = cnf.project_name
@@ -532,11 +533,17 @@ class BCBioStructure:
         if cnf.bed:
             verify_file(cnf.bed)
             self.bed = adjust_path(cnf.bed)
+            self.sv_bed = adjust_path(cnf.bed)
         else:
             bed_files_used = [s.bed for s in self.samples]
             if len(set(bed_files_used)) > 2:
                 critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
             self.bed = bed_files_used[0] if bed_files_used else None
+
+            sv_bed_files_used = [s.sv_bed for s in self.samples]
+            if len(set(sv_bed_files_used)) > 2:
+                critical('Error: more than 1 SV BED file found: ' + str(set(sv_bed_files_used)))
+            self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else self.bed
 
         # setting up batch properties
         for b in self.batches.values():
@@ -702,6 +709,12 @@ class BCBioStructure:
         else:
             err('No BED file for sample and no variant BED file'
                 ' - assuming WGS')
+
+        if sample_info['algorithm'].get('sv_regions'):  # SV regions?
+            sv_bed = adjust_path(sample_info['algorithm']['sv_regions'])
+            verify_bed(sv_bed, is_critical=True)
+            sample.sv_bed = sv_bed
+            info('SV BED file for ' + sample.name + ': ' + sample.sv_bed)
 
         sample.bed = bed
         if sample.bed:

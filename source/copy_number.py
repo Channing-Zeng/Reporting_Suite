@@ -91,7 +91,7 @@ def _seq2c(cnf, bcbio_structure):
         (delayed(remove_dups)(CallCnf(cnf.__dict__), s.bam, samtools) for s in bcbio_structure.samples)))
 
     mapped_reads_dup_fpath, combined_gene_depths_dups_fpath = None, None
-    combined_gene_depths_fpath = __cov2cnv(cnf, bcbio_structure.samples, dedupped_bam_by_sample)
+    combined_gene_depths_fpath = __cov2cnv(cnf, bcbio_structure.sv_bed or bcbio_structure.bed, bcbio_structure.samples, dedupped_bam_by_sample)
     mapped_reads_fpath = __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample)
     info()
     if not mapped_reads_fpath or not combined_gene_depths_fpath:
@@ -193,7 +193,7 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
     bed_fpath = iterate_file(cnf, bed_fpath, f, 'filt')
 
     info('Done: ' + bed_fpath)
-    return bed_fpath
+    return bed_fpath, exons_bed
 
 
 def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_sample):
@@ -206,17 +206,17 @@ def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_samp
         seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
 
 
-def __cov2cnv(cnf, samples, dedupped_bam_by_sample):
+def __cov2cnv(cnf, bed_fpath, samples, dedupped_bam_by_sample):
     info()
     # info('Combining gene depths...')
 
     result = []
-    bed_fpath = next((adjust_path(s.bed) for s in samples if s.bed), cnf.genome.az_exome)
-    print any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples)
+    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    bed_fpath = bed_fpath or exons_bed_fpath
+    # print any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples)
     if any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples) or not cnf.reuse_intermediate:
-        exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
         verify_bed(bed_fpath, is_critical=True)
-        bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
+        bed_fpath, exons_bed = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
 
     # info('Running first for the de-dupped version, then for the original version.')
     # Parallel(n_jobs=cnf.threads) \

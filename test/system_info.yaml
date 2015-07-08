@@ -25,17 +25,17 @@ resources:
 
 genomes:
   hg19:
-    seq: ~/Dropbox/az/chr21.fa
+    seq: ~/Dropbox/az/reference_data/chr21.fa
 
-    dbsnp: ~/Dropbox/az/dbsnp.chr21.vcf
-    cosmic: ~/Dropbox/az/cosmic.chr21.vcf
-    oncomine: ~/Dropbox/az/oncomine.chr21.vcf
-    dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
-    clinvar: ~/Dropbox/az/clinvar_latest.chr21.vcf
-    1000genomes: ~/Dropbox/az/1000G.chr21.vcf
+    dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf
+    cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf
+    oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
+#    dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
+    clinvar: ~/Dropbox/az/reference_data/clinvar_latest.chr21.vcf
+    1000genomes: ~/Dropbox/az/reference_data/1000G.chr21.vcf
 
-    exons: ~/Dropbox/az/Exons/Exons.with_genes.chr21.bed
-    az_exome: ~/Dropbox/az/AZ_Exome.chr21.bed
+    exons: ~/Dropbox/az/reference_data/Exons/Exons.with_genes.chr21.bed
+    az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
 
 queue: ngs.q
 
