@@ -2,10 +2,11 @@ import os
 from os.path import join, relpath, dirname
 from collections import OrderedDict
 import getpass
+from traceback import format_exc
 import source
 
 from source.bcbio_structure import BCBioStructure
-from source.jira_utils import retrieve_jira_info, JiraCase
+from source.jira_utils import JiraCase
 from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
@@ -39,10 +40,15 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
+    jira_case = JiraCase(cnf.jira)
     if cnf.jira:
-        jira_case = retrieve_jira_info(cnf.jira)
-    else:
-        jira_case = JiraCase(cnf.jira)  # Slug
+        try:
+            from source.jira_utils import retrieve_jira_info
+        except:
+            err('Cannot retrieve jira info, skipping:')
+            err(format_exc())
+        else:
+            jira_case = retrieve_jira_info(cnf.jira)
 
     html_report_url = ''
     if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
