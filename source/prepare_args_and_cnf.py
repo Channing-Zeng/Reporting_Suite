@@ -11,7 +11,7 @@ from source.config import defaults, Config
 from source.logger import info, critical, warn, err
 from source.file_utils import which, file_exists, safe_mkdir
 from source.ngscat.bed_file import verify_bam, verify_bed
-from source.utils import is_uk, is_us
+from source.utils import is_uk, is_us, is_cloud
 from source.utils import is_china
 from source.utils import is_local
 
@@ -245,4 +245,6 @@ def detect_sys_cnf_by_location():
         sys_cnf = defaults['sys_cnfs']['local']
     elif is_us():
         sys_cnf = defaults['sys_cnfs']['us']
+    elif is_cloud():
+        sys_cnf = defaults['sys_cnfs']['cloud']
     return sys_cnf
