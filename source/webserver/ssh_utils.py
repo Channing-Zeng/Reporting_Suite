@@ -7,7 +7,7 @@ from source import verify_file
 from source.file_utils import file_transaction
 from source.logger import info, critical, err, is_local, warn
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import is_uk
+from source.utils import is_uk, compatible_with_ngs_webserver
 
 
 US_CSV = '/ngs/oncology/NGS.Project.csv'
@@ -15,6 +15,9 @@ UK_CSV = '/ngs/oncology/reports/NGS.Project.csv'
 
 
 def sync_with_ngs_server(cnf, jira_case, project_name, sample_names, final_dirpath=None, final_summary_report_fpath=None):
+    if not compatible_with_ngs_webserver():
+        return None
+
     info()
     csv_fpath = US_CSV
     country_id = 'US'

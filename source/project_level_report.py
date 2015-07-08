@@ -11,7 +11,7 @@ from source.file_utils import verify_file, file_transaction, adjust_path, safe_m
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
 from source.webserver.ssh_utils import connect_ngs_server_us, sync_with_ngs_server
-from utils import is_local, is_uk
+from utils import is_local, is_uk, is_us, compatible_with_ngs_webserver
 
 
 def make_project_level_report(cnf, bcbio_structure):
@@ -45,7 +45,7 @@ def make_project_level_report(cnf, bcbio_structure):
         jira_case = JiraCase(cnf.jira)  # Slug
 
     html_report_url = ''
-    if not is_local() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
+    if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
         html_report_url = sync_with_ngs_server(cnf, jira_case,
             [s.name for s in bcbio_structure.samples], bcbio_structure.final_dirpath,
             bcbio_structure.project_name, final_summary_report_fpath)
@@ -71,19 +71,19 @@ def _add_variants(bcbio_structure, general_section, general_records):
     for caller in bcbio_structure.variant_callers.values():
         mut_fname = source.mut_fname_template.format(caller_name=caller.name)
         mut_fpath = join(bcbio_structure.date_dirpath, mut_fname)
-
+        mut_pass_fpath = add_suffix(mut_fpath, source.mut_pass_suffix)
         if verify_file(mut_fpath, silent=True):
-            val[caller.name] = mut_fpath
+            val[caller.name] = mut_pass_fpath
         else:
             single_mut_fpath = add_suffix(mut_fpath, source.mut_single_suffix)
             paired_mut_fpath = add_suffix(mut_fpath, source.mut_paired_suffix)
-            single_mut_fpath = add_suffix(single_mut_fpath, source.mut_pass_suffix)
-            paired_mut_fpath = add_suffix(paired_mut_fpath, source.mut_pass_suffix)
-            if verify_file(single_mut_fpath):
-                single_val[caller.name] = single_mut_fpath
+            single_mut_pass_fpath = add_suffix(single_mut_fpath, source.mut_pass_suffix)
+            paired_mut_pass_fpath = add_suffix(paired_mut_fpath, source.mut_pass_suffix)
+            if verify_file(single_mut_pass_fpath, silent=True):
+                single_val[caller.name] = single_mut_pass_fpath
                 # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
-            if verify_file(paired_mut_fpath):
-                paired_val[caller.name] = paired_mut_fpath
+            if verify_file(paired_mut_pass_fpath, silent=True):
+                paired_val[caller.name] = paired_mut_pass_fpath
                 # _add_rec(paired_mut_fpath, caller.name + ' mutations for paired samples')
 
     for val, metric_name in (

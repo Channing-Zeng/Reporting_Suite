@@ -17,6 +17,7 @@ from source.config import Config
 from source.logger import info, critical, err, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path
+from source.utils import compatible_with_ngs_webserver
 from source.webserver.ssh_utils import symlink_to_ngs, sync_with_ngs_server
 
 
@@ -105,7 +106,7 @@ def main():
         # Add to the NGS list
         jira_case = retrieve_jira_info(jira_url)
 
-    if cnf.expose_to_ngs_server:
+    if compatible_with_ngs_webserver() and cnf.expose_to_ngs_server:
         sync_with_ngs_server(cnf, jira_case=jira_case,
             project_name=cnf.project_name, sample_names=sample_names)
 

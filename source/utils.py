@@ -163,4 +163,9 @@ def is_us():
     hostname = socket.gethostname()
     return any(name in hostname for name in ['rask', 'chara', 'blue', 'green', 'espo', 'orr', 'usbod', 'bn0'])
 
+def is_cloud():
+    hostname = socket.gethostname()
+    return 'starcluster' in hostname
 
+def compatible_with_ngs_webserver():
+    return is_uk() or is_us()
