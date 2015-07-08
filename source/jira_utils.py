@@ -1,6 +1,3 @@
-from ext_modules.jira import JIRA
-
-
 JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
 
 
@@ -15,6 +12,8 @@ class JiraCase:
 
 
 def retrieve_jira_info(jira_url):
+    from ext_modules.jira import JIRA
+
     """
     :param jira_url:  https://jira.rd.astrazeneca.net/i#browse/NGSG-38
                       https://jira.rd.astrazeneca.net/browse/NGSG-196
@@ -24,8 +23,7 @@ def retrieve_jira_info(jira_url):
     jira = JIRA(server=JIRA_SERVER,
                 basic_auth=('klpf990', '123qweasd'),
                 options={'verify': False})
-
-    jira = JIRA(jira_url)
+    # jira = JIRA(jira_url)
     t = jira_url.split('NGSG-')
     if len(t) == 1:
         return None
