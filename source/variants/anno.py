@@ -167,7 +167,8 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         db_path = vcf_conf.get('path')
         if not db_path:
             err('Please, privide a path to ' + dbname + ' in the run config '
-                '("path:" field), or in the "genomes" section in the system config')
+                '("path:" field), or in the "genomes" section in the system config. '
+                'The config is: ' + str(cnf['genome']))
             return
         verify_file(db_path, is_critical=True)
 
