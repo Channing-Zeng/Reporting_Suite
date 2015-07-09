@@ -2,7 +2,7 @@ resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/snpEff.jar
-    config: ext_tools/snpEff/snpEff.config  # /usr/local/share/ngs/Reporting_Suite/ext_tools/snpEff/snpEff.config
+#    config: ext_tools/snpEff/snpEff.config  # /usr/local/share/ngs/Reporting_Suite/ext_tools/snpEff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: ext_tools/snpEff/SnpSift.jar

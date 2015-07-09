@@ -266,7 +266,11 @@ def _snpeff(cnf, input_fpath):
             opts += ' -onlyTr ' + custom_transcripts + ' '
 
     if cnf.resources.snpeff.config:
-        opts += ' -c ' + cnf.resources.snpeff.config + ' '
+        conf = get_system_path(cnf, cnf.resources.snpeff.config)
+        if conf:
+            opts += ' -c ' + conf + ' '
+        else:
+            err('Cannot find snpEff config file ' + str(cnf.resources.snpeff.config))
 
     if cnf.annotation.snpeff.extra_options:
         opts += ''
