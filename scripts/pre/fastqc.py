@@ -34,6 +34,7 @@ def main():
     parser = OptionParser(description=description)
     parser.add_option('-1', dest='left_reads_fpath', help='Left reads fpath')
     parser.add_option('-2', dest='right_reads_fpath', help='Right reads fpath')
+    parser.add_option('--sample', dest='sample_name', help='Sample name')
     parser.add_option('-o', dest='output_dir', help='Output directory path')
     parser.add_option('--downsample-to', dest='downsample_to', default=1e7, type='int',
         help='Downsample reads to avoid excessive processing times with large files. '
@@ -48,7 +49,9 @@ def main():
     verify_dir(dirname(output_dirpath), description='output_dir', is_critical=True)
 
     with workdir(cnf):
-        sample_name = _get_sample_name(left_reads_fpath, right_reads_fpath)
+        sample_name = cnf.sample_name
+        if not sample_name:
+            sample_name = _get_sample_name(left_reads_fpath, right_reads_fpath)
         results_dirpath = run_fastq(cnf, sample_name, left_reads_fpath, right_reads_fpath, output_dirpath, downsample_to=cnf.downsample_to)
 
     verify_dir(results_dirpath, is_critical=True)

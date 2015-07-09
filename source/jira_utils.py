@@ -1,3 +1,7 @@
+from traceback import format_exc
+from source.logger import err
+
+
 JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
 
 
@@ -20,15 +24,20 @@ def retrieve_jira_info(jira_url):
                       https://jira.rd.astrazeneca.net/i#browse/NGSG-38?filter=-1
     :return: instance of JiraCase
     """
-    jira = JIRA(server=JIRA_SERVER,
-                basic_auth=('klpf990', '123qweasd'),
-                options={'verify': False})
+    try:
+        jira_inst = JIRA(server=JIRA_SERVER,
+                    basic_auth=('klpf990', '123qweasd'),
+                    options={'verify': False})
+    except:
+        err(format_exc())
+        return None
+
     # jira = JIRA(jira_url)
     t = jira_url.split('NGSG-')
     if len(t) == 1:
         return None
     case_id = t[1].split('?')[0]
-    issue = jira.issue('NGSG-' + case_id)
+    issue = jira_inst.issue('NGSG-' + case_id)
     # retrieve everything
     case = JiraCase(jira_url)
     # print issue.fields.project.key             # 'JRA'

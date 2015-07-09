@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from collections import OrderedDict
+import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
 import sys
@@ -7,6 +7,7 @@ from optparse import OptionParser
 from os.path import join, isfile, basename, isdir
 from time import sleep
 import shutil
+from collections import OrderedDict
 
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
@@ -117,7 +118,7 @@ def main():
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
     cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
-    cmdline += (' --sys-cnf {cnf.sys_cnf} -1 {l_fpath} -2 {r_fpath} -o {fastqc_dirpath}'.format(**locals()))
+    cmdline += (' --sys-cnf {cnf.sys_cnf} --sample {sample.name} -1 {sample.l_fpath} -2 {sample.r_fpath} -o {fastqc_dirpath}'.format(**locals()))
     return submit_job(cnf, cmdline, 'FastQC_' + sample.name)
 
     # parser = FastQCParser(fastqc_out, data["name"][-1])
@@ -141,27 +142,27 @@ def find_fastq(fastq_dirpath, fastqs_list_fpath, samples_names):
         fastq_fnames = [l.strip() for l in f]
 
     for sn in samples_names:
-        fastq_fnames = [f for f in fastq_fnames if f.startswith(sn + '_R')]
-        if len(fastq_fnames) == 0:
+        sn_fastq_fnames = [f for f in fastq_fnames if f.startswith(sn + '_R')]
+        if len(sn_fastq_fnames) == 0:
             err('Error: no fastq found for ' + sn)
             fastq_by_sn[sn] = None
-        elif len(fastq_fnames) > 2:
-            critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(fastq_fnames))
-        elif len(fastq_fnames) == 1:
+        elif len(sn_fastq_fnames) > 2:
+            critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(sn_fastq_fnames))
+        elif len(sn_fastq_fnames) == 1:
             warn('Warning: only single fastq file is found for ' + sn + '. Treating as single reads.')
-            fastq_by_sn[sn] = verify_file(join(fastq_dirpath, fastq_fnames[0])), None
+            fastq_by_sn[sn] = [verify_file(join(fastq_dirpath, sn_fastq_fnames[0])), None]
         else:
-            fastq_by_sn[sn] = (verify_file(join(fastq_dirpath, fn)) for fn in fastq_fnames)
+            fastq_by_sn[sn] = [verify_file(join(fastq_dirpath, fn)) for fn in sn_fastq_fnames]
 
     return fastq_by_sn
 
 
 def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
-    fastq_by_sn = find_fastq(samples_names, fastq_dirpath, join(fastq_dirpath, 'fastqs.list'))
+    fastq_by_sn = find_fastq(fastq_dirpath, join(fastq_dirpath, 'fastqs.list'), samples_names)
     samples = []
     for sn in samples_names:
         if fastq_by_sn[sn]:
-            samples.append(Sample(name=sn, l_fpath=fastq_by_sn[0], r_fpath=fastq_by_sn[1]))
+            samples.append(Sample(name=sn, l_fpath=fastq_by_sn[sn][0], r_fpath=fastq_by_sn[sn][1]))
 
     fastqc_dirpath = join(fastq_dirpath, 'fastqc')
     if isdir(fastqc_dirpath):
@@ -186,6 +187,7 @@ def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_p
         fastqc_jobs = []
         for sample in samples:
             j = run_fastqc(cnf, sample, fastqc_dirpath)
+            info()
             fastqc_jobs.append(j)
         wait_for_jobs(fastqc_jobs)
 
