@@ -6,7 +6,8 @@ JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
 
 
 class JiraCase:
-    def __init__(self, url, assignee=None, reporter=None, type_=None, department=None, data_hub=None):
+    def __init__(self, case_id, url, assignee=None, reporter=None, type_=None, department=None, data_hub=None):
+        self.case_id = case_id
         self.url = url
         self.assignee = assignee
         self.reporter = reporter
@@ -15,7 +16,7 @@ class JiraCase:
         self.data_hub = data_hub
 
 
-def retrieve_jira_info(jira_url):
+def retrieve_jira_info(url):
     from ext_modules.jira import JIRA
 
     """
@@ -32,20 +33,26 @@ def retrieve_jira_info(jira_url):
         err(format_exc())
         return None
 
-    # jira = JIRA(jira_url)
-    t = jira_url.split('NGSG-')
-    if len(t) == 1:
-        return None
-    case_id = t[1].split('?')[0]
-    issue = jira_inst.issue('NGSG-' + case_id)
     # retrieve everything
-    case = JiraCase(jira_url)
+    case_id = __parse_id(url)
+    issue = jira_inst.issue('NGSG-' + case_id)
+    case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
     # print issue.fields.issuetype.name          # 'New Feature'
     case.reporter = issue.fields.reporter.displayName    # 'Mike Cannon-Brookes [Atlassian]'
     case.assignee = issue.fields.assignee.displayName    # 'Mike Cannon-Brookes [Atlassian]'
-    case.type = issue.fields.project.type
-    case.department = issue.fields.project.group
-    case.data_hub = issue.fields.data_hub_location
-    case.division = None
+    case.description = issue.fields.summary              # HiSeq4000_2x75 Whole genome sequencing of 5 AURA plasma
+    # case.type = issue.fields.project.type
+    # case.department = issue.fields.project.group
+    # case.data_hub = issue.fields.data_hub_location
+    # case.division = None
     return case
+
+
+def __parse_id(url):
+    t = url.split('NGSG-')
+    if len(t) == 1:
+        err('Incorrect JIRA URL ' + url)
+        return None
+    case_id = t[1].split('?')[0]
+    return case_id

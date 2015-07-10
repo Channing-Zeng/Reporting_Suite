@@ -242,12 +242,13 @@ def __cov2cnv(cnf, bed_fpath, samples, dedupped_bam_by_sample):
                 os.remove(s.seq2cov_output_fpath)
             to_redo_samples.append(s)
 
+    tx_output_fpath_by_sn = dict()
     for i, s in enumerate(to_redo_samples):
         safe_mkdir(dirname(s.seq2cov_output_fpath))
         bam_fpath = dedupped_bam_by_sample[s.name]
-        seq2cov_output_log = s.seq2cov_output_fpath + '.log'
-        seq2cov_output_err = s.seq2cov_output_fpath + '.err'
-        tx_output_fpath = join(cnf.work_dir, s.seq2cov_output_fpath + '.tx')
+        seq2cov_output_log = join(cnf.log_dir, s.name + '.seq2cov.err')
+        tx_output_fpath = join(cnf.work_dir, s.name + '.seq2cov.tx')
+        tx_output_fpath_by_sn[s.name] = tx_output_fpath
         done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
         # with file_transaction(cnf.work_dir, s.seq2cov_output_fpath) as tx_fpath:
         cmdline = (
@@ -273,7 +274,7 @@ def __cov2cnv(cnf, bed_fpath, samples, dedupped_bam_by_sample):
     # info(cmdline)
     # call(cnf, cmdline, silent=True)
     for s in to_redo_samples:
-        tx_output_fpath = join(cnf.work_dir, s.seq2cov_output_fpath + '.tx')
+        tx_output_fpath = tx_output_fpath_by_sn[s.name]
         info('Waiting for ' + tx_output_fpath + ' to be written...')
         done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
         while not isfile(done_marker):

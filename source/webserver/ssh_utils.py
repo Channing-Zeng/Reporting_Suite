@@ -134,6 +134,8 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         if jira_case:
             d['JIRA URL'] = jira_case.url
             d['Updated By'] = getpass.getuser() if 'Updated By' not in d else d['Updated By']
+            if jira_case.description:
+                d['Description'] = jira_case.description
             if jira_case.data_hub:
                 d['Data Hub'] = jira_case.data_hub
             if jira_case.type:

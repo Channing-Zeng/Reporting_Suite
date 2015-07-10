@@ -40,7 +40,7 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    jira_case = JiraCase(cnf.jira)
+    jira_case = None
     if cnf.jira:
         try:
             from source.jira_utils import retrieve_jira_info
