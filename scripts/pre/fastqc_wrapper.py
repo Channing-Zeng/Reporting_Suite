@@ -55,6 +55,7 @@ def main():
             cmdl += ' --sample {opts.sample_name}'
         if opts.downsample_to:
             cmdl += ' --downsample-to ' + str(opts.downsample_to)
+        cmdl = cmdl.format(**locals())
         info(cmdl)
         ssh.exec_command(cmdl)
         info()
