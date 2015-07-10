@@ -193,7 +193,7 @@ def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_p
 
         for s in samples:
             sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
-            s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
+            s.fastqc_html_fpath = join(fastqc_dirpath, s.name + '.fq_fastqc.html')
             verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
             if os.path.exists(sample_fastqc_dirpath + '.zip'):
                 os.remove(sample_fastqc_dirpath + '.zip')

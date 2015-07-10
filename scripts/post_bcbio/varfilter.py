@@ -337,17 +337,3 @@ def _copy_to_datahub(cnf, caller, datahub_dirpath):
 if __name__ == '__main__':
     main()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-

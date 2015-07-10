@@ -63,7 +63,7 @@ def _symlink_report_us(cnf, work_dir, final_dirpath, project_name, html_report_f
     server_path = '/opt/lampp/htdocs/reports'
 
     html_report_url = None
-    with connect_ngs_server_us() as ssh:
+    with connect_to_server() as ssh:
         html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + project_name + '/' + \
             relpath(html_report_fpath, final_dirpath)
         final_dirpath_in_ngs = final_dirpath.split('/gpfs')[1]
@@ -82,7 +82,7 @@ def symlink_to_ngs(src_fpaths, dst_dirpath):
 
     dst_fpaths = []
 
-    with connect_ngs_server_us() as ssh:
+    with connect_to_server() as ssh:
         for src_fpath in src_fpaths:
             dst_fpath = join(dst_dirpath, basename(src_fpath))
             for cmd in ['mkdir ' + dst_dirpath,
@@ -175,13 +175,10 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
             f.write(new_line + '\n')
 
 
-def connect_ngs_server_us():
+def connect_to_server(server_url='172.18.47.33', username='klpf990', password='123werasd'):
     # html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + bcbio_structure.project_name + '/' + \
     #     relpath(html_report_fpath, bcbio_structure.final_dirpath)
 
-    server_url = '172.18.47.33'  # ngs
-    username = 'klpf990'
-    password = '123werasd'
     rsa_key_path = get_system_path(None, join(dirname(__file__), 'id_rsa'), is_critical=False)
     if rsa_key_path:
         try:

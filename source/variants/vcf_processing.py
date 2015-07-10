@@ -680,6 +680,9 @@ def igvtools_index(cnf, vcf_fpath):
         return None
     if igvtools.endswith('.jar'):
         igvtools = get_java_tool_cmdline(cnf, 'igvtools')
+        if igvtools is None:
+            err('Warning: no jar igvtools found, cannot index VCF.')
+            return None
 
     cmdline = '{igvtools} index {vcf_fpath}'.format(**locals())
     call(cnf, cmdline, exit_on_error=False)
