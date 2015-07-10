@@ -40,7 +40,7 @@ def proc_opts():
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
     (opts, args) = parser.parse_args()
-    if len(args) < 2:
+    if len(args) < 2:  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX/Unalign/fastq/fastqc
         critical('Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]')
 
     # base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
@@ -193,10 +193,15 @@ def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_p
 
         for s in samples:
             sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
+            try:
+                os.remove(sample_fastqc_dirpath)
+            except OSError:
+                pass
             s.fastqc_html_fpath = join(fastqc_dirpath, s.name + '.fq_fastqc.html')
             verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
             if os.path.exists(sample_fastqc_dirpath + '.zip'):
-                os.remove(sample_fastqc_dirpath + '.zip')
+                safe_mkdir(join(fastqc_dirpath, 'zip'))
+                os.rename(sample_fastqc_dirpath + '.zip', join(fastqc_dirpath, 'zip'))
 
         comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
         write_fastqc_combo_report(comb_fastqc_fpath, samples)
