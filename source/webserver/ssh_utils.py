@@ -180,31 +180,39 @@ def connect_to_server(server_url='172.18.47.33', username='klpf990', password='1
     #     relpath(html_report_fpath, bcbio_structure.final_dirpath)
 
     rsa_key_path = get_system_path(None, join(dirname(__file__), 'id_rsa'), is_critical=False)
-    if rsa_key_path:
+    if not rsa_key_path:
+        err('Could not find key ' + rsa_key_path)
+
+    try:
+        from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+    except ImportError as e:
+        print_exc()
+        warn()
+        err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
+        warn()
+    else:
+        ssh = SSHClient()
+        ssh.load_system_host_keys()
+        # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
+        ssh.set_missing_host_key_policy(AutoAddPolicy())
         try:
-            from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
-        except ImportError as e:
+            key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
+        except Exception, e:
+            warn('Cannot read RSAKey from ' + rsa_key_path)
+            warn()
             print_exc()
-            err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
+            warn()
         else:
-            ssh = SSHClient()
-            ssh.load_system_host_keys()
-            # ki = RSAKey.from_private_key_file(filename=rsa_key_path)
-            ssh.set_missing_host_key_policy(AutoAddPolicy())
+            info('Succesfully read RSAKey from ' + rsa_key_path)
             try:
-                key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
+                ssh.connect(server_url, username=username, password=password, pkey=key)
             except Exception, e:
-                warn('Cannot read RSAKey from ' + rsa_key_path)
-                warn('  ' + str(e))
+                warn('Cannot connect to ' + server_url + ':')
+                warn()
+                print_exc()
+                warn()
             else:
-                info('Succesfully read RSAKey from ' + rsa_key_path)
-                try:
-                    ssh.connect(server_url, username=username, password=password, pkey=key)
-                except Exception, e:
-                    warn('Cannot connect to ' + server_url + ':')
-                    warn('  ' + str(e))
-                else:
-                    info('Succesfully connected to ' + server_url)
-                    yield ssh
-                finally:
-                    ssh.close()
+                info('Succesfully connected to ' + server_url)
+                return ssh
+
+    return None

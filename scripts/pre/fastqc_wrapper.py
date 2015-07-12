@@ -48,17 +48,20 @@ def main():
     output_dirpath = adjust_path(opts.output_dir) if opts.output_dir else critical('Please, specify output directory with -o')
     verify_dir(dirname(output_dirpath), description='output_dir', is_critical=True)
 
-    with connect_to_server('blue') as ssh:
-        fastqc_py = get_script_cmdline(None, 'python', 'scripts/pre/fastqc.py')
-        cmdl = '{fastqc_py} -1 {left_reads_fpath} -2 {right_reads_fpath} -o {output_dirpath}'
-        if opts.sample_name:
-            cmdl += ' --sample {opts.sample_name}'
-        if opts.downsample_to:
-            cmdl += ' --downsample-to ' + str(opts.downsample_to)
-        cmdl = cmdl.format(**locals())
-        info(cmdl)
-        ssh.exec_command(cmdl)
-        info()
+    ssh = connect_to_server(server_url='blue.usbod.astrazeneca.net', username='klpf990', password='123qweasd')
+    fastqc_py = get_script_cmdline(None, 'python', 'scripts/pre/fastqc.py')
+    cmdl = '{fastqc_py} -1 {left_reads_fpath} -2 {right_reads_fpath} -o {output_dirpath}'
+    if opts.sample_name:
+        cmdl += ' --sample {opts.sample_name}'
+    if opts.downsample_to:
+        cmdl += ' --downsample-to ' + str(int(opts.downsample_to))
+    cmdl = cmdl.format(**locals())
+    info(cmdl)
+    stdin, stdout, stderr = ssh.exec_command(cmdl)
+    for l in stdout:
+        err(l, ending='')
+    info()
+    ssh.close()
 
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ class Region:
         self.bases_by_depth = bases_by_depth or defaultdict(int)  # filled in from the "bedcoverage hist" output
 
         # Calculated once on "sum_up()", when all self.bases_by_depth are there:
-        self.avg_depth = avg_depth
+        self.avg_depth = avg_depth  # float
         self.std_dev = std_dev
         self.rate_within_normal = rate_within_normal
         self.bases_within_threshs = None    # OrderedDict((depth, 0) for depth in depth_thresholds)
@@ -188,16 +188,19 @@ class GeneInfo(Region):
 
         - Supports extending with exons in sorted by starting position order;
           when adding a new exon, recalculates start, end, size and based_by_depth.
-
     """
-    def __init__(self, sample_name, gene_name, chrom=None, strand=None, feature='Whole-Gene', exon_num=None):
-        Region.__init__(self, sample_name=sample_name, gene_name=gene_name, exon_num=exon_num, strand=strand,
-                              feature=feature, chrom=chrom)
+    def __init__(self, sample_name, gene_name, chrom=None, strand=None, feature='Gene-Exon', exon_num=None):
+        Region.__init__(self,
+            sample_name=sample_name, gene_name=gene_name, exon_num=exon_num, strand=strand,
+            feature=feature, chrom=chrom)
         self.exons = []
         self.amplicons = []
         self.non_overlapping_exons = []
         self.size = 0
         self.min_depth = None
+        # self.amplicon_gene_info = GeneInfo(
+        #     sample_name=sample_name, gene_name=gene_name, exon_num=exon_num, strand=strand,
+        #     feature='Gene-Capture', chrom=chrom)
 
     def get_exons(self):
         return self.exons  # self.subregions_by_feature['Exon']['regions']

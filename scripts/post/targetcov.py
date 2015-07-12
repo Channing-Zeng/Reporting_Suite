@@ -32,12 +32,6 @@ def main(args):
                 action='store_true',
                 default=False)
              ),
-            (['--dedup'], dict(
-                dest='dedup',
-                help='count duplicates when calculating coverage metrics',
-                action='store_true',
-                default=False)
-             ),
             (['-e', '--extended'], dict(
                 dest='extended',
                 help='extended - flagged regions and missed variants',

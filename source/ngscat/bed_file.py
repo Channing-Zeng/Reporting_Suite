@@ -11,8 +11,8 @@ from source.utils import get_chr_lengths
 import config
 
 
-def verify_bam(fpath, description='', is_critical=False):
-    if not verify_file(fpath, description, is_critical=is_critical):
+def verify_bam(fpath, description='', is_critical=False, silent=False):
+    if not verify_file(fpath, description, is_critical=is_critical, silent=silent):
         return None
 
     fpath = adjust_path(fpath)
@@ -32,8 +32,8 @@ def verify_bam(fpath, description='', is_critical=False):
     return fpath
 
 
-def verify_bed(fpath, description='', is_critical=False):
-    if not verify_file(fpath, description, is_critical=is_critical):
+def verify_bed(fpath, description='', is_critical=False, silent=False):
+    if not verify_file(fpath, description, is_critical=is_critical, silent=silent):
         return None
 
     fpath = adjust_path(fpath)

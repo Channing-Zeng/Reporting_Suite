@@ -29,6 +29,8 @@ fastqc_repr              = 'FastQC'
 seq2c_name               = 'Seq2C'
 seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
 
+dedup_bam                = 'dedup'  # work/post_processing/dedup and -ready.dedup.bam
+
 mut_fname_template = '{caller_name}.txt'
 mut_single_suffix = 'single'
 mut_paired_suffix = 'paired'
@@ -62,8 +64,7 @@ class BaseSample:
         self.qualimap_genome_results_fpath = self.make_fpath(path_base + 'genome_results.txt', name=qualimap_name)
         self.qualimap_ins_size_hist_fpath  = self.make_fpath(path_base + 'raw_data_qualimapReport/insert_size_histogram.txt', name=qualimap_name)
         self.fastqc_html_fpath             = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
-        self.seq2cov_output_fpath          = self.make_fpath(path_base + '{sample}.{name}_' + seq2c_seq2cov_ending, name=targetseq_name)
-        self.seq2cov_output_dup_fpath      = self.make_fpath(path_base + '{sample}.{name}_dup_' + seq2c_seq2cov_ending, name=targetseq_name)
+        # self.seq2cov_output_fpath          = self.make_fpath(path_base + '{sample}.{name}_' + seq2c_seq2cov_ending, name=targetseq_name)
 
     def make_fpath(self, path_template, **kwargs):
         keys = dict(dict(dirpath=self.dirpath, sample=self.name).items() + kwargs.items())

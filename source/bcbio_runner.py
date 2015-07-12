@@ -137,7 +137,7 @@ class BCBioRunner:
         self.steps.extend([self.fastqc_summary])
 
         if Steps.contains(cnf.steps, 'Seq2C'):
-            self.steps.append(self.seq2c)
+            self.steps.extend([self.seq2c])
         if Steps.contains(cnf.steps, 'AbnormalCovReport'):
             self.steps.append(self.abnormal_regions)
 
@@ -222,15 +222,13 @@ class BCBioRunner:
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
+
         targetcov_params = params_for_one_sample + ' --bam \'{bam}\' {bed} -o \'{output_dir}\' ' \
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         if cnf.exons:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
-        if cnf.dedup:
-            targetcov_params += '--dedup'
-
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targetseq_name, short_name='tc',
             interpreter='python',
@@ -602,7 +600,7 @@ class BCBioRunner:
             if self.seq2c in self.steps:
                 self._submit_job(
                     self.seq2c,
-                    wait_for_steps=[],
+                    wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
                     genome=self.bcbio_structure.samples[0].genome,
                     threads=self.summary_threads)
 
@@ -731,8 +729,7 @@ class BCBioRunner:
             self._submit_job(
                 self.varqc, sample.name, caller_suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
                 threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
-                wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)]
-                                if self.varannotate in self.steps else [])
+                wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)] if self.varannotate in self.steps else [])
 
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
         # annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))

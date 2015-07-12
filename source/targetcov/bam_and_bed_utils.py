@@ -1,6 +1,7 @@
 from itertools import dropwhile
 from os.path import isfile, join, abspath
 import sys
+from subprocess import check_output
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file
 from source.logger import info, critical, warn, err
@@ -222,3 +223,13 @@ def calc_sum_of_regions(bed_fpath):
 def get_total_bed_size(cnf, bed_fpath):
     merged_bed = total_merge_bed(cnf, bed_fpath)
     return calc_sum_of_regions(merged_bed)
+
+
+def bedtools_version(bedtools):
+    v = check_output([bedtools, '--version'])  # bedtools v2.24.0
+    try:
+        v = int(v.split(' ')[1].split('.')[1])
+    except:
+        return None
+    else:
+        return v

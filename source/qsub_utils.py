@@ -11,16 +11,19 @@ from source.file_utils import make_tmpfile, adjust_system_path
 
 
 class JobRunning:
-    def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker):
+    def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker,
+                 output_fpath=None, sample=None):
         self.job_id = job_id
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
         self.done_marker = done_marker
         self.repr = job_id
         self.is_done = False
+        self.output_fpath = output_fpath
+        self.sample = sample
 
 
-def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
+def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1, **kwargs):
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
@@ -38,13 +41,14 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1):
         '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
     info(job_name)
     info(qsub_cmdline)
-    job = JobRunning(job_id, log_fpath, qsub_cmdline, marker_fpath)
+    job = JobRunning(job_id, log_fpath, qsub_cmdline, marker_fpath, **kwargs)
     call(cnf, qsub_cmdline, silent=True)
     return job
 
 
 def wait_for_jobs(jobs):
     info()
+    jobs = filter(None, jobs)
     waiting = False
     while True:
         # set flags for all done jobs

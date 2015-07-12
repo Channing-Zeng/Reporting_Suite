@@ -4,9 +4,11 @@ from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath, splitext
 
 import source
+from source.qsub_utils import submit_job
 import source.targetcov
 from source.calling_process import call, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile
+from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile, \
+    safe_mkdir, add_suffix
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows, \
     load_records
@@ -202,14 +204,14 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     info('Total dup reads: ' + Metric.format_value(bam_stats['duplicates']))
     info('Total properly paired reads: ' + Metric.format_value(bam_stats['properly paired']))
 
-    dup_bam_fpath = bam_fpath
-    dedup_bam_stats = dict()
-    if not cnf.dedup:
-        dedup_bam_fpath = remove_dups(cnf, bam_fpath)
-        dedup_bam_stats = samtools_flag_stat(cnf, dedup_bam_fpath)
-        info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['total']))
-        info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['mapped']))
-        bam_fpath = dedup_bam_fpath
+    dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
+    safe_mkdir(dedup_bam_dirpath)
+    dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(sample.bam), source.dedup_bam))
+    remove_dups(cnf, bam_fpath, output_fpath=dedup_bam_fpath)
+    dedup_bam_stats = samtools_flag_stat(cnf, dedup_bam_fpath)
+    info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['total']))
+    info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['mapped']))
+    bam_fpath = dedup_bam_fpath
 
     target_info = None
     max_depth = None  # TODO: calculate max_depth independently of target
@@ -682,10 +684,12 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
         if msgs:
             critical(msgs)
 
-    cols = count_bed_cols(bed)
+    bedcov_output = run_bedcoverage_hist_stats(cnf, bed, bam)
+    bed_col_num = count_bed_cols(bed)
+    return summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
 
-    regions, max_depth, total_bed_size = [], 0, 0
 
+def run_bedcoverage_hist_stats(cnf, bed, bam):
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
@@ -703,8 +707,12 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
         cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
         info()
         res = call(cnf, cmdline, bedcov_output)
+    return bedcov_output
 
+
+def summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num):
     _total_regions_count = 0
+    regions, max_depth, total_bed_size = [], 0, 0
 
     info()
     info('Anylising bedcoverage output...')
@@ -728,7 +736,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
                 extra_fields = ()
             else:
                 start, end = map(int, line_tokens[1:3])
-                gene_name = line_tokens[3] if cols > 3 else None
+                gene_name = line_tokens[3] if bed_col_num > 3 else None
                 extra_fields = tuple(line_tokens[4:-4])
 
             line_region_key_tokens = (sample_name, chrom, start, end, gene_name, extra_fields)
@@ -887,17 +895,18 @@ def number_of_dup_mapped_reads(cnf, bam):
         return int(f.read().strip())
 
 
-def remove_dups(cnf, bam, samtools=None):
+def remove_dups(cnf, bam, output_fpath, samtools=None):
     samtools = samtools or get_system_path(cnf, 'samtools')
-    output_fpath = intermediate_fname(cnf, bam, 'dedup')
-    if samtools is None:
-        samtools = get_system_path(cnf, 'samtools', is_critical=True)
-    cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (not) 1024 (dup)
-    call(cnf, cmdline, output_fpath)
-    if not isfile(output_fpath + '.bai'):
-        info('Indexing bam ' + output_fpath)
-        index_bam(cnf, output_fpath, samtools)
-    return output_fpath
+    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+        return None
+    else:
+        if samtools is None:
+            samtools = get_system_path(cnf, 'samtools', is_critical=True)
+        cmdline = '{samtools} view -b -F 1024 {bam} > {output_fpath} && ' \
+                  '{samtools} index {output_fpath}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+        j = submit_job(cnf, cmdline, basename(bam) + '_dedup')
+        info()
+        return j
 
 
 def remove_dups_picard(cnf, bam_fpath):

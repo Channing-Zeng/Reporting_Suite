@@ -29,6 +29,10 @@ def main():
                 dest='bed',
                 help='BED file to run targetSeq and Seq2C analysis on.')
             ),
+           # (['--dedup'], dict(
+           #      dest='dedup',
+           #      help='Remove duplicates from the input bedfile.')
+           #  ),
         ],
     )
 

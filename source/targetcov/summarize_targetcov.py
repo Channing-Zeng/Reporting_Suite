@@ -583,7 +583,7 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
         if not all(lines_for_each_sample):
             break
 
-        if all([not l.startswith('#') and 'Whole-Gene' in l for l in lines_for_each_sample]):
+        if all([not l.startswith('#') and 'Gene-Exon' in l for l in lines_for_each_sample]):
             shared_fields = lines_for_each_sample[0].split('\t')[first_col:first_col+8]
             reg = report.add_region()
             reg.add_record('Chr', get_val(shared_fields[0]))
