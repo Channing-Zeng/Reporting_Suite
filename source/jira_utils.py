@@ -38,7 +38,6 @@ def retrieve_jira_info(url):
     issue = jira_inst.issue('NGSG-' + case_id)
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
-    # print issue.fields.issuetype.name          # 'New Feature'
     case.reporter = issue.fields.reporter.displayName    # 'Mike Cannon-Brookes [Atlassian]'
     case.assignee = issue.fields.assignee.displayName    # 'Mike Cannon-Brookes [Atlassian]'
     case.description = issue.fields.summary              # HiSeq4000_2x75 Whole genome sequencing of 5 AURA plasma

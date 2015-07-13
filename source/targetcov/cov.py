@@ -4,7 +4,7 @@ from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath, splitext
 
 import source
-from source.qsub_utils import submit_job
+from source.qsub_utils import submit_job, wait_for_jobs
 import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile, \
@@ -207,7 +207,8 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
     dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
     safe_mkdir(dedup_bam_dirpath)
     dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(sample.bam), source.dedup_bam))
-    remove_dups(cnf, bam_fpath, output_fpath=dedup_bam_fpath)
+    j = remove_dups(cnf, bam_fpath, output_fpath=dedup_bam_fpath)
+    wait_for_jobs([j])
     dedup_bam_stats = samtools_flag_stat(cnf, dedup_bam_fpath)
     info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['total']))
     info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['mapped']))
@@ -897,16 +898,23 @@ def number_of_dup_mapped_reads(cnf, bam):
 
 def remove_dups(cnf, bam, output_fpath, samtools=None):
     samtools = samtools or get_system_path(cnf, 'samtools')
-    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
-        return None
-    else:
-        if samtools is None:
-            samtools = get_system_path(cnf, 'samtools', is_critical=True)
-        cmdline = '{samtools} view -b -F 1024 {bam} > {output_fpath} && ' \
-                  '{samtools} index {output_fpath}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-        j = submit_job(cnf, cmdline, basename(bam) + '_dedup')
-        info()
-        return j
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+    cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=output_fpath)
+    info()
+    return j
+
+
+def index_bam(cnf, bam, samtools=None):
+    info('Indexing to ' + bam + '...')
+    samtools = samtools or get_system_path(cnf, 'samtools')
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+    cmdline = '{samtools} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=bam + '.bai', stdout_to_outputfile=False)
+    info()
+    return j
 
 
 def remove_dups_picard(cnf, bam_fpath):

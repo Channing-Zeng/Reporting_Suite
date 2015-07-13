@@ -246,9 +246,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
                 bedtools = get_system_path(cnf, 'bedtools')
                 v = bedtools_version(bedtools)
                 if v and v >= 24:
-                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_fpath} -hist > {bedcov_output}'.format(**locals())
+                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_fpath} -hist'.format(**locals())
                 else:
-                    cmdline = '{bedtools} coverage -abam {bam_fpath} -b {bed_fpath} -hist > {bedcov_output}'.format(**locals())
+                    cmdline = '{bedtools} coverage -abam {bam_fpath} -b {bed_fpath} -hist'.format(**locals())
                 j = submit_job(cnf, cmdline, job_name, sample=s, output_fpath=bedcov_output)
                 jobs_to_wait.append(j)
         info()
@@ -488,10 +488,10 @@ def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpat
         else:
             info('targetSeq output for ' + s.name + ' was not found; submitting a flagstat job')
             samtools = get_system_path(cnf, 'samtools')
-            output_fpath = join(cnf.work_dir, basename(dedupped_bam_by_sample[s.name]) + '_flag_stats')
+            flagstat_fpath = join(cnf.work_dir, basename(dedupped_bam_by_sample[s.name]) + '_flag_stats')
             bam_fpath = dedupped_bam_by_sample[s.name]
-            cmdline = '{samtools} flagstat {bam_fpath} > {output_fpath}'.format(**locals())
-            j = submit_job(cnf, cmdline, 'flagstat_' + s.name, sample=s, output_fpath=output_fpath)
+            cmdline = '{samtools} flagstat {bam_fpath}'.format(**locals())
+            j = submit_job(cnf, cmdline, 'flagstat_' + s.name, sample=s, output_fpath=flagstat_fpath)
             jobs_to_wait.append(j)
 
     # if running falgstat ourselves, finally parse its output
