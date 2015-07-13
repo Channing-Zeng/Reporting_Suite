@@ -96,3 +96,4 @@ def wait_for_jobs(jobs):
             info('.', print_date=False, ending='')
         else:
             break
+    return jobs

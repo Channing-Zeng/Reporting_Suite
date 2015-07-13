@@ -104,7 +104,7 @@ def _seq2c(cnf, bcbio_structure):
         else:
             info('Deduplicating bam file ' + dedup_bam_fpath)
             dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath))
-    wait_for_jobs(dedup_jobs)
+    dedup_jobs = wait_for_jobs(dedup_jobs)
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
@@ -255,7 +255,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
     info('*' * 50)
 
     info('* Making seq2cov output *')
-    wait_for_jobs(jobs_to_wait)
+    jobs_to_wait = wait_for_jobs(jobs_to_wait)
     for s in samples:
         if not regions_by_sample[s.name] and not verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(s.name + ': summarizing bedcoverage output')
@@ -495,7 +495,7 @@ def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpat
             jobs_to_wait.append(j)
 
     # if running falgstat ourselves, finally parse its output
-    wait_for_jobs(jobs_to_wait)
+    jobs_to_wait = wait_for_jobs(jobs_to_wait)
     for j in jobs_to_wait:
         with open(j.output_fpath) as f:
             lines = f.readlines()
