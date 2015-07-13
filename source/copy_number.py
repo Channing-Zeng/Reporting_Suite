@@ -99,7 +99,9 @@ def _seq2c(cnf, bcbio_structure):
     for s in bcbio_structure.samples:
         dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(s.bam), source.dedup_bam))
         dedupped_bam_by_sample[s.name] = dedup_bam_fpath
-        if not verify_bam(dedup_bam_fpath, is_critical=False, silent=True):
+        if verify_bam(dedup_bam_fpath, silent=True):
+            info(dedup_bam_fpath + ' exists')
+        else:
             info('Deduplicating bam file ' + dedup_bam_fpath)
             dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath))
     wait_for_jobs(dedup_jobs)
