@@ -29,6 +29,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     out_fpath = None
     if output_fpath:
         if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+            info(output_fpath + ' exists, reusing')
             return None
         if stdout_to_outputfile:
             out_fpath = output_fpath + '.tx'
