@@ -260,6 +260,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if not regions_by_sample[s.name] and not verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(s.name + ': summarizing bedcoverage output')
             amplicons, _, _ = summarize_bedcoverage_hist_stats(bedcov_output_by_sample[s.name], s.name, count_bed_cols(bed_fpath))
+            amplicons = sorted(amplicons, key=lambda a: (a.chrom, a.gene_name, a.start))
             for r in amplicons:
                 r.calc_avg_depth()
             regions_by_sample[s.name] = amplicons
@@ -488,7 +489,8 @@ def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpat
             info('targetSeq output for ' + s.name + ' was not found; submitting a flagstat job')
             samtools = get_system_path(cnf, 'samtools')
             output_fpath = join(cnf.work_dir, basename(dedupped_bam_by_sample[s.name]) + '_flag_stats')
-            cmdline = '{samtools} flagstat {bam} > {output_fpath}'.format(**locals())
+            bam_fpath = dedupped_bam_by_sample[s.name]
+            cmdline = '{samtools} flagstat {bam_fpath} > {output_fpath}'.format(**locals())
             j = submit_job(cnf, cmdline, 'flagstat_' + s.name, sample=s, output_fpath=output_fpath)
             jobs_to_wait.append(j)
 
