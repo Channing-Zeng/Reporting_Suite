@@ -9,6 +9,7 @@ from source.calling_process import call_subprocess
 from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
 from source.file_utils import file_exists, verify_file
+from tools.bed_processing.sort_bed import SortableByChrom
 
 
 class OrderedDefaultDict(OrderedDict):
@@ -71,23 +72,25 @@ def get_chr_len_fpath(cnf):
     if not genome_seq_fpath:
         return None
 
-    chr_lengths = OrderedDict()
+    chr_lengths = []
     if verify_file(genome_seq_fpath + '.fai'):
         info('Reading genome index file (.fai) to get chromosome lengths')
         with open(genome_seq_fpath + '.fai', 'r') as handle:
             for line in handle:
-                chr, length = line.split()[0], line.split()[1]
-                chr_lengths[chr] = length
+                chrom, length = line.split()[0], line.split()[1]
+                chr_lengths.append([SortableByChrom(chrom), length])
     else:
         info('Reading genome sequence (.fa) to get chromosome lengths')
         with open(genome_seq_fpath, 'r') as handle:
             from Bio import SeqIO
             reference_records = SeqIO.parse(handle, 'fasta')
             for record in reference_records:
-                chr_lengths[record.id] = len(record.seq)
+                chrom = record.id
+                chr_lengths.append([SortableByChrom(chrom), len(record.seq)])
+
     with open(chr_len_fpath, 'w') as handle:
-        for chr_name in sorted(chr_lengths, key=chr_lengths.get, reverse=True):
-            handle.write(chr_name + '\t' + str(chr_lengths[chr_name]) + '\n')
+        for c, l in sorted(chr_lengths, key=lambda (c, l): c.get_key()):
+            handle.write(c.chrom + '\t' + str(l) + '\n')
     return chr_len_fpath
 
 

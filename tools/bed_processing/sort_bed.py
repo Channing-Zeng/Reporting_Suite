@@ -6,13 +6,10 @@ from os.path import abspath, dirname, realpath, join
 import sys
 
 
-class Region:
-    def __init__(self, chrom, start, end, other_fields):
+class SortableByChrom:
+    def __init__(self, chrom):
         self.chrom = chrom
         self.__chrom_key = self.__make_chrom_key()
-        self.start = start
-        self.end = end
-        self.other_fields = tuple(other_fields)
 
     def __make_chrom_key(self):
         CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
@@ -30,6 +27,18 @@ class Region:
 
         sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
         return None
+
+    def get_key(self):
+        return self.__chrom_key
+
+
+class Region(SortableByChrom):
+    def __init__(self, chrom, start, end, other_fields):
+        SortableByChrom.__init__(self, chrom)
+        self.chrom = chrom
+        self.start = start
+        self.end = end
+        self.other_fields = tuple(other_fields)
 
     def get_key(self):
         return self.__chrom_key, self.start, self.end, self.other_fields
