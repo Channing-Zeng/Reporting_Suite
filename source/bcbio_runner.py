@@ -746,7 +746,7 @@ class BCBioRunner:
             cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
             for fname in os.listdir(sample_dirpath):
-                if any(fname.endswith(s) for s in ['-cn_mops.bed', '-ensemble.bed']):
+                if any(s in fname for s in ['-cn_mops', '-cnvkit', '-lumpy']):
                     if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
                     try:
                         os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
