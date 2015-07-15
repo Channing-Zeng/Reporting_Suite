@@ -37,9 +37,9 @@ def main():
     parser.add_option('-2', dest='right_reads_fpath', help='Right reads fpath')
     parser.add_option('--sample', dest='sample_name', help='Sample name')
     parser.add_option('-o', dest='output_dir', help='Output directory path')
-    parser.add_option('--downsample-to', dest='downsample_to', default=1e7, type='int',
+    parser.add_option('--downsample-to', dest='downsample_to', default=0, type='int',
         help='Downsample reads to avoid excessive processing times with large files. '
-             'Default is 1 million. Set to 0 to turn off downsampling.')
+            'Default is 1 million. Set to 0 to turn off downsampling.')
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     (opts, args) = parser.parse_args()
 
