@@ -237,8 +237,8 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         else:
             info(s.name + ': submitting bedcoverage hist')
             bam_fpath = dedupped_bam_by_sample[s.name]
-            job_name = splitext_plus(basename(bed_fpath))[0] + '_' + splitext_plus(basename(bam_fpath))[0] + '_bedcov'
-            bedcov_output = join(cnf.work_dir, job_name + '_output.txt')
+            job_name = s.name + '_bedcov'
+            bedcov_output = join(seq2c_work_dirpath, job_name + '.txt')
             bedcov_output_by_sample[s.name] = bedcov_output
             if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
                 info(bedcov_output + ' exists, reusing')
@@ -258,7 +258,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
     jobs_to_wait = wait_for_jobs(jobs_to_wait)
     for s in samples:
         if not regions_by_sample[s.name] and not verify_file(seq2cov_output_by_sample[s.name], silent=True):
-            info(s.name + ': summarizing bedcoverage output')
+            info(s.name + ': summarizing bedcoverage output ' + bedcov_output_by_sample[s.name])
             amplicons, _, _ = summarize_bedcoverage_hist_stats(bedcov_output_by_sample[s.name], s.name, count_bed_cols(bed_fpath))
             amplicons = sorted(amplicons, key=lambda a: (a.chrom, a.gene_name, a.start))
             for r in amplicons:
