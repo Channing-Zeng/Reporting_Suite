@@ -1,10 +1,11 @@
 from itertools import dropwhile
-from os.path import isfile, join, abspath
+from os.path import isfile, join, abspath, basename
 import sys
 from subprocess import check_output
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file
 from source.logger import info, critical, warn, err
+from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path
 
 
@@ -17,6 +18,17 @@ def index_bam(cnf, bam_fpath, samtools=None):
         cmdline = '{samtools} index {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
     info('Index: ' + indexed_bam)
+
+
+def index_bam_grid(cnf, bam, samtools=None):
+    info('Indexing to ' + bam + '...')
+    samtools = samtools or get_system_path(cnf, 'samtools')
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+    cmdline = '{samtools} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=bam + '.bai', stdout_to_outputfile=False)
+    info()
+    return j
 
 
 def count_bed_cols(bed_fpath):

@@ -2,6 +2,7 @@ from collections import defaultdict, OrderedDict
 import math
 import os
 from os.path import isfile, join
+from source.file_utils import file_transaction
 
 from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bed
@@ -245,16 +246,20 @@ def proc_regions(regions, fn, *args, **kwargs):
         info('Processed {0:,} regions.'.format(i))
 
 
-def save_regions_to_bed(cnf, regions, f_basename, save_original_fields=False):
-    bed_fpath = join(cnf.work_dir, f_basename + '.bed')
-    info('Writing regions to ' + bed_fpath)
-
+def save_regions_to_bed(cnf, regions, bed_fpath, save_original_fields=False):
     if isfile(bed_fpath):
         if cnf.reuse_intermediate:
             verify_bed(bed_fpath, is_critical=True)
             return bed_fpath
         else:
             os.remove(bed_fpath)
+
+    with file_transaction(cnf.work_dir, bed_fpath) as tx_fpath:
+        save_regions_to_bed_nocnf(regions, tx_fpath, save_original_fields)
+
+
+def save_regions_to_bed_nocnf(regions, bed_fpath, save_original_fields=False):
+    info('Writing regions to ' + bed_fpath)
 
     with open(bed_fpath, 'w') as f:
         for r in regions:
@@ -271,4 +276,3 @@ def save_regions_to_bed(cnf, regions, f_basename, save_original_fields=False):
             #     str(region.start), str(region.end), str(region.avg_depth)]) + '\n')
 
     info('Saved to ' + bed_fpath)
-    return bed_fpath

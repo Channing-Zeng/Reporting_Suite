@@ -810,17 +810,6 @@ def remove_dups(cnf, bam, output_fpath, samtools=None):
     return j
 
 
-def index_bam(cnf, bam, samtools=None):
-    info('Indexing to ' + bam + '...')
-    samtools = samtools or get_system_path(cnf, 'samtools')
-    if samtools is None:
-        samtools = get_system_path(cnf, 'samtools', is_critical=True)
-    cmdline = '{samtools} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=bam + '.bai', stdout_to_outputfile=False)
-    info()
-    return j
-
-
 def remove_dups_picard(cnf, bam_fpath):
     picard = get_system_path(cnf, 'java', 'picard')
     if not picard:

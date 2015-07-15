@@ -20,6 +20,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 
     bedcov_output = run_bedcoverage_hist_stats(cnf, bed, bam)
     bed_col_num = count_bed_cols(bed)
+    info()
+    info('Anylising bedcoverage output...')
     return summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
 
 
@@ -44,13 +46,29 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
     return bedcov_output
 
 
-def summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num):
+def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num):
+    """
+    :param bedcov_output_fpath: file path
+    :param sample_name: sting
+    :param bed_col_num: int
+    :return: regions, total_region, max_depth
+        regions: [Region(
+            sample_name: string
+            chrom: string
+            start: int
+            end: int
+            size: int
+            gene_name: string
+            bases_by_depth: dict(depth:int->bases:int)
+            extra_fields: [string])]
+        total_region: Region(--|--)
+        max_depth: int
+    """
+
     _total_regions_count = 0
     regions, max_depth, total_bed_size = [], 0, 0
 
-    info()
-    info('Anylising bedcoverage output...')
-    with open(bedcov_output) as f:
+    with open(bedcov_output_fpath) as f:
         for next_line in f:
             if not next_line.strip() or next_line.startswith('#'):
                 continue
@@ -87,16 +105,16 @@ def summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num):
 
                 _total_regions_count += 1
 
-                if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-                    info('  Processed {0:,} regions'.format(_total_regions_count))
+                # if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
+                #     info('  Processed {0:,} regions'.format(_total_regions_count))
 
             regions[-1].add_bases_for_depth(depth, bases)
 
             if regions[-1].min_depth is None:
-                regions[-1].min_depth = depth
+                regions[-1].min_depth = depth  # depth values go from lowest to highest, so if we are meeting the first record for this region, the depth would be the lowest
 
-    if _total_regions_count % 100000 != 0:
-        info('  Processed {0:,} regions'.format(_total_regions_count))
+    # if _total_regions_count % 100000 != 0:
+    #     info('  Processed {0:,} regions'.format(_total_regions_count))
 
     total_region = regions[-1]
     regions = regions[:-1]

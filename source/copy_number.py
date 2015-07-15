@@ -20,12 +20,12 @@ from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.Region import Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
     group_and_merge_regions_by_gene, bedtools_version
-from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups, \
-    summarize_bedcoverage_hist_stats
+from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
 import source
+from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
 
 
 def cnv_reports(cnf, bcbio_structure):
@@ -214,7 +214,6 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
     verify_bed(bed_fpath, is_critical=True)
     bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
 
-    regions_by_sample = defaultdict(dict)
     jobs_to_wait = []
     bedcov_output_by_sample = dict()
     seq2cov_output_by_sample = dict()
@@ -226,13 +225,17 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         info('*' * 50)
         info(s.name + ':')
         seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
+
+        if not cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name]):
+            os.remove(seq2cov_output_by_sample[s.name])
+
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
             info(s.name + ': parsing targetseq output')
             amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv)
-            regions_by_sample[s.name] = amplicons
+            save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:
             info(s.name + ': submitting bedcoverage hist')
@@ -254,60 +257,29 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         info()
     info('*' * 50)
 
-    info('* Making seq2cov output *')
     jobs_to_wait = wait_for_jobs(jobs_to_wait)
-    for s in samples:
-        if not regions_by_sample[s.name] and not verify_file(seq2cov_output_by_sample[s.name], silent=True):
+
+    sum_jobs_to_wait = []
+    info('* Submitting seq2cov output *')
+    for j in jobs_to_wait:
+        s = j.sample
+        if not verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(s.name + ': summarizing bedcoverage output ' + bedcov_output_by_sample[s.name])
-            amplicons, _, _ = summarize_bedcoverage_hist_stats(bedcov_output_by_sample[s.name], s.name, count_bed_cols(bed_fpath))
-            amplicons = sorted(amplicons, key=lambda a: (a.chrom, a.gene_name, a.start))
-            for r in amplicons:
-                r.calc_avg_depth()
-            regions_by_sample[s.name] = amplicons
 
-    def __sum_up_gene(g):
-        g.start = g.amplicons[0].start
-        g.end = g.amplicons[-1].end
-        g.size = sum(a.end - a.start for a in g.amplicons)
-        g.avg_depth = sum(float(a.size) * a.avg_depth for a in g.amplicons) / g.get_size() if g.get_size() else 0
+            script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'), is_critical=True)
+            bedcov_hist_fpath = bedcov_output_by_sample[s.name]
+            bed_col_num = count_bed_cols(bed_fpath)
+            cmdline = '{script} {bedcov_hist_fpath} {s.name} {bed_col_num}'.format(**locals())
+            j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s, output_fpath=seq2cov_output_by_sample[s.name])
+            sum_jobs_to_wait.append(j)
 
-    for s in samples:
-        info('*' * 50)
-        info(s.name + ':')
-        if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
-            info('reusing ' + seq2cov_output_by_sample[s.name])
-        else:
-            info(s.name + ': summing up whole-genes')
-            final_regions = []
-            gene = None
-            for a in regions_by_sample[s.name]:
-                a.sample_name = s.name
-                a.feature = 'Amplicon'
-                if gene and gene.gene_name != a.gene_name:
-                    __sum_up_gene(gene)
-                    final_regions.append(gene)
-                    gene = None
-                if not gene:
-                    gene = GeneInfo(sample_name=s.name, gene_name=a.gene_name, chrom=a.chrom,
-                                    strand=a.strand, feature='Whole-Gene')
-                gene.add_amplicon(a)
-                final_regions.append(a)
-            if gene:
-                __sum_up_gene(gene)
-                final_regions.append(gene)
+    sum_jobs_to_wait = wait_for_jobs(sum_jobs_to_wait)
 
-            coverage_info = []
-            for r in final_regions:
-                if r.avg_depth is not None and r.avg_depth != 0:
-                    coverage_info.append([s.name, r.gene_name, r.chrom, r.start, r.end, r.feature, r.size, r.avg_depth])
-
-            with open(seq2cov_output_by_sample[s.name], 'w') as f:
-                for fs in coverage_info:
-                    f.write('\t'.join(map(str, fs)) + '\n')
-            info(s.name + ': saved seq2cov to ' + seq2cov_output_by_sample[s.name])
     info()
+    info('Done')
     info('*' * 50)
-
+    info()
+    info('Combining seq2cov output')
     with open(output_fpath, 'w') as out:
         for i, s in enumerate(samples):
             verify_file(seq2cov_output_by_sample[s.name], is_critical=True)
@@ -316,9 +288,24 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
                     out.write(l)
 
     verify_file(output_fpath, is_critical=True)
-    info('Saved to ' + output_fpath)
+    info('Saved combined seq2cov output to ' + output_fpath)
     info()
     return output_fpath
+
+
+def save_regions_to_seq2cov_output(cnf, sample_name, regions, output_fpath):
+    info('*' * 50)
+    info(sample_name + ':')
+    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+        info('reusing ' + output_fpath)
+        return output_fpath
+    else:
+        info(sample_name + ': summing up whole-genes')
+        with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
+            save_regions_to_seq2cov_output__nocnf(sample_name, regions, tx_fpath)
+
+        info(sample_name + ': saved seq2cov to ' + output_fpath)
+        return output_fpath
 
 
 def __cov2cnv(cnf, bed_fpath, samples, dedupped_bam_by_sample, combined_gene_depths_fpath):

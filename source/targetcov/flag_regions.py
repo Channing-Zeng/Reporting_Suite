@@ -67,7 +67,8 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
         final_regions.extend(gene.get_exons())
         final_regions.append(gene)
 
-    bed_fpath = save_regions_to_bed(cnf, final_regions, 'selected_regions')
+    bed_fpath = join(cnf.work_dir, 'selected_regions.bed')
+    save_regions_to_bed(cnf, final_regions, bed_fpath)
     # TODO: extract only those subregions where cov is 0
 
     # variants
