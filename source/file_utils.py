@@ -611,6 +611,11 @@ def _log(msg, silent, is_critical):
         warn(msg)
 
 def verify_obj_by_path(path, description='', silent=False, is_critical=False):
+    if path is None:
+        msg = (description + ': i' if description else 'I') + 's not specified (None).'
+        _log(msg, silent, is_critical)
+        return path
+
     if not path:
         msg = (description + ': f' if description else 'N') + 'ame is empty.'
         _log(msg, silent, is_critical)
@@ -632,6 +637,11 @@ def verify_obj_by_path(path, description='', silent=False, is_critical=False):
         return None
 
 def verify_file(fpath, description='', silent=False, is_critical=False):
+    if fpath is None:
+        msg = (description + ': i' if description else 'I') + 's not specified (None).'
+        _log(msg, silent, is_critical)
+        return fpath
+
     if not fpath:
         msg = (description + ': f' if description else 'F') + 'ile name is empty.'
         _log(msg, silent, is_critical)
@@ -655,24 +665,29 @@ def verify_file(fpath, description='', silent=False, is_critical=False):
 
     return fpath
 
-def verify_dir(fpath, description='', silent=False, is_critical=False):
-    if not fpath:
+def verify_dir(dirpath, description='', silent=False, is_critical=False):
+    if dirpath is None:
+        msg = (description + ': i' if description else 'I') + 's not specified (None).'
+        _log(msg, silent, is_critical)
+        return dirpath
+
+    if not dirpath:
         msg = (description + ': d' if description else 'D') + 'ir name is empty.'
         _log(msg, silent, is_critical)
         return None
 
-    fpath = adjust_path(fpath)
-    if not exists(fpath):
-        msg = (description + ': ' if description else '') + fpath + ' does not exist.'
+    dirpath = adjust_path(dirpath)
+    if not exists(dirpath):
+        msg = (description + ': ' if description else '') + dirpath + ' does not exist.'
         _log(msg, silent, is_critical)
         return None
 
-    if not isdir(fpath):
-        msg = (description + ': ' if description else '') + fpath + ' is not a directory.'
+    if not isdir(dirpath):
+        msg = (description + ': ' if description else '') + dirpath + ' is not a directory.'
         _log(msg, silent, is_critical)
         return None
 
-    return fpath
+    return dirpath
 
 
 def num_lines(fpath):
