@@ -63,14 +63,17 @@ def _symlink_report_us(cnf, work_dir, final_dirpath, project_name, html_report_f
     server_path = '/opt/lampp/htdocs/reports'
 
     html_report_url = None
-    with connect_to_server() as ssh:
-        html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + project_name + '/' + \
-            relpath(html_report_fpath, final_dirpath)
-        final_dirpath_in_ngs = final_dirpath.split('/gpfs')[1]
-        link_path = join(server_path, project_name)
-        cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
-        ssh.exec_command(cmd)
-        info('  ' + cmd)
+    ssh = connect_to_server()
+    if ssh is None:
+        return None
+    html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + project_name + '/' + \
+        relpath(html_report_fpath, final_dirpath)
+    final_dirpath_in_ngs = final_dirpath.split('/gpfs')[1]
+    link_path = join(server_path, project_name)
+    cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
+    ssh.exec_command(cmd)
+    info('  ' + cmd)
+    ssh.close()
 
     info()
     return html_report_url
@@ -82,17 +85,20 @@ def symlink_to_ngs(src_fpaths, dst_dirpath):
 
     dst_fpaths = []
 
-    with connect_to_server() as ssh:
-        for src_fpath in src_fpaths:
-            dst_fpath = join(dst_dirpath, basename(src_fpath))
-            for cmd in ['mkdir ' + dst_dirpath,
-                        'rm ' + dst_fpath,
-                        'ln -s ' + src_fpath + ' ' + dst_fpath]:
-                ssh.exec_command(cmd)
-                info('  ' + cmd)
+    ssh = connect_to_server()
+    if ssh is None:
+        return None
+    for src_fpath in src_fpaths:
+        dst_fpath = join(dst_dirpath, basename(src_fpath))
+        for cmd in ['mkdir ' + dst_dirpath,
+                    'rm ' + dst_fpath,
+                    'ln -s ' + src_fpath + ' ' + dst_fpath]:
+            ssh.exec_command(cmd)
+            info('  ' + cmd)
 
-            info('Symlinked ' + src_fpath + ' to ' + dst_fpath)
-            dst_fpaths.append(dst_fpath)
+        info('Symlinked ' + src_fpath + ' to ' + dst_fpath)
+        dst_fpaths.append(dst_fpath)
+    ssh.close()
 
     if len(dst_fpaths) == 1:
         return dst_fpaths[0]

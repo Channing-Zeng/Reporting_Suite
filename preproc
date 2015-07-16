@@ -1,10 +1,12 @@
 #!/usr/bin/env python
+from itertools import dropwhile
+import tempfile
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
 import sys
 from optparse import OptionParser
-from os.path import join, isfile, basename, isdir
+from os.path import join, isfile, basename, isdir, expanduser
 from time import sleep
 import shutil
 from collections import OrderedDict
@@ -35,7 +37,7 @@ def proc_opts():
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
-    parser.add_option('-e', '--expose', dest='expose_to_ngs_server', help='Add project to the webserver')
+    parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=False, help='Add project to the webserver')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
@@ -53,7 +55,8 @@ def proc_opts():
     # check_genome_resources(cnf)
     check_system_resources(cnf, optional=['fastq'])
 
-    work_dir_path = join(dataset_dirpath, 'work')
+    work_dir_path = tempfile.mkdtemp(dir=expanduser('~'))
+    # work_dir_path =  #join(dataset_dirpath, 'work')
     safe_mkdir(work_dir_path)
     cnf.work_dir = join(work_dir_path, 'pre_processing')
     safe_mkdir(cnf.work_dir)
@@ -66,41 +69,86 @@ def proc_opts():
     return cnf, dataset_dirpath, jira_url
 
 
+def parse_sample_sheet(sample_sheet_fpath):
+    with open(sample_sheet_fpath) as f:
+        sample_lines = dropwhile(lambda l: not l.startswith('[Data]'), f)
+        sample_infos = []
+        keys = []
+        for l in sample_lines:
+            if l.startswith('[Data]'):
+                pass
+            elif not keys:
+                keys = l.strip().split(',')
+            else:
+                fs = l.strip().split(',')
+                sample_infos.append(dict(zip(keys, fs)))
+
+    sample_names = []
+    for i, info_d in enumerate(sample_infos):
+        sample_names.append(info_d['Sample_ID'].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
+
+    return sample_names
+
+
 def main():
     cnf, dataset_dirpath, jira_url = proc_opts()
 
-    unalign_dirpath = join(dataset_dirpath, 'Unalign')
-    fastq_dirpath = join(unalign_dirpath, 'fastq')
-    verify_dir(unalign_dirpath, is_critical=True)
-    verify_dir(fastq_dirpath, is_critical=True)
+    # basecalls_dirpath = join(dataset_dirpath, 'Unalign')
+    # if not isdir(basecalls_dirpath):
+    basecalls_dirpath = join(dataset_dirpath, 'Data/Intensities/BaseCalls')
+    verify_dir(basecalls_dirpath, is_critical=True)
+    fastq_dirpath = join(basecalls_dirpath, 'fastq')
+    safe_mkdir(fastq_dirpath)
+    sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
+    verify_file(sample_sheet_csv_fpath, is_critical=True)
+    sample_names = parse_sample_sheet(sample_sheet_csv_fpath)
+
     ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
 
-    sample_list_fpath = join(fastq_dirpath, 'samples.list')
-    verify_file(sample_list_fpath, is_critical=True)
-    with open(sample_list_fpath) as f:
-        sample_names = [l.strip() for l in f]
+    # sample_list_fpath = join(fastq_dirpath, 'samples.list')
+    # verify_file(sample_list_fpath, is_critical=True)
+    # with open(sample_list_fpath) as f:
+    #     sample_names = [l.strip() for l in f]
 
-    comb_fastqc_fpath = make_fastqc_reports(cnf, sample_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
+    fastq_fpaths = [join(basecalls_dirpath, fname) for fname in os.listdir(basecalls_dirpath) if fname.endswith('.fastq.gz')]
+    if len(fastq_fpaths) == 0:
+        critical('No fastq files inside ' + basecalls_dirpath)
+
+    samples = []
+    fastq_by_sn = find_fastq(fastq_fpaths, sample_names)
+    for sn in sample_names:
+        if not fastq_by_sn[sn]:
+            critical('No fastq for ' + sn)
+        l_fpath = fastq_by_sn[sn][0]
+        r_fpath = fastq_by_sn[sn][1]
+        l_fpath_link = join(fastq_dirpath, sn + '_R1.fastq.gz')
+        r_fpath_link = join(fastq_dirpath, sn + '_R2.fastq.gz')
+        if not l_fpath_link:
+            os.symlink(l_fpath, l_fpath_link)
+        if not r_fpath_link:
+            os.symlink(r_fpath, r_fpath_link)
+        samples.append(Sample(name=sn, l_fpath=l_fpath_link, r_fpath=r_fpath_link))
+
+    comb_fastqc_fpath = make_fastqc_reports(cnf, samples, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
 
     if cnf.expose_to_ngs_server:
         # FastQC
-        symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath)
+        if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath) is None:
+            err('Error: cannot connect to the ngs server and make symlinks')
+        else:
+            # BaseCalls
+            basecall_stats_dirnames = [fname for fname in os.listdir(basecalls_dirpath) if fname.startswith('Basecall_Stats_')]
+            if len(basecall_stats_dirnames) > 1:
+                err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
+            if len(basecall_stats_dirnames) == 0:
+                err('No Basecall_Stats_* dirs found in unalign_dirpath')
+            if len(basecall_stats_dirnames) == 1:
+                basecall_stats_dirpath = join(basecalls_dirpath, basecall_stats_dirnames[0])
+                fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname) for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
+                symlink_to_ngs(fpaths, ngs_webserver_seqqc_proj_dirpath)
 
-        # BaseCalls
-        basecall_stats_dirnames = [fname for fname in os.listdir(unalign_dirpath) if fname.startswith('Basecall_Stats_')]
-        if len(basecall_stats_dirnames) > 1:
-            err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
-        if len(basecall_stats_dirnames) == 0:
-            err('No Basecall_Stats_* dirs found in unalign_dirpath')
-        if len(basecall_stats_dirnames) == 1:
-            basecall_stats_dirpath = join(unalign_dirpath, basecall_stats_dirnames[0])
-            fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname) for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
-            symlink_to_ngs(fpaths, ngs_webserver_seqqc_proj_dirpath)
-
-        # Sample sheet
-        sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
-        verify_file(sample_sheet_csv_fpath, is_critical=True)
-        symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
+            # Sample sheet
+            symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
 
     jira_case = None
     if jira_url:
@@ -134,36 +182,26 @@ class Sample:
         self.fastqc_html_fpath = None
 
 
-def find_fastq(fastq_dirpath, fastqs_list_fpath, samples_names):
+def find_fastq(fastq_fpaths, samples_names):
     fastq_by_sn = OrderedDict()
 
-    verify_file(fastqs_list_fpath, description='List of fastq files', is_critical=True)
-    with open(fastqs_list_fpath) as f:
-        fastq_fnames = [l.strip() for l in f]
-
     for sn in samples_names:
-        sn_fastq_fnames = [f for f in fastq_fnames if f.startswith(sn + '_R')]
-        if len(sn_fastq_fnames) == 0:
+        sn_fastq_fpaths = sorted([f for f in fastq_fpaths if basename(f).startswith(sn + '_R')])
+        if len(sn_fastq_fpaths) == 0:
             err('Error: no fastq found for ' + sn)
             fastq_by_sn[sn] = None
-        elif len(sn_fastq_fnames) > 2:
-            critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(sn_fastq_fnames))
-        elif len(sn_fastq_fnames) == 1:
+        elif len(sn_fastq_fpaths) > 2:
+            critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(sn_fastq_fpaths))
+        elif len(sn_fastq_fpaths) == 1:
             warn('Warning: only single fastq file is found for ' + sn + '. Treating as single reads.')
-            fastq_by_sn[sn] = [verify_file(join(fastq_dirpath, sn_fastq_fnames[0])), None]
+            fastq_by_sn[sn] = [verify_file(sn_fastq_fpaths[0]), None]
         else:
-            fastq_by_sn[sn] = [verify_file(join(fastq_dirpath, fn)) for fn in sn_fastq_fnames]
+            fastq_by_sn[sn] = [verify_file(fpath) for fpath in sn_fastq_fpaths]
 
     return fastq_by_sn
 
 
-def make_fastqc_reports(cnf, samples_names, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
-    fastq_by_sn = find_fastq(fastq_dirpath, join(fastq_dirpath, 'fastqs.list'), samples_names)
-    samples = []
-    for sn in samples_names:
-        if fastq_by_sn[sn]:
-            samples.append(Sample(name=sn, l_fpath=fastq_by_sn[sn][0], r_fpath=fastq_by_sn[sn][1]))
-
+def make_fastqc_reports(cnf, samples, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
     fastqc_dirpath = join(fastq_dirpath, 'fastqc')
     if isdir(fastqc_dirpath):
         if isdir(fastqc_dirpath + '.bak'):
