@@ -237,6 +237,7 @@ class BCBioSample(BaseSample):
     def __init__(self, name, final_dir, **kwargs):
         self.dirpath = join(final_dir, name)
         BaseSample.__init__(self, name, self.dirpath, '{dirpath}/{name}/', **kwargs)
+        self.sv_bed = None
         self.ngscat_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=source.ngscat_name)
         self.qualimap_html_fpath           = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=source.qualimap_name)
         self.qualimap_genome_results_fpath = self.make_fpath('{dirpath}/qc/{name}/genome_results.txt', name=source.qualimap_name)
@@ -696,9 +697,9 @@ class BCBioStructure:
             bed = adjust_path(self.cnf.bed)
             verify_bed(bed, is_critical=True)
 
-        elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
-            bed = adjust_path(sample_info['algorithm']['variant_regions'])
-            verify_bed(bed, is_critical=True)
+        # elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
+        #     bed = adjust_path(sample_info['algorithm']['variant_regions'])
+        #     verify_bed(bed, is_critical=True)
 
         # elif self.cnf.genomes[sample.genome].exons:
         #     warn('Warning: no amplicon BED file provided, using exons instead.')

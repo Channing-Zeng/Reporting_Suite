@@ -11,8 +11,8 @@ from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
-from source.webserver.ssh_utils import connect_to_server, sync_with_ngs_server
-from utils import is_local, is_uk, is_us, compatible_with_ngs_webserver
+from source.webserver.ssh_utils import sync_with_ngs_server
+from utils import compatible_with_ngs_webserver
 
 
 def make_project_level_report(cnf, bcbio_structure):
@@ -53,8 +53,10 @@ def make_project_level_report(cnf, bcbio_structure):
     html_report_url = ''
     if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
         html_report_url = sync_with_ngs_server(cnf, jira_case,
-            [s.name for s in bcbio_structure.samples], bcbio_structure.final_dirpath,
-            bcbio_structure.project_name, final_summary_report_fpath)
+            project_name=bcbio_structure.project_name,
+            sample_names=[s.name for s in bcbio_structure.samples],
+            final_dirpath=bcbio_structure.final_dirpath,
+            final_summary_report_fpath=final_summary_report_fpath)
 
     info()
     info('*' * 70)
