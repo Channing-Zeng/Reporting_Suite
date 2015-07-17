@@ -47,7 +47,7 @@ def remove_comments(cnf, bed_fpath):
             return l
         else:
             return None
-    return iterate_file(cnf, bed_fpath, f, 'rmcmt')
+    return iterate_file(cnf, bed_fpath, f, suffix='rmcmt')
 
 
 def prepare_beds(cnf, exons_bed=None, target_bed=None):
@@ -159,7 +159,7 @@ def prep_bed_for_seq2c(cnf, bed):
     def f(l, i):
         if l.split('\t')[3].strip() == '.': return None
         else: return l
-    seq2c_bed = iterate_file(cnf, seq2c_bed, f, 'filt')
+    seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
 
     info('Done: ' + seq2c_bed)
     return seq2c_bed

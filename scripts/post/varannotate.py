@@ -90,7 +90,7 @@ def process_one(cnf):
                 del ts[9 + none_idx]
                 return '\t'.join(ts) + '\n'
             return line
-        sample.vcf = iterate_file(cnf, sample.vcf, fn, 'none_col')
+        sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='none_col')
 
     # Replacing so the main sample goes first (if it is not already)
     main_idx = get_sample_column_index(sample.vcf, sample.name)
@@ -104,7 +104,7 @@ def process_one(cnf):
                 ts = ts[:9] + [main_sample_field] + ts[9:]
                 return '\t'.join(ts) + '\n'
             return line
-        sample.vcf = iterate_file(cnf, sample.vcf, fn, 'main_col')
+        sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='main_col')
 
     annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
 

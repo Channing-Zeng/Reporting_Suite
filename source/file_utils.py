@@ -813,7 +813,8 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
     return output_fpath
 
 
-def iterate_file(cnf, input_fpath, proc_line_fun, check_result=True, *args, **kwargs):
+def iterate_file(cnf, input_fpath, proc_line_fun,
+                 suffix=None, check_result=True, **kwargs):
     def _proc_file(inp_f, out_f, ctx=None):
         max_bunch_size = 1000 * 1000
         written_lines = 0
@@ -841,7 +842,8 @@ def iterate_file(cnf, input_fpath, proc_line_fun, check_result=True, *args, **kw
         out_f.writelines(bunch)
         info('Written lines: ' + str(written_lines))
 
-    return convert_file(cnf, input_fpath, _proc_file, check_result=check_result, *args, **kwargs)
+    return convert_file(cnf, input_fpath, _proc_file,
+        suffix=suffix, check_result=check_result, **kwargs)
 
 
 def dots_to_empty_cells(config, tsv_fpath):
@@ -851,7 +853,7 @@ def dots_to_empty_cells(config, tsv_fpath):
         while '\t\t' in l:
             l = l.replace('\t\t', '\t.\t')
         return l
-    return iterate_file(config, tsv_fpath, proc_line, 'dots')
+    return iterate_file(config, tsv_fpath, proc_line, suffix='dots')
 
 
 def __remove_tmpdirs(fnames):

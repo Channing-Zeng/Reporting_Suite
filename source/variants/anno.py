@@ -329,7 +329,7 @@ def _tracks(cnf, track_path, input_fpath):
         return line
 
     assert output_fpath
-    return iterate_file(cnf, output_fpath, proc_line, 'trk')
+    return iterate_file(cnf, output_fpath, proc_line, suffix='trk')
 
 
 def _add_annotation(cnf, input_fpath, key, value):
@@ -339,7 +339,7 @@ def _add_annotation(cnf, input_fpath, key, value):
         rec.INFO[key] = value
         return rec
 
-    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'plus')
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, suffix='plus')
     return output_fpath
 
 
@@ -378,9 +378,9 @@ def _filter_malformed_fields(cnf, input_fpath):
             #     return '\t'.join(fields)
 
     info('Correcting INFO fields...')
-    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, 'corr')
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, suffix='corr')
     info('')
     info('Correcting headers for vcf-merge...')
-    output_fpath = iterate_file(cnf, output_fpath, proc_line, 'corr_headr')
+    output_fpath = iterate_file(cnf, output_fpath, proc_line, suffix='corr_headr')
 
     return output_fpath

@@ -186,7 +186,7 @@ def __prep_bed(cnf, bed_fpath, exons_bed):
     def f(l, i):
         if l.split('\t')[3].strip() == '.': return None
         else: return l
-    bed_fpath = iterate_file(cnf, bed_fpath, f, 'filt')
+    bed_fpath = iterate_file(cnf, bed_fpath, f, suffix='filt')
 
     info('Done: ' + bed_fpath)
     return bed_fpath
