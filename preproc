@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-from itertools import dropwhile
-import tempfile
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
 import sys
 from optparse import OptionParser
-from os.path import join, isfile, basename, isdir, expanduser
+from os.path import join, isfile, basename, isdir, expanduser, exists
 from time import sleep
 import shutil
 from collections import OrderedDict
+from itertools import dropwhile
+import tempfile
 
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
@@ -123,9 +123,9 @@ def main():
         r_fpath = fastq_by_sn[sn][1]
         l_fpath_link = join(fastq_dirpath, sn + '_R1.fastq.gz')
         r_fpath_link = join(fastq_dirpath, sn + '_R2.fastq.gz')
-        if not l_fpath_link:
+        if not exists(l_fpath_link):
             os.symlink(l_fpath, l_fpath_link)
-        if not r_fpath_link:
+        if not exists(r_fpath_link):
             os.symlink(r_fpath, r_fpath_link)
         samples.append(Sample(name=sn, l_fpath=l_fpath_link, r_fpath=r_fpath_link))
 
