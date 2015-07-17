@@ -36,7 +36,7 @@ def sync_with_ngs_server(cnf, jira_case, project_name, sample_names, final_dirpa
             work_dir=cnf.work_dir, jira_case=jira_case, project_list_fpath=csv_fpath,
             country_id=country_id, project_name=project_name, samples_num=len(sample_names),
             analysis_dirpath=dirname(final_dirpath) if final_dirpath else None,
-            html_report_url=final_summary_report_fpath)
+            html_report_url=html_report_url or final_summary_report_fpath)
 
     return html_report_url
 
@@ -122,38 +122,39 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
     values_by_keys_by_pid = OrderedDict()
     for l in uncom_lines[1:]:
         if l:
-            values = l.split(',')
+            values = map(__unquote, l.split(','))
             pid = values[index_of_pid]
             values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, values))
 
     pid = project_name
     with file_transaction(work_dir, project_list_fpath) as tx_fpath:
         if pid not in values_by_keys_by_pid.keys():
+            info(pid + ' not in ' + str(values_by_keys_by_pid.keys()))
             info('Adding new record for ' + pid)
             values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, [''] * len(header_keys)))
         else:
             info('Updating existing record for ' + pid)
         d = values_by_keys_by_pid[pid]
 
-        d['PID'] = pid
-        d['Name'] = project_name
+        d['PID'] = pid.replace(',', ';')
+        d['Name'] = project_name.replace(',', ';')
         if jira_case:
-            d['JIRA URL'] = jira_case.url
-            d['Updated By'] = getpass.getuser() if 'Updated By' not in d else d['Updated By']
+            d['JIRA URL'] = jira_case.url.replace(',', ';')
+            d['Updated By'] = (getpass.getuser() if 'Updated By' not in d else d['Updated By']).replace(',', ';')
             if jira_case.description:
-                d['Description'] = jira_case.description
+                d['Description'] = jira_case.description.replace(',', ';')
             if jira_case.data_hub:
-                d['Data Hub'] = jira_case.data_hub
+                d['Data Hub'] = jira_case.data_hub.replace(',', ';')
             if jira_case.type:
-                d['Type'] = jira_case.type
+                d['Type'] = jira_case.type.replace(',', ';')
             if jira_case.department:
-                d['Department'] = jira_case.department
+                d['Department'] = jira_case.department.replace(',', ';')
             if jira_case.division:
-                d['Division'] = jira_case.division
+                d['Division'] = jira_case.division.replace(',', ';')
             if jira_case.assignee:
-                d['Assignee'] = jira_case.assignee
+                d['Assignee'] = jira_case.assignee.replace(',', ';')
             if jira_case.reporter:
-                d['Reporter'] = jira_case.reporter
+                d['Reporter'] = jira_case.reporter.replace(',', ';')
         if html_report_url:
             d['HTML report path'] = html_report_url
         if analysis_dirpath:
@@ -161,8 +162,8 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         if samples_num:
             d['Sample Number'] = str(samples_num)
 
-        new_line = ','.join(v or '' for v in d.values())
-        info('Adding the new line: ' + new_line)
+        new_line = ','.join(__re_quote(v) or '' for v in d.values())
+        info('Writing line: ' + new_line)
 
         with open(tx_fpath, 'w') as f:
             os.umask(0002)
@@ -173,12 +174,29 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
                 if l.startswith('#'):
                     f.write(l)
                 else:
-                    if ',' + project_name + ',' in l:
+                    if ',' + project_name + ',' in l or ',"' + project_name + '",' in l:
                         info('Old csv line: ' + l)
                         # f.write('#' + l)
                     else:
                         f.write(l)
             f.write(new_line + '\n')
+
+
+def __unquote(s):
+    if s.startswith('"') or s.startswith("'"):
+        s = s[1:]
+    if s.endswith('"') or s.endswith("'"):
+        s = s[:-1]
+    return s
+
+
+def __re_quote(s):
+    if s.startswith('"') or s.startswith("'"):
+        s = s[1:]
+    if s.endswith('"') or s.endswith("'"):
+        s = s[:-1]
+    s = s.replace('"', "'")
+    return '"' + s + '"'
 
 
 def connect_to_server(server_url='172.18.47.33', username='klpf990', password='123werasd'):

@@ -6,13 +6,14 @@ JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
 
 
 class JiraCase:
-    def __init__(self, case_id, url, assignee=None, reporter=None, type_=None, department=None, data_hub=None):
+    def __init__(self, case_id, url, assignee=None, reporter=None, type_=None, department=None, division=None, data_hub=None):
         self.case_id = case_id
         self.url = url
         self.assignee = assignee
         self.reporter = reporter
         self.type = type_
         self.department = department
+        self.division = division
         self.data_hub = data_hub
 
 

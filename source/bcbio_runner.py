@@ -106,8 +106,11 @@ class BCBioRunner:
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self._init_steps(cnf, self.run_id)
-        self.steps = Steps()
 
+        if not cnf.steps:
+            cnf.steps.append('Summary')
+
+        self.steps = Steps()
         if 'Variants' in cnf.steps:
             self.steps.extend([
                 self.varannotate,
@@ -480,7 +483,7 @@ class BCBioRunner:
                         else:
                             if self.ngscat in self.steps:
                                 self._submit_job(
-                                    self.ngscat, sample.name, bam=sample.bam, bed=sample.bed or self.cnf.genomes[sample.genome].exons,
+                                    self.ngscat, sample.name, bam=sample.bam, bed=self.bcbio_structure.bed or self.cnf.genomes[sample.genome].exons,
                                     sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
                         # Qualimap
