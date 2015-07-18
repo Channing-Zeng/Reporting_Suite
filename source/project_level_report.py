@@ -40,8 +40,9 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    jira_case = None
-    if cnf.jira:
+    html_report_url = ''
+    if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath and cnf.jira:
+        jira_case = None
         try:
             from source.jira_utils import retrieve_jira_info
         except:
@@ -50,8 +51,6 @@ def make_project_level_report(cnf, bcbio_structure):
         else:
             jira_case = retrieve_jira_info(cnf.jira)
 
-    html_report_url = ''
-    if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath:
         html_report_url = sync_with_ngs_server(cnf, jira_case,
             project_name=bcbio_structure.project_name,
             sample_names=[s.name for s in bcbio_structure.samples],

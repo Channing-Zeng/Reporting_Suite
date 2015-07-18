@@ -44,10 +44,10 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
             _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
             summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
-            if not cnf.reuse_intermediate or not sample.ngscat_done():
-                info('NgsCat for "' + basename(sample.bam) + '"')
-                _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
-                summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
+            # if not cnf.reuse_intermediate or not sample.ngscat_done():
+            #     info('NgsCat for "' + basename(sample.bam) + '"')
+            #     _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
+            #     summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
             if not cnf.reuse_intermediate or not sample.qualimap_done():
                 info('Qualimap "' + basename(sample.bam) + '"')
@@ -94,7 +94,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',
         interpreter='python',
-        script=join('scripts', 'targetcov.py'),
+        script=join('scripts', 'post', 'targetcov.py'),
         paramln=targetcov_params
     )
 
@@ -109,7 +109,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     ngscat_step = Step(cnf, run_id,
         name=source.ngscat_name, short_name='nc',
         interpreter='python',
-        script=join('scripts', 'ngscat.py'),
+        script=join('scripts', 'post', 'ngscat.py'),
         paramln=ngscat_params
     )
 
@@ -125,7 +125,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
     qualimap_step = Step(cnf, run_id,
         name=source.qualimap_name, short_name='qm',
         interpreter='python',
-        script=join('scripts', 'qualimap.py'),
+        script=join('scripts', 'post', 'qualimap.py'),
         paramln=qualimap_params,
     )
 

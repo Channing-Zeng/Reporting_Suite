@@ -61,7 +61,9 @@ def main():
 
     check_genome_resources(cnf)
 
-    bed_fpath, exons_bed_fpath, genes_fpath = get_bed_targqc_inputs(cnf, verify_bed(cnf.bed, is_critical=True))
+    bed_fpath, exons_bed_fpath, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
+    if not cnf.bed:
+        info('No bed is specified, using exons instead: ' + exons_bed_fpath)
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)

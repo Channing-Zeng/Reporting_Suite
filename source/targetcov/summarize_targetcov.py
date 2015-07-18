@@ -5,6 +5,7 @@ from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict, defaultdict
 
 import source
+from source.ngscat.bed_file import verify_bed
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, PerRegionSampleReport, Report
 from source.logger import step_greetings, info, warn, err
 from source.qualimap import report_parser as qualimap_report_parser
@@ -632,10 +633,13 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
 
 
 def get_bed_targqc_inputs(cnf, bed_fpath=None):
+    if bed_fpath:
+        bed_fpath = verify_bed(bed_fpath, is_critical=True, description='input bed file')
+
     exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
     info('Exons: ' + exons_bed_fpath)
 
-    bed_fpath = adjust_path(bed_fpath or cnf.genome.az_exome or exons_bed_fpath)
+    bed_fpath = adjust_path(bed_fpath or exons_bed_fpath)
     info('Using amplicons/capture panel ' + bed_fpath)
 
     genes_fpath = None
