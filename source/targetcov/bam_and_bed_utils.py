@@ -87,10 +87,12 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
         info('Sorting target...')
         target_bed = sort_bed(cnf, target_bed)
 
-    if target_bed and exons_bed:
+    if target_bed:
         cols = count_bed_cols(target_bed)
         if cnf.reannotate or cols < 4:
             info()
+            if not exons_bed:
+                critical(str(cols) + ' columns (less than 4), and no Ensembl exons to annotate regions.')
             info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in amplicons bed is ' + str(cols) +
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
@@ -141,19 +143,19 @@ def cut(cnf, fpath, col_num):
     return cut_fpath
 
 
-def prep_bed_for_seq2c(cnf, bed):
+def prep_bed_for_seq2c(cnf, bed_fpath):
     info()
     info('Preparing BED file for seq2c...')
 
-    cols = count_bed_cols(bed)
+    cols = count_bed_cols(bed_fpath)
 
-    seq2c_bed = bed
-
+    seq2c_bed = None
     if 8 > cols > 4:
-        seq2c_bed = cut(cnf, bed, 4)
-
+        seq2c_bed = cut(cnf, bed_fpath, 4)
     elif cols > 8:
-        seq2c_bed = cut(cnf, bed, 8)
+        seq2c_bed = cut(cnf, bed_fpath, 8)
+    else:
+        seq2c_bed = bed_fpath
 
     # removing regions with no gene annotation
     def f(l, i):

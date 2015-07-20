@@ -713,9 +713,12 @@ class BCBioStructure:
 
         if sample_info['algorithm'].get('sv_regions'):  # SV regions?
             sv_bed = adjust_path(sample_info['algorithm']['sv_regions'])
-            verify_bed(sv_bed, is_critical=True)
-            sample.sv_bed = sv_bed
-            info('SV BED file for ' + sample.name + ': ' + sample.sv_bed)
+            if sv_bed.endswith('.bed'):
+                verify_bed(sv_bed, is_critical=True)
+                sample.sv_bed = sv_bed
+                info('SV BED file for ' + sample.name + ': ' + sample.sv_bed)
+            else:
+                warn('sv_regions file for ' + sample.name + ' is not BED: ' + sv_bed)
 
         sample.bed = bed
         if sample.bed:

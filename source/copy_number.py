@@ -19,7 +19,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.Region import Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
-    group_and_merge_regions_by_gene, bedtools_version
+    group_and_merge_regions_by_gene, bedtools_version, prepare_beds
 from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
@@ -57,7 +57,7 @@ def cnv_reports(cnf, bcbio_structure):
 def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath):
     amplicons = []
 
-    info('Reading from ' + detailed_gene_report_fpath)
+    info('Parsing amplicons from from ' + detailed_gene_report_fpath)
 
     with open(detailed_gene_report_fpath, 'r') as f:
         for i, line in enumerate(f):
@@ -71,7 +71,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath):
                 amplicons.append(ampl)
 
     if not amplicons:
-        critical('No Capture is found in ' + detailed_gene_report_fpath)
+        critical('No "Capture" record was found in ' + detailed_gene_report_fpath)
 
     return amplicons
 
@@ -161,37 +161,6 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
     return res
 
 
-def __prep_bed(cnf, bed_fpath, exons_bed):
-    info()
-    info('Preparing BED file for seq2c...')
-
-    info()
-    info('Sorting regions by (chrom, gene name, start)')
-    bed_fpath = sort_bed(cnf, bed_fpath)
-
-    cols = count_bed_cols(bed_fpath)
-    if cols < 4:
-        info('Sorting exons by (chrom, gene name, start)')
-        exons_bed = sort_bed(cnf, exons_bed)
-        info(str(cols) + ' columns (Less than 4). Annotating amplicons with gene names from Ensembl...')
-        bed_fpath = annotate_amplicons(cnf, bed_fpath, exons_bed)
-
-    elif 8 > cols > 4:
-        bed_fpath = cut(cnf, bed_fpath, 4)
-
-    elif cols > 8:
-        bed_fpath = cut(cnf, bed_fpath, 4)  # TODO: address 8-column bed-files for Seq2C
-
-    # removing regions with no gene annotation
-    def f(l, i):
-        if l.split('\t')[3].strip() == '.': return None
-        else: return l
-    bed_fpath = iterate_file(cnf, bed_fpath, f, suffix='filt')
-
-    info('Done: ' + bed_fpath)
-    return bed_fpath
-
-
 # def _run_cov2cnv(cnf, seq2cov, samtools, sample, bed_fpath, dedupped_bam_by_sample):
 #     if not verify_file(sample.seq2cov_output_fpath):
 #         safe_mkdir(dirname(sample.seq2cov_output_fpath))
@@ -208,11 +177,10 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         return output_fpath
 
     info('Preparing BED files')
-    bed_fpath = bcbio_structure.sv_bed or bcbio_structure.bed
+    target_bed = bcbio_structure.sv_bed or bcbio_structure.bed
     exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons
-    bed_fpath = adjust_path(bed_fpath or exons_bed_fpath)
-    verify_bed(bed_fpath, is_critical=True)
-    bed_fpath = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
+    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+        prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
 
     jobs_to_wait = []
     bedcov_output_by_sample = dict()
@@ -249,9 +217,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
                 bedtools = get_system_path(cnf, 'bedtools')
                 v = bedtools_version(bedtools)
                 if v and v >= 24:
-                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_fpath} -hist'.format(**locals())
+                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {seq2c_bed} -b {bam_fpath} -hist'.format(**locals())
                 else:
-                    cmdline = '{bedtools} coverage -abam {bam_fpath} -b {bed_fpath} -hist'.format(**locals())
+                    cmdline = '{bedtools} coverage -abam {bam_fpath} -b {seq2c_bed} -hist'.format(**locals())
                 j = submit_job(cnf, cmdline, job_name, sample=s, output_fpath=bedcov_output)
                 jobs_to_wait.append(j)
         info()
@@ -268,7 +236,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
 
             script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'), is_critical=True)
             bedcov_hist_fpath = bedcov_output_by_sample[s.name]
-            bed_col_num = count_bed_cols(bed_fpath)
+            bed_col_num = count_bed_cols(seq2c_bed)
             cmdline = '{script} {bedcov_hist_fpath} {s.name} {bed_col_num}'.format(**locals())
             j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s, output_fpath=seq2cov_output_by_sample[s.name])
             sum_jobs_to_wait.append(j)
@@ -308,17 +276,17 @@ def save_regions_to_seq2cov_output(cnf, sample_name, regions, output_fpath):
         return output_fpath
 
 
-def __cov2cnv(cnf, bed_fpath, samples, dedupped_bam_by_sample, combined_gene_depths_fpath):
+def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_depths_fpath):
     info()
     # info('Combining gene depths...')
 
     result = []
     exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    bed_fpath = bed_fpath or exons_bed_fpath
     # print any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples)
     if any(not verify_file(s.seq2cov_output_fpath, silent=True) for s in samples) or not cnf.reuse_intermediate:
-        verify_bed(bed_fpath, is_critical=True)
-        bed_fpath, exons_bed = __prep_bed(cnf, bed_fpath, exons_bed_fpath)
+        verify_bed(target_bed, is_critical=True)
+        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+            prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
 
     # info('Running first for the de-dupped version, then for the original version.')
     # Parallel(n_jobs=cnf.threads) \

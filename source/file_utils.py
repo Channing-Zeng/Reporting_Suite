@@ -532,9 +532,6 @@ def adjust_path(path):
     path = abspath(path)
     if path is None: return None
 
-    path = realpath(path)
-    if path is None: return None
-
     return path
 
 
