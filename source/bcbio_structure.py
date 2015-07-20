@@ -694,8 +694,8 @@ class BCBioStructure:
     def _set_bed_file(self, sample, sample_info):
         bed = None
         if self.cnf.bed:  # Custom BED provided in command line?
+            sample.bed = verify_bed(self.cnf.bed, is_critical=True)
             info('BED file for ' + sample.name + ': ' + sample.bed)
-            sample.bed = verify_bed(bed, is_critical=True)
 
         # elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
         #     bed = adjust_path(sample_info['algorithm']['variant_regions'])
