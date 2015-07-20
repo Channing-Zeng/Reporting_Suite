@@ -54,14 +54,14 @@ def cnv_reports(cnf, bcbio_structure):
 #         self.ave_depth = ave_depth
 
 
-def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath):
+def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=False):
     amplicons = []
 
     info('Parsing amplicons from from ' + detailed_gene_report_fpath)
 
     with open(detailed_gene_report_fpath, 'r') as f:
         for i, line in enumerate(f):
-            if 'Capture' in line:
+            if ('Capture' in line and not is_wgs) or (('Exon' in line or 'CDS' in line) and is_wgs):
                 ts = line.split('\t')
                 # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave  ...
                 chrom, s, e, size, symbol, strand, feature, _, ave_depth = ts[:9]
@@ -202,7 +202,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
 
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
             info(s.name + ': parsing targetseq output')
-            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv)
+            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(target_bed is None))
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:
