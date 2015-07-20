@@ -61,7 +61,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=Fal
 
     with open(detailed_gene_report_fpath, 'r') as f:
         for i, line in enumerate(f):
-            if ('Capture' in line and not is_wgs) or (('Exon' in line or 'CDS' in line) and is_wgs):
+            if (not is_wgs and 'Capture' in line) or (is_wgs and ('Exon' in line or 'CDS' in line)):
                 ts = line.split('\t')
                 # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave  ...
                 chrom, s, e, size, symbol, strand, feature, _, ave_depth = ts[:9]
@@ -200,9 +200,11 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif verify_file(s.targetcov_detailed_tsv, silent=True):
+        elif ((bcbio_structure.bed == bcbio_structure.sv_bed or  # same bed files for targqc and seqc - can use ave coverages from targqc
+                  not bcbio_structure.bed and not bcbio_structure.sv_bed) and  # no bed and sv_file file specified at all - meaning WGS - using Exons
+                verify_file(s.targetcov_detailed_tsv, silent=True)):
             info(s.name + ': parsing targetseq output')
-            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(target_bed is None))
+            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(bcbio_structure.bed is None))
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:

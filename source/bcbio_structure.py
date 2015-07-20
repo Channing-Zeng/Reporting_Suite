@@ -694,8 +694,8 @@ class BCBioStructure:
     def _set_bed_file(self, sample, sample_info):
         bed = None
         if self.cnf.bed:  # Custom BED provided in command line?
-            bed = adjust_path(self.cnf.bed)
-            verify_bed(bed, is_critical=True)
+            info('BED file for ' + sample.name + ': ' + sample.bed)
+            sample.bed = verify_bed(bed, is_critical=True)
 
         # elif sample_info['algorithm'].get('variant_regions'):  # Variant regions?
         #     bed = adjust_path(sample_info['algorithm']['variant_regions'])
@@ -707,9 +707,9 @@ class BCBioStructure:
         #     if not verify_bed(bed):
         #         sys.exit(1)
 
-        else:
-            err('No BED file for sample and no variant BED file'
-                ' - assuming WGS')
+        # else:
+        #     err('No BED file for sample and no variant BED file'
+        #         ' - assuming WGS')
 
         if sample_info['algorithm'].get('sv_regions'):  # SV regions?
             sv_bed = adjust_path(sample_info['algorithm']['sv_regions'])
@@ -720,11 +720,8 @@ class BCBioStructure:
             else:
                 warn('sv_regions file for ' + sample.name + ' is not BED: ' + sv_bed)
 
-        sample.bed = bed
-        if sample.bed:
-            info('BED file for ' + sample.name + ': ' + sample.bed)
-        else:
-            err('No BED file for ' + sample.name)
+        if sample.bed and not sample.sv_bed:
+            info('No BED file and no sv_regions bed file for ' + sample.name + '. Assuming WGS')
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
