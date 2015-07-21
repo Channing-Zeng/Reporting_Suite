@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import getpass
 import os
-from os.path import join, isfile, basename, dirname, abspath, isdir, relpath
+from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath
 from traceback import print_exc
 from source import verify_file
 from source.file_utils import file_transaction
@@ -68,7 +68,7 @@ def _symlink_report_us(cnf, work_dir, final_dirpath, project_name, html_report_f
         return None
     html_report_url = 'http://ngs.usbod.astrazeneca.net/reports/' + project_name + '/' + \
         relpath(html_report_fpath, final_dirpath)
-    final_dirpath_in_ngs = final_dirpath.split('/gpfs')[1]
+    final_dirpath_in_ngs = realpath(final_dirpath).split('/gpfs')[1]
     link_path = join(server_path, project_name)
     cmd = 'rm ' + link_path + '; ln -s ' + final_dirpath_in_ngs + ' ' + link_path
     ssh.exec_command(cmd)

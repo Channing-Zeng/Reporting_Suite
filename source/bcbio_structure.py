@@ -5,7 +5,7 @@ import re
 from dircache import listdir
 from genericpath import isdir, isfile
 from collections import defaultdict, OrderedDict
-from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname
+from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname, realpath
 from optparse import OptionParser
 from distutils import file_util
 
@@ -453,8 +453,8 @@ class BCBioStructure:
             self.project_name = cnf.project_name
         else:
             # path is like /ngs/oncology/analysis/bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
-            if '/ngs/oncology/analysis/' in bcbio_project_dirpath:
-                short_path = bcbio_project_dirpath.split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
+            if '/ngs/oncology/analysis/' in realpath(bcbio_project_dirpath):
+                short_path = realpath(bcbio_project_dirpath).split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
                 self.project_name = '_'.join(short_path.split('/')[1:])  # Bio_0031_Heme_MRL_DLBCL_IRAK4_bcbio_Dev_0079
 
         bcbio_project_dirname = basename(bcbio_project_dirpath)  # bcbio_Dev_0079
