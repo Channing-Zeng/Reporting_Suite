@@ -142,7 +142,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
             d['JIRA URL'] = jira_case.url.replace(',', ';')
             d['Updated By'] = (getpass.getuser() if 'Updated By' not in d else d['Updated By']).replace(',', ';')
             if jira_case.description:
-                d['Description'] = jira_case.description.replace(',', ';')
+                d['Description'] = jira_case.summary.replace(',', ';')
             if jira_case.data_hub:
                 d['Data Hub'] = jira_case.data_hub.replace(',', ';')
             if jira_case.type:

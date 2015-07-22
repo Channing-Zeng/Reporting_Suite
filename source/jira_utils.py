@@ -7,7 +7,7 @@ JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
 
 class JiraCase:
     def __init__(self, case_id, url, assignee=None, reporter=None, type_=None, department=None, division=None,
-                 data_hub=None, analysis_path=None, project_name=None, project_id=None, description=None):
+                 data_hub=None, analysis_path=None, project_name=None, project_id=None, summary=None, description=None):
         self.case_id = case_id
         self.url = url
         self.assignee = assignee
@@ -19,6 +19,7 @@ class JiraCase:
         self.analysis_path = analysis_path
         self.project_name = project_name
         self.project_id = project_id
+        self.summary = summary
         self.description = description
 
 
@@ -44,11 +45,11 @@ def retrieve_jira_info(url):
     issue = jira_inst.issue('NGSG-' + case_id)
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
-    case.reporter = issue.fields.reporter.displayName    # 'Mike Cannon-Brookes [Atlassian]'
-    case.assignee = issue.fields.assignee.displayName    # 'Mike Cannon-Brookes [Atlassian]'
-    case.description = issue.fields.summary              # HiSeq4000_2x75 Whole genome sequencing of 5 AURA plasma
-    case.type = issue.fields.customfield_12711.value if issue.fields.customfield_12711 else None  # "Exome", "Panel"
-    case.department = issue.fields.customfield_12701.value if issue.fields.customfield_12701 else None  # "BIO", "EXT"
+    case.reporter = issue.fields.reporter.displayName    # 'Greenawalt, Danielle'
+    case.assignee = issue.fields.assignee.displayName    # 'Saif, Sakina'
+    case.summary = issue.fields.summary              # Bio_029 - M2Gen - 100 Post Treatment Exomes
+    case.type = issue.fields.customfield_12711.value if issue.fields.customfield_12711 else None  # Exome/Panel/etc
+    case.department = issue.fields.customfield_12701.value if issue.fields.customfield_12701 else None  # BIO/EXT/etc
     # case.division = None  # always 'ONC' in NGS.Project.csv, no such field in Jira
     case.data_hub = issue.fields.customfield_12704  # projects/ProcessedDataHub/Patients/BRCA/Bio_029_M2Gen_RR
     case.analysis_path = issue.fields.customfield_12714  # /analysis/bioscience/Bio_031_M2Gen_RR
