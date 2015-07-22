@@ -93,15 +93,23 @@ def parse_sample_sheet(sample_sheet_fpath):
 def main():
     cnf, dataset_dirpath, jira_url = proc_opts()
 
-    # basecalls_dirpath = join(dataset_dirpath, 'Unalign')
-    # if not isdir(basecalls_dirpath):
+    unaligned_dirpath = join(dataset_dirpath, 'Unaligned')
+    verify_dir(unaligned_dirpath, description='Unaligned dir', is_critical=True)
+    try:
+        project_dirpath = next(fn for fn in os.listdir(unaligned_dirpath) if isdir(fn) and fn.startswith('Project_'))
+    except StopIteration:
+        critical('Could not find directory starting with Project_ in ' + unaligned_dirpath)
+
+    cnf.project_name = cnf.project_name or project_dirpath.split('Project_')[1]
+
     basecalls_dirpath = join(dataset_dirpath, 'Data/Intensities/BaseCalls')
     verify_dir(basecalls_dirpath, is_critical=True)
-    fastq_dirpath = join(basecalls_dirpath, 'fastq')
-    safe_mkdir(fastq_dirpath)
-    sample_sheet_csv_fpath = join(dataset_dirpath, 'SampleSheet.csv')
+    sample_sheet_csv_fpath = join(basecalls_dirpath, 'SampleSheet.csv')
     verify_file(sample_sheet_csv_fpath, is_critical=True)
     sample_names = parse_sample_sheet(sample_sheet_csv_fpath)
+
+    output_fastq_dirpath = join(basecalls_dirpath, 'fastq')
+    safe_mkdir(output_fastq_dirpath)
 
     ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
 
@@ -110,26 +118,26 @@ def main():
     # with open(sample_list_fpath) as f:
     #     sample_names = [l.strip() for l in f]
 
-    fastq_fpaths = [join(basecalls_dirpath, fname) for fname in os.listdir(basecalls_dirpath) if fname.endswith('.fastq.gz')]
+    fastq_fpaths = [join(sample_dirpath, fname) for sample_dirpath in os.listdir(project_dirpath) for fname in os.listdir(sample_dirpath) if fname.endswith('.fastq.gz')]
     if len(fastq_fpaths) == 0:
         critical('No fastq files inside ' + basecalls_dirpath)
 
     samples = []
-    fastq_by_sn = find_fastq(fastq_fpaths, sample_names)
+    fastq_by_sn = find_fastq_pairs_by_sample_name(fastq_fpaths, sample_names)
     for sn in sample_names:
         if not fastq_by_sn[sn]:
             critical('No fastq for ' + sn)
         l_fpath = fastq_by_sn[sn][0]
         r_fpath = fastq_by_sn[sn][1]
-        l_fpath_link = join(fastq_dirpath, sn + '_R1.fastq.gz')
-        r_fpath_link = join(fastq_dirpath, sn + '_R2.fastq.gz')
+        l_fpath_link = join(output_fastq_dirpath, sn + '_R1.fastq.gz')
+        r_fpath_link = join(output_fastq_dirpath, sn + '_R2.fastq.gz')
         if not exists(l_fpath_link):
             os.symlink(l_fpath, l_fpath_link)
         if not exists(r_fpath_link):
             os.symlink(r_fpath, r_fpath_link)
         samples.append(Sample(name=sn, l_fpath=l_fpath_link, r_fpath=r_fpath_link))
 
-    comb_fastqc_fpath = make_fastqc_reports(cnf, samples, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
+    comb_fastqc_fpath = make_fastqc_reports(cnf, samples, output_fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
 
     if cnf.expose_to_ngs_server:
         # FastQC
@@ -182,7 +190,7 @@ class Sample:
         self.fastqc_html_fpath = None
 
 
-def find_fastq(fastq_fpaths, samples_names):
+def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):
     fastq_by_sn = OrderedDict()
 
     for sn in samples_names:
