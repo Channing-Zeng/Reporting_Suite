@@ -53,8 +53,10 @@ def main():
     if not opts.left_reads_fpath or not opts.right_reads_fpath or not opts.output_dir:
         parser.print_usage()
 
-    left_reads_fpath = verify_file(opts.left_reads_fpath, is_critical=True)
-    right_reads_fpath = verify_file(opts.right_reads_fpath, is_critical=True)
+    verify_file(opts.left_reads_fpath, is_critical=False)
+    left_reads_fpath = adjust_path(opts.left_reads_fpath)
+    verify_file(opts.right_reads_fpath, is_critical=False)
+    right_reads_fpath = adjust_path(opts.right_reads_fpath)
     output_dirpath = adjust_path(opts.output_dir) if opts.output_dir else critical('Please, specify output directory with -o')
     verify_dir(dirname(output_dirpath), description='output_dir', is_critical=True)
 
@@ -72,7 +74,7 @@ def main():
     if opts.downsample_to:
         cmdl += ' --downsample-to ' + str(int(opts.downsample_to))
     cmdl = cmdl.format(**locals())
-    cmdl += ' 2> &1'
+    cmdl += ' 2>&1'
     info(cmdl)
     stdin, stdout, stderr = ssh.exec_command(cmdl)
     for l in stdout:
@@ -84,7 +86,7 @@ def main():
 def _proc_path(path):
     starts = {'/mnt/Datasets': '/ngs/oncology/datasets',
               '/mnt/HiSeq': '/ngs/oncology/datasets/HiSeq/',
-              '/mnt/MiSeq': '/ngs/oncology/datasetsMiSeq'}
+              '/mnt/MiSeq': '/ngs/oncology/datasets/MiSeq/'}
     if not any(path.startswith(s) for s in starts.keys()):
         critical('Error: path ' + path + ' has to start with something from ' + str(starts.keys()))
     for k, v in starts.iteritems():
