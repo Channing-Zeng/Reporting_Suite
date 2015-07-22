@@ -703,7 +703,7 @@ class BCBioStructure:
                 if bed.endswith('.bed'):
                     verify_bed(bed, is_critical=True)
                     sample.bed = bed
-                    info('SV BED file for ' + sample.name + ': ' + sample.sv_bed)
+                    info('SV BED file for ' + sample.name + ': ' + sample.bed)
                 else:
                     warn('sv_regions file for ' + sample.name + ' is not BED: ' + bed)
 
