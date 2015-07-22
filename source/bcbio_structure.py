@@ -533,7 +533,7 @@ class BCBioStructure:
         # setting bed files for samples
         if cnf.bed:
             verify_file(cnf.bed)
-            self.bed = adjust_path(cnf.bed)
+            self.bed = cnf.bed = adjust_path(cnf.bed)
             self.sv_bed = adjust_path(cnf.bed)
         else:
             bed_files_used = [s.bed for s in self.samples]

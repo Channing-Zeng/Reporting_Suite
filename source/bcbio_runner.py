@@ -304,8 +304,8 @@ class BCBioRunner:
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
-        if cnf.bed:
-            seq2c_cmdline += ' --bed ' + cnf.bed
+        if self.bcbio_structure.bed:
+            seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
         if cnf.controls:
             seq2c_cmdline += ' -c ' + cnf.controls
         if cnf.seq2c_opts:
