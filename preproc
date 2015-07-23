@@ -38,6 +38,7 @@ def proc_opts():
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
     parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=False, help='Add project to the webserver')
+    parser.add_option('-e', '--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
@@ -93,10 +94,10 @@ def parse_sample_sheet(sample_sheet_fpath):
 
 
 def main():
-    cnf, dataset_dirpath, jira_url = proc_opts()
+    cnf, project_dirpath, jira_url = proc_opts()
 
-    unaligned_dirpath = join(dataset_dirpath, 'Unaligned')
-    verify_dir(unaligned_dirpath, description='Unaligned dir', is_critical=True)
+    unaligned_dirpath = join(project_dirpath, 'Unalign')
+    verify_dir(unaligned_dirpath, description='Unalign dir', is_critical=True)
 
     # Reading project name
     bcl2fastq_dirpath = None
@@ -107,17 +108,17 @@ def main():
     cnf.project_name = cnf.project_name or bcl2fastq_dirpath.split('Project_')[1]
 
     # Parsing sample sheet
-    basecalls_dirpath = join(dataset_dirpath, 'Data/Intensities/BaseCalls')
+    basecalls_dirpath = join(project_dirpath, 'Data/Intensities/BaseCalls')
     verify_dir(basecalls_dirpath, is_critical=True)
     sample_sheet_csv_fpath = join(basecalls_dirpath, 'SampleSheet.csv')
+    if not isfile(sample_sheet_csv_fpath):
+        sample_sheet_csv_fpath = join(project_dirpath, 'SampleSheet.csv')
     verify_file(sample_sheet_csv_fpath, is_critical=True)
     sample_names = parse_sample_sheet(sample_sheet_csv_fpath)
 
-    # Creating new project-name directory in Datasets
-    new_dataset_dirpath = join(dirname(dataset_dirpath), cnf.project_name)
-    safe_mkdir(new_dataset_dirpath)
-    output_fastq_dirpath = join(new_dataset_dirpath, 'fastq')
-    safe_mkdir(output_fastq_dirpath)
+    # Directory to run fastq
+    fastq_dirpath = join(unaligned_dirpath, 'fastq')
+    safe_mkdir(fastq_dirpath)
 
     # sample_list_fpath = join(fastq_dirpath, 'samples.list')
     # verify_file(sample_list_fpath, is_critical=True)
@@ -134,7 +135,7 @@ def main():
     if len(fastq_fpaths) == 0:
         critical('No fastq files found inside ')
 
-    # Runnign FastQC
+    # Getting list of samples with fastqc
     samples = []
     fastq_by_sn = find_fastq_pairs_by_sample_name(fastq_fpaths, sample_names)
     for sn in sample_names:
@@ -142,20 +143,30 @@ def main():
             critical('No fastq for ' + sn)
         l_fpath = fastq_by_sn[sn][0]
         r_fpath = fastq_by_sn[sn][1]
-        l_fpath_link = join(output_fastq_dirpath, sn + '_R1.fastq.gz')
-        r_fpath_link = join(output_fastq_dirpath, sn + '_R2.fastq.gz')
+        l_fpath_link = join(fastq_dirpath, sn + '_R1.fastq.gz')
+        r_fpath_link = join(fastq_dirpath, sn + '_R2.fastq.gz')
         if not exists(l_fpath_link):
             os.symlink(l_fpath, l_fpath_link)
         if not exists(r_fpath_link):
             os.symlink(r_fpath, r_fpath_link)
         samples.append(Sample(name=sn, l_fpath=l_fpath_link, r_fpath=r_fpath_link))
 
-    # Exposing
-    ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
-    comb_fastqc_fpath = make_fastqc_reports(cnf, samples, output_fastq_dirpath, ngs_webserver_seqqc_proj_dirpath)
+    # Running FastQC
+    fastqc_dirpath = join(fastq_dirpath, 'fastqc')
+    safe_mkdir(fastqc_dirpath)
+    comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
+    if not cnf.expose_to_ngs_server_only:
+        make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc_fpath)
 
-    if cnf.expose_to_ngs_server:
+    # Creating symlink new project-name directory in Datasets
+    new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
+    if not exists(new_project_symlink):
+        os.symlink(project_dirpath, new_project_symlink)
+
+    # Exposing
+    if compatible_with_ngs_webserver() and (cnf.expose_to_ngs_server or cnf.expose_to_ngs_server_only):
         # FastQC
+        ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
         if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath) is None:
             err('Error: cannot connect to the ngs server and make symlinks')
         else:
@@ -173,12 +184,11 @@ def main():
             # Sample sheet
             symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
 
-    jira_case = None
-    if jira_url:
-        # Add to the NGS list
-        jira_case = retrieve_jira_info(jira_url)
+        jira_case = None
+        if jira_url:
+            # Add to the NGS list
+            jira_case = retrieve_jira_info(jira_url)
 
-    if compatible_with_ngs_webserver() and cnf.expose_to_ngs_server:
         sync_with_ngs_server(cnf, jira_case=jira_case,
             project_name=cnf.project_name, sample_names=sample_names)
 
@@ -224,8 +234,7 @@ def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):
     return fastq_by_sn
 
 
-def make_fastqc_reports(cnf, samples, fastq_dirpath, ngs_webserver_seqqc_proj_dirpath):
-    fastqc_dirpath = join(fastq_dirpath, 'fastqc')
+def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc_fpath):
     if isdir(fastqc_dirpath):
         if isdir(fastqc_dirpath + '.bak'):
             try:
@@ -264,7 +273,6 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, ngs_webserver_seqqc_proj_di
                 safe_mkdir(join(fastqc_dirpath, 'zip'))
                 os.rename(sample_fastqc_dirpath + '.zip', join(fastqc_dirpath, 'zip'))
 
-        comb_fastqc_fpath = join(fastqc_dirpath, 'FastQC.html')
         write_fastqc_combo_report(comb_fastqc_fpath, samples)
         verify_file(comb_fastqc_fpath, is_critical=True)
         info('Combined FastQC saved to ' + comb_fastqc_fpath)

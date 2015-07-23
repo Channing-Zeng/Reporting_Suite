@@ -695,26 +695,26 @@ class BCBioStructure:
         bed = None
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.sv_bed = sample.bed = verify_bed(self.cnf.bed, is_critical=True)
-            info('BED file for ' + sample.name + ': ' + sample.bed)
+            info('BED file for ' + sample.name + ': ' + str(sample.bed))
 
         else:
             if sample_info['algorithm'].get('variant_regions'):  # Variant regions?
                 bed = adjust_path(sample_info['algorithm']['variant_regions'])
-                if bed.endswith('.bed'):
+                if bed and bed.endswith('.bed'):
                     verify_bed(bed, is_critical=True)
                     sample.bed = bed
-                    info('SV BED file for ' + sample.name + ': ' + sample.bed)
+                    info('SV BED file for ' + sample.name + ': ' + str(sample.bed))
                 else:
-                    warn('sv_regions file for ' + sample.name + ' is not BED: ' + bed)
+                    warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(bed))
 
             if sample_info['algorithm'].get('sv_regions'):  # SV regions?
                 sv_bed = adjust_path(sample_info['algorithm']['sv_regions'])
-                if sv_bed.endswith('.bed'):
+                if sv_bed and sv_bed.endswith('.bed'):
                     verify_bed(sv_bed, is_critical=True)
                     sample.sv_bed = sv_bed
-                    info('SV BED file for ' + sample.name + ': ' + sample.sv_bed)
+                    info('SV BED file for ' + sample.name + ': ' + str(sample.sv_bed))
                 else:
-                    warn('sv_regions file for ' + sample.name + ' is not BED: ' + sv_bed)
+                    warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(sv_bed))
             else:
                 sample.sv_bed = sample.bed
 
