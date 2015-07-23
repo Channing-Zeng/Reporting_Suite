@@ -179,7 +179,7 @@
       _results = [];
       for (_i = 0, _len = records.length; _i < _len; _i++) {
         rec = records[_i];
-        if (rec && rec.metric.name in common_metrics_by_name) {
+        if (rec && rec.metric && rec.metric.name in common_metrics_by_name) {
           _results.push(rec);
         }
       }

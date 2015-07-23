@@ -129,7 +129,7 @@ reporting.buildReport = ->
 
     common_metrics_by_name = report.metric_storage.general_section.metrics_by_name
     records = if report.hasOwnProperty('sample_reports') then report.sample_reports[0].records else report.records
-    general_records = (rec for rec in records when rec and rec.metric.name of common_metrics_by_name)
+    general_records = (rec for rec in records when rec and rec.metric and rec.metric.name of common_metrics_by_name)
     reporting.buildCommonRecords general_records
 
     for section in report.metric_storage.sections
