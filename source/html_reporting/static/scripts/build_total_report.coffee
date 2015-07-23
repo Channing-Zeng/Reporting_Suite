@@ -161,7 +161,7 @@ calc_cell_contents = (report, section, font) ->
             for rec in sampleReport.records
                 calc_record_cell_contents rec, font
 
-            for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
+            for rec in sampleReport.records when rec.metric and rec.metric.name of section.metrics_by_name
                 if not (rec.metric.name of max_frac_widths_by_metric)
                     max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
                 else if rec.frac_width > max_frac_widths_by_metric[rec.metric.name]
@@ -210,7 +210,7 @@ calc_cell_contents = (report, section, font) ->
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for sampleReport in (if report.hasOwnProperty('sample_reports') then report.sample_reports else [report])
-        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
+        for rec in sampleReport.records when rec.metric and rec.metric.name of section.metrics_by_name
             # Padding based on frac width
             if rec.frac_width?
                 rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
@@ -335,6 +335,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                 continue
             rec = null
             for r in sampleReport.records
+                if !r.metric
+                    continue
                 if r.metric.name == metric.name
                     rec = r
                     break
