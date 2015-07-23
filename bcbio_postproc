@@ -40,6 +40,7 @@ def main():
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
+    parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths = process_post_bcbio_args(parser)
 
@@ -67,7 +68,6 @@ def main():
 
         bcbio_runner = BCBioRunner(cnf, bcbio_structure, cnf.bcbio_cnf)
         bcbio_runner.post_jobs()
-
 
     # Special case: multiple projects in input. No post-processing them, but rather combining summary reports together.
     elif len(bcbio_structures) > 1:
