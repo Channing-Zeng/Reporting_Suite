@@ -38,7 +38,7 @@ def proc_opts():
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
     parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=False, help='Add project to the webserver')
-    parser.add_option('-e', '--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
+    parser.add_option('--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
