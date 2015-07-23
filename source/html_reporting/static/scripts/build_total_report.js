@@ -201,7 +201,7 @@
     var num_html, result, value;
     value = rec.value;
     num_html = '';
-    if ((value == null) || value === '') {
+    if ((value == null) || value === '' || !rec.metric) {
       rec.cell_contents = '-';
     } else {
       if (typeof value === 'number') {

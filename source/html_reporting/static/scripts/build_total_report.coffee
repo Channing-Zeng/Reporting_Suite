@@ -128,7 +128,7 @@ calc_record_cell_contents = (rec, font) ->
     value = rec.value
     num_html = ''
 
-    if not value? or value == ''
+    if not value? or value == '' or not rec.metric
         rec.cell_contents = '-'
 
     else
