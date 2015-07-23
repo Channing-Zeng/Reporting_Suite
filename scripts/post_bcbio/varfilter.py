@@ -251,8 +251,11 @@ def filter_all(cnf, bcbio_structure):
     if errory:
         err()
         err('For some samples and callers annotated VCFs could not be read:')
-        for e in errory:
-            err('  ' + str(e))
+        for sample_name, fpath in errory:
+            if not fpath:
+                err('  For ' + str(sample_name) + ' VCF cannot be found')
+            else:
+                err('  For ' + str(sample_name) + ' VCF ' + str(fpath) + ' cannot be read')
 
 
 def _symlink_vcfs(callers, datestamp_var_dirpath):
@@ -266,7 +269,7 @@ def _symlink_vcfs(callers, datestamp_var_dirpath):
 
             filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
             if not verify_file(filt_vcf_fpath):
-                errory.append(filt_vcf_fpath)
+                errory.append([caller.name, filt_vcf_fpath])
             else:
                 base_filt_fpath = filt_vcf_fpath[:-3] if filt_vcf_fpath.endswith('.gz') else filt_vcf_fpath
                 for fpath in [base_filt_fpath + '.gz',
