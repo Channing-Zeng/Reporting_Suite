@@ -8,7 +8,7 @@ from os.path import join, basename
 from source.calling_process import call_subprocess
 from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
-from source.file_utils import file_exists, verify_file
+from source.file_utils import file_exists, verify_file, file_transaction
 from tools.bed_processing.sort_bed import SortableByChrom
 
 
@@ -88,9 +88,11 @@ def get_chr_len_fpath(cnf):
                 chrom = record.id
                 chr_lengths.append([SortableByChrom(chrom), len(record.seq)])
 
-    with open(chr_len_fpath, 'w') as handle:
-        for c, l in sorted(chr_lengths, key=lambda (c, l): c.get_key()):
-            handle.write(c.chrom + '\t' + str(l) + '\n')
+    with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
+        with open(tx, 'w') as handle:
+            # for c, l in sorted(chr_lengths, key=lambda (c, l): c.get_key()):
+            for c, l in chr_lengths:
+                handle.write(c.chrom + '\t' + str(l) + '\n')
     return chr_len_fpath
 
 
