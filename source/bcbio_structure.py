@@ -74,17 +74,28 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
 
-    dir_args = args if len(args) > 0 else [os.getcwd()]
-    dir_args = [adjust_path(da) for da in dir_args]
-    [verify_dir(da, is_critical=True) for da in dir_args]
+    bcbio_dirpaths = []
+    tags = []
+
+    for dir_arg in args or [os.getcwd()]:
+        # /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0159_AHK2KTADXX/bcbio,Kudos159 /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0160_BHKWMNADXX/bcbio,Kudos160
+        dirpath = adjust_path(dir_arg.split(',')[0])
+        bcbio_dirpaths.append(dirpath)
+        if len(dir_arg.split(',')) > 1:
+            tags.append(dir_arg.split(',')[1])
+        else:
+            tags.append(None)
+
+    for dirpath, tag in zip(bcbio_dirpaths, tags):
+        verify_dir(dirpath, is_critical=True, description='Path to bcbio project' + (' ' if tag else ''))
 
     cnf = None
     bcbio_project_dirpaths = []
     bcbio_cnfs = []
     final_dirpaths = []
 
-    for dir_arg in dir_args:
-        bcbio_project_dirpath, final_dirpath, config_dirpath = _detect_bcbio_dirpath(dir_arg)
+    for dirpath in bcbio_dirpaths:
+        bcbio_project_dirpath, final_dirpath, config_dirpath = _detect_bcbio_dirpath(dirpath)
         bcbio_project_dirpaths.append(bcbio_project_dirpath)
         final_dirpaths.append(final_dirpath)
 
@@ -103,7 +114,7 @@ def process_post_bcbio_args(parser):
 
         bcbio_cnfs.append(load_bcbio_cnf(cnf, config_dirpath))
 
-    return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths
+    return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags
 
 
 def _detect_bcbio_dirpath(dir_arg):
@@ -243,6 +254,7 @@ class BCBioSample(BaseSample):
         self.qualimap_genome_results_fpath = self.make_fpath('{dirpath}/qc/{name}/genome_results.txt', name=source.qualimap_name)
         self.qualimap_ins_size_hist_fpath  = self.make_fpath('{dirpath}/qc/{name}/raw_data_qualimapReport/insert_size_histogram.txt', name=source.qualimap_name)
         self.fastqc_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=source.fastqc_name)
+        self.project_tag = None
 
     # ----------
     def annotated_vcfs_dirpath(self):

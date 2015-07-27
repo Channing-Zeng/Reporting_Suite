@@ -23,7 +23,7 @@ steps:
 #  filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
 #  filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
 #
-#  min_freq:           0.02    # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
+#  min_freq:           0.075   # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
 #                              # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
 #  min_mq:             10      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
 #  min_vd:             2       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.

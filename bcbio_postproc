@@ -42,7 +42,7 @@ def main():
     parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
-    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
 
     cnf_project_name = cnf.project_name
     if len(bcbio_project_dirpaths) > 1:
@@ -89,10 +89,12 @@ def main():
         cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
         safe_mkdir(cnf.work_dir)
 
-        combine_projects(cnf, bcbio_structures)
+        combine_projects(cnf, bcbio_structures, tags)
 
 
-def combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name):
+def combine_varqc(cnf, bcbio_structures, tag_by_sample,
+                  dirname=BCBioStructure.varqc_dir,
+                  name=BCBioStructure.varqc_name):
     callers = []
     samples = []
 
@@ -112,22 +114,35 @@ def combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_dir, name=
     output_dir = join(cnf.output_dir, dirname)
     safe_mkdir(output_dir)
 
-    summarize_qc.make_summary_reports(cnf, 1, output_dir,
-         callers, samples, jsons_by_sample_by_caller, htmls_by_sample_by_caller)
+    summarize_qc.make_summary_reports(cnf, 1, output_dir, callers, samples,
+         jsons_by_sample_by_caller, htmls_by_sample_by_caller, tag_by_sample)
 
 
-def combine_projects(cnf, bcbio_structures):
+def combine_targqc(cnf, bcbio_structures, tag_by_sample):
     samples = [s for bs in bcbio_structures for s in bs.samples]
+    output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
+    safe_mkdir(output_dir)
+
+    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples, tag_by_sample)
+
+
+def combine_projects(cnf, bcbio_structures, tags=None):
+    tag_by_sample = dict()
+    if tags:
+        for bs, tag in zip(bcbio_structures, tags):
+            for s in bs.samples:
+                tag_by_sample[s.name] = tag
+    else:
+        for bs in bcbio_structures:
+            for s in bs.sampels:
+                tag_by_sample[s.name] = bs.project_name
 
     reuse = cnf.reuse_intermediate
     cnf.reuse_intermediate = True
 
-    combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
-    combine_varqc(cnf, bcbio_structures, dirname=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
-
-    output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
-    safe_mkdir(output_dir)
-    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples)
+    combine_varqc(cnf, bcbio_structures, tag_by_sample, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
+    combine_varqc(cnf, bcbio_structures, tag_by_sample, dirname=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
+    combine_targqc(cnf, bcbio_structures, tag_by_sample)
 
     cnf.reuse_intermediate = reuse
 

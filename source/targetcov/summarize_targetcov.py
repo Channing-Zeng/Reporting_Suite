@@ -75,7 +75,7 @@ def _make_targetcov_symlinks(samples):
         info('TargetCov TXT symlink saved to ' + new_link)
 
 
-def _make_tarqc_html_report(cnf, output_dir, samples):
+def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
     header_storage = get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
     targqc_metric_storage = _get_targqc_metric_storage([
@@ -97,18 +97,18 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
             records_by_report_type.append(('qualimap', qualimap_report_parser.parse_qualimap_sample_report(
                 sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
 
-        targqc_full_report.sample_reports.append(
-            SampleReport(
-                sample,
-                records=_get_targqc_records(records_by_report_type, header_storage),
-                html_fpath=dict(
-                    targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
-                    ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
-                    qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
-                ),
-                metric_storage=targqc_metric_storage
-            )
-        )
+        sample_report = SampleReport(
+            sample,
+            records=_get_targqc_records(records_by_report_type, header_storage),
+            html_fpath=dict(
+                targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
+                ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
+                qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
+            ),
+            metric_storage=targqc_metric_storage)
+        if tag_by_sample:
+            sample_report.set_project_tag(tag_by_sample[sample.name])
+        targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
@@ -120,7 +120,8 @@ def _make_tarqc_html_report(cnf, output_dir, samples):
     return txt_fpath, tsv_fpath, html_fpath
 
 
-def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, genes_fpath=None):
+def summarize_targqc(cnf, summary_threads, output_dir, samples,
+        bed_fpath=None, exons_fpath=None, genes_fpath=None, tag_by_sample=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     correct_samples = []
@@ -138,7 +139,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
 
     # _make_targetcov_symlinks(samples)
 
-    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample)
 
     best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
     ''' 1. best_regions = get_best_regions()
@@ -152,7 +153,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
         if not exons_fpath or not bed_fpath:
             err('For the extended analysis, capture and exons beds are required!')
         else:
-            exons_bed, exons_no_genes_cut_bed, target_bed,  _ = prepare_beds(cnf, exons_fpath, bed_fpath)
+            exons_bed, exons_no_genes_cut_bed, target_bed, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
 
             #norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
             #    cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)

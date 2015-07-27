@@ -76,7 +76,7 @@ class Metric:
         self.common = common
         self.unit = unit
 
-    def display_name(self):
+    def get_display_name(self):
         return self.short_name if self.short_name is not None else self.name
 
     def format(self, value, human_readable=True):
@@ -163,7 +163,7 @@ class Report:
             date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
             data_outside_reports={},
             report=self,
-            type_=None,
+            type_=type_,
         ), separators=(',', ':'), cls=Encoder)
         fpath = write_html_report(json, output_dirpath, base_fname, caption)
         self.html_fpath = fpath
@@ -187,6 +187,7 @@ class SampleReport(Report):
     def __init__(self, sample=None, html_fpath=None,
                  records=None, metric_storage=None,
                  report_name='', plots=None, json_fpath=None,
+                 display_name=None, caller_tag=None, project_tag=None,
                  **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
@@ -195,11 +196,40 @@ class SampleReport(Report):
         self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
         self.json_fpath = json_fpath
-        self.display_name = sample if isinstance(sample, basestring) else sample.name
 
-    def set_display_name(self, name):
-        self.display_name = name
-        return self
+        self.display_name = display_name or (self.sample if isinstance(self.sample, basestring) else self.sample.name)
+        self.caller_tag = None
+        self.set_caller_tag(caller_tag)
+        self.project_tag = None
+        self.set_project_tag(project_tag)
+
+        self.display_name = self.get_display_name()  # filled in only in save_html()!!!
+        # self.display_name = sample if isinstance(sample, basestring) else sample.name
+        # if self.sample.project_tag:
+        #     self.display_name = self.sample.project_tag + ' ' + self.display_name
+
+    # def set_display_name(self, name):
+    #     self.display_name = name
+    #     return self
+
+    def set_project_tag(self, tag):
+        if not self.project_tag and tag:
+            self.display_name = tag + ' ' + self.display_name
+            self.project_tag = tag
+
+    def set_caller_tag(self, tag):
+        if not self.caller_tag and tag:
+            self.display_name = self.display_name + ' ' + tag
+            self.project_tag = tag
+
+    def get_display_name(self):
+        return self.display_name
+    #     name = self.sample if isinstance(self.sample, basestring) else self.sample.name
+    #     if self.project_tag:
+    #         name = self.sample.project_tag + ' ' + name
+    #     if self.caller_tag:
+    #         name = name + ' ' + self.caller_tag
+    #     return name
 
     def add_record(self, metric_name, value, meta=None):
         metric = self.metric_storage.get_metric(metric_name.strip())
@@ -220,7 +250,7 @@ class SampleReport(Report):
                 else:
                     rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
 
-        rows.append(['Sample', self.display_name])
+        rows.append(['Sample', self.get_display_name()])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             rec = Report.find_record(self.records, metric.name)
@@ -232,7 +262,7 @@ class SampleReport(Report):
         return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='SampleReport')
 
     def __repr__(self):
-        return self.display_name + (', ' + self.report_name if self.report_name else '')
+        return self.get_display_name() + (', ' + self.report_name if self.report_name else '')
 
     @staticmethod
     def load(data, sample=None, bcbio_structure=None):
@@ -280,7 +310,7 @@ class PerRegionSampleReport(SampleReport):
         header_row = []
         ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
         for i, m in enumerate(ms):
-            header_row.append(('#' if i == 0 else '') + m.display_name())
+            header_row.append(('#' if i == 0 else '') + m.get_display_name())
         rows.append(header_row)
 
         for reg in self.regions:
@@ -393,7 +423,7 @@ class FullReport(Report):
                 else:
                     rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
-        rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
+        rows.append(['Sample'] + [rep.get_display_name() for rep in self.sample_reports])
 
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
@@ -404,7 +434,8 @@ class FullReport(Report):
         return rows
 
     @staticmethod
-    def construct_from_sample_report_jsons(samples, bcbio_structure, output_dirpath, jsons_by_sample, htmls_by_sample):
+    def construct_from_sample_report_jsons(samples, bcbio_structure, output_dirpath,
+            jsons_by_sample, htmls_by_sample):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:
@@ -430,7 +461,7 @@ class FullReport(Report):
             self.save_tsv(output_dirpath, base_fname, sections), \
             self.save_html(output_dirpath, base_fname, caption)
 
-    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+    def save_html(self, output_dirpath, base_fname, caption='', type_=None, display_name=None):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None

@@ -259,7 +259,7 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
                        if record.metric.name in metric_names.keys()]
         sample_report_dict = dict()
         sample_report_dict["records"] = new_records
-        sample_report_dict["sample_name"] = sample_report.display_name
+        sample_report_dict["sample_name"] = sample_report.get_display_name()
         main_dict["sample_reports"].append(sample_report_dict)
 
     return write_static_html_report({"common": common_dict, "main": main_dict},
