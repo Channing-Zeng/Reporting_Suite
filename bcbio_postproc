@@ -52,7 +52,8 @@ def main():
     info('*' * 70)
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name))
+        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name)
+        bcbio_structures.append(bs)
 
     # Post-processing one bcbio project as usually
     if len(bcbio_structures) == 1:
@@ -92,9 +93,7 @@ def main():
         combine_projects(cnf, bcbio_structures, tags)
 
 
-def combine_varqc(cnf, bcbio_structures, tag_by_sample,
-                  dirname=BCBioStructure.varqc_dir,
-                  name=BCBioStructure.varqc_name):
+def combine_varqc(cnf, bcbio_structures, tag_by_sample, varqc_dirname, varqc_name, caption):
     callers = []
     samples = []
 
@@ -107,15 +106,20 @@ def combine_varqc(cnf, bcbio_structures, tag_by_sample,
     htmls_by_sample_by_caller = defaultdict(dict)
     for bc in bcbio_structures:
         for vc in bc.variant_callers.values():
-            jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dirname, name, 'json', bc.final_dirpath)
-            htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(dirname, name, 'html', bc.final_dirpath)
+            fpath_by_sample = vc.find_fpaths_by_sample(varqc_dirname, varqc_name, 'json', bc.final_dirpath)
+            for sname, fpath in fpath_by_sample.items():
+                jsons_by_sample_by_caller[vc.name][sname] = fpath
+            fpath_by_sample = vc.find_fpaths_by_sample(varqc_dirname, varqc_name, 'html', bc.final_dirpath)
+            for sname, fpath in fpath_by_sample.items():
+                htmls_by_sample_by_caller[vc.name][sname] = fpath
             samples.extend(vc.samples)
 
-    output_dir = join(cnf.output_dir, dirname)
+    output_dir = join(cnf.output_dir, varqc_dirname)
     safe_mkdir(output_dir)
 
     summarize_qc.make_summary_reports(cnf, 1, output_dir, callers, samples,
-         jsons_by_sample_by_caller, htmls_by_sample_by_caller, tag_by_sample)
+         jsons_by_sample_by_caller, htmls_by_sample_by_caller, tag_by_sample,
+         varqc_name=varqc_name, caption=caption)
 
 
 def combine_targqc(cnf, bcbio_structures, tag_by_sample):
@@ -123,7 +127,7 @@ def combine_targqc(cnf, bcbio_structures, tag_by_sample):
     output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
     safe_mkdir(output_dir)
 
-    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples, tag_by_sample)
+    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples, tag_by_sample=tag_by_sample)
 
 
 def combine_projects(cnf, bcbio_structures, tags=None):
@@ -131,17 +135,23 @@ def combine_projects(cnf, bcbio_structures, tags=None):
     if tags:
         for bs, tag in zip(bcbio_structures, tags):
             for s in bs.samples:
-                tag_by_sample[s.name] = tag
-    else:
-        for bs in bcbio_structures:
-            for s in bs.sampels:
-                tag_by_sample[s.name] = bs.project_name
+                tag_by_sample[s.name] = tag or bs.project_name
+    # else:
+    #     for bs in bcbio_structures:
+    #         for s in bs.sampels:
+    #             tag_by_sample[s.name] = bs.project_name
 
     reuse = cnf.reuse_intermediate
     cnf.reuse_intermediate = True
 
-    combine_varqc(cnf, bcbio_structures, tag_by_sample, dirname=BCBioStructure.varqc_dir, name=BCBioStructure.varqc_name)
-    combine_varqc(cnf, bcbio_structures, tag_by_sample, dirname=BCBioStructure.varqc_after_dir, name=BCBioStructure.varqc_after_name)
+    combine_varqc(cnf, bcbio_structures, tag_by_sample,
+        varqc_dirname=BCBioStructure.varqc_dir,
+        varqc_name=BCBioStructure.varqc_name,
+        caption='Variant QC')
+    combine_varqc(cnf, bcbio_structures, tag_by_sample,
+        varqc_dirname=BCBioStructure.varqc_after_dir,
+        varqc_name=BCBioStructure.varqc_after_name,
+        caption='Variant QC after filtering')
     combine_targqc(cnf, bcbio_structures, tag_by_sample)
 
     cnf.reuse_intermediate = reuse

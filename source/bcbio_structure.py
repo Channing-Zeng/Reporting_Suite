@@ -23,20 +23,20 @@ from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
 
 
-def summary_script_proc_params(name, dir_name=None, description=None, extra_opts=None):
+def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
-    parser.add_option('--dir', dest='dir_name', default=dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
-    parser.add_option('--name', dest='name', default=name, help='Procedure name')
+    parser.add_option('--varqc-dir', dest='proc_dir_name', default=proc_dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
+    parser.add_option('--varqc-name', dest='proc_name', default=proc_name, help='Procedure name')
     parser.add_option('-o', dest='output_dir', metavar='DIR')
 
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
-    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
 
     cnf_project_name = cnf.project_name
     if len(bcbio_project_dirpaths) > 1:
@@ -49,8 +49,8 @@ def summary_script_proc_params(name, dir_name=None, description=None, extra_opts
     # Single project, running as usually
     if len(bcbio_structures) == 1:
         bcbio_structure = bcbio_structures[0]
-        cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.dir_name) if cnf.dir_name else None
-        cnf.work_dir = cnf.work_dir or join(bcbio_structure.work_dir, cnf.name)
+        cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.proc_dir_name) if cnf.proc_dir_name else None
+        cnf.work_dir = cnf.work_dir or join(bcbio_structure.work_dir, cnf.proc_name)
         set_up_work_dir(cnf)
 
         info('*' * 70)

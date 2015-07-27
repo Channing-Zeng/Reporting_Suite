@@ -277,8 +277,8 @@ class BCBioRunner:
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
-                ' --name ' + BCBioStructure.varqc_after_name +
-                ' --dir ' + BCBioStructure.varqc_after_dir
+                ' --varqc-name ' + BCBioStructure.varqc_after_name +
+                ' --varqc-dir ' + BCBioStructure.varqc_after_dir
         )
         varfilter_paramline = summaries_cmdline_params + ' ' + self.final_dir + ' --caller {caller} '
         if cnf.datahub_path:

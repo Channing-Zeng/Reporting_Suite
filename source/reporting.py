@@ -214,7 +214,7 @@ class SampleReport(Report):
 
     def set_project_tag(self, tag):
         if not self.project_tag and tag:
-            self.display_name = tag + ' ' + self.display_name
+            self.display_name = '[' + tag + ']' + ' ' + self.display_name
             self.project_tag = tag
 
     def set_caller_tag(self, tag):
@@ -657,29 +657,29 @@ def write_tsv_rows(rows, output_dirpath, base_fname):
     return output_fpath
 
 
-def parse_value(string):
-    val = string.replace(' ', '').replace(',', '')
-
-    num_chars = []
-    unit_chars = []
-
-    i = 0
-    while i < len(val) and (val[i].isdigit() or val[i] == '.'):
-        num_chars += val[i]
-        i += 1
-    while i < len(val):
-        unit_chars += val[i]
-        i += 1
-
-    val_num = ''.join(num_chars)
-    val_unit = ''.join(unit_chars)
-
-    try:
-        val = int(val_num)
-    except ValueError:
-        try:
-            val = float(val_num)
-        except ValueError:
-            val = val_num
-
-    return val
+# def parse_value(string):
+#     val = string.replace(' ', '').replace(',', '')
+#
+#     num_chars = []
+#     unit_chars = []
+#
+#     i = 0
+#     while i < len(val) and (val[i].isdigit() or val[i] == '.'):
+#         num_chars += val[i]
+#         i += 1
+#     while i < len(val):
+#         unit_chars += val[i]
+#         i += 1
+#
+#     val_num = ''.join(num_chars)
+#     val_unit = ''.join(unit_chars)
+#
+#     try:
+#         val = int(val_num)
+#     except ValueError:
+#         try:
+#             val = float(val_num)
+#         except ValueError:
+#             val = val_num
+#
+#     return val
