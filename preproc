@@ -222,7 +222,7 @@ def __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, suf='R1'
 def downsample_fastq(cnf, sample, reads_num=1e6):
     # downsampled_reads_fpath = join(cnf.work_dir, sample.name + '_' + str(reads_num) + '.fastq')
     info('Downsampling ' + sample.name + ' to ' + str(int(reads_num)))
-    l_fpath, r_fpath = downsample(cnf.work_dir, sample.l_fpath, sample.r_fpath, reads_num)
+    l_fpath, r_fpath = downsample(cnf.work_dir, sample.l_fpath, sample.r_fpath, int(reads_num))
     return l_fpath, r_fpath
 
 

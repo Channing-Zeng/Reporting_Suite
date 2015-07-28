@@ -13,6 +13,7 @@ def downsample(work_dir, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     quick=True will just grab the first N reads rather than do a true
     downsampling
     """
+    N = int(N)
     if quick:
         rand_records = range(N)
     else:
