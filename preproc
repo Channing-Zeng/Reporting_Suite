@@ -1,25 +1,31 @@
 #!/usr/bin/env python
+import re
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
 import sys
 from optparse import OptionParser
-from os.path import join, isfile, basename, isdir, expanduser, exists, dirname
+from os.path import join, isfile, basename, isdir, expanduser, exists, dirname, splitext
 from time import sleep
 import shutil
 from collections import OrderedDict
 from itertools import dropwhile
 import tempfile
+from source import BaseSample
 
 from source.calling_process import call
+from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
 from source.qsub_utils import submit_job, wait_for_jobs
+from source.targetcov.cov import make_targetseq_reports
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config
 from source.logger import info, critical, err, is_local, warn
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf
-from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
+    check_genome_resources
+from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path
 from source.utils import compatible_with_ngs_webserver
 from source.webserver.ssh_utils import symlink_to_ngs, sync_with_ngs_server
 
@@ -55,6 +61,7 @@ def proc_opts():
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
     # check_genome_resources(cnf)
     check_system_resources(cnf, optional=['fastq'])
+    check_genome_resources(cnf)
 
     work_dir_path = tempfile.mkdtemp(dir=expanduser('~'))
     # work_dir_path =  #join(dataset_dirpath, 'work')
@@ -70,30 +77,31 @@ def proc_opts():
     return cnf, dataset_dirpath, jira_url
 
 
-def parse_sample_sheet(sample_sheet_fpath):
-    with open(sample_sheet_fpath) as f:
-        sample_lines = dropwhile(lambda l: not l.startswith('FCID'), f)
-        sample_infos = []
-        keys = []
-        for l in sample_lines:
-            if l.startswith('FCID'):
-                keys = l.strip().split(',')
-            else:
-                fs = l.strip().split(',')
-                sample_infos.append(dict(zip(keys, fs)))
-
-    sample_names = []
-    for i, info_d in enumerate(sample_infos):
-        key = 'Sample_ID'
-        if key not in info_d:
-            key = 'SampleID'
-        lane = 1
-        if 'Lane' in info_d:
-            lane = int(info_d['Lane'])
-        sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
-        # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
-
-    return sample_names
+# def __parse_sample_sheet(sample_sheet_fpath):
+#     with open(sample_sheet_fpath) as f:
+#         sample_lines = dropwhile(lambda l: not l.startswith('FCID'), f)
+#         sample_infos = []
+#         keys = []
+#         for l in sample_lines:
+#             if l.startswith('FCID'):
+#                 keys = l.strip().split(',')
+#             else:
+#                 fs = l.strip().split(',')
+#                 sample_infos.append(dict(zip(keys, fs)))
+#
+#     sample_names = []
+#     for i, info_d in enumerate(sample_infos):
+#         key = 'Sample_ID'
+#         if key not in info_d:
+#             key = 'SampleID'
+#         lane = 1
+#         if 'Lane' in info_d:
+#             lane = int(info_d['Lane'])
+#         sample_names.append(info_d[key].replace(' ', '_'))
+#         # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
+#         # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
+#
+#     return sample_names
 
 
 def main():
@@ -117,42 +125,41 @@ def main():
     if not isfile(sample_sheet_csv_fpath):
         sample_sheet_csv_fpath = join(project_dirpath, 'SampleSheet.csv')
     verify_file(sample_sheet_csv_fpath, is_critical=True)
-    sample_names = parse_sample_sheet(sample_sheet_csv_fpath)
 
     # Directory to run fastq
     fastq_dirpath = join(unaligned_dirpath, 'fastq')
     safe_mkdir(fastq_dirpath)
+    sample_dirpaths = [join(bcl2fastq_dirpath, sample_dirname)
+                       for sample_dirname in os.listdir(bcl2fastq_dirpath)
+                       if isdir(join(bcl2fastq_dirpath, sample_dirname))]
+    samples = []
+    for sample_dirpath in sample_dirpaths:
+        sample_dirname = basename(sample_dirpath)
+        if sample_dirname.startswith('Sample_'):
+            sample_name = sample_dirname.split('_', 1)[1]
+            r1_fpath = __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, 'R1')
+            r2_fpath = __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, 'R2')
+            samples.append(Sample(sample_name, r1_fpath, r2_fpath))
 
+    # Write sample and fastq list
     # sample_list_fpath = join(fastq_dirpath, 'samples.list')
     # verify_file(sample_list_fpath, is_critical=True)
     # with open(sample_list_fpath) as f:
     #     sample_names = [l.strip() for l in f]
 
-    sample_dirpaths = [join(bcl2fastq_dirpath, sample_dirname)
-                       for sample_dirname in os.listdir(bcl2fastq_dirpath)
-                       if isdir(join(bcl2fastq_dirpath, sample_dirname))]
-    fastq_fpaths = [join(sample_dirpath, fname)
-                    for sample_dirpath in sample_dirpaths
-                    for fname in os.listdir(sample_dirpath)
-                    if fname.endswith('.fastq.gz')]
-    if len(fastq_fpaths) == 0:
-        critical('No fastq files found inside ')
+    # Downsample, align, and analyse
+    bam_by_sample = dict()
+    for sample in samples:
+        l_fpath, r_fpath = downsample_fastq(cnf, sample)
+        bam_by_sample[sample.name] = align(cnf, sample, l_fpath, r_fpath)
 
-    # Getting list of samples with fastqc
-    samples = []
-    fastq_by_sn = find_fastq_pairs_by_sample_name(fastq_fpaths, sample_names)
-    for sn in sample_names:
-        if not fastq_by_sn[sn]:
-            critical('No fastq for ' + sn)
-        l_fpath = fastq_by_sn[sn][0]
-        r_fpath = fastq_by_sn[sn][1]
-        l_fpath_link = join(fastq_dirpath, sn + '_R1.fastq.gz')
-        r_fpath_link = join(fastq_dirpath, sn + '_R2.fastq.gz')
-        if not exists(l_fpath_link):
-            os.symlink(l_fpath, l_fpath_link)
-        if not exists(r_fpath_link):
-            os.symlink(r_fpath, r_fpath_link)
-        samples.append(Sample(name=sn, l_fpath=l_fpath_link, r_fpath=r_fpath_link))
+    downsample_metamapping_dirpath = join(project_dirpath, 'Downsample_MetaMapping')
+    safe_mkdir(downsample_metamapping_dirpath)
+    run_metamapping(cnf, samples, bam_by_sample, downsample_metamapping_dirpath)
+
+    downsample_targqc_dirpath = join(project_dirpath, 'Downsample_TargQC')
+    safe_mkdir(downsample_targqc_dirpath)
+    run_targqc(cnf, samples, bam_by_sample, downsample_targqc_dirpath)
 
     # Running FastQC
     fastqc_dirpath = join(fastq_dirpath, 'fastqc')
@@ -193,10 +200,71 @@ def main():
             jira_case = retrieve_jira_info(jira_url)
 
         sync_with_ngs_server(cnf, jira_case=jira_case,
-            project_name=cnf.project_name, sample_names=sample_names)
+            project_name=cnf.project_name, sample_names=[s.name for s in samples])
 
     info()
     info('*' * 70)
+
+
+def __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, suf='R1'):
+    fastq_fpaths = [join(sample_dirpath, fn) for fn in os.listdir(sample_dirpath) if re.match(sample_name + '.*_' + suf + '.*\.fastq\.gz', fn)]
+    if not fastq_fpaths:
+        critical('No fastq files for the sample ' + sample_name + ' were found inside ' + sample_dirpath)
+
+    concat_fastq_fpath = join(fastq_dirpath, sample_name + '_' + suf + '.fastq.gz')
+    with open(concat_fastq_fpath, 'w') as out:
+        for fq_fpath in fastq_fpaths:
+            with open(fq_fpath, 'r') as inp:
+                shutil.copyfileobj(inp, out)
+    return concat_fastq_fpath
+
+
+def downsample_fastq(cnf, sample, reads_num=1e6):
+    # downsampled_reads_fpath = join(cnf.work_dir, sample.name + '_' + str(reads_num) + '.fastq')
+    info('Downsampling ' + sample.name + ' to ' + str(int(reads_num)))
+    l_fpath, r_fpath = downsample(cnf.work_dir, sample.l_fpath, sample.r_fpath, reads_num)
+    return l_fpath, r_fpath
+
+
+def align(cnf, sample, l_fpath, r_fpath):
+    ref = cnf.genome.seq
+    bwa = get_system_path(cnf, 'bwa')
+    bwa_cmdline = '{bwa} mem {ref} {l_fpath} {r_fpath}'.format(**locals())
+    sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
+    call(cnf, bwa_cmdline, output_fpath=sam_fpath)
+
+    samtools = get_system_path(cnf, 'samtools')
+    bam_fpath = join(cnf.work_dir, sample.name + '_downsampled.bam')
+    sam2bam_cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
+    call(cnf, sam2bam_cmdline, output_fpath=bam_fpath)
+
+    return bam_fpath
+
+
+def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
+    info('Running MetaMapping for downsampled BAMs')
+
+
+def run_targqc(cnf, samples, bam_by_sample, output_dirpath):
+    info('Running TargQC for downsampled BAMs')
+
+    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    bed_fpath = cnf.bed
+    if bed_fpath:
+        info('Using amplicons/capture panel ' + bed_fpath)
+    elif exons_bed_fpath:
+        info('WGS, taking CDS as target')
+
+    for sample in samples:
+        sample.bed = cnf.bed
+        sample.bam = bam_by_sample[sample.name]
+        output_dirpath = join(output_dirpath, sample.name)
+        safe_mkdir(output_dirpath)
+        info('Running targeqSeq for ' + sample.name + ', saving into ' + output_dirpath)
+        avg_depth, gene_by_name, reports = make_targetseq_reports(
+            cnf, output_dirpath, sample, exons_bed_fpath)
+        [summary_report, per_gene_report] = reports
+        info()
 
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
@@ -210,12 +278,14 @@ def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     # parser.save_sections_into_file()
 
 
-class Sample:
+class Sample():
     def __init__(self, name, l_fpath, r_fpath):
         self.name = name
         self.l_fpath = l_fpath
         self.r_fpath = r_fpath
         self.fastqc_html_fpath = None
+        self.bam = None
+        self.bed = None
 
 
 def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):

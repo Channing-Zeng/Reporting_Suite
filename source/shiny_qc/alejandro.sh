@@ -29,7 +29,7 @@ fqs=$(find $tmp | grep fastq.gz)
 mkdir $tmp/FastQC
 fastqc --extract -o $tmp/FastQC -t $cpu $fqs
  
- 
+
 
 #######################################################################
 ################### METAMAPPING (CONTAMINATION) #######################

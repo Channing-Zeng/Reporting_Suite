@@ -43,6 +43,8 @@ resources:
 #    path: tools/qsub.sh
   fastqc:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/fastqc
+  bwa:
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bwa
 
 genomes:
   hg38:

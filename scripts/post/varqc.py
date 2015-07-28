@@ -57,7 +57,7 @@ def process_one(cnf):
     if not verify_file(vcf_fpath):
         critical('Annotated VCF ' + vcf_fpath + ' does not exist, thus cannot run VarQC')
 
-    sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+    sample = SingleSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     if cnf.get('filter_reject'):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)
@@ -73,8 +73,8 @@ def process_one(cnf):
     report.plots = [relpath(plot_fpath, cnf.output_dir) for plot_fpath in qc_plots_for_html_report_fpaths]
 
     summary_report_html_fpath = report.save_html(
-        cnf.output_dir, cnf.name + '-' + cnf.caller + '.' + cnf.proc_name,
-        caption='Variant QC for ' + cnf.name + ' (caller: ' + cnf.caller + ')')
+        cnf.output_dir, cnf.sample + '-' + cnf.caller + '.' + cnf.proc_name,
+        caption='Variant QC for ' + cnf.sample + ' (caller: ' + cnf.caller + ')')
 
     return summary_report_html_fpath, qc_plots_fpaths
 
@@ -86,10 +86,6 @@ def finalize_one(cnf, qc_report_fpath, qc_plots_fpaths):
         info('Saved QC plots are in: ' + ', '.join(qc_plots_fpaths))
     elif not verify_module('matplotlib'):
         warn('Warning: QC plots were not generated because matplotlib is not installed.')
-
-    # send_email('VarQC finished for ' + cnf.name + ':' +
-    #            '\nReport: ' + qc_report_fpath +
-    #            '\nPlots: ' + ', '.join(qc_plots_fpaths))
 
 
 def finalize_all(cnf, samples, results):

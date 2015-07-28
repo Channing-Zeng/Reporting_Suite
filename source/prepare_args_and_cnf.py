@@ -1,8 +1,11 @@
 from distutils import file_util
+import getpass
+import hashlib
 import sys
 import os
 from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, basename
 from os import getcwd
+import datetime
 from source import logger
 
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path, \
@@ -176,8 +179,13 @@ def set_up_dirs(cnf):
 
 
 def set_up_work_dir(cnf):
+    # timestamp = str(datetime.datetime.now())
+    # user_prid = getpass.getuser()
+    # hasher = hashlib.sha1( + timestamp)
+    # path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+
     if not cnf.work_dir:
-        work_dir_name = 'work' + ('_' + cnf.name if cnf.name else '')
+        work_dir_name = 'work' + ('_' + cnf.sample if cnf.sample else '')
         cnf.work_dir = join(cnf.output_dir, work_dir_name)
         # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
         #     rmtree(cnf.work_dir)

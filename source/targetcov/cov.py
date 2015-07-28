@@ -195,7 +195,7 @@ class TargetInfo:
         self.genes_num = genes_num
 
 
-def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
+def make_targetseq_reports(cnf, output_dir, sample, exons_bed, genes_fpath=None):
     bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
         _prep_files(cnf, sample, exons_bed)
 
@@ -241,7 +241,7 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     info()
     summary_report = make_and_save_general_report(
-        cnf, sample, bam_fpath, bam_stats, dedup_bam_stats,
+        cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats,
         combined_region, max_depth, target_info)
 
     un_annotated_amplicons = []
@@ -290,29 +290,29 @@ def make_targetseq_reports(cnf, sample, exons_bed, genes_fpath=None):
 
     per_gene_report = None
     if exons_bed or target_bed:
-        per_gene_report = _generate_region_cov_report(cnf, sample, cnf.output_dir,
+        per_gene_report = _generate_region_cov_report(cnf, sample, output_dir,
             gene_by_name.values(), un_annotated_amplicons)
 
     return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
 
 
 def make_and_save_general_report(
-        cnf, sample, bam_fpath, bam_stats, dedup_bam_stats,
-        combined_region=None, max_depth=None, target_info=None):
+        cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats,
+        combined_region=None, max_depth=None, target_info=None,):
 
     step_greetings('Target coverage summary report')
 
     chr_len_fpath = get_chr_len_fpath(cnf)
     ref_fapth = cnf.genome.seq
 
-    summary_report = generate_summary_report(cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
+    summary_report = generate_summary_report(cnf, output_dir, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
         cnf.coverage_reports.depth_thresholds, cnf.padding,
         combined_region=combined_region, max_depth=max_depth, target_info=target_info)
 
-    summary_report.save_json(cnf.output_dir, sample.name + '.' + source.targetseq_name)
-    summary_report.save_txt (cnf.output_dir, sample.name + '.' + source.targetseq_name)
-    summary_report.save_html(cnf.output_dir, sample.name + '.' + source.targetseq_name,
+    summary_report.save_json(output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report.save_txt (output_dir, sample.name + '.' + source.targetseq_name)
+    summary_report.save_html(output_dir, sample.name + '.' + source.targetseq_name,
         caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
@@ -351,7 +351,7 @@ def get_records_by_metrics(records, metrics):
 
 
 def generate_summary_report(
-        cnf, sample, bam_fpath, chr_len_fpath, ref_fapth,
+        cnf, output_dir, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
         depth_thresholds, padding,
         combined_region=None, max_depth=None, target_info=None):  # TODO: calculate max_depth independently of target
@@ -395,11 +395,12 @@ def generate_summary_report(
         info('Getting number of mapped reads on target...')
         mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
         report.add_record('Reads mapped on target', mapped_reads_on_target)
-        percent_mapped_on_target = 1.0 * mapped_reads_on_target / (dedup_bam_stats or bam_stats)['mapped'] if (dedup_bam_stats or bam_stats)['mapped'] else None
-        report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
-        assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
-        percent_mapped_off_target = 1.0 - percent_mapped_on_target
-        report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
+        if (dedup_bam_stats or bam_stats)['mapped']:
+            percent_mapped_on_target = 1.0 * mapped_reads_on_target / (dedup_bam_stats or bam_stats)['mapped']
+            report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
+            assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
+            percent_mapped_off_target = 1.0 - percent_mapped_on_target
+            report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
 
         info('Making bed file for padded regions...')
         padded_bed = get_padded_bed_file(cnf, target_info.bed, chr_len_fpath, padding)
@@ -431,8 +432,8 @@ def generate_summary_report(
     if picard:
         info()
         info('Picard ins size hist for "' + basename(bam_fpath) + '"')
-        picard_ins_size_hist_pdf = join(cnf.output_dir, 'picard_ins_size_hist.pdf')
-        picard_ins_size_hist_txt = join(cnf.output_dir, 'picard_ins_size_hist.txt')
+        picard_ins_size_hist_pdf = join(output_dir, 'picard_ins_size_hist.pdf')
+        picard_ins_size_hist_txt = join(output_dir, 'picard_ins_size_hist.txt')
         cmdline = '{picard} CollectInsertSizeMetrics' \
                   ' I={bam_fpath}' \
                   ' O={picard_ins_size_hist_txt}' \
@@ -757,7 +758,7 @@ def samtools_flag_stat(cnf, bam):
 
 def number_of_reads(cnf, bam, suf=''):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_' + suf + 'num_reads')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_reads')
     cmdline = '{samtools} view -c {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
@@ -766,7 +767,7 @@ def number_of_reads(cnf, bam, suf=''):
 
 def number_of_mapped_reads(cnf, bam, suf=''):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_' + suf + 'num_mapped_reads')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_mapped_reads')
     cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
@@ -775,7 +776,7 @@ def number_of_mapped_reads(cnf, bam, suf=''):
 
 def number_of_properly_paired_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_paired_reads')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_paired_reads')
     cmdline = '{samtools} view -c -f 2 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
@@ -784,7 +785,7 @@ def number_of_properly_paired_reads(cnf, bam):
 
 def number_of_dup_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_dup_reads')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_reads')
     cmdline = '{samtools} view -c -f 1024 {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
@@ -793,7 +794,7 @@ def number_of_dup_reads(cnf, bam):
 
 def number_of_dup_mapped_reads(cnf, bam):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_dup_unmapped_reads')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_unmapped_reads')
     cmdline = '{samtools} view -c -F 4 -f 1024 {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
@@ -805,7 +806,7 @@ def remove_dups(cnf, bam, output_fpath, samtools=None):
     if samtools is None:
         samtools = get_system_path(cnf, 'samtools', is_critical=True)
     cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=output_fpath)
+    j = submit_job(cnf, cmdline, cnf.project_name + '_' + basename(bam) + '_dedup', output_fpath=output_fpath)
     info()
     return j
 
@@ -846,7 +847,7 @@ def remove_dups_picard(cnf, bam_fpath):
 
 def number_mapped_reads_on_target(cnf, bed, bam):
     samtools = get_system_path(cnf, 'samtools')
-    output_fpath = join(cnf.work_dir, cnf.name + '_num_mapped_reads_target')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + basename(bed) + '_num_mapped_reads_target')
     cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:

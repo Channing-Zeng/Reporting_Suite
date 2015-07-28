@@ -490,12 +490,12 @@ class BCBioStructure:
         safe_mkdir(self.date_dirpath)
 
         info('Project name: ' + self.project_name)
-        self.cnf.name = proc_name or self.project_name
+        # self.cnf.name = proc_name or self.project_name
 
         self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log')
         info('log_dirpath: ' + self.log_dirpath)
         safe_mkdir(self.log_dirpath)
-        info('cnf.name: ' + self.cnf.name)
+        # info('cnf.name: ' + str(self.cnf.name))
 
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 

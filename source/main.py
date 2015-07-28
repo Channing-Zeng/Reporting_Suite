@@ -33,7 +33,7 @@ def read_opts_and_cnfs(extra_opts,
              help='output directory (or directory name in case of bcbio final dir)')
          ),
         (['-s', '--sample', '--name'], dict(
-             dest='name',
+             dest='sample',
              metavar='NAME',
              help='sample name (default is part of name of the first parameter prior to the first - or .')
          ),
@@ -95,15 +95,15 @@ def read_opts_and_cnfs(extra_opts,
     if errors:
         critical(errors)
 
-    if cnf.name:
-        cnf.name = remove_quotes(cnf.name)
+    if cnf.sample:
+        cnf.sample = remove_quotes(cnf.sample)
     else:
         if not key_for_sample_name or not cnf[key_for_sample_name]:
-            if cnf.name:
+            if cnf.sample:
                 critical('Error: ' + (key_for_sample_name or 'key_for_sample_name') +
                     ' must be provided in options or in ' + cnf.run_cnf + '.')
         key_fname = basename(cnf[key_for_sample_name])
-        cnf.name = key_fname.split('.')[0]
+        cnf.sample = key_fname.split('.')[0]
 
     if cnf.caller:
         cnf.caller = remove_quotes(cnf.caller)

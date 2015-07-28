@@ -20,7 +20,7 @@ from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.Region import Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
     group_and_merge_regions_by_gene, bedtools_version, prepare_beds
-from source.targetcov.cov import make_and_save_general_report, make_targetseq_reports, remove_dups
+from source.targetcov.cov import remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
