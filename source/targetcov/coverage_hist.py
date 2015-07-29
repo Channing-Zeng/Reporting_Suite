@@ -4,7 +4,7 @@ from source.calling_process import call
 from source.file_utils import splitext_plus
 from source.logger import critical, info, warn
 from source.targetcov.Region import Region
-from source.targetcov.bam_and_bed_utils import count_bed_cols
+from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
 
@@ -29,20 +29,20 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
-    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
     bedcov_output = join(cnf.work_dir,
         splitext_plus(basename(bed))[0] + '_' +
         splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
+
+    v = bedtools_version(bedtools)
+    if v and v >= 24:
+        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
+    else:
+        cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+
     # if reuse and file_exists(bedcov_output) and verify_file(bedcov_output):
     #     pass
     # else:
-    res = call(cnf, cmdline, bedcov_output, exit_on_error=False)
-    if not res:
-        info()
-        warn('Could not run bedtools, maybe old version, trying without -sorted -g [genome]')
-        cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
-        info()
-        res = call(cnf, cmdline, bedcov_output)
+    res = call(cnf, cmdline, bedcov_output)
     return bedcov_output
 
 

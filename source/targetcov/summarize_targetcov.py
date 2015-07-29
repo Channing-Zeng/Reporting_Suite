@@ -642,14 +642,13 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
 
 
 def get_bed_targqc_inputs(cnf, bed_fpath=None):
-    if bed_fpath:
-        bed_fpath = verify_bed(bed_fpath, is_critical=True, description='input bed file')
+    bed_fpath = verify_bed(bed_fpath, description='input bed file')
 
     exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
     info('Exons: ' + exons_bed_fpath)
 
-    bed_fpath = adjust_path(bed_fpath or exons_bed_fpath)
-    info('Using amplicons/capture panel ' + bed_fpath)
+    if bed_fpath:
+        info('Using amplicons/capture panel ' + bed_fpath)
 
     genes_fpath = None
     if cnf.genes:

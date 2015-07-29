@@ -36,6 +36,12 @@ def main(args):
                 action='store_true',
                 default=False)
              ),
+            (['--no-prep-bed'], dict(
+                dest='no_prep_bed',
+                help='do not fix input beds and exons',
+                action='store_true',
+                default=False)
+             ),
             (['-e', '--extended'], dict(
                 dest='extended',
                 help='extended - flagged regions and missed variants',
@@ -45,6 +51,10 @@ def main(args):
             (['--exons', '--exome'], dict(
                 dest='exons',
                 help='a BED file with real CDS regions (default Ensembl is in system_config)')
+             ),
+            (['--exons-no-genes'], dict(
+                dest='exons_no_genes',
+                help='a BED file with real CDS regions, w/o Gene records (default Ensembl is in system_config)')
              ),
             (['--genes'], dict(
                 dest='genes',
@@ -68,8 +78,8 @@ def main(args):
 
     check_genome_resources(cnf)
 
-    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    info('Exons: ' + exons_bed_fpath)
+    exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    info('Exons: ' + exons_bed)
 
     if cnf.genes:
         genes_fpath = adjust_path(cnf.genes)
@@ -82,10 +92,12 @@ def main(args):
     bed_fpath = cnf.bed
     if bed_fpath:
         info('Using amplicons/capture panel ' + bed_fpath)
-    elif exons_bed_fpath:
+    elif exons_bed:
         info('WGS, taking CDS as target')
 
-    run_one(cnf, process_one, finalize_one, multiple_samples=False, output_dir=cnf.output_dir, exons_bed_fpath=exons_bed_fpath, genes_fpath=genes_fpath)
+    run_one(cnf, process_one, finalize_one, multiple_samples=False,
+            output_dir=cnf.output_dir, exons_bed=exons_bed, exons_no_genes_bed=cnf.exons_no_genes,
+            genes_fpath=genes_fpath)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
@@ -96,11 +108,14 @@ class Sample(BaseSample):
         BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
 
-def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
+def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
     sample = Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
-    bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
-        prep_files(cnf, sample.name, sample.bam, sample.bed, exons_bed_fpath)
+    bam_fpath = cnf.bam
+    target_bed = cnf.bed
+    if not cnf.no_prep_bed:
+        bam_fpath, exons_bed, exons_no_genes_bed, target_bed, _ = \
+            prep_files(cnf, sample.name, sample.bam, sample.bed, exons_bed)
 
     avg_depth, gene_by_name, reports = make_targetseq_reports(
         cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath)

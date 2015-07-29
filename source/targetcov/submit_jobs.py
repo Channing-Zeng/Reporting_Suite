@@ -19,9 +19,13 @@ class StandaloneSample(source.BaseSample):
         source.BaseSample.__init__(self, name, dirpath, '{dirpath}/{sample}_{name}/', *args, **kwargs)
 
 
-def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_fpath):
+def run_targqc(cnf, bam_fpaths, main_script_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
+    if not target_bed:
+        target_bed = exons_bed
+        info('No target_bed, using exons_bed instead')
+
     samples = [
-        StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=bed_fpath, genome=cnf.genome.name)
+        StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=target_bed, genome=cnf.genome.name)
             for bam_fpath in bam_fpaths]
     samples.sort(key=lambda _s: _s.key_to_sort())
 
@@ -33,7 +37,7 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
     if not cnf.only_summary:
         targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
             _prep_steps(cnf, threads_per_sample, summary_threads,
-                samples, bed_fpath, exons_fpath, main_script_name)
+                samples, target_bed, exons_bed, exons_no_genes_bed, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -62,10 +66,10 @@ def run_targqc(cnf, bam_fpaths, main_script_name, bed_fpath, exons_fpath, genes_
 
     else:
         info('Making targqc summary')
-        return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, bed_fpath, exons_fpath, genes_fpath)
+        return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
 
 
-def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, main_script_name):
+def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, exons_no_genes_bed, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
     run_id = path_hash + '_' + cnf.project_name
@@ -88,8 +92,10 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
         ' --bam {bam}' + \
         ' --bed ' + bed_fpath + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
+       (' --exons-no-genes ' + exons_no_genes_bed if exons_no_genes_bed else '') + \
        (' --reannotate ' if cnf.reannotate else '') + \
-       (' --dedup ' if cnf.dedup else '')
+       (' --dedup ' if cnf.dedup else '') + \
+        ' --no-prep-bed'
 
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',

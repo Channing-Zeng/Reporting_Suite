@@ -28,7 +28,7 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config
 from source.logger import info, critical, err, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
-    check_genome_resources
+    check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
     add_suffix
 from source.utils import compatible_with_ngs_webserver
@@ -71,15 +71,17 @@ def proc_opts():
     if cnf.work_dir:
         cnf.debug = True
     else:
-        work_dir = tempfile.mkdtemp(dir=expanduser('~'))
+        work_dir = tempfile.mkdtemp()
         safe_mkdir(work_dir)
-        cnf.work_dir = join(cnf.work_dir, 'pre_processing')
+        cnf.work_dir = join(work_dir, 'pre_processing')
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
 
     cnf.project_name = project_name
     info('Project name: ' + cnf.project_name)
+
+    set_up_log(cnf, project_name=cnf.project_name)
 
     return cnf, dataset_dirpath, jira_url
 
@@ -227,13 +229,13 @@ def main():
         sync_with_ngs_server(cnf, jira_case=jira_case,
             project_name=cnf.project_name, sample_names=[s.name for s in samples])
 
+    info()
+    info('*' * 70)
     if not cnf.debug and cnf.work_dir:
         try:
             shutil.rmtree(cnf.work_dir)
         except OSError:
             err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
-    info()
-    info('*' * 70)
 
 
 def __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, suf='R1'):
@@ -270,7 +272,7 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
     cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
     call(cnf, cmdline)
 
-    index_bam(cnf, sorted_bam_fpath)
+    index_bam(cnf, sorted_bam_fpath, samtools=samtools)
 
     return sorted_bam_fpath
 
@@ -282,29 +284,35 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
 def run_targqc(cnf, samples, bam_by_sample, targqc_dirpath):
     info('Running TargQC for downsampled BAMs')
 
-    exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    bed_fpath = cnf.bed
-    if bed_fpath:
-        info('Using amplicons/capture panel ' + bed_fpath)
-    elif exons_bed:
-        info('WGS, taking CDS as target')
+    targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
+    bam_fpaths = ' '.join(bam_by_sample[s.name] for s in samples)
+    cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
+           '--work-dir {cnf.work_dir} --log-dir {cnf.log_dir} --project-name {cnf.project_name} ' \
+           '-o {targqc_dirpath}'.format(**locals())
+    if cnf.reuse:
+        cmdl += ' --reuse'
+    call(cnf, cmdl)
+    html_fpath = join(targqc_dirpath, 'targQC.html')
+    info('Waiting for targqc to be done...')
+    while True:
+        if isfile(html_fpath):
+            break
+    verify_file(html_fpath, is_critical=True)
+    return html_fpath
 
-    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
-        prepare_beds(cnf, exons_bed, bed_fpath)
+    # samples = [TargQCSample(
+    #     s.name,
+    #     output_dir=join(targqc_dirpath, s.name),
+    #     bed=cnf.bed,
+    #     bam=bam_by_sample[s.name])
+    #            for s in samples]
 
-    samples = [TargQCSample(
-        s.name,
-        output_dir=join(targqc_dirpath, s.name),
-        bed=cnf.bed,
-        bam=bam_by_sample[s.name])
-               for s in samples]
-
-    Parallel(n_jobs=len(samples))(delayed(make_targetseq_reports(
-        CallCnf(cnf.__dict__), sample.dirpath, sample,
-        sample.bam, exons_bed, exons_no_genes_bed, target_bed
-    )(CallCnf(cnf.__dict__), sample) for sample in samples))
-
-    return summarize_targqc(cnf, 1, targqc_dirpath, samples, bed_fpath, exons_bed)
+    # Parallel(n_jobs=len(samples))(delayed(make_targetseq_reports(
+    #     CallCnf(cnf.__dict__), sample.dirpath, sample,
+    #     sample.bam, exons_bed, exons_no_genes_bed, target_bed
+    # )(CallCnf(cnf.__dict__), sample) for sample in samples))
+    #
+    # return summarize_targqc(cnf, 1, targqc_dirpath, samples, bed_fpath, exons_bed)
 
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
@@ -324,11 +332,6 @@ class FastQCSample():
         self.l_fpath = l_fpath
         self.r_fpath = r_fpath
         self.fastqc_html_fpath = None
-
-
-class TargQCSample(BaseSample):
-    def __init__(self, name, output_dir, **kwargs):
-        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
 
 def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):
@@ -384,6 +387,8 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
             except OSError:
                 pass
             s.fastqc_html_fpath = join(fastqc_dirpath, s.name + '.fq_fastqc.html')
+            if not isfile(s.fastqc_html_fpath):
+                s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
             verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
             if os.path.exists(sample_fastqc_dirpath + '.zip'):
                 safe_mkdir(join(fastqc_dirpath, 'zip'))

@@ -21,6 +21,8 @@ resources:
     path: /usr/local/bin/vcf-merge
   picard:
     path: ext_tools/picard/picard.jar
+  seqtk:
+    path: ~/vagrant/seqtk/seqtk
 
 
 genomes:

@@ -15,6 +15,7 @@ from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
 from source.main import set_up_dirs
+from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.targetcov.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -61,19 +62,23 @@ def main():
 
     check_genome_resources(cnf)
 
-    bed_fpath, exons_bed_fpath, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
-    if not cnf.bed:
-        info('No bed is specified, using exons instead: ' + exons_bed_fpath)
+    target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
+    exons_no_genes_bed = None
+    if not target_bed:
+        info('No bed is specified, using exons instead: ' + exons_bed)
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
         verify_file(cnf.qsub_runner, is_critical=True)
 
+        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+            prepare_beds(cnf, exons_bed, target_bed)
+
     info('*' * 70)
     info()
 
-    targqc_html_fpath = run_targqc(cnf, bam_fpaths, basename(__file__), bed_fpath, exons_bed_fpath, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, bam_fpaths, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 
