@@ -17,8 +17,8 @@ def main():
     jsons_by_sample_by_caller = defaultdict(dict)
     htmls_by_sample_by_caller = defaultdict(dict)
     for vc in bcbio_structure.variant_callers.values():
-        jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(cnf.dir_name, cnf.proc_name, 'json', bcbio_structure.final_dirpath)
-        htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(cnf.dir_name, cnf.proc_name, 'html', bcbio_structure.final_dirpath)
+        jsons_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(cnf.proc_dir_name, cnf.proc_name, 'json', bcbio_structure.final_dirpath)
+        htmls_by_sample_by_caller[vc.name] = vc.find_fpaths_by_sample(cnf.proc_dir_name, cnf.proc_name, 'html', bcbio_structure.final_dirpath)
 
     make_summary_reports(cnf, 1, cnf.output_dir, bcbio_structure.variant_callers.values(),
          bcbio_structure.samples, jsons_by_sample_by_caller, htmls_by_sample_by_caller,
