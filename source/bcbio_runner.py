@@ -34,7 +34,7 @@ class Step:
         self.env_vars = env_vars
 
     def job_name(self, sample=None, caller=None):
-        return self.short_name.upper() + '_' + self.run_id_ + \
+        return 'J_' + self.short_name.upper() + '_' + self.run_id_ + \
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
 
