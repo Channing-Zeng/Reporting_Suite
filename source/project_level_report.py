@@ -15,6 +15,11 @@ from source.webserver.ssh_utils import sync_with_ngs_server
 from utils import compatible_with_ngs_webserver
 
 
+def make_empty_project_level_report(cnf, bcbio_structure):
+    pass
+
+
+
 def make_project_level_report(cnf, bcbio_structure):
     step_greetings('Project-level report')
 

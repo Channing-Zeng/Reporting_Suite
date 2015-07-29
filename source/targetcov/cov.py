@@ -77,26 +77,6 @@ def get_header_metric_storage(depth_thresholds):
     return ms
 
 
-def _prep_files(cnf, sample, exons_bed):
-    bam_fpath = sample.bam
-    if not bam_fpath:
-        critical(sample.name + ': BAM file is required.')
-    if not isfile(bam_fpath + '.bai'):
-        info('Indexing bam ' + bam_fpath)
-        index_bam(cnf, bam_fpath)
-
-    target_bed = sample.bed
-    # if not sample.bed:
-    #     info(sample.name + ': BED file was not provided. Using Exons as default: ' + exons_bed)
-
-    if not exons_bed:
-        err('Error: no exons specified for the genome in system config.')
-
-    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
-
-    return bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
-
-
 def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
     gene_by_name = OrderedDict()
 
@@ -195,10 +175,8 @@ class TargetInfo:
         self.genes_num = genes_num
 
 
-def make_targetseq_reports(cnf, output_dir, sample, exons_bed, genes_fpath=None):
-    bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
-        _prep_files(cnf, sample, exons_bed)
-
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath=None):
+    info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     bam_stats = samtools_flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
     info('Total mapped reads: ' + Metric.format_value(bam_stats['mapped']))
@@ -235,7 +213,7 @@ def make_targetseq_reports(cnf, output_dir, sample, exons_bed, genes_fpath=None)
         total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
 
         target_info = TargetInfo(
-            fpath=cnf.bed or cnf.exons or cnf.genome.exons, bed=target_bed or exons_no_genes_bed,
+            fpath=target_bed or exons_no_genes_bed, bed=target_bed or exons_no_genes_bed,
             regions_num=len(targets), bases_num=total_bed_size,
             genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
@@ -293,6 +271,7 @@ def make_targetseq_reports(cnf, output_dir, sample, exons_bed, genes_fpath=None)
         per_gene_report = _generate_region_cov_report(cnf, sample, output_dir,
             gene_by_name.values(), un_annotated_amplicons)
 
+    info()
     return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
 
 

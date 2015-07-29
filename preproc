@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-import re
 import __check_python_version  # checking for python version and adding site dirs inside
 
+import re
 import os
 import sys
 from optparse import OptionParser
@@ -11,21 +11,26 @@ import shutil
 from collections import OrderedDict
 from itertools import dropwhile
 import tempfile
-from source import BaseSample
+from joblib import Parallel, delayed
+from source.config import CallCnf
 
+from source import BaseSample
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
 from source.qsub_utils import submit_job, wait_for_jobs
+from source.targetcov import cov
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.targetcov.cov import make_targetseq_reports
-from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs, summarize_targqc
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config
 from source.logger import info, critical, err, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources
-from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path
+from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
+    add_suffix
 from source.utils import compatible_with_ngs_webserver
 from source.webserver.ssh_utils import symlink_to_ngs, sync_with_ngs_server
 
@@ -139,7 +144,7 @@ def main():
             sample_name = sample_dirname.split('_', 1)[1]
             r1_fpath = __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, 'R1')
             r2_fpath = __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, 'R2')
-            samples.append(Sample(sample_name, r1_fpath, r2_fpath))
+            samples.append(FastQCSample(sample_name, r1_fpath, r2_fpath))
 
     # Write sample and fastq list
     # sample_list_fpath = join(fastq_dirpath, 'samples.list')
@@ -149,9 +154,21 @@ def main():
 
     # Downsample, align, and analyse
     bam_by_sample = dict()
-    for sample in samples:
-        l_fpath, r_fpath = downsample_fastq(cnf, sample)
-        bam_by_sample[sample.name] = align(cnf, sample, l_fpath, r_fpath)
+
+    fastqs = Parallel(n_jobs=len(samples))(delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample) for sample in samples)
+    lefts = [l for l, r in fastqs]
+    rights = [r for l, r in fastqs]
+    print cnf.genome.seq
+    aligned = Parallel(n_jobs=len(samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
+        get_system_path(cnf, 'samtools', is_critical=True),
+        get_system_path(cnf, 'bwa', is_critical=True),
+        get_system_path(cnf, 'seqtk', is_critical=True),
+        cnf.genome.seq) for s, l, r in zip(samples, lefts, rights))
+    for sample, bam_fpath in zip(samples, aligned):
+        bam_by_sample[sample.name] = bam_fpath
+    # for sample in samples:
+    #     l_fpath, r_fpath = downsample_fastq(cnf, sample)
+    #     bam_by_sample[sample.name] = align(cnf, sample, l_fpath, r_fpath)
 
     downsample_metamapping_dirpath = join(project_dirpath, 'Downsample_MetaMapping')
     safe_mkdir(downsample_metamapping_dirpath)
@@ -159,7 +176,7 @@ def main():
 
     downsample_targqc_dirpath = join(project_dirpath, 'Downsample_TargQC')
     safe_mkdir(downsample_targqc_dirpath)
-    run_targqc(cnf, samples, bam_by_sample, downsample_targqc_dirpath)
+    targqc_html_fpath = run_targqc(cnf, samples, bam_by_sample, downsample_targqc_dirpath)
 
     # Running FastQC
     fastqc_dirpath = join(fastq_dirpath, 'fastqc')
@@ -172,6 +189,9 @@ def main():
     new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
     if not exists(new_project_symlink):
         os.symlink(project_dirpath, new_project_symlink)
+
+    # Running project-level report
+    # make_project_level_report(cnf, )
 
     # Exposing
     if compatible_with_ngs_webserver() and (cnf.expose_to_ngs_server or cnf.expose_to_ngs_server_only):
@@ -193,6 +213,9 @@ def main():
 
             # Sample sheet
             symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
+
+            # TargQC downsampled
+            symlink_to_ngs(targqc_html_fpath, ngs_webserver_seqqc_proj_dirpath)
 
         jira_case = None
         if jira_url:
@@ -231,19 +254,23 @@ def downsample_fastq(cnf, sample, reads_num=1e5):
     return l_fpath, r_fpath
 
 
-def align(cnf, sample, l_fpath, r_fpath):
-    ref = cnf.genome.seq
-    bwa = get_system_path(cnf, 'bwa')
-    bwa_cmdline = '{bwa} mem {ref} {l_fpath} {r_fpath}'.format(**locals())
+def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
+    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {ref} -'.format(**locals())
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     call(cnf, bwa_cmdline, output_fpath=sam_fpath)
 
-    samtools = get_system_path(cnf, 'samtools')
     bam_fpath = join(cnf.work_dir, sample.name + '_downsampled.bam')
-    sam2bam_cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
-    call(cnf, sam2bam_cmdline, output_fpath=bam_fpath)
+    cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
+    call(cnf, cmdline, output_fpath=bam_fpath)
 
-    return bam_fpath
+    sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
+    prefix = splitext(sorted_bam_fpath)[0]
+    cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
+    call(cnf, cmdline)
+
+    index_bam(cnf, sorted_bam_fpath)
+
+    return sorted_bam_fpath
 
 
 def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
@@ -253,23 +280,29 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
 def run_targqc(cnf, samples, bam_by_sample, targqc_dirpath):
     info('Running TargQC for downsampled BAMs')
 
-    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
     bed_fpath = cnf.bed
     if bed_fpath:
         info('Using amplicons/capture panel ' + bed_fpath)
-    elif exons_bed_fpath:
+    elif exons_bed:
         info('WGS, taking CDS as target')
 
-    for sample in samples:
-        sample.bed = cnf.bed
-        sample.bam = bam_by_sample[sample.name]
-        output_dirpath = join(targqc_dirpath, sample.name)
-        safe_mkdir(output_dirpath)
-        info('Running targeqSeq for ' + sample.name + ', saving into ' + output_dirpath)
-        avg_depth, gene_by_name, reports = make_targetseq_reports(
-            cnf, output_dirpath, sample, exons_bed_fpath)
-        [summary_report, per_gene_report] = reports
-        info()
+    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+        prepare_beds(cnf, exons_bed, bed_fpath)
+
+    samples = [TargQCSample(
+        s.name,
+        output_dir=join(targqc_dirpath, s.name),
+        bed=cnf.bed,
+        bam=bam_by_sample[s.name])
+               for s in samples]
+
+    Parallel(n_jobs=len(samples))(delayed(make_targetseq_reports(
+        CallCnf(cnf.__dict__), sample.dirpath, sample,
+        sample.bam, exons_bed, exons_no_genes_bed, target_bed
+    )(CallCnf(cnf.__dict__), sample) for sample in samples))
+
+    return summarize_targqc(cnf, 1, targqc_dirpath, samples, bed_fpath, exons_bed)
 
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
@@ -283,14 +316,17 @@ def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     # parser.save_sections_into_file()
 
 
-class Sample():
+class FastQCSample():
     def __init__(self, name, l_fpath, r_fpath):
         self.name = name
         self.l_fpath = l_fpath
         self.r_fpath = r_fpath
         self.fastqc_html_fpath = None
-        self.bam = None
-        self.bed = None
+
+
+class TargQCSample(BaseSample):
+    def __init__(self, name, output_dir, **kwargs):
+        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
 
 def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):

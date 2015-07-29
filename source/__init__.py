@@ -38,7 +38,7 @@ mut_pass_suffix = 'PASS'
 
 
 class BaseSample:
-    def __init__(self, name, dirpath=None, path_base=None, bam=None, bed=None, vcf=None, genome=None):
+    def __init__(self, name, dirpath, path_base=None, bam=None, bed=None, vcf=None, genome=None):
         self.name = name
         self.bam = bam
         self.bed = bed
@@ -51,6 +51,9 @@ class BaseSample:
         self.var_dirpath = None
         self.normal_match = None
         self.min_af = None
+
+        if not path_base:
+            path_base = dirpath
 
         self.targetcov_html_fpath          = self.make_fpath(path_base + '{sample}.{name}.html', name=targetseq_name)
         self.targetcov_json_fpath          = self.make_fpath(path_base + '{sample}.{name}.json', name=targetseq_name)

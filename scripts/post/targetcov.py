@@ -1,13 +1,17 @@
 #!/usr/bin/env python
+from os.path import isfile
 
 import __check_python_version
 
 import sys
 import shutil
 from source import BaseSample
+from source.logger import critical
+from source.logger import err
 from source.main import read_opts_and_cnfs
 from source.config import defaults
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
@@ -95,7 +99,11 @@ class Sample(BaseSample):
 def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
     sample = Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
-    avg_depth, gene_by_name, reports = make_targetseq_reports(cnf, output_dir, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
+    bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
+        prep_files(cnf, sample.name, sample.bam, sample.bed, exons_bed_fpath)
+
+    avg_depth, gene_by_name, reports = make_targetseq_reports(
+        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath)
 
     if cnf.extended:
         info('Generating flagged regions report...')
@@ -120,6 +128,26 @@ def finalize_one(cnf, *args):
         if selected_regions_report.txt_fpath:
             info('Selected regions: ' + selected_regions_report.txt_fpath +
                  ' (' + str(len(selected_regions_report.regions)) + ' regions)')
+
+
+def prep_files(cnf, sample_name, bam_fpath, bed_fpath, exons_bed):
+    bam_fpath = bam_fpath
+    if not bam_fpath:
+        critical(sample_name + ': BAM file is required.')
+    if not isfile(bam_fpath + '.bai'):
+        info('Indexing bam ' + bam_fpath)
+        index_bam(cnf, bam_fpath)
+
+    target_bed = bed_fpath
+    # if not sample.bed:
+    #     info(sample.name + ': BED file was not provided. Using Exons as default: ' + exons_bed)
+
+    if not exons_bed:
+        err('Error: no exons specified for the genome in system config.')
+
+    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+
+    return bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
 
 if __name__ == '__main__':
