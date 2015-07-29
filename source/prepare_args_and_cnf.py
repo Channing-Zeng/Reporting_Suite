@@ -31,6 +31,7 @@ def add_cnf_t_reuse_prjname_reuse_marker_genome(parser):
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
     # parser.add_option('--email', dest='email')
     parser.add_option('--genome', dest='genome', help='Genome build.', default='hg19')
+    parser.add_option('--debug', dest='debug', help='Debug mode; keep work directory.', action='store_true', default=False)
 
 
 def check_genome_resources(cnf):

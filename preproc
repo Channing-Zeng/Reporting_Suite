@@ -202,6 +202,11 @@ def main():
         sync_with_ngs_server(cnf, jira_case=jira_case,
             project_name=cnf.project_name, sample_names=[s.name for s in samples])
 
+    if not cnf.debug and cnf.work_dir:
+        try:
+            shutil.rmtree(cnf.work_dir)
+        except OSError:
+            err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
     info()
     info('*' * 70)
 
@@ -219,7 +224,7 @@ def __find_and_concat_fastq(sample_dirpath, sample_name, fastq_dirpath, suf='R1'
     return concat_fastq_fpath
 
 
-def downsample_fastq(cnf, sample, reads_num=1e6):
+def downsample_fastq(cnf, sample, reads_num=1e5):
     # downsampled_reads_fpath = join(cnf.work_dir, sample.name + '_' + str(reads_num) + '.fastq')
     info('Downsampling ' + sample.name + ' to ' + str(int(reads_num)))
     l_fpath, r_fpath = downsample(cnf.work_dir, sample.l_fpath, sample.r_fpath, int(reads_num))
@@ -245,7 +250,7 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
     info('Running MetaMapping for downsampled BAMs')
 
 
-def run_targqc(cnf, samples, bam_by_sample, output_dirpath):
+def run_targqc(cnf, samples, bam_by_sample, targqc_dirpath):
     info('Running TargQC for downsampled BAMs')
 
     exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
@@ -258,7 +263,7 @@ def run_targqc(cnf, samples, bam_by_sample, output_dirpath):
     for sample in samples:
         sample.bed = cnf.bed
         sample.bam = bam_by_sample[sample.name]
-        output_dirpath = join(output_dirpath, sample.name)
+        output_dirpath = join(targqc_dirpath, sample.name)
         safe_mkdir(output_dirpath)
         info('Running targeqSeq for ' + sample.name + ', saving into ' + output_dirpath)
         avg_depth, gene_by_name, reports = make_targetseq_reports(
