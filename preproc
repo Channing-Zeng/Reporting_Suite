@@ -68,10 +68,12 @@ def proc_opts():
     check_system_resources(cnf, optional=['fastq'])
     check_genome_resources(cnf)
 
-    work_dir_path = tempfile.mkdtemp(dir=expanduser('~'))
-    # work_dir_path =  #join(dataset_dirpath, 'work')
-    safe_mkdir(work_dir_path)
-    cnf.work_dir = join(work_dir_path, 'pre_processing')
+    if cnf.work_dir:
+        cnf.debug = True
+    else:
+        work_dir = tempfile.mkdtemp(dir=expanduser('~'))
+        safe_mkdir(work_dir)
+        cnf.work_dir = join(cnf.work_dir, 'pre_processing')
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
