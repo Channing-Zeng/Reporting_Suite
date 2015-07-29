@@ -83,7 +83,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
         ('ngscat', ngscat_report_parser.metric_storage),
         ('qualimap', qualimap_report_parser.metric_storage)])
 
-    targqc_full_report = FullReport(cnf.name, [], metric_storage=targqc_metric_storage)
+    targqc_full_report = FullReport(source.targqc_repr, [], metric_storage=targqc_metric_storage)
 
     for sample in samples:
         records_by_report_type = []

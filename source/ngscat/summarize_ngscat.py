@@ -1,4 +1,5 @@
 from os.path import relpath
+import source
 from source.reporting import FullReport, SampleReport
 from source.logger import step_greetings, info, send_email
 from source.ngscat import report_parser
@@ -11,7 +12,7 @@ def summary_reports(cnf, bcbio_structure):
     if not htmls_by_sample:
         return []
 
-    full_report = FullReport(cnf.name, [
+    full_report = FullReport(source.ngscat_repr, [
         SampleReport(sample,
                      records=report_parser.parse_ngscat_sample_report(htmls_by_sample[sample.name]),
                      html_fpath=relpath(htmls_by_sample[sample.name], cnf.output_dir),

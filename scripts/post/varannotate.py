@@ -66,7 +66,7 @@ def main(args):
 
 def process_one(cnf):
     info('process_one')
-    sample = SingleSample(cnf.name, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+    sample = SingleSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
@@ -112,7 +112,7 @@ def process_one(cnf):
 
 
 def finalize_one(cnf, anno_vcf_fpath):
-    msg = ['Annoatation finished for ' + cnf.name + ':']
+    msg = ['Annoatation finished for ' + cnf.sample + ':']
     if anno_vcf_fpath:
         msg.append('VCF: ' + anno_vcf_fpath)
         info('Saved final VCF to ' + anno_vcf_fpath)

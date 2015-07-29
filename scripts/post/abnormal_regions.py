@@ -71,7 +71,7 @@ class Sample(BaseSample):
 
 
 def finalize_one(cnf, *abnormal_regions_reports):
-    msg = ['Regions with abnormal regions finished for ' + cnf.name + ':']
+    msg = ['Regions with abnormal regions finished for ' + cnf.sample + ':']
 
     if abnormal_regions_reports:
         msg.append('Abnormal region reports: ')

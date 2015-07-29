@@ -56,7 +56,7 @@ def main():
 
     cnf.proc_name = 'TargQC'
     set_up_dirs(cnf)
-    cnf.name = 'TargQC_' + cnf.project_name
+    # cnf.name = 'TargQC_' + cnf.project_name
 
     check_genome_resources(cnf)
 

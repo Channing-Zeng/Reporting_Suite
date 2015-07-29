@@ -244,7 +244,7 @@ def _snpeff(cnf, input_fpath):
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
-    stats_fpath = join(cnf.work_dir, cnf.name + '-' + cnf.caller + '.snpEff_summary.html')
+    stats_fpath = join(cnf.work_dir, cnf.sample + '-' + cnf.caller + '.snpEff_summary.html')
 
     ref_name = cnf.annotation.snpeff.reference or cnf.genome.name
     # if ref_name == 'GRCh37': ref_name += '.75'

@@ -35,7 +35,7 @@ def make_project_level_report(cnf, bcbio_structure):
             html_fpath=None,
             metric_storage=metric_storage))
 
-    full_report = FullReport(cnf.name, sample_reports, metric_storage=metric_storage)
+    full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage)
     final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)

@@ -17,7 +17,7 @@ cpu=$(grep -c processor /proc/cpuinfo)
 module add bcl2fastq
 src=Data/Intensities/BaseCalls
 sheet=$src/SampleSheet.csv
-#bcl2fastq -r $cpu -d $cpu -p $cpu -w $cpu -R $src  --no-lane-splitting -o $tmp --sample-sheet $sheet --fastq-compression-level 1 --interop-dir $tmp/InterOp
+bcl2fastq -r $cpu -d $cpu -p $cpu -w $cpu -R $src  --no-lane-splitting -o $tmp --sample-sheet $sheet --fastq-compression-level 1 --interop-dir $tmp/InterOp
  
 src="should not access src from this point onward"
  

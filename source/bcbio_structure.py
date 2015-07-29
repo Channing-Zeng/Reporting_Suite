@@ -44,7 +44,7 @@ def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, 
 
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.name))
+        bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.proc_name))
 
     # Single project, running as usually
     if len(bcbio_structures) == 1:

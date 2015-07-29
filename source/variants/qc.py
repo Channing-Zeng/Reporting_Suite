@@ -114,7 +114,7 @@ def make_report(cnf, vcf_fpath, sample):
 
 
 def save_report(cnf, report):
-    f_basepath = join(cnf.output_dir, cnf.name + ('-' + cnf.caller if cnf.caller else '') + '.' + cnf.proc_name)
+    f_basepath = join(cnf.output_dir, cnf.sample + ('-' + cnf.caller if cnf.caller else '') + '.' + cnf.proc_name)
 
     report.save_txt(cnf.output_dir, f_basepath)
     report.save_json(cnf.output_dir, f_basepath)
