@@ -413,6 +413,9 @@
               _ref2 = sampleReport.html_fpath;
               for (report_name in _ref2) {
                 html_fpath = _ref2[report_name];
+                if (!html_fpath) {
+                  continue;
+                }
                 if (links.length !== 0) {
                   links += ", ";
                 }

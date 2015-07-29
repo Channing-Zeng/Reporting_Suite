@@ -318,6 +318,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                     else
                         links = ""
                         for report_name, html_fpath of sampleReport.html_fpath
+                            if not html_fpath
+                              continue
                             if links.length != 0
                               links += ", "
                             links += "<a href=\"#{html_fpath}\">#{report_name}</a>"
