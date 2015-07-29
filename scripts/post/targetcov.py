@@ -93,7 +93,7 @@ class Sample(BaseSample):
 
 
 def process_one(cnf, output_dir, exons_bed_fpath, genes_fpath):
-    sample = Sample(cnf.name, output_dir, bam=cnf.bam, bed=cnf.bed)
+    sample = Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
     avg_depth, gene_by_name, reports = make_targetseq_reports(cnf, output_dir, sample, exons_bed_fpath, genes_fpath)  # cnf.vcfs_by_callername
 
