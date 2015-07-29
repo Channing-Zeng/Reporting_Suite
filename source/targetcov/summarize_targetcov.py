@@ -490,19 +490,27 @@ def _correct_qualimap_genome_results(cnf, samples):
     """
     for s in samples:
         if verify_file(s.qualimap_genome_results_fpath):
-            fixed_fpath = intermediate_fname(cnf, s.qualimap_genome_results_fpath, 'fix')
-            if not verify_file(fixed_fpath, silent=True) or not cnf.reuse_intermediate:
-                with open(s.qualimap_genome_results_fpath, 'r') as f:
-                    content = f.readlines()
-                with file_transaction(cnf.work_dir, fixed_fpath) as tx:
-                    with open(tx, 'w') as f:
-                        metrics_started = False
-                        for line in content:
-                            if ">> Reference" in line:
-                                metrics_started = True
-                            if metrics_started:
+            correction_is_needed = False
+            with open(s.qualimap_genome_results_fpath, 'r') as f:
+                content = f.readlines()
+                metrics_started = False
+                for line in content:
+                    if ">> Reference" in line:
+                        metrics_started = True
+                    if metrics_started:
+                        if line.find(',') != -1:
+                            correction_is_needed = True
+                            break
+            if correction_is_needed:
+                with open(s.qualimap_genome_results_fpath, 'w') as f:
+                    metrics_started = False
+                    for line in content:
+                        if ">> Reference" in line:
+                            metrics_started = True
+                        if metrics_started:
+                            if line.find(',') != -1:
                                 line = line.replace(',', '')
-                            f.write(line)
+                        f.write(line)
 
 
 def _correct_qualimap_insert_size_histogram(cnf, samples):
