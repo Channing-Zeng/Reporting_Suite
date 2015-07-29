@@ -24,7 +24,7 @@ from source.utils import OrderedDefaultDict
 
 
 def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, extra_opts=None):
-    description = description or 'This script generates project-level summaries based on per-sample ' + name + ' reports.'
+    description = description or 'This script generates project-level summaries based on per-sample ' + proc_name + ' reports.'
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
 
