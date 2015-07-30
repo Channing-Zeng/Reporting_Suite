@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import subprocess
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import re
@@ -71,9 +72,10 @@ def proc_opts():
     if cnf.work_dir:
         cnf.debug = True
     else:
-        work_dir = tempfile.mkdtemp()
-        safe_mkdir(work_dir)
-        cnf.work_dir = join(work_dir, 'pre_processing')
+        cnf.work_dir = tempfile.mkdtemp()
+        safe_mkdir(cnf.work_dir)
+        subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+    cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
@@ -81,7 +83,7 @@ def proc_opts():
     cnf.project_name = project_name
     info('Project name: ' + cnf.project_name)
 
-    set_up_log(cnf, project_name=cnf.project_name)
+    # set_up_log(cnf, project_name=cnf.project_name)
 
     return cnf, dataset_dirpath, jira_url
 
