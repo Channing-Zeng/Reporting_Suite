@@ -24,7 +24,11 @@ class JiraCase:
 
 
 def retrieve_jira_info(url):
-    from ext_modules.jira import JIRA
+    try:
+        from ext_modules.jira import JIRA
+    except ImportError, e:
+        err('Cannot import JIRA: ' + str(e))
+        return None
 
     """
     :param jira_url:  https://jira.rd.astrazeneca.net/i#browse/NGSG-38
@@ -37,6 +41,7 @@ def retrieve_jira_info(url):
                     basic_auth=('klpf990', '123qweasd'),
                     options={'verify': False})
     except:
+        err('Cannot create JIRA obj:')
         err(format_exc())
         return None
 

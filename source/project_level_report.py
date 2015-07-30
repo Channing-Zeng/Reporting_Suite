@@ -11,16 +11,58 @@ from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
 from source.html_reporting.html_saver import write_static_html_report
-from source.webserver.ssh_utils import sync_with_ngs_server
-from utils import compatible_with_ngs_webserver
 
 
-def make_empty_project_level_report(cnf, bcbio_structure):
-    pass
+def make_preproc_project_level_report(cnf, project_dirpath, samples):
+    step_greetings('Preproc project-level report')
+
+    general_section = ReportSection('general_section', '', [])
+    general_records = []
+
+    # Summary
+    for (name, repr_name, summary_dir) in [
+            ('preproc_fastqc',      'Preproc FastQC',      preproc_fastqc_dirapth),
+            ('targqc_downsampled',      'Seq QC downsamples',      downsampled_targqc_dirpath)]:
+
+        summary_report_fpath = join(project_dirpath, summary_dir, name + '.html')
+        if verify_file(summary_report_fpath):
+            cur_metric = Metric(repr_name + ' summary', common=True)
+            general_section.add_metric(cur_metric)
+            general_records.append(
+                Record(metric=cur_metric,
+                       value=cur_metric.name,
+                       html_fpath=_convert_to_relpath(
+                           summary_report_fpath,
+                           project_dirpath)))
+
+    # individual_reports_section = ReportSection('individual_reports', '', [])
+    # sample_reports_records = _add_per_sample_reports(bcbio_structure, general_records, individual_reports_section)
+    #
+    # metric_storage = MetricStorage(general_section=general_section, sections=[individual_reports_section])
+    # sample_reports = []
+    # for sample in bcbio_structure.samples:
+    #     sample_reports.append(SampleReport(
+    #         sample,
+    #         records=sample_reports_records[sample.name],
+    #         html_fpath=None,
+    #         metric_storage=metric_storage))
+    #
+    # full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage)
+    # final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
+    #     report_base_name=bcbio_structure.project_name,
+    #     project_name=bcbio_structure.project_name)
+
+    info()
+    if not final_summary_report_fpath:
+        err('Cannot write ' + final_summary_report_fpath)
+    else:
+        info('*' * 70)
+        info('Project-level report saved in: ')
+        info('  ' + final_summary_report_fpath)
+    return final_summary_report_fpath
 
 
-
-def make_project_level_report(cnf, bcbio_structure):
+def make_postproc_project_level_report(cnf, bcbio_structure):
     step_greetings('Project-level report')
 
     general_section = ReportSection('general_section', '', [])
@@ -45,34 +87,14 @@ def make_project_level_report(cnf, bcbio_structure):
         report_base_name=bcbio_structure.project_name,
         project_name=bcbio_structure.project_name)
 
-    html_report_url = ''
-    if compatible_with_ngs_webserver() and '/ngs/oncology/' in bcbio_structure.final_dirpath and cnf.jira:
-        jira_case = None
-        try:
-            from source.jira_utils import retrieve_jira_info
-        except:
-            err('Cannot retrieve jira info, skipping:')
-            err(format_exc())
-        else:
-            jira_case = retrieve_jira_info(cnf.jira)
-
-        html_report_url = sync_with_ngs_server(cnf, jira_case,
-            project_name=bcbio_structure.project_name,
-            sample_names=[s.name for s in bcbio_structure.samples],
-            final_dirpath=bcbio_structure.final_dirpath,
-            final_summary_report_fpath=final_summary_report_fpath)
-
     info()
-    info('*' * 70)
-    info('Project-level report saved in: ')
-    info('  ' + final_summary_report_fpath)
-    if html_report_url:
-        info('  Web link: ' + html_report_url)
-
-    info()
-    info('Done report for ' + bcbio_structure.project_name + ':\n  ' + (html_report_url or final_summary_report_fpath))
-
-    return html_report_url or final_summary_report_fpath
+    if not final_summary_report_fpath:
+        err('Cannot write ' + final_summary_report_fpath)
+    else:
+        info('*' * 70)
+        info('Project-level report saved in: ')
+        info('  ' + final_summary_report_fpath)
+    return final_summary_report_fpath
 
 
 def _add_variants(bcbio_structure, general_section, general_records):

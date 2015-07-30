@@ -8,7 +8,7 @@ out=${11}
 err=${13}
 cmdline="${runner} ${marker} \"${params}\""
 echo "${params}"
-eval "${cmdline}" >${out} 2>${err}
-cat ${err}
+eval "${cmdline}" &  #>${out} 2>${err}
+#cat ${err}
 
 set +x

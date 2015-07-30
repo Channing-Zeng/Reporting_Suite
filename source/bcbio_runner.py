@@ -10,12 +10,13 @@ from time import sleep
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
-from source.project_level_report import make_project_level_report
+from source.project_level_report import make_postproc_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
+from source.webserver.exposing import sync_with_ngs_server
 
 
 class Step:
@@ -108,7 +109,7 @@ class BCBioRunner:
         self._init_steps(cnf, self.run_id)
 
         if not cnf.steps:
-            cnf.steps.append('Summary')
+            cnf.steps = ['Summary']
 
         self.steps = Steps()
         if 'Variants' in cnf.steps:
@@ -693,7 +694,14 @@ class BCBioRunner:
                 else:
                     break
 
-            html_report_url = make_project_level_report(self.cnf, self.bcbio_structure)
+            html_report_fpath = make_postproc_project_level_report(self.cnf, self.bcbio_structure)
+            if html_report_fpath:
+                sync_with_ngs_server(self.cnf,
+                    jira_url=self.cnf.jira,
+                    project_name=self.bcbio_structure.project_name,
+                    sample_names=[s.name for s in self.bcbio_structure.samples],
+                    bcbio_final_dirpath=self.bcbio_structure.final_dirpath,
+                    summary_report_fpath=html_report_fpath)
 
             if time_waited_after_final_report_finished >= 30:
                 txt = 'Post-processing finished for ' + self.bcbio_structure.project_name

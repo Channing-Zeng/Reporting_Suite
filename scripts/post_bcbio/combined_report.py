@@ -4,7 +4,7 @@ import __check_python_version
 
 import sys
 from source.bcbio_structure import summary_script_proc_params
-from source.project_level_report import make_project_level_report
+from source.project_level_report import make_postproc_project_level_report
 from source.logger import info
 
 
@@ -14,7 +14,7 @@ def main():
 
     cnf, bcbio_structure = summary_script_proc_params('project_level_report')
 
-    make_project_level_report(cnf, bcbio_structure)
+    make_postproc_project_level_report(cnf, bcbio_structure)
 
 
 if __name__ == '__main__':

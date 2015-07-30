@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import subprocess
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import re
@@ -12,14 +11,16 @@ import shutil
 from collections import OrderedDict
 from itertools import dropwhile
 import tempfile
+import subprocess
 from joblib import Parallel, delayed
-from source.config import CallCnf
 
+from source.config import CallCnf
 from source import BaseSample
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
+from source.project_level_report import make_preproc_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov import cov
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
@@ -32,14 +33,12 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_gen
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
     add_suffix
-from source.utils import compatible_with_ngs_webserver
-from source.webserver.ssh_utils import symlink_to_ngs, sync_with_ngs_server
+from source.webserver.exposing import sync_with_ngs_server
 
 
-NGS_WEBSERVER_SEQQC_DIR = '/opt/lampp/htdocs/seqQC'
+NGS_WEBSERVER_PREPROC_DIR = '/opt/lampp/htdocs/reports'
 if is_local():
-    NGS_WEBSERVER_SEQQC_DIR = '/Users/vladsaveliev/Sites/seqQC'
-
+    NGS_WEBSERVER_PREPROC_DIR = '/Users/vlad/Sites/reports'
 
 def proc_opts():
     info(' '.join(sys.argv))
@@ -79,6 +78,7 @@ def proc_opts():
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
+    set_up_log(cnf, proc_name='preproc', project_name=project_name)
 
     cnf.project_name = project_name
     info('Project name: ' + cnf.project_name)
@@ -196,40 +196,53 @@ def main():
     if not exists(new_project_symlink):
         os.symlink(project_dirpath, new_project_symlink)
 
-    # Running project-level report
-    # make_project_level_report(cnf, )
+    # Creating analysis directory
+    analysis_proj_dirpath = adjust_path(join(dirname(project_dirpath), '..', 'analysis', cnf.project_name))
+    if not exists(analysis_proj_dirpath):
+        safe_mkdir(analysis_proj_dirpath)
+
+    # Making project-level report
+    html_report_fpath = make_preproc_project_level_report(cnf, project_dirpath, samples)
 
     # Exposing
-    if compatible_with_ngs_webserver() and (cnf.expose_to_ngs_server or cnf.expose_to_ngs_server_only):
+    sync_with_ngs_server(cnf,
+        jira_url=cnf.jira,
+        project_name=cnf.project_name,
+        sample_names=[s.name for s in samples],
+        dataset_dirpath=project_dirpath,
+        summary_report_fpath=html_report_fpath)
+
         # FastQC
-        ngs_webserver_seqqc_proj_dirpath = join(NGS_WEBSERVER_SEQQC_DIR, cnf.project_name)
-        if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_seqqc_proj_dirpath) is None:
-            err('Error: cannot connect to the ngs server and make symlinks')
-        else:
-            # BaseCalls
-            basecall_stats_dirnames = [fname for fname in os.listdir(basecalls_dirpath) if fname.startswith('Basecall_Stats_')]
-            if len(basecall_stats_dirnames) > 1:
-                err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
-            if len(basecall_stats_dirnames) == 0:
-                err('No Basecall_Stats_* dirs found in unalign_dirpath')
-            if len(basecall_stats_dirnames) == 1:
-                basecall_stats_dirpath = join(basecalls_dirpath, basecall_stats_dirnames[0])
-                fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname) for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
-                symlink_to_ngs(fpaths, ngs_webserver_seqqc_proj_dirpath)
+        # symlink_to_ngs(project_dirpath, NGS_WEBSERVER_PREPROC_DIR)
 
-            # Sample sheet
-            symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_seqqc_proj_dirpath)
+        # if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_project_dirpath) is None:
+        #     err('Error: cannot connect to the ngs server and make symlinks')
+        # else:
+        #     # BaseCalls
+        #     basecall_stats_dirnames = [fname for fname in os.listdir(basecalls_dirpath) if fname.startswith('Basecall_Stats_')]
+        #     if len(basecall_stats_dirnames) > 1:
+        #         err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
+        #     if len(basecall_stats_dirnames) == 0:
+        #         err('No Basecall_Stats_* dirs found in unalign_dirpath')
+        #     if len(basecall_stats_dirnames) == 1:
+        #         basecall_stats_dirpath = join(basecalls_dirpath, basecall_stats_dirnames[0])
+        #         fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname)
+        #             for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
+        #         symlink_to_ngs(fpaths, ngs_webserver_project_dirpath)
+        #
+        #     # Sample sheet
+        #     symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_project_dirpath)
+        #
+        #     # TargQC downsampled
+        #     symlink_to_ngs(targqc_html_fpath, ngs_webserver_project_dirpath)
 
-            # TargQC downsampled
-            symlink_to_ngs(targqc_html_fpath, ngs_webserver_seqqc_proj_dirpath)
-
-        jira_case = None
-        if jira_url:
-            # Add to the NGS list
-            jira_case = retrieve_jira_info(jira_url)
-
-        sync_with_ngs_server(cnf, jira_case=jira_case,
-            project_name=cnf.project_name, sample_names=[s.name for s in samples])
+        # jira_case = None
+        # if jira_url:
+        #     # Add to the NGS list
+        #     jira_case = retrieve_jira_info(jira_url)
+        #
+        # sync_with_ngs_server(cnf, jira_case=jira_case,
+        #     project_name=cnf.project_name, sample_names=[s.name for s in samples])
 
     info()
     info('*' * 70)

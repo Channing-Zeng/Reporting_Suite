@@ -9,6 +9,7 @@ import source
 from source.logger import info, err, warn, critical
 from source.bcbio_runner import Step, fix_bed_for_qualimap
 from source.file_utils import safe_mkdir, verify_file, verify_dir
+from source.qsub_utils import submit_job, wait_for_jobs
 from source.utils import get_system_path
 from source.calling_process import call
 from source.targetcov.summarize_targetcov import summarize_targqc
@@ -34,8 +35,9 @@ def run_targqc(cnf, bam_fpaths, main_script_name, target_bed, exons_bed, exons_n
     summary_threads = min(len(samples), max_threads)
     info('Number of threads to run summary: ' + str(summary_threads))
 
+    jobs_to_wait = []
     if not cnf.only_summary:
-        targetcov_step, ngscat_step, qualimap_step, targqc_summary_step = \
+        targetcov_step, ngscat_step, qualimap_step = \
             _prep_steps(cnf, threads_per_sample, summary_threads,
                 samples, target_bed, exons_bed, exons_no_genes_bed, main_script_name)
 
@@ -45,7 +47,8 @@ def run_targqc(cnf, bam_fpaths, main_script_name, target_bed, exons_bed, exons_n
             info('Processing ' + basename(sample.bam))
 
             info('TargetSeq for "' + basename(sample.bam) + '"')
-            _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+            j = _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name)
+            jobs_to_wait.append(j)
             summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
             # if not cnf.reuse_intermediate or not sample.ngscat_done():
@@ -55,18 +58,17 @@ def run_targqc(cnf, bam_fpaths, main_script_name, target_bed, exons_bed, exons_n
 
             if not cnf.reuse_intermediate or not sample.qualimap_done():
                 info('Qualimap "' + basename(sample.bam) + '"')
-                _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
+                j = _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
+                jobs_to_wait.append(j)
                 summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
 
             info('Done ' + basename(sample.bam))
             info()
 
-        _submit_job(cnf, targqc_summary_step, wait_for_steps=summary_wait_for_steps, threads=summary_threads)
-        return None
+    wait_for_jobs(jobs_to_wait)
 
-    else:
-        info('Making targqc summary')
-        return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
+    info('Making targqc summary')
+    return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, exons_no_genes_bed, main_script_name):
@@ -135,69 +137,22 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
         paramln=qualimap_params,
     )
 
-
-    #######################################
-    # Summary
-    summary_cmdline_params = basic_params + \
-        ' -o ' + cnf.output_dir + \
-        ' --work-dir ' + cnf.work_dir + \
-        ' --log-dir ' + cnf.log_dir + \
-       (' --reuse ' if cnf.reuse_intermediate else '') + \
-        ' --genome ' + cnf.genome.name + \
-        ' --project-name ' + cnf.project_name + \
-        ' ' + ' '.join([s.bam for s in samples]) + \
-        ' --bed ' + bed_fpath + \
-        ' --only-summary ' + \
-        ' -t ' + str(summary_threads)
-
-    targqc_summary_step = Step(
-        cnf, run_id,
-        name=source.targqc_name + '_summary', short_name='targqc',
-        interpreter='python',
-        script=main_script_name,
-        paramln=summary_cmdline_params
-    )
-
-    return targetcov_step, ngscat_step, qualimap_step, targqc_summary_step
+    return targetcov_step, ngscat_step, qualimap_step
 
 
 def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):
-    log_fpath = join(cnf.log_dir, (step.name + ('_' + sample_name if sample_name else '') + '.log'))
-
-    if isfile(log_fpath):
-        try:
-            os.remove(log_fpath)
-        except OSError:
-            err('Warning: cannot remove log file ' + log_fpath + ', probably permission denied.')
-
-    safe_mkdir(dirname(log_fpath))
-
     tool_cmdline = get_system_path(cnf, step.interpreter, step.script, is_critical=is_critical)
     if not tool_cmdline:
         return False
 
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
 
-    hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
-    job_name = step.job_name(sample_name)
-    qsub = get_system_path(cnf, 'qsub')
-    threads = str(threads)
-    queue = cnf.queue
-    runner_script = cnf.qsub_runner
-    bash = get_system_path(cnf, 'bash')
-
-    marker_fpath = join(cnf.work_dir, step.script + '_' + sample_name + '.done')
-    if isfile(marker_fpath):
-        os.remove(marker_fpath)
-    qsub_cmdline = (
-        '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-        '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
-        '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'
-        ''.format(**locals()))
-
     info(step.name)
-    info(qsub_cmdline)
 
-    call(cnf, qsub_cmdline, silent=True)
+    job = submit_job(cnf, cmdline,
+        job_name=step.job_name(sample_name),
+        wait_for_steps=wait_for_steps,
+        threads=threads)
 
     info()
+    return job

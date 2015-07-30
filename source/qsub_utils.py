@@ -38,6 +38,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
         else:
             if isfile(output_fpath):
                 os.remove(output_fpath)
+        cmdline += ' > ' + output_fpath
 
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
@@ -45,18 +46,17 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     f, marker_fpath = make_tmpfile(cnf, prefix=job_name, suffix='.done_marker')
     if isfile(marker_fpath):
         os.remove(marker_fpath)
-    job_id = 'J_' + basename(marker_fpath)[3:] + '_' + job_name
+    job_id = job_name + '_' + basename(marker_fpath)[3:]
     log_fpath = join(cnf.log_dir, job_id + '.log')
-    out_fpath = out_fpath or log_fpath
 
     queue = cnf.queue
     runner_script = adjust_system_path(cnf.qsub_runner)
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-        '-j n -o {out_fpath} -e {log_fpath} {hold_jid_line} '
+        '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
         '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
-    info(job_name)
+    info('Submitting job ' + job_id)
     info(qsub_cmdline)
     job = JobRunning(job_id, log_fpath, qsub_cmdline, marker_fpath,
         output_fpath=output_fpath, tx_output_fpath=out_fpath, **kwargs)

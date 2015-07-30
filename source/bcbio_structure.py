@@ -489,6 +489,7 @@ class BCBioStructure:
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
+        cnf.project_name = self.project_name
         info('Project name: ' + self.project_name)
         # self.cnf.name = proc_name or self.project_name
 
