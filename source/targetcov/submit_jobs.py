@@ -15,20 +15,10 @@ from source.calling_process import call
 from source.targetcov.summarize_targetcov import summarize_targqc
 
 
-class StandaloneSample(source.BaseSample):
-    def __init__(self, name, dirpath, *args, **kwargs):
-        source.BaseSample.__init__(self, name, dirpath, '{dirpath}/{sample}_{name}/', *args, **kwargs)
-
-
-def run_targqc(cnf, bam_fpaths, main_script_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
+def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
     if not target_bed:
         target_bed = exons_bed
         info('No target_bed, using exons_bed instead')
-
-    samples = [
-        StandaloneSample(basename(splitext(bam_fpath)[0]), cnf.output_dir, bam=bam_fpath, bed=target_bed, genome=cnf.genome.name)
-            for bam_fpath in bam_fpaths]
-    samples.sort(key=lambda _s: _s.key_to_sort())
 
     max_threads = cnf.threads
     threads_per_sample = 1  # max(max_threads / len(samples), 1)

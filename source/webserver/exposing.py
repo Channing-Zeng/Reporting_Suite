@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import getpass
 import os
-from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath
+from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath, pardir
 from traceback import print_exc, format_exc
 from source import verify_file
 from source.file_utils import file_transaction, safe_mkdir
@@ -16,30 +16,34 @@ ngs_server_username = 'klpf990'
 ngs_server_password = '123werasd'
 
 class Location:
-    def __init__(self, loc_id, url_base, csv_fpath, reports_dirpath, proper_path_should_contain):
+    def __init__(self, loc_id, report_url_base, website_url_base, csv_fpath, reports_dirpath, proper_path_should_contain):
         self.loc_id = loc_id
-        self.url_base = url_base
+        self.report_url_base = report_url_base
+        self.website_url_base = website_url_base
         self.csv_fpath = csv_fpath
         self.reports_dirapth = reports_dirpath
         self.proper_path_should_contain = proper_path_should_contain
 
 us = Location('US',
-    url_base='http://ngs.usbod.astrazeneca.net/reports/',
+    report_url_base='http://ngs.usbod.astrazeneca.net/reports/',
+    website_url_base='http://ngs.usbod.astrazeneca.net/',
     csv_fpath='/ngs/oncology/NGS.Project.csv',
     reports_dirpath='/opt/lampp/htdocs/reports',
-    proper_path_should_contain='/gpfs/ngs/oncology/Analysis/'
+    proper_path_should_contain=['/gpfs/ngs/oncology/Analysis/', '/gpfs/ngs/oncology/Datasets/']
 )
 uk = Location('UK',
-    url_base='http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/',
+    report_url_base='http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/',
+    website_url_base='http://ngs.usbod.astrazeneca.net/',
     csv_fpath='/ngs/oncology/reports/NGS.Project.csv',
     reports_dirpath='/ngs/oncology/reports',
-    proper_path_should_contain='/ngs/oncology/analysis/'
+    proper_path_should_contain=['/ngs/oncology/analysis/', '/ngs/oncology/datasets/']
 )
 local = Location('Local',
-    url_base='http://localhost/reports/',
-    csv_fpath='/Users/vlad/Sites/NGS.Project.csv',
+    report_url_base='http://localhost/reports/',
+    website_url_base='http://localhost/ngs_website/',
+    csv_fpath='/Users/vlad/Sites/reports/NGS.Project.csv',
     reports_dirpath='/Users/vlad/Sites/reports',
-    proper_path_should_contain='/Dropbox/az/analysis/'
+    proper_path_should_contain=['/Dropbox/az/analysis/', '/Dropbox/az/datasets/']
 )
 loc_by_id = dict(us=us, uk=uk, local=local)
 
@@ -62,12 +66,16 @@ def sync_with_ngs_server(
 
     html_report_url = None
     if bcbio_final_dirpath:
-        html_report_url = join(loc.url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(bcbio_final_dirpath)))
+        html_report_url = join(loc.report_url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(bcbio_final_dirpath)))
     elif dataset_dirpath:
-        html_report_url = join(loc.url_base, project_name, 'dataset', relpath(summary_report_fpath, dataset_dirpath))
-    info('HTML url: ' + html_report_url)
+        html_report_url = join(loc.report_url_base, project_name, 'dataset', relpath(summary_report_fpath, dataset_dirpath))
+    else:
+        return None
+    
+    html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
+    info('HTML url: ' + html_report_full_url)
 
-    if loc.proper_path_should_contain in realpath(bcbio_final_dirpath):
+    if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
         jira_case = None
         if is_az():
             jira_case = retrieve_jira_info(cnf.jira)
@@ -75,8 +83,8 @@ def sync_with_ngs_server(
         _symlink_dirs(
             cnf=cnf,
             loc=loc,
-            final_dirpath=bcbio_final_dirpath,
             project_name=project_name,
+            final_dirpath=bcbio_final_dirpath,
             dataset_dirpath=dataset_dirpath,
             html_report_fpath=summary_report_fpath,
             html_report_url=html_report_url)
@@ -95,16 +103,16 @@ def sync_with_ngs_server(
     return html_report_url
 
 
-def _symlink_dirs(cnf, loc, final_dirpath, project_name, dataset_dirpath, html_report_fpath, html_report_url):
+def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath, html_report_fpath, html_report_url):
     info(loc.loc_id + ', symlinking to ' + loc.reports_dirapth)
 
-    if final_dirpath:
-        (symlink_to_ngs if loc.loc_id == 'US' else local_symlink) \
-            (dirname(final_dirpath), join(loc.reports_dirapth, 'bcbio'))
-
     if dataset_dirpath:
-        (symlink_to_ngs if loc.loc_id == 'US' else local_symlink) \
-            (dirname(dataset_dirpath), join(loc.reports_dirapth, 'dataset'))
+        dst = join(loc.reports_dirapth, project_name, 'dataset')
+        (symlink_to_ngs if is_us() else local_symlink)(dataset_dirpath, dst)
+
+    if final_dirpath:
+        dst = join(loc.reports_dirapth, project_name, 'bcbio')
+        (symlink_to_ngs if is_us() else local_symlink)(dirname(final_dirpath), dst)
 
 
 def local_symlink(src, dst):
@@ -115,6 +123,7 @@ def local_symlink(src, dst):
             err('Cannot remove link ' + dst + ': ' + str(e))
             return None
     if not os.path.exists(dst):
+        safe_mkdir(dirname(dst))
         try:
             os.symlink(src, dst)
         except Exception, e:
@@ -237,7 +246,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         if html_report_url:
             d['HTML report path'] = html_report_url
         if analysis_dirpath:
-            d['Analyses directory ' + country_id if country_id != 'Local' else 'US'] = analysis_dirpath
+            d['Analyses directory ' + country_id if not is_local() else 'US'] = analysis_dirpath
         if samples_num:
             d['Sample Number'] = str(samples_num)
 

@@ -7,7 +7,7 @@ from os.path import join, abspath, dirname, isdir, splitext
 from json import dumps, JSONEncoder
 
 from source.bcbio_structure import VariantCaller, BCBioSample
-from source.file_utils import verify_file
+from source.file_utils import verify_file, file_transaction
 from source.html_reporting import json_saver
 from source.file_utils import file_exists
 from ext_modules.jsontemplate import jsontemplate
@@ -164,7 +164,7 @@ def _append(html_fpath, json, keyword):
     return html_fpath
 
 
-def write_static_html_report(data_dict, output_dirpath, report_base_name):
+def _write_static_html_report(work_dir, data_dict, html_fpath):
     with open(static_template_fpath) as f:
         html = f.read()
 
@@ -172,11 +172,8 @@ def write_static_html_report(data_dict, output_dirpath, report_base_name):
 
     html = _embed_css_and_scripts(html)
 
-    html_fpath = os.path.join(output_dirpath, report_base_name + '.html')
-    if os.path.exists(html_fpath):
-        os.remove(html_fpath)
-
-    with open(html_fpath, 'w') as f:
-        f.write(html)
+    with file_transaction(work_dir, html_fpath) as tx:
+        with open(tx, 'w') as f:
+            f.write(html)
 
     return html_fpath

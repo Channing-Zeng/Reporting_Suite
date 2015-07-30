@@ -202,7 +202,8 @@ def main():
         safe_mkdir(analysis_proj_dirpath)
 
     # Making project-level report
-    html_report_fpath = make_preproc_project_level_report(cnf, project_dirpath, samples)
+    html_report_fpath = make_preproc_project_level_report(cnf, samples, cnf.project_name,
+        project_dirpath, fastqc_dirpath, downsample_targqc_dirpath)
 
     # Exposing
     sync_with_ngs_server(cnf,

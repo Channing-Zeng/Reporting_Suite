@@ -4,10 +4,11 @@ import __check_python_version  # checking for python version and adding site dir
 
 import sys
 import os
-from os.path import relpath, join, exists, abspath, pardir, basename
+from os.path import relpath, join, exists, abspath, pardir, basename, splitext
 from optparse import OptionParser
 
 from source import logger
+import source
 from source.config import Config, defaults
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_genome_resources, determine_run_cnf, \
     determine_sys_cnf
@@ -21,7 +22,7 @@ from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 
 
-def main():
+def proc_args(argv):
     info(' '.join(sys.argv))
     info()
 
@@ -41,14 +42,8 @@ def main():
 
     if len(args) == 0:
         critical('No BAMs provided to input.')
-    bam_fpaths = list(set([abspath(a) for a in args]))
 
-    bad_bam_fpaths = []
-    for fpath in bam_fpaths:
-        if not verify_bam(fpath):
-            bad_bam_fpaths.append(fpath)
-    if bad_bam_fpaths:
-        critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
+    sample_names, bam_fpaths = read_samples(args)
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
 
@@ -59,6 +54,11 @@ def main():
     cnf.proc_name = 'TargQC'
     set_up_dirs(cnf)
     # cnf.name = 'TargQC_' + cnf.project_name
+
+    samples = [
+        StandaloneSample(s_name, cnf.output_dir, bam=bam_fpath)
+            for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
+    samples.sort(key=lambda _s: _s.key_to_sort())
 
     check_genome_resources(cnf)
 
@@ -72,15 +72,51 @@ def main():
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
         verify_file(cnf.qsub_runner, is_critical=True)
 
+    return cnf, samples, target_bed, exons_bed, genes_fpath
+
+
+def main():
+    cnf, samples, target_bed, exons_bed, genes_fpath = proc_args(sys.argv)
+
+    exons_no_genes_bed = None
+    if not cnf.only_summary:
         exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
             prepare_beds(cnf, exons_bed, target_bed)
 
     info('*' * 70)
     info()
 
-    targqc_html_fpath = run_targqc(cnf, bam_fpaths, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf,
+        samples, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
+
+
+class StandaloneSample(source.BaseSample):
+    def __init__(self, name, dirpath, *args, **kwargs):
+        source.BaseSample.__init__(self, name, dirpath, '{dirpath}/{sample}_{name}/', *args, **kwargs)
+
+
+def read_samples(args):
+    bam_fpaths = []
+    sample_names = []
+    bad_bam_fpaths = []
+
+    for arg in args or [os.getcwd()]:
+        # /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0159_AHK2KTADXX/bcbio,Kudos159 /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0160_BHKWMNADXX/bcbio,Kudos160
+        bam_fpath = verify_bam(arg.split(',')[0])
+        if not verify_bam(bam_fpath):
+            bad_bam_fpaths.append(bam_fpath)
+        bam_fpaths.append(bam_fpath)
+        if len(arg.split(',')) > 1:
+            sample_names.append(arg.split(',')[1])
+        else:
+            sample_names.append(basename(splitext(bam_fpath)[0]))
+    if bad_bam_fpaths:
+        critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
+
+    return sample_names, bam_fpaths
 
 
 if __name__ == '__main__':

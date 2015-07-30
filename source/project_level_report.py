@@ -10,56 +10,54 @@ from source.jira_utils import JiraCase
 from source.logger import info, step_greetings, send_email, warn, err
 from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport
-from source.html_reporting.html_saver import write_static_html_report
+from source.html_reporting.html_saver import _write_static_html_report
 
 
-def make_preproc_project_level_report(cnf, project_dirpath, samples):
+def make_preproc_project_level_report(cnf, samples, project_name,
+        project_dirpath, fastqc_dirpath, downsample_targqc_dirpath):
     step_greetings('Preproc project-level report')
 
     general_section = ReportSection('general_section', '', [])
     general_records = []
 
     # Summary
-    for (name, repr_name, summary_dir) in [
-            ('preproc_fastqc',      'Preproc FastQC',      preproc_fastqc_dirapth),
-            ('targqc_downsampled',      'Seq QC downsamples',      downsampled_targqc_dirpath)]:
+    for (name, repr_name, report_fpath) in [
+            ('raw_fastqc_summary',            'Preproc FastQC',     join(fastqc_dirpath, 'FastQC.html')),
+            ('downsampled_target_qc_summary', 'Seq QC downsamples', join(downsample_targqc_dirpath, 'targQC.html'))]:
 
-        summary_report_fpath = join(project_dirpath, summary_dir, name + '.html')
-        if verify_file(summary_report_fpath):
+        if verify_file(report_fpath):
             cur_metric = Metric(repr_name + ' summary', common=True)
             general_section.add_metric(cur_metric)
             general_records.append(
                 Record(metric=cur_metric,
                        value=cur_metric.name,
                        html_fpath=_convert_to_relpath(
-                           summary_report_fpath,
+                           report_fpath,
                            project_dirpath)))
 
-    # individual_reports_section = ReportSection('individual_reports', '', [])
-    # sample_reports_records = _add_per_sample_reports(bcbio_structure, general_records, individual_reports_section)
-    #
-    # metric_storage = MetricStorage(general_section=general_section, sections=[individual_reports_section])
-    # sample_reports = []
-    # for sample in bcbio_structure.samples:
+    # Individual reports
+    individual_reports_section = ReportSection('individual_reports', '', [])
+    sample_reports_records = dict()
+    # _add_per_sample_reports(bcbio_structure, general_records, individual_reports_section)
+
+    metric_storage = MetricStorage(general_section=general_section, sections=[individual_reports_section])
+    sample_reports = []
+    # for sample in samples:
     #     sample_reports.append(SampleReport(
     #         sample,
     #         records=sample_reports_records[sample.name],
     #         html_fpath=None,
     #         metric_storage=metric_storage))
-    #
-    # full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage)
-    # final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
-    #     report_base_name=bcbio_structure.project_name,
-    #     project_name=bcbio_structure.project_name)
+
+    full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage)
+    html_fpath = join(project_dirpath, project_name + '.html')
+    _save_static_html(cnf.work_dir, full_report, html_fpath, project_name)
 
     info()
-    if not final_summary_report_fpath:
-        err('Cannot write ' + final_summary_report_fpath)
-    else:
-        info('*' * 70)
-        info('Project-level report saved in: ')
-        info('  ' + final_summary_report_fpath)
-    return final_summary_report_fpath
+    info('*' * 70)
+    info('Project-level report saved in: ')
+    info('  ' + html_fpath)
+    return html_fpath
 
 
 def make_postproc_project_level_report(cnf, bcbio_structure):
@@ -83,18 +81,14 @@ def make_postproc_project_level_report(cnf, bcbio_structure):
             metric_storage=metric_storage))
 
     full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage)
-    final_summary_report_fpath = _save_static_html(full_report, bcbio_structure.date_dirpath,
-        report_base_name=bcbio_structure.project_name,
-        project_name=bcbio_structure.project_name)
+    html_fpath = join(bcbio_structure.date_dirpath, bcbio_structure.project_name + '.html')
+    _save_static_html(cnf.work_dir, full_report, html_fpath, bcbio_structure.project_name)
 
     info()
-    if not final_summary_report_fpath:
-        err('Cannot write ' + final_summary_report_fpath)
-    else:
-        info('*' * 70)
-        info('Project-level report saved in: ')
-        info('  ' + final_summary_report_fpath)
-    return final_summary_report_fpath
+    info('*' * 70)
+    info('Project-level report saved in: ')
+    info('  ' + html_fpath)
+    return html_fpath
 
 
 def _add_variants(bcbio_structure, general_section, general_records):
@@ -240,12 +234,14 @@ def _convert_to_relpath(value, base_dirpath):
         return value
 
 
-def _save_static_html(full_report, output_dirpath, report_base_name, project_name):
+def _save_static_html(work_dir, full_report, html_fpath, project_name):
     # metric name in FullReport --> metric name in Static HTML
     metric_names = OrderedDict([
+        # (BCBioStructure.fastqc_repr + ' preproc', 'FastQC preproc'),
         (BCBioStructure.fastqc_repr, 'FastQC'),
         # ('BAM', 'BAM'),
         (BCBioStructure.targqc_repr, 'SeqQC'),
+        # ('Downsampled ' + BCBioStructure.targqc_repr, 'Downsampled SeqQC'),
         # ('Mutations', 'Mutations'),
         # ('Mutations for separate samples', 'Mutations for separate samples'),
         # ('Mutations for paired samples', 'Mutations for paired samples'),
@@ -268,26 +264,27 @@ def _save_static_html(full_report, output_dirpath, report_base_name, project_nam
     # common records (summary reports)
     common_dict = dict()
     common_dict["project_name"] = project_name
-    sample_report = full_report.sample_reports[0]
-    for record in sample_report.records:
-        if record.metric.common:
-            common_dict[_get_summary_report_name(record)] = record.__dict__
-            if 'Mutations' in record.metric.name:
-                common_dict[_get_summary_report_name(record)]['contents'] = (
-                    record.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in record.html_fpath.items()))
-
-    # individual records
     main_dict = dict()
-    main_dict["sample_reports"] = []
-    main_dict["metric_names"] = [v for k, v in metric_names.items()
-                                 if k in [m.name for m in full_report.metric_storage.get_metrics(skip_general_section=True)]]
-    for sample_report in full_report.sample_reports:
-        new_records = [_process_record(record.__dict__) for record in sample_report.records
-                       if record.metric.name in metric_names.keys()]
-        sample_report_dict = dict()
-        sample_report_dict["records"] = new_records
-        sample_report_dict["sample_name"] = sample_report.get_display_name()
-        main_dict["sample_reports"].append(sample_report_dict)
+    if full_report.sample_reports:
+        sample_report = full_report.sample_reports[0]
+        for record in sample_report.records:
+            if record.metric.common:
+                common_dict[_get_summary_report_name(record)] = record.__dict__
+                if 'Mutations' in record.metric.name:
+                    common_dict[_get_summary_report_name(record)]['contents'] = (
+                        record.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in record.html_fpath.items()))
 
-    return write_static_html_report({"common": common_dict, "main": main_dict},
-                                    output_dirpath, report_base_name)
+        # individual records
+        main_dict = dict()
+        main_dict["sample_reports"] = []
+        main_dict["metric_names"] = [v for k, v in metric_names.items()
+                                     if k in [m.name for m in full_report.metric_storage.get_metrics(skip_general_section=True)]]
+        for sample_report in full_report.sample_reports:
+            new_records = [_process_record(record.__dict__) for record in sample_report.records
+                           if record.metric.name in metric_names.keys()]
+            sample_report_dict = dict()
+            sample_report_dict["records"] = new_records
+            sample_report_dict["sample_name"] = sample_report.get_display_name()
+            main_dict["sample_reports"].append(sample_report_dict)
+
+    return _write_static_html_report(work_dir, {"common": common_dict, "main": main_dict}, html_fpath)
