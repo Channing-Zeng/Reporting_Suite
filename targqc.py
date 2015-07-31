@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import sys
@@ -56,7 +55,7 @@ def proc_args(argv):
     # cnf.name = 'TargQC_' + cnf.project_name
 
     samples = [
-        StandaloneSample(s_name, cnf.output_dir, bam=bam_fpath)
+        source.TargQCStandaloneSample(s_name, cnf.output_dir, bam=bam_fpath)
             for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
     samples.sort(key=lambda _s: _s.key_to_sort())
 
@@ -91,11 +90,6 @@ def main():
 
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
-
-
-class StandaloneSample(source.BaseSample):
-    def __init__(self, name, dirpath, *args, **kwargs):
-        source.BaseSample.__init__(self, name, dirpath, '{dirpath}/{sample}_{name}/', *args, **kwargs)
 
 
 def read_samples(args):

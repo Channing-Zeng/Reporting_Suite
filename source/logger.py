@@ -57,15 +57,27 @@ def err(msg='', ending='\n', print_date=True, severity='error'):
     warn(msg, ending, print_date, severity=severity)
 
 
+email_by_prid = {
+    'klpf990': 'Vlad.Saveliev@astrazeneca.com',
+    'kjgk478': 'Alexey.Gurevich@astrazeneca.com',
+    'knfz728': 'Alla.Bushoy@astrazeneca.com',
+    'klrl262': 'Miika.Ahdesmaki@astrazeneca.com',
+    'kmtc481': 'Sakina.Saif@astrazeneca.com',
+    'kxjn734': 'Justin.Johnson@astrazeneca.com'
+}
+
 def send_email(msg='', subj=''):
     if msg and smtp_host:
         addresses = [my_address]
         if address:
             addresses.append(address)
+        prid = getpass.getuser()
+        if prid in email_by_prid:
+            addresses.append(email_by_prid[prid])
 
         msg += '\n'
         msg += '\n'
-        msg += 'Run by ' + getpass.getuser() + '\n'
+        msg += 'Ran by ' + prid + '\n'
         msg += '\n'
         if critical_msgs:
             msg += 'Critical errors during the processing:\n'

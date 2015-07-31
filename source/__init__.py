@@ -149,3 +149,9 @@ class SingleSample(BaseSample):
     def __init__(self, name, output_dir, **kwargs):
         BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
+
+class TargQCStandaloneSample(BaseSample):
+    path_base = '{dirpath}/{sample}_{name}/'
+
+    def __init__(self, name, dirpath, *args, **kwargs):
+        BaseSample.__init__(self, name, dirpath, TargQCStandaloneSample.path_base, *args, **kwargs)

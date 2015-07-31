@@ -385,10 +385,12 @@ class PerRegionSampleReport(SampleReport):
 
 
 class FullReport(Report):
-    def __init__(self, name='', sample_reports=None, metric_storage=None):
+    def __init__(self, name='', sample_reports=None, metric_storage=None, general_records=None):
         self.name = name
         self.sample_reports = sample_reports or []
         self.metric_storage = metric_storage
+        self.general_records = general_records
+
         if metric_storage:
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
@@ -399,7 +401,11 @@ class FullReport(Report):
                 sample_report.metric_storage = metric_storage
 
     def get_common_records(self):
-        common_records = list()
+        common_records = []
+
+        if self.general_records:
+            common_records.extend(self.general_records)
+
         if self.sample_reports:
             sample_report = self.sample_reports[0]
             for record in sample_report.records:
