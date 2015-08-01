@@ -502,6 +502,12 @@ class ReportSection:
         self.metrics.append(metric)
         self.metrics_by_name[metric.name] = metric
 
+    def get_metrics(self):
+        return self.metrics
+
+    def get_metric(self, metric_name):
+        return next((m for m in self.get_metrics() if m.name == metric_name), None)
+
     def remove_metric(self, metric_name):
         metric = self.metrics_by_name[metric_name]
         self.metrics.remove(metric)

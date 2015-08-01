@@ -45,6 +45,13 @@ def proc_opts():
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
+    parser.add_option('--targqc', dest='targqc', action='store_true', default=True, help='')
+    parser.add_option('--no-targqc', dest='targqc', action='store_false', default=True, help='')
+    parser.add_option('--metamapping', dest='metamapping', action='store_true', default=False, help='')
+    parser.add_option('--no-metamapping', dest='metamapping', action='store_false', default=False, help='')
+    parser.add_option('--fastqc', dest='fastqc', action='store_true', default=True, help='')
+    parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
+
     (opts, args) = parser.parse_args()
     if len(args) < 2:  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX/Unalign/fastq/fastqc
         critical('Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]')
@@ -111,37 +118,39 @@ def main():
     cnf, project_dirpath, jira_url = proc_opts()
     ds = DatasetStructure(project_dirpath, cnf.project_name)
 
-    # Directory to run fastq
     safe_mkdir(ds.fastq_dirpath)
     for s in ds.samples:
         concat_fastq(cnf.work_dir, s.find_raw_fastq('R1'), s.l_fpath)
         concat_fastq(cnf.work_dir, s.find_raw_fastq('R2'), s.r_fpath)
 
-    # # Downsample, align, and analyse
-    # bam_by_sample = dict()
-    # fastqs = Parallel(n_jobs=len(ds.samples)) \
-    #     (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample) \
-    #         for sample in ds.samples)
-    # lefts = [l for l, r in fastqs]
-    # rights = [r for l, r in fastqs]
-    # aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
-    #     get_system_path(cnf, 'samtools', is_critical=True),
-    #     get_system_path(cnf, 'bwa', is_critical=True),
-    #     get_system_path(cnf, 'seqtk', is_critical=True),
-    #     cnf.genome.seq) for s, l, r in zip(ds.samples, lefts, rights))
-    # for sample, bam_fpath in zip(ds.samples, aligned):
-    #     bam_by_sample[sample.name] = bam_fpath
-    #
-    # safe_mkdir(ds.downsample_metamapping_dirpath)
-    # run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
-    #
-    # safe_mkdir(ds.downsample_targqc_dirpath)
-    # ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
-    #
-    # # Running FastQC
-    # safe_mkdir(ds.fastqc_dirpath)
-    # if not cnf.expose_to_ngs_server_only:
-    #     make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
+    if cnf.fastqc:
+        safe_mkdir(ds.fastqc_dirpath)
+        if not cnf.expose_to_ngs_server_only:
+            make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
+
+    if cnf.targqc or cnf.metamapping:
+        # Downsample, align, and analyse
+        bam_by_sample = dict()
+        fastqs = Parallel(n_jobs=len(ds.samples)) \
+            (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample) \
+                for sample in ds.samples)
+        lefts = [l for l, r in fastqs]
+        rights = [r for l, r in fastqs]
+        aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
+            get_system_path(cnf, 'samtools', is_critical=True),
+            get_system_path(cnf, 'bwa', is_critical=True),
+            get_system_path(cnf, 'seqtk', is_critical=True),
+            cnf.genome.seq) for s, l, r in zip(ds.samples, lefts, rights))
+        for sample, bam_fpath in zip(ds.samples, aligned):
+            bam_by_sample[sample.name] = bam_fpath
+
+        if cnf.metamapping:
+            safe_mkdir(ds.downsample_metamapping_dirpath)
+            run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
+
+        if cnf.fastqc:
+            safe_mkdir(ds.downsample_targqc_dirpath)
+            ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
 
     # Creating symlink new project-name directory in Datasets
     new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
