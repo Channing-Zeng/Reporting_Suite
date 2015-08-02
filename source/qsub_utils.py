@@ -46,7 +46,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     f, marker_fpath = make_tmpfile(cnf, prefix=job_name + '_', suffix='.done_marker')
     if isfile(marker_fpath):
         os.remove(marker_fpath)
-    job_id = basename(marker_fpath.split('.')[0])[3:]
+    job_id = basename(marker_fpath.split('.')[0])
     log_fpath = join(cnf.log_dir, job_id + '.log')
 
     queue = cnf.queue

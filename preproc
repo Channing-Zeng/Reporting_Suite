@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+import base64
+import getpass
+import datetime
+import hashlib
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
@@ -67,10 +71,17 @@ def proc_opts():
     check_system_resources(cnf, optional=['fastq'])
     check_genome_resources(cnf)
 
+    cnf.project_name = project_name
+    info('Project name: ' + cnf.project_name)
+
     if cnf.work_dir:
         cnf.debug = True
     else:
-        cnf.work_dir = tempfile.mkdtemp()
+        user_prid = getpass.getuser()
+        timestamp = str(datetime.datetime.now())
+        hasher = hashlib.sha1(cnf.project_name + user_prid + timestamp)
+        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+        cnf.work_dir = join(dataset_dirpath, 'work_' + path_hash)
         safe_mkdir(cnf.work_dir)
         subprocess.call(['chmod', '-R', '777', cnf.work_dir])
     cnf.work_dir = adjust_path(cnf.work_dir)
@@ -79,11 +90,6 @@ def proc_opts():
     safe_mkdir(cnf.log_dir)
     subprocess.call(['chmod', '-R', '777', cnf.log_dir])
     set_up_log(cnf, proc_name='preproc', project_name=project_name)
-
-    cnf.project_name = project_name
-    info('Project name: ' + cnf.project_name)
-
-    # set_up_log(cnf, project_name=cnf.project_name)
 
     return cnf, dataset_dirpath, jira_url
 
