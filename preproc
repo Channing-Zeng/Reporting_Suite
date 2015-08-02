@@ -159,11 +159,7 @@ def main():
         os.symlink(project_dirpath, new_project_symlink)
 
     # Creating analysis directory
-    analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', cnf.project_name))
-    if not exists(analysis_proj_dirpath):
-        safe_mkdir(analysis_proj_dirpath)
-
-    # for
+    __prepare_analysis_directory(cnf.project_name, project_dirpath)
 
     # Making project-level report
     make_preproc_project_level_report(cnf, ds)
@@ -364,6 +360,28 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
         verify_file(comb_fastqc_fpath, is_critical=True)
         info('Combined FastQC saved to ' + comb_fastqc_fpath)
         return comb_fastqc_fpath
+
+
+def __prepare_analysis_directory(project_name, project_dirpath, samples):
+    kind_by_pref = {
+        'Bio_': 'bioscience',
+        'Dev_': 'dev',
+        'EXT_': 'external',
+        'TS_': 'translation',
+    }
+    kind = next((kind for pref, kind in kind_by_pref.items() if project_name.startswith(pref)), None)
+    if kind:
+        analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', kind, project_name))
+        if not exists(analysis_proj_dirpath):
+            safe_mkdir(analysis_proj_dirpath)
+
+        bcbio_csv_fpath = join(analysis_proj_dirpath, 'bcbio.csv')
+        if not isfile(bcbio_csv_fpath):
+            with file_transaction(bcbio_csv_fpath) as tx:
+                with open(tx, 'w') as f:
+                    f.write('samplename,description,batch\n')
+                    for s in samples:
+                        f.write(s.name + ',' + s.name + ',' + s.name + '-batch\n')
 
 
 if __name__ == '__main__':
