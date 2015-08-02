@@ -43,10 +43,10 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    f, marker_fpath = make_tmpfile(cnf, prefix=job_name, suffix='.done_marker')
+    f, marker_fpath = make_tmpfile(cnf, prefix=job_name + '_', suffix='.done_marker')
     if isfile(marker_fpath):
         os.remove(marker_fpath)
-    job_id = job_name + '_' + basename(marker_fpath)[3:]
+    job_id = basename(marker_fpath.split('.')[0])[3:]
     log_fpath = join(cnf.log_dir, job_id + '.log')
 
     queue = cnf.queue

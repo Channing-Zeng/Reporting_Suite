@@ -77,6 +77,7 @@ def proc_opts():
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
+    subprocess.call(['chmod', '-R', '777', cnf.log_dir])
     set_up_log(cnf, proc_name='preproc', project_name=project_name)
 
     cnf.project_name = project_name
@@ -158,9 +159,11 @@ def main():
         os.symlink(project_dirpath, new_project_symlink)
 
     # Creating analysis directory
-    analysis_proj_dirpath = adjust_path(join(dirname(project_dirpath), '..', 'analysis', cnf.project_name))
+    analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', cnf.project_name))
     if not exists(analysis_proj_dirpath):
         safe_mkdir(analysis_proj_dirpath)
+
+    # for
 
     # Making project-level report
     make_preproc_project_level_report(cnf, ds)
