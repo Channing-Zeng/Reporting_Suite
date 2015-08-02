@@ -293,6 +293,15 @@ class BCBioSample(BaseSample):
                     self.name + '-' + callername + BCBioStructure.anno_vcf_ending +
                     ('.gz' if gz else ''))
 
+    # varqc
+    def find_varqc_fpath_by_callername(self, callername):
+        fpath = self.get_varqc_fpath_by_callername(callername)
+        return verify_file(fpath)
+
+    def get_varqc_fpath_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varqc_dir,
+                    self.name + '-' + callername + '.' + BCBioStructure.varqc_name + '.html')
+
     # filtered
     def find_filt_vcf_by_callername(self, callername):
         fpath = self.get_filt_vcf_fpath_by_callername(callername, gz=True)
@@ -302,8 +311,17 @@ class BCBioSample(BaseSample):
 
     def get_filt_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending +
+                    self.name + '-' + callername + '.' + BCBioStructure.filt_vcf_ending +
                     ('.gz' if gz else ''))
+
+    # varqc after filtering
+    def find_varqc_after_fpath_by_callername(self, callername):
+        fpath = self.get_varqc_after_fpath_by_callername(callername)
+        return verify_file(fpath)
+
+    def get_varqc_after_fpath_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varqc_after_dir,
+                    self.name + '-' + callername + BCBioStructure.varqc_after_name + '.html')
 
     # filtered passed
     def find_pass_filt_vcf_by_callername(self, callername):
@@ -489,8 +507,6 @@ class BCBioStructure:
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        self.project_level_report_fpath = join(self.date_dirpath, self.project_name + '.html')
-
         cnf.project_name = self.project_name
         info('Project name: ' + self.project_name)
         # self.cnf.name = proc_name or self.project_name
@@ -544,6 +560,14 @@ class BCBioStructure:
         self.samples.sort(key=lambda _s: _s.key_to_sort())
         for caller in self.variant_callers.values():
             caller.samples.sort(key=lambda _s: _s.key_to_sort())
+
+        self.project_level_report_fpath = join(self.date_dirpath, self.project_name + '.html')
+        self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
+        self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
+        self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
+        self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name + '.html')
+        self.varqc_report_fpath_by_caller =       OrderedDict([(k, join(dirname(self.varqc_report_fpath),       k + '.' + basename(self.varqc_report_fpath)))       for k in self.variant_callers.keys()])
+        self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath), k + '.' + basename(self.varqc_after_report_fpath))) for k in self.variant_callers.keys()])
 
         # setting bed files for samples
         if cnf.bed:

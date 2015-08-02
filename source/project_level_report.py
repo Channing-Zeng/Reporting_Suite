@@ -129,11 +129,22 @@ def _add_variants(general_section, bcbio_structure):
             rec = Record(
                 metric=metric,
                 value=metric.name,
-                html_fpath=_convert_to_relpath(val, bcbio_structure.date_dirpath))
+                html_fpath=_relpath_all(val, bcbio_structure.date_dirpath))
             general_section.add_metric(metric)
             records.append(rec)
 
     return records
+
+
+def _make_path_record(html_fpath_value, metric, base_dirpath):
+    if isinstance(html_fpath_value, basestring):
+        html_fpath = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
+        return Record(metric=metric, value=metric.name, html_fpath=html_fpath)
+    elif isinstance(html_fpath_value, dict):
+        html_fpath_value = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
+        return Record(metric=metric, value=metric.name, html_fpath=html_fpath_value)
+    else:
+        pass
 
 
 def _add_summary_reports(general_section, bcbio_structure=None, dataset_structure=None):
@@ -141,127 +152,151 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
     """
-    records = []
-
     if bcbio_structure:
         base_dirpath = bcbio_structure.date_dirpath
     else:
         base_dirpath = dirname(dataset_structure.project_report_html_fpath)
 
-    if dataset_structure:
-        for metric_name, report_fpath in [
-            (PRE_FASTQC_NAME, dataset_structure.comb_fastqc_fpath),
-            (PRE_SEQQC_NAME,  dataset_structure.downsample_targqc_report_fpath)]:
+    recs = []
 
-            if verify_file(report_fpath):
-                metric = general_section.get_metric(metric_name)
-                records.append(Record(metric=metric, value=metric.name, html_fpath=relpath(report_fpath, base_dirpath)))
+    if dataset_structure:
+        recs.append(_make_path_record(dataset_structure.comb_fastqc_fpath,              general_section.get_metric(PRE_FASTQC_NAME), base_dirpath))
+        recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.get_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
-        for (report_file_name, metric_name, summary_dir) in [
-            (BCBioStructure.fastqc_name,      FASTQC_NAME,      BCBioStructure.fastqc_summary_dir),
-            (BCBioStructure.targqc_name,      SEQQC_NAME,       BCBioStructure.targqc_summary_dir),
-            (BCBioStructure.varqc_name,       VARQC_NAME,       BCBioStructure.varqc_summary_dir),
-            (BCBioStructure.varqc_after_name, VARQC_AFTER_NAME, BCBioStructure.varqc_after_summary_dir)]:
+        varqc_d = bcbio_structure.varqc_report_fpath_by_caller
+        varqc_d['all'] = bcbio_structure.varqc_report_fpath
 
-            report_fpath = join(bcbio_structure.date_dirpath, summary_dir, report_file_name + '.html')
-            if verify_file(report_fpath):
-                metric = general_section.get_metric(metric_name)
-                if metric:
-                    records.append(Record(metric=metric, value=metric.name, html_fpath=relpath(report_fpath, base_dirpath)))
-            else:
-                pass
+        varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
+        varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
 
-    return records
+        recs.append(_make_path_record(bcbio_structure.fastqc_summary_fpath, general_section.get_metric(FASTQC_NAME), base_dirpath))
+        recs.append(_make_path_record(bcbio_structure.targqc_summary_fpath, general_section.get_metric(SEQQC_NAME),  base_dirpath))
+        recs.append(_make_path_record(varqc_d,       general_section.get_metric(VARQC_NAME),       base_dirpath))
+        recs.append(_make_path_record(varqc_after_d, general_section.get_metric(VARQC_AFTER_NAME), base_dirpath))
+
+    return recs
 
 
 def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, dataset_structure=None):
-    to_add = []
     base_dirpath = None
-
     if dataset_structure:
-        pre_fastqc_htmls_by_sample = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in dataset_structure.samples])
-        targqc_htmls_by_sample     = _add_targqc_reports(dataset_structure.samples)
-        to_add.extend([
-            (PRE_FASTQC_NAME,        pre_fastqc_htmls_by_sample),
-            (PRE_SEQQC_NAME,         targqc_htmls_by_sample),
-        ])
         base_dirpath = dirname(dataset_structure.project_report_html_fpath)
 
     if bcbio_structure:
-        varqc_htmls_by_sample       = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
-        varqc_after_htmls_by_sample = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_dir)
-        targqc_htmls_by_sample      = _add_targqc_reports(bcbio_structure.samples)
-        fastqc_htmls_by_sample      = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in bcbio_structure.samples])
-        to_add.extend([
-            (FASTQC_NAME,      fastqc_htmls_by_sample),
-            # ('BAM',                            bams_by_samples),
-            (SEQQC_NAME,       targqc_htmls_by_sample),
-            (VARQC_NAME,       varqc_htmls_by_sample),
-            (VARQC_AFTER_NAME, varqc_after_htmls_by_sample)
-        ])
         base_dirpath = dirname(bcbio_structure.project_level_report_fpath)
 
     sample_reports_records = defaultdict(list)
 
-    for (repr_name, links_by_sample) in to_add:
-        cur_metric = Metric(repr_name)
-        # individual_reports_section.add_metric(cur_metric)
+    if dataset_structure:
+        for s in dataset_structure.samples:
+            sample_reports_records[s.name].extend([
+                _make_path_record(
+                    s.fastqc_html_fpath, individual_reports_section.get_metric(PRE_FASTQC_NAME), base_dirpath),
+                _make_path_record(
+                    OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
+                    individual_reports_section.get_metric(PRE_SEQQC_NAME), base_dirpath)
+            ])
 
-        samples = []
-        if dataset_structure:
-            samples.extend(dataset_structure.samples)
-        if bcbio_structure:
-            samples.extend(bcbio_structure.samples)
+    if bcbio_structure:
+        for s in bcbio_structure.samples:
+            targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)])
+            varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
+            varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
 
-        for sample in samples:
-            if links_by_sample and links_by_sample.get(sample.name):
-                sample_reports_records[sample.name].append(
-                    Record(
-                        metric=cur_metric,
-                        value=cur_metric.name,
-                        html_fpath=_convert_to_relpath(links_by_sample[sample.name], base_dirpath)))
-            else:
-                sample_reports_records[sample.name].append(
-                    Record(metric=cur_metric, value=None, html_fpath=None))
+            sample_reports_records[s.name].extend([
+                _make_path_record(s.fastqc_html_fpath, individual_reports_section.get_metric(FASTQC_NAME),      base_dirpath),
+                _make_path_record(targqc_d,            individual_reports_section.get_metric(SEQQC_NAME),       base_dirpath),
+                _make_path_record(varqc_d,             individual_reports_section.get_metric(VARQC_NAME),       base_dirpath),
+                _make_path_record(varqc_after_d,       individual_reports_section.get_metric(VARQC_AFTER_NAME), base_dirpath)
+            ])
+
+    # for (repr_name, links_by_sample) in to_add:
+    #     cur_metric = Metric(repr_name)
+    #     # individual_reports_section.add_metric(cur_metric)
+    #
+    #     samples = []
+    #     if dataset_structure:
+    #         samples.extend(dataset_structure.samples)
+    #     if bcbio_structure:
+    #         samples.extend(bcbio_structure.samples)
+    #
+    #     for sample in samples:
+    #         if links_by_sample and links_by_sample.get(sample.name):
+    #             sample_reports_records[sample.name].append(
+    #                 Record(
+    #                     metric=cur_metric,
+    #                     value=cur_metric.name,
+    #                     html_fpath=_relpath_all(links_by_sample[sample.name], base_dirpath)))
+    #         else:
+    #             sample_reports_records[sample.name].append(
+    #                 Record(metric=cur_metric, value=None, html_fpath=None))
+
+    # fastqc_by_sample = dict()
+    # targqc_by_sample = dict()
+    # varqc_by_sample = dict()
+    # varqc_after_by_sample = dict()
+    #
+    # if dataset_structure:
+    #
+    #     fastqc_by_sample.append(dict(PRE_FASTQC_NAME=pre_fastqc_htmls_by_sample))
+    #     pre_fastqc_htmls_by_sample = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in dataset_structure.samples])
+    #     targqc_htmls_by_sample     = _add_targqc_reports(dataset_structure.samples)
+    #
+    #     to_add.extend([
+    #         (PRE_FASTQC_NAME,        pre_fastqc_htmls_by_sample),
+    #         (PRE_SEQQC_NAME,         targqc_htmls_by_sample),
+    #     ])
+    #
+    # if bcbio_structure:
+    #     varqc_htmls_by_sample       = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
+    #     varqc_after_htmls_by_sample = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_dir)
+    #     targqc_htmls_by_sample      = _add_targqc_reports(bcbio_structure.samples)
+    #     fastqc_htmls_by_sample      = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in bcbio_structure.samples])
+    #     to_add.extend([
+    #         (FASTQC_NAME,      fastqc_htmls_by_sample),
+    #         # ('BAM',                            bams_by_samples),
+    #         (SEQQC_NAME,       targqc_htmls_by_sample),
+    #         (VARQC_NAME,       varqc_htmls_by_sample),
+    #         (VARQC_AFTER_NAME, varqc_after_htmls_by_sample)
+    #     ])
+
     return sample_reports_records
 
 
-def _add_varqc_reports(bcbio_structure, name, dir_name):
-    callers = bcbio_structure.variant_callers.values()
-    if len(callers) == 0:
-        varqc_htmls_by_sample = None
-    elif len(callers) == 1:
-        varqc_htmls_by_sample = callers[0].find_fpaths_by_sample(
-            dir_name, name, 'html')
-    else:
-        varqc_htmls_by_sample = OrderedDict()
-        for sample in bcbio_structure.samples:
-            varqc_htmls_by_sample[sample.name] = OrderedDict()
-        for caller in callers:
-            for sample, fpath in caller.find_fpaths_by_sample(
-                    dir_name, name, 'html').items():
-                varqc_htmls_by_sample[sample][caller.name] = fpath
-
-    return varqc_htmls_by_sample
-
-
-def _add_targqc_reports(samples):
-    targqc_htmls_by_sample = OrderedDict()
-
-    for sample in samples:
-        targqc_htmls_by_sample[sample.name] = OrderedDict()
-        for report_name, report_html_fpath in [
-            ('targetcov', sample.targetcov_html_fpath),
-            ('ngscat',    sample.ngscat_html_fpath),
-            ('qualimap',  sample.qualimap_html_fpath)]:
-            if verify_file(report_html_fpath):
-                targqc_htmls_by_sample[sample.name][report_name] = verify_file(report_html_fpath)
-
-    return targqc_htmls_by_sample
+# def _add_varqc_reports(bcbio_structure, name, dir_name):
+#     callers = bcbio_structure.variant_callers.values()
+#     if len(callers) == 0:
+#         varqc_htmls_by_sample = None
+#     elif len(callers) == 1:
+#         varqc_htmls_by_sample = callers[0].find_fpaths_by_sample(dir_name, name, 'html')
+#     else:
+#         varqc_htmls_by_sample = OrderedDict()
+#         for sample in bcbio_structure.samples:
+#             varqc_htmls_by_sample[sample.name] = OrderedDict()
+#         for caller in callers:
+#             for sample, fpath in caller.find_fpaths_by_sample(dir_name, name, 'html').items():
+#                 varqc_htmls_by_sample[sample][caller.name] = fpath
+#
+#     return varqc_htmls_by_sample
+#
+#
+# def _add_targqc_reports(samples):
+#     targqc_htmls_by_sample = OrderedDict()
+#
+#     for sample in samples:
+#         targqc_htmls_by_sample[sample.name] = OrderedDict()
+#         for report_name, report_html_fpath in [
+#             ('targetcov', sample.targetcov_html_fpath),
+#             ('ngscat',    sample.ngscat_html_fpath),
+#             ('qualimap',  sample.qualimap_html_fpath)]:
+#             if verify_file(report_html_fpath):
+#                 targqc_htmls_by_sample[sample.name][report_name] = verify_file(report_html_fpath)
+#
+#     return targqc_htmls_by_sample
 
 
-def _convert_to_relpath(value, base_dirpath):
+def _relpath_all(value, base_dirpath):
     if not value:
         return None
     if isinstance(value, str):
@@ -292,14 +327,16 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
     #     (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
 
     def __process_record(rec):
+        d = rec.__dict__.copy()
         new_html_fpath_value = []
         if isinstance(rec.html_fpath, basestring):
             new_html_fpath_value = [dict(html_fpath_name=rec.value, html_fpath_value=rec.html_fpath)]
         elif isinstance(rec.html_fpath, dict):
             for k, v in rec.html_fpath.items():
                 new_html_fpath_value.append(dict(html_fpath_name=k, html_fpath_value=v))
-        rec.html_fpath = new_html_fpath_value
-        return rec.__dict__
+        d['html_fpath'] = new_html_fpath_value
+        d['metric'] = rec.metric.__dict__
+        return d
 
     def _get_summary_report_name(rec):
         return rec.value.lower().replace(' ', '_')
@@ -309,10 +346,10 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
     common_dict["project_name"] = project_name
     common_records = full_report.get_common_records()
     for rec in common_records:
-        rec.metric = rec.metric.__dict__
-        rec_d = rec.__dict__
-        common_dict[_get_summary_report_name(rec)] = rec_d
-        if 'Mutations' in rec.metric['name']:
+        # rec.metric = rec.metric.__dict__
+        # rec_d = rec.__dict__
+        common_dict[_get_summary_report_name(rec)] = __process_record(rec)  #rec_d
+        if 'Mutations' in rec.metric.name:
             common_dict[_get_summary_report_name(rec)]['contents'] = (
                 rec.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()))
 

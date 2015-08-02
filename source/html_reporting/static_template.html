@@ -50,13 +50,25 @@
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
                 <h4>Variants</h4>
                 {.section var_qc}
-                <span class="text-muted"><a href="{html_fpath}">Variant QC reports</a></span>
+                <span class="text-muted">
+                    {.repeated section html_fpath}
+                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                    {.or}
+                      - {# no html_fpath at all!}
+                    {.end}
+                </span>
                 {.or}
                 <span class="text-muted not-available">VarQC reports are not available</span>
                 {.end}
                 <br>
                 {.section var_qc_after_filtering}
-                <span class="text-muted"><a href="{html_fpath}">Variant QC post-filtering reports</a></span>
+                <span class="text-muted">
+                    {.repeated section html_fpath}
+                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                    {.or}
+                      - {# no html_fpath at all!}
+                    {.end}
+                </span>
                 {.or}
                 <span class="text-muted not-available">VarQC post filtering reports are not available</span>
                 {.end}
