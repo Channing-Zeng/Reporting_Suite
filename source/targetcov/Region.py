@@ -143,7 +143,18 @@ class Region:
                 (depth - avg_depth) ** 2 * bases
                 for depth, bases
                 in self.bases_by_depth.items())
-            self.std_dev = math.sqrt(float(sum_of_sq_var) / self.get_size())
+            sz = self.get_size()
+            if sz and sz > 0:
+                d = float(sum_of_sq_var) / float(sz)
+                try:
+                    self.std_dev = math.sqrt(d)
+                except ValueError, e:
+                    print 'float(sum_of_sq_var) =', float(sum_of_sq_var)
+                    print 'float(sz) =', float(sz)
+                    print 'd =', d
+                    print self.sample_name, self.gene_name, self.chrom, ':', self.start, '-', self.end
+                    # print 'math.sqrt(d) =', math.sqrt(d)
+                    critical(str(e))
             return self.std_dev
 
     def calc_rate_within_normal(self, avg_depth):

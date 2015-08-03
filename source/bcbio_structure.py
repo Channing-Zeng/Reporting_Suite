@@ -565,7 +565,7 @@ class BCBioStructure:
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
-        self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name + '.html')
+        self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
         self.varqc_report_fpath_by_caller =       OrderedDict([(k, join(dirname(self.varqc_report_fpath),       k + '.' + basename(self.varqc_report_fpath)))       for k in self.variant_callers.keys()])
         self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath), k + '.' + basename(self.varqc_after_report_fpath))) for k in self.variant_callers.keys()])
 
@@ -892,6 +892,7 @@ def ungzip_if_needed(cnf, fpath):
     if not file_exists(fpath) and file_exists(fpath + '.gz'):
         gz_fpath = fpath + '.gz'
         gunzip = get_system_path(cnf, 'gunzip')
+
         cmdline = '{gunzip} -c {gz_fpath}'.format(**locals())
         res = call(cnf, cmdline, output_fpath=fpath, exit_on_error=False)
         info()

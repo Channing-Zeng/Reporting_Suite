@@ -165,7 +165,7 @@ def main():
         os.symlink(project_dirpath, new_project_symlink)
 
     # Creating analysis directory
-    __prepare_analysis_directory(cnf.project_name, project_dirpath)
+    __prepare_analysis_directory(cnf.project_name, project_dirpath, ds.samples)
 
     # Making project-level report
     make_preproc_project_level_report(cnf, ds)
