@@ -146,7 +146,7 @@ class BCBioRunner:
             self.steps.append(self.abnormal_regions)
 
         if Steps.contains(cnf.steps, 'Summary'):
-            pass
+            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
 
         # self.vardict_steps.extend(
         #     [s for s in [
