@@ -12,7 +12,7 @@ from source.file_utils import make_tmpfile, adjust_system_path, verify_file
 
 class JobRunning:
     def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker,
-                 output_fpath=None, tx_output_fpath=None, sample=None):
+                 output_fpath=None, tx_output_fpath=None, sample=None, **kwargs):
         self.job_id = job_id
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
@@ -22,6 +22,8 @@ class JobRunning:
         self.output_fpath = output_fpath
         self.tx_output_fpath = tx_output_fpath
         self.sample = sample
+        for k, v in kwargs.items():
+            self.__dict__[k] = v
 
 
 def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,

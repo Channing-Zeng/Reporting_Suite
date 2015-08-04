@@ -43,12 +43,12 @@ def extract_graphs(samples):  # Sample(name, fastq_fpath)
                 for i, part in enumerate(parts):
                     # info('Parsing ' + _header[i])
                     # info(str(part))
-                    table, graph = None, None
-                    ok_img = '<img ' + part.split('"><img')[1].split('"/>')[0] + '"/>'
+                    table, graph = '', ''
+                    ok_img = '<img ' + part.split('"><img')[1].split('>')[0] + '>'
                     if '<table>' in part:
                         table = '<table>' + part.split('<table>')[1]
                     if '<p><img ' in part:
-                        graph = '<img ' + part.split('<p><img')[1].split('"/>')[0] + '"/>'
+                        graph = '<img ' + part.split('<p><img')[1].split('>')[0] + '>'
                     parsed_data[_header[i]].append([s.name, ok_img, graph, table])
 
                 # module_divs = soup.find_all("div", class_="module")

@@ -635,7 +635,7 @@ def verify_obj_by_path(path, description='', silent=False, is_critical=False):
 
 def verify_file(fpath, description='', silent=False, is_critical=False):
     if fpath is None:
-        msg = (description + ': i' if description else 'File i') + 's not specified.'
+        msg = (description + ': ' if description else ' ') + 'File is None.'
         _log(msg, silent, is_critical)
         return fpath
 

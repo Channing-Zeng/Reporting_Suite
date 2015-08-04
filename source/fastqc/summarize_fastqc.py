@@ -29,19 +29,22 @@ def _print_graphs(outfile, graphs):
     print >> outfile, '<table >'
 
     for graph_name, values in graphs.items():
-        line = '<tr class="title" ><td colspan=" ' + str(
-            len(values)) + '"><h2 >' + graph_name + '</h2><td></tr>'
+        line = '<tr class="title"><td colspan="' + str(len(values)) + '"><h2>' + graph_name + '</h2><td></tr>'
         # print line
         print >> outfile, line
-        print >> outfile, '<tr >'
+        print >> outfile, '<tr>'
         i = 0
         for div_contains in values:
             bam_file_name = div_contains[0]
             ok_img = div_contains[1]
+            if ok_img:
+                ok_img = ok_img.replace('"Icons/', '"' + bam_file_name + '_fastqc/Icons/')
             graph = div_contains[2]
+            if graph:
+                graph = graph.replace('"Images/', '"' + bam_file_name + '_fastqc/Images/')
             table = div_contains[3]
-            line = '<td  name="tcol' + str(i) + '"  id="tcol' + str(i) + '"  class="data">' + str(
-                ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(table) + '</td>'
+            line = '<td name="tcol' + str(i) + '" id="tcol' + str(i) + '" class="data">' + \
+                str(ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(table) + '</td>'
             # print line
             print >> outfile, line
             i += 1

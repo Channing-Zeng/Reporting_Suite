@@ -192,7 +192,8 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         for s in dataset_structure.samples:
             sample_reports_records[s.name].extend([
                 _make_path_record(
-                    s.fastqc_html_fpath, individual_reports_section.get_metric(PRE_FASTQC_NAME), base_dirpath),
+                    OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
+                    individual_reports_section.get_metric(PRE_FASTQC_NAME), base_dirpath),
                 _make_path_record(
                     OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
                     individual_reports_section.get_metric(PRE_SEQQC_NAME), base_dirpath)

@@ -10,7 +10,7 @@ import sys
 from optparse import OptionParser
 from os.path import join, isfile, basename, isdir, expanduser, exists, dirname, splitext
 import shutil
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import tempfile
 import subprocess
 from joblib import Parallel, delayed
@@ -28,7 +28,7 @@ from source.logger import info, critical, err, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
-    add_suffix, file_transaction
+    add_suffix, file_transaction, splitext_plus
 from source.webserver.exposing import sync_with_ngs_server
 
 
@@ -155,7 +155,7 @@ def main():
             safe_mkdir(ds.downsample_metamapping_dirpath)
             run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
 
-        if cnf.fastqc:
+        if cnf.targqc:
             safe_mkdir(ds.downsample_targqc_dirpath)
             ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
 
@@ -165,7 +165,7 @@ def main():
         os.symlink(project_dirpath, new_project_symlink)
 
     # Creating analysis directory
-    __prepare_analysis_directory(cnf.project_name, project_dirpath, ds.samples)
+    __prepare_analysis_directory(cnf.work_dir, cnf.project_name, project_dirpath, ds.samples)
 
     # Making project-level report
     make_preproc_project_level_report(cnf, ds)
@@ -293,19 +293,25 @@ def run_targqc(cnf, ds, bam_by_sample):
 
 def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
-    cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
-    cmdline += (' --sys-cnf {cnf.sys_cnf} --sample {sample.name} -1 {sample.l_fpath} -2 {sample.r_fpath} -o {fastqc_dirpath}'.format(**locals()))
-    return submit_job(cnf, cmdline, 'FastQC_' + sample.name)
+    # cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
+    # cmdline += (' --sys-cnf {cnf.sys_cnf} --sample {sample.name} -1 {sample.l_fpath} -2 {sample.r_fpath} -o {fastqc_dirpath}'.format(**locals()))
+    fastqc = get_system_path(cnf, 'fastqc', is_critical=True)
+    java = get_system_path(cnf, 'java', is_critical=True)
+    cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.l_fpath}'.format(**locals())
+    cmdline_r = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
+    j_l = submit_job(cnf, cmdline_l, 'FastQC_' + sample.l_fastqc_base_name)
+    j_r = submit_job(cnf, cmdline_r, 'FastQC_' + sample.r_fastqc_base_name)
+    return j_l, j_r
 
     # parser = FastQCParser(fastqc_out, data["name"][-1])
     # stats = parser.get_fastqc_summary()
     # parser.save_sections_into_file()
 
 
-def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):
+def find_fastq_pairs_by_sample_names(fastq_fpaths, sample_names):
     fastq_by_sn = OrderedDict()
 
-    for sn in samples_names:
+    for sn in sample_names:
         sn_fastq_fpaths = sorted([f for f in fastq_fpaths if basename(f).startswith(sn + '_R')])
         if len(sn_fastq_fpaths) == 0:
             err('Error: no fastq found for ' + sn)
@@ -321,18 +327,21 @@ def find_fastq_pairs_by_sample_name(fastq_fpaths, samples_names):
     return fastq_by_sn
 
 
+FQC_Sample = namedtuple('FQC_Sample', 'name fastqc_html_fpath')
+
+
 def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc_fpath):
-    if isdir(fastqc_dirpath):
-        if isdir(fastqc_dirpath + '.bak'):
-            try:
-                shutil.rmtree(fastqc_dirpath + '.bak')
-            except OSError:
-                pass
-        if not isdir(fastqc_dirpath + '.bak'):
-            os.rename(fastqc_dirpath, fastqc_dirpath + '.bak')
-    if isdir(fastqc_dirpath):
-        err('Could not run and combine fastqc because it already exists and could not be moved to fastqc.bak')
-        return None
+    # if isdir(fastqc_dirpath):
+    #     if isdir(fastqc_dirpath + '.bak'):
+    #         try:
+    #             shutil.rmtree(fastqc_dirpath + '.bak')
+    #         except OSError:
+    #             pass
+    #     if not isdir(fastqc_dirpath + '.bak'):
+    #         os.rename(fastqc_dirpath, fastqc_dirpath + '.bak')
+    # if isdir(fastqc_dirpath):
+    #     err('Could not run and combine fastqc because it already exists and could not be moved to fastqc.bak')
+    #     return None
 
     fastqc = get_system_path(cnf, 'fastqc')
     if not fastqc:
@@ -341,34 +350,40 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
 
     else:
         safe_mkdir(fastqc_dirpath)
+
+        fqc_samples = []
         fastqc_jobs = []
-        for sample in samples:
-            j = run_fastqc(cnf, sample, fastqc_dirpath)
+        for s in samples:
+            l_fastqc_html = s.find_fastqc_html(s.l_fastqc_base_name)
+            r_fastqc_html = s.find_fastqc_html(s.r_fastqc_base_name)
+            if cnf.reuse_intermediate and verify_file(l_fastqc_html, silent=True) and verify_file(r_fastqc_html, silent=True):
+                info(l_fastqc_html + ' and ' + r_fastqc_html + ' exist, reusing')
+            else:
+                jobs = run_fastqc(cnf, s, fastqc_dirpath)
+                fastqc_jobs.extend(jobs)
             info()
-            fastqc_jobs.append(j)
         wait_for_jobs(fastqc_jobs)
 
         for s in samples:
-            sample_fastqc_dirpath = join(fastqc_dirpath, s.name + '.fq_fastqc')
-            try:
-                os.remove(sample_fastqc_dirpath)
-            except OSError:
-                pass
-            s.fastqc_html_fpath = join(fastqc_dirpath, s.name + '.fq_fastqc.html')
-            if not isfile(s.fastqc_html_fpath):
-                s.fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
-            verify_file(s.fastqc_html_fpath, is_critical=True, silent=True)
-            if os.path.exists(sample_fastqc_dirpath + '.zip'):
-                safe_mkdir(join(fastqc_dirpath, 'zip'))
-                os.rename(sample_fastqc_dirpath + '.zip', join(fastqc_dirpath, 'zip'))
+            for end_name in [s.l_fastqc_base_name, s.r_fastqc_base_name]:
+                fastqc_html_fpath = s.find_fastqc_html(end_name)
+                verify_file(fastqc_html_fpath, is_critical=True, description=end_name)
+                fqc_samples.append(FQC_Sample(name=end_name, fastqc_html_fpath=fastqc_html_fpath))
 
-        write_fastqc_combo_report(comb_fastqc_fpath, samples)
+                sample_fastqc_dirpath = join(fastqc_dirpath, end_name + '_fastqc')
+                if isfile(sample_fastqc_dirpath + '.zip'):
+                    try:
+                        os.remove(sample_fastqc_dirpath + '.zip')
+                    except OSError:
+                        pass
+
+        write_fastqc_combo_report(comb_fastqc_fpath, fqc_samples)
         verify_file(comb_fastqc_fpath, is_critical=True)
         info('Combined FastQC saved to ' + comb_fastqc_fpath)
         return comb_fastqc_fpath
 
 
-def __prepare_analysis_directory(project_name, project_dirpath, samples):
+def __prepare_analysis_directory(work_dir, project_name, project_dirpath, samples):
     kind_by_pref = {
         'Bio_': 'bioscience',
         'Dev_': 'dev',
@@ -383,7 +398,7 @@ def __prepare_analysis_directory(project_name, project_dirpath, samples):
 
         bcbio_csv_fpath = join(analysis_proj_dirpath, 'bcbio.csv')
         if not isfile(bcbio_csv_fpath):
-            with file_transaction(bcbio_csv_fpath) as tx:
+            with file_transaction(work_dir, bcbio_csv_fpath) as tx:
                 with open(tx, 'w') as f:
                     f.write('samplename,description,batch\n')
                     for s in samples:

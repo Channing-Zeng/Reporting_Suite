@@ -1,10 +1,10 @@
 import re
 import os
-from os.path import join, isfile, isdir
+from os.path import join, isfile, isdir, basename
 
 from source import TargQCStandaloneSample
 from source.logger import critical
-from source.file_utils import verify_dir, verify_file
+from source.file_utils import verify_dir, verify_file, splitext_plus
 
 
 class DatasetStructure:
@@ -63,6 +63,11 @@ class DatasetSample:
 
         self.sample_fastqc_dirpath = join(ds.fastqc_dirpath, self.name + '.fq_fastqc')
         self.fastqc_html_fpath = join(ds.fastqc_dirpath, self.name + '.fq_fastqc.html')
+        self.l_fastqc_base_name = splitext_plus(basename(self.l_fpath))[0]
+        self.r_fastqc_base_name = splitext_plus(basename(self.r_fpath))[0]
+        # self.l_fastqc_html_fpath = None  # join(ds.fastqc_dirpath,  + '_fastqc.html')
+        # self.r_fastqc_html_fpath = None  # join(ds.fastqc_dirpath, splitext_plus(self.r_fpath)[0] + '_fastqc.html')
+
         if not isfile(self.fastqc_html_fpath):
             self.fastqc_html_fpath = join(self.sample_fastqc_dirpath, 'fastqc_report.html')
 
@@ -79,4 +84,16 @@ class DatasetSample:
         if not fastq_fpaths:
             critical('No fastq files for the sample ' + self.name + ' were found inside ' + self.bcl2fastq_sample_dirpath)
         return fastq_fpaths
+
+    def find_fastqc_html(self, end_name):
+        sample_fastqc_dirpath = join(self.ds.fastqc_dirpath, end_name + '_fastqc')
+        fastqc_html_fpath = join(self.ds.fastqc_dirpath, end_name + '_fastqc.html')
+        if isfile(fastqc_html_fpath):
+            return fastqc_html_fpath
+        else:
+            fastqc_html_fpath = join(sample_fastqc_dirpath, 'fastqc_report.html')
+            if isfile(fastqc_html_fpath):
+                return fastqc_html_fpath
+            else:
+                return None
 
