@@ -17,6 +17,7 @@ from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
 from source.webserver.exposing import sync_with_ngs_server
+from source.config import defaults
 
 
 class Step:
@@ -109,7 +110,7 @@ class BCBioRunner:
         self._init_steps(cnf, self.run_id)
 
         if not cnf.steps:
-            cnf.steps = ['Summary']
+            cnf.steps = []
 
         self.steps = Steps()
         if 'Variants' in cnf.steps:
@@ -138,15 +139,19 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'ngsCAT'):
             self.steps.append(self.ngscat)
 
-        self.steps.extend([self.fastqc_summary])
-
         if Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
         if Steps.contains(cnf.steps, 'AbnormalCovReport'):
             self.steps.append(self.abnormal_regions)
 
+        # fastqc summary -- special case (turn on if user uses default steps)
+        if cmp(defaults['steps'], cnf.steps) == 0:
+            self.steps.extend([self.fastqc_summary])
+        elif Steps.contains(cnf.steps, 'FastQC'):
+            self.steps.extend([self.fastqc_summary])
+
         if Steps.contains(cnf.steps, 'Summary'):
-            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
+            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
 
         # self.vardict_steps.extend(
         #     [s for s in [
