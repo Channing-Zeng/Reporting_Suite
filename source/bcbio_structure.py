@@ -32,6 +32,7 @@ def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, 
     parser.add_option('--varqc-dir', dest='proc_dir_name', default=proc_dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')
     parser.add_option('--varqc-name', dest='proc_name', default=proc_name, help='Procedure name')
     parser.add_option('-o', dest='output_dir', metavar='DIR')
+    parser.add_option('--email', dest='email')
 
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)

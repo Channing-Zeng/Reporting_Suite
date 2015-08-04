@@ -162,7 +162,7 @@ def main():
 
         (['-c', '--control'], dict(
             dest='control',
-            help='The control sample name. Any novel or COSMIC varia    nts passing all '
+            help='The control sample name. Any novel or COSMIC variants passing all '
                  'above filters but also detected in Control sample will be deemed '
                  'considered false positive. Use only when there\'s control sample.'
         )),
