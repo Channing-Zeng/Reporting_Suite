@@ -135,9 +135,9 @@ class BCBioRunner:
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
         if Steps.contains(cnf.steps, 'Qualimap'):
-            self.steps.append(self.qualimap)
+            self.steps.extend([self.qualimap, self.targqc_summary])
         if Steps.contains(cnf.steps, 'ngsCAT'):
-            self.steps.append(self.ngscat)
+            self.steps.extend([self.ngscat, self.targqc_summary])
 
         if Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
