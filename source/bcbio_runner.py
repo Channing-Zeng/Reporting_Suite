@@ -175,7 +175,7 @@ class BCBioRunner:
     @staticmethod
     def __generate_run_id(final_dir, project_name, prid='', timestamp=''):
         hasher = hashlib.sha1(final_dir + prid + timestamp)
-        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
         return path_hash + '_' + project_name
 
     def _init_steps(self, cnf, run_id):

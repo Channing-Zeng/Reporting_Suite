@@ -16,9 +16,9 @@ from source.targetcov.summarize_targetcov import summarize_targqc
 
 
 def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
-    if not target_bed:
-        target_bed = exons_bed
-        info('No target_bed, using exons_bed instead')
+    # if not target_bed:
+    #     target_bed = exons_bed
+    #     info('No target_bed, using exons_bed instead')
 
     max_threads = cnf.threads
     threads_per_sample = 1  # max(max_threads / len(samples), 1)
@@ -63,7 +63,7 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_g
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, exons_no_genes_bed, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
-    path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
+    path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
     run_id = path_hash + '_' + cnf.project_name
 
     basic_params = \
@@ -82,7 +82,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.targetseq_name) + \
         ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.targetseq_name) + \
         ' --bam {bam}' + \
-        ' --bed ' + bed_fpath + \
+       (' --bed ' + bed_fpath if bed_fpath else '') + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
        (' --exons-no-genes ' + exons_no_genes_bed if exons_no_genes_bed else '') + \
        (' --reannotate ' if cnf.reannotate else '') + \
@@ -96,28 +96,31 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
         paramln=targetcov_params
     )
 
-    ngscat_params = params_for_one_sample + \
-        ' -s {sample} ' + \
-        ' -o ' + join(cnf.output_dir, '{sample}_' + source.ngscat_name) + \
-        ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.ngscat_name) + \
-        ' --bam {bam}' + \
-        ' --bed ' + bed_fpath + \
-        ' --saturation y '
+    ngscat_step = None
+    if bed_fpath or exons_no_genes_bed:
+        ngscat_params = params_for_one_sample + \
+            ' -s {sample} ' + \
+            ' -o ' + join(cnf.output_dir, '{sample}_' + source.ngscat_name) + \
+            ' --work-dir ' + join(cnf.work_dir, '{sample}_' + source.ngscat_name) + \
+            ' --bam {bam}' + \
+            ' --bed ' + (bed_fpath or exons_no_genes_bed) + \
+            ' --saturation y '
 
-    ngscat_step = Step(cnf, run_id,
-        name=source.ngscat_name, short_name='nc',
-        interpreter='python',
-        script=join('scripts', 'post', 'ngscat.py'),
-        paramln=ngscat_params
-    )
+        ngscat_step = Step(cnf, run_id,
+            name=source.ngscat_name, short_name='nc',
+            interpreter='python',
+            script=join('scripts', 'post', 'ngscat.py'),
+            paramln=ngscat_params
+        )
 
     qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
-    fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
+    if bed_fpath:
+        fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
 
     qualimap_params = \
         params_for_one_sample + \
         ' --bam {bam}' + \
-        ' --bed ' + qualimap_bed_fpath + \
+       (' --bed ' + qualimap_bed_fpath if bed_fpath else '') + \
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name)
 
     qualimap_step = Step(cnf, run_id,
