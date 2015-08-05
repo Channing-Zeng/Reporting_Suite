@@ -176,7 +176,8 @@ def symlink_to_ngs(src_paths, dst_dirpath):
     for src_path in src_paths:
         dst_path = join(dst_dirpath, basename(src_path))
         dst_fpaths.append(dst_path)
-        for cmd in ['mkdir ' + dst_dirpath,
+        for cmd in ['mkdir ' + dirname(dst_dirpath),
+                    'mkdir ' + dst_dirpath,
                     'rm ' + dst_path,
                     'ln -s ' + src_path + ' ' + dst_path]:
             info('Executing on the server:  ' + cmd)
