@@ -68,7 +68,7 @@ def sync_with_ngs_server(
     if bcbio_final_dirpath:
         html_report_url = join(loc.report_url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(bcbio_final_dirpath)))
     elif dataset_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'dataset', relpath(summary_report_fpath, dataset_dirpath))
+        html_report_url = join(loc.report_url_base, project_name, 'dataset', basename(dataset_dirpath), relpath(summary_report_fpath, dataset_dirpath))
     else:
         return None
     
@@ -174,6 +174,7 @@ def symlink_to_ngs(src_paths, dst_dirpath):
         return None
 
     for src_path in src_paths:
+        src_path = src_path.replace('/gpfs/', '/')
         dst_path = join(dst_dirpath, basename(src_path))
         dst_fpaths.append(dst_path)
         for cmd in ['mkdir ' + dirname(dst_dirpath),
