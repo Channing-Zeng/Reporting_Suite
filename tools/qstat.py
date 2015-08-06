@@ -53,7 +53,12 @@ def add_row(cur_fields, full_name, pred_jobs):
 
 
 un = getpass.getuser()
-f = subprocess.Popen(['qstat', '-r'], stdout=subprocess.PIPE).stdout
+cmdl = ['qstat', '-r']
+if len(sys.argv) > 1 and sys.argv[1] == '-a':
+    un = ''
+    cmdl.extend(['-u', '"*"'])
+
+f = subprocess.Popen(cmdl, stdout=subprocess.PIPE).stdout
 for i, l in enumerate(f):
     if i == 0:
         l = l.replace('submit/start', 'submit/date')
