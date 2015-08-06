@@ -78,7 +78,7 @@ genomes:
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gzf
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
@@ -105,7 +105,7 @@ genomes:
     cosmic:      /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/Cosmic-Coding_latest.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/ClinVar_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine_latest.vcf.gzf
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine_latest.vcf.gz
     snpeff:
       reference: GRCh37.75
 
