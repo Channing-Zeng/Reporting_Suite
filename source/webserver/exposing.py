@@ -77,7 +77,7 @@ def sync_with_ngs_server(
 
     if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
         jira_case = None
-        if is_az():
+        if is_az() and cnf.jira:
             jira_case = retrieve_jira_info(cnf.jira)
 
         _symlink_dirs(
