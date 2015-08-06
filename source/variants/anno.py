@@ -3,6 +3,7 @@ import os
 from os.path import splitext, basename, join, isfile
 import socket
 import sys
+import re
 
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file
@@ -183,6 +184,12 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         return output_fpath
 
     # all_fields.extend(annotations)
+    info_pattern = re.compile(r'''\#\#INFO=<
+        ID=(?P<id>[^,]+),\s*
+        Number=(?P<number>-?\d+|\.|[AG]),\s*
+        Type=(?P<type>Integer|Float|Flag|Character|String),\s*
+        Description="(?P<desc>[^"]*)"
+        >''', re.VERBOSE)
 
     def _fix_after_snpsift(line, i, ctx):
         if not line.startswith('#'):
@@ -191,11 +198,17 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             line = line.replace(' ', '_')
             assert ' ' not in line
 
-        elif line.startswith('##INFO=<ID=om'):
-            line = line.replace(' ', '')
+        # elif line.startswith('##INFO=<ID=om'):
+        #     line = line.replace(' ', '')
 
         elif not ctx['met_CHROM'] and line.startswith('#CHROM'):
             ctx['met_CHROM'] = True
+
+        elif line.startswith('##INFO'):
+            m = info_pattern.match(line)
+            if m:
+                line = '##INFO=<ID={0},Number={1},Type={2},Description="{3}">\n'.format(
+                    m.group('id'), m.group('number'), m.group('type'), m.group('desc'))
 
         return line
 
@@ -210,8 +223,9 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
     db_path = cnf['genome'].get('dbnsfp')
     if not db_path:
-        critical('Please, provide a path to DB NSFP file in '
-                 'the "genomes" section in the system config.')
+        err('Please, provide a path to DB NSFP file in '
+            'the "genomes" section in the system config.')
+        return None
 
     annotations = cnf.annotation['dbnsfp'].get('annotations') or []
 
@@ -222,8 +236,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
     cmdline = '{executable} dbnsfp {ann_line} -v -db {db_path} ' \
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
-    if call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                       stdout_to_outputfile=True, exit_on_error=False):
+    if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True, exit_on_error=False):
         return output_fpath
     else:
         return None
