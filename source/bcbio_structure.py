@@ -291,7 +291,7 @@ class BCBioSample(BaseSample):
 
     def get_anno_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varannotate_dir,
-                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending +
+                    self.name + '-' + callername + '.' + BCBioStructure.anno_vcf_ending +
                     ('.gz' if gz else ''))
 
     # varqc
@@ -312,7 +312,7 @@ class BCBioSample(BaseSample):
 
     def get_filt_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.filt_vcf_ending +
+                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending +
                     ('.gz' if gz else ''))
 
     # varqc after filtering
@@ -322,7 +322,7 @@ class BCBioSample(BaseSample):
 
     def get_varqc_after_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varqc_after_dir,
-                    self.name + '-' + callername + BCBioStructure.varqc_after_name + '.html')
+                    self.name + '-' + callername + '.' + BCBioStructure.varqc_after_name + '.html')
 
     # filtered passed
     def find_pass_filt_vcf_by_callername(self, callername):
@@ -333,7 +333,7 @@ class BCBioSample(BaseSample):
 
     def get_pass_filt_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending+
+                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending +
                     ('.gz' if gz else ''))
 
     # filtered TSV
