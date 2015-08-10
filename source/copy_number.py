@@ -328,7 +328,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
             '{samtools} {tx_output_fpath} {done_marker}').format(**locals())
         print str(cnf.project_name)
         qsub_cmdline = (
-            '{qsub} -l mem=15GB -pe smp 1 -S {bash} -q {queue} '
+            '{qsub} -pe smp 1 -S {bash} -q {queue} '
             '-j n -o {seq2cov_output_log} -e {seq2cov_output_err} -hold_jid \'_\' '
             '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} {done_marker} "{cmdline}"'
         ).format(**locals())

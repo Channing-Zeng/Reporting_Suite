@@ -56,7 +56,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     mem = threads * 15
     qsub_cmdline = (
-        '{qsub} -pe smp {threads} -l mem={mem}GB -S {bash} -q {queue} '
+        '{qsub} -pe smp {threads} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
         '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
     info('Submitting job ' + job_id)

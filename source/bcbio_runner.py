@@ -414,7 +414,7 @@ class BCBioRunner:
         runner_script = self.qsub_runner
         bash = get_system_path(self.cnf, 'bash')
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -l mem={mem}GB -S {bash} -q {queue} '
+            '{qsub} -pe smp {threads} -S {bash} -q {queue} '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
 
