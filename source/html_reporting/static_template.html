@@ -31,7 +31,13 @@
                 {.end}
                 <br>
                 {.section fastqc}
-                <span class="text-muted"><a href="{html_fpath}">FastQC reports</a></span>
+                <span class="text-muted">
+                    {.repeated section html_fpath}
+                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                    {.or}
+                      - {# no html_fpath at all!}
+                    {.end}
+                </span>
                 {.or}
                 <span class="text-muted not-available">FastQC reports are not available</span>
                 {.end}
@@ -47,15 +53,20 @@
                     {.or}
                       - {# no html_fpath at all!}
                     {.end}
-                    <!--<a href="{html_fpath}">Downsampled SeqQC reports</a></span>-->
+                    <!--<a href="{html_fpath}">Downsampled Seq QC reports</a></span>-->
                 {.or}
-                <span class="text-muted not-available">Downsampled SeqQC reports are not available</span>
+                <span class="text-muted not-available">Downsampled Seq QC reports are not available</span>
                 {.end}
                 <br>
                 {.section seq_qc}
-                <span class="text-muted"><a href="{html_fpath}">{metric.name}</a></span>
+                <span class="text-muted">
+                    {.repeated section html_fpath}
+                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
+                    {.or}
+                      - {# no html_fpath at all!}
+                    {.end}
                 {.or}
-                <span class="text-muted not-available">SeqQC reports are not available</span>
+                <span class="text-muted not-available">Seq QC reports are not available</span>
                 {.end}
             </div>
             <div class="col-xs-6 col-sm-3 placeholder">
@@ -70,7 +81,7 @@
                     {.end}
                 </span>
                 {.or}
-                <span class="text-muted not-available">VarQC reports are not available</span>
+                <span class="text-muted not-available">Var QC reports are not available</span>
                 {.end}
                 <br>
                 {.section var_qc_after_filtering}
@@ -82,7 +93,7 @@
                     {.end}
                 </span>
                 {.or}
-                <span class="text-muted not-available">VarQC post filtering reports are not available</span>
+                <span class="text-muted not-available">Var QC post filtering reports are not available</span>
                 {.end}
                 <br>
 
