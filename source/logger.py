@@ -95,16 +95,14 @@ def send_email(msg='', subj=''):
                 msg += '  ' + m + '\n'
 
         msg = MIMEText(msg)
-        subject = ''
-        if project_name:
-            subject += project_name
-        else:
-            subject += 'Reporting'
-        if proc_name:
-            subject += ' - ' + proc_name
-        if subj:
-            subject += ': ' + subj
-        msg['Subject'] = subject
+        if not subj:
+            if project_name:
+                subj += project_name
+            else:
+                subj += 'Reporting'
+            if proc_name:
+                subj += ' - ' + proc_name
+        msg['Subject'] = subj
 
         msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
         msg['To'] = ','.join(addresses)

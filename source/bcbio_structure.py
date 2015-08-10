@@ -480,13 +480,19 @@ class BCBioStructure:
         self.bed = None
         self.sv_bed = None
         self.project_name = None
+
+        self.small_project_path = None
+        if '/ngs/oncology/analysis/' in realpath(bcbio_project_dirpath):
+            short_path = realpath(bcbio_project_dirpath).split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
+            self.small_project_path = '/'.join(short_path.split('/')[1:])
+
         if cnf.project_name:
             self.project_name = cnf.project_name
-        else:
+
+        if not self.project_name:
             # path is like /ngs/oncology/analysis/bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
-            if '/ngs/oncology/analysis/' in realpath(bcbio_project_dirpath):
-                short_path = realpath(bcbio_project_dirpath).split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
-                self.project_name = '_'.join(short_path.split('/')[1:])  # Bio_0031_Heme_MRL_DLBCL_IRAK4_bcbio_Dev_0079
+            if self.small_project_path:
+                self.project_name = '_'.join(self.small_project_path.split('/'))  # Bio_0031_Heme_MRL_DLBCL_IRAK4_bcbio_Dev_0079
 
         bcbio_project_dirname = basename(bcbio_project_dirpath)  # bcbio_Dev_0079
         bcbio_project_parent_dirname = basename(dirname(bcbio_project_dirpath))  # Bio_0031_Heme_MRL_DLBCL_IRAK4

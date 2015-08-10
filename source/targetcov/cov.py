@@ -785,7 +785,7 @@ def remove_dups(cnf, bam, output_fpath, samtools=None):
     if samtools is None:
         samtools = get_system_path(cnf, 'samtools', is_critical=True)
     cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    j = submit_job(cnf, cmdline, cnf.project_name + '_' + basename(bam) + '_dedup', output_fpath=output_fpath)
+    j = submit_job(cnf, cmdline, 'DEDUP__' + cnf.project_name + '__' + basename(bam).split('.')[0], output_fpath=output_fpath)
     info()
     return j
 

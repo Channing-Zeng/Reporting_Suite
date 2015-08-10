@@ -16,6 +16,7 @@ from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email
 from source.ngscat.bed_file import verify_bam
+from source.utils import is_us
 from source.webserver.exposing import sync_with_ngs_server
 from source.config import defaults
 
@@ -678,8 +679,6 @@ class BCBioRunner:
 
             info()
             waiting = False
-            html_report_url = None
-            time_waited_after_final_report_finished = 30
             while True:
                 # set flags for all done jobs
                 for j in self.jobs_running:
@@ -698,25 +697,26 @@ class BCBioRunner:
                              ', '.join(set([j.step.name for j in self.jobs_running if not j.is_done])))
                         info('', print_date=True, ending='')
                     sleep(10)
-                    time_waited_after_final_report_finished += 10
                     info('.', print_date=False, ending='')
                 else:
                     break
 
             html_report_fpath = make_postproc_project_level_report(self.cnf, self.bcbio_structure)
+
+            html_report_url = None
             if html_report_fpath:
-                sync_with_ngs_server(self.cnf,
+                html_report_url = sync_with_ngs_server(self.cnf,
                     jira_url=self.cnf.jira,
                     project_name=self.bcbio_structure.project_name,
                     sample_names=[s.name for s in self.bcbio_structure.samples],
                     bcbio_final_dirpath=self.bcbio_structure.final_dirpath,
                     summary_report_fpath=html_report_fpath)
+                if not html_report_url:
+                    if is_us() and '/analysis/' in html_report_fpath:
+                        rel_url = html_report_fpath.split('/analysis/')[1]
+                        html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/analysis/' + rel_url)
 
-            if time_waited_after_final_report_finished >= 30:
-                txt = 'Post-processing finished for ' + self.bcbio_structure.project_name
-                if html_report_url:
-                    txt += '. The final report URL is ' + html_report_url
-                send_email(txt)
+            _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
 
         except KeyboardInterrupt:
             for j in self.jobs_running:
@@ -789,6 +789,17 @@ class BCBioRunner:
                             symlink_plus(src_fpath, dst_fpath)
                         except OSError:
                             pass
+
+
+def _final_email_notification(html_report_url, jira_url, bs):
+    subj = bs.small_project_path or bs.project_name
+    txt = 'Post-processing finished for ' + bs.project_name + '\n'
+    txt += '\n'
+    txt += 'Path: ' + bs.final_dirpath + '\n'
+    txt += 'Report: ' + (html_report_url or bs.project_level_report_fpath) + '\n'
+    if jira_url:
+        txt += 'Jira: ' + jira_url
+    send_email(txt, subj)
 
 
 def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
