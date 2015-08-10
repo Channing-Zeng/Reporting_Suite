@@ -18,7 +18,7 @@ from source.html_reporting.html_saver import _write_static_html_report
 FASTQC_NAME      = BCBioStructure.fastqc_repr
 PRE_FASTQC_NAME  = 'Raw ' + FASTQC_NAME
 SEQQC_NAME       = 'Seq QC'
-PRE_SEQQC_NAME   = 'Downsampled ' + SEQQC_NAME
+PRE_SEQQC_NAME   = 'Pre ' + SEQQC_NAME
 VARQC_NAME       = BCBioStructure.varqc_repr
 VARQC_AFTER_NAME = BCBioStructure.varqc_after_repr
 MUTATIONS_NAME   = 'Mutations'
@@ -31,7 +31,8 @@ metric_storage = MetricStorage(
         Metric(PRE_SEQQC_NAME),
         Metric(SEQQC_NAME),
         Metric(VARQC_NAME),
-        Metric(VARQC_AFTER_NAME)
+        Metric(VARQC_AFTER_NAME),
+        Metric(MUTATIONS_NAME)
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),

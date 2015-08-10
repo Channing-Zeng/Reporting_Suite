@@ -417,15 +417,17 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
     err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(vcf2txt_out_fpath))[0] + '.err')
     while True:
         res = call(cnf, cmdline, vcf2txt_out_fpath, err_fpath=err_fpath, exit_on_error=False)
-        if res is None:
+        if res is not None:
+            return res
+        else:
             tries += 1
             send_email(msg='vcf2txt.pl crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
                            '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
                        subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']')
-        if tries == 10:
-            break
-        sleep(120 * 60)
-        info()
+            if tries == 10:
+                break
+            sleep(120 * 60)
+            info()
 
     return res
 

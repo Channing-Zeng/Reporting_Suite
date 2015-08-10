@@ -24,6 +24,7 @@ def get_header_metric_storage(depth_thresholds):
     ms = MetricStorage(
         general_section=ReportSection('general_section', '', [
             Metric('Target', short_name='Target', common=True),
+            Metric('Target ready', short_name='Target ready', common=True),
             Metric('Regions in target', short_name='Regions in target', common=True),
             Metric('Bases in target', short_name='Target bp', unit='bp', common=True),
             Metric('Genes', short_name='Genes', common=True),
@@ -166,16 +167,18 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_gene
 
 
 class TargetInfo:
-    def __init__(self, fpath=None, bed=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
+    def __init__(self, fpath=None, bed=None, original_target_bed=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
         self.fpath = realpath(fpath) if fpath else None  # raw source file - to demonstrate were we took one
         self.bed = bed                                   # processed (sorted, merged...), to do real calculations
+        self.original_target_bed = original_target_bed
         self.regions_num = regions_num
         self.bases_num = bases_num
         self.genes_fpath = realpath(genes_fpath) if genes_fpath else None
         self.genes_num = genes_num
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath=None):
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed,
+                           genes_fpath=None, original_target_bed=None):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     bam_stats = samtools_flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
@@ -214,6 +217,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
         target_info = TargetInfo(
             fpath=target_bed or exons_no_genes_bed, bed=target_bed or exons_no_genes_bed,
+            original_target_bed=original_target_bed or target_bed or exons_no_genes_bed,
             regions_num=len(targets), bases_num=total_bed_size,
             genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
@@ -358,7 +362,8 @@ def generate_summary_report(
 
     if target_info:
         info('* Target coverage statistics *')
-        report.add_record('Target', target_info.fpath)
+        report.add_record('Target', target_info.original_target_bed)
+        report.add_record('Target ready', target_info.fpath)
         report.add_record('Regions in target', target_info.regions_num)
         report.add_record('Bases in target', target_info.bases_num)
         if target_info.genes_fpath: report.add_record('Genes', target_info.genes_fpath)

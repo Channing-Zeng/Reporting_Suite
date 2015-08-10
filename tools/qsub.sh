@@ -1,11 +1,11 @@
 #!/bin/bash
 set -x
 
-runner=${20}
-marker=${21}
-params=${22}
-out=${13}
-err=${15}
+runner=${18}
+marker=${19}
+params=${20}
+out=${11}
+err=${13}
 cmdline="${runner} ${marker} \"${params}\""
 echo "${params}"
 eval "${cmdline}" &  #>${out} 2>${err}

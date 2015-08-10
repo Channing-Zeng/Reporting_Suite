@@ -477,7 +477,9 @@ class BCBioStructure:
         self.samples = []
         self.variant_callers = OrderedDict()
 
+        self.original_bed = None
         self.bed = None
+        self.original_sv_bed = None
         self.sv_bed = None
         self.project_name = None
 

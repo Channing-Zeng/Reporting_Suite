@@ -75,7 +75,7 @@ def _make_targetcov_symlinks(samples):
         info('TargetCov TXT symlink saved to ' + new_link)
 
 
-def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
+def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fpath=None):
     header_storage = get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
     targqc_metric_storage = _get_targqc_metric_storage([
@@ -112,6 +112,22 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
+    orig_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target'), None)
+    ready_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target ready'), None)
+
+    if not ready_bed_rec:
+        ready_bed_rec = orig_bed_rec
+
+    if ready_bed_rec:
+        ready_bed = ready_bed_rec.value
+        if verify_bed(ready_bed, 'ready_bed_rec.value'):
+            project_ready_bed = join(output_dir, 'target.bed')
+            shutil.copy(ready_bed, project_ready_bed)
+            ready_bed_rec.value = project_ready_bed
+
+    if orig_bed_rec and ready_bed_rec:
+        orig_bed_rec.value = bed_fpath
+
     txt_fpath = targqc_full_report.save_txt(output_dir, BCBioStructure.targqc_name)
     tsv_fpath = targqc_full_report.save_tsv(output_dir, BCBioStructure.targqc_name)
     html_fpath = targqc_full_report.save_html(output_dir, BCBioStructure.targqc_name,
@@ -139,7 +155,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
 
     # _make_targetcov_symlinks(samples)
 
-    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample, bed_fpath)
 
     best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
     ''' 1. best_regions = get_best_regions()

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-from os.path import isfile
+import os
+from os.path import isfile, join
 
 import __check_python_version
 
@@ -29,6 +30,10 @@ def main(args):
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
                 help='a BED file for capture panel or amplicons')
+             ),
+            (['--original-bed'], dict(
+                dest='original_target_bed',
+                help='original bed file path (just for reporting)')
              ),
             (['--reannotate'], dict(
                 dest='reannotate',
@@ -108,7 +113,7 @@ class Sample(BaseSample):
         BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
 
 
-def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
+def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath, original_target_bed=None):
     sample = Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
     bam_fpath = cnf.bam
@@ -117,8 +122,12 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
         bam_fpath, exons_bed, exons_no_genes_bed, target_bed, _ = \
             prep_files(cnf, sample.name, sample.bam, sample.bed, exons_bed)
 
+    ready_target_bed = join(output_dir, 'target.bed')
+    shutil.copy(target_bed, ready_target_bed)
+
     avg_depth, gene_by_name, reports = make_targetseq_reports(
-        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath)
+        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, ready_target_bed,
+        genes_fpath, original_target_bed=cnf.original_target_bed or cnf.bed)
 
     if cnf.extended:
         info('Generating flagged regions report...')

@@ -45,15 +45,17 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
     err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output))[0] + '.err')
     while True:
         res = call(cnf, cmdline, bedcov_output, err_fpath=err_fpath, exit_on_error=False)
-        if res is None:
+        if res is not None:
+            return res
+        else:
             tries += 1
             send_email(msg='bedtools coverage crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
                            '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
                        subj='bedtools coverage crashed [' + str(cnf.project_name) + ']')
-        if tries == 10:
-            break
-        sleep(120 * 60)
-        info()
+            if tries == 10:
+                break
+            sleep(120 * 60)
+            info()
 
     return bedcov_output
 
