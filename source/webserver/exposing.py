@@ -248,7 +248,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         if html_report_url:
             d['HTML report path'] = html_report_url
         if analysis_dirpath:
-            d['Analyses directory ' + country_id if not is_local() else 'US'] = analysis_dirpath
+            d['Analyses directory ' + (country_id if not is_local() else 'US')] = analysis_dirpath
         if samples_num:
             d['Sample Number'] = str(samples_num)
 

@@ -328,15 +328,17 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
     #     (BCBioStructure.varqc_repr, 'VarQC'),
     #     (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
 
-    def __process_record(rec):
+    def __process_record(rec, short=False):
         d = rec.__dict__.copy()
-        new_html_fpath_value = []
+
         if isinstance(rec.html_fpath, basestring):
-            new_html_fpath_value = [dict(html_fpath_name=rec.value, html_fpath_value=rec.html_fpath)]
+            d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
+
         elif isinstance(rec.html_fpath, dict):
-            for k, v in rec.html_fpath.items():
-                new_html_fpath_value.append(dict(html_fpath_name=k, html_fpath_value=v))
-        d['html_fpath'] = new_html_fpath_value
+            d['contents'] = ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
+            if not short:
+                d['contents'] = rec.metric.name + ': ' + d['contents']
+
         d['metric'] = rec.metric.__dict__
         return d
 
@@ -350,26 +352,37 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
     for rec in common_records:
         # rec.metric = rec.metric.__dict__
         # rec_d = rec.__dict__
-        common_dict[_get_summary_report_name(rec)] = __process_record(rec)  #rec_d
-        if 'Mutations' in rec.metric.name:
-            common_dict[_get_summary_report_name(rec)]['contents'] = (
-                rec.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()))
+        if rec.value:
+            common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
+        # if 'Mutations' in rec.metric.name:
+        #     common_dict[_get_summary_report_name(rec)]['contents'] = (
+        #         rec.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()))
 
     main_dict = dict()
     if full_report.sample_reports:
         # individual records
         main_dict = dict()
         main_dict["sample_reports"] = []
-        main_dict["metric_names"] = [m.name for m in full_report.metric_storage.get_metrics(skip_general_section=True)]
 
+        metrics = metric_storage.get_metrics(skip_general_section=True)
+        metrics_with_values_set = set()
         for sample_report in full_report.sample_reports:
-            ready_records = []
             for m in metric_storage.get_metrics(skip_general_section=True):
                 r = next((r for r in sample_report.records if r.metric.name == m.name), None)
                 if r:
-                    ready_records.append(__process_record(r))
+                    metrics_with_values_set.add(m)
+
+        metrics = [m for m in metrics if m in metrics_with_values_set]
+        main_dict['metric_names'] = [m.name for m in metrics]
+
+        for sample_report in full_report.sample_reports:
+            ready_records = []
+            for m in metrics:
+                r = next((r for r in sample_report.records if r.metric.name == m.name), None)
+                if r:
+                    ready_records.append(__process_record(r, short=True))
                 else:
-                    ready_records.append(__process_record(Record(metric=m, value=None)))
+                    ready_records.append(__process_record(Record(metric=m, value=None), short=True))
             assert len(ready_records) == len(main_dict["metric_names"])
 
             sample_report_dict = dict()

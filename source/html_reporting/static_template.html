@@ -19,25 +19,10 @@
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
                 <h4 class="section_header">Reads</h4>
                 {.section raw_fastqc}
-                <span class="text-muted">
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
-                </span>
-                {.or}
-                <span class="text-muted not-available">Raw FastQC reports are not available</span>
+                <span class="text-muted">{contents}<br></span>
                 {.end}
-                <br>
                 {.section fastqc}
-                <span class="text-muted">
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
-                </span>
+                <span class="text-muted">{contents}</span>
                 {.or}
                 <span class="text-muted not-available">FastQC reports are not available</span>
                 {.end}
@@ -47,24 +32,10 @@
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
                 <h4>Alignment and Capture</h4>
                 {.section downsampled_seq_qc}
-                <span class="text-muted">
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
-                    <!--<a href="{html_fpath}">Downsampled Seq QC reports</a></span>-->
-                {.or}
-                <span class="text-muted not-available">Downsampled Seq QC reports are not available</span>
+                <span class="text-muted">{contents}<br></span>
                 {.end}
-                <br>
                 {.section seq_qc}
-                <span class="text-muted">
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
+                <span class="text-muted">{contents}</span>
                 {.or}
                 <span class="text-muted not-available">Seq QC reports are not available</span>
                 {.end}
@@ -73,27 +44,13 @@
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
                 <h4>Variants</h4>
                 {.section var_qc}
-                <span class="text-muted">
-                    Var QC:
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
-                </span>
+                <span class="text-muted">{contents}</span>
                 {.or}
                 <span class="text-muted not-available">Var QC reports are not available</span>
                 {.end}
                 <br>
                 {.section var_qc_after_filtering}
-                <span class="text-muted">
-                    Var QC post filtering:
-                    {.repeated section html_fpath}
-                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                    {.or}
-                      - {# no html_fpath at all!}
-                    {.end}
-                </span>
+                <span class="text-muted">{contents}</span>
                 {.or}
                 <span class="text-muted not-available">Var QC post filtering reports are not available</span>
                 {.end}
@@ -133,13 +90,7 @@
                         <tr>
                             <td class="left_column_td">{sample_name}</td>
                             {.repeated section records}
-                                <td class="td">
-                                    {.repeated section html_fpath}
-                                      <a href="{html_fpath_value}">{html_fpath_name}</a>{.alternates with},
-                                    {.or}
-                                      - {# no html_fpath at all!}
-                                    {.end}
-                                </td>
+                                <td class="td">{contents}</td>
                             {.end}
                         </tr>
                     {.end}
