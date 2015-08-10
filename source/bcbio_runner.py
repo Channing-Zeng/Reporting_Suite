@@ -36,9 +36,12 @@ class Step:
         self.env_vars = env_vars
 
     def job_name(self, sample=None, caller=None):
-        return 'J_' + self.short_name.upper() + '_' + self.run_id_ + \
+        jn = self.short_name.upper() + '_' + self.run_id_ + \
                ('_' + sample if sample else '') + \
                ('_' + caller if caller else '')
+        if not jn[0].isalpha():
+            jn = 'j_' + jn
+        return jn
 
     def __repr__(self):
         return self.name
@@ -176,7 +179,7 @@ class BCBioRunner:
     def __generate_run_id(final_dir, project_name, prid='', timestamp=''):
         hasher = hashlib.sha1(final_dir + prid + timestamp)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
-        return path_hash + '_' + project_name
+        return project_name + '_' + path_hash
 
     def _init_steps(self, cnf, run_id):
         basic_params = \
@@ -404,12 +407,13 @@ class BCBioRunner:
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         job_name = step.job_name(sample_name, caller_suf)
         qsub = get_system_path(self.cnf, 'qsub')
+        mem = str(threads * 15)
         threads = str(threads)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         bash = get_system_path(self.cnf, 'bash')
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -S {bash} -q {queue} '
+            '{qsub} -pe smp {threads} -l mem={mem}GB -S {bash} -q {queue} '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
 

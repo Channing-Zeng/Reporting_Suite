@@ -46,7 +46,7 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_g
             #     _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
             #     summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
-            if not cnf.reuse_intermediate or not sample.qualimap_done():
+            if qualimap_step and (not cnf.reuse_intermediate or not sample.qualimap_done()):
                 info('Qualimap "' + basename(sample.bam) + '"')
                 j = _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
                 jobs_to_wait.append(j)
@@ -123,12 +123,14 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
        (' --bed ' + qualimap_bed_fpath if bed_fpath else '') + \
         ' -o ' + join(cnf.output_dir, '{sample}_' + source.qualimap_name)
 
-    qualimap_step = Step(cnf, run_id,
-        name=source.qualimap_name, short_name='qm',
-        interpreter='python',
-        script=join('scripts', 'post', 'qualimap.py'),
-        paramln=qualimap_params,
-    )
+    qualimap_step = None
+    if cnf.qualimap:
+        qualimap_step = Step(cnf, run_id,
+            name=source.qualimap_name, short_name='qm',
+            interpreter='python',
+            script=join('scripts', 'post', 'qualimap.py'),
+            paramln=qualimap_params,
+        )
 
     return targetcov_step, ngscat_step, qualimap_step
 

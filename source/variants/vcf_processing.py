@@ -250,7 +250,7 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
     info('iterate_vcf: overwrite=' + str(overwrite))
     def _convert_vcf(inp_f, out_f):
-        max_bunch_size = 10000
+        max_bunch_size = 100000
         written_records = 0
         bunch = []
 

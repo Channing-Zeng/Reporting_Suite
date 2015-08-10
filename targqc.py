@@ -33,7 +33,9 @@ def proc_args(argv):
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='count duplicates in coverage metrics')
+    # parser.add_option('--no-dedup', dest='dedup', action='store_false', default=False, help='not counting duplicates in coverage metrics')
     parser.add_option('-e', '--extended', dest='extended', action='store_true', default=False, help='count missed variants')
+    parser.add_option('--no-qualimap', dest='qualimap', action='store_false', default=True, help='do not run qualimap')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
 
