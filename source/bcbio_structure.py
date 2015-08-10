@@ -291,7 +291,7 @@ class BCBioSample(BaseSample):
 
     def get_anno_vcf_fpath_by_callername(self, callername, gz):
         return join(self.dirpath, BCBioStructure.varannotate_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.anno_vcf_ending +
+                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending +
                     ('.gz' if gz else ''))
 
     # varqc
