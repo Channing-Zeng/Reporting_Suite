@@ -39,7 +39,7 @@ metric_storage = MetricStorage(
         # Metric('BAM'),
         Metric(PRE_SEQQC_NAME),
         Metric(SEQQC_NAME),
-        Metric(MUTATIONS_NAME),
+        # Metric(MUTATIONS_NAME),
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
     ])])
