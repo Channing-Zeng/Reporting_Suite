@@ -2,6 +2,7 @@
 
 from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath, splitext
+import shutil
 
 import source
 from source.qsub_utils import submit_job, wait_for_jobs
@@ -177,8 +178,11 @@ class TargetInfo:
         self.genes_num = genes_num
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed,
-                           genes_fpath=None, original_target_bed=None):
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed,
+                           target_bed, genes_fpath=None):
+    original_target_bed = cnf.original_target_bed or target_bed
+    original_exons_bed = cnf.original_exons_bed or exons_no_genes_bed
+
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     bam_stats = samtools_flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
@@ -215,9 +219,12 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
         total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
 
+        ready_target_bed = join(output_dir, 'target.bed')
+        shutil.copy(target_bed or exons_bed, ready_target_bed)
+
         target_info = TargetInfo(
-            fpath=target_bed or exons_no_genes_bed, bed=target_bed or exons_no_genes_bed,
-            original_target_bed=original_target_bed or target_bed or exons_no_genes_bed,
+            fpath=total_merged_target_bed, bed=total_merged_target_bed,
+            original_target_bed=original_target_bed or original_exons_bed,
             regions_num=len(targets), bases_num=total_bed_size,
             genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
