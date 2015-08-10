@@ -66,7 +66,7 @@ def sync_with_ngs_server(
 
     html_report_url = None
     if bcbio_final_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(bcbio_final_dirpath)))
+        html_report_url = join(loc.report_url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(dirname(bcbio_final_dirpath))))
     elif dataset_dirpath:
         html_report_url = join(loc.report_url_base, project_name, 'dataset', basename(dataset_dirpath), relpath(summary_report_fpath, dataset_dirpath))
     else:

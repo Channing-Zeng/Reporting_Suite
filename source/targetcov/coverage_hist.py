@@ -1,8 +1,9 @@
-from os.path import join, basename
+from os.path import join, basename, splitext
+from time import sleep
 
 from source.calling_process import call
 from source.file_utils import splitext_plus
-from source.logger import critical, info, warn
+from source.logger import critical, info, warn, send_email
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
@@ -39,10 +40,21 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
     else:
         cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
 
-    # if reuse and file_exists(bedcov_output) and verify_file(bedcov_output):
-    #     pass
-    # else:
-    res = call(cnf, cmdline, bedcov_output)
+    res = None
+    tries = 0
+    err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output))[0] + '.err')
+    while True:
+        res = call(cnf, cmdline, bedcov_output, err_fpath=err_fpath, exit_on_error=False)
+        if res is None:
+            tries += 1
+            send_email(msg='bedtools coverage crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
+                           '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
+                       subj='bedtools coverage crashed [' + str(cnf.project_name) + ']')
+        if tries == 10:
+            break
+        sleep(120 * 60)
+        info()
+
     return bedcov_output
 
 

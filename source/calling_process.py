@@ -26,7 +26,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
          overwrite=False, check_output=False, return_proc=False, print_stderr=True,
-         return_err_code=False,
+         return_err_code=False, err_fpath=None,
 
          env_vars=None):
     """
@@ -55,6 +55,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     check_output                    subprocess.check_output; returns stdout
     return_proc                     proc = subprocess.Popen; returns proc
     return_err_code                 if return code !=0, return this code (only if exit_on_error=False)
+    err_fpath                       also write stderr here
 
     env_vars                        dictionary of environment variables to set only for this subprocess call
     ------------------------------------------------------------
@@ -77,11 +78,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             os.remove(output_fpath)
 
     # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
-    err_fpath = join(cnf.work_dir, '.subprocess_stderr.txt')
-    if exists(err_fpath):
-        os.remove(err_fpath)
+    _err_fpath = join(cnf.work_dir, '.subprocess_stderr.txt')
+    if err_fpath:
+        _err_fpath = err_fpath
+    else:
+        to_remove.append(_err_fpath)
 
-    to_remove.append(err_fpath)
+    if exists(_err_fpath):
+        os.remove(_err_fpath)
 
     def clean():
         for fpath in to_remove:
@@ -191,7 +195,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
-                    stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
+                    stderr = open(_err_fpath, 'a') if _err_fpath else open('/dev/null')
                 else:
                 # STDOUT TO PIPE
                     if output_fpath:
@@ -199,7 +203,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.STDOUT
-                    stderr = open(err_fpath, 'a') if err_fpath else open('/dev/null')
+                    stderr = open(_err_fpath, 'a') if _err_fpath else open('/dev/null')
             else:
                 if not silent:
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
@@ -210,7 +214,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             # PRINT STDOUT AND STDERR
             if ret_code != 0:
-                with open(err_fpath) as err_f:
+                with open(_err_fpath) as err_f:
                     stderr_dump = err_f.read()
 
                 info('')
@@ -238,8 +242,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 else:
                     return None
             else:
-                if cnf.log and err_fpath:
-                    with open(err_fpath) as err_f, \
+                if cnf.log and _err_fpath:
+                    with open(_err_fpath) as err_f, \
                          open(cnf.log, 'a') as log_f:
                         log_f.write('')
                         log_f.write(err_f.read())

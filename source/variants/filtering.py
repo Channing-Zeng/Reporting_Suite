@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 import os
-from os.path import basename, join, isfile, dirname, islink, abspath, isdir
+from os.path import basename, join, isfile, dirname, islink, abspath, isdir, splitext
+from time import sleep
 import traceback
 
 from joblib import Parallel, delayed
@@ -12,7 +13,7 @@ from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline
-from source.logger import critical, err, warn, is_local
+from source.logger import critical, err, warn, is_local, send_email
 from source.utils import is_us
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
@@ -411,6 +412,20 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
 
     cmdline += ' ' + ' '.join(vcf_fpaths)
 
-    res = call(cnf, cmdline, vcf2txt_out_fpath, exit_on_error=False)
+    res = None
+    tries = 0
+    err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(vcf2txt_out_fpath))[0] + '.err')
+    while True:
+        res = call(cnf, cmdline, vcf2txt_out_fpath, err_fpath=err_fpath, exit_on_error=False)
+        if res is None:
+            tries += 1
+            send_email(msg='vcf2txt.pl crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
+                           '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
+                       subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']')
+        if tries == 10:
+            break
+        sleep(120 * 60)
+        info()
+
     return res
 
