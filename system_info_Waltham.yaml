@@ -74,13 +74,6 @@ genomes:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
 
     dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf.gz
-    custom_vcfs:
-      BALB_cJ_snps:     /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/BALB_cJ.mgp.v5.snps.dbSNP142.vcf.gz
-      BALB_cJ_indels:   /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/BALB_cJ.mgp.v5.indels.dbSNP142.normed.vcf.gz
-      C57BL_6NJ_snps:   /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/C57BL_6NJ.mgp.v5.snps.dbSNP142.vcf.gz
-      C57BL_6NJ_indels: /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/C57BL_6NJ.mgp.v5.indels.dbSNP142.normed.vcf.gz
-      DBA_1J_snps:      /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.snps.dbSNP142.vcf.gz
-      DBA_1J_indels:    /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.indels.dbSNP142.normed.vcf.gz
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
@@ -108,6 +101,13 @@ genomes:
     actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable_hotspot.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+
+    tracks:
+      cpgIslandExt: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
+      dgvMerged: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed          ## Copy Number Variants
+      genomicSuperDups: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed   ## Segmental Duplications
+      rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
+      RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa

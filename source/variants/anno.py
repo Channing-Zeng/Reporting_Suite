@@ -73,9 +73,18 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             if file_exists(summary_fpath): shutil.move(summary_fpath, final_summary_fpath)
             if file_exists(genes_fpath): shutil.move(genes_fpath, final_genes_fpath)
 
-    if cnf.annotation.get('tracks'):
-        for track in cnf.annotation['tracks']:
-            res = _tracks(cnf, track, vcf_fpath)
+    if 'tracks' in cnf.annotation and cnf.annotation['tracks']:
+        track_fapths = []
+        for track_name in cnf.annotation['tracks']:
+            if isfile(track_name) and verify_file(track_name):
+                track_fapths.append(track_name)
+            else:
+                if 'tracks' in cnf['genome'] and cnf['genome']['tracks'] and track_name in cnf['genome']['tracks']:
+                    track_fpath = cnf['genome']['tracks'][track_name]
+                    if verify_file(track_fpath):
+                        track_fapths.append(track_fpath)
+        for track_fapth in track_fapths:
+            res = _tracks(cnf, track_fapth, vcf_fpath)
             if res:
                 annotated = True
                 vcf_fpath = res
@@ -217,14 +226,16 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
 
 def _snpsift_db_nsfp(cnf, input_fpath):
+    if 'dbnsfp' not in cnf.annotation or 'dbnsfp' not in cnf.genome:
+        return None
+
     step_greetings('DB SNFP')
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
 
-    db_path = cnf['genome'].get('dbnsfp')
-    if not db_path:
-        err('Please, provide a path to DB NSFP file in '
-            'the "genomes" section in the system config.')
+    db_path = cnf['genome']['dbnsfp']
+    if not verify_file(db_path, 'DB NSFP file'):
+        err('DB NSFP file is incorrect. Skipping.')
         return None
 
     annotations = cnf.annotation['dbnsfp'].get('annotations') or []
@@ -243,17 +254,16 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
 
 def _snpeff(cnf, input_fpath):
+    if 'snpeff' not in cnf.annotation or 'snpeff' not in cnf.genome:
+        return None, None, None
+
     step_greetings('SnpEff')
 
     info('Removing previous EFF annotations...')
-
     res = remove_prev_eff_annotation(cnf, input_fpath)
     if res:
         input_fpath = res
     info('')
-
-    if 'snpeff' not in cnf.annotation:
-        return None, None, None
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
@@ -302,6 +312,9 @@ def _snpeff(cnf, input_fpath):
 
 
 def _tracks(cnf, track_path, input_fpath):
+    if not verify_file(track_path):
+        return None
+
     field_name = splitext(basename(track_path))[0]
 
     step_greetings('Intersecting with ' + field_name)
@@ -311,7 +324,7 @@ def _tracks(cnf, track_path, input_fpath):
         err('WARNING: Skipping annotation with tracks: vcfannotate '
             'executable not found, you probably need to specify path in system_config, or '
             'run load bcbio:  . /group/ngs/bin/bcbio-prod.sh"')
-        return
+        return None
 
     # self.all_fields.append(field_name)
 
