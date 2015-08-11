@@ -13,29 +13,46 @@ class DatasetStructure:
 
     def __init__(self, dirpath, project_name=None):
         self.dirpath = dirpath
-        self.unaligned_dirpath = join(self.dirpath, 'Unalign')
-        verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
-
+        self.unaligned_dirpath = None
         self.basecalls_dirpath = join(self.dirpath, 'Data/Intensities/BaseCalls')
         verify_dir(self.basecalls_dirpath, is_critical=True)
 
-        self.bcl2fastq_dirpath = self.__get_bcl2fastq_dirpath()
-        self.project_name = project_name or self.bcl2fastq_dirpath.split('Project_')[1]
+        self.bcl2fastq_dirpath = None
+        self.project_name = project_name
 
         self.sample_sheet_csv_fpath = join(self.basecalls_dirpath, 'SampleSheet.csv')
         if not isfile(self.sample_sheet_csv_fpath):
             self.sample_sheet_csv_fpath = join(self.dirpath, 'SampleSheet.csv')
         verify_file(self.sample_sheet_csv_fpath, is_critical=True)
 
-        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
-        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
-        self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
+        self.fastq_dirpath = None
+        self.fastqc_dirpath = None
+        self.comb_fastqc_fpath = None
+        self.downsample_targqc_report_fpath = None
+        self.project_report_html_fpath = None
+
         self.downsample_metamapping_dirpath = join(self.dirpath, 'Downsample_MetaMapping')
         self.downsample_targqc_dirpath = join(self.dirpath, 'Downsample_TargQC')
         self.downsample_targqc_report_fpath = join(self.downsample_targqc_dirpath, 'targQC.html')
         self.project_report_html_fpath = join(self.dirpath, self.project_name + '.html')
 
         self.samples = []
+
+
+class HiSeqStructure(DatasetStructure):
+    def __init__(self, dirpath, project_name=None):
+        DatasetStructure.__init__(self, dirpath)
+
+        self.unaligned_dirpath = join(self.dirpath, 'Unalign')
+        verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
+
+        self.bcl2fastq_dirpath = self.__get_bcl2fastq_dirpath()
+        self.project_name = project_name or self.bcl2fastq_dirpath.split('Project_')[1]
+
+        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
+        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
+        self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
+
         for sample_dirname in os.listdir(self.bcl2fastq_dirpath):
             sample_dirpath = join(self.bcl2fastq_dirpath, sample_dirname)
             if isdir(sample_dirpath) and sample_dirname.startswith('Sample_'):
@@ -51,6 +68,31 @@ class DatasetStructure:
         except StopIteration:
             critical('Could not find directory starting with Project_ in ' + self.unaligned_dirpath)
         return bcl2fastq_dirpath
+
+
+class MiSeqStructure(DatasetStructure):
+    pass
+
+
+class HiSeq4000Structure(DatasetStructure):
+    def __init__(self, dirpath, project_name):
+        DatasetStructure.__init__(self, dirpath)
+
+        self.unaligned_dirpath = join(self.dirpath, 'Unalign')
+        verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
+
+        self.fastq_dirpath = self.fastqc_dirpath = self.__find_merged_dir()
+        self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
+
+    def __find_merged_dir(self):
+        merged_dirpath = None
+        for d in os.listdir(self.unaligned_dirpath):
+            for d2 in os.listdir(join(self.unaligned_dirpath, d)):
+                if d2 == 'merged':
+                    merged_dirpath = join(self.unaligned_dirpath, d, d2)
+                    break
+        verify_dir(merged_dirpath, is_critical=True, description='"merged" dirpath is not found')
+        return merged_dirpath
 
 
 class DatasetSample:
