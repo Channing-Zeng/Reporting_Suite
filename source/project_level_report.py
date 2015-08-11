@@ -335,7 +335,7 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
             d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
 
         elif isinstance(rec.html_fpath, dict):
-            d['contents'] = ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
+            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 
@@ -353,13 +353,8 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
     common_dict["project_name"] = project_name
     common_records = full_report.get_common_records()
     for rec in common_records:
-        # rec.metric = rec.metric.__dict__
-        # rec_d = rec.__dict__
         if rec.value:
             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
-        # if 'Mutations' in rec.metric.name:
-        #     common_dict[_get_summary_report_name(rec)]['contents'] = (
-        #         rec.metric.name + ': ' + ', '.join('<a href={v}>{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()))
 
     main_dict = dict()
     if full_report.sample_reports:
