@@ -70,9 +70,20 @@ genomes:
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
+  mm10:
+    seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
+
+    dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf.gz
+    custom_vcfs:
+      BALB_cJ_snps:     /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/BALB_cJ.mgp.v5.snps.dbSNP142.vcf.gz
+      BALB_cJ_indels:   /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/BALB_cJ.mgp.v5.indels.dbSNP142.normed.vcf.gz
+      C57BL_6NJ_snps:   /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/C57BL_6NJ.mgp.v5.snps.dbSNP142.vcf.gz
+      C57BL_6NJ_indels: /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/C57BL_6NJ.mgp.v5.indels.dbSNP142.normed.vcf.gz
+      DBA_1J_snps:      /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.snps.dbSNP142.vcf.gz
+      DBA_1J_indels:    /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.indels.dbSNP142.normed.vcf.gz
+
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
-#    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
