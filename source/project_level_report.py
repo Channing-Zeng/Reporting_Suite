@@ -339,6 +339,9 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 
+        else:
+            d['contents'] = '-'
+
         d['metric'] = rec.metric.__dict__
         return d
 
