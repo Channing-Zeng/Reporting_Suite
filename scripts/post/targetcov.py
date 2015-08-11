@@ -88,7 +88,10 @@ def main(args):
     check_genome_resources(cnf)
 
     exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    info('Exons: ' + exons_bed)
+    if exons_bed:
+        info('Exons: ' + exons_bed)
+    else:
+        info('no exons found')
 
     if cnf.genes:
         genes_fpath = adjust_path(cnf.genes)
