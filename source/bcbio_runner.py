@@ -455,6 +455,7 @@ class BCBioRunner:
             qualimap_bed = self._qualimap_bed(self.bcbio_structure.bed)
 
         try:
+            targqc_wait_for_steps = []
             for sample in self.bcbio_structure.samples:
                 if not (any(step in self.steps for step in
                             [self.targetcov,
@@ -486,7 +487,9 @@ class BCBioRunner:
                             self._submit_job(
                                 self.targetcov, sample.name,
                                 bam=sample.bam, bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''), sample=sample.name, genome=sample.genome,
-                                caller_names='', vcfs='', threads=self.threads_per_sample)
+                                caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps)
+                            if not sample.bed:  # WGS
+                                targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
 
                         # ngsCAT reports
                         if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
@@ -537,6 +540,7 @@ class BCBioRunner:
                         if self.varqc in self.steps])
 
             if self.varfilter in self.steps:
+                wait_for_callers_steps = []
                 for caller in self.bcbio_structure.variant_callers.values():
                     info('varFilter for ' + caller.name)
                     self._submit_job(
@@ -545,9 +549,11 @@ class BCBioRunner:
                         wait_for_steps=[
                             self.varannotate.job_name(s.name, caller.name)
                             for s in caller.samples
-                            if self.varannotate in self.steps],
+                            if self.varannotate in self.steps] + wait_for_callers_steps,
                         create_dir=False,
                         threads=self.summary_threads)
+                    if not self.bcbio_structure.bed:  # WGS
+                        wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
             # TargetSeq reports
             # if self.abnormal_regions in self.steps:
