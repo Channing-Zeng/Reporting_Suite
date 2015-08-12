@@ -111,7 +111,7 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_gene
                 info('Merging regions within genes...')
                 target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
                 info('Sorting amplicons_bed by (chrom, gene name, start)')
-                target_bed = sort_bed(cnf, target_bed)
+                target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
                 info('Getting gene names again...')
                 gene_names_set, gene_names_list = _get_gene_names(target_bed)
                 info()

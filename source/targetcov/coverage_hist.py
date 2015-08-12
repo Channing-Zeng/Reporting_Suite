@@ -3,7 +3,7 @@ from time import sleep
 
 from source.calling_process import call
 from source.file_utils import splitext_plus
-from source.logger import critical, info, warn, send_email
+from source.logger import critical, info, warn, send_email, err
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
@@ -36,23 +36,31 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
-        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
+        cmdline = '{bedtools} coveraage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
     else:
-        cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
+        cmdline = '{bedtools} coveraage -abam {bam} -b {bed} -hist'.format(**locals())
 
     res = None
     tries = 0
+    MAX_TRIES = 10
     err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output))[0] + '.err')
     while True:
-        res = call(cnf, cmdline, bedcov_output, err_fpath=err_fpath, exit_on_error=False)
+        stderr_dump = []
+        res = call(cnf, cmdline, bedcov_output, stderr_dump=stderr_dump, exit_on_error=False)
         if res is not None:
             return res
         else:
             tries += 1
-            send_email(msg='bedtools coverage crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
-                           '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
-                       subj='bedtools coverage crashed [' + str(cnf.project_name) + ']')
-            if tries == 10:
+            msg = 'bedtools coverage crashed:\n' + cmdline + '\n' + \
+                  (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
+            if tries < MAX_TRIES:
+                msg += '\n\nRerunning in 120 minutes (tries ' + str(tries) + '/10)'
+
+            send_email(msg=msg,
+                       subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
+                       only_me=True)
+            err(msg)
+            if tries == MAX_TRIES:
                 break
             sleep(120 * 60)
             info()

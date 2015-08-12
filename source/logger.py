@@ -66,14 +66,15 @@ email_by_prid = {
     'kxjn734': 'Justin.Johnson@astrazeneca.com'
 }
 
-def send_email(msg='', subj=''):
+def send_email(msg='', subj='', only_me=False):
     if msg and smtp_host:
         addresses = [my_address]
         if address:
             addresses.append(address)
         prid = getpass.getuser()
-        if prid in email_by_prid:
-            addresses.append(email_by_prid[prid])
+        if not only_me:
+            if prid in email_by_prid:
+                addresses.append(email_by_prid[prid])
 
         msg += '\n'
         msg += '\n'

@@ -6,7 +6,7 @@ from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
-from source.tools_from_cnf import get_system_path
+from source.tools_from_cnf import get_system_path, get_script_cmdline
 
 
 def index_bam(cnf, bam_fpath, samtools=None):
@@ -67,7 +67,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
 
         info()
         info('Sorting exons by (chrom, gene name, start)')
-        exons_bed = sort_bed(cnf, exons_bed)
+        exons_bed = sort_bed(cnf, exons_bed, cnf.genome.name)
 
         info()
         info('Filtering exon bed file to have only non-gene records...')
@@ -85,7 +85,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
 
         info()
         info('Sorting target...')
-        target_bed = sort_bed(cnf, target_bed)
+        target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
 
     if target_bed:
         cols = count_bed_cols(target_bed)
@@ -105,7 +105,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
         target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
 
         info('Sorting exons by (chrom, gene name, start)')
-        target_bed = sort_bed(cnf, target_bed)
+        target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
 
     return exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
@@ -181,27 +181,34 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
     return iterate_file(cnf, bed_fpath, fn, suffix='key', check_result=False)
 
 
-def sort_bed(cnf, bed_fpath):
+def sort_bed(cnf, bed_fpath, genome=None):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
 
-    sort = get_system_path(cnf, 'sort')
-    cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}'.format(**locals())
-    res = call(cnf, cmdline, output_fpath, exit_on_error=False)
-    if not res:
-        warn('Cannot sort with -V, trying with -n')
-        cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}'.format(**locals())
-        res = call(cnf, cmdline, output_fpath, exit_on_error=False)
-        if not res:
-            warn('Cannot uniq-sort, trying with bedtools')
-            bedtools = get_system_path(cnf, 'bedtools')
-            cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
-            res = call(cnf, cmdline, output_fpath)
+    cmdl = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sort_bed.py'), is_critical=True)
+    if genome: cmdl += ' ' + genome
 
+    res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath)
     if not res:
         return None
 
-    cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
-    res = call(cnf, cmdline)
+    # sort = get_system_path(cnf, 'sort')
+    # cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}'.format(**locals())
+    # res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+    # if not res:
+    #     warn('Cannot sort with -V, trying with -n')
+    #     cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}'.format(**locals())
+    #     res = call(cnf, cmdline, output_fpath, exit_on_error=False)
+    #     if not res:
+    #         warn('Cannot uniq-sort, trying with bedtools')
+    #         bedtools = get_system_path(cnf, 'bedtools')
+    #         cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
+    #         res = call(cnf, cmdline, output_fpath)
+    #
+    # if genome != 'mm10':
+    #     cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
+    #     res = call(cnf, cmdline)
+    # else:
+    #     cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
 
     return output_fpath
 

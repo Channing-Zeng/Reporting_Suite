@@ -7,12 +7,15 @@ import sys
 
 
 class SortableByChrom:
-    def __init__(self, chrom):
+    def __init__(self, chrom, genome=None):
         self.chrom = chrom
-        self.__chrom_key = self.__make_chrom_key()
+        self.genome = genome
+        self._chrom_key = self.__make_chrom_key()
 
     def __make_chrom_key(self):
         CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
+        if self.genome == 'mm10':
+            CHROMS = [('Y', 23), ('X', 24), ('M', 25)]
         for i in range(22, 0, -1):
             CHROMS.append((str(i), i))
 
@@ -23,29 +26,34 @@ class SortableByChrom:
             if chr_remainder == c:
                 return i
             elif chr_remainder.startswith(c):
-                return i + 24
+                return i + 25
 
         sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
         return None
 
     def get_key(self):
-        return self.__chrom_key
+        return self._chrom_key
 
 
 class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, other_fields):
+    def __init__(self, chrom, start, end, other_fields, genome=None):
         SortableByChrom.__init__(self, chrom)
         self.chrom = chrom
         self.start = start
         self.end = end
         self.other_fields = tuple(other_fields)
+        self.genome = genome
 
     def get_key(self):
-        return self.__chrom_key, self.start, self.end, self.other_fields
+        return self._chrom_key, self.start, self.end, self.other_fields
 
 
 def main():
     regions = []
+
+    genome = None
+    if len(sys.argv) > 1:
+        genome = sys.argv[1]
 
     for l in sys.stdin:
         if not l.strip():
@@ -58,7 +66,7 @@ def main():
         start = int(fs[1])
         end = int(fs[2])
         other_fields = fs[3:]
-        regions.append(Region(chrom, start, end, other_fields))
+        regions.append(Region(chrom, start, end, other_fields, genome))
 
     sys.stderr.write('Found ' + str(len(regions)) + ' regions.\n')
 

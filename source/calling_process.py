@@ -1,3 +1,5 @@
+import base64
+import hashlib
 import sys
 import subprocess
 import os
@@ -26,7 +28,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
          overwrite=False, check_output=False, return_proc=False, print_stderr=True,
-         return_err_code=False, err_fpath=None,
+         return_err_code=False, stderr_dump=None,
 
          env_vars=None):
     """
@@ -55,7 +57,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     check_output                    subprocess.check_output; returns stdout
     return_proc                     proc = subprocess.Popen; returns proc
     return_err_code                 if return code !=0, return this code (only if exit_on_error=False)
-    err_fpath                       also write stderr here
+    stderr_dump                     list. also store stderr here
 
     env_vars                        dictionary of environment variables to set only for this subprocess call
     ------------------------------------------------------------
@@ -77,16 +79,6 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         else:
             os.remove(output_fpath)
 
-    # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
-    _err_fpath = join(cnf.work_dir, '.subprocess_stderr.txt')
-    if err_fpath:
-        _err_fpath = err_fpath
-    else:
-        to_remove.append(_err_fpath)
-
-    if exists(_err_fpath):
-        os.remove(_err_fpath)
-
     def clean():
         for fpath in to_remove:
             if fpath and isfile(fpath):
@@ -106,7 +98,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 env[k] = v
 
     # RUN AND PRINT OUTPUT
-    def do(cmdl, out_fpath=None):
+    def do(cmdl, out_fpath=None, stderr_dump=None):
         stdout = subprocess.PIPE
         stderr = subprocess.STDOUT
 
@@ -137,7 +129,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
                 stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
-            stderr_dump = ''
+
+            if stderr_dump is None:
+                stderr_dump = []
 
             if return_proc:
                 # TODO: make this yield (as well as other returns),
@@ -156,7 +150,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
                         silent_err('   ' + line.strip())
-                        stderr_dump += line
+                        stderr_dump.append(line)
                     info()
 
             # CHECK RES CODE
@@ -175,7 +169,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 msg += '\n'
                 if stderr_dump:
                     msg += 'Stderr:\n'
-                    msg += stderr_dump
+                    for l in stderr_dump:
+                        msg += l
                 # send_email(msg)
 
                 if exit_on_error:
@@ -189,6 +184,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             return output_fpath
 
         else:  # NOT VERBOSE, KEEP STDERR TO ERR FILE
+            # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
+            hasher = hashlib.sha1(str(cmdline))
+            cmdl_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
+            _err_fpath = join(cnf.work_dir, cmdl_hash + '.subprocess_stderr.txt')
+            to_remove.append(_err_fpath)
+            if exists(_err_fpath):
+                os.remove(_err_fpath)
+
             if out_fpath:
                 # STDOUT TO TO FILE
                 if stdout_to_outputfile:
@@ -214,12 +217,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             # PRINT STDOUT AND STDERR
             if ret_code != 0:
-                with open(_err_fpath) as err_f:
-                    stderr_dump = err_f.read()
+                if _err_fpath:
+                    with open(_err_fpath) as err_f:
+                        stderr_dump = err_f.read()
 
-                info('')
-                warn(stderr_dump)
-                info('')
+                    info('')
+                    warn(stderr_dump)
+                    info('')
 
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
@@ -250,13 +254,13 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
             return output_fpath
 
-    def do_handle_oserror(cmdl, out_fpath=None):
+    def do_handle_oserror(cmdl, out_fpath=None, stderr_dump=None):
         res_ = None
         counter = 0
         max_number_of_tries = 200
         while True:
             try:
-                res_ = do(cmdl, out_fpath)
+                res_ = do(cmdl, out_fpath, stderr_dump=stderr_dump)
                 break
             except OSError, e:
                 counter += 1
@@ -276,9 +280,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     res = None  # = proc or output_fpath
     if output_fpath and not output_is_dir:
         with file_transaction(cnf.work_dir, output_fpath) as tx_out_fpath:
-            res = do_handle_oserror(cmdline, tx_out_fpath)
+            res = do_handle_oserror(cmdline, tx_out_fpath, stderr_dump=stderr_dump)
     else:
-        res = do_handle_oserror(cmdline)
+        res = do_handle_oserror(cmdline, stderr_dump=stderr_dump)
         if res is not None:
             clean()
             return res
