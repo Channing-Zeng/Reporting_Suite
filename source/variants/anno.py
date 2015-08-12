@@ -6,7 +6,7 @@ import sys
 import re
 
 from source.calling_process import call_subprocess, call
-from source.file_utils import iterate_file, intermediate_fname, verify_file
+from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus
 from source.logger import step_greetings, critical, info, err, warn
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
@@ -311,11 +311,11 @@ def _snpeff(cnf, input_fpath):
         return None, None, None
 
 
-def _tracks(cnf, track_path, input_fpath):
-    if not verify_file(track_path):
+def _tracks(cnf, track_fpath, input_fpath):
+    if not verify_file(track_fpath):
         return None
 
-    field_name = splitext(basename(track_path))[0]
+    field_name = splitext_plus(basename(track_fpath))[0]
 
     step_greetings('Intersecting with ' + field_name)
 
@@ -328,14 +328,14 @@ def _tracks(cnf, track_path, input_fpath):
 
     # self.all_fields.append(field_name)
 
-    cmdline = '{toolpath} -b {track_path} -k {field_name} {input_fpath}'.format(**locals())
+    cmdline = '{toolpath} -b {track_fpath} -k {field_name} {input_fpath}'.format(**locals())
 
     assert input_fpath
     output_fpath = intermediate_fname(cnf, input_fpath, field_name)
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                                    stdout_to_outputfile=True)
     if not output_fpath:
-        err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_path)
+        err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_fpath)
         return output_fpath
 
     # Set TRUE or FALSE for tracks
