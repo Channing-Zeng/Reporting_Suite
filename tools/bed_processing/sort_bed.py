@@ -6,13 +6,13 @@ from os.path import abspath, dirname, realpath, join
 import sys
 
 
-MM10_CHROMS = [('Y', 22), ('X', 23), ('M', 24)]
-for i in range(21, -1, -1):
-    MM10_CHROMS.append((str(i), i))
-
-HG19_CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
+HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0)]
 for i in range(22, 0, -1):
     HG19_CHROMS.append((str(i), i))
+
+MM10_CHROMS = [('X', 22), ('Y', 23), ('M', 24)]
+for i in range(21, -1, -1):
+    MM10_CHROMS.append((str(i), i))
 
 
 class SortableByChrom:
