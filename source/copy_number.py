@@ -194,7 +194,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         info(s.name + ':')
         seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
 
-        if not cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name]):
+        if not cnf.reuse_intermediate and isfile(seq2cov_output_by_sample[s.name]):
             os.remove(seq2cov_output_by_sample[s.name])
 
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):

@@ -78,7 +78,7 @@ def get_chr_len_fpath(cnf):
         with open(genome_seq_fpath + '.fai', 'r') as handle:
             for line in handle:
                 chrom, length = line.split()[0], line.split()[1]
-                chr_lengths.append([SortableByChrom(chrom), length])
+                chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
     else:
         info('Reading genome sequence (.fa) to get chromosome lengths')
         with open(genome_seq_fpath, 'r') as handle:
@@ -86,7 +86,7 @@ def get_chr_len_fpath(cnf):
             reference_records = SeqIO.parse(handle, 'fasta')
             for record in reference_records:
                 chrom = record.id
-                chr_lengths.append([SortableByChrom(chrom), len(record.seq)])
+                chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), len(record.seq)])
 
     with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
         with open(tx, 'w') as handle:

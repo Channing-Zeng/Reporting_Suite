@@ -41,8 +41,9 @@ def check_genome_resources(cnf):
     info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
     info()
 
+    info('Genome: ' + str(cnf.genome))
+
     for build_name, genome_cnf in cnf.genomes.items():
-        info(build_name)
         for key in genome_cnf.keys():
             if isinstance(genome_cnf[key], basestring):
                 genome_cnf[key] = adjust_system_path(genome_cnf[key])
@@ -51,8 +52,9 @@ def check_genome_resources(cnf):
                     if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz', silent=True):
                         gz_fpath = genome_cnf[key] + '.gz'
                         if verify_file(gz_fpath, silent=True):
-                            info(key + ': ' + gz_fpath)
                             genome_cnf[key] = gz_fpath
+                            if build_name == cnf.genome:
+                                info(key + ': ' + gz_fpath)
                     else:
                         if build_name == cnf.genome:
                             err('   Err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))

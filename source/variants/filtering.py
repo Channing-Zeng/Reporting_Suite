@@ -414,17 +414,25 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
 
     res = None
     tries = 0
+    MAX_TRIES = 10
     err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(vcf2txt_out_fpath))[0] + '.err')
     while True:
-        res = call(cnf, cmdline, vcf2txt_out_fpath, err_fpath=err_fpath, exit_on_error=False)
+        stderr_dump = []
+        res = call(cnf, cmdline, vcf2txt_out_fpath, stderr_dump=stderr_dump, exit_on_error=False)
         if res is not None:
             return res
         else:
             tries += 1
-            send_email(msg='vcf2txt.pl crashed:\n' + cmdline + '\n\n' + open(err_fpath).read() +
-                           '\n\nrerunning in 120 minutes (tries ' + str(tries) + '/10)',
-                       subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']')
-            if tries == 10:
+            msg = 'vcf2txt.pl crashed:\n' + cmdline + '\n' + \
+                  (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
+            if tries < MAX_TRIES:
+                msg += '\n\nRerunning in 120 minutes (tries ' + str(tries) + '/10)'
+
+            send_email(msg=msg,
+                       subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']',
+                       only_me=True)
+            err(msg)
+            if tries == MAX_TRIES:
                 break
             sleep(120 * 60)
             info()

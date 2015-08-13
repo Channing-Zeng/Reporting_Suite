@@ -36,9 +36,9 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
-        cmdline = '{bedtools} coveraage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
     else:
-        cmdline = '{bedtools} coveraage -abam {bam} -b {bed} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -abam {bam} -b {bed} -hist'.format(**locals())
 
     res = None
     tries = 0

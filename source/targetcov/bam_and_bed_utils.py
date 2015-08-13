@@ -145,7 +145,7 @@ def cut(cnf, fpath, col_num):
 
 def prep_bed_for_seq2c(cnf, bed_fpath):
     info()
-    info('Preparing BED file for seq2c...')
+    info('Doing some Seq2C specific preparation of the BED file...')
 
     cols = count_bed_cols(bed_fpath)
 
