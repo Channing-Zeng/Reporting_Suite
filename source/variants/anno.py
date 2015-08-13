@@ -13,6 +13,30 @@ from source.file_utils import file_exists, code_base_path
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
 
 
+def intersect_vcf(cnf, input_fpath, db_fpath, key):
+    db_fpath = verify_file(db_fpath)
+    if not db_fpath:
+        return None
+
+    info('Intersecting with ' + db_fpath + ', writing key ' + str(key))
+
+    info('Preparing db...')
+    def _add_info_flag(rec):
+        rec.INFO[key] = True
+        return rec
+    db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
+    db_fpath = bgzip_and_tabix(cnf, db_fpath)
+
+    info('Annotating...')
+    vcf_conf = {
+        'path': db_fpath,
+        'annotation': key}
+    output_fpath = _snpsift_annotate(cnf, vcf_conf, key, input_fpath)
+
+    info()
+    return output_fpath
+
+
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     info('run_annotators')
     annotated = False
@@ -37,9 +61,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     dbs = [(dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
            if dbname in cnf.annotation]
-
-    if 'custom_vcfs' in cnf.annotation:
-        dbs.extend(cnf.annotation['custom_vcfs'].items())
 
     for dbname, dbconf in dbs:
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
@@ -85,6 +106,14 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
                         track_fapths.append(track_fpath)
         for track_fapth in track_fapths:
             res = _tracks(cnf, track_fapth, vcf_fpath)
+            if res:
+                annotated = True
+                vcf_fpath = res
+
+    step_greetings('Intersection with database VCFs...')
+    if 'intersect_with' in cnf.annotation:
+        for key, db_fpath in cnf.annotation['intersect_with'].items():
+            res = intersect_vcf(cnf, input_fpath=vcf_fpath, db_fpath=db_fpath, key=key)
             if res:
                 annotated = True
                 vcf_fpath = res
@@ -216,7 +245,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         elif line.startswith('##INFO'):
             m = info_pattern.match(line)
             if m:
-                line = '##INFO=<ID={0},Number={1},Type={2},Description="{3}">\n'.format(
+                line = '##INFO=<ID={0},Number={1},Type={2},Description="{3}">'.format(
                     m.group('id'), m.group('number'), m.group('type'), m.group('desc'))
 
         return line
