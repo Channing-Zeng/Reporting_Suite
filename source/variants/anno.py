@@ -32,7 +32,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Annotating...')
     vcf_conf = {
         'path': db_fpath,
-        'annotation': [key, 'DP_' + key.replace('.', '_'), 'MQ_' + key.replace('.', '_')]}
+        'annotations': [key, 'DP_' + key.replace('.', '_'), 'MQ_' + key.replace('.', '_')]}
     output_fpath = _snpsift_annotate(cnf, vcf_conf, key, input_fpath)
     if output_fpath:
         os.rename(output_fpath, input_fpath)
