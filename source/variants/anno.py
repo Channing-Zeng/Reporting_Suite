@@ -32,9 +32,11 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         'path': db_fpath,
         'annotation': key}
     output_fpath = _snpsift_annotate(cnf, vcf_conf, key, input_fpath)
+    if output_fpath:
+        os.rename(output_fpath, input_fpath)
 
     info()
-    return output_fpath
+    return input_fpath
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
