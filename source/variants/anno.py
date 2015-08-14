@@ -23,6 +23,8 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Preparing db...')
     def _add_info_flag(rec):
         rec.INFO[key] = True
+        rec.INFO['DP_' + key.replace('.', '_')] = rec.genotype(key.split('.')[0])['DP']
+        rec.INFO['MQ_' + key.replace('.', '_')] = rec.genotype(key.split('.')[0])['MQ']
         return rec
     db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
     db_fpath = bgzip_and_tabix(cnf, db_fpath)
@@ -30,7 +32,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Annotating...')
     vcf_conf = {
         'path': db_fpath,
-        'annotation': key}
+        'annotation': [key, 'DP_' + key.replace('.', '_'), 'MQ_' + key.replace('.', '_')]}
     output_fpath = _snpsift_annotate(cnf, vcf_conf, key, input_fpath)
     if output_fpath:
         os.rename(output_fpath, input_fpath)
