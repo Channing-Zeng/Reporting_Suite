@@ -26,6 +26,12 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     return summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
 
 
+# TODO:
+# split bam and bed by chromosome
+# run bedtools hist
+# merge. for general stats, merge more sofisticated.
+
+
 def run_bedcoverage_hist_stats(cnf, bed, bam):
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
