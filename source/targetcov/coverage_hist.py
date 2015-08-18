@@ -25,7 +25,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     info('Anylising bedcoverage output...')
     regions, total_region, max_depth = summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
 
-    # Sync real regions in {bed} and {regions}
+    # for r in regions:
+    #TODO Sync real regions in {bed} and {regions}
 
     return regions, total_region, max_depth
 

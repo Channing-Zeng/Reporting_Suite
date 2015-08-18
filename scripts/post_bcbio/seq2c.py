@@ -41,12 +41,13 @@ def main():
         ],
     )
 
-    exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons
-    _, _, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.sv_bed)
+    cnv_reports(cnf, bcbio_structure)
 
-    # cnv_reports(cnf, bcbio_structure)
-    bcbio_structure.sv_bed = target_bed or cnf.genome.refseq or seq2c_bed
-    standalone_cnv(cnf, bcbio_structure)
+    # exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons
+    # _, _, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.sv_bed)
+    #
+    # bcbio_structure.sv_bed = target_bed or cnf.genome.refseq or seq2c_bed
+    # standalone_cnv(cnf, bcbio_structure)
     # TODO: replace with /group/ngs/src/az.reporting/Seq2C/seq2c.sh sample2bam.tsv seq2c_regions.bed "" "" "-q batch.q"
 
 
