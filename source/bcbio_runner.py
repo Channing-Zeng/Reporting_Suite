@@ -313,6 +313,7 @@ class BCBioRunner:
             dir_name='mongo_loader',
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
+
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         if self.bcbio_structure.bed:
             seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
@@ -327,6 +328,7 @@ class BCBioRunner:
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=seq2c_cmdline
         )
+
         targqc_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if self.bcbio_structure.bed:
             targqc_cmdline += ' --bed ' + self.bcbio_structure.bed

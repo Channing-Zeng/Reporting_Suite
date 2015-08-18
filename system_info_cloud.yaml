@@ -50,6 +50,7 @@ genomes:
 
     exons:    /nfs/glusterfs/ref/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /nfs/glusterfs/ref/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
+    refseq:   /nfs/glusterfs/ref/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
 
     polymorphic_variants:         /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs:             /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
@@ -75,6 +76,7 @@ genomes:
 
     exons:    /nfs/glusterfs/ref/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
     az_exome: /nfs/glusterfs/ref/genomes/Hsapiens/GRCh37/bed/Exome-AZ.bed
+    refseq:   /nfs/glusterfs/ref/genomes/Hsapiens/GRCh37/bed/CDS_RefSeq.bed
 
     polymorphic_variants:         /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs:             /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt

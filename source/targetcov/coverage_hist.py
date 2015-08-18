@@ -23,7 +23,11 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
     bed_col_num = count_bed_cols(bed)
     info()
     info('Anylising bedcoverage output...')
-    return summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
+    regions, total_region, max_depth = summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
+
+    # Sync real regions in {bed} and {regions}
+
+    return regions, total_region, max_depth
 
 
 # TODO:
