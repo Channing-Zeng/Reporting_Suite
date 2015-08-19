@@ -67,7 +67,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=Fal
                 chrom, s, e, size, symbol, strand, feature, _, ave_depth = ts[:9]
                 ampl = Region(
                     gene_name=symbol, chrom=chrom, strand=strand, feature=feature,
-                    start=int(s), end=int(e), size=int(size), avg_depth=float(ave_depth))
+                    start=int(s) + 1, end=int(e), size=int(size), avg_depth=float(ave_depth))
                 amplicons.append(ampl)
 
     if not amplicons:
