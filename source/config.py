@@ -25,7 +25,8 @@ defaults = dict(
         cloud=abspath(join(this_script_dirpath, pardir, 'system_info_cloud.yaml')),
         local=abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
-    run_cnf = abspath(join(this_script_dirpath, pardir, 'run_info.yaml')),
+    run_cnf_exome_seq = abspath(join(this_script_dirpath, pardir, 'run_info_ExomeSeq.yaml')),
+    run_cnf_wgs = abspath(join(this_script_dirpath, pardir, 'run_info_WGS.yaml')),
     run_cnf_deep_seq = abspath(join(this_script_dirpath, pardir, 'run_info_DeepSeq.yaml')),
 
     load_mongo = False,  # 'True' adds 'LoadMongo' to steps

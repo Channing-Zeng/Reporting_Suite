@@ -100,9 +100,13 @@ def process_post_bcbio_args(parser):
         bcbio_project_dirpaths.append(bcbio_project_dirpath)
         final_dirpaths.append(final_dirpath)
 
+        bcbio_cnf = load_bcbio_cnf(config_dirpath)
+        bcbio_cnfs.append(bcbio_cnf)
+
         if cnf is None:
             _detect_sys_config(config_dirpath, opts)
-            _detect_move_run_config(config_dirpath, opts)
+            is_wgs = not opts.bed and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
+            _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
 
             cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
             check_genome_resources(cnf)
@@ -112,8 +116,6 @@ def process_post_bcbio_args(parser):
             errors = check_inputs(cnf, file_keys=['qsub_runner'])
             if errors:
                 critical(errors)
-
-        bcbio_cnfs.append(load_bcbio_cnf(cnf, config_dirpath))
 
     return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags
 
@@ -174,11 +176,8 @@ def _detect_sys_config(config_dirpath, opts):
     info('Using ' + opts.sys_cnf)
 
 
-def _detect_move_run_config(config_dirpath, opts):
+def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
     provided_cnf_fpath = adjust_path(opts.run_cnf)
-
-    if not provided_cnf_fpath and opts.deep_seq:  # TODO: if there is a run_info in dir, ignore the deep_seq opt
-        provided_cnf_fpath = defaults['run_cnf_deep_seq']
 
     # provided in commandline?
     if provided_cnf_fpath:
@@ -230,8 +229,14 @@ def _detect_move_run_config(config_dirpath, opts):
             info('No YAMLs containing run_info in name found in the config directory ' +
                  config_dirpath + ', using the default one.')
 
-            # using default one.
-            opts.run_cnf = defaults['run_cnf']
+            # using one of the default ones.
+            if opts.deep_seq:
+                opts.run_cnf = defaults['run_cnf_deep_seq']
+            elif is_wgs:
+                opts.run_cnf = defaults['run_cnf_wgs']
+            else:
+                opts.run_cnf = defaults['run_cnf_exome_seq']
+
             project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
             info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
@@ -859,7 +864,7 @@ class BCBioStructure:
                 shutil.rmtree(dirpath)
 
 
-def load_bcbio_cnf(cnf, config_dirpath):
+def load_bcbio_cnf(config_dirpath):
     yaml_files_in_config_dir = [
         join(config_dirpath, fname)
         for fname in listdir(config_dirpath)
