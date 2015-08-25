@@ -10,7 +10,7 @@ from time import sleep
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
-from source.project_level_report import make_postproc_project_level_report
+from source.project_level_report import make_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
@@ -709,7 +709,7 @@ class BCBioRunner:
                 else:
                     break
 
-            html_report_fpath = make_postproc_project_level_report(self.cnf, self.bcbio_structure)
+            html_report_fpath = make_project_level_report(self.cnf, self.bcbio_structure)
 
             html_report_url = None
             if html_report_fpath:

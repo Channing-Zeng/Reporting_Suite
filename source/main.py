@@ -66,9 +66,9 @@ def read_opts_and_cnfs(extra_opts,
         (['--run-cnf'], dict(
              dest='run_cnf',
              metavar='RUN_CNF.yaml',
-             default=defaults['run_cnf'],
+             default=defaults['run_cnf_exome_seq'],
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
-                  'The default is %s' % defaults['run_cnf'])
+                  'The default is %s' % defaults['run_cnf_exome_seq'])
          ),
         (['--work-dir'], dict(dest='work_dir', metavar='DIR')),
         (['--log-dir'], dict(dest='log_dir', metavar='DIR')),
@@ -85,7 +85,8 @@ def read_opts_and_cnfs(extra_opts,
 
     (opts, args) = parser.parse_args()
 
-    cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
+    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
     errors = check_keys(cnf, required_keys)
     if errors:

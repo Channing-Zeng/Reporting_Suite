@@ -1,5 +1,5 @@
 import os
-from os.path import join, relpath, dirname
+from os.path import join, relpath, dirname, basename, pardir, normpath, realpath
 from collections import OrderedDict, namedtuple
 import getpass
 from traceback import format_exc
@@ -15,6 +15,7 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection, Sampl
 from source.html_reporting.html_saver import _write_static_html_report
 
 
+BASECALLS_NAME   = 'BaseCalls'
 FASTQC_NAME      = BCBioStructure.fastqc_repr
 PRE_FASTQC_NAME  = 'Raw ' + FASTQC_NAME
 SEQQC_NAME       = 'Seq QC'
@@ -26,6 +27,7 @@ MUTATIONS_NAME   = 'Mutations'
 
 metric_storage = MetricStorage(
     general_section=ReportSection(metrics=[
+        Metric(BASECALLS_NAME),
         Metric(PRE_FASTQC_NAME),
         Metric(FASTQC_NAME),
         Metric(PRE_SEQQC_NAME),
@@ -46,54 +48,38 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_preproc_project_level_report(cnf, dataset_structure):
+def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None):
     step_greetings('Preproc project-level report')
 
-    general_records = _add_summary_reports(metric_storage.general_section, dataset_structure=dataset_structure)
-    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], dataset_structure=dataset_structure)
+    if dataset_structure is None and bcbio_structure:
+        analysis_dirpath = normpath(join(bcbio_structure.bcbio_project_dirpath, pardir))
+        dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
+        dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
+
+    general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure, dataset_structure)
+    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure)
 
     sample_reports = []
-    for sample in dataset_structure.samples:
-        sample_reports.append(SampleReport(
-            sample,
+    for sample in (bcbio_structure or dataset_structure).samples:
+        sample_reports.append(SampleReport(sample,
             records=sample_reports_records[sample.name],
             html_fpath=None,
             metric_storage=metric_storage))
 
     full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage, general_records=general_records)
-    _save_static_html(cnf.work_dir, full_report, dataset_structure.project_report_html_fpath, dataset_structure.project_name)
+    project_report_html_fpath = dataset_structure.project_report_html_fpath
+    project_name = dataset_structure.project_name
+    if bcbio_structure:
+        project_report_html_fpath = bcbio_structure.project_report_html_fpath
+        project_name = bcbio_structure.project_name
+
+    _save_static_html(cnf.work_dir, full_report, project_report_html_fpath, project_name)
 
     info()
     info('*' * 70)
     info('Project-level report saved in: ')
-    info('  ' + dataset_structure.project_report_html_fpath)
-    return dataset_structure.project_report_html_fpath
-
-
-def make_postproc_project_level_report(cnf, bcbio_structure):
-    step_greetings('Project-level report')
-
-    general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure=bcbio_structure)
-    general_records.extend(_add_variants(metric_storage.general_section, bcbio_structure))
-
-    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure=bcbio_structure)
-
-    sample_reports = []
-    for sample in bcbio_structure.samples:
-        sample_reports.append(SampleReport(
-            sample,
-            records=sample_reports_records[sample.name],
-            html_fpath=None,
-            metric_storage=metric_storage))
-
-    full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage, general_records=general_records)
-    _save_static_html(cnf.work_dir, full_report, bcbio_structure.project_level_report_fpath, bcbio_structure.project_name)
-
-    info()
-    info('*' * 70)
-    info('Project-level report saved in: ')
-    info('  ' + bcbio_structure.project_level_report_fpath)
-    return bcbio_structure.project_level_report_fpath
+    info('  ' + project_report_html_fpath)
+    return project_report_html_fpath
 
 
 def _add_variants(general_section, bcbio_structure):
@@ -161,6 +147,9 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     recs = []
 
     if dataset_structure:
+        if dataset_structure.basecall_stat_html_reports:
+            val = OrderedDict([(basename(fpath), fpath) for fpath in dataset_structure.basecall_stat_html_reports])
+            recs.append(_make_path_record(val, general_section.get_metric(BASECALLS_NAME), base_dirpath))
         recs.append(_make_path_record(dataset_structure.comb_fastqc_fpath,              general_section.get_metric(PRE_FASTQC_NAME), base_dirpath))
         recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.get_metric(PRE_SEQQC_NAME),  base_dirpath))
 

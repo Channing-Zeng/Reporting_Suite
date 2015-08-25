@@ -15,12 +15,13 @@ from collections import OrderedDict, namedtuple
 import tempfile
 import subprocess
 from joblib import Parallel, delayed
+import source
 
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.preproc.dataset_structure import DatasetStructure, MiSeqStructure, HiSeqStructure, HiSeq4000Structure
-from source.project_level_report import make_preproc_project_level_report
+from source.project_level_report import make_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -67,7 +68,9 @@ def proc_opts():
     # dataset_dirpath = verify_dir(join(base_dirpath, project_name), is_critical=True)
     jira_url = args[2] if len(args) > 2 else None
 
-    cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
+    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
+
     # check_genome_resources(cnf)
     check_system_resources(cnf, optional=['fastq'])
     check_genome_resources(cnf)
@@ -127,17 +130,7 @@ def main():
     if not cnf.project_name:
         critical('Please, specify project name')
 
-    ds = None
-    if 'datasets/miseq/' in project_dirpath.lower():
-        ds = MiSeqStructure(project_dirpath, cnf.project_name)
-
-    elif 'dataset/hiseq/' in project_dirpath.lower():
-        ds = HiSeqStructure(project_dirpath, cnf.project_name)
-
-    elif 'dataset/hiseq4000/' in project_dirpath.lower():
-        ds = HiSeq4000Structure(project_dirpath, cnf.project_name)
-    else:
-        critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/')
+    ds = DatasetStructure.create(project_dirpath, cnf.project_name)
 
     safe_mkdir(ds.fastq_dirpath)
     for s in ds.samples:
@@ -182,7 +175,7 @@ def main():
     __prepare_analysis_directory(cnf.work_dir, cnf.project_name, project_dirpath, ds.samples)
 
     # Making project-level report
-    make_preproc_project_level_report(cnf, ds)
+    make_project_level_report(cnf, ds)
 
     # Exposing
     sync_with_ngs_server(cnf,
@@ -398,17 +391,13 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
 
 
 def __prepare_analysis_directory(work_dir, project_name, project_dirpath, samples):
-    kind_by_pref = {
-        'Bio_': 'bioscience',
-        'Dev_': 'dev',
-        'EXT_': 'external',
-        'TS_': 'translation',
-    }
-    kind = next((kind for pref, kind in kind_by_pref.items() if project_name.startswith(pref)), None)
+    kind = next((kind for pref, kind in source.project_kind_by_prefix.items() if project_name.startswith(pref)), None)
     if kind:
         analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', kind, project_name))
         if not exists(analysis_proj_dirpath):
             safe_mkdir(analysis_proj_dirpath)
+        if isdir(analysis_proj_dirpath):
+            os.symlink(project_dirpath, join(analysis_proj_dirpath, 'dataset'))
 
         bcbio_csv_fpath = join(analysis_proj_dirpath, 'bcbio.csv')
         if not isfile(bcbio_csv_fpath):

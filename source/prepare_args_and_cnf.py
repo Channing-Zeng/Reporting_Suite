@@ -21,7 +21,7 @@ from source.utils import is_local
 
 def add_cnf_t_reuse_prjname_reuse_marker_genome(parser):
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf'])
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
     # parser.add_option('-v', dest='verbose', action='store_true', help='Verbose')
     parser.add_option('-t', dest='threads', type='int', help='Max number of threads', default=10)
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
@@ -239,8 +239,16 @@ def determine_sys_cnf(opts):
     return opts.sys_cnf
 
 
-def determine_run_cnf(opts):
-    opts.run_cnf = adjust_path(opts.run_cnf) if opts.run_cnf else defaults['run_cnf']
+def determine_run_cnf(opts, is_wgs=False, is_targeteq=False):
+    if opts.run_cnf:
+        opts.run_cnf = adjust_path(opts.run_cnf)
+    elif is_wgs:
+        opts.run_cnf = defaults['run_cnf_wgs']
+    elif is_targeteq:
+        opts.run_cnf = defaults['run_cnf_deep_seq']
+    else:
+        opts.run_cnf = defaults['run_cnf_exome_seq']
+
     verify_file(opts.run_cnf, is_critical=True)
     info('Using ' + opts.run_cnf)
     return opts.run_cnf

@@ -473,6 +473,7 @@ class BCBioStructure:
     filt_tsv_ending = '.anno.filt.tsv'
 
     def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
+        self.bcbio_project_dirpath = bcbio_project_dirpath
         self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
 
         self.bcbio_cnf = bcbio_cnf
@@ -838,7 +839,7 @@ class BCBioStructure:
                     fpath = join(sample.var_dirpath, fname)
                     os.rename(fpath, join(sample.dirpath, fname))
 
-            for dirname in [BCBioStructure.varannotate_dir,
+            for dir_name in [BCBioStructure.varannotate_dir,
                             BCBioStructure.varfilter_dir,
                             BCBioStructure.varqc_dir,
                             BCBioStructure.varqc_after_dir,
@@ -846,19 +847,19 @@ class BCBioStructure:
                             BCBioStructure.qualimap_dir,
                             BCBioStructure.targetseq_dir,
                             BCBioStructure.var_dir]:
-                dirpath = join(sample.dirpath, dirname)
+                dirpath = join(sample.dirpath, dir_name)
                 if isdir(dirpath):
                     info('  removing ' + dirpath)
                     shutil.rmtree(dirpath)
             info()
 
-        for dirname in [BCBioStructure.targetseq_summary_dir,
+        for dir_name in [BCBioStructure.targetseq_summary_dir,
                         BCBioStructure.cnv_summary_dir,
                         BCBioStructure.varqc_summary_dir,
                         BCBioStructure.varqc_after_summary_dir,
                         BCBioStructure.ngscat_summary_dir,
                         BCBioStructure.qualimap_summary_dir]:
-            dirpath = join(self.date_dirpath, dirname)
+            dirpath = join(self.date_dirpath, dir_name)
             if isdir(dirpath):
                 info('  removing ' + dirpath)
                 shutil.rmtree(dirpath)

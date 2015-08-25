@@ -3,7 +3,7 @@ import os
 from os.path import join, isfile, isdir, basename
 
 from source import TargQCStandaloneSample
-from source.logger import critical
+from source.logger import critical, err
 from source.file_utils import verify_dir, verify_file, splitext_plus
 
 
@@ -11,9 +11,22 @@ class DatasetStructure:
     pre_fastqc_repr =        'Preproc FastQC'
     downsample_targqc_repr = 'TargQC downsampled'
 
+    @staticmethod
+    def create(dir_path, project_name=None):
+        if 'datasets/miseq/' in dir_path.lower():
+            return MiSeqStructure(dir_path, project_name)
+
+        elif 'datasets/hiseq/' in dir_path.lower():
+            return HiSeqStructure(dir_path, project_name)
+
+        elif 'datasets/hiseq4000/' in dir_path.lower():
+            return HiSeq4000Structure(dir_path, project_name)
+        else:
+            critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/')
+
     def __init__(self, dirpath, project_name=None):
+        self.samples = []
         self.dirpath = dirpath
-        self.unaligned_dirpath = None
         self.basecalls_dirpath = join(self.dirpath, 'Data/Intensities/BaseCalls')
         verify_dir(self.basecalls_dirpath, is_critical=True)
 
@@ -36,12 +49,10 @@ class DatasetStructure:
         self.downsample_targqc_report_fpath = join(self.downsample_targqc_dirpath, 'targQC.html')
         self.project_report_html_fpath = join(self.dirpath, self.project_name + '.html')
 
-        self.samples = []
-
 
 class HiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
-        DatasetStructure.__init__(self, dirpath)
+        DatasetStructure.__init__(self, dirpath, project_name)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
         verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
@@ -60,6 +71,8 @@ class HiSeqStructure(DatasetStructure):
                 s = DatasetSample(self, sample_name, bcl2fastq_sample_dirpath=sample_dirpath)
                 self.samples.append(s)
 
+        self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
     def __get_bcl2fastq_dirpath(self):
         # Reading project name
         bcl2fastq_dirpath = None
@@ -68,6 +81,18 @@ class HiSeqStructure(DatasetStructure):
         except StopIteration:
             critical('Could not find directory starting with Project_ in ' + self.unaligned_dirpath)
         return bcl2fastq_dirpath
+
+    def __get_basecall_stats_reports(self):
+        basecall_stats_dirnames = [fname for fname in os.listdir(self.unaligned_dirpath) if fname.startswith('Basecall_Stats_')]
+        basecall_stats_dirnames = [fname for fname in os.listdir(self.unaligned_dirpath) if fname.startswith('Basecall_Stats_')]
+        if len(basecall_stats_dirnames) > 1:
+            err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
+        if len(basecall_stats_dirnames) == 0:
+            err('No Basecall_Stats_* dirs found in unalign_dirpath')
+        if len(basecall_stats_dirnames) == 1:
+            basecall_stats_dirpath = join(self.unaligned_dirpath, basecall_stats_dirnames[0])
+            basecall_reports = [verify_file(join(basecall_stats_dirpath, html_fname)) for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm']]
+            return filter(None, basecall_reports)
 
 
 class MiSeqStructure(DatasetStructure):
@@ -122,9 +147,9 @@ class DatasetSample:
         fastq_fpaths = [
             join(self.bcl2fastq_sample_dirpath, fname)
                 for fname in os.listdir(self.bcl2fastq_sample_dirpath)
-                if re.match(self.name + '.*_' + suf + '.*\.fastq\.gz', fname)]
+                if re.match(self.name.replace('-', '.').replace('_', '.').replace(' ', '.') + '.*_' + suf + '.*\.fastq\.gz', fname)]
         if not fastq_fpaths:
-            critical('No fastq files for the sample ' + self.name + ' were found inside ' + self.bcl2fastq_sample_dirpath)
+            critical('Error: no fastq files for the sample ' + self.name + ' were found inside ' + self.bcl2fastq_sample_dirpath)
         return fastq_fpaths
 
     def find_fastqc_html(self, end_name):

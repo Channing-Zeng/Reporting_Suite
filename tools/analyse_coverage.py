@@ -48,7 +48,8 @@ def main():
     if bad_bam_fpaths:
         critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
 
-    cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
+    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
     if not cnf.project_name:
         cnf.project_name = basename(cnf.output_dir)
