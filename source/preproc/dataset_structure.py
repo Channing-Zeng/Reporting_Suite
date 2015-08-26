@@ -1,8 +1,8 @@
 import re
 import os
 from os.path import join, isfile, isdir, basename
+from source import TargQC_Sample
 
-from source import TargQCStandaloneSample
 from source.logger import critical, err
 from source.file_utils import verify_dir, verify_file, splitext_plus
 
@@ -138,7 +138,7 @@ class DatasetSample:
         if not isfile(self.fastqc_html_fpath):
             self.fastqc_html_fpath = join(self.sample_fastqc_dirpath, 'fastqc_report.html')
 
-        self.targqc_sample = TargQCStandaloneSample(self.name, ds.downsample_targqc_dirpath)
+        self.targqc_sample = TargQC_Sample(self.name, ds.downsample_targqc_dirpath)
         self.targetcov_html_fpath = self.targqc_sample.targetcov_html_fpath
         self.ngscat_html_fpath    = self.targqc_sample.ngscat_html_fpath
         self.qualimap_html_fpath  = self.targqc_sample.qualimap_html_fpath

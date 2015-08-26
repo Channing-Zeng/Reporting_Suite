@@ -9,7 +9,7 @@ resources:
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   qualimap:
-    path: /group/ngs/src/qualimap_v2.0/qualimap
+    path: /group/ngs/src/qualimap/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
     # path: /group/cancer_informatics/tools_resources/NGS/bin/samtools

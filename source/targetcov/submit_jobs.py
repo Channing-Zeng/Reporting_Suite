@@ -46,11 +46,11 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_g
             #     _submit_job(cnf, ngscat_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
             #     summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
 
-            if qualimap_step and (not cnf.reuse_intermediate or not sample.qualimap_done()):
-                info('Qualimap "' + basename(sample.bam) + '"')
-                j = _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
-                jobs_to_wait.append(j)
-                summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
+            # if qualimap_step and (not cnf.reuse_intermediate or not sample.qualimap_done()):
+            #     info('Qualimap "' + basename(sample.bam) + '"')
+            #     j = _submit_job(cnf, qualimap_step, sample.name, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
+            #     jobs_to_wait.append(j)
+            #     summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
 
             info('Done ' + basename(sample.bam))
             info()

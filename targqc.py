@@ -89,8 +89,7 @@ def main():
     info('*' * 70)
     info()
 
-    targqc_html_fpath = run_targqc(cnf,
-        samples, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, samples, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)

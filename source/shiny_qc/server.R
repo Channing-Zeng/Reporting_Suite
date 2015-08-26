@@ -16,20 +16,20 @@ require("data.table")
 require(gplots)
 
 shinyServer(function(input, output) {
-  
+
   statsHtml = reactive({
     rn=input$txtInRunName
     # rn="150709_NS500580_0025_AH23FWAFXX"  
     #rn="150310_NS500580_0004_AH2CJ7AFXX"
     rnX=str_split_fixed(rn,pattern="_",10)[,4]
     rnX=str_replace(rnX,"^A","")
-    
-    fl=paste("/projects/NGS/projects/DS/PreProcessed/",rn,"/Reports/html/",rnX,"/all/all/all/laneBarcode.html",sep="")
+
+    fl=paste(rn,"/Reports/html/",rnX,"/all/all/all/laneBarcode.html",sep="")
     #fl=      "/projects/NGS/projects/DS/results/150522_NS500580_0012_AH352YBGXX/Reports/html/H352YBGXX/all/all/all/laneBarcode.html"
     readHTMLTable(fl)    
     #statsHtml=readHTMLTable(fl)    
   })
-  
+
   output$readPlot <- renderPlot({    
     #x=statsHtml[[3]] 
     x=statsHtml()[[3]] 

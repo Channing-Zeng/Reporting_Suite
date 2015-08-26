@@ -253,13 +253,14 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 class BCBioSample(BaseSample):
     def __init__(self, sample_name, final_dir, **kwargs):
         dirpath = join(final_dir, sample_name)
-        self.fastqc_dirpath   = join(dirpath, BCBioStructure.fastqc_dir)
-        self.targqc_dirpath   = join(dirpath, BCBioStructure.targqc_dir)
-        self.ngscat_dirpath   = join(self.targqc_dirpath, BCBioStructure.ngscat_name)
-        self.qualimap_dirpath = join(self.targqc_dirpath, BCBioStructure.qualimap_name)
-        self.picard_dirpath   = join(self.targqc_dirpath, BCBioStructure.picard_name)
 
-        BaseSample.__init__(self, name=sample_name, dirpath=dirpath, **kwargs)
+        BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
+            fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
+            targqc_dirpath=join(dirpath, BCBioStructure.targqc_dir),
+            ngscat_dirpath=join(self.targqc_dirpath, BCBioStructure.ngscat_name),
+            qualimap_dirpath=join(self.targqc_dirpath, BCBioStructure.qualimap_name),
+            picard_dirpath=join(self.targqc_dirpath, BCBioStructure.picard_name),
+            **kwargs)
 
         self.sv_bed = None
         self.project_tag = None

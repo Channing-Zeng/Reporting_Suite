@@ -80,8 +80,8 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
 
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', header_storage),
-        ('ngscat', ngscat_report_parser.metric_storage),
-        ('qualimap', qualimap_report_parser.metric_storage)])
+        ('ngscat', ngscat_report_parser.metric_storage)]),
+        # ('qualimap', qualimap_report_parser.metric_storage)])
 
     targqc_full_report = FullReport(source.targqc_repr, [], metric_storage=targqc_metric_storage)
 

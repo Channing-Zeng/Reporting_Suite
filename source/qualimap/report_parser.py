@@ -2,11 +2,19 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection
 
 
 metric_storage = MetricStorage(
+    general_section=ReportSection('general_section', '', [
+        Metric('Reference size', short_name='Reference size', common=True),
+        Metric('Regions size/percentage of reference (on target)', short_name='Regions size/percentage of reference', common=True),
+        Metric('Regions size/percentage of reference (on target) %', short_name='Regions size/percentage of reference', common=True),
+    ]),
+
     sections=[
         # ReportSection('basic_metrics', 'General', [
-            # Metric('Number of reads',                               'Reads ngscat',                       'Total number of reads'),
-            # Metric('Mapped reads',                                  'Mapped ngscat',                      'Number of mapped reads'),
-            # Metric('Unmapped reads',                                'Unmapped ngscat',                    'Number of unmapped reads',               quality='Less is better'),
+        #     Metric('Number of reads',                               'Reads',                       'Total number of reads'),
+        #     Metric('Mapped reads',                                  'Mapped',                      'Number of mapped reads'),
+        #     Metric('Mapped reads %',                                'Mapped %',                      'Number of mapped reads'),
+        #     Metric('Unmapped reads',                                'Unmapped ',                    'Number of unmapped reads',               quality='Less is better'),
+        #     Metric('Unmapped reads %',                              'Unmapped %',                    'Number of unmapped reads',               quality='Less is better'),
         # ]),
 
         # ReportSection('on_off_metrics', 'ON/OFF target', [
@@ -14,8 +22,7 @@ metric_storage = MetricStorage(
             # Metric('Mapped reads, only second in pair',             'Mapped, 2nd',                 'Number of mapped reads, only second in pair'),
             # Metric('Mapped reads, both in pair',                    'Mapped, both',                'Number of mapped reads, both in pair'),
             # Metric('Mapped reads, singletons',                      'Mapped, single',              'Number of mapped reads, singletons'),
-            #
-            # Metric('Mapped reads (on target)',                      'Mapped (on trg)',             'Number of mapped reads inside of regions'),
+
             # Metric('Mapped reads, only first in pair (on target)',  'Mapped, 1st (on trg)',        'Number of mapped reads inside of regions, only first in pair'),
             # Metric('Mapped reads, only second in pair (on target)', 'Mapped, 2nd (on trg)',        'Number of mapped reads inside of regions, only second in pair'),
             # Metric('Mapped reads, both in pair (on target)',        'Mapped, both (on trg)',       'Number of mapped reads inside of regions, both in pair'),
@@ -28,7 +35,18 @@ metric_storage = MetricStorage(
         ]),
 
         ReportSection('reads', 'Reads', [
-            # Metric('Paired reads',                                  'Paired',                      'Total number of paired reads'),
+            Metric('Reference size',                                'Reference size',          ),
+            Metric('Number of reads',                               'Reads',                       'Total number of reads'),
+            Metric('Mapped reads',                                  'Mapped',                  ),
+            Metric('Mapped reads %',                                'Mapped %',                  ),
+            Metric('Unmapped reads',                                'Unmapped',                  ),
+            Metric('Unmapped reads %',                              'Unmapped %',                  ),
+            Metric('Mapped reads (on target)',                      'Mapped (on trg)',         ),
+            Metric('Mapped reads (on target) %',                    'Mapped % (on trg)',         ),
+            Metric('Paired reads',                                  'Paired reads',            ),
+            Metric('Paired reads %',                                'Paired reads %',            ),
+            Metric('Duplicated reads (flagged)',                    'Dup rate',                ),
+            Metric('Duplicated reads (flagged) %',                  'Dup rate %',                ),
             Metric('Read min length',                               'Min len',                     'Read min length'),
             Metric('Read max length',                               'Max len',                     'Read max length'),
             Metric('Read mean length',                              'Ave len',                     'Read mean length'),
@@ -106,41 +124,68 @@ def parse_qualimap_sample_report(report_fpath):
                 return None
 
             rec = Record(metric_storage.get_metric(metric_name), val)
-            if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
-                rec.meta = val_unit[1:]
             records.append(rec)
 
-    sections = {'start':            'Summary',
-                'on target':        'Globals (inside of regions)',
-                'coverage':         'Coverage (inside of regions)',
-                'mapping quality':  'Mapping Quality',
-                'finish':           'Coverage across reference'}  # plots are starting from this line
+            if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
+                meta_val = val_unit[1:]
+                if '%' in meta_val:
+                    try:
+                        val = float(meta_val.split('%')[0]) / 100.0
+                    except:
+                        pass
+                    else:
+                        rec = Record(metric_storage.get_metric(metric_name + ' %'), val)
+                        records.append(rec)
+
+    sections = {'start':                             'Summary',
+                'globals (on target)':               'Globals (inside of regions)',
+                'globals':                           'Globals',
+                'coverage (on target)':              'Coverage (inside of regions)',
+                'coverage':                          'Coverage',
+                'mq':                                'Mapping Quality (inside of regions)',
+                'mq (on target)':                    'Mapping Quality',
+                'mismatches and indels (on target)': 'Mismatches and indels (inside of regions)',
+                'mismatches and indels':             'Mismatches and indels',
+                'finish':                            'Coverage across reference'}  # plots are starting from this line
     on_target_stats_suffix = ' (on target)'
     coverage_stats_prefix = 'Coverage '
     with open(report_fpath) as f:
         cur_section = None
         cur_metric_name = None
         for line in f:
-            for name, pattern in sections.items():
-                if line.find(pattern) != -1:
-                    cur_section = name
-                    break
-            if cur_section is None:
+            if 'mapped' in line.lower():
+                pass
+
+            if 'class=table-summary' in line:
+                cur_section = None
                 continue
+
+            if cur_section is None:
+                for name, pattern in sections.items():
+                    if pattern in line:
+                        cur_section = name
+                        break
+                if cur_section is None:
+                    continue
+
             if cur_section == 'finish':
                 break
 
             if line.find('class=column1') != -1:
                 cur_metric_name = __get_td_tag_contents(line)
-                if cur_section == 'on target':
+
+                if cur_section.endswith('(on target)'):
                     cur_metric_name += on_target_stats_suffix
-                elif cur_section == 'coverage':
+
+                if cur_section.startswith('coverage'):
                     cur_metric_name = coverage_stats_prefix + cur_metric_name
-                elif not metric_storage.get_metric(cur_metric_name):  # special case for Duplication rate and Clipped reads (Qualimap v.1 and v.2 difference)
-                    if metric_storage.get_metric(cur_metric_name + on_target_stats_suffix):  # extra 'on target' metrics
-                        cur_metric_name += on_target_stats_suffix
+
+                # if not metric_storage.get_metric(cur_metric_name):  # special case for Duplication rate and Clipped reads (Qualimap v.1 and v.2 difference)
+                #     if metric_storage.get_metric(cur_metric_name + on_target_stats_suffix):  # extra 'on target' metrics
+                #         cur_metric_name += on_target_stats_suffix
 
             if cur_metric_name and line.find('class=column2') != -1:
                 __fill_record(cur_metric_name, line)
                 cur_metric_name = None
+
     return records

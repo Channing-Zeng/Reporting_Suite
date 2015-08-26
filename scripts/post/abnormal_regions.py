@@ -62,7 +62,7 @@ def process_all(targetcov_dir):
 
 class Sample(BaseSample):
     def __init__(self, name, output_dir, **kwargs):
-        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
+        BaseSample.__init__(self, name, output_dir, **kwargs)
 
 
 # def process_one(cnf, output_dir):

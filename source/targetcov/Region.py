@@ -148,16 +148,7 @@ class Region:
         if self.rate_within_normal is not None:
             return self.rate_within_normal
 
-        if self.bases_by_depth:
-            bases_within_normal = sum(
-                bases
-                for depth, bases
-                in self.bases_by_depth.items()
-                if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
-
-            self.rate_within_normal = 1.0 * bases_within_normal / self.get_size() \
-                if self.get_size() else None
-            return self.rate_within_normal
+        return calc_rate_within_normal(self.bases_by_depth, avg_depth, self.get_size())
 
     def sum_up(self, depth_thresholds):
         self.calc_avg_depth()
@@ -174,6 +165,16 @@ class Region:
         return self.chrom == reg2.chrom and \
                (reg2.start < self.start < reg2.end or
                 self.start < reg2.start < self.end)
+
+
+def calc_rate_within_normal(bases_by_depth, avg_depth, total_size):
+    bases_within_normal = sum(
+        bases
+        for depth, bases
+        in bases_by_depth.items()
+        if math.fabs(avg_depth - depth) < 0.2 * avg_depth)
+
+    return 1.0 * bases_within_normal / total_size if total_size else None
 
 
 def calc_bases_within_threshs(bases_by_depth, total_size, depth_thresholds):

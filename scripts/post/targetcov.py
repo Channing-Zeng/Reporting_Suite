@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import os
-from os.path import isfile, join
-
 import __check_python_version
 
+import os
+from os.path import isfile, join, basename, splitext
 import sys
 import shutil
 from source import BaseSample, TargQC_Sample
+from source.calling_process import call
 from source.logger import critical
 from source.logger import err
 from source.main import read_opts_and_cnfs
@@ -16,6 +16,7 @@ from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
+from source.tools_from_cnf import get_system_path
 from source.utils import info
 from source.file_utils import adjust_path
 
@@ -114,6 +115,22 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
+def picard_is_hist(cnf, sample, bam_fpath, output_dir):
+    picard = get_system_path(cnf, 'java', 'picard')
+    if picard:
+        info()
+        info('Picard ins size hist for "' + basename(bam_fpath) + '"')
+        cmdline = '{picard} CollectInsertSizeMetrics' \
+                  ' I={bam_fpath}' \
+                  ' O={sample.picard_ins_size_hist_txt_fpath}' \
+                  ' H={sample.picard_ins_size_hist_pdf_fpath}' \
+                  ' VALIDATION_STRINGENCY=LENIENT'
+
+        cmdline = cmdline.format(**locals())
+        call(cnf, cmdline, output_fpath=sample.picard_ins_size_hist_txt_fpath,
+             stdout_to_outputfile=False, exit_on_error=False)
+
+
 def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
     sample = TargQC_Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
@@ -128,6 +145,8 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
 
     avg_depth, gene_by_name, reports = make_targetseq_reports(
         cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath)
+
+    picard_is_hist(cnf, sample, bam_fpath, output_dir)
 
     if cnf.extended:
         info('Generating flagged regions report...')
@@ -144,8 +163,9 @@ def finalize_one(cnf, *args):
     if summary_report.txt_fpath:
         info('Summary report: ' + summary_report.txt_fpath)
 
-    if gene_report.txt_fpath:
-        info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
+    if gene_report:
+        if gene_report.txt_fpath:
+            info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
 
     if len(args) >= 3:
         selected_regions_report = args[2]

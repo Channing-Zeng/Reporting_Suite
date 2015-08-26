@@ -1,4 +1,4 @@
-from os.path import join
+from os.path import join, splitext
 from collections import OrderedDict
 from source.file_utils import verify_file
 from source.logger import info
@@ -55,7 +55,8 @@ mut_pass_suffix = 'PASS'
 
 
 class BaseSample:
-    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None):
+    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
+                 targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None, fastqc_dirpath=None, picard_dirpath=None):
         self.name = name
         self.bam = bam
         self.bed = bed
@@ -69,28 +70,34 @@ class BaseSample:
         self.normal_match = None
         self.min_af = None
 
-        if self.targqc_dirpath:
-            self.targetcov_html_fpath         = join(self.targetseq_dirpath, name + '.' + targetseq_name +  '.html')
-            self.targetcov_json_fpath         = join(self.targetseq_dirpath, name + '.' + targetseq_name +  '.json')
-            self.targetcov_detailed_txt       = join(self.targetseq_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.txt')
-            self.targetcov_detailed_tsv       = join(self.targetseq_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
+        if targqc_dirpath:
+            self.targqc_dirpath = targqc_dirpath
+            self.targetcov_html_fpath         = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.html')
+            self.targetcov_json_fpath         = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.json')
+            self.targetcov_detailed_txt       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.txt')
+            self.targetcov_detailed_tsv       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
             self.targetcov_norm_depth_vcf_txt = None
             self.targetcov_norm_depth_vcf_tsv = None
 
-        if self.ngscat_dirpath:
+        if ngscat_dirpath:
+            self.ngscat_dirpath = ngscat_dirpath
             self.ngscat_html_fpath = join(self.ngscat_dirpath, ngscat_name, ngscat_report_fname)
 
-        if self.qualimap_dirpath:
-            self.qualimap_html_fpath           = join(self.qualimap_dirpath, qualimap_name, qualimap_report_fname)
-            self.qualimap_genome_results_fpath = join(self.qualimap_dirpath, qualimap_name, qualimap_report_fname)
-            self.qualimap_ins_size_hist_fpath  = join(self.qualimap_dirpath, qualimap_name, qualimap_ishist_fsubpath)
-            self.qualimap_cov_hist_fpath       = join(self.qualimap_dirpath, qualimap_name, qualimap_covhist_fsubpath)
+        if qualimap_dirpath:
+            self.qualimap_dirpath              = qualimap_dirpath
+            self.qualimap_html_fpath           = join(self.qualimap_dirpath, qualimap_report_fname)
+            self.qualimap_genome_results_fpath = join(self.qualimap_dirpath, qualimap_report_fname)
+            self.qualimap_ins_size_hist_fpath  = join(self.qualimap_dirpath, qualimap_ishist_fsubpath)
+            self.qualimap_cov_hist_fpath       = join(self.qualimap_dirpath, qualimap_covhist_fsubpath)
 
-        if self.fastqc_dirpath:
-            self.fastqc_html_fpath = join(self.fastqc_dirpath, fastqc_name, fastqc_report_fname)
+        if fastqc_dirpath:
+            self.fastqc_dirpath = fastqc_dirpath
+            self.fastqc_html_fpath = join(self.fastqc_dirpath, fastqc_report_fname)
 
-        if self.picard_dirpath:
-            self.picard_ins_size_hist_fpath   = join(self.picard_dirpath, picard_ishist_fname)
+        if picard_dirpath:
+            self.picard_dirpath = picard_dirpath
+            self.picard_ins_size_hist_txt_fpath   = join(self.picard_dirpath, picard_ishist_fname)
+            self.picard_ins_size_hist_pdf_fpath   = join(self.picard_dirpath, splitext(picard_ishist_fname)[0] + '.pdf')
 
         # # Only for Bcbio and TargQC:
         # self.ngscat_html_fpath                 = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)
@@ -146,12 +153,15 @@ class BaseSample:
 
 class TargQC_Sample(BaseSample):
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None):
-        self.targqc_dirpath   = dirpath
-        self.ngscat_dirpath   = join(dirpath, ngscat_name)
-        self.qualimap_dirpath = join(dirpath, qualimap_name)
-        self.picard_dirpath   = join(dirpath, picard_name)
-
-        BaseSample.__init__(self, name, dirpath)
+        BaseSample.__init__(self, name, dirpath,
+            targqc_dirpath=dirpath,
+            ngscat_dirpath=join(dirpath, ngscat_name),
+            qualimap_dirpath=join(dirpath, qualimap_name),
+            picard_dirpath=join(dirpath, picard_name))
+        self.bam = bam
+        self.bed = bed
+        self.vcf = vcf
+        self.genome = genome
 
     def targetcov_done(self):
         if verify_file(self.targetcov_json_fpath) \
