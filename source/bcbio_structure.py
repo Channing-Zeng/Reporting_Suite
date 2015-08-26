@@ -251,15 +251,17 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 
 
 class BCBioSample(BaseSample):
-    def __init__(self, name, final_dir, **kwargs):
-        self.dirpath = join(final_dir, name)
-        BaseSample.__init__(self, name, self.dirpath, '{dirpath}/{name}/', **kwargs)
+    def __init__(self, sample_name, final_dir, **kwargs):
+        dirpath = join(final_dir, sample_name)
+        self.fastqc_dirpath   = join(dirpath, BCBioStructure.fastqc_dir)
+        self.targqc_dirpath   = join(dirpath, BCBioStructure.targqc_dir)
+        self.ngscat_dirpath   = join(self.targqc_dirpath, BCBioStructure.ngscat_name)
+        self.qualimap_dirpath = join(self.targqc_dirpath, BCBioStructure.qualimap_name)
+        self.picard_dirpath   = join(self.targqc_dirpath, BCBioStructure.picard_name)
+
+        BaseSample.__init__(self, name=sample_name, dirpath=dirpath, **kwargs)
+
         self.sv_bed = None
-        self.ngscat_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/captureQC.html', name=source.ngscat_name)
-        self.qualimap_html_fpath           = self.make_fpath('{dirpath}/qc/{name}/qualimapReport.html', name=source.qualimap_name)
-        self.qualimap_genome_results_fpath = self.make_fpath('{dirpath}/qc/{name}/genome_results.txt', name=source.qualimap_name)
-        self.qualimap_ins_size_hist_fpath  = self.make_fpath('{dirpath}/qc/{name}/raw_data_qualimapReport/insert_size_histogram.txt', name=source.qualimap_name)
-        self.fastqc_html_fpath             = self.make_fpath('{dirpath}/qc/{name}/fastqc_report.html', name=source.fastqc_name)
         self.project_tag = None
 
     # ----------
@@ -437,32 +439,30 @@ class Batch:
 
 
 class BCBioStructure:
-    varfilter_name   = varfilter_dir                           = 'varFilter'
-    varannotate_name = varannotate_dir                         = 'varAnnotate'
-    targetseq_name   = targetseq_dir = targetseq_summary_dir   = 'targetSeq'
-    cnv_dir                          = cnv_summary_dir         = 'cnv'
+    varfilter_name   = varfilter_dir   = 'varFilter'
+    varannotate_name = varannotate_dir = 'varAnnotate'
 
-    varqc_name               = 'varQC'
-    varqc_after_name         = 'varQC_postVarFilter'
-    ngscat_name              = 'ngscat'
-    qualimap_name            = 'qualimap'
-    targqc_name              = 'targQC'
-    fastqc_name              = 'fastqc'
+    fastqc_name      = 'fastqc'
+    targqc_name      = 'targQC'
+    varqc_name       = 'varQC'
+    varqc_after_name = 'varQC_postVarFilter'
+    ngscat_name      = 'ngscat'
+    qualimap_name    = 'qualimap'
+    picard_name      = 'picard'
 
-    varqc_repr               = 'Var QC'
-    varqc_after_repr         = 'Var QC after filtering'
-    ngscat_repr              = 'Ngscat'
-    qualimap_repr            = 'Qualimap'
-    targqc_repr              = 'Target QC'
-    fastqc_repr              = 'FastQC'
+    fastqc_repr      = 'FastQC'
+    varqc_repr       = 'VarQC'
+    varqc_after_repr = 'VarQC after filtering'
+    ngscat_repr      = 'ngsCAT'
+    qualimap_repr    = 'Qualimap'
+    targqc_repr      = 'TargQC'
 
+    fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
     varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
     varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
-    ngscat_dir       = ngscat_summary_dir      = join('qc', ngscat_name)
-    qualimap_dir     = qualimap_summary_dir    = join('qc', qualimap_name)
-    targqc_summary_dir                         = join('qc', targqc_name)
-    fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
+    targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
 
+    cnv_dir = cnv_summary_dir = 'cnv'
     seq2c_name = 'Seq2C'
     seq2c_seq2cov_ending = 'seq2c_seq2cov.txt'
 
@@ -664,7 +664,7 @@ class BCBioStructure:
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath)
+        sample = BCBioSample(sample_name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')

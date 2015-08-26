@@ -41,7 +41,7 @@ if is_local():
 def proc_opts():
     info(' '.join(sys.argv))
     info()
-    description = 'This script runs preprocessing.'
+    description = 'This script runs preprocessing. Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]'
 
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)

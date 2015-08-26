@@ -58,8 +58,8 @@ def check_genome_resources(cnf):
                     else:
                         if build_name == cnf.genome:
                             err('   Err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-                        else:
-                            warn('   Warn: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
+                        # else:
+                        #     warn('   Warn: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
                 # else:
                 #     info(key + ': ' + genome_cnf[key])
         info()

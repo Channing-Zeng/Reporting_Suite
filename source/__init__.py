@@ -38,6 +38,16 @@ seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
 
 dedup_bam                = 'dedup'  # work/post_processing/dedup and -ready.dedup.bam
 
+ngscat_report_fname             = 'captureQC.html'
+qualimap_report_fname           = 'qualimapReport.html'
+qualimap_genome_results_fname   = 'genome_results.txt'
+qualimap_raw_data_dirname       = 'raw_data_qualimapReport'
+qualimap_ishist_fsubpath        = join(qualimap_raw_data_dirname, 'insert_size_histogram.txt')
+qualimap_covhist_fsubpath       = join(qualimap_raw_data_dirname, 'coverage_histogram.txt')
+
+picard_ishist_fname = 'picard_ishist.txt'
+fastqc_report_fname = 'fastqc_report.html'
+
 mut_fname_template = '{caller_name}.txt'
 mut_single_suffix = 'single'
 mut_paired_suffix = 'paired'
@@ -45,7 +55,7 @@ mut_pass_suffix = 'PASS'
 
 
 class BaseSample:
-    def __init__(self, name, dirpath, path_base=None, bam=None, bed=None, vcf=None, genome=None):
+    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None):
         self.name = name
         self.bam = bam
         self.bed = bed
@@ -59,60 +69,42 @@ class BaseSample:
         self.normal_match = None
         self.min_af = None
 
-        if not path_base:
-            path_base = dirpath
+        if self.targqc_dirpath:
+            self.targetcov_html_fpath         = join(self.targetseq_dirpath, name + '.' + targetseq_name +  '.html')
+            self.targetcov_json_fpath         = join(self.targetseq_dirpath, name + '.' + targetseq_name +  '.json')
+            self.targetcov_detailed_txt       = join(self.targetseq_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.txt')
+            self.targetcov_detailed_tsv       = join(self.targetseq_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
+            self.targetcov_norm_depth_vcf_txt = None
+            self.targetcov_norm_depth_vcf_tsv = None
 
-        self.targetcov_html_fpath          = self.make_fpath(path_base + '{sample}.{name}.html', name=targetseq_name)
-        self.targetcov_json_fpath          = self.make_fpath(path_base + '{sample}.{name}.json', name=targetseq_name)
-        self.targetcov_detailed_txt        = self.make_fpath(path_base + '{sample}.{name}' + detail_gene_report_baseending + '.txt', name=targetseq_name)
-        self.targetcov_detailed_tsv        = self.make_fpath(path_base + '{sample}.{name}' + detail_gene_report_baseending + '.tsv', name=targetseq_name)
-        self.targetcov_norm_depth_vcf_txt  = None
-        self.targetcov_norm_depth_vcf_tsv  = None
-        self.picard_ins_size_hist_fpath    = self.make_fpath(path_base + 'picard_ins_size_hist.txt', name=targetseq_name)
-        self.ngscat_html_fpath             = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)
-        self.qualimap_html_fpath           = self.make_fpath(path_base + 'qualimapReport.html', name=qualimap_name)
-        self.qualimap_genome_results_fpath = self.make_fpath(path_base + 'genome_results.txt', name=qualimap_name)
-        self.qualimap_ins_size_hist_fpath  = self.make_fpath(path_base + 'raw_data_qualimapReport/insert_size_histogram.txt', name=qualimap_name)
-        self.fastqc_html_fpath             = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
-        # self.seq2cov_output_fpath          = self.make_fpath(path_base + '{sample}.{name}_' + seq2c_seq2cov_ending, name=targetseq_name)
+        if self.ngscat_dirpath:
+            self.ngscat_html_fpath = join(self.ngscat_dirpath, ngscat_name, ngscat_report_fname)
 
-    def make_fpath(self, path_template, **kwargs):
-        keys = dict(dict(dirpath=self.dirpath, sample=self.name).items() + kwargs.items())
-        return join(*path_template.split('/')).format(**keys)
+        if self.qualimap_dirpath:
+            self.qualimap_html_fpath           = join(self.qualimap_dirpath, qualimap_name, qualimap_report_fname)
+            self.qualimap_genome_results_fpath = join(self.qualimap_dirpath, qualimap_name, qualimap_report_fname)
+            self.qualimap_ins_size_hist_fpath  = join(self.qualimap_dirpath, qualimap_name, qualimap_ishist_fsubpath)
+            self.qualimap_cov_hist_fpath       = join(self.qualimap_dirpath, qualimap_name, qualimap_covhist_fsubpath)
 
-    def targetcov_done(self):
-        if verify_file(self.targetcov_json_fpath) \
-           and verify_file(self.targetcov_html_fpath) \
-           and verify_file(self.targetcov_detailed_tsv):
-            # info(self.targetcov_json_fpath + ', ' +
-            #      self.targetcov_html_fpath + ', and ' +
-            #      self.targetcov_detailed_tsv + ' exist.')
-            return True
-        return False
+        if self.fastqc_dirpath:
+            self.fastqc_html_fpath = join(self.fastqc_dirpath, fastqc_name, fastqc_report_fname)
 
-    def ngscat_done(self):
-        if verify_file(self.ngscat_html_fpath):
-            # info(self.ngscat_html_fpath + ' exists.')
-            return True
-        return False
+        if self.picard_dirpath:
+            self.picard_ins_size_hist_fpath   = join(self.picard_dirpath, picard_ishist_fname)
 
-    def qualimap_done(self):
-        if verify_file(self.qualimap_html_fpath):
-            # info(self.qualimap_html_fpath + ' exists.')
-            return True
-        return False
+        # # Only for Bcbio and TargQC:
+        # self.ngscat_html_fpath                 = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)
+        # self.qualimap_html_fpath               = self.make_fpath(path_base + 'qualimapReport.html', name=qualimap_name)
+        # self.qualimap_genome_results_fpath     = self.make_fpath(path_base + 'genome_results.txt', name=qualimap_name)
+        # self.qualimap_ins_size_hist_fpath      = self.make_fpath(path_base + 'raw_data_qualimapReport/insert_size_histogram.txt', name=qualimap_name)
+        # self.qualimap_cov_hist_fpath           = self.make_fpath(path_base + 'raw_data_qualimapReport/coverage_histogram.txt', name=qualimap_name)
+        # # self.qualimap_postproc_cov_hist_fpath  = self.make_fpath(path_base + 'raw_data_qualimapReport/coverage_histogram.txt', name=qualimap_name)
+        # self.fastqc_html_fpath                 = self.make_fpath(path_base + 'fastqc_report.html', name=fastqc_name)
+        # # self.seq2cov_output_fpath              = self.make_fpath(path_base + '{sample}.{name}_' + seq2c_seq2cov_ending, name=targetseq_name)
 
-    # def picard_dup_done(self):
-    #     if verify_file(self.picard_dup_metrics_fpath):
-    #         info(self.picard_dup_metrics_fpath + ' exists.')
-    #         return True
-    #     return False
-    #
-    # def picard_ins_size_done(self):
-    #     if verify_file(self.picard_ins_size_pdf_fpath):
-    #         info(self.picard_ins_size_pdf_fpath + ' exists.')
-    #         return True
-    #     return False
+    # def make_fpath(self, path_template, **kwargs):
+    #     keys = dict(dict(dirpath=self.dirpath, sample=self.name).items() + kwargs.items())
+    #     return join(*path_template.split('/')).format(**keys)
 
     def __cmp__(self, other):
         return cmp(self.key_to_sort(), other.key_to_sort())
@@ -152,13 +144,43 @@ class BaseSample:
         return self.name
 
 
-class SingleSample(BaseSample):
+class TargQC_Sample(BaseSample):
+    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None):
+        self.targqc_dirpath   = dirpath
+        self.ngscat_dirpath   = join(dirpath, ngscat_name)
+        self.qualimap_dirpath = join(dirpath, qualimap_name)
+        self.picard_dirpath   = join(dirpath, picard_name)
+
+        BaseSample.__init__(self, name, dirpath)
+
+    def targetcov_done(self):
+        if verify_file(self.targetcov_json_fpath) \
+           and verify_file(self.targetcov_html_fpath) \
+           and verify_file(self.targetcov_detailed_tsv):
+            # info(self.targetcov_json_fpath + ', ' +
+            #      self.targetcov_html_fpath + ', and ' +
+            #      self.targetcov_detailed_tsv + ' exist.')
+            return True
+        return False
+
+    # def ngscat_done(self):
+    #     if verify_file(self.ngscat_html_fpath):
+    #         # info(self.ngscat_html_fpath + ' exists.')
+    #         return True
+    #     return False
+    #
+    # def qualimap_done(self):
+    #     if verify_file(self.qualimap_html_fpath):
+    #         # info(self.qualimap_html_fpath + ' exists.')
+    #         return True
+    #     return False
+
+
+class VarSample(BaseSample):
     def __init__(self, name, output_dir, **kwargs):
-        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
+        BaseSample.__init__(self, name, output_dir, **kwargs)
 
 
-class TargQCStandaloneSample(BaseSample):
-    path_base = '{dirpath}/{sample}_{name}/'
-
-    def __init__(self, name, dirpath, *args, **kwargs):
-        BaseSample.__init__(self, name, dirpath, TargQCStandaloneSample.path_base, *args, **kwargs)
+# class TargQCStandaloneSample(BaseSample):
+#     def __init__(self, name, dirpath, *args, **kwargs):
+#         BaseSample.__init__(self, name, join(dirpath, '{sample}_{name}'), *args, **kwargs)

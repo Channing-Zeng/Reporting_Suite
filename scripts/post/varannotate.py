@@ -7,7 +7,7 @@ import __check_python_version
 import sys
 import shutil
 import source
-from source import SingleSample
+from source import VarSample
 from source.bcbio_structure import BCBioStructure
 from source.file_utils import iterate_file, open_gzipsafe
 from source.main import read_opts_and_cnfs
@@ -66,7 +66,7 @@ def main(args):
 
 def process_one(cnf):
     info('process_one')
-    sample = SingleSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+    sample = VarSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)

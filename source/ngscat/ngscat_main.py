@@ -86,8 +86,8 @@ def launch_coverage_distribution(coveragefiles, outdir, legend, executiongranted
     meancoverage = multiprocessing.Array('f', len(coveragefiles))
 
     Pcoveragedistribution = multiprocessing.Process(target=coverageHisto.histo_CV, args=(
-    coveragefiles, outdir, legend, executiongranted, status, meancoverage,
-    config.warnmeancoverage,))
+        coveragefiles, outdir, legend, executiongranted, status, meancoverage,
+        config.warnmeancoverage,))
     info('Launching coverage distribution calculation...')
     Pcoveragedistribution.start()
 

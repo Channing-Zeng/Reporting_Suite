@@ -2,6 +2,7 @@ from itertools import dropwhile
 from os.path import isfile, join, abspath, basename
 import sys
 from subprocess import check_output
+from collections import OrderedDict
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file
 from source.logger import info, critical, warn, err
@@ -254,3 +255,200 @@ def bedtools_version(bedtools):
         return None
     else:
         return v
+
+
+def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
+    with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
+        for l in inn:
+            fields = l.strip().split('\t')
+
+            if len(fields) < 3:
+                continue
+            try:
+                int(fields[1]), int(fields[2])
+            except ValueError:
+                continue
+
+            if len(fields) < 4:
+                fields.append('.')
+
+            if len(fields) < 5:
+                fields.append('0')
+
+            if len(fields) < 6:
+                fields.append('+')
+
+            out.write('\t'.join(fields) + '\n')
+
+
+def remove_dups(cnf, bam, output_fpath, samtools=None, use_grid=False):
+    samtools = samtools or get_system_path(cnf, 'samtools')
+    if samtools is None:
+        samtools = get_system_path(cnf, 'samtools', is_critical=True)
+    cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+    if use_grid:
+        j = submit_job(cnf, cmdline, 'DEDUP__' + cnf.project_name + '__' + basename(bam).split('.')[0], output_fpath=output_fpath)
+        info()
+        return j
+    else:
+        call(cnf, cmdline, output_fpath=output_fpath)
+        return None
+
+
+def remove_dups_picard(cnf, bam_fpath):
+    picard = get_system_path(cnf, 'java', 'picard')
+    if not picard:
+        critical('No picard in the system')
+
+    info('Running picard dedup for "' + basename(bam_fpath) + '"')
+
+    dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
+    output_fpath = intermediate_fname(cnf, bam_fpath, 'pcd_dedup')
+
+    cmdline = '{picard} MarkDuplicates' \
+              ' I={bam_fpath}' \
+              ' O={output_fpath}' \
+              ' METRICS_FILE={dup_metrics_txt}' \
+              ' REMOVE_DUPLICATES=True' \
+              ' VALIDATION_STRINGENCY=LENIENT'
+    res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
+        stdout_to_outputfile=False, exit_on_error=False)
+
+    if res != output_fpath:  # error occurred, try to correct BAM and restart
+        warn('Picard deduplication failed for "' + basename(bam_fpath) + '". Fixing BAM and restarting Picard...')
+        bam_fpath = _fix_bam_for_picard(cnf, bam_fpath)
+        res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
+            stdout_to_outputfile=False, exit_on_error=False)
+
+    if res == output_fpath:
+        dup_rate = _parse_picard_dup_report(dup_metrics_txt)
+        assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
+        info('Duplication rate (picard): ' + str(dup_rate))
+        return output_fpath
+    else:
+        return None
+
+
+def _fix_bam_for_picard(cnf, bam_fpath):
+    def __process_problem_read_aligns(read_aligns):
+        # each alignment: 0:NAME 1:FLAG 2:CHR 3:COORD 4:MAPQUAL 5:CIGAR 6:MATE_CHR 7:MATE_COORD TLEN SEQ ...
+        def __get_key(align):
+            return align.split('\t')[2] + '@' + align.split('\t')[3]
+
+        def __get_mate_key(align):
+            return (align.split('\t')[6] if align.split('\t')[2] != '=' else align.split('\t')[2]) \
+                   + '@' + align.split('\t')[7]
+
+        chr_coord = OrderedDict()
+        for align in read_aligns:
+            key = __get_key(align)
+            if key not in chr_coord:
+                chr_coord[key] = []
+            chr_coord[key].append(align)
+        correct_pairs = []
+        for align in read_aligns:
+            mate_key = __get_mate_key(align)
+            if mate_key in chr_coord:
+                for pair_align in chr_coord[mate_key]:
+                    if read_aligns.index(pair_align) <= read_aligns.index(align):
+                        continue
+                    if __get_mate_key(pair_align) == __get_key(align):
+                        correct_pairs.append((align, pair_align))
+        if not correct_pairs:
+            return []
+        if len(correct_pairs) > 1:
+            # sort by sum of mapping quality of both alignments
+            correct_pairs.sort(key=lambda pair: pair[0].split('\t')[4] + pair[1].split('\t')[4], reverse=True)
+        return [correct_pairs[0][0], correct_pairs[0][1]]
+
+    samtools = get_system_path(cnf, 'samtools')
+    try:
+        import pysam
+        without_pysam = False
+    except ImportError:
+        without_pysam = True
+
+    # find reads presented more than twice in input BAM
+    if without_pysam:
+        qname_sorted_sam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')[:-len('bam')] + 'sam'
+        # queryname sorting; output is SAM
+        cmdline = '{samtools} view {bam_fpath} | sort '.format(**locals())
+        call(cnf, cmdline, qname_sorted_sam_fpath)
+        qname_sorted_file = open(qname_sorted_sam_fpath, 'r')
+    else:
+        qname_sorted_bam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')
+        # queryname sorting (-n), to stdout (-o), 'prefix' is not used; output is BAM
+        cmdline = '{samtools} sort -n -o {bam_fpath} prefix'.format(**locals())
+        call(cnf, cmdline, qname_sorted_bam_fpath)
+        qname_sorted_file = pysam.Samfile(qname_sorted_bam_fpath, 'rb')
+    problem_reads = dict()
+    cur_read_aligns = []
+    for line in qname_sorted_file:
+        line = str(line)
+        if cur_read_aligns:
+            if line.split('\t')[0] != cur_read_aligns[0].split('\t')[0]:
+                if len(cur_read_aligns) > 2:
+                    problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
+                cur_read_aligns = []
+        flag = int(line.split('\t')[1])
+        cur_read_aligns.append(line)
+    if len(cur_read_aligns) > 2:
+        problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
+    qname_sorted_file.close()
+
+    for read_id, read_aligns in problem_reads.items():
+        problem_reads[read_id] = __process_problem_read_aligns(read_aligns)
+
+    # correct input BAM
+    fixed_bam_fpath = intermediate_fname(cnf, bam_fpath, 'fixed_for_picard')
+    fixed_sam_fpath = fixed_bam_fpath[:-len('bam')] + 'sam'
+    if without_pysam:
+        sam_fpath = intermediate_fname(cnf, bam_fpath, 'tmp')[:-len('bam')] + 'sam'
+        cmdline = '{samtools} view -h {bam_fpath}'.format(**locals())
+        call(cnf, cmdline, sam_fpath)
+        input_file = open(sam_fpath, 'r')
+        fixed_file = open(fixed_sam_fpath, 'w')
+    else:
+        input_file = pysam.Samfile(bam_fpath, 'rb')
+        fixed_file = pysam.Samfile(fixed_bam_fpath, 'wb', template=input_file)
+    for line in input_file:
+        if without_pysam and line.startswith('@'):  # header
+            fixed_file.write(line)
+            continue
+        read_name = str(line).split('\t')[0]
+        if read_name in problem_reads and str(line) not in problem_reads[read_name]:
+            continue
+        fixed_file.write(line)
+    input_file.close()
+    fixed_file.close()
+    if without_pysam:
+        cmdline = '{samtools} view -bS {fixed_sam_fpath}'.format(**locals())
+        call(cnf, cmdline, fixed_bam_fpath)
+
+    return fixed_bam_fpath
+
+
+def _parse_picard_dup_report(dup_report_fpath):
+    with open(dup_report_fpath) as f:
+        for l in f:
+            if l.startswith('## METRICS CLASS'):
+                l_NEXT = None
+                ind = None
+                try:
+                    l_LIBRARY = next(f)
+                    if l_LIBRARY.startswith('LIBRARY'):
+                        ind = l_LIBRARY.strip().split().index('PERCENT_DUPLICATION')
+                        l_NEXT = next(f)
+                        while l_NEXT.startswith(' ') or l_NEXT.startswith('\t'):
+                            l_NEXT = next(f)
+                except StopIteration:
+                    pass
+                else:
+                    if l_NEXT and ind:
+                        fields = l_NEXT.split()
+                        if fields[0] == 'Unknown':
+                            ind += 1
+                        if len(fields) > ind:
+                            dup_rate = 1.0 * float(fields[ind])
+                            return dup_rate
+    err('Error: cannot read duplication rate from ' + dup_report_fpath)

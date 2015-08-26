@@ -6,7 +6,7 @@ import sys
 import shutil
 from os.path import abspath, dirname, realpath, join, basename, relpath
 import source
-from source import SingleSample
+from source import VarSample
 from source.file_utils import verify_module, verify_file
 from source.file_utils import file_exists
 from source.logger import err, info, warn, send_email, critical
@@ -57,7 +57,7 @@ def process_one(cnf):
     if not verify_file(vcf_fpath):
         critical('Annotated VCF ' + vcf_fpath + ' does not exist, thus cannot run VarQC')
 
-    sample = SingleSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+    sample = VarSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
 
     if cnf.get('filter_reject'):
         vcf_fpath = remove_rejected(cnf, vcf_fpath)

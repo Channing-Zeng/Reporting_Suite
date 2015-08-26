@@ -98,24 +98,8 @@ class Region:
         if self.bases_by_depth is None:
             err('Error: self.bases_by_depth is None for ' + str(self))
 
-        self.bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
-        self.rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
-
-        for depth, bases in self.bases_by_depth.iteritems():
-            for t in depth_thresholds:
-                if depth >= t:
-                    self.bases_within_threshs[t] += bases
-        for t in depth_thresholds:
-            sz = self.get_size()
-            bs = self.bases_within_threshs[t]
-            if sz > 0:
-                rate = 1.0 * self.bases_within_threshs[t] / sz
-                if rate > 1:
-                    critical(
-                        'Error: rate = ' + str(rate) + ', bases = ' + str(bs) +
-                        ', size = ' + str(sz) +
-                        ', start = ' + str(self.start) + ', end = ' + str(self.end))
-                self.rates_within_threshs[t] = rate
+        self.bases_within_threshs, self.rates_within_threshs = calc_bases_within_threshs(
+            self.bases_by_depth, self.get_size(), depth_thresholds)
 
         return self.bases_within_threshs
 
@@ -190,6 +174,25 @@ class Region:
         return self.chrom == reg2.chrom and \
                (reg2.start < self.start < reg2.end or
                 self.start < reg2.start < self.end)
+
+
+def calc_bases_within_threshs(bases_by_depth, total_size, depth_thresholds):
+    bases_within_threshs = OrderedDict((depth, 0) for depth in depth_thresholds)
+    rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
+
+    for depth, bases in bases_by_depth.iteritems():
+        for t in depth_thresholds:
+            if depth >= t:
+                bases_within_threshs[t] += bases
+    for t in depth_thresholds:
+        bs = bases_within_threshs[t]
+        if total_size > 0:
+            rate = 1.0 * bases_within_threshs[t] / total_size
+            if rate > 1:
+                critical('Error: rate = ' + str(rate) + ', bases = ' + str(bs) + ', size = ' + str(total_size))
+            rates_within_threshs[t] = rate
+
+    return bases_within_threshs, rates_within_threshs
 
 
 class GeneInfo(Region):

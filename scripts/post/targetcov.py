@@ -6,7 +6,7 @@ import __check_python_version
 
 import sys
 import shutil
-from source import BaseSample
+from source import BaseSample, TargQC_Sample
 from source.logger import critical
 from source.logger import err
 from source.main import read_opts_and_cnfs
@@ -114,13 +114,8 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
-class Sample(BaseSample):
-    def __init__(self, name, output_dir, **kwargs):
-        BaseSample.__init__(self, name, output_dir, path_base=output_dir, **kwargs)
-
-
 def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
-    sample = Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
+    sample = TargQC_Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
     bam_fpath = cnf.bam
     target_bed = cnf.bed

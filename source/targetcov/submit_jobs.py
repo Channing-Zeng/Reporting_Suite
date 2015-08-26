@@ -7,7 +7,7 @@ from os import listdir
 
 import source
 from source.logger import info, err, warn, critical
-from source.bcbio_runner import Step, fix_bed_for_qualimap
+from source.bcbio_runner import Step
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.utils import get_system_path

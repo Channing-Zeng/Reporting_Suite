@@ -59,7 +59,7 @@ def proc_args(argv):
     # cnf.name = 'TargQC_' + cnf.project_name
 
     samples = [
-        source.TargQCStandaloneSample(s_name, cnf.output_dir, bam=bam_fpath)
+        source.TargQC_Sample(s_name, join(cnf.output_dir, s_name), bam=bam_fpath)
             for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
     samples.sort(key=lambda _s: _s.key_to_sort())
 

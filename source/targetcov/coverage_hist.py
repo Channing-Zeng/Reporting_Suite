@@ -2,28 +2,75 @@ from os.path import join, basename, splitext
 from time import sleep
 
 from source.calling_process import call
-from source.file_utils import splitext_plus
+from source.file_utils import splitext_plus, add_suffix, safe_mkdir
 from source.logger import critical, info, warn, send_email, err
+from source.ngscat import coverageHisto
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
 
 
-def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
-    if not bam or not bed:
+def ngscat_bedcov_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
+    cov_out_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'coverage')
+    bedgraph_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'bedgraph')
+
+    info('Coveragefile = ' + cov_out_fpath)
+    from source.ngscat import bam_file
+    bam = bam_file.BamFile(bam_fpath, 'rb')
+
+    info('Launching coverageBed...')
+    bam.myCoverageBed(cnf, bed_fpath, writeToFile=cov_out_fpath, bedGraphFile=bedgraph_fpath)
+    info('\tDone.')
+
+    cov_hist_dirpath = join(cnf.work_dir, 'cov_hist')
+    safe_mkdir(cov_hist_dirpath)
+    info('Launching coverage distribution calculation...')
+    coverageHisto.histo_CV(cov_out_fpath, cov_hist_dirpath)
+
+
+class BedCov:
+    def __init__(self, chrom, chrom_len, bedcov_output_fpath):
+        self.chrom = chrom
+        self.chrom_len = chrom_len
+        self.bedcov_output_fpath = bedcov_output_fpath
+
+
+def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
+    if not bam_fpath or not bed_fpath:
         info()
         msgs = []
-        if not bam: msgs.append('BAM file is required.')
-        if not bed: msgs.append('BED file is required.')
+        if not bam_fpath: msgs.append('BAM file is required.')
+        if not bed_fpath: msgs.append('BED file is required.')
         if msgs:
             critical(msgs)
 
-    bedcov_output = run_bedcoverage_hist_stats(cnf, bed, bam)
-    bed_col_num = count_bed_cols(bed)
+    bedcov_output_fpath = join(cnf.work_dir,
+        splitext_plus(basename(bed_fpath))[0] + '__' +
+        splitext_plus(basename(bam_fpath))[0] + '_bedcov_output.txt')
+
+    bamtools = get_system_path(cnf, 'bamtools')
+    if not bamtools:
+        bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath)
+    else:
+        bedcov_by_chrom = dict()
+
+        cmdline = '{bamtools} split -in {bam} -reference'.format(**locals())
+        call(cnf, cmdline)
+
+        chroms = [l.split() for l in open(get_chr_len_fpath(cnf)).readlines()]
+        for chrom, ln in chroms:
+            grep = get_system_path(cnf, 'grep')
+            cmdl = '{grep} "^{chrom}" {bed}'.format(**locals())
+            bed_chrom = add_suffix(bed_fpath, chrom)
+            call(cnf, cmdl, bed_chrom)
+            bam_chrom = add_suffix(bam_fpath, 'REF_' + chrom)
+            bedcov_by_chrom[chrom] = launch_bedcoverage_hist(cnf, bed_chrom, bam_chrom)
+
+    bed_col_num = count_bed_cols(bed_fpath)
     info()
     info('Anylising bedcoverage output...')
-    regions, total_region, max_depth = summarize_bedcoverage_hist_stats(bedcov_output, sample_name, bed_col_num)
+    regions, total_region, max_depth = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
 
     # for r in regions:
     #TODO Sync real regions in {bed} and {regions}
@@ -37,13 +84,22 @@ def bedcoverage_hist_stats(cnf, sample_name, bam, bed, reuse=False):
 # merge. for general stats, merge more sofisticated.
 
 
-def run_bedcoverage_hist_stats(cnf, bed, bam):
+# def grep(cnf, fpath, pattern):
+#     res =
+
+
+def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None):
+    # import pybedtools
+    # bed = pybedtools.BedTool(bed_fpath)
+    # bam = pybedtools.BedTool(bam_fpath)
+    # return bed.coverage(bam)
+
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
-    bedcov_output = join(cnf.work_dir,
-        splitext_plus(basename(bed))[0] + '_' +
-        splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
+    bedcov_output_fpath = bedcov_output_fpath or join(cnf.work_dir,
+        splitext_plus(basename(bed_fpath))[0] + '__' +
+        splitext_plus(basename(bam_fpath))[0] + '_bedcov_output.txt')
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
@@ -54,10 +110,10 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
     res = None
     tries = 0
     MAX_TRIES = 10
-    err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output))[0] + '.err')
+    err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output_fpath))[0] + '.err')
     while True:
         stderr_dump = []
-        res = call(cnf, cmdline, bedcov_output, stderr_dump=stderr_dump, exit_on_error=False)
+        res = call(cnf, cmdline, bedcov_output_fpath, stderr_dump=stderr_dump, exit_on_error=False)
         if res is not None:
             return res
         else:
@@ -76,7 +132,7 @@ def run_bedcoverage_hist_stats(cnf, bed, bam):
             sleep(120 * 60)
             info()
 
-    return bedcov_output
+    return bedcov_output_fpath
 
 
 def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num):
@@ -101,6 +157,7 @@ def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_n
     _total_regions_count = 0
     regions, max_depth, total_bed_size = [], 0, 0
 
+    # for next_line in bedcov:
     with open(bedcov_output_fpath) as f:
         for next_line in f:
             if not next_line.strip() or next_line.startswith('#'):

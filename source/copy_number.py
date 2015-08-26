@@ -103,7 +103,7 @@ def _seq2c(cnf, bcbio_structure):
             info(dedup_bam_fpath + ' exists')
         else:
             info('Deduplicating bam file ' + dedup_bam_fpath)
-            dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath))
+            dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath, use_grid=True))
     dedup_jobs = wait_for_jobs(dedup_jobs)
 
     info('Getting reads and cov stats')

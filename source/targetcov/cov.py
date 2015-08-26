@@ -1,11 +1,13 @@
 # coding=utf-8
 
 from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile, abspath, realpath, splitext
+from os.path import join, basename, isfile, abspath, realpath, splitext, normpath
 import shutil
 
 import source
+from source.bcbio_structure import BCBioStructure
 from source.qsub_utils import submit_job, wait_for_jobs
+from source.qualimap.report_parser import parse_qualimap_sample_report
 import source.targetcov
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile, \
@@ -13,9 +15,10 @@ from source.file_utils import intermediate_fname, splitext_plus, verify_file, fi
 from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows, \
     load_records
-from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo
+from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo, calc_bases_within_threshs
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
-    total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed
+    total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed, fix_bed_for_qualimap, \
+    remove_dups
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
@@ -25,7 +28,7 @@ def get_header_metric_storage(depth_thresholds):
     ms = MetricStorage(
         general_section=ReportSection('general_section', '', [
             Metric('Target', short_name='Target', common=True),
-            Metric('Target ready', short_name='Target ready', common=True),
+            # Metric('Target ready', short_name='Target ready', common=True),
             Metric('Regions in target', short_name='Regions in target', common=True),
             Metric('Bases in target', short_name='Target bp', unit='bp', common=True),
             Metric('Genes', short_name='Genes', common=True),
@@ -79,7 +82,7 @@ def get_header_metric_storage(depth_thresholds):
     return ms
 
 
-def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
+def _extract_gene_names_and_filter_exons(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
     gene_by_name = OrderedDict()
 
     gene_names_set = set()
@@ -168,8 +171,9 @@ def _get_genes_and_filter(cnf, sample_name, target_bed, exons_bed, exons_no_gene
 
 
 class TargetInfo:
-    def __init__(self, fpath=None, bed=None, original_target_bed=None, regions_num=None, bases_num=None, genes_fpath=None, genes_num=None):
-        self.fpath = realpath(fpath) if fpath else None  # raw source file - to demonstrate were we took one
+    def __init__(self, fpath=None, bed=None, original_target_bed=None, regions_num=None,
+                 bases_num=None, genes_fpath=None, genes_num=None):
+        self.fpath = realpath(fpath) if fpath else None  # raw source file - to demonstrate where we took one
         self.bed = bed                                   # processed (sorted, merged...), to do real calculations
         self.original_target_bed = original_target_bed
         self.regions_num = regions_num
@@ -178,12 +182,35 @@ class TargetInfo:
         self.genes_num = genes_num
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed,
-                           target_bed, genes_fpath=None):
-    original_target_bed = cnf.original_target_bed or target_bed
-    original_exons_bed = cnf.original_exons_bed or exons_no_genes_bed
+def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None):
+    safe_mkdir(sample.qualimap_dirpath)
 
-    info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
+    bed = ''
+    if bed_fpath:
+        qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
+        fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
+        bed = '--bed ' + qualimap_bed_fpath
+
+    qm = get_system_path(cnf, 'python', join('scripts', 'post', 'qualimap.py'))
+    cmdl = '{qm} --bam {bam_fpath} {bed} -o {output_dirpath} -t {cnf.threads}'.format(**locals())
+    call(cnf, cmdl, sample.qualimap_dirpath, output_is_dir=True)
+    return sample.qualimap_dirpath
+
+    # join(self.qualimap, sample_name, bam=sample.bam, sample=sample.name,
+    #     genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
+ # hist = qualimap_cov_hist_fpath
+ #
+ #
+ #                self.qualimap = Step(cnf, run_id,
+ #            name=BCBioStructure.qualimap_name, short_name='qm',
+ #            interpreter='python',
+ #            script=join('scripts', 'post', 'qualimap.py'),
+ #            dir_name=BCBioStructure.qualimap_dir,
+ #            paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
+ #        )
+
+
+def _dedup_and_flag_stat(cnf, bam_fpath):
     bam_stats = samtools_flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
     info('Total mapped reads: ' + Metric.format_value(bam_stats['mapped']))
@@ -192,30 +219,62 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
     safe_mkdir(dedup_bam_dirpath)
-    dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(sample.bam), source.dedup_bam))
-    j = remove_dups(cnf, bam_fpath, output_fpath=dedup_bam_fpath)
-    wait_for_jobs([j])
+    dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(bam_fpath), source.dedup_bam))
+    remove_dups(cnf, bam_fpath, output_fpath=dedup_bam_fpath, use_grid=False)
     dedup_bam_stats = samtools_flag_stat(cnf, dedup_bam_fpath)
     info('Total reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['total']))
     info('Total mapped reads after dedup (samtools view -F 1024): ' + Metric.format_value(dedup_bam_stats['mapped']))
-    bam_fpath = dedup_bam_fpath
+    return dedup_bam_fpath, bam_stats, dedup_bam_stats
+
+
+def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_thresholds):
+    if not verify_file(qualimap_cov_hist_fpath):
+        err('Qualimap hist fpath is not found, cannot build histogram')
+    else:
+        bases_by_depth = OrderedDict()
+        with open(qualimap_cov_hist_fpath) as f:
+            for l in f:
+                if l.startswith('#'):
+                    pass
+                else:
+                    cov, bases = map(int, l.strip().split())
+                    bases_by_depth[cov] = bases
+
+        max_depth = bases_by_depth.items()[-1][0]
+        n = len(bases_by_depth)
+
+    if not verify_file(qualimap_html_fpath):
+        err('Qualimap report was not found')
+    else:
+        records = parse_qualimap_sample_report(qualimap_html_fpath)
+        ave_depth = next(r for r in records if r.metric.name == 'Coverage Mean')
+        stddev_depth = next(r for r in records if r.metric.name == 'Coverage Standard Deviation')
+
+    return bases_by_depth, max_depth, ave_depth, stddev_depth, within20percent_ofmean
+
+
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath=None):
+    info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
+    original_target_bed = cnf.original_target_bed or target_bed
+    original_exons_bed = cnf.original_exons_bed or exons_no_genes_bed
+
+    bam_fpath, bam_stats, dedup_bam_stats = _dedup_and_flag_stat(cnf, bam_fpath)
 
     target_info = None
-    max_depth = None  # TODO: calculate max_depth independently of target
-    targets, combined_region = [], None
-    if exons_bed or target_bed:
+    targets = []
+    if target_bed or exons_bed:
         target_bed, exons_bed, exons_no_genes_bed, gene_by_name = \
-            _get_genes_and_filter(cnf, sample.name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+            _extract_gene_names_and_filter_exons(cnf, sample.name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
-        info()
-        info('Calculation of coverage statistics for the regions in the input BED file...')
-        targets, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
-        info()
-        info('Merging capture BED file to get total target cov statistics...')
+        # info()
+        # info('Calculation of coverage statistics for the regions in the input BED file...')
+        # targets, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
+        # info()
+        # info('Merging capture BED file to get total target cov statistics...')
         total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
-        info()
-        info('Calculation of coverage statistics for total target...')
-        _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_target_bed)
+        # info()
+        # info('Calculation of coverage statistics for total target...')
+        # _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_target_bed)
 
         total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
 
@@ -223,15 +282,12 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
         shutil.copy(target_bed or exons_bed, ready_target_bed)
 
         target_info = TargetInfo(
-            fpath=total_merged_target_bed, bed=total_merged_target_bed,
-            original_target_bed=original_target_bed or original_exons_bed,
+            fpath=target_bed, bed=target_bed, original_target_bed=original_target_bed,
             regions_num=len(targets), bases_num=total_bed_size,
             genes_fpath=genes_fpath, genes_num=len(gene_by_name))
 
     info()
-    summary_report = make_and_save_general_report(
-        cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats,
-        combined_region, max_depth, target_info)
+    summary_report = make_and_save_general_report(cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats, target_info)
 
     un_annotated_amplicons = []
 
@@ -286,10 +342,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
 
 
-def make_and_save_general_report(
-        cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats,
-        combined_region=None, max_depth=None, target_info=None,):
-
+def make_and_save_general_report(cnf, output_dir, sample, bam_fpath, bam_stats, dedup_bam_stats, target_info=None):
     step_greetings('Target coverage summary report')
 
     chr_len_fpath = get_chr_len_fpath(cnf)
@@ -297,13 +350,11 @@ def make_and_save_general_report(
 
     summary_report = generate_summary_report(cnf, output_dir, sample, bam_fpath, chr_len_fpath, ref_fapth,
         bam_stats, dedup_bam_stats,
-        cnf.coverage_reports.depth_thresholds, cnf.padding,
-        combined_region=combined_region, max_depth=max_depth, target_info=target_info)
+        cnf.coverage_reports.depth_thresholds, cnf.padding, target_info=target_info)
 
     summary_report.save_json(output_dir, sample.name + '.' + source.targetseq_name)
     summary_report.save_txt (output_dir, sample.name + '.' + source.targetseq_name)
-    summary_report.save_html(output_dir, sample.name + '.' + source.targetseq_name,
-        caption='Target coverage statistics for ' + sample.name)
+    summary_report.save_html(output_dir, sample.name + '.' + source.targetseq_name, caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
     info('  ' + summary_report.txt_fpath)
@@ -342,9 +393,9 @@ def get_records_by_metrics(records, metrics):
 
 def generate_summary_report(
         cnf, output_dir, sample, bam_fpath, chr_len_fpath, ref_fapth,
+        target_bed, exons_no_genes_bed,
         bam_stats, dedup_bam_stats,
-        depth_thresholds, padding,
-        combined_region=None, max_depth=None, target_info=None):  # TODO: calculate max_depth independently of target
+        depth_thresholds, padding, target_info=None):  # TODO: calculate max_depth independently of target
 
     report = SampleReport(sample, metric_storage=get_header_metric_storage(depth_thresholds))
     info('* General coverage statistics *')
@@ -367,17 +418,25 @@ def generate_summary_report(
         report.add_record('Duplication rate', dup_rate)
         report.add_record('Dedupped mapped reads', dedup_bam_stats['mapped'])
 
+    _run_qualimap(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
+    bases_by_depth, max_depth, ave_depth, stddev_depth, within20percent_ofmean = \
+        _parse_qualimap_results(sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, depth_thresholds)
+    bases_within_threshs, rates_within_threshs = calc_bases_within_threshs(bases_by_depth, depth_thresholds)
+
     if target_info:
         info('* Target coverage statistics *')
-        report.add_record('Target', target_info.original_target_bed)
-        report.add_record('Target ready', target_info.fpath)
+        if target_info.original_target_bed:
+            report.add_record('Target', target_info.original_target_bed)
+            # report.add_record('Target ready', target_info.fpath)
+        else:
+            report.add_record('Target', target_info.fpath)
+
         report.add_record('Regions in target', target_info.regions_num)
         report.add_record('Bases in target', target_info.bases_num)
         if target_info.genes_fpath: report.add_record('Genes', target_info.genes_fpath)
         report.add_record('Genes in target', target_info.genes_num)
 
-        combined_region.sum_up(depth_thresholds)
-        v_covered_bases_in_targ = combined_region.bases_within_threshs.items()[0][1]
+        v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
         report.add_record('Covered bases in target', v_covered_bases_in_targ)
         v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num if target_info.bases_num else None
         report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
@@ -435,131 +494,6 @@ def generate_summary_report(
         call(cnf, cmdline, output_fpath=picard_ins_size_hist_txt, stdout_to_outputfile=False, exit_on_error=False)
 
     return report
-
-
-def _fix_bam_for_picard(cnf, bam_fpath):
-    def __process_problem_read_aligns(read_aligns):
-        # each alignment: 0:NAME 1:FLAG 2:CHR 3:COORD 4:MAPQUAL 5:CIGAR 6:MATE_CHR 7:MATE_COORD TLEN SEQ ...
-        def __get_key(align):
-            return align.split('\t')[2] + '@' + align.split('\t')[3]
-
-        def __get_mate_key(align):
-            return (align.split('\t')[6] if align.split('\t')[2] != '=' else align.split('\t')[2]) \
-                   + '@' + align.split('\t')[7]
-
-        chr_coord = OrderedDict()
-        for align in read_aligns:
-            key = __get_key(align)
-            if key not in chr_coord:
-                chr_coord[key] = []
-            chr_coord[key].append(align)
-        correct_pairs = []
-        for align in read_aligns:
-            mate_key = __get_mate_key(align)
-            if mate_key in chr_coord:
-                for pair_align in chr_coord[mate_key]:
-                    if read_aligns.index(pair_align) <= read_aligns.index(align):
-                        continue
-                    if __get_mate_key(pair_align) == __get_key(align):
-                        correct_pairs.append((align, pair_align))
-        if not correct_pairs:
-            return []
-        if len(correct_pairs) > 1:
-            # sort by sum of mapping quality of both alignments
-            correct_pairs.sort(key=lambda pair: pair[0].split('\t')[4] + pair[1].split('\t')[4], reverse=True)
-        return [correct_pairs[0][0], correct_pairs[0][1]]
-
-    samtools = get_system_path(cnf, 'samtools')
-    try:
-        import pysam
-        without_pysam = False
-    except ImportError:
-        without_pysam = True
-
-    # find reads presented more than twice in input BAM
-    if without_pysam:
-        qname_sorted_sam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')[:-len('bam')] + 'sam'
-        # queryname sorting; output is SAM
-        cmdline = '{samtools} view {bam_fpath} | sort '.format(**locals())
-        call(cnf, cmdline, qname_sorted_sam_fpath)
-        qname_sorted_file = open(qname_sorted_sam_fpath, 'r')
-    else:
-        qname_sorted_bam_fpath = intermediate_fname(cnf, bam_fpath, 'qname_sorted')
-        # queryname sorting (-n), to stdout (-o), 'prefix' is not used; output is BAM
-        cmdline = '{samtools} sort -n -o {bam_fpath} prefix'.format(**locals())
-        call(cnf, cmdline, qname_sorted_bam_fpath)
-        qname_sorted_file = pysam.Samfile(qname_sorted_bam_fpath, 'rb')
-    problem_reads = dict()
-    cur_read_aligns = []
-    for line in qname_sorted_file:
-        line = str(line)
-        if cur_read_aligns:
-            if line.split('\t')[0] != cur_read_aligns[0].split('\t')[0]:
-                if len(cur_read_aligns) > 2:
-                    problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
-                cur_read_aligns = []
-        flag = int(line.split('\t')[1])
-        cur_read_aligns.append(line)
-    if len(cur_read_aligns) > 2:
-        problem_reads[cur_read_aligns[0].split('\t')[0]] = cur_read_aligns
-    qname_sorted_file.close()
-
-    for read_id, read_aligns in problem_reads.items():
-        problem_reads[read_id] = __process_problem_read_aligns(read_aligns)
-
-    # correct input BAM
-    fixed_bam_fpath = intermediate_fname(cnf, bam_fpath, 'fixed_for_picard')
-    fixed_sam_fpath = fixed_bam_fpath[:-len('bam')] + 'sam'
-    if without_pysam:
-        sam_fpath = intermediate_fname(cnf, bam_fpath, 'tmp')[:-len('bam')] + 'sam'
-        cmdline = '{samtools} view -h {bam_fpath}'.format(**locals())
-        call(cnf, cmdline, sam_fpath)
-        input_file = open(sam_fpath, 'r')
-        fixed_file = open(fixed_sam_fpath, 'w')
-    else:
-        input_file = pysam.Samfile(bam_fpath, 'rb')
-        fixed_file = pysam.Samfile(fixed_bam_fpath, 'wb', template=input_file)
-    for line in input_file:
-        if without_pysam and line.startswith('@'):  # header
-            fixed_file.write(line)
-            continue
-        read_name = str(line).split('\t')[0]
-        if read_name in problem_reads and str(line) not in problem_reads[read_name]:
-            continue
-        fixed_file.write(line)
-    input_file.close()
-    fixed_file.close()
-    if without_pysam:
-        cmdline = '{samtools} view -bS {fixed_sam_fpath}'.format(**locals())
-        call(cnf, cmdline, fixed_bam_fpath)
-
-    return fixed_bam_fpath
-
-
-def _parse_picard_dup_report(dup_report_fpath):
-    with open(dup_report_fpath) as f:
-        for l in f:
-            if l.startswith('## METRICS CLASS'):
-                l_NEXT = None
-                ind = None
-                try:
-                    l_LIBRARY = next(f)
-                    if l_LIBRARY.startswith('LIBRARY'):
-                        ind = l_LIBRARY.strip().split().index('PERCENT_DUPLICATION')
-                        l_NEXT = next(f)
-                        while l_NEXT.startswith(' ') or l_NEXT.startswith('\t'):
-                            l_NEXT = next(f)
-                except StopIteration:
-                    pass
-                else:
-                    if l_NEXT and ind:
-                        fields = l_NEXT.split()
-                        if fields[0] == 'Unknown':
-                            ind += 1
-                        if len(fields) > ind:
-                            dup_rate = 1.0 * float(fields[ind])
-                            return dup_rate
-    err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 
 def _generate_region_cov_report(cnf, sample, output_dir, genes, un_annotated_amplicons):
@@ -790,50 +724,6 @@ def number_of_dup_mapped_reads(cnf, bam):
     call(cnf, cmdline, output_fpath)
     with open(output_fpath) as f:
         return int(f.read().strip())
-
-
-def remove_dups(cnf, bam, output_fpath, samtools=None):
-    samtools = samtools or get_system_path(cnf, 'samtools')
-    if samtools is None:
-        samtools = get_system_path(cnf, 'samtools', is_critical=True)
-    cmdline = '{samtools} view -b -F 1024 {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    j = submit_job(cnf, cmdline, 'DEDUP__' + cnf.project_name + '__' + basename(bam).split('.')[0], output_fpath=output_fpath)
-    info()
-    return j
-
-
-def remove_dups_picard(cnf, bam_fpath):
-    picard = get_system_path(cnf, 'java', 'picard')
-    if not picard:
-        critical('No picard in the system')
-
-    info('Running picard dedup for "' + basename(bam_fpath) + '"')
-
-    dup_metrics_txt = join(cnf.work_dir, 'picard_dup_metrics.txt')
-    output_fpath = intermediate_fname(cnf, bam_fpath, 'pcd_dedup')
-
-    cmdline = '{picard} MarkDuplicates' \
-              ' I={bam_fpath}' \
-              ' O={output_fpath}' \
-              ' METRICS_FILE={dup_metrics_txt}' \
-              ' REMOVE_DUPLICATES=True' \
-              ' VALIDATION_STRINGENCY=LENIENT'
-    res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
-        stdout_to_outputfile=False, exit_on_error=False)
-
-    if res != output_fpath:  # error occurred, try to correct BAM and restart
-        warn('Picard deduplication failed for "' + basename(bam_fpath) + '". Fixing BAM and restarting Picard...')
-        bam_fpath = _fix_bam_for_picard(cnf, bam_fpath)
-        res = call(cnf, cmdline.format(**locals()), output_fpath=output_fpath,
-            stdout_to_outputfile=False, exit_on_error=False)
-
-    if res == output_fpath:
-        dup_rate = _parse_picard_dup_report(dup_metrics_txt)
-        assert dup_rate <= 1.0 or dup_rate is None, str(dup_rate)
-        info('Duplication rate (picard): ' + str(dup_rate))
-        return output_fpath
-    else:
-        return None
 
 
 def number_mapped_reads_on_target(cnf, bed, bam):
