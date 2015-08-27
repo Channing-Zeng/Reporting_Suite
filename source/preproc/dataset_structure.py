@@ -3,8 +3,7 @@ import re
 import os
 from os.path import join, isfile, isdir, basename
 from source import TargQC_Sample
-
-from source.logger import critical, err
+from source.logger import critical, err, info
 from source.file_utils import verify_dir, verify_file, splitext_plus
 
 
@@ -53,6 +52,7 @@ class DatasetStructure:
 
 class HiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
+        info('Parsing a HiSeq project structure')
         DatasetStructure.__init__(self, dirpath, project_name)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
@@ -98,11 +98,14 @@ class HiSeqStructure(DatasetStructure):
 
 class MiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
+        info('Parsing a MiSeq project structure')
         DatasetStructure.__init__(self, dirpath, project_name)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
         verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
         self.bcl2fastq_fastq_dirpath = self.__find_fastq_dir()
+        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
+        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
 
         sample_names = _parse_sample_sheet(self.sample_sheet_csv_fpath)
         for sample_name in sample_names:
@@ -111,15 +114,14 @@ class MiSeqStructure(DatasetStructure):
             # for fastq_fname in os.listdir(self.bcl2fastq_fastq_dirpath):
             #     if fastq_fname.startswith(sample_name.replace(' ', '-').replace('_', '-')):
 
-        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
-        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
         self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
 
     def __find_fastq_dir(self):
         for dname in os.listdir(self.unaligned_dirpath):
-            if any(f.endswith('.fastq.gz') for f in os.listdir(join(self.unaligned_dirpath, dname))):
-                return join(self.unaligned_dirpath, dname)
+            dpath = join(self.unaligned_dirpath, dname)
+            if isdir(dpath) and any(f.endswith('.fastq.gz') for f in os.listdir(dpath)):
+                return dpath
 
     def __get_basecall_stats_reports(self):
         dirpath = join(self.unaligned_dirpath, 'Reports', 'html')
@@ -130,6 +132,7 @@ class MiSeqStructure(DatasetStructure):
 
 class HiSeq4000Structure(DatasetStructure):
     def __init__(self, dirpath, project_name):
+        info('Parsing a HiSeq4000 project structure')
         DatasetStructure.__init__(self, dirpath)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
@@ -195,12 +198,13 @@ class DatasetSample:
 
 
 def _parse_sample_sheet(sample_sheet_fpath):
+    info('Parsing sample sheet ' + sample_sheet_fpath)
     with open(sample_sheet_fpath) as f:
-        sample_lines = dropwhile(lambda l: not l.startswith('FCID') and not l.startswith('Lane,'), f)
+        sample_lines = dropwhile(lambda l: not l.startswith('FCID') and not l.startswith('Lane,') and not l.startswith('Sample_ID'), f)
         sample_infos = []
         keys = []
         for l in sample_lines:
-            if l.startswith('FCID'):
+            if l.startswith('FCID') or l.startswith('Lane,') or l.startswith('Sample_ID'):
                 keys = l.strip().split(',')
             else:
                 fs = l.strip().split(',')
@@ -214,7 +218,9 @@ def _parse_sample_sheet(sample_sheet_fpath):
         lane = 1
         if 'Lane' in info_d:
             lane = int(info_d['Lane'])
-        sample_names.append(info_d[key].replace(' ', '_'))
+        sname = info_d[key].replace(' ', '_')
+        info('Sample ' + sname)
+        sample_names.append(sname)
         # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
         # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
 

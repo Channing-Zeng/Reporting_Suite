@@ -104,6 +104,8 @@ def main():
         critical('Please, specify project name')
 
     ds = DatasetStructure.create(project_dirpath, cnf.project_name)
+    if not ds.samples:
+        critical('No samples found')
 
     safe_mkdir(ds.fastq_dirpath)
     for s in ds.samples:
