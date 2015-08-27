@@ -378,9 +378,9 @@ def __prepare_analysis_directory(work_dir, project_name, project_dirpath, sample
         if not isfile(bcbio_csv_fpath):
             with file_transaction(work_dir, bcbio_csv_fpath) as tx:
                 with open(tx, 'w') as f:
-                    f.write('samplename,description,batch\n')
+                    f.write('samplename,description,batch,phenotype\n')
                     for s in samples:
-                        f.write(s.name + ',' + s.name + ',' + s.name + '-batch\n')
+                        f.write(s.name + ',' + s.name + ',' + s.name + '-batch,tumor\n')
 
 
 if __name__ == '__main__':

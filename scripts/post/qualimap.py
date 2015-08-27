@@ -45,7 +45,7 @@ def main():
         critical('Cannot find qualimap')
 
     info()
-    cmdline = ('{qualimap} bamqc -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
+    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
     report_fpath = join(cnf.output_dir, 'qualimapReport.html')
 
