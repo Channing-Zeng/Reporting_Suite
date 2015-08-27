@@ -1,3 +1,4 @@
+from itertools import dropwhile
 import re
 import os
 from os.path import join, isfile, isdir, basename
@@ -96,7 +97,35 @@ class HiSeqStructure(DatasetStructure):
 
 
 class MiSeqStructure(DatasetStructure):
-    pass
+    def __init__(self, dirpath, project_name=None):
+        DatasetStructure.__init__(self, dirpath, project_name)
+
+        self.unaligned_dirpath = join(self.dirpath, 'Unalign')
+        verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
+        self.bcl2fastq_fastq_dirpath = self.__find_fastq_dir()
+
+        sample_names = _parse_sample_sheet(self.sample_sheet_csv_fpath)
+        for sample_name in sample_names:
+            s = DatasetSample(self, sample_name, bcl2fastq_sample_dirpath=self.bcl2fastq_fastq_dirpath)
+            self.samples.append(s)
+            # for fastq_fname in os.listdir(self.bcl2fastq_fastq_dirpath):
+            #     if fastq_fname.startswith(sample_name.replace(' ', '-').replace('_', '-')):
+
+        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
+        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
+        self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
+        self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
+    def __find_fastq_dir(self):
+        for dname in os.listdir(self.unaligned_dirpath):
+            if any(f.endswith('.fastq.gz') for f in os.listdir(join(self.unaligned_dirpath, dname))):
+                return join(self.unaligned_dirpath, dname)
+
+    def __get_basecall_stats_reports(self):
+        dirpath = join(self.unaligned_dirpath, 'Reports', 'html')
+        index_html_fpath = join(dirpath, 'index.html')
+        if verify_dir(dirpath) and verify_file(index_html_fpath):
+            return [index_html_fpath]
 
 
 class HiSeq4000Structure(DatasetStructure):
@@ -163,4 +192,31 @@ class DatasetSample:
                 return fastqc_html_fpath
             else:
                 return None
+
+
+def _parse_sample_sheet(sample_sheet_fpath):
+    with open(sample_sheet_fpath) as f:
+        sample_lines = dropwhile(lambda l: not l.startswith('FCID') and not l.startswith('Lane,'), f)
+        sample_infos = []
+        keys = []
+        for l in sample_lines:
+            if l.startswith('FCID'):
+                keys = l.strip().split(',')
+            else:
+                fs = l.strip().split(',')
+                sample_infos.append(dict(zip(keys, fs)))
+
+    sample_names = []
+    for i, info_d in enumerate(sample_infos):
+        key = 'Sample_ID'
+        if key not in info_d:
+            key = 'SampleID'
+        lane = 1
+        if 'Lane' in info_d:
+            lane = int(info_d['Lane'])
+        sample_names.append(info_d[key].replace(' ', '_'))
+        # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
+        # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
+
+    return sample_names  #, proj_description
 
