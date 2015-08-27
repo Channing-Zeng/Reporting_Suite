@@ -371,7 +371,7 @@ def __prepare_analysis_directory(work_dir, project_name, project_dirpath, sample
         analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', kind, project_name))
         if not exists(analysis_proj_dirpath):
             safe_mkdir(analysis_proj_dirpath)
-        if isdir(analysis_proj_dirpath):
+        if isdir(analysis_proj_dirpath) and not exists(join(analysis_proj_dirpath, 'dataset')):
             os.symlink(project_dirpath, join(analysis_proj_dirpath, 'dataset'))
 
         bcbio_csv_fpath = join(analysis_proj_dirpath, 'bcbio.csv')

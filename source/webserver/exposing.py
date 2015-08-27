@@ -66,9 +66,9 @@ def sync_with_ngs_server(
 
     html_report_url = None
     if bcbio_final_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'bcbio', relpath(summary_report_fpath, dirname(dirname(bcbio_final_dirpath))))
+        html_report_url = join(loc.report_url_base, project_name, 'bcbio', project_name, relpath(summary_report_fpath, dirname(dirname(bcbio_final_dirpath))))
     elif dataset_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'dataset', relpath(summary_report_fpath, dataset_dirpath))
+        html_report_url = join(loc.report_url_base, project_name, 'dataset', project_name, relpath(summary_report_fpath, dataset_dirpath))
     else:
         return None
     
@@ -85,9 +85,9 @@ def sync_with_ngs_server(
             loc=loc,
             project_name=project_name,
             final_dirpath=bcbio_final_dirpath,
-            dataset_dirpath=dataset_dirpath,
-            html_report_fpath=summary_report_fpath,
-            html_report_url=html_report_url)
+            dataset_dirpath=dataset_dirpath)
+            # html_report_fpath=summary_report_fpath,
+            # html_report_url=html_report_url)
 
         if verify_file(loc.csv_fpath, 'Project list'):
             write_to_csv_file(
@@ -103,15 +103,15 @@ def sync_with_ngs_server(
     return html_report_url
 
 
-def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath, html_report_fpath, html_report_url):
+def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath): #, html_report_fpath, html_report_url):
     info(loc.loc_id + ', symlinking to ' + loc.reports_dirapth)
 
     if dataset_dirpath:
-        dst = join(loc.reports_dirapth, project_name, 'dataset')
+        dst = join(loc.reports_dirapth, project_name, 'dataset', project_name)
         (symlink_to_ngs if is_us() else local_symlink)(dataset_dirpath, dst)
 
     if final_dirpath:
-        dst = join(loc.reports_dirapth, project_name, 'bcbio')
+        dst = join(loc.reports_dirapth, project_name, 'bcbio', project_name)
         (symlink_to_ngs if is_us() else local_symlink)(dirname(final_dirpath), dst)
 
 
@@ -163,37 +163,25 @@ def local_symlink(src, dst):
 #     return html_report_url
 
 
-def symlink_to_ngs(src_paths, dst_dirpath):
-    if isinstance(src_paths, basestring):
-        src_paths = [src_paths]
-
-    dst_fpaths = []
-
+def symlink_to_ngs(src_path, dst_fpath):
     ssh = connect_to_server(ngs_server_url, ngs_server_username, ngs_server_password)
     if ssh is None:
         return None
 
-    for src_path in src_paths:
-        src_path = src_path.replace('/gpfs/', '/')
-        dst_path = join(dst_dirpath, basename(src_path))
-        dst_fpaths.append(dst_path)
-        for cmd in ['mkdir ' + dirname(dst_dirpath),
-                    'mkdir ' + dst_dirpath,
-                    'rm ' + dst_path,
-                    'ln -s ' + src_path + ' ' + dst_path]:
-            info('Executing on the server:  ' + cmd)
-            try:
-                ssh.exec_command(cmd)
-            except Exception, e:
-                err('Cannot execute command: ' + str(e))
-            continue
-        info('Symlinked ' + src_path + ' to ' + dst_path)
+    src_path = src_path.replace('/gpfs/', '/')
+    for cmd in ['mkdir ' + dirname(dst_fpath),
+                'rm ' + dst_fpath,
+                'ln -s ' + src_path + ' ' + dst_fpath]:
+        info('Executing on the server:  ' + cmd)
+        try:
+            ssh.exec_command(cmd)
+        except Exception, e:
+            err('Cannot execute command: ' + str(e))
+        continue
+    info('Symlinked ' + src_path + ' to ' + dst_fpath)
     ssh.close()
 
-    if len(src_paths) == 1 and dst_fpaths:
-        return dst_fpaths[0]
-    else:
-        return dst_fpaths
+    return dst_fpath
 
 
 def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, project_name,
