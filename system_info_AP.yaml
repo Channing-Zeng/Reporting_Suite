@@ -60,11 +60,11 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/mutation_details.vcf
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
     snpeff:

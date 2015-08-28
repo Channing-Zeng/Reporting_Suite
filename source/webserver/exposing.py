@@ -207,7 +207,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
     pid = project_name
     with file_transaction(work_dir, project_list_fpath) as tx_fpath:
         if pid not in values_by_keys_by_pid.keys():
-            info(pid + ' not in ' + str(values_by_keys_by_pid.keys()))
+            # info(pid + ' not in ' + str(values_by_keys_by_pid.keys()))
             info('Adding new record for ' + pid)
             values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, [''] * len(header_keys)))
         else:

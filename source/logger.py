@@ -67,8 +67,9 @@ email_by_prid = {
 }
 
 def send_email(msg='', subj='', only_me=False):
+    # for addr in [my_address, ]
     if msg and smtp_host:
-        addresses = [my_address]
+        addresses = []
         if address:
             addresses.append(address)
         prid = getpass.getuser()
@@ -112,7 +113,7 @@ def send_email(msg='', subj='', only_me=False):
             s = smtplib.SMTP(host)
             s.sendmail(msg['From'], addresses, msg.as_string())
             s.quit()
-            info('Mail sent to ' + msg['To'] + ' using ' + host)
+            info('Mail sent to ' + email_by_prid[prid] + ' using ' + host)
 
         def print_msg():
             for line in msg.as_string().split('\n'):
