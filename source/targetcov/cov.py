@@ -364,8 +364,9 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath,
     else:
         target_info.bases_num = target_stats['reference_size']
 
-    padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.padding)
-    reads_stats['mapped_reads_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
+    if target_info.bed:
+        padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.padding)
+        reads_stats['mapped_reads_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
