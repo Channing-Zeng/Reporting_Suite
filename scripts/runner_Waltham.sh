@@ -11,9 +11,9 @@ echo >&2
 echo "$2" >&2
 echo >&2
 echo >&2
-eval $2
+bash -c "$2"
+echo "$?">$1
 echo >&2
 date >&2
-touch $1 >&2
 
 #set +x

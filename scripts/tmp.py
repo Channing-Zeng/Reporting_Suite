@@ -10,7 +10,7 @@ from time import sleep
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
-from source.project_level_report import make_project_level_report
+from source.project_level_report import make_postproc_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
@@ -136,11 +136,11 @@ class BCBioRunner:
             self.steps.extend([self.varqc_after, self.varqc_after_summary])
 
         if Steps.contains(cnf.steps, 'TargQC'):
-            self.steps.extend([self.targetcov, self.targqc_summary])
+            self.steps.extend([self.targetcov, self.ngscat, self.qualimap, self.targqc_summary])
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
-        # if Steps.contains(cnf.steps, 'Qualimap'):
-        #     self.steps.extend([self.qualimap, self.targqc_summary])
+        if Steps.contains(cnf.steps, 'Qualimap'):
+            self.steps.extend([self.qualimap, self.targqc_summary])
         if Steps.contains(cnf.steps, 'ngsCAT'):
             self.steps.extend([self.ngscat, self.targqc_summary])
 
@@ -238,25 +238,25 @@ class BCBioRunner:
         )
 
         targetcov_params = params_for_one_sample + ' --bam \'{bam}\' {bed} -o \'{output_dir}\' ' \
-            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
+            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         if cnf.exons:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
         self.targetcov = Step(cnf, run_id,
-            name=BCBioStructure.targqc_name, short_name='tc',
+            name=BCBioStructure.targetseq_name, short_name='tc',
             interpreter='python',
             script=join('scripts', 'post', 'targetcov.py'),
-            dir_name=BCBioStructure.targqc_dir,
+            dir_name=BCBioStructure.targetseq_dir,
             paramln=targetcov_params,
         )
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
             script=join('scripts', 'post', 'abnormal_regions.py'),
-            dir_name=BCBioStructure.targqc_dir,
+            dir_name=BCBioStructure.targetseq_dir,
             paramln=params_for_one_sample + ' -o \'{output_dir}\' {caller_names} {vcfs} '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
         )
         self.ngscat = Step(cnf, run_id,
             name=BCBioStructure.ngscat_name, short_name='nc',
@@ -266,13 +266,13 @@ class BCBioRunner:
             paramln=params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
-        # self.qualimap = Step(cnf, run_id,
-        #     name=BCBioStructure.qualimap_name, short_name='qm',
-        #     interpreter='python',
-        #     script=join('scripts', 'post', 'qualimap.py'),
-        #     dir_name=BCBioStructure.qualimap_dir,
-        #     paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
-        # )
+        self.qualimap = Step(cnf, run_id,
+            name=BCBioStructure.qualimap_name, short_name='qm',
+            interpreter='python',
+            script=join('scripts', 'post', 'qualimap.py'),
+            dir_name=BCBioStructure.qualimap_dir,
+            paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
+        )
         #############
         # Summaries #
         self.varqc_summary = Step(cnf, run_id,
@@ -314,7 +314,6 @@ class BCBioRunner:
             dir_name='mongo_loader',
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
-
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         if self.bcbio_structure.bed:
             seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
@@ -329,7 +328,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=seq2c_cmdline
         )
-
         targqc_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if self.bcbio_structure.bed:
             targqc_cmdline += ' --bed ' + self.bcbio_structure.bed
@@ -438,15 +436,15 @@ class BCBioRunner:
         return output_dirpath
 
 
-    # def _qualimap_bed(self, bed_fpath):
-    #     if self.qualimap in self.steps and bed_fpath:
-    #         qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
-    #
-    #         fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
-    #
-    #         return qualimap_bed_fpath
-    #     else:
-    #         return bed_fpath
+    def _qualimap_bed(self, bed_fpath):
+        if self.qualimap in self.steps and bed_fpath:
+            qualimap_bed_fpath = join(self.cnf.work_dir, 'tmp_qualimap.bed')
+
+            fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
+
+            return qualimap_bed_fpath
+        else:
+            return bed_fpath
 
 
     def post_jobs(self):
@@ -454,9 +452,9 @@ class BCBioRunner:
 
         callers = self.bcbio_structure.variant_callers.values()
 
-        # qualimap_bed = None
-        # if self.qualimap in self.steps and self.bcbio_structure.bed:
-        #     qualimap_bed = self._qualimap_bed(self.bcbio_structure.bed)
+        qualimap_bed = None
+        if self.qualimap in self.steps and self.bcbio_structure.bed:
+            qualimap_bed = self._qualimap_bed(self.bcbio_structure.bed)
 
         try:
             targqc_wait_for_steps = []
@@ -464,7 +462,7 @@ class BCBioRunner:
                 if not (any(step in self.steps for step in
                             [self.targetcov,
                              self.seq2c,
-                             # self.qualimap,
+                             self.qualimap,
                              self.ngscat,
                              self.varqc,
                              self.varqc_after,
@@ -480,7 +478,7 @@ class BCBioRunner:
                 # BAMS
                 if any(step in self.steps for step in [
                        self.targetcov,
-                       # self.qualimap,
+                       self.qualimap,
                        self.ngscat]):
                     if not sample.bam or not verify_bam(sample.bam):
                         err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
@@ -504,14 +502,14 @@ class BCBioRunner:
                                     self.ngscat, sample.name, bam=sample.bam, bed=self.bcbio_structure.bed or self.cnf.genomes[sample.genome].exons,
                                     sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
-                        # # Qualimap
-                        # if self.qualimap in self.steps:
-                        #     qualimap_gff_cmdl = ''
-                        #     if self.bcbio_structure.bed:
-                        #         qualimap_gff_cmdl = ' --bed ' + qualimap_bed + ' '
-                        #     self._submit_job(
-                        #         self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                        #         genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
+                        # Qualimap
+                        if self.qualimap in self.steps:
+                            qualimap_gff_cmdl = ''
+                            if self.bcbio_structure.bed:
+                                qualimap_gff_cmdl = ' --bed ' + qualimap_bed + ' '
+                            self._submit_job(
+                                self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
+                                genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
@@ -632,7 +630,7 @@ class BCBioRunner:
                 wait_for_steps = []
                 wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
                 wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-                # wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+                wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
                 self._submit_job(
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps,
@@ -689,7 +687,7 @@ class BCBioRunner:
 
             self.wait_for_jobs()
 
-            html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
+            html_report_fpath = make_postproc_project_level_report(self.cnf, self.bcbio_structure)
 
             html_report_url = None
             if html_report_fpath:
@@ -816,3 +814,26 @@ def _final_email_notification(html_report_url, jira_url, bs):
         txt += 'Jira: ' + jira_url
     send_email(txt, subj)
 
+
+def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
+    with open(qualimap_bed_fpath, 'w') as out, open(bed_fpath) as inn:
+        for l in inn:
+            fields = l.strip().split('\t')
+
+            if len(fields) < 3:
+                continue
+            try:
+                int(fields[1]), int(fields[2])
+            except ValueError:
+                continue
+
+            if len(fields) < 4:
+                fields.append('.')
+
+            if len(fields) < 5:
+                fields.append('0')
+
+            if len(fields) < 6:
+                fields.append('+')
+
+            out.write('\t'.join(fields) + '\n')
