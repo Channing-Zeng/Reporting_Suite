@@ -42,16 +42,17 @@ if is_local():
 def proc_opts():
     info(' '.join(sys.argv))
     info()
-    description = 'This script runs preprocessing. Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]'
+    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--project-name STR] [--expose-only]'
+    description = 'This script runs preprocessing. ' + usage
 
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
-    parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=False, help='Add project to the webserver')
-    parser.add_option('--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
+    # parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=True, help='Add project to the webserver')
+    parser.add_option('--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
     parser.add_option('--targqc', dest='targqc', action='store_true', default=True, help='')
     parser.add_option('--no-targqc', dest='targqc', action='store_false', default=True, help='')
     parser.add_option('--metamapping', dest='metamapping', action='store_true', default=False, help='')
@@ -60,14 +61,15 @@ def proc_opts():
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
 
     (opts, args) = parser.parse_args()
-    if len(args) < 2:  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX/Unalign/fastq/fastqc
-        critical('Usage: ' + __file__ + ' <dataset/location/dir> <project_name> [--jira URL] [--expose]')
-
-    # base_dirpath = verify_dir(join(DATASETS_ROOT_DIRPATH, args[0]), is_critical=True)
-    dataset_dirpath = verify_dir(args[0])
-    project_name = args[1]
-    # dataset_dirpath = verify_dir(join(base_dirpath, project_name), is_critical=True)
-    jira_url = args[2] if len(args) > 2 else None
+    if len(args) < 1:
+        critical(usage)
+    if len(args) < 2:
+        info('No dataset path specified, assuming it is the current working directory')
+        dataset_dirpath = adjust_path(os.getcwd())
+        jira_url = args[1]
+    else:
+        dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
+        jira_url = args[1]
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -76,8 +78,8 @@ def proc_opts():
     check_system_resources(cnf, optional=['fastq'])
     check_genome_resources(cnf)
 
-    cnf.project_name = project_name
-    info('Project name: ' + cnf.project_name)
+    if cnf.project_name:
+        info('Project name: ' + cnf.project_name)
 
     if cnf.work_dir:
         cnf.debug = True
@@ -90,20 +92,22 @@ def proc_opts():
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
     subprocess.call(['chmod', '-R', '777', cnf.log_dir])
-    set_up_log(cnf, proc_name='preproc', project_name=project_name)
 
     return cnf, dataset_dirpath, jira_url
 
 
 def main():
     cnf, project_dirpath, jira_url = proc_opts()
-    if not cnf.project_name:
-        critical('Please, specify project name')
 
     jira_case = None
     if is_az() and jira_url:
         info('Getting info from JIRA...')
         jira_case = retrieve_jira_info(jira_url)
+        cnf.project_name = jira_case.project_name
+    elif not cnf.project_name:
+        critical('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
+
+    set_up_log(cnf, proc_name='preproc', project_name=cnf.project_name)
 
     ds = DatasetStructure.create(project_dirpath, cnf.project_name)
     if not ds.samples:

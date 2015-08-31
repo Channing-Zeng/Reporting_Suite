@@ -26,7 +26,7 @@ def add_cnf_t_reuse_prjname_reuse_marker_genome(parser):
     parser.add_option('-t', dest='threads', type='int', help='Max number of threads', default=10)
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
     # parser.add_option('--runner', dest='qsub_runner', help='Bash script that takes command line as the 1st argument. This script will be submitted to GRID. Default: ' + defaults['qsub_runner'])
-    parser.add_option('--project-name', '--project', dest='project_name')
+    parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')
     parser.add_option('--done-marker', dest='done_marker')
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
     # parser.add_option('--email', dest='email')
