@@ -49,7 +49,7 @@ metric_storage = MetricStorage(
 
 
 def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None):
-    step_greetings('Preproc project-level report')
+    step_greetings('Making the preproc project-level report')
 
     if dataset_structure is None and bcbio_structure:
         analysis_dirpath = normpath(join(bcbio_structure.bcbio_project_dirpath, pardir))
