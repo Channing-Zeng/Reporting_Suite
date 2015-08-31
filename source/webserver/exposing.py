@@ -104,7 +104,7 @@ def sync_with_ngs_server(
     return html_report_url
 
 
-def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath): #, html_report_fpath, html_report_url):
+def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath):  #, html_report_fpath, html_report_url):
     info(loc.loc_id + ', symlinking to ' + loc.reports_dirapth)
 
     if dataset_dirpath:
@@ -216,7 +216,14 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         d = values_by_keys_by_pid[pid]
 
         d['PID'] = pid.replace(',', ';')
-        d['Name'] = project_name.replace(',', ';')
+
+        if analysis_dirpath:
+            d['Analyses directory ' + (country_id if not is_local() else 'US')] = analysis_dirpath
+        if project_name and (analysis_dirpath or not __unquote(d['Name'])):  # update only if running after bcbio, or no value there at all
+            d['Name'] = project_name.replace(',', ';')
+        if html_report_url and (analysis_dirpath or not __unquote(d['HTML report path'])):  # update only if running after bcbio, or no value there at all
+            d['HTML report path'] = html_report_url
+
         if jira_case:
             d['JIRA URL'] = jira_case.url.replace(',', ';')
             d['Updated By'] = (getpass.getuser() if 'Updated By' not in d else d['Updated By']).replace(',', ';')
@@ -234,10 +241,6 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
                 d['Assignee'] = jira_case.assignee.replace(',', ';')
             if jira_case.reporter:
                 d['Reporter'] = jira_case.reporter.replace(',', ';')
-        if html_report_url:
-            d['HTML report path'] = html_report_url
-        if analysis_dirpath:
-            d['Analyses directory ' + (country_id if not is_local() else 'US')] = analysis_dirpath
         if samples_num:
             d['Sample Number'] = str(samples_num)
 

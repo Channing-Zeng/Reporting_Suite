@@ -51,10 +51,10 @@ metric_storage = MetricStorage(
 def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None):
     step_greetings('Making the preproc project-level report')
 
-    if dataset_structure is None and bcbio_structure:
-        analysis_dirpath = normpath(join(bcbio_structure.bcbio_project_dirpath, pardir))
-        dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
-        dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
+    # if dataset_structure is None and bcbio_structure:
+    #     analysis_dirpath = normpath(join(bcbio_structure.bcbio_project_dirpath, pardir))
+    #     dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
+    #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
     general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure, dataset_structure)
     sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure)
@@ -67,8 +67,12 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None)
             metric_storage=metric_storage))
 
     full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage, general_records=general_records)
-    project_report_html_fpath = dataset_structure.project_report_html_fpath
-    project_name = dataset_structure.project_name
+
+    project_report_html_fpath = None
+    project_name = None
+    if dataset_structure:
+        project_report_html_fpath = dataset_structure.project_report_html_fpath
+        project_name = dataset_structure.project_name
     if bcbio_structure:
         project_report_html_fpath = bcbio_structure.project_report_html_fpath
         project_name = bcbio_structure.project_name
@@ -174,7 +178,7 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         base_dirpath = dirname(dataset_structure.project_report_html_fpath)
 
     if bcbio_structure:
-        base_dirpath = dirname(bcbio_structure.project_level_report_fpath)
+        base_dirpath = dirname(bcbio_structure.project_report_html_fpath)
 
     sample_reports_records = defaultdict(list)
 

@@ -253,13 +253,14 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 class BCBioSample(BaseSample):
     def __init__(self, sample_name, final_dir, **kwargs):
         dirpath = join(final_dir, sample_name)
+        targqc_dirpath = join(dirpath, BCBioStructure.targqc_dir)
 
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
             fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
-            targqc_dirpath=join(dirpath, BCBioStructure.targqc_dir),
-            ngscat_dirpath=join(self.targqc_dirpath, BCBioStructure.ngscat_name),
-            qualimap_dirpath=join(self.targqc_dirpath, BCBioStructure.qualimap_name),
-            picard_dirpath=join(self.targqc_dirpath, BCBioStructure.picard_name),
+            targqc_dirpath=targqc_dirpath,
+            ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
+            qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
+            picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
             **kwargs)
 
         self.sv_bed = None
@@ -447,8 +448,8 @@ class BCBioStructure:
     targqc_name      = 'targQC'
     varqc_name       = 'varQC'
     varqc_after_name = 'varQC_postVarFilter'
-    ngscat_name      = 'ngscat'
-    qualimap_name    = 'qualimap'
+    ngscat_name = ngscat_dir = 'ngscat'
+    qualimap_name = qualimap_dir = 'qualimap'
     picard_name      = 'picard'
 
     fastqc_repr      = 'FastQC'
@@ -577,7 +578,7 @@ class BCBioStructure:
         for caller in self.variant_callers.values():
             caller.samples.sort(key=lambda _s: _s.key_to_sort())
 
-        self.project_level_report_fpath = join(self.date_dirpath, self.project_name + '.html')
+        self.project_report_html_fpath  = join(self.date_dirpath, self.project_name + '.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')

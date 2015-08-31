@@ -23,7 +23,7 @@ class DatasetStructure:
         elif 'datasets/hiseq4000/' in dir_path.lower():
             return HiSeq4000Structure(dir_path, project_name)
         else:
-            critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/')
+            critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
 
     def __init__(self, dirpath, project_name):
         self.samples = []

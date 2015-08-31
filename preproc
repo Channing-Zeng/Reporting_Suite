@@ -42,12 +42,13 @@ if is_local():
 def proc_opts():
     info(' '.join(sys.argv))
     info()
-    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--project-name STR] [--expose-only]'
+    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--bed BED] [--project-name STR] [--expose-only]'
     description = 'This script runs preprocessing. ' + usage
 
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
+    parser.add_option('--bed', dest='bed', help='BED file (used for downsampled TargQC reports)')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 

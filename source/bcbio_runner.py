@@ -237,25 +237,25 @@ class BCBioRunner:
         )
 
         targetcov_params = params_for_one_sample + ' --bam \'{bam}\' {bed} -o \'{output_dir}\' ' \
-            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
+            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
         if cnf.exons:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
         self.targetcov = Step(cnf, run_id,
-            name=BCBioStructure.targetseq_name, short_name='tc',
+            name=BCBioStructure.targqc_name, short_name='tc',
             interpreter='python',
             script=join('scripts', 'post', 'targetcov.py'),
-            dir_name=BCBioStructure.targetseq_dir,
+            dir_name=BCBioStructure.targqc_dir,
             paramln=targetcov_params,
         )
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
             script=join('scripts', 'post', 'abnormal_regions.py'),
-            dir_name=BCBioStructure.targetseq_dir,
+            dir_name=BCBioStructure.targqc_dir,
             paramln=params_for_one_sample + ' -o \'{output_dir}\' {caller_names} {vcfs} '
-                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targetseq_name) + '_{sample}\' '
+                    '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
         )
         self.ngscat = Step(cnf, run_id,
             name=BCBioStructure.ngscat_name, short_name='nc',
@@ -709,7 +709,7 @@ class BCBioRunner:
                 else:
                     break
 
-            html_report_fpath = make_project_level_report(self.cnf, self.bcbio_structure)
+            html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 
             html_report_url = None
             if html_report_fpath:
