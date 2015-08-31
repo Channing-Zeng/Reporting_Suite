@@ -81,13 +81,14 @@ def proc_opts():
     if cnf.work_dir:
         cnf.debug = True
     else:
-        user_prid = getpass.getuser()
-        timestamp = str(datetime.datetime.now())
-        hasher = hashlib.sha1(cnf.project_name + user_prid + timestamp)
-        path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
-        cnf.work_dir = join(dataset_dirpath, 'work_' + path_hash)
-        safe_mkdir(cnf.work_dir)
-        subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+        # user_prid = getpass.getuser()
+        # timestamp = str(datetime.datetime.now())
+        # hasher = hashlib.sha1(cnf.project_name + user_prid + timestamp)
+        # path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
+        # cnf.work_dir = join(dataset_dirpath, 'work_' + path_hash)
+        cnf.work_dir = tempfile.mkdtemp()
+        info('Creating a temporary working directory: ' + cnf.work_dir)
+    # subprocess.call(['chmod', '-R', '777', cnf.work_dir])
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')

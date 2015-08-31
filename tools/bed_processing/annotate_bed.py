@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import tempfile
+import shutil
 
 import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
@@ -21,20 +23,21 @@ usage = """
         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
         If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
 
-    Usage: python annotate_bed Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
+    Usage: python annotate_bed Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
 """
 
 
 def _read_args(args):
-    if len(args) < 2:
+    if len(args) < 1:
         sys.exit(['Usage:',
-        '  ' + __file__ + ' Input_BED_file work_dir [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file'])
+        '  ' + __file__ + ' Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file'])
 
     input_bed_fpath = abspath(args[0])
     log('Input: ' + input_bed_fpath)
 
-    work_dirpath = abspath(args[1])
-    log('Working directory: ' + work_dirpath)
+    # work_dirpath = abspath(args[1])
+    work_dirpath = tempfile.mkdtemp()
+    log('Creating a temporary working directory ' + work_dirpath)
     if not exists(work_dirpath):
         os.mkdir(work_dirpath)
 
@@ -87,6 +90,10 @@ def main():
         #         '{:.2f}%'.format(100.0 * overlap_size / (r.end - r.start))
         #     ]))
         # sys.stdout.write('\n')
+    try:
+        shutil.rmtree(work_dirpath)
+    except OSError:
+        pass
     log('Done.')
 
 

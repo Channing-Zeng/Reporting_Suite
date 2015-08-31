@@ -98,7 +98,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
 
-    seq2c_bed = prep_bed_for_seq2c(cnf, target_bed or cut(cnf, exons_no_genes_bed, 4))
+    seq2c_bed = prep_bed_for_seq2c(cnf, target_bed or cnf.genome.refseq or cut(cnf, exons_no_genes_bed, 4))
 
     if target_bed:
         info()

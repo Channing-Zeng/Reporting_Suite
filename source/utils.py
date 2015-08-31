@@ -1,3 +1,6 @@
+import base64
+import getpass
+import hashlib
 from os import environ
 import socket
 import sys
@@ -5,10 +8,12 @@ import re
 
 from collections import OrderedDict
 from os.path import join, basename
+import datetime
+import tempfile
 from source.calling_process import call_subprocess
 from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
-from source.file_utils import file_exists, verify_file, file_transaction
+from source.file_utils import file_exists, verify_file, file_transaction, safe_mkdir
 from tools.bed_processing.sort_bed import SortableByChrom
 
 
@@ -174,3 +179,4 @@ def is_az():
 def is_cloud():
     hostname = socket.gethostname()
     return 'starcluster' in hostname
+

@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import tempfile
+import shutil
 
 import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
@@ -23,7 +25,7 @@ from tools.bed_processing import annotate_bed
         Output BED is sorted using by chromosome name -> start -> end. Run standardize_bed.py --help for details about
         options.
 
-    Usage: python standardize_bed.py [options] Input_BED_file work_dir > Standardized_BED_file
+    Usage: python standardize_bed.py [options] Input_BED_file > Standardized_BED_file
 """
 
 
@@ -74,7 +76,7 @@ def _read_args(args_list):
          )
     ]
 
-    parser = OptionParser(usage='usage: %prog [options] Input_BED_file work_dir > Standardized_BED_file',
+    parser = OptionParser(usage='usage: %prog [options] Input_BED_file > Standardized_BED_file',
                           description='Scripts outputs a standardized version of input BED file. '
                                       'Standardized BED: 1) has 4 or 8 fields (for BEDs with primer info);'
                                       ' 2) has HGNC approved symbol in forth column if annotation is '
@@ -86,17 +88,17 @@ def _read_args(args_list):
         parser.add_option(*args, **kwargs)
     (opts, args) = parser.parse_args(args_list)
 
-    if len(args) != 2:
+    if len(args) != 1:
         parser.print_help(file=sys.stderr)
         sys.exit(1)
 
+    work_dirpath = tempfile.mkdtemp()
+    log('Creating a temporary working directory ' + work_dirpath)
+    if not exists(work_dirpath):
+        os.mkdir(work_dirpath)
+
     input_bed_fpath = abspath(args[0])
     log('Input: ' + input_bed_fpath)
-
-    work_dirpath = abspath(args[1])
-    log('Working directory: ' + work_dirpath)
-    if not exists(work_dirpath):
-        os.makedirs(work_dirpath)
 
     # process configuration
     for k, v in opts.__dict__.iteritems():
@@ -251,7 +253,7 @@ def _annotate(bed_fpath, work_dirpath, cnf):
         log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
         annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
 
-        cmdline = '{annotate_bed_py} {input_fpath} {work_dirpath} {db_bed_fpath} {cnf.bedtools}'.format(**locals())
+        cmdline = '{annotate_bed_py} {input_fpath} {db_bed_fpath} {cnf.bedtools}'.format(**locals())
         __call(cnf, cmdline, output_fpath)
 
         if id < len(references) - 1:
@@ -437,6 +439,11 @@ def main():
     if not cnf.debug:
         for f in [preprocessed_fpath] + annotated_fpaths:
             os.remove(f)
+
+    try:
+        shutil.rmtree(work_dirpath)
+    except OSError:
+        pass
 
 if __name__ == '__main__':
     main()
