@@ -2,9 +2,10 @@ from itertools import dropwhile
 import re
 import os
 from os.path import join, isfile, isdir, basename
+import shutil
 from source import TargQC_Sample
 from source.logger import critical, err, info
-from source.file_utils import verify_dir, verify_file, splitext_plus
+from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir, file_transaction
 
 
 class DatasetStructure:
@@ -31,6 +32,7 @@ class DatasetStructure:
         verify_dir(self.basecalls_dirpath, is_critical=True)
 
         self.bcl2fastq_dirpath = None
+        self.source_fastq_dirpath = None
         self.project_name = project_name
 
         self.sample_sheet_csv_fpath = join(self.basecalls_dirpath, 'SampleSheet.csv')
@@ -38,6 +40,7 @@ class DatasetStructure:
             self.sample_sheet_csv_fpath = join(self.dirpath, 'SampleSheet.csv')
         verify_file(self.sample_sheet_csv_fpath, is_critical=True)
 
+        self.mergred_dir_found = False
         self.fastq_dirpath = None
         self.fastqc_dirpath = None
         self.comb_fastqc_fpath = None
@@ -49,10 +52,27 @@ class DatasetStructure:
         self.downsample_targqc_report_fpath = join(self.downsample_targqc_dirpath, 'targQC.html')
         self.project_report_html_fpath = join(self.dirpath, self.project_name + '.html')
 
+    def concat_fastqs(self, work_dir):
+        if not self.mergred_dir_found and self.samples and self.fastqc_dirpath and not isdir(self.fastq_dirpath):
+            safe_mkdir(self.fastq_dirpath)
+            for s in self.samples:
+                _concat_fastq(work_dir, s.find_raw_fastq('R1'), s.l_fpath)
+                _concat_fastq(work_dir, s.find_raw_fastq('R2'), s.r_fpath)
+
+
+def _concat_fastq(work_dir, fastq_fpaths, output_fpath):
+    with file_transaction(work_dir, output_fpath) as tx:
+        with open(tx, 'w') as out:
+            for fq_fpath in fastq_fpaths:
+                with open(fq_fpath, 'r') as inp:
+                    shutil.copyfileobj(inp, out)
+    return output_fpath
+
 
 class HiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
         info('Parsing a HiSeq project structure')
+        self.kind = 'hiseq'
         DatasetStructure.__init__(self, dirpath, project_name)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
@@ -69,7 +89,7 @@ class HiSeqStructure(DatasetStructure):
             sample_dirpath = join(self.bcl2fastq_dirpath, sample_dirname)
             if isdir(sample_dirpath) and sample_dirname.startswith('Sample_'):
                 sample_name = sample_dirname.split('_', 1)[1]
-                s = DatasetSample(self, sample_name, bcl2fastq_sample_dirpath=sample_dirpath)
+                s = DatasetSample(self, sample_name, source_fastq_dirpath=sample_dirpath)
                 self.samples.append(s)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
@@ -99,20 +119,26 @@ class HiSeqStructure(DatasetStructure):
 class MiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
         info('Parsing a MiSeq project structure')
+        self.kind = 'miseq'
         DatasetStructure.__init__(self, dirpath, project_name)
 
         self.unaligned_dirpath = join(self.dirpath, 'Unalign')
         verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
-        self.bcl2fastq_fastq_dirpath = self.__find_fastq_dir()
-        self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
-        self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
 
-        sample_names = _parse_sample_sheet(self.sample_sheet_csv_fpath)
+        sample_names, proj_name = _parse_sample_sheet(self.sample_sheet_csv_fpath)
+        self.source_fastq_dirpath = join(self.unaligned_dirpath, proj_name)
+        verify_dir(self.source_fastq_dirpath, is_critical=True, description='Not found source fastq dir ' + str(proj_name))
+        merged_dirpath = join(self.source_fastq_dirpath, 'merged')
+        if verify_dir(merged_dirpath):
+            self.fastq_dirpath = self.fastqc_dirpath = merged_dirpath
+            self.mergred_dir_found = True
+        else:
+            self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
+            self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
+
         for sample_name in sample_names:
-            s = DatasetSample(self, sample_name, bcl2fastq_sample_dirpath=self.bcl2fastq_fastq_dirpath)
+            s = DatasetSample(self, sample_name, source_fastq_dirpath=self.source_fastq_dirpath)
             self.samples.append(s)
-            # for fastq_fname in os.listdir(self.bcl2fastq_fastq_dirpath):
-            #     if fastq_fname.startswith(sample_name.replace(' ', '-').replace('_', '-')):
 
         self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
@@ -130,33 +156,18 @@ class MiSeqStructure(DatasetStructure):
             return [index_html_fpath]
 
 
-class HiSeq4000Structure(DatasetStructure):
+class HiSeq4000Structure(MiSeqStructure):
     def __init__(self, dirpath, project_name):
-        info('Parsing a HiSeq4000 project structure')
-        DatasetStructure.__init__(self, dirpath)
-
-        self.unaligned_dirpath = join(self.dirpath, 'Unalign')
-        verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
-
-        self.fastq_dirpath = self.fastqc_dirpath = self.__find_merged_dir()
-        self.comb_fastqc_fpath = join(self.fastqc_dirpath, 'FastQC.html')
-
-    def __find_merged_dir(self):
-        merged_dirpath = None
-        for d in os.listdir(self.unaligned_dirpath):
-            for d2 in os.listdir(join(self.unaligned_dirpath, d)):
-                if d2 == 'merged':
-                    merged_dirpath = join(self.unaligned_dirpath, d, d2)
-                    break
-        verify_dir(merged_dirpath, is_critical=True, description='"merged" dirpath is not found')
-        return merged_dirpath
+        info('Parsing a HiSeq4000 project structure - same as MiSeq')
+        self.kind = 'hiseq4000'
+        MiSeqStructure.__init__(self, dirpath)
 
 
 class DatasetSample:
-    def __init__(self, ds, name, bcl2fastq_sample_dirpath=None):
+    def __init__(self, ds, name, source_fastq_dirpath=None):
         self.ds = ds
         self.name = name
-        self.bcl2fastq_sample_dirpath = bcl2fastq_sample_dirpath
+        self.source_fastq_dirpath = source_fastq_dirpath
         self.l_fpath = join(ds.fastq_dirpath, name + '_R1.fastq.gz')
         self.r_fpath = join(ds.fastq_dirpath, name + '_R2.fastq.gz')
 
@@ -177,11 +188,11 @@ class DatasetSample:
 
     def find_raw_fastq(self, suf='R1'):
         fastq_fpaths = [
-            join(self.bcl2fastq_sample_dirpath, fname)
-                for fname in os.listdir(self.bcl2fastq_sample_dirpath)
+            join(self.source_fastq_dirpath, fname)
+                for fname in os.listdir(self.source_fastq_dirpath)
                 if re.match(self.name.replace('-', '.').replace('_', '.').replace(' ', '.') + '.*_' + suf + '.*\.fastq\.gz', fname)]
         if not fastq_fpaths:
-            critical('Error: no fastq files for the sample ' + self.name + ' were found inside ' + self.bcl2fastq_sample_dirpath)
+            critical('Error: no fastq files for the sample ' + self.name + ' were found inside ' + self.source_fastq_dirpath)
         return fastq_fpaths
 
     def find_fastqc_html(self, end_name):
@@ -211,6 +222,7 @@ def _parse_sample_sheet(sample_sheet_fpath):
                 sample_infos.append(dict(zip(keys, fs)))
 
     sample_names = []
+    proj_name = None
     for i, info_d in enumerate(sample_infos):
         key = 'Sample_ID'
         if key not in info_d:
@@ -218,11 +230,12 @@ def _parse_sample_sheet(sample_sheet_fpath):
         lane = 1
         if 'Lane' in info_d:
             lane = int(info_d['Lane'])
-        sname = info_d[key].replace(' ', '_')
+        sname = info_d[key].replace(' ', '-').replace('_', '-')
         info('Sample ' + sname)
         sample_names.append(sname)
         # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
         # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
+        proj_name = info_d['Sample_Project'].replace(' ', '-').replace('_', '-')
 
-    return sample_names  #, proj_description
+    return sample_names, proj_name  #, proj_description
 

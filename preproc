@@ -108,10 +108,7 @@ def main():
     if not ds.samples:
         critical('No samples found')
 
-    safe_mkdir(ds.fastq_dirpath)
-    for s in ds.samples:
-        concat_fastq(cnf.work_dir, s.find_raw_fastq('R1'), s.l_fpath)
-        concat_fastq(cnf.work_dir, s.find_raw_fastq('R2'), s.r_fpath)
+    ds.concat_fastqs(cnf.work_dir)
 
     if cnf.fastqc:
         safe_mkdir(ds.fastqc_dirpath)
@@ -200,15 +197,6 @@ def main():
             shutil.rmtree(cnf.work_dir)
         except OSError:
             err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
-
-
-def concat_fastq(work_dir, fastq_fpaths, output_fpath):
-    with file_transaction(work_dir, output_fpath) as tx:
-        with open(tx, 'w') as out:
-            for fq_fpath in fastq_fpaths:
-                with open(fq_fpath, 'r') as inp:
-                    shutil.copyfileobj(inp, out)
-    return output_fpath
 
 
 def downsample_fastq(cnf, sample, reads_num=1e5):
