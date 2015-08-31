@@ -81,7 +81,7 @@ class BaseSample:
 
         if ngscat_dirpath:
             self.ngscat_dirpath = ngscat_dirpath
-            self.ngscat_html_fpath = join(self.ngscat_dirpath, ngscat_name, ngscat_report_fname)
+            self.ngscat_html_fpath = join(self.ngscat_dirpath, ngscat_report_fname)
 
         if qualimap_dirpath:
             self.qualimap_dirpath              = qualimap_dirpath
@@ -165,8 +165,8 @@ class TargQC_Sample(BaseSample):
 
     def targetcov_done(self):
         if verify_file(self.targetcov_json_fpath) \
-           and verify_file(self.targetcov_html_fpath) \
-           and verify_file(self.targetcov_detailed_tsv):
+           and verify_file(self.targetcov_html_fpath):
+           # and verify_file(self.targetcov_detailed_tsv):
             # info(self.targetcov_json_fpath + ', ' +
             #      self.targetcov_html_fpath + ', and ' +
             #      self.targetcov_detailed_tsv + ' exist.')

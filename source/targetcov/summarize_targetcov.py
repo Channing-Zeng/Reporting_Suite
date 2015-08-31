@@ -157,7 +157,9 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
 
     txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample, bed_fpath)
 
-    best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
+    best_for_regions_fpath = None
+    if any(verify_file(s.targetcov_detailed_tsv, silent=True) for s in samples):
+        best_for_regions_fpath = _save_best_details_for_each_gene(cnf.coverage_reports.depth_thresholds, samples, output_dir)
     ''' 1. best_regions = get_best_regions()
         2. best_for_regions_fpath = save_per_region_report()
         3. calc median coverage across best regions
@@ -176,13 +178,17 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
 
     info()
     info('*' * 70)
-    info('TargQC summary saved in: ')
-    for fpath in [txt_fpath, html_fpath]:
-        if fpath: info('  ' + fpath)
+    if not html_fpath and not txt_fpath:
+        info('TargQC summary was not generated, because there were no reports generated for individual samples.')
+    else:
+        info('TargQC summary saved in: ')
+        for fpath in [txt_fpath, html_fpath]:
+            if fpath: info('  ' + fpath)
 
-    info()
-    info('Best stats for regions saved in:')
-    info('  ' + best_for_regions_fpath)
+    if best_for_regions_fpath:
+        info()
+        info('Best stats for regions saved in:')
+        info('  ' + best_for_regions_fpath)
 
     # if cnf.extended:
     #     if norm_best_var_fpath:

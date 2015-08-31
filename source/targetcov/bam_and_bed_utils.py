@@ -3,8 +3,8 @@ from os.path import isfile, join, abspath, basename
 import sys
 from subprocess import check_output
 from collections import OrderedDict
-from source.calling_process import call
-from source.file_utils import intermediate_fname, iterate_file
+from source.calling_process import call, call_pipe
+from source.file_utils import intermediate_fname, iterate_file, splitext_plus
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -452,3 +452,122 @@ def _parse_picard_dup_report(dup_report_fpath):
                             dup_rate = 1.0 * float(fields[ind])
                             return dup_rate
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
+
+
+def number_of_reads(cnf, bam, suf=''):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_reads')
+    cmdline = '{samtools} view -c {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def number_of_mapped_reads(cnf, bam, suf=''):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_mapped_reads')
+    cmdline = '{samtools} view -c -F 4 {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def number_of_properly_paired_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_paired_reads')
+    cmdline = '{samtools} view -c -f 2 {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def number_of_dup_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_reads')
+    cmdline = '{samtools} view -c -f 1024 {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def number_of_dup_mapped_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_unmapped_reads')
+    cmdline = '{samtools} view -c -F 4 -f 1024 {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def number_mapped_reads_on_target(cnf, bed, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_' + basename(bed) + '_num_mapped_reads_target')
+    cmdline = '{samtools} view -c -F 4 -L {bed} {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    with open(output_fpath) as f:
+        return int(f.read().strip())
+
+
+def samtools_flag_stat(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    output_fpath = join(cnf.work_dir, basename(bam) + '_flag_stats')
+    cmdline = '{samtools} flagstat {bam}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    stats = dict()
+    with open(output_fpath) as f:
+        lines = f.readlines()
+        for stat, fun in [('total', number_of_reads),
+                          ('duplicates', number_of_dup_reads),  # '-f 1024'
+                          ('mapped', number_of_mapped_reads),   # '-F 4'
+                          ('properly paired', number_of_properly_paired_reads)]:  # '-f 2'
+            try:
+                val = next(l.split()[0] for l in lines if stat in l)
+            except StopIteration:
+                warn('Cannot extract ' + stat + ' from flagstat output ' + output_fpath + '. Trying samtools view -c...')
+                val = None
+            else:
+                try:
+                    val = int(val)
+                except ValueError:
+                    warn('Cannot parse value ' + str(val) + ' from ' + stat + ' from flagstat output ' + output_fpath + '. Trying samtools view -c...')
+                    val = None
+            if val is not None:
+                stats[stat] = val
+            else:
+                stats[stat] = fun(cnf, bam)
+
+    return stats
+
+
+def number_bases_in_aligned_reads(cnf, bam):
+    samtools = get_system_path(cnf, 'samtools')
+    cmdline = '{samtools} depth {bam}'.format(**locals())
+    proc = call_pipe(cnf, cmdline)
+    count = 0
+    while True:
+        coverage_line = proc.stdout.readline()
+        if coverage_line:
+            values = coverage_line.strip().split('\t')
+            count += int(values[2])
+    return count
+
+
+def get_padded_bed_file(cnf, bed, genome, padding):
+    info('Making bed file for padded regions...')
+    bedtools = get_system_path(cnf, 'bedtools')
+    cmdline = '{bedtools} slop -i {bed} -g {genome} -b {padding}'.format(**locals())
+    output_fpath = intermediate_fname(cnf, bed, 'padded')
+    call(cnf, cmdline, output_fpath)
+    return output_fpath
+
+
+def intersect_bed(cnf, bed1, bed2):
+    bed1_fname, _ = splitext_plus(basename(bed1))
+    bed2_fname, _ = splitext_plus(basename(bed2))
+    output_fpath = join(cnf['work_dir'], bed1_fname + '__' + bed2_fname + '.bed')
+    bedtools = get_system_path(cnf, 'bedtools')
+    cmdline = '{bedtools} intersect -u -a {bed1} -b {bed2}'.format(**locals())
+    call(cnf, cmdline, output_fpath)
+    return output_fpath
+
+

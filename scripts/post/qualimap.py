@@ -6,7 +6,7 @@ import sys
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.targetcov.bam_and_bed_utils import index_bam
+from source.targetcov.bam_and_bed_utils import index_bam, number_of_dup_reads
 from os.path import isfile, join
 from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
@@ -44,8 +44,13 @@ def main():
     if not qualimap:
         critical('Cannot find qualimap')
 
+    sd_opt = '--skip-duplicated'
+    dup_num = number_of_dup_reads(cnf, cnf.bam)
+    if dup_num and dup_num == 0:
+        sd_opt = ''
+
     info()
-    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
+    cmdline = ('{qualimap} bamqc {sd_opt} -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
     report_fpath = join(cnf.output_dir, 'qualimapReport.html')
 

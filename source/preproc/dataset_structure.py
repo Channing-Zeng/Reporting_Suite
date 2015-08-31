@@ -13,7 +13,7 @@ class DatasetStructure:
     downsample_targqc_repr = 'TargQC downsampled'
 
     @staticmethod
-    def create(dir_path, project_name=None):
+    def create(dir_path, project_name):
         if 'datasets/miseq/' in dir_path.lower():
             return MiSeqStructure(dir_path, project_name)
 
@@ -25,7 +25,7 @@ class DatasetStructure:
         else:
             critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/')
 
-    def __init__(self, dirpath, project_name=None):
+    def __init__(self, dirpath, project_name):
         self.samples = []
         self.dirpath = dirpath
         self.basecalls_dirpath = join(self.dirpath, 'Data/Intensities/BaseCalls')
@@ -35,9 +35,9 @@ class DatasetStructure:
         self.source_fastq_dirpath = None
         self.project_name = project_name
 
-        self.sample_sheet_csv_fpath = join(self.basecalls_dirpath, 'SampleSheet.csv')
+        self.sample_sheet_csv_fpath = join(self.dirpath, 'SampleSheet.csv')
         if not isfile(self.sample_sheet_csv_fpath):
-            self.sample_sheet_csv_fpath = join(self.dirpath, 'SampleSheet.csv')
+            self.sample_sheet_csv_fpath = join(self.basecalls_dirpath, 'SampleSheet.csv')
         verify_file(self.sample_sheet_csv_fpath, is_critical=True)
 
         self.mergred_dir_found = False
@@ -117,7 +117,7 @@ class HiSeqStructure(DatasetStructure):
 
 
 class MiSeqStructure(DatasetStructure):
-    def __init__(self, dirpath, project_name=None):
+    def __init__(self, dirpath, project_name):
         info('Parsing a MiSeq project structure')
         self.kind = 'miseq'
         DatasetStructure.__init__(self, dirpath, project_name)
@@ -160,7 +160,7 @@ class HiSeq4000Structure(MiSeqStructure):
     def __init__(self, dirpath, project_name):
         info('Parsing a HiSeq4000 project structure - same as MiSeq')
         self.kind = 'hiseq4000'
-        MiSeqStructure.__init__(self, dirpath)
+        MiSeqStructure.__init__(self, dirpath, project_name)
 
 
 class DatasetSample:
@@ -231,11 +231,17 @@ def _parse_sample_sheet(sample_sheet_fpath):
         if 'Lane' in info_d:
             lane = int(info_d['Lane'])
         sname = info_d[key].replace(' ', '-').replace('_', '-')
-        info('Sample ' + sname)
-        sample_names.append(sname)
-        # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
-        # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
-        proj_name = info_d['Sample_Project'].replace(' ', '-').replace('_', '-')
+        if sname not in sample_names:
+            info('Sample ' + sname)
+            sample_names.append(sname)
+            # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
+            # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
+            proj_name = info_d.get('Sample_Project')
+            if not proj_name:
+                proj_name = info_d.get('SampleProject')
+                if not proj_name:
+                    critical('No SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+                proj_name = proj_name.replace(' ', '-').replace('_', '-')
 
     return sample_names, proj_name  #, proj_description
 

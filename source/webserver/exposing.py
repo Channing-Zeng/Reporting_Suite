@@ -55,7 +55,8 @@ def sync_with_ngs_server(
         sample_names,
         summary_report_fpath,
         dataset_dirpath=None,
-        bcbio_final_dirpath=None):
+        bcbio_final_dirpath=None,
+        jira_case=None):
 
     loc = None
     if is_us(): loc = us
@@ -76,9 +77,9 @@ def sync_with_ngs_server(
     info('HTML url: ' + html_report_full_url)
 
     if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
-        jira_case = None
-        if is_az() and cnf.jira:
-            jira_case = retrieve_jira_info(cnf.jira)
+        if jira_case is None and is_az() and jira_url:
+            info('Getting info from JIRA...')
+            jira_case = retrieve_jira_info(jira_url)
 
         _symlink_dirs(
             cnf=cnf,

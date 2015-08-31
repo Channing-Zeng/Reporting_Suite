@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from itertools import dropwhile
 import __check_python_version  # checking for python version and adding site dirs inside
 
 import os
@@ -20,6 +19,7 @@ import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
+from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure, MiSeqStructure, HiSeqStructure, HiSeq4000Structure
 from source.project_level_report import make_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
@@ -27,6 +27,7 @@ from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source.logger import info, critical, err, is_local, warn
+from source.utils import is_az
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
@@ -81,11 +82,6 @@ def proc_opts():
     if cnf.work_dir:
         cnf.debug = True
     else:
-        # user_prid = getpass.getuser()
-        # timestamp = str(datetime.datetime.now())
-        # hasher = hashlib.sha1(cnf.project_name + user_prid + timestamp)
-        # path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
-        # cnf.work_dir = join(dataset_dirpath, 'work_' + path_hash)
         cnf.work_dir = tempfile.mkdtemp()
         info('Creating a temporary working directory: ' + cnf.work_dir)
     # subprocess.call(['chmod', '-R', '777', cnf.work_dir])
@@ -103,6 +99,11 @@ def main():
     cnf, project_dirpath, jira_url = proc_opts()
     if not cnf.project_name:
         critical('Please, specify project name')
+
+    jira_case = None
+    if is_az() and jira_url:
+        info('Getting info from JIRA...')
+        jira_case = retrieve_jira_info(jira_url)
 
     ds = DatasetStructure.create(project_dirpath, cnf.project_name)
     if not ds.samples:
@@ -156,7 +157,8 @@ def main():
         project_name=cnf.project_name,
         sample_names=[s.name for s in ds.samples],
         dataset_dirpath=project_dirpath,
-        summary_report_fpath=ds.project_report_html_fpath)
+        summary_report_fpath=ds.project_report_html_fpath,
+        jira_case=jira_case)
 
         # FastQC
         # symlink_to_ngs(project_dirpath, NGS_WEBSERVER_PREPROC_DIR)
