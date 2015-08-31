@@ -4,29 +4,29 @@ from time import sleep
 from source.calling_process import call
 from source.file_utils import splitext_plus, add_suffix, safe_mkdir
 from source.logger import critical, info, warn, send_email, err
-from source.ngscat import coverageHisto
+# from source.ngscat import coverageHisto
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
 
 
-def ngscat_bedcov_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
-    cov_out_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'coverage')
-    bedgraph_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'bedgraph')
-
-    info('Coveragefile = ' + cov_out_fpath)
-    from source.ngscat import bam_file
-    bam = bam_file.BamFile(bam_fpath, 'rb')
-
-    info('Launching coverageBed...')
-    bam.myCoverageBed(cnf, bed_fpath, writeToFile=cov_out_fpath, bedGraphFile=bedgraph_fpath)
-    info('\tDone.')
-
-    cov_hist_dirpath = join(cnf.work_dir, 'cov_hist')
-    safe_mkdir(cov_hist_dirpath)
-    info('Launching coverage distribution calculation...')
-    coverageHisto.histo_CV(cov_out_fpath, cov_hist_dirpath)
+# def ngscat_bedcov_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
+#     cov_out_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'coverage')
+#     bedgraph_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'bedgraph')
+#
+#     info('Coveragefile = ' + cov_out_fpath)
+#     from source.ngscat import bam_file
+#     bam = bam_file.BamFile(bam_fpath, 'rb')
+#
+#     info('Launching coverageBed...')
+#     bam.myCoverageBed(cnf, bed_fpath, writeToFile=cov_out_fpath, bedGraphFile=bedgraph_fpath)
+#     info('\tDone.')
+#
+#     cov_hist_dirpath = join(cnf.work_dir, 'cov_hist')
+#     safe_mkdir(cov_hist_dirpath)
+#     info('Launching coverage distribution calculation...')
+#     coverageHisto.histo_CV(cov_out_fpath, cov_hist_dirpath)
 
 
 class BedCov:
