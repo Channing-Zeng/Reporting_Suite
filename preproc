@@ -66,7 +66,7 @@ def proc_opts():
     if len(args) < 2:
         info('No dataset path specified, assuming it is the current working directory')
         dataset_dirpath = adjust_path(os.getcwd())
-        jira_url = args[1]
+        jira_url = args[0]
     else:
         dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
         jira_url = args[1]
@@ -84,8 +84,11 @@ def proc_opts():
     if cnf.work_dir:
         cnf.debug = True
     else:
-        cnf.work_dir = tempfile.mkdtemp()
+        all_work_dir = join(dataset_dirpath, 'work')
+        safe_mkdir(all_work_dir)
+        cnf.work_dir = tempfile.mkdtemp(dir=all_work_dir)
         info('Creating a temporary working directory: ' + cnf.work_dir)
+
     # subprocess.call(['chmod', '-R', '777', cnf.work_dir])
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
@@ -339,7 +342,7 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
                 jobs = run_fastqc(cnf, s, fastqc_dirpath)
                 fastqc_jobs.extend(jobs)
             info()
-        wait_for_jobs(fastqc_jobs)
+        wait_for_jobs(cnf, fastqc_jobs)
 
         for s in samples:
             for end_name in [s.l_fastqc_base_name, s.r_fastqc_base_name]:

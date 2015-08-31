@@ -67,37 +67,45 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     return job
 
 
-def wait_for_jobs(jobs):
-    info()
-    jobs = filter(None, jobs)
-    waiting = False
-    while True:
-        # set flags for all done jobs
-        for j in jobs:
-            if not j.is_done and isfile(j.done_marker):
-                j.is_done = True
-                os.remove(j.done_marker)
-                if waiting:
-                    info('', print_date=False)
-                if j.output_fpath:
-                    if not verify_file(j.tx_output_fpath):
-                        err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty')
+def wait_for_jobs(cnf, jobs):
+    try:
+        info()
+        jobs = filter(None, jobs)
+        waiting = False
+        while True:
+            # set flags for all done jobs
+            for j in jobs:
+                if not j.is_done and isfile(j.done_marker):
+                    j.is_done = True
+                    os.remove(j.done_marker)
+                    if waiting:
+                        info('', print_date=False)
+                    if j.output_fpath:
+                        if not verify_file(j.tx_output_fpath):
+                            err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty')
+                        else:
+                            os.rename(j.tx_output_fpath, j.output_fpath)
+                            info('Done ' + j.repr + ', saved to ' + j.output_fpath)
                     else:
-                        os.rename(j.tx_output_fpath, j.output_fpath)
-                        info('Done ' + j.repr + ', saved to ' + j.output_fpath)
-                else:
-                    info('Done ' + j.repr)
-                waiting = False
+                        info('Done ' + j.repr)
+                    waiting = False
 
-        # check flags and wait if not all are done
-        if not all(j.is_done for j in jobs):
-            if not waiting:
-                waiting = True
-                info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                     ', '.join(set([j.repr for j in jobs if not j.is_done])))
-                info('', print_date=True, ending='')
-            sleep(10)
-            info('.', print_date=False, ending='')
-        else:
-            break
+            # check flags and wait if not all are done
+            if not all(j.is_done for j in jobs):
+                if not waiting:
+                    waiting = True
+                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
+                         ', '.join(set([j.repr for j in jobs if not j.is_done])))
+                    info('', print_date=True, ending='')
+                sleep(10)
+                info('.', print_date=False, ending='')
+            else:
+                break
+    except KeyboardInterrupt:
+        qdel = get_system_path(cnf, 'qdel', is_critical=False)
+        for j in jobs:
+            if not j.is_done:
+                if qdel:
+                    call(cnf, qdel + ' ' + j.job_name, exit_on_error=False)
+        raise
     return jobs

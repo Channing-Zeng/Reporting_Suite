@@ -103,7 +103,7 @@ def _seq2c(cnf, bcbio_structure):
         else:
             info('Deduplicating bam file ' + dedup_bam_fpath)
             dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath, use_grid=True))
-    dedup_jobs = wait_for_jobs(dedup_jobs)
+    dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
@@ -228,7 +228,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         info()
     info('*' * 50)
 
-    jobs_to_wait = wait_for_jobs(jobs_to_wait)
+    jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
 
     sum_jobs_to_wait = []
     info('* Submitting seq2cov output *')
@@ -244,7 +244,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s, output_fpath=seq2cov_output_by_sample[s.name])
             sum_jobs_to_wait.append(j)
 
-    sum_jobs_to_wait = wait_for_jobs(sum_jobs_to_wait)
+    sum_jobs_to_wait = wait_for_jobs(cnf, sum_jobs_to_wait)
 
     info()
     info('Done')
@@ -458,7 +458,7 @@ def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpat
             jobs_to_wait.append(j)
 
     # if running falgstat ourselves, finally parse its output
-    jobs_to_wait = wait_for_jobs(jobs_to_wait)
+    jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
     for j in jobs_to_wait:
         with open(j.output_fpath) as f:
             lines = f.readlines()
