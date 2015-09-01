@@ -170,7 +170,8 @@ def symlink_to_ngs(src_path, dst_fpath):
         return None
 
     src_path = src_path.replace('/gpfs/', '/')
-    for cmd in ['mkdir ' + dirname(dst_fpath),
+    for cmd in ['mkdir ' + dirname(dirname(dst_fpath)),
+                'mkdir ' + dirname(dst_fpath),
                 'rm ' + dst_fpath,
                 'ln -s ' + src_path + ' ' + dst_fpath]:
         info('Executing on the server:  ' + cmd)
@@ -226,7 +227,8 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
 
         if jira_case:
             d['JIRA URL'] = jira_case.url.replace(',', ';')
-            d['Updated By'] = (getpass.getuser() if 'Updated By' not in d else d['Updated By']).replace(',', ';')
+            # if 'Updated By' in d and __unquote(d['Updated By']):
+            d['Updated By'] = getpass.getuser()
             if jira_case.description:
                 d['Description'] = jira_case.summary.replace(',', ';')
             if jira_case.data_hub:
@@ -256,8 +258,10 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
                 if l.startswith('#'):
                     f.write(l)
                 else:
-                    if ',' + project_name + ',' in l or ',"' + project_name + '",' in l:
-                        info('Old csv line: ' + l)
+                    l = unicode(l, 'utf-8')
+                    l_ascii = l.encode('ascii', 'ignore')
+                    if ',' + project_name + ',' in l_ascii or ',"' + project_name + '",' in l_ascii:
+                        info('Old csv line: ' + l_ascii)
                         # f.write('#' + l)
                     else:
                         f.write(l)

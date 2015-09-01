@@ -181,7 +181,7 @@ class DatasetSample:
         if not isfile(self.fastqc_html_fpath):
             self.fastqc_html_fpath = join(self.sample_fastqc_dirpath, 'fastqc_report.html')
 
-        self.targqc_sample = TargQC_Sample(self.name, ds.downsample_targqc_dirpath)
+        self.targqc_sample = TargQC_Sample(self.name, join(ds.downsample_targqc_dirpath, self.name))
         self.targetcov_html_fpath = self.targqc_sample.targetcov_html_fpath
         self.ngscat_html_fpath    = self.targqc_sample.ngscat_html_fpath
         self.qualimap_html_fpath  = self.targqc_sample.qualimap_html_fpath

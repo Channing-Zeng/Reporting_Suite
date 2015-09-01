@@ -80,7 +80,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
 
     targqc_metric_storage = _get_targqc_metric_storage([
         ('targetcov', header_storage),
-        ('ngscat', ngscat_report_parser.metric_storage)]),
+        ('ngscat', ngscat_report_parser.metric_storage)])
         # ('qualimap', qualimap_report_parser.metric_storage)])
 
     targqc_full_report = FullReport(source.targqc_repr, [], metric_storage=targqc_metric_storage)
@@ -113,20 +113,20 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
     orig_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target'), None)
-    ready_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target ready'), None)
+    # ready_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target ready'), None)
 
-    if not ready_bed_rec:
-        ready_bed_rec = orig_bed_rec
+    # if not ready_bed_rec:
+    #     ready_bed_rec = orig_bed_rec
 
-    if ready_bed_rec:
-        ready_bed = ready_bed_rec.value
-        if verify_bed(ready_bed, 'ready_bed_rec.value'):
-            project_ready_bed = join(output_dir, 'target.bed')
-            shutil.copy(ready_bed, project_ready_bed)
-            ready_bed_rec.value = project_ready_bed
+    # if ready_bed_rec:
+    #     ready_bed = ready_bed_rec.path
+    #     if verify_bed(ready_bed, 'ready_bed_rec.value'):
+    #         project_ready_bed = join(output_dir, 'target.bed')
+    #         shutil.copy(ready_bed, project_ready_bed)
+    #         ready_bed_rec.value = project_ready_bed
 
-    if orig_bed_rec and ready_bed_rec:
-        orig_bed_rec.value = bed_fpath
+    # if orig_bed_rec and ready_bed_rec:
+    #     orig_bed_rec.value = bed_fpath
 
     txt_fpath = targqc_full_report.save_txt(output_dir, BCBioStructure.targqc_name)
     tsv_fpath = targqc_full_report.save_tsv(output_dir, BCBioStructure.targqc_name)
@@ -147,10 +147,10 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
             err('Error: target coverage is not done (json, html, or detail tsv are not there)')
         else:
             correct_samples.append(sample)
-            if not sample.ngscat_done():
-                sample.ngscat_html_fpath = None
-            if not sample.qualimap_done():
-                sample.qualimap_html_fpath = None
+            # if not sample.ngscat_done():
+            # sample.ngscat_html_fpath = None
+            # if not sample.qualimap_done():
+            # sample.qualimap_html_fpath = None
     samples = correct_samples
 
     # _make_targetcov_symlinks(samples)
@@ -553,8 +553,8 @@ def _correct_qualimap_insert_size_histogram(cnf, samples):
         if verify_file(s.qualimap_ins_size_hist_fpath, silent=True) and cnf.reuse_intermediate:
             pass
         else:
-            if verify_file(s.picard_ins_size_hist_fpath):
-                with open(s.picard_ins_size_hist_fpath, 'r') as picard_f:
+            if verify_file(s.picard_ins_size_hist_txt_fpath):
+                with open(s.picard_ins_size_hist_txt_fpath, 'r') as picard_f:
                     one_line_to_stop = False
                     for line in picard_f:
                         if one_line_to_stop:

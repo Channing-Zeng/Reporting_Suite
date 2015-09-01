@@ -5,12 +5,14 @@ import sys
 import datetime
 from os.path import join, abspath, dirname, isdir, splitext
 from json import dumps, JSONEncoder
+import traceback
 
 from source.bcbio_structure import VariantCaller, BCBioSample
 from source.file_utils import verify_file, file_transaction
 from source.html_reporting import json_saver
 from source.file_utils import file_exists
 from ext_modules.jsontemplate import jsontemplate
+from source.logger import err
 
 
 def get_real_path(path_in_html_saver):
@@ -120,7 +122,29 @@ def _embed_css_and_scripts(html):
                 contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
 
                 line = line_tmpl.format(file_rel_path=rel_fpath)
-                html = html.replace(line, l_tag.format(rel_fpath) + '\n' + contents + '\n' + r_tag)
+                l_tag_fmt = l_tag.format(rel_fpath)
+                # line_ascii = line.encode('ascii', 'ignore')
+                # html = html.decode('utf-8', 'ignore').encode('ascii')
+                # try:
+                #     html_ascii = html.decode('utf-8', 'ignore').encode('ascii')  #.encode('ascii', 'ignore')
+                # except:
+                #     pass
+                try:
+                    html = html.replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)
+                except:
+                    err()
+                    # print contents
+                    err()
+                    err(traceback.format_exc())
+                    err()
+                    err('Encoding problem embeding this file into html: ' + rel_fpath)
+                    err()
+
+                # try:
+                #     html = html_ascii.encode('ascii').replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)
+                # except:
+                #     pass
+                    # err('line - cannot replace')  # + str(l_tag_fmt + '\n' + contents + '\n' + r_tag))
 
     return html
 

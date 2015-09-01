@@ -533,11 +533,11 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         percent_mapped_off_target = 1.0 - percent_mapped_on_target
         report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
 
-
-    report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
-    percent_mapped_on_padded_target = 1.0 * reads_stats['mapped_reads_on_padded_target'] / reads_stats['mapped'] if reads_stats['mapped'] else None
-    report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
-    assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
+    if 'mapped_reads_on_padded_target' in reads_stats:
+        report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
+        percent_mapped_on_padded_target = 1.0 * reads_stats['mapped_reads_on_padded_target'] / reads_stats['mapped'] if reads_stats['mapped'] else None
+        report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
+        assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
     read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
     report.add_record('Read bases mapped on target', read_bases_on_targ)
@@ -633,7 +633,8 @@ def get_detailed_metric_storage(depth_threshs):
         ] + [
             Metric('{}x'.format(thresh), description='Bases covered by at least {} reads'.format(thresh), unit='%')
             for thresh in depth_threshs
-        ])])
+        ])]
+    )
 
 
 def make_flat_region_report(sample, regions, depth_threshs):
