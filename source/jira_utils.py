@@ -80,6 +80,7 @@ def retrieve_jira_info(url):
         info('project_name: ' + case.project_name)
     if case.project_id:
         info('project_id: ' + case.project_id)
+    info()
 
     return case
 

@@ -115,6 +115,7 @@ def main():
 
     set_up_log(cnf, proc_name='preproc', project_name=cnf.project_name)
 
+    info()
     ds = DatasetStructure.create(project_dirpath, cnf.project_name)
     if not ds.samples:
         critical('No samples found')
@@ -122,18 +123,23 @@ def main():
     ds.concat_fastqs(cnf.work_dir)
 
     if cnf.fastqc:
-        safe_mkdir(ds.fastqc_dirpath)
         if not cnf.expose_to_ngs_server_only:
+            info('Making FastQC reports')
+            safe_mkdir(ds.fastqc_dirpath)
             make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
 
     if cnf.targqc or cnf.metamapping:
-        # Downsample, align, and analyse
+        info()
+        ds_to = 1e6
+        info('Downsampling the reads to ' + str(ds_to))
         bam_by_sample = dict()
         fastqs = Parallel(n_jobs=len(ds.samples)) \
-            (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample) \
+            (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample, reads_num=ds_to/2) \
                 for sample in ds.samples)
         lefts = [l for l, r in fastqs]
         rights = [r for l, r in fastqs]
+        info()
+        info('Alignming ' + str(ds_to) + ' random reads to the reference')
         aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
             get_system_path(cnf, 'samtools', is_critical=True),
             get_system_path(cnf, 'bwa', is_critical=True),
@@ -143,15 +149,20 @@ def main():
             bam_by_sample[sample.name] = bam_fpath
 
         if cnf.metamapping:
+            info()
+            info('Metamapping for contamination')
             safe_mkdir(ds.downsample_metamapping_dirpath)
             run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
 
         if cnf.targqc:
+            info()
+            info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
             safe_mkdir(ds.downsample_targqc_dirpath)
             ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
 
     new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
     if not exists(new_project_symlink):
+        info()
         info('Creating symlink in Datasets now called as project-name: ' + project_dirpath + ' -> ' + new_project_symlink)
         os.symlink(project_dirpath, new_project_symlink)
 
@@ -162,6 +173,8 @@ def main():
     make_project_level_report(cnf, ds)
 
     # Exposing
+    info()
+    info('Synking with the NGS webserver')
     sync_with_ngs_server(cnf,
         jira_url=cnf.jira,
         project_name=cnf.project_name,

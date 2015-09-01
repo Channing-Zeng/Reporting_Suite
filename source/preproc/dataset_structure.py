@@ -74,7 +74,7 @@ def _concat_fastq(work_dir, fastq_fpaths, output_fpath):
 
 class HiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name=None):
-        info('Parsing a HiSeq project structure')
+        info('Parsing the HiSeq project structure')
         self.kind = 'hiseq'
         DatasetStructure.__init__(self, dirpath, project_name)
 
@@ -123,7 +123,7 @@ class HiSeqStructure(DatasetStructure):
 
 class MiSeqStructure(DatasetStructure):
     def __init__(self, dirpath, project_name):
-        info('Parsing a MiSeq project structure')
+        info('Parsing the MiSeq project structure')
         self.kind = 'miseq'
         DatasetStructure.__init__(self, dirpath, project_name)
 
@@ -164,7 +164,7 @@ class MiSeqStructure(DatasetStructure):
 
 class HiSeq4000Structure(MiSeqStructure):
     def __init__(self, dirpath, project_name):
-        info('Parsing a HiSeq4000 project structure - same as MiSeq')
+        info('Parsing the HiSeq4000 project structure - same as MiSeq')
         self.kind = 'hiseq4000'
         MiSeqStructure.__init__(self, dirpath, project_name)
 
