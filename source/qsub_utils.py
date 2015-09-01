@@ -81,7 +81,7 @@ def wait_for_jobs(cnf, jobs):
                     if waiting:
                         info('', print_date=False)
                     if j.output_fpath:
-                        if not verify_file(j.tx_output_fpath):
+                        if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.name)):
                             err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty')
                         else:
                             os.rename(j.tx_output_fpath, j.output_fpath)

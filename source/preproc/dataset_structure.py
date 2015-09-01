@@ -54,13 +54,16 @@ class DatasetStructure:
 
     def concat_fastqs(self, work_dir):
         if not self.mergred_dir_found and self.samples and self.fastqc_dirpath and not isdir(self.fastq_dirpath):
+            info('Merging fastq files...')
             safe_mkdir(self.fastq_dirpath)
             for s in self.samples:
                 _concat_fastq(work_dir, s.find_raw_fastq('R1'), s.l_fpath)
                 _concat_fastq(work_dir, s.find_raw_fastq('R2'), s.r_fpath)
+            info()
 
 
 def _concat_fastq(work_dir, fastq_fpaths, output_fpath):
+    info('Merging ' + ', '.join(fastq_fpaths))
     with file_transaction(work_dir, output_fpath) as tx:
         with open(tx, 'w') as out:
             for fq_fpath in fastq_fpaths:
@@ -79,7 +82,9 @@ class HiSeqStructure(DatasetStructure):
         verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
 
         self.bcl2fastq_dirpath = self.__get_bcl2fastq_dirpath()
+        info('bcl2fastq_dirpath: ' + str(self.bcl2fastq_dirpath))
         self.project_name = project_name or self.bcl2fastq_dirpath.split('Project_')[1]
+        info('self.project_name: ' + str(self.project_name))
 
         self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
         self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
@@ -135,6 +140,7 @@ class MiSeqStructure(DatasetStructure):
         else:
             self.fastq_dirpath = join(self.unaligned_dirpath, 'fastq')
             self.fastqc_dirpath = join(self.fastq_dirpath, 'FastQC')
+        info()
 
         for sample_name in sample_names:
             s = DatasetSample(self, sample_name, source_fastq_dirpath=self.source_fastq_dirpath)
@@ -230,7 +236,7 @@ def _parse_sample_sheet(sample_sheet_fpath):
         lane = 1
         if 'Lane' in info_d:
             lane = int(info_d['Lane'])
-        sname = info_d[key].replace(' ', '-').replace('_', '-')
+        sname = info_d[key].replace(' ', '-').replace('_', '-').replace('.', '-')
         if sname not in sample_names:
             info('Sample ' + sname)
             sample_names.append(sname)
@@ -241,7 +247,7 @@ def _parse_sample_sheet(sample_sheet_fpath):
                 proj_name = info_d.get('SampleProject')
                 if not proj_name:
                     critical('No SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
-                proj_name = proj_name.replace(' ', '-').replace('_', '-')
+                proj_name = proj_name.replace(' ', '-').replace('_', '-').replace('.', '-')
 
     return sample_names, proj_name  #, proj_description
 

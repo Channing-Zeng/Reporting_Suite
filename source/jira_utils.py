@@ -1,5 +1,5 @@
 from traceback import format_exc
-from source.logger import err
+from source.logger import err, info
 
 
 JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
@@ -45,8 +45,8 @@ def retrieve_jira_info(url):
         err(format_exc())
         return None
 
-    # retrieve everything
     case_id = __parse_id(url)
+    info('Parsing the JIRA case ' + case_id)
     issue = jira_inst.issue('NGSG-' + case_id)
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
@@ -61,6 +61,25 @@ def retrieve_jira_info(url):
     case.project_name = issue.fields.customfield_12707  # M2Gen_RR
     case.project_id = issue.fields.customfield_12709  # Bio_031_M2Gen_RR
     case.description = issue.fields.description  # 100 post treatment exomes sourced...
+
+    if case.reporter:
+        info('reporter: ' + case.reporter)
+    if case.assignee:
+        info('assignee: ' + case.assignee)
+    if case.summary:
+        info('summary: ' + case.summary)
+    if case.type:
+        info('type: ' + case.type)
+    if case.department:
+        info('department: ' + case.department)
+    if case.data_hub:
+        info('data_hub: ' + case.data_hub)
+    if case.analysis_path:
+        info('analysis_path: ' + case.analysis_path)
+    if case.project_name:
+        info('project_name: ' + case.project_name)
+    if case.project_id:
+        info('project_id: ' + case.project_id)
 
     return case
 

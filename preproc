@@ -107,9 +107,11 @@ def main():
     if is_az() and jira_url:
         info('Getting info from JIRA...')
         jira_case = retrieve_jira_info(jira_url)
-        cnf.project_name = jira_case.project_name
+        if not cnf.project_name:
+            cnf.project_name = jira_case.project_name
     elif not cnf.project_name:
         critical('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
+    cnf.project_name = cnf.project_name.replace(' ', '_')
 
     set_up_log(cnf, proc_name='preproc', project_name=cnf.project_name)
 
@@ -301,9 +303,9 @@ def find_fastq_pairs_by_sample_names(fastq_fpaths, sample_names):
             critical('Error: more than 2 fastq files starting with ' + sn + '_R: ' + ', '.join(sn_fastq_fpaths))
         elif len(sn_fastq_fpaths) == 1:
             warn('Warning: only single fastq file is found for ' + sn + '. Treating as single reads.')
-            fastq_by_sn[sn] = [verify_file(sn_fastq_fpaths[0]), None]
+            fastq_by_sn[sn] = [verify_file(sn_fastq_fpaths[0], description='sn_fastq_fpaths[0] for ' + str(sn)), None]
         else:
-            fastq_by_sn[sn] = [verify_file(fpath) for fpath in sn_fastq_fpaths]
+            fastq_by_sn[sn] = [verify_file(fpath, description='fpath from sn_fastq_fpaths for ' + str(sn)) for fpath in sn_fastq_fpaths]
 
     return fastq_by_sn
 
@@ -348,7 +350,7 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
         for s in samples:
             for end_name in [s.l_fastqc_base_name, s.r_fastqc_base_name]:
                 fastqc_html_fpath = s.find_fastqc_html(end_name)
-                verify_file(fastqc_html_fpath, is_critical=True, description=end_name)
+                verify_file(fastqc_html_fpath, is_critical=True, description='fastqc_html_fpath for ' + s.name + ', ' + end_name)
                 fqc_samples.append(FQC_Sample(name=end_name, fastqc_html_fpath=fastqc_html_fpath))
 
                 sample_fastqc_dirpath = join(fastqc_dirpath, end_name + '_fastqc')
