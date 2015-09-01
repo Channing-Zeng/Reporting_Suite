@@ -1,12 +1,12 @@
 from itertools import izip, product
 import os
-from os.path import splitext
+from os.path import splitext, dirname, join
 import random
 import gzip
-from source.file_utils import open_gzipsafe, file_transaction, file_exists
+from source.file_utils import open_gzipsafe, file_transaction, file_exists, intermediate_fname
 
 
-def downsample(work_dir, fastq_L_fpath, fastq_R_fpath, N, quick=False):
+def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     """ get N random headers from a fastq file without reading the
     whole thing into memory
     modified from: http://www.biostars.org/p/6544/
@@ -23,8 +23,8 @@ def downsample(work_dir, fastq_L_fpath, fastq_R_fpath, N, quick=False):
 
     fh1 = open_gzipsafe(fastq_L_fpath)
     fh2 = open_gzipsafe(fastq_R_fpath) if fastq_R_fpath else None
-    outf1 = splitext(fastq_L_fpath)[0] + '.subset' + splitext(fastq_L_fpath)[1]
-    outf2 = splitext(fastq_R_fpath)[0] + '.subset' + splitext(fastq_R_fpath)[1] if fastq_R_fpath else None
+    outf1 = intermediate_fname(cnf, fastq_L_fpath, 'subset')
+    outf2 = intermediate_fname(cnf, fastq_R_fpath, 'subset')
 
     if file_exists(outf1):
         if not outf2:
@@ -34,7 +34,7 @@ def downsample(work_dir, fastq_L_fpath, fastq_R_fpath, N, quick=False):
 
     out_files = (outf1, outf2) if outf2 else (outf1)
 
-    with file_transaction(work_dir, out_files) as tx_out_files:
+    with file_transaction(cnf.work_dir, out_files) as tx_out_files:
         if isinstance(tx_out_files, basestring):
             tx_out_f1 = tx_out_files
         else:
