@@ -719,9 +719,11 @@ class BCBioRunner:
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()
-        is_waiting = False
+        num_occupied = sum(j.threads for j in self.jobs_running if not j.is_done)
+        info('Waiting for ' + str(num_occupied - number_of_jobs_allowed_to_left_running) + ' jobs to finish '
+                              'out of ' + str(num_occupied) + ' occupied')
+        is_waiting = False  # just we don't want to print info that we are waiting if nothing changed
         while True:
-            is_waiting = False  # just we don't want to print info that we are waiting if nothing changed
             # set flags for all done jobs
             for j in self.jobs_running:
                 if not j.is_done and isfile(j.done_marker):

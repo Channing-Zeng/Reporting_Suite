@@ -513,7 +513,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         report.add_record('Regions in target', target_info.regions_num)
     else:
         report.add_record('Target', 'whole genome')
-        report.add_record('Reference size', target_info.reference_size)
+        report.add_record('Reference size', target_info.bases_num)
         report.add_record('Genes in target', target_info.genes_num)
 
     bases_within_threshs = depth_stats['bases_within_threshs']
