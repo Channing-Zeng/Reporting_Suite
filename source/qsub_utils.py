@@ -6,7 +6,7 @@ from time import sleep
 
 from source.calling_process import call
 from source.tools_from_cnf import get_system_path
-from source.logger import info, err
+from source.logger import info, err, warn
 from source.file_utils import make_tmpfile, adjust_system_path, verify_file
 
 
@@ -101,11 +101,21 @@ def wait_for_jobs(cnf, jobs):
                 info('.', print_date=False, ending='')
             else:
                 break
+
     except KeyboardInterrupt:
         qdel = get_system_path(cnf, 'qdel', is_critical=False)
-        for j in jobs:
-            if not j.is_done:
-                if qdel:
-                    call(cnf, qdel + ' ' + j.job_name, exit_on_error=False)
+        command = ' '.join(j.job_id for j in jobs if not j.is_done)
+        if qdel:
+            res = call(cnf, qdel + command, exit_on_error=False)
+            if res == 0:
+                info('All running jobs for this project has been deleted from queue.')
+            else:
+                warn('Can\'t run qdel. Please kill the remaning jobs manually using the following command:')
+                warn('  qdel ' + command)
+        else:
+            warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
+            warn('  qdel ' + command)
+        info()
         raise
+
     return jobs

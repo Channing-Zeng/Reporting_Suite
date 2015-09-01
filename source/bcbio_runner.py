@@ -14,7 +14,7 @@ from source.project_level_report import make_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
-from source.logger import info, err, critical, send_email
+from source.logger import info, err, critical, send_email, warn
 from source.ngscat.bed_file import verify_bam
 from source.utils import is_us
 from source.webserver.exposing import sync_with_ngs_server
@@ -73,9 +73,9 @@ class Steps(list):
 
 
 class JobRunning:
-    def __init__(self, step, job_name, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker, threads):
+    def __init__(self, step, job_id, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker, threads):
         self.step = step
-        self.job_name = job_name
+        self.job_id = job_id
         self.sample_name = sample_name
         self.caller_suf = caller_suf
         self.log_fpath = log_fpath
@@ -707,15 +707,20 @@ class BCBioRunner:
             _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
 
         except KeyboardInterrupt:
-            for j in self.jobs_running:
-                if not j.is_done:
-                    qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
-                    if qdel:
-                        call(self.cnf, qdel + ' ' + j.job_name, exit_on_error=False)
+            qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
+            command = ' '.join(j.job_id for j in self.jobs_running if not j.is_done)
+            if qdel:
+                res = call(self.cnf, qdel + command, exit_on_error=False)
+                if res == 0:
+                    info('All running jobs for this project has been deleted from queue.')
+                else:
+                    warn('Can\'t run qdel. Please kill the remaning jobs manually using the following command:')
+                    warn('  qdel ' + command)
+            else:
+                warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
+                warn('  qdel ' + command)
             info()
-            info('All running jobs for this project has been deleted from queue.')
-            sys.exit(0)
-
+            raise
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()
