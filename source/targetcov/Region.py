@@ -2,10 +2,12 @@ from collections import defaultdict, OrderedDict
 import math
 import os
 from os.path import isfile, join
-from source.file_utils import file_transaction
+from source.calling_process import call
+from source.file_utils import file_transaction, intermediate_fname
 
 from source.logger import info, err, critical
 from source.ngscat.bed_file import verify_bed
+from source.targetcov.bam_and_bed_utils import get_gene_names
 
 
 class Region:
@@ -245,6 +247,54 @@ class GeneInfo(Region):
         # amplicon = copy.copy(amplicon)
         amplicon.gene_name = amplicon.gene_name or self.gene_name
         self.amplicons.append(amplicon)
+
+
+def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
+    # info('Making unique gene list without affecting the order')
+    # fixed_gene_names_list = []
+    # added_gene_names_set = set()
+    # for i in range(len(gene_names_list)):
+    #     gene_name = gene_names_list[i]
+    #     if gene_name not in added_gene_names_set:
+    #         fixed_gene_names_list.append(gene_name)
+    #         added_gene_names_set.add(gene_name)
+    # gene_names_list = fixed_gene_names_list
+    # info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
+    gene_by_name = OrderedDict()
+
+    info('Building the Gene objects list')
+    if gene_names_list:
+        info()
+        info('Init the Gene object dict')
+        for gn in gene_names_list:
+            gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
+        info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
+
+    if exons_bed and gene_by_name:
+        info()
+        info('Filtering exon bed file to have only gene records...')
+        exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
+        call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
+        info('Saved genes to ' + exons_only_genes_bed)
+
+        info()
+        info('Setting start and end for the genes')
+        i = 0
+        with open(exons_only_genes_bed) as f:
+            for l in f:
+                l = l.strip()
+                if l and not l.startswith('#'):
+                    fs = l.split('\t')
+                    chrom, start, end, symbol = fs[:4]
+                    gene_by_name[symbol].start = int(start)
+                    gene_by_name[symbol].end = int(end)
+                    if len(fs) >= 8:
+                        gene_by_name[symbol].biotype = fs[7]
+                    i += 1
+        info('Processed ' + str(i) + ' genes')
+        info()
+
+    return gene_by_name
 
 
 def proc_regions(regions, fn, *args, **kwargs):

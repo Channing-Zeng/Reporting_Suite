@@ -15,7 +15,7 @@ from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
 from source.main import set_up_dirs
-from source.targetcov.bam_and_bed_utils import prepare_beds
+from source.targetcov.bam_and_bed_utils import prepare_beds, extract_gene_names_and_filter_exons
 from source.targetcov.submit_jobs import run_targqc
 from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -81,15 +81,7 @@ def proc_args(argv):
 def main():
     cnf, samples, target_bed, exons_bed, genes_fpath = proc_args(sys.argv)
 
-    exons_no_genes_bed = None
-    if not cnf.only_summary:
-        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
-            prepare_beds(cnf, exons_bed, target_bed)
-
-    info('*' * 70)
-    info()
-
-    targqc_html_fpath = run_targqc(cnf, samples, basename(__file__), target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, samples, basename(__file__), target_bed, exons_bed, genes_fpath)
 
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)

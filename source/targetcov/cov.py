@@ -16,10 +16,10 @@ from source.logger import step_greetings, critical, info, err, warn
 from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows, \
     load_records
 from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo, calc_bases_within_threshs, \
-    calc_rate_within_normal
+    calc_rate_within_normal, build_gene_objects_list
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
     total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed, fix_bed_for_qualimap, \
-    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat
+    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
@@ -93,104 +93,6 @@ def get_header_metric_storage(depth_thresholds):
             'depth_metrics')
 
     return ms
-
-
-def _extract_gene_names_and_filter_exons(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath=None):
-    gene_by_name = OrderedDict()
-
-    gene_names_set = set()
-    gene_names_list = []
-    regions_num = None
-
-    info()
-    info('Getting gene list')
-
-    if genes_fpath:
-        with open(genes_fpath) as f:
-            gene_names_list = [g.strip() for g in f.read().split('\n') if g]
-            gene_names_set = set(gene_names_list)
-        info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
-        if target_bed:
-            target_bed = filter_bed_with_gene_set(cnf, target_bed, gene_names_set)
-        if exons_bed:
-            exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-            exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
-    else:
-        if target_bed:
-            info()
-            gene_names_set, gene_names_list, regions_num = _get_gene_names(target_bed)
-            info('Using genes from amplicons list, trying filtering exons with this genes.')
-            if exons_bed:
-                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-                if not verify_file(exons_anno_bed):
-                    info()
-                    warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
-                    target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
-                    info('Merging regions within genes...')
-                    target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
-                    info('Sorting amplicons_bed by (chrom, gene name, start)')
-                    target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
-                    info('Getting gene names again...')
-                    gene_names_set, gene_names_list, regions_num = _get_gene_names(target_bed)
-                    info()
-                    info('Using genes from the new amplicons list, filtering exons with this genes.')
-                    exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
-                    if not verify_file(exons_anno_bed):
-                        critical('No gene symbols from the capture bed file was found in Ensemble.')
-                exons_bed = exons_anno_bed
-                exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
-    info()
-
-    # info('Making unique gene list without affecting the order')
-    # fixed_gene_names_list = []
-    # added_gene_names_set = set()
-    # for i in range(len(gene_names_list)):
-    #     gene_name = gene_names_list[i]
-    #     if gene_name not in added_gene_names_set:
-    #         fixed_gene_names_list.append(gene_name)
-    #         added_gene_names_set.add(gene_name)
-    # gene_names_list = fixed_gene_names_list
-    # info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
-
-    info('Building the Gene objects list')
-
-    if not gene_names_list and exons_no_genes_bed:
-        info()
-        info('No target, getting the gene names from exons...')
-        _, gene_names_list, _ = _get_gene_names(exons_no_genes_bed)
-
-    if gene_names_list:
-        info()
-        info('Init the Gene object dict')
-        for gn in gene_names_list:
-            gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
-        info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
-
-    if exons_bed and gene_by_name:
-        info()
-        info('Filtering exon bed file to have only gene records...')
-        exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
-        call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
-        info('Saved genes to ' + exons_only_genes_bed)
-
-        info()
-        info('Setting start and end for the genes')
-        i = 0
-        with open(exons_only_genes_bed) as f:
-            for l in f:
-                l = l.strip()
-                if l and not l.startswith('#'):
-                    fs = l.split('\t')
-                    chrom, start, end, symbol = fs[:4]
-                    gene_by_name[symbol].start = int(start)
-                    gene_by_name[symbol].end = int(end)
-                    if len(fs) >= 8:
-                        gene_by_name[symbol].biotype = fs[7]
-                    i += 1
-        info('Processed ' + str(i) + ' genes')
-        info()
-
-    return target_bed, exons_bed, exons_no_genes_bed, gene_by_name, regions_num
 
 
 class TargetInfo:
@@ -315,33 +217,18 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
     return depth_stats, reads_stats, mm_indels_stats, target_stats
 
 
-def _target_info(cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed):
-    original_target_bed = cnf.original_target_bed or target_bed
-    target_info = None
-    gene_by_name = None
-
-    regions_num = None
-    gene_by_name = None
-    if target_bed or exons_no_genes_bed:
-        target_bed, exons_bed, exons_no_genes_bed, gene_by_name, regions_num = _extract_gene_names_and_filter_exons(
-            cnf, sample_name, target_bed, exons_bed, exons_no_genes_bed)
-
-    target_info = TargetInfo(
-        fpath=target_bed, bed=target_bed, original_target_bed=original_target_bed,
-        regions_num=regions_num, genes_num=len(gene_by_name) if gene_by_name else None)
-
-    return target_bed, exons_no_genes_bed, gene_by_name, target_info
-
-
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath,
-        exons_bed, exons_no_genes_bed, target_bed, genes_fpath=None):
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     # bam_fpath, bam_stats, dedup_bam_stats = _dedup_and_flag_stat(cnf, bam_fpath)
+    gene_by_name = build_gene_objects_list(cnf, sample.name, exons_bed, gene_names_list)
+
     ref_fapth = cnf.genome.seq
     original_target_bed = cnf.original_target_bed or target_bed
-
-    target_bed, exons_no_genes_bed, gene_by_name, target_info = _target_info(
-        cnf, sample.name, target_bed, exons_bed, exons_no_genes_bed)
+    target_info = TargetInfo(
+        fpath=target_bed, bed=target_bed, original_target_bed=original_target_bed,
+        genes_num=len(gene_by_name) if gene_by_name else None)
+    if target_bed:
+        target_info.regions_num = calc_region_number(target_bed)
 
     _run_qualimap(cnf, sample, bam_fpath, target_bed)
 
@@ -349,9 +236,9 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath,
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
 
     depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
-            depth_stats['bases_by_depth'],
-            target_stats['target_size'] or target_stats['reference_size'],
-            cnf.coverage_reports.depth_thresholds)
+        depth_stats['bases_by_depth'],
+        target_stats['target_size'] or target_stats['reference_size'],
+        cnf.coverage_reports.depth_thresholds)
 
     depth_stats['wn_20_percent'] = calc_rate_within_normal(
         depth_stats['bases_by_depth'],
@@ -444,29 +331,6 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath,
 
     info()
     return combined_region.avg_depth, gene_by_name, [summary_report, per_gene_report]
-
-
-def _get_gene_names(bed_fpath, gene_index=3):
-    gene_names_set = set()
-    gene_names_list = list()
-    regions_num = 0
-    with open(bed_fpath) as f:
-        for line in f:
-            if not line or not line.strip() or line.startswith('#'):
-                continue
-            regions_num += 1
-
-            tokens = line.split()
-            if len(tokens) <= gene_index:
-                continue
-
-            for gn in tokens[gene_index].split(','):
-                if gn != '.':
-                    if gn not in gene_names_set:
-                        gene_names_set.add(gn)
-                        gene_names_list.append(gn)
-
-    return gene_names_set, gene_names_list, regions_num
 
 
 def get_records_by_metrics(records, metrics):

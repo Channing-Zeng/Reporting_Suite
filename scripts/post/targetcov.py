@@ -12,7 +12,7 @@ from source.logger import err
 from source.main import read_opts_and_cnfs
 from source.config import defaults
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, extract_gene_names_and_filter_exons
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
@@ -55,10 +55,10 @@ def main(args):
                 default=False)
              ),
             (['--no-prep-bed'], dict(
-                dest='no_prep_bed',
+                dest='prep_bed',
                 help='do not fix input beds and exons',
-                action='store_true',
-                default=False)
+                action='store_false',
+                default=True)
              ),
             (['-e', '--extended'], dict(
                 dest='extended',
@@ -115,7 +115,7 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
-def picard_is_hist(cnf, sample, bam_fpath, output_dir):
+def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
     picard = get_system_path(cnf, 'java', 'picard')
     if picard:
         info()
@@ -139,14 +139,29 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
     cnf.original_exons_bed = cnf.original_exons_bed or exons_no_genes_bed or exons_bed
     cnf.original_target_bed = cnf.original_target_bed or cnf.bed
 
-    if not cnf.no_prep_bed:
-        bam_fpath, exons_bed, exons_no_genes_bed, target_bed, _ = \
-            prep_files(cnf, sample.name, sample.bam, sample.bed, exons_bed)
+    bam_fpath = bam_fpath
+    if not bam_fpath:
+        critical(sample.name + ': BAM file is required.')
+    if not isfile(bam_fpath + '.bai'):
+        info('Indexing bam ' + bam_fpath)
+        index_bam(cnf, bam_fpath)
+
+    gene_names_list = None
+    if cnf.prep_bed:
+        info('Preparing the BED file.')
+        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+
+        gene_names_set, gene_names_list, target_bed, exons_bed, exons_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+    else:
+        info('The BED file is ready, skipping preparing.')
+        with open(genes_fpath) as f:
+            gene_names_list = [g.strip() for g in f.read().split('\n')]
 
     avg_depth, gene_by_name, reports = make_targetseq_reports(
-        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, genes_fpath)
+        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list)
 
-    picard_is_hist(cnf, sample, bam_fpath, output_dir)
+    picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
     if cnf.extended:
         info('Generating flagged regions report...')
@@ -172,26 +187,6 @@ def finalize_one(cnf, *args):
         if selected_regions_report.txt_fpath:
             info('Selected regions: ' + selected_regions_report.txt_fpath +
                  ' (' + str(len(selected_regions_report.regions)) + ' regions)')
-
-
-def prep_files(cnf, sample_name, bam_fpath, bed_fpath, exons_bed):
-    bam_fpath = bam_fpath
-    if not bam_fpath:
-        critical(sample_name + ': BAM file is required.')
-    if not isfile(bam_fpath + '.bai'):
-        info('Indexing bam ' + bam_fpath)
-        index_bam(cnf, bam_fpath)
-
-    target_bed = bed_fpath
-    # if not sample.bed:
-    #     info(sample.name + ': BED file was not provided. Using Exons as default: ' + exons_bed)
-
-    if not exons_bed:
-        err('Error: no exons specified for the genome in system config.')
-
-    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
-
-    return bam_fpath, exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
 
 if __name__ == '__main__':

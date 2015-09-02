@@ -4,7 +4,7 @@ import sys
 from subprocess import check_output
 from collections import OrderedDict
 from source.calling_process import call, call_pipe
-from source.file_utils import intermediate_fname, iterate_file, splitext_plus
+from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -109,6 +109,82 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
         target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
 
     return exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
+
+
+def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath=None):
+    gene_names_set = set()
+    gene_names_list = []
+
+    info()
+    info('Getting gene list')
+
+    if genes_fpath:
+        with open(genes_fpath) as f:
+            gene_names_list = [g.strip() for g in f.read().split('\n') if g]
+            gene_names_set = set(gene_names_list)
+        info('Using genes from ' + genes_fpath + ', filtering exons and amplicons with this genes.')
+        if target_bed:
+            target_bed = filter_bed_with_gene_set(cnf, target_bed, gene_names_set)
+        if exons_bed:
+            exons_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+            exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
+    else:
+        if target_bed:
+            info()
+            gene_names_set, gene_names_list = get_gene_names(target_bed)
+            info('Using genes from amplicons list, trying filtering exons with this genes.')
+            if exons_bed:
+                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+                if not verify_file(exons_anno_bed):
+                    info()
+                    warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
+                    target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
+                    info('Merging regions within genes...')
+                    target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+                    info('Sorting amplicons_bed by (chrom, gene name, start)')
+                    target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
+                    info('Getting gene names again...')
+                    gene_names_set, gene_names_list = get_gene_names(target_bed)
+                    info()
+                    info('Using genes from the new amplicons list, filtering exons with this genes.')
+                    exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+                    if not verify_file(exons_anno_bed):
+                        critical('No gene symbols from the capture bed file was found in Ensemble.')
+                exons_bed = exons_anno_bed
+                exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
+        elif exons_no_genes_bed:
+            info()
+            info('No target, getting the gene names from exons...')
+            gene_names_set, gene_names_list = get_gene_names(exons_no_genes_bed)
+        info()
+
+    return gene_names_set, gene_names_list, target_bed, exons_bed, exons_no_genes_bed
+
+
+def calc_region_number(bed_fpath):
+    with open(bed_fpath) as f:
+        return sum(1 for l in f if l.strip() and not l.strip().startswith('#'))
+
+
+def get_gene_names(bed_fpath, gene_index=3):
+    gene_names_set = set()
+    gene_names_list = list()
+    with open(bed_fpath) as f:
+        for line in f:
+            if not line or not line.strip() or line.startswith('#'):
+                continue
+
+            tokens = line.split()
+            if len(tokens) <= gene_index:
+                continue
+
+            for gn in tokens[gene_index].split(','):
+                if gn != '.':
+                    if gn not in gene_names_set:
+                        gene_names_set.add(gn)
+                        gene_names_list.append(gn)
+
+    return gene_names_set, gene_names_list
 
 
 def annotate_amplicons(cnf, amplicons_bed, exons_bed):

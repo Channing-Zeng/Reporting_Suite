@@ -87,15 +87,14 @@ def proc_opts():
     else:
         all_work_dir = join(dataset_dirpath, 'work')
         safe_mkdir(all_work_dir)
-        cnf.work_dir = tempfile.mkdtemp(dir=all_work_dir)
+        cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
+        # cnf.work_dir = tempfile.mkdtemp(dir=all_work_dir)
         info('Creating a temporary working directory: ' + cnf.work_dir)
-
-    # subprocess.call(['chmod', '-R', '777', cnf.work_dir])
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
-    subprocess.call(['chmod', '-R', '777', cnf.log_dir])
+    subprocess.call(['chmod', '-R', '777', cnf.work_dir])
 
     return cnf, dataset_dirpath, jira_url
 
@@ -218,11 +217,11 @@ def main():
 
     info()
     info('*' * 70)
-    if not cnf.debug and cnf.work_dir:
-        try:
-            shutil.rmtree(cnf.work_dir)
-        except OSError:
-            err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
+    # if not cnf.debug and cnf.work_dir:
+    #     try:
+    #         shutil.rmtree(cnf.work_dir)
+    #     except OSError:
+    #         err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
 
 
 def downsample_fastq(cnf, sample, reads_num=5e5):

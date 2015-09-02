@@ -10,13 +10,13 @@ from source.logger import info, err, warn, critical
 from source.bcbio_runner import Step
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.targetcov.bam_and_bed_utils import fix_bed_for_qualimap
+from source.targetcov.bam_and_bed_utils import fix_bed_for_qualimap, prepare_beds, extract_gene_names_and_filter_exons
 from source.utils import get_system_path
 from source.calling_process import call
 from source.targetcov.summarize_targetcov import summarize_targqc
 
 
-def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_genes_bed, genes_fpath):
+def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpath):
     # if not target_bed:
     #     target_bed = exons_bed
     #     info('No target_bed, using exons_bed instead')
@@ -28,9 +28,20 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_g
 
     jobs_to_wait = []
     if not cnf.only_summary:
+        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+        gene_names_set, gene_names_list, target_bed, exons_bed, exons_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+        if not genes_fpath:
+            genes_fpath = join(cnf.work_dir, 'genes.txt')
+            with open(genes_fpath, 'w') as f:
+                f.write('\n'.join(gene_names_list))
+
+        info('*' * 70)
+        info()
+
         targetcov_step, ngscat_step, qualimap_step = \
             _prep_steps(cnf, threads_per_sample, summary_threads,
-                samples, target_bed, exons_bed, exons_no_genes_bed, main_script_name)
+                samples, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -62,7 +73,8 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, exons_no_g
     return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
 
 
-def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, exons_fpath, exons_no_genes_bed, main_script_name):
+def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
+                bed_fpath, exons_fpath, exons_no_genes_bed, genes_fpath, main_script_name):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
     run_id = path_hash + '_' + cnf.project_name
@@ -86,6 +98,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, ex
        (' --bed ' + bed_fpath if bed_fpath else '') + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
        (' --exons-no-genes ' + exons_no_genes_bed if exons_no_genes_bed else '') + \
+       (' --genes ' + genes_fpath if genes_fpath else '') + \
        (' --reannotate ' if cnf.reannotate else '') + \
        (' --dedup ' if cnf.dedup else '') + \
         ' --no-prep-bed'
