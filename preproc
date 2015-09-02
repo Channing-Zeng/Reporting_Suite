@@ -54,6 +54,7 @@ def proc_opts():
 
     # parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=True, help='Add project to the webserver')
     parser.add_option('--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')
+    parser.add_option('--no-expose', dest='expose', action='store_false', default=True, help='Do not expose the reports')
     parser.add_option('--targqc', dest='targqc', action='store_true', default=True, help='')
     parser.add_option('--no-targqc', dest='targqc', action='store_false', default=True, help='')
     parser.add_option('--metamapping', dest='metamapping', action='store_true', default=False, help='')
@@ -62,8 +63,9 @@ def proc_opts():
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
 
     (opts, args) = parser.parse_args()
+    jira_url = None
     if len(args) < 1:
-        critical(usage)
+        warn('No JIRA path was specified')
     if len(args) < 2:
         info('No dataset path specified, assuming it is the current working directory')
         dataset_dirpath = adjust_path(os.getcwd())

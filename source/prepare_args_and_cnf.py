@@ -177,6 +177,7 @@ def set_up_dirs(cnf):
     if not cnf.log_dir:
         cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
+    info('Created log dir ' + cnf.log_dir)
 
     set_up_log(cnf)
 
