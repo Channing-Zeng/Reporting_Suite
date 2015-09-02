@@ -316,8 +316,8 @@ class BCBioRunner:
         )
 
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
-        if self.bcbio_structure.bed:
-            seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
+        if self.bcbio_structure.sv_bed:
+            seq2c_cmdline += ' --bed ' + self.bcbio_structure.sv_bed
         if cnf.controls:
             seq2c_cmdline += ' -c ' + cnf.controls
         if cnf.seq2c_opts:

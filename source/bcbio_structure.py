@@ -772,7 +772,7 @@ class BCBioStructure:
                 else:
                     warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(sv_bed))
             else:
-                sample.sv_bed = sample.bed
+                sample.sv_bed = self.cnf.genome.refseq
 
         if not sample.bed and not sample.sv_bed:
             info('No BED file and no sv_regions bed file for ' + sample.name + '. Assuming WGS')

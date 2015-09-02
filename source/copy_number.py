@@ -177,10 +177,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         return output_fpath
 
     info('Preparing BED files')
-    target_bed = bcbio_structure.sv_bed or bcbio_structure.bed
-    exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons
-    exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = \
-        prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
+    exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
+    _, _, _, seq2c_bed = \
+        prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.sv_bed)
 
     jobs_to_wait = []
     bedcov_output_by_sample = dict()

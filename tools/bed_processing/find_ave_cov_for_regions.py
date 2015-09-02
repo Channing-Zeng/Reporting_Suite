@@ -46,8 +46,8 @@ def save_regions_to_seq2cov_output__nocnf(sample_name, regions, output_fpath=Non
 
     coverage_info = []
     for r in final_regions:
-        if r.avg_depth is not None and r.avg_depth != 0:
-            coverage_info.append([sample_name, r.gene_name, r.chrom, r.start, r.end, r.feature, r.size, r.avg_depth])
+       # if r.avg_depth is not None:  #and r.avg_depth != 0:
+        coverage_info.append([sample_name, r.gene_name, r.chrom, r.start, r.end, r.feature, r.size, r.avg_depth])
 
     if output_fpath:
         with open(output_fpath, 'w') as f:
