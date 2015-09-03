@@ -124,12 +124,6 @@ def main():
 
     ds.concat_fastqs(cnf.work_dir)
 
-    if cnf.fastqc:
-        if not cnf.expose_to_ngs_server_only:
-            info('Making FastQC reports')
-            safe_mkdir(ds.fastqc_dirpath)
-            make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
-
     if cnf.targqc or cnf.metamapping:
         info()
         ds_to = 1e6
@@ -161,6 +155,12 @@ def main():
             info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
             safe_mkdir(ds.downsample_targqc_dirpath)
             ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
+
+    if cnf.fastqc:
+        if not cnf.expose_to_ngs_server_only:
+            info('Making FastQC reports')
+            safe_mkdir(ds.fastqc_dirpath)
+            make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
 
     new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
     if not exists(new_project_symlink):

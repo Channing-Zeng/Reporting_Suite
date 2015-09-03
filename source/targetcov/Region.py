@@ -272,25 +272,26 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
 
     if exons_bed and gene_by_name:
         info()
-        info('Filtering exon bed file to have only gene records...')
-        exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
-        call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
-        info('Saved genes to ' + exons_only_genes_bed)
+        # info('Filtering exon bed file to have only gene records...')
+        # exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
+        # call(cnf, 'grep -w Gene ' + exons_bed, output_fpath=exons_only_genes_bed)
+        # info('Saved genes to ' + exons_only_genes_bed)
 
         info()
         info('Setting start and end for the genes')
         i = 0
-        with open(exons_only_genes_bed) as f:
+        with open(exons_bed) as f:
             for l in f:
-                l = l.strip()
-                if l and not l.startswith('#'):
-                    fs = l.split('\t')
-                    chrom, start, end, symbol = fs[:4]
-                    gene_by_name[symbol].start = int(start)
-                    gene_by_name[symbol].end = int(end)
-                    if len(fs) >= 8:
-                        gene_by_name[symbol].biotype = fs[7]
-                    i += 1
+                if '\tGene\t' in l:
+                    l = l.strip()
+                    if l and not l.startswith('#'):
+                        fs = l.split('\t')
+                        chrom, start, end, symbol = fs[:4]
+                        gene_by_name[symbol].start = int(start)
+                        gene_by_name[symbol].end = int(end)
+                        if len(fs) >= 8:
+                            gene_by_name[symbol].biotype = fs[7]
+                        i += 1
         info('Processed ' + str(i) + ' genes')
         info()
 

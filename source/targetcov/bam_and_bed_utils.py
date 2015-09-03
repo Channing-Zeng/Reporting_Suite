@@ -370,6 +370,8 @@ def remove_dups(cnf, bam, output_fpath, samtools=None, use_grid=False):
         call(cnf, cmdline, output_fpath=output_fpath)
         return None
 
+    # TODO: index bams
+
 
 def remove_dups_picard(cnf, bam_fpath):
     picard = get_system_path(cnf, 'java', 'picard')
