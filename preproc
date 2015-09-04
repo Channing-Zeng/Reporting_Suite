@@ -152,9 +152,12 @@ def main():
 
         if cnf.targqc:
             info()
+            cnf.work_dir = join(cnf.work_dir, source.targqc_name)
+            safe_mkdir(cnf.work_dir)
             info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
             safe_mkdir(ds.downsample_targqc_dirpath)
             ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
+            cnf.work_dir = dirname(cnf.work_dir)
 
     if cnf.fastqc:
         if not cnf.expose_to_ngs_server_only:

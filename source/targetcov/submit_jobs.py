@@ -93,7 +93,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
     targetcov_params = params_for_one_sample + \
         ' -s {sample.name}' + \
         ' -o ' + join('{sample.targqc_dirpath}') + \
-        ' --work-dir ' + join(cnf.work_dir, source.targqc_name) + \
+        ' --work-dir ' + join(cnf.work_dir, '{sample.name}') + \
         ' --bam {bam}' + \
        (' --bed ' + bed_fpath if bed_fpath else '') + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
@@ -115,7 +115,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
         ngscat_params = params_for_one_sample + \
             ' -s {sample.name} ' + \
             ' -o {sample.ngscat_dirpath}' + \
-            ' --work-dir ' + join(cnf.work_dir, source.ngscat_name) + \
+            ' --work-dir ' + join(cnf.work_dir, source.ngscat_name + '_{sample.name}') + \
             ' --bam {bam}' + \
             ' --bed ' + (bed_fpath or exons_no_genes_bed) + \
             ' --saturation y '
