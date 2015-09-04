@@ -196,9 +196,12 @@ class DatasetSample:
         fastq_fpaths = [
             join(self.source_fastq_dirpath, fname)
                 for fname in os.listdir(self.source_fastq_dirpath)
-                if re.match(self.name.replace('-', '.').replace('_', '.').replace(' ', '.') + '.*_' + suf + '.*\.fastq\.gz', fname)]
+                if re.match(self.name.replace('-', '.').replace('_', '.').replace(' ', '.') +
+                            '.*_' + suf + '.*\.fastq\.gz', fname)]
+        fastq_fpaths = sorted(fastq_fpaths)
         if not fastq_fpaths:
             critical('Error: no fastq files for the sample ' + self.name + ' were found inside ' + self.source_fastq_dirpath)
+        info(self.name + ': found raw fastq files ' + ', '.join(fastq_fpaths))
         return fastq_fpaths
 
     def find_fastqc_html(self, end_name):
