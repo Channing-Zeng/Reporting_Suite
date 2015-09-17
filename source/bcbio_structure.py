@@ -105,7 +105,7 @@ def process_post_bcbio_args(parser):
 
         if cnf is None:
             _detect_sys_config(config_dirpath, opts)
-            is_wgs = not opts.bed and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
+            is_wgs = not opts.__dict__.get('bed') and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
             _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
 
             cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
