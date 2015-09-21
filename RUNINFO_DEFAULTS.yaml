@@ -45,7 +45,7 @@ quality_control:
 coverage_reports:
   min_depth: 30  # regions with depth below this value will be flagged
   depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
-  padding: 250
+  padding: 200
   saturation: 'n'
   depthlist: 'auto'
   availablefeatures: [
@@ -111,7 +111,7 @@ annotation:
     - CLNSIG  # Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other
 
   snpeff:  ## no "annotations" section here, always applied all annotations
-    clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+#    clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
     cancer: False
     extra_options: ''
 

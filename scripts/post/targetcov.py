@@ -81,6 +81,9 @@ def main(args):
         file_keys=['bam', 'bed'],
         key_for_sample_name='bam')
 
+    if cnf.padding:
+        cnf.coverage_reports.padding = cnf.padding
+
     check_system_resources(
         cnf,
         required=['samtools', 'bedtools'],
