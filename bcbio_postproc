@@ -127,7 +127,8 @@ def combine_targqc(cnf, bcbio_structures, tag_by_sample):
     output_dir = join(cnf.output_dir, BCBioStructure.targqc_summary_dir)
     safe_mkdir(output_dir)
 
-    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples), output_dir, samples, tag_by_sample=tag_by_sample)
+    summarize_targetcov.summarize_targqc(cnf, cnf.threads or len(samples),
+         output_dir, samples, tag_by_sample=tag_by_sample)
 
 
 def combine_projects(cnf, bcbio_structures, tags=None):

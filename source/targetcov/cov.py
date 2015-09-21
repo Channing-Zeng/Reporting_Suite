@@ -377,7 +377,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
 
         info()
         info('Calculation of coverage statistics for the regions in the input BED file...')
-        targets_or_exons, _, max_depth = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
+        targets_or_exons = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
         info()
         # info('Merging capture BED file to get total target cov statistics...')
         # total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
@@ -395,7 +395,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
         else:
             info()
             info('Calculating coverage statistics for exons...')
-            exons_with_optional_genes, _, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, exons_no_genes_bed)
+            exons_with_optional_genes = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, exons_no_genes_bed)
 
         for exon_or_gene in exons_with_optional_genes:
             exon_or_gene.sample_name = sample.name

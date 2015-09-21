@@ -171,7 +171,7 @@ calc_cell_contents = (report, section, font) ->
                 rec.metric.values.push rec.num
 
     else if report.type == 'SampleReport'
-        for rec in sampleReport.records when rec.metric.name of section.metrics_by_name
+        for rec in report.records when rec.metric.name of section.metrics_by_name
             if rec.num?
                 rec.metric.values = [] if not rec.metric.values?
                 rec.metric.values.push rec.num
@@ -314,7 +314,7 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                     table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
                 else  # several links for one sample are possible multi-reports (e.g. TargQC)
                     if (k for own k of sampleReport.html_fpath).length == 0
-                        table += "<span class=\"sample_name\"\">#{line_caption}</span>"
+                        table += "<span class=\"sample_name\">#{line_caption}</span>"
                     else
                         links = ""
                         for report_name, html_fpath of sampleReport.html_fpath
@@ -323,10 +323,10 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                             if links.length != 0
                               links += ", "
                             links += "<a href=\"#{html_fpath}\">#{report_name}</a>"
-                        table += "<span class=\"sample_name\"\">#{line_caption} (#{links})</span>"
+                        table += "<span class=\"sample_name\">#{line_caption} (#{links})</span>"
                 # table += "<a class=\"sample_name\" href=\"#{sampleReport.html_fpath}\">#{line_caption}</a>"
             else
-                table += "<span class=\"sample_name\"\">#{line_caption}</span>"
+                table += "<span class=\"sample_name\">#{line_caption}</span>"
 
         table += "</td>"
 
@@ -374,8 +374,8 @@ reporting.buildTotalReport = (report, section, columnOrder) ->
                         caller_links = ""
                         for caller, html_fpath of rec.html_fpath
                             if caller_links.length != 0
-                              caller_links += ", "
-                            caller_links += "<a href=\"#{html_fpath}\">#{caller}</a>"
+                                caller_links += ", "
+                                caller_links += "<a href=\"#{html_fpath}\">#{caller}</a>"
                         table += "#{rec.cell_contents} (#{caller_links})</td>"
             else
                 table += "<a style=\"#{padding}\"

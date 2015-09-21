@@ -132,7 +132,6 @@ def format_decimal(name, value, unit=''):
 
 
 def mean(values):
-    print values
     return float(sum(values)) / len(values) if len(values) > 0 else float('nan')
 
 
@@ -146,9 +145,8 @@ def median(values):
 
 
 def get_numeric_value(string_value):
-    '''
-    parses string_value and returns only number-like part
-    '''
+    """ parses string_value and returns only number-like part
+    """
     num_chars = ['.', '+', '-']
     number = ''
     for c in string_value:

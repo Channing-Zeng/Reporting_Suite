@@ -26,6 +26,13 @@ class Record:
         self.meta = meta or dict()
         self.html_fpath = html_fpath
 
+        self.num = None
+        self.cell_contents = None
+        self.frac_width = None
+        self.right_shift = None
+        self.color = None
+        self.text_color = None
+
     def get_value(self):
         return self.value
 
@@ -50,6 +57,9 @@ class Record:
 
     def format(self, human_readable=True):
         return self.metric.format(self.value, human_readable=human_readable)
+
+    def format_html(self):
+        return self.metric.format(self.value, human_readable=True, is_html=True)
 
     def __repr__(self):
         return self.metric.name + ' ' + self.metric.format(self.value, human_readable=True)
@@ -76,16 +86,29 @@ class Metric:
         self.common = common
         self.unit = unit
 
+        self.values = []
+        self.min = None
+        self.max = None
+        self.med = None
+        self.low_outer_fence = None
+        self.low_inner_fence = None
+        self.top_inner_fence = None
+        self.top_outer_fence = None
+        self.all_values_equal = False
+
     def get_display_name(self):
         return self.short_name if self.short_name is not None else self.name
 
-    def format(self, value, human_readable=True):
-        return Metric.format_value(value, unit=self.unit, human_readable=human_readable)
+    def format(self, value, human_readable=True, is_html=False):
+        return Metric.format_value(value, unit=self.unit, human_readable=human_readable, is_html=is_html)
 
     @staticmethod
-    def format_value(value, unit='', human_readable=True):
+    def format_value(value, unit='', human_readable=True, is_html=False):
         if value is None:
             return '.'
+
+        if unit and is_html:
+            unit = '<span class=\'rhs\'>&nbsp;</span>' + unit
 
         if isinstance(value, basestring):
             if human_readable:
@@ -114,12 +137,16 @@ class Metric:
                 for i in range(10, 2, -1):
                     if value < 1./(10**i):
                         presision = i + 1
-                return '{value:.{presision}f}{unit}'.format(**locals())
+                v = '{value:.{presision}f}'.format(**locals())
+                if is_html:
+                    v = v.replace('.', '<span class=\'hs\'></span>')
+                v += unit
+                return v
             else:
                 return str(value)
 
         if isinstance(value, list):
-            return ','.join(Metric.format_value(v, unit, human_readable) for v in list)
+            return ','.join(Metric.format_value(v, unit, human_readable, is_html) for v in list)
 
         return '.'
 
@@ -153,19 +180,20 @@ class Report:
         return fpath
 
     def save_html(self, output_dirpath, base_fname, caption='', type_=None):
-        class Encoder(JSONEncoder):
-            def default(self, o):
-                if isinstance(o, (VariantCaller, BCBioSample)):
-                    return o.for_json()
-                return o.__dict__
+        # class Encoder(JSONEncoder):
+        #     def default(self, o):
+        #         if isinstance(o, (VariantCaller, BCBioSample)):
+        #             return o.for_json()
+        #         return o.__dict__
 
-        json = dumps(dict(
-            date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
-            data_outside_reports={},
-            report=self,
-            type_=type_,
-        ), separators=(',', ':'), cls=Encoder)
-        fpath = write_html_report(json, output_dirpath, base_fname, caption)
+        # json = dumps(dict(
+        #     date=datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'),
+        #     report=self,
+        #     type_=type_,
+        # ), separators=(',', ':'), cls=Encoder)
+        fpath = write_html_report(
+            self, type_,
+            output_dirpath, base_fname, caption)
         self.html_fpath = fpath
         return fpath
 
@@ -192,6 +220,7 @@ class SampleReport(Report):
         self.sample = sample
         self.html_fpath = html_fpath
         self.records = records or []
+        self.general_records = []
         self.metric_storage = metric_storage
         self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG

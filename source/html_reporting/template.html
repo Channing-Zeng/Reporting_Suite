@@ -42,7 +42,7 @@
         }
 
         $(function() {
-            reporting.buildReport();
+//            reporting.buildReport();
 
 //            dragTable.init();
 
@@ -59,7 +59,7 @@
 <div class="content">
     <div id='header'>
         <h1 class="report-header">{{ caption }}</h1>
-        <p id='report_date'></p>
+        <p id='report_date'>{{ report_date }}</p>
 
         <!--<p id="data_set_p">-->
             <!--<span style="display: none;" id="reference_length">Genome:-->
@@ -86,11 +86,9 @@
     </noscript>
 
     <div class='report-and-plots'>
-        <div id='report'>
-        </div>
+        <div id='report'>{{ report }}</div>
 
-        <div id='plot'>
-        </div>
+        <div id='plot'>{{ plots }}</div>
 
         <!--<div class='plots'>-->
             <!--<table style='margin: -3px;'>-->
@@ -116,11 +114,11 @@
         <div style="clear: left"></div>
         <div style="clear: right"></div>
 
-        <div class='json-code'>
-            <div id='total-report-json'>
-                {{ totalReport }}
-            </div>
-        </div>
+        <!--<div class='json-code'>-->
+            <!--<div id='total-report-json'>-->
+                <!--{{ totalReport }}-->
+            <!--</div>-->
+        <!--</div>-->
     </div>
 </div>
 </body>
