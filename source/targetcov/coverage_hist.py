@@ -54,30 +54,31 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
 
     regions = []
     bamtools = get_system_path(cnf, 'bamtools')
+    info('Anylising bedcoverage output...')
     if not bamtools:
         bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath)
         info()
-        info('Anylising bedcoverage output...')
         regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
 
     else:
         chroms = [l.split()[0] for l in open(get_chr_len_fpath(cnf)).readlines()]
 
         stub = join(cnf.work_dir, basename(splitext_plus(bam_fpath)[0]))
-        if cnf.reuse_intermediate and all(verify_bam(stub + '.' + 'REF_' + chrom + '.bam', silent=True) for chrom in chroms):
+        if cnf.reuse_intermediate and all(verify_bam(stub + '.REF_' + chrom + '.bam', silent=True) for chrom in chroms):
             info('BAM ' + bam_fpath + ' is split, reusing...')
         else:
+            info('Splitting the BAM file, writing as ' + stub + '.REF_#.bam')
             cmdline = '{bamtools} split -in {bam_fpath} -stub {stub} -reference'.format(**locals())
             call(cnf, cmdline)
 
         for chrom in chroms:
-            bed_chrom = add_suffix(bed_fpath, chrom)
+            chrom_bed_fpath = add_suffix(bed_fpath, chrom)
             grep = get_system_path(cnf, 'grep')
             cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
-            call(cnf, cmdl, output_fpath=bed_chrom)
+            call(cnf, cmdl, output_fpath=chrom_bed_fpath)
 
-            bam_chrom = add_suffix(bam_fpath, 'REF_' + chrom)
-            bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_chrom, bam_chrom)
+            chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
+            bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
             info('Anylising bedcoverage output for ' + str(chrom) + '...')
             rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
             regions.extend(rs)
@@ -123,6 +124,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
     res = None
     tries = 0
     MAX_TRIES = 2
+    WAIT_MINUTES = 30
     err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output_fpath))[0] + '.err')
     while True:
         stderr_dump = []
@@ -134,7 +136,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
             msg = 'bedtools coverage crashed:\n' + cmdline + '\n' + \
                   (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
             if tries < MAX_TRIES:
-                msg += '\n\nRerunning in 120 minutes (tries ' + str(tries) + '/10)'
+                msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
 
             send_email(msg=msg,
                        subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
@@ -142,7 +144,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
             err(msg)
             if tries == MAX_TRIES:
                 break
-            sleep(30 * 60)
+            sleep(WAIT_MINUTES * 60)
             info()
 
     return bedcov_output_fpath

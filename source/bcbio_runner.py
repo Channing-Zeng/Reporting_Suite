@@ -60,11 +60,14 @@ class Steps(list):
     def contains(name_list, step_name):
         return Steps.normalize(step_name) in [Steps.normalize(name) for name in name_list]
 
-    def __contains(self, step_name):
-        return Steps.contains([s.name for s in self], step_name)
+    def __contains__(self, step):
+        if isinstance(step, Step):
+            return Steps.contains([s.name for s in self], step.name)
+        else:
+            return Steps.contains([s.name for s in self], step)
 
     def add_step(self, step):
-        if not self.__contains(step.name):
+        if not self.__contains__(step.name):
             self.append(step)
 
     def extend(self, iterable):
@@ -335,7 +338,7 @@ class BCBioRunner:
             targqc_cmdline += ' --bed ' + self.bcbio_structure.bed
 
         self.targqc_summary = Step(cnf, run_id,
-            name=BCBioStructure.targqc_name, short_name='targqc',
+            name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
             dir_name=BCBioStructure.targqc_summary_dir,

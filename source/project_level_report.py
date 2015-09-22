@@ -15,14 +15,16 @@ from source.reporting import Metric, Record, MetricStorage, ReportSection, Sampl
 from source.html_reporting.html_saver import _write_static_html_report
 
 
-BASECALLS_NAME   = 'BaseCalls'
-FASTQC_NAME      = BCBioStructure.fastqc_repr
-PRE_FASTQC_NAME  = 'Raw ' + FASTQC_NAME
-SEQQC_NAME       = 'Seq QC'
-PRE_SEQQC_NAME   = 'Pre ' + SEQQC_NAME
-VARQC_NAME       = BCBioStructure.varqc_repr
-VARQC_AFTER_NAME = BCBioStructure.varqc_after_repr
-MUTATIONS_NAME   = 'Mutations'
+BASECALLS_NAME        = 'BaseCalls'
+FASTQC_NAME           = BCBioStructure.fastqc_repr
+PRE_FASTQC_NAME       = 'Raw ' + FASTQC_NAME
+SEQQC_NAME            = 'Seq QC'
+PRE_SEQQC_NAME        = 'Pre ' + SEQQC_NAME
+VARQC_NAME            = 'Var QC'
+VARQC_AFTER_NAME      = 'Var QC after filtering'
+MUTATIONS_NAME        = 'Mutations'
+MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
+MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
 
 
 metric_storage = MetricStorage(
@@ -34,7 +36,9 @@ metric_storage = MetricStorage(
         Metric(SEQQC_NAME),
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
-        Metric(MUTATIONS_NAME)
+        Metric(MUTATIONS_NAME),
+        Metric(MUTATIONS_SINGLE_NAME),
+        Metric(MUTATIONS_PAIRED_NAME),
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),
@@ -86,7 +90,7 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None)
     return project_report_html_fpath
 
 
-def _add_variants(general_section, bcbio_structure):
+def _mutations_records(general_section, bcbio_structure):
     records = []
 
     val = OrderedDict()
@@ -94,27 +98,25 @@ def _add_variants(general_section, bcbio_structure):
     paired_val = OrderedDict()
 
     for caller in bcbio_structure.variant_callers.values():
-        mut_fname = source.mut_fname_template.format(caller_name=caller.name)
-        mut_fpath = join(bcbio_structure.date_dirpath, mut_fname)
-        mut_pass_fpath = add_suffix(mut_fpath, source.mut_pass_suffix)
+        _base_mut_fname = source.mut_fname_template.format(caller_name=caller.name)
+        _base_mut_fpath = join(bcbio_structure.date_dirpath, _base_mut_fname)
+        mut_fpath = add_suffix(_base_mut_fpath, source.mut_pass_suffix)
         if verify_file(mut_fpath, silent=True):
-            val[caller.name] = mut_pass_fpath
+            val[caller.name] = mut_fpath
         else:
-            single_mut_fpath = add_suffix(mut_fpath, source.mut_single_suffix)
-            paired_mut_fpath = add_suffix(mut_fpath, source.mut_paired_suffix)
-            single_mut_pass_fpath = add_suffix(single_mut_fpath, source.mut_pass_suffix)
-            paired_mut_pass_fpath = add_suffix(paired_mut_fpath, source.mut_pass_suffix)
-            if verify_file(single_mut_pass_fpath, silent=True):
-                single_val[caller.name] = single_mut_pass_fpath
+            single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, source.mut_single_suffix), source.mut_pass_suffix)
+            paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, source.mut_paired_suffix), source.mut_pass_suffix)
+            if verify_file(single_mut_fpath, silent=True):
+                single_val[caller.name] = single_mut_fpath
                 # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
-            if verify_file(paired_mut_pass_fpath, silent=True):
-                paired_val[caller.name] = paired_mut_pass_fpath
+            if verify_file(paired_mut_fpath, silent=True):
+                paired_val[caller.name] = paired_mut_fpath
                 # _add_rec(paired_mut_fpath, caller.name + ' mutations for paired samples')
 
     for val, metric_name in (
-         (val, 'Mutations'),
-         (single_val, 'Mutations for separate samples'),
-         (paired_val, 'Mutations for paired samples')):
+         (val, MUTATIONS_NAME),
+         (single_val, MUTATIONS_SINGLE_NAME),
+         (paired_val, MUTATIONS_PAIRED_NAME)):
         if val:
             metric = Metric(metric_name, common=True)
             rec = Record(
@@ -159,6 +161,8 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
+        recs.extend(_mutations_records(general_section, bcbio_structure))
+
         varqc_d = bcbio_structure.varqc_report_fpath_by_caller
         varqc_d['all'] = bcbio_structure.varqc_report_fpath
 

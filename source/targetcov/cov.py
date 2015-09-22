@@ -41,7 +41,7 @@ def get_header_metric_storage(depth_thresholds):
             ReportSection('reads', 'Reads', [
                 Metric('Reads'),
                 Metric('Mapped reads', short_name='Mapped', description='samtools view -c -F 4'),
-                Metric('Percentage of mapped reads', short_name='%', unit='%'),
+                Metric('Percentage of mapped reads', short_name='Mapped %', unit='%'),
                 # Metric('Unmapped reads', short_name='Unmapped', quality='Less is better', description='samtools view -c -f 4'),
                 # Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
                 Metric('Properly paired reads percent', short_name='Paired %', unit='%', description='Pecent of properly paired mapped reads (-f 2).'),
@@ -59,12 +59,12 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
 
                 # Metric('Reads mapped on target', short_name='Reads on trg'),
-                Metric('Percentage of reads mapped on target', short_name='%', unit='%'),
+                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%'),
 
-                Metric('Percentage of reads mapped off target', short_name='% off trg', unit='%', quality='Less is better'),
+                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better'),
 
                 # Metric('Reads mapped on padded target', 'On padded trg'),
-                Metric('Percentage of reads mapped on padded target', short_name='%', unit='%'),
+                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%'),
 
                 Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
             ]),
@@ -260,8 +260,22 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed,
                                            exons_no_genes_bed, output_dir, gene_by_name)
 
+    az300_report_fpaths = make_az300_reports(cnf, per_gene_report)
+
     info()
     return depth_stats['ave_depth'], gene_by_name, [summary_report, per_gene_report]
+
+
+def make_az300_reports(cnf, per_gene_report):
+    if not verify_file(cnf.genome.az300):
+        return []
+    info('Generating tables for AZ300')
+    with open(cnf.genome.az300) as f:
+        az300_gene_names = [l.strip() for l in f.readlines()]
+
+    for gn in az300_gene_names:
+        cmdl = 'grep "Gene" | grep "{gn}" {per_gene_report.tsv_fpath}'.format(**locals())
+        # call(cmdl, )
 
 
 def get_records_by_metrics(records, metrics):

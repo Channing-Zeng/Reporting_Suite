@@ -73,7 +73,7 @@ def process_one(cnf):
     report.plots = [relpath(plot_fpath, cnf.output_dir) for plot_fpath in qc_plots_for_html_report_fpaths]
 
     summary_report_html_fpath = report.save_html(
-        cnf.output_dir, cnf.sample + '-' + cnf.caller + '.' + cnf.proc_name,
+        join(cnf.output_dir, cnf.sample + '-' + cnf.caller + '.' + cnf.proc_name + '.html'),
         caption='Variant QC for ' + cnf.sample + ' (caller: ' + cnf.caller + ')')
 
     return summary_report_html_fpath, qc_plots_fpaths

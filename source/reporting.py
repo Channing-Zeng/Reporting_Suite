@@ -127,12 +127,13 @@ class Metric:
         if value is None:
             return '.'
 
+        unit_str = unit
         if unit and is_html:
-            unit = '<span class=\'rhs\'>&nbsp;</span>' + unit
+            unit_str = '<span class=\'rhs\'>&nbsp;</span>' + unit
 
         if isinstance(value, basestring):
             if human_readable:
-                return '{value}{unit}'.format(**locals())
+                return '{value}{unit_str}'.format(**locals())
             else:
                 return value
 
@@ -143,7 +144,10 @@ class Metric:
                 if value <= 9999:
                     return str(value)
                 else:
-                    return '{value:,}{unit}'.format(**locals())
+                    v = '{value:,}{unit_str}'.format(**locals())
+                    if is_html:
+                        v = v.replace(',', '<span class=\'hs\'></span>')
+                    return v
             else:
                 return str(value)
 
@@ -157,11 +161,7 @@ class Metric:
                 for i in range(10, 2, -1):
                     if value < 1./(10**i):
                         presision = i + 1
-                v = '{value:.{presision}f}'.format(**locals())
-                if is_html:
-                    v = v.replace('.', '<span class=\'hs\'></span>')
-                v += unit
-                return v
+                return '{value:.{presision}f}{unit_str}'.format(**locals())
             else:
                 return str(value)
 
