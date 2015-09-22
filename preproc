@@ -26,7 +26,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
-from source.logger import info, critical, err, is_local, warn
+from source.logger import info, critical, err, is_local, warn, send_email
 from source.utils import is_az
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
@@ -219,6 +219,15 @@ def main():
         #
         # sync_with_ngs_server(cnf, jira_case=jira_case,
         #     project_name=cnf.project_name, sample_names=[s.name for s in samples])
+
+    subj = ds.project_report_html_fpath or ds.project_name
+    txt = 'Preproc finished for ' + ds.project_name + '\n'
+    txt += '\n'
+    txt += 'Path: ' + ds.final_dirpath + '\n'
+    txt += 'Report: ' + str(ds.project_report_html_fpath) + '\n'
+    if jira_url:
+        txt += 'Jira: ' + jira_url
+    send_email(txt, subj)
 
     info()
     info('*' * 70)
