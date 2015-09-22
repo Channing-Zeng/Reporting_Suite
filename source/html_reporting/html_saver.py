@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import os
 import shutil
 import re
@@ -64,7 +66,6 @@ image_files = [
 
 def _build_report(report, type_):
     report_html = ''
-    plots_html = ''
     report_html += _build_common_records(report.get_common_records())
 
     for section in report.metric_storage.sections:
@@ -74,11 +75,7 @@ def _build_report(report, type_):
 
         report_html += _build_total_report(report, section, column_order)
 
-    if report.plots:
-        for plot in report.plots:
-            plots_html += '<img src="' + plot + '"/>'
-
-    return report_html, plots_html
+    return report_html
 
 
 def _build_common_records(general_records):
@@ -150,7 +147,7 @@ def _build_total_report(report, section, column_order):
         else:
             if sample_report.html_fpath:
                 if isinstance(sample_report.html_fpath, basestring):
-                    table += '<a class="sample_name" href="' + sample_report.html_fpath + '>' + line_caption + '</a>'
+                    table += '<a class="sample_name" href="' + sample_report.html_fpath + '">' + line_caption + '</a>'
                 else:  # several links for one sample are possible multi-reports (e.g. TargQC)
                     if len(sample_report.html_fpath) == 0:
                         table += '<span class="sample_name">' + line_caption + '</span>'
@@ -183,7 +180,7 @@ def _build_total_report(report, section, column_order):
             table += '\n<td metric="' + metric.name + '" style="background-color: ' + rec.color + '; color: ' + rec.text_color + \
                      '" quality="' + str(metric.quality) + '" class="td '
             if rec.num:
-                table += ' number" number="' + str(rec.value) + ' data-sortAs="' + str(rec.value) + '>'
+                table += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value) + '">'
             else:
                 table += '">'
 
@@ -194,7 +191,7 @@ def _build_total_report(report, section, column_order):
 
             if rec.html_fpath:
                 if isinstance(rec.html_fpath, basestring):
-                    table += '<a href="' + rec.html_fpath + '>' + rec.cell_contents + '</a></td>'
+                    table += '<a href="' + rec.html_fpath + '">' + rec.cell_contents + '</a></td>'
                 else:  # varQC -- several variant callers for one sample are possible
                     if len(rec.html_fpath) == 0:
                         rec.value = None
@@ -208,6 +205,7 @@ def _build_total_report(report, section, column_order):
 
             else:
                 table += '<a style="' + str(padding_style) + '" ' + __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</a></td>'
+
         table += '\n</tr>'
         i += 1
     table += '\n</tbody>\n</table>\n'
@@ -257,8 +255,7 @@ def __get_meta_tag_contents(rec):
     #
     #         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
     # else
-    #     return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
-    return ''
+    return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
 # Color heat map
@@ -429,11 +426,22 @@ def _calc_cell_contents(report, section):
 
 
 def write_html_report(report, type_, html_fpath, caption=''):
-    html_fpath = _init_html(html_fpath, caption)
-    report_html, plots_html = _build_report(report, type_)
-    html_fpath = _insert_into_html(html_fpath, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
-    html_fpath = _insert_into_html(html_fpath, report_html, 'report')
-    html_fpath = _insert_into_html(html_fpath, plots_html, 'plots')
+    with open(template_fpath) as template_file:
+        html = template_file.read()
+
+    html = _insert_into_html(html, caption, 'caption')
+    html = _insert_into_html(html, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
+
+    report_html = _build_report(report, type_)
+    html = _insert_into_html(html, report_html, 'report')
+
+    plots_html = ''.join('<img src="' + plot + '"/>' for plot in report.plots)
+    html = _insert_into_html(html, plots_html, 'plots')
+
+    html = _embed_css_and_scripts(html)
+
+    with open(html_fpath, 'w') as f:
+        f.write(html)
     return html_fpath
 
 
@@ -504,6 +512,8 @@ def _embed_css_and_scripts(html):
                 # except:
                 #     pass
                 try:
+                    html = ''.join(i for i in html if ord(i) < 128)
+                    contents = ''.join(i for i in contents if ord(i) < 128)
                     html = html.replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)
                 except:
                     err()
@@ -523,43 +533,13 @@ def _embed_css_and_scripts(html):
     return html
 
 
-def _init_html(html_fpath, caption=''):
-    # Temporary:
-    aux_dirpath = join(dirname(html_fpath), aux_dirname)
-    if isdir(aux_dirpath):
-        shutil.rmtree(aux_dirpath)
-    # Temporary.
-
-    with open(template_fpath) as template_file:
-        html = template_file.read()
-
-    html = html.replace('{{ caption }}', caption)
-
-    html = _embed_css_and_scripts(html)
-
-    if os.path.exists(html_fpath):
-        os.remove(html_fpath)
-
-    with open(html_fpath, 'w') as f:
-        f.write(html)
-
-    return html_fpath
-
-
-def _insert_into_html(html_fpath, text, keyword):
-    # reading html template file
-    with open(html_fpath) as f_html:
-        html_text = f_html.read()
-
+def _insert_into_html(html, text, keyword):
     # substituting template text with json
     # html_text = re.sub('{{ ' + keyword + ' }}', text, html_text)
-    html_text = html_text.encode().replace('{{ ' + keyword.encode() + ' }}', text.encode())
+    html = ''.join(i for i in html if ord(i) < 128)
+    html = html.replace('{{ ' + keyword + ' }}', text)
 
-    # writing substituted html to final file
-    with open(html_fpath, 'w') as f_html:
-        f_html.write(html_text)
-
-    return html_fpath
+    return html
 
 
 def _write_static_html_report(work_dir, data_dict, html_fpath):

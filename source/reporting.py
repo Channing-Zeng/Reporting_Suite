@@ -1,3 +1,5 @@
+# coding: utf-8
+
 from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
 from os.path import join, relpath
