@@ -222,6 +222,8 @@ class Report:
             rec = next(r for r in records if r.metric.name == metric_name)
         except StopIteration:
             return None  # if no record for the metric
+        except AttributeError:
+            return None  # record with no metric
         else:
             return rec
 
@@ -237,7 +239,7 @@ class SampleReport(Report):
                  **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
-        self.records = records or []
+        self.records = [r for r in records if r.metric] if records else []
         self.metric_storage = metric_storage
         self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
@@ -285,7 +287,7 @@ class SampleReport(Report):
     #     return name
 
     def add_record(self, metric_name, value, meta=None):
-        metric = self.metric_storage.get_metric(metric_name.strip())
+        metric = self.metric_storage.find_metric(metric_name.strip())
         assert metric, metric_name
         rec = Record(metric, value, meta)
         self.records.append(rec)
@@ -323,7 +325,10 @@ class SampleReport(Report):
         data['records'] = [Record.load(d) for d in data['records']]
         data['metric_storage'] = MetricStorage.load(data['metric_storage'])
 
-        return SampleReport(**data)
+        rep = SampleReport(**data)
+        for rec in rep.records:
+            rec.metric = rep.metric_storage.find_metric(rec.metric.name)
+        return rep
 
 
 class PerRegionSampleReport(SampleReport):
@@ -333,7 +338,7 @@ class PerRegionSampleReport(SampleReport):
             self.records = []
 
         def add_record(self, metric_name, value, meta=None):
-            metric = self.__parent_report.metric_storage.get_metric(metric_name.strip())
+            metric = self.__parent_report.metric_storage.find_metric(metric_name.strip())
             assert metric, metric_name
             rec = Record(metric, value, meta)
             self.records.append(rec)
@@ -398,7 +403,7 @@ class PerRegionSampleReport(SampleReport):
 
         return rows
 
-    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+    def save_html(self, output_fpath, caption='', type_=None):
         return None
         # sample_reports = []
         # fr = FullReport(self.report_name, sample_reports, self.metric_storage)
@@ -495,8 +500,8 @@ class FullReport(Report):
         return rows
 
     @staticmethod
-    def construct_from_sample_report_jsons(samples, bcbio_structure, output_dirpath,
-            jsons_by_sample, htmls_by_sample):
+    def construct_from_sample_report_jsons(samples, output_dirpath,
+            jsons_by_sample, htmls_by_sample, bcbio_structure=None):
         full_report = FullReport()
         metric_storage = None
         for sample in samples:
@@ -511,6 +516,8 @@ class FullReport(Report):
 
         for sample_report in full_report.sample_reports:
             sample_report.metric_storage = metric_storage
+            for rec in sample_report.records:
+                rec.metric = metric_storage.find_metric(rec.metric.name)
 
         full_report.metric_storage = metric_storage
 
@@ -560,7 +567,7 @@ class ReportSection:
     def get_metrics(self):
         return self.metrics
 
-    def get_metric(self, metric_name):
+    def find_metric(self, metric_name):
         return next((m for m in self.get_metrics() if m.name == metric_name), None)
 
     def remove_metric(self, metric_name):
@@ -607,7 +614,7 @@ class MetricStorage:
     def add_metric(self, metric, section_name=''):
         self.sections_by_name[section_name].add_metric(metric)
 
-    def get_metric(self, metric_name):
+    def find_metric(self, metric_name):
         return next((m for m in self.get_metrics() if m.name == metric_name), None)
 
     def remove_metric(self, metric_name):

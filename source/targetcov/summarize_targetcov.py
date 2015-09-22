@@ -27,41 +27,46 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
         2. Adds records to targqc_full_report.plots
     """
     plots_dirpath = join(output_dir, 'plots')
+    if cnf.reuse_intermediate and verify_dir(plots_dirpath) and [f for f in listdir(plots_dirpath) if not f.startswith('.')]:
+        info('Qualimap miltisample plots exist - ' + plots_dirpath + ', reusing...')
+    else:
+        # Qualimap2 run for multi-sample plots
+        if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]) > 0:
+            qualimap = get_system_path(cnf, interpreter_or_name=None, name='qualimap')
 
-    # Qualimap2 run for multi-sample plots
-    if len([s.qualimap_html_fpath for s in samples if s.qualimap_html_fpath]):
-        qualimap = get_system_path(cnf, interpreter_or_name=None, name='qualimap')
+            if qualimap is not None and get_qualimap_type(qualimap) == 'full':
+                qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
 
-        if qualimap is not None and get_qualimap_type(qualimap) == 'full':
-            qualimap_output_dir = join(cnf.work_dir, 'qualimap_multi_bamqc')
+                _correct_qualimap_genome_results(cnf, samples)
+                _correct_qualimap_insert_size_histogram(cnf, samples)
 
-            _correct_qualimap_genome_results(cnf, samples)
-            _correct_qualimap_insert_size_histogram(cnf, samples)
+                safe_mkdir(qualimap_output_dir)
+                rows = []
+                for sample in samples:
+                    if sample.qualimap_html_fpath:
+                        rows += [[sample.name, sample.qualimap_html_fpath]]
 
-            safe_mkdir(qualimap_output_dir)
-            rows = []
-            for sample in samples:
-                if sample.qualimap_html_fpath:
-                    rows += [[sample.name, sample.qualimap_html_fpath]]
-
-            data_file = write_tsv_rows(rows, join(qualimap_output_dir, 'qualimap_results_by_sample.tsv'))
-            cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
-            ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=None))
-
-            targqc_full_report.plots = []
-            qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
-            if (ret_code is None or ret_code == 0) and verify_dir(qualimap_plots_dirpath):
-                if exists(plots_dirpath):
-                    shutil.rmtree(plots_dirpath)
-                shutil.move(qualimap_plots_dirpath, plots_dirpath)
-                for plot_fpath in listdir(plots_dirpath):
-                    plot_fpath = join(plots_dirpath, plot_fpath)
-                    if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
-                        targqc_full_report.plots.append(relpath(plot_fpath, output_dir))
+                data_fpath = write_tsv_rows(rows, join(qualimap_output_dir, 'qualimap_results_by_sample.tsv'))
+                qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
+                cmdline = '{qualimap} multi-bamqc --data {data_fpath} -outdir {qualimap_output_dir}'.format(**locals())
+                res = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=None),
+                                output_fpath=qualimap_plots_dirpath, output_is_dir=True)
+                if res is None or not verify_dir(qualimap_plots_dirpath):
+                    warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
+                    return None
+                else:
+                    if exists(plots_dirpath):
+                        shutil.rmtree(plots_dirpath)
+                    shutil.move(qualimap_plots_dirpath, plots_dirpath)
             else:
-                warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
-        else:
-            warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
+                warn('Warning: Qualimap for multi-sample analysis was not found. TargQC will not contain plots.')
+                return None
+
+    targqc_full_report.plots = []
+    for plot_fpath in listdir(plots_dirpath):
+        plot_fpath = join(plots_dirpath, plot_fpath)
+        if verify_file(plot_fpath) and plot_fpath.endswith('.png'):
+            targqc_full_report.plots.append(relpath(plot_fpath, output_dir))
 
 
 def _make_targetcov_symlinks(samples):
@@ -78,37 +83,42 @@ def _make_targetcov_symlinks(samples):
 def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fpath=None):
     header_storage = get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
-    targqc_metric_storage = _get_targqc_metric_storage([
-        ('targetcov', header_storage),
-        ('ngscat', ngscat_report_parser.metric_storage)])
-        # ('qualimap', qualimap_report_parser.metric_storage)])
+    # targqc_metric_storage = _get_targqc_metric_storage([
+    #     ('targetcov', header_storage),
+    #     ('ngscat', ngscat_report_parser.metric_storage)])
+    #     # ('qualimap', qualimap_report_parser.metric_storage)])
 
-    targqc_full_report = FullReport(source.targqc_repr, [], metric_storage=targqc_metric_storage)
+    jsons_by_sample = {s.name: s.targetcov_json_fpath for s in samples if verify_file(s.targetcov_json_fpath)}
+    htmls_by_sample = {s.name: s.targetcov_html_fpath for s in samples if verify_file(s.targetcov_html_fpath)}
 
-    for sample in samples:
-        records_by_report_type = []
-        if (verify_file(sample.targetcov_json_fpath, True) or
-                verify_file(sample.ngscat_html_fpath, True) or
-                verify_file(sample.qualimap_html_fpath, True)):
-            records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(
-                sample.targetcov_json_fpath, silent=True) else []))
-            records_by_report_type.append(('ngscat', ngscat_report_parser.parse_ngscat_sample_report(
-                sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
-            records_by_report_type.append(('qualimap', qualimap_report_parser.parse_qualimap_sample_report(
-                sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
+    targqc_full_report = FullReport.construct_from_sample_report_jsons(samples, output_dir, jsons_by_sample, htmls_by_sample)
 
-        sample_report = SampleReport(
-            sample,
-            records=_get_targqc_records(records_by_report_type, header_storage),
-            html_fpath=dict(
-                targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
-                ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
-                qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
-            ),
-            metric_storage=targqc_metric_storage)
+    # source.targqc_repr, [], metric_storage=targqc_metric_storage)
+
+    for sample_report in targqc_full_report.sample_reports:
+    #     records_by_report_type = []
+    #     if (verify_file(sample.targetcov_json_fpath, True) or
+    #             verify_file(sample.ngscat_html_fpath, True) or
+    #             verify_file(sample.qualimap_html_fpath, True)):
+    #         records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(
+    #             sample.targetcov_json_fpath, silent=True) else []))
+    #         records_by_report_type.append(('ngscat', ngscat_report_parser.parse_ngscat_sample_report(
+    #             sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
+    #         records_by_report_type.append(('qualimap', qualimap_report_parser.parse_qualimap_sample_report(
+    #             sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
+    #
+    #     sample_report = SampleReport(
+    #         sample,
+    #         records=_get_targqc_records(records_by_report_type, header_storage),
+    #         html_fpath=dict(
+    #             targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
+    #             ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
+    #             qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
+    #         ),
+    #         metric_storage=targqc_metric_storage)
         if tag_by_sample:
-            sample_report.set_project_tag(tag_by_sample[sample.name])
-        targqc_full_report.sample_reports.append(sample_report)
+            sample_report.set_project_tag(tag_by_sample[sample_report.sample.name])
+        # targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
@@ -328,7 +338,7 @@ def _prep_comb_report(metric_storage, samples, shared_general_metrics, shared_me
     report.add_record('Sample', 'contains values from all samples: ' + ', '.join([s.name for s in samples]))
     report.add_record('For each sample', 'Depths and normalized depths for each hotspot.')
 
-    m = metric_storage.get_metric('Average sample depth')
+    m = metric_storage.find_metric('Average sample depth')
     for s in samples:
         val = Report.find_record(s.report.records, m.name).value
         report.add_record(s.name + ' ave depth', val)
@@ -341,7 +351,7 @@ def _prep_best_report(metric_storage, samples):
 
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
-    m = metric_storage.get_metric('Average sample depth')
+    m = metric_storage.find_metric('Average sample depth')
     ave_sample_depth = max(Report.find_record(s.report.records, m.name).value for s in samples)
     report.add_record('Average sample depth', ave_sample_depth)
 
@@ -419,19 +429,19 @@ def _report_normalize_coverage_for_variant_sites(cnf, summary_threads, output_di
 
 def _get_targqc_metric(metric, header_metric_storage, report_type='targetcov'):  # report type is in ['targetcov', 'qualimap', 'ngscat']
     qualimap_to_targetcov_dict = {
-        'Number of reads': header_metric_storage.get_metric('Reads'),
-        'Mapped reads': header_metric_storage.get_metric('Mapped reads'),
-        'Unmapped reads': header_metric_storage.get_metric('Unmapped reads'),
-        'Mapped reads (on target)': header_metric_storage.get_metric('Reads mapped on target'),
-        'Coverage Mean': header_metric_storage.get_metric('Average target coverage depth'),
-        'Coverage Standard Deviation': header_metric_storage.get_metric('Std. dev. of target coverage depth')
+        'Number of reads': header_metric_storage.find_metric('Reads'),
+        'Mapped reads': header_metric_storage.find_metric('Mapped reads'),
+        'Unmapped reads': header_metric_storage.find_metric('Unmapped reads'),
+        'Mapped reads (on target)': header_metric_storage.find_metric('Reads mapped on target'),
+        'Coverage Mean': header_metric_storage.find_metric('Average target coverage depth'),
+        'Coverage Standard Deviation': header_metric_storage.find_metric('Std. dev. of target coverage depth')
     }
 
     ngscat_to_targetcov_dict = {
-        'Number reads': header_metric_storage.get_metric('Mapped reads'),
+        'Number reads': header_metric_storage.find_metric('Mapped reads'),
         # '% target bases with coverage >= 1x': cov.header_metric_storage.get_metric('Percentage of target covered by at least 1 read'),
-        '% reads on target': header_metric_storage.get_metric('Reads mapped on target'),
-        'mean coverage': header_metric_storage.get_metric('Average target coverage depth')
+        '% reads on target': header_metric_storage.find_metric('Reads mapped on target'),
+        'mean coverage': header_metric_storage.find_metric('Average target coverage depth')
     }
 
     if report_type == 'targetcov':

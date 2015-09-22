@@ -73,9 +73,10 @@ def _build_report(report, type_):
         column_order = range(len(column_names))  # TODO: read column order
 
         report_html += _build_total_report(report, section, column_order)
-        if report.plots:
-            for plot in report.plots:
-                plots_html += '<img src="' + plot + '"/>'
+
+    if report.plots:
+        for plot in report.plots:
+            plots_html += '<img src="' + plot + '"/>'
 
     return report_html, plots_html
 
@@ -552,7 +553,7 @@ def _insert_into_html(html_fpath, text, keyword):
 
     # substituting template text with json
     # html_text = re.sub('{{ ' + keyword + ' }}', text, html_text)
-    html_text = text.replace('{{ ' + keyword + ' }}', text)
+    html_text = html_text.encode().replace('{{ ' + keyword.encode() + ' }}', text.encode())
 
     # writing substituted html to final file
     with open(html_fpath, 'w') as f_html:

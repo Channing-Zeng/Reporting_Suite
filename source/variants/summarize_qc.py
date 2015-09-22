@@ -65,8 +65,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
 
 
 def _full_report_for_caller(cnf, samples, output_dir, jsons_by_sample, htmls_by_sample):
-    return FullReport.construct_from_sample_report_jsons(
-        samples, None, output_dir, jsons_by_sample, htmls_by_sample)
+    return FullReport.construct_from_sample_report_jsons(samples, output_dir, jsons_by_sample, htmls_by_sample)
 
 
 def _load_sample_report(json_fpath, sample, bcbio_structure):

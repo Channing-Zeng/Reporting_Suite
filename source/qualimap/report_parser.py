@@ -86,11 +86,11 @@ def parse_qualimap_sample_report(report_fpath):
 
         if metric_name == 'Read min/max/mean length':  # special case
             for metric_infix, value in zip(['min', 'max', 'mean'], val.split('/')):
-                metric = metric_storage.get_metric('Read ' + metric_infix + ' length')
+                metric = metric_storage.find_metric('Read ' + metric_infix + ' length')
                 rec = Record(metric, value)
                 records.append(rec)
         else:
-            metric = metric_storage.get_metric(metric_name)
+            metric = metric_storage.find_metric(metric_name)
             if not metric:
                 return
 
@@ -120,10 +120,10 @@ def parse_qualimap_sample_report(report_fpath):
                 except ValueError:  # it is a string
                     val = val_num + val_unit
 
-            if not metric_storage.get_metric(metric_name):
+            if not metric_storage.find_metric(metric_name):
                 return None
 
-            rec = Record(metric_storage.get_metric(metric_name), val)
+            rec = Record(metric_storage.find_metric(metric_name), val)
             records.append(rec)
 
             if val_unit.startswith('/'):  # for values like "80,220 / 99.86%"
@@ -134,7 +134,7 @@ def parse_qualimap_sample_report(report_fpath):
                     except:
                         pass
                     else:
-                        rec = Record(metric_storage.get_metric(metric_name + ' %'), val)
+                        rec = Record(metric_storage.find_metric(metric_name + ' %'), val)
                         records.append(rec)
 
     sections = {'start':                             'Summary',

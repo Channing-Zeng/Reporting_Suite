@@ -28,7 +28,7 @@ def parse_ngscat_sample_report(report_fpath):
     records = []
 
     def __parse_record(metric_name, line):
-        metric = metric_storage.get_metric(metric_name)
+        metric = metric_storage.find_metric(metric_name)
         record = Record(metric=metric)
 
         crop_left = line.split('>')

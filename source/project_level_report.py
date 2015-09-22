@@ -154,9 +154,9 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     if dataset_structure:
         if dataset_structure.basecall_stat_html_reports:
             val = OrderedDict([(basename(fpath), fpath) for fpath in dataset_structure.basecall_stat_html_reports])
-            recs.append(_make_path_record(val, general_section.get_metric(BASECALLS_NAME), base_dirpath))
-        recs.append(_make_path_record(dataset_structure.comb_fastqc_fpath,              general_section.get_metric(PRE_FASTQC_NAME), base_dirpath))
-        recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.get_metric(PRE_SEQQC_NAME),  base_dirpath))
+            recs.append(_make_path_record(val, general_section.find_metric(BASECALLS_NAME), base_dirpath))
+        recs.append(_make_path_record(dataset_structure.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
+        recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
         varqc_d = bcbio_structure.varqc_report_fpath_by_caller
@@ -165,10 +165,10 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
         varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
 
-        recs.append(_make_path_record(bcbio_structure.fastqc_summary_fpath, general_section.get_metric(FASTQC_NAME), base_dirpath))
-        recs.append(_make_path_record(bcbio_structure.targqc_summary_fpath, general_section.get_metric(SEQQC_NAME),  base_dirpath))
-        recs.append(_make_path_record(varqc_d,       general_section.get_metric(VARQC_NAME),       base_dirpath))
-        recs.append(_make_path_record(varqc_after_d, general_section.get_metric(VARQC_AFTER_NAME), base_dirpath))
+        recs.append(_make_path_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
+        recs.append(_make_path_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
+        recs.append(_make_path_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
+        recs.append(_make_path_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
 
     return recs
 
@@ -188,10 +188,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             sample_reports_records[s.name].extend([
                 _make_path_record(
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
-                    individual_reports_section.get_metric(PRE_FASTQC_NAME), base_dirpath),
+                    individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath),
                 _make_path_record(
                     OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
-                    individual_reports_section.get_metric(PRE_SEQQC_NAME), base_dirpath)
+                    individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath)
             ])
 
     if bcbio_structure:
@@ -201,10 +201,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
 
             sample_reports_records[s.name].extend([
-                _make_path_record(s.fastqc_html_fpath, individual_reports_section.get_metric(FASTQC_NAME),      base_dirpath),
-                _make_path_record(targqc_d,            individual_reports_section.get_metric(SEQQC_NAME),       base_dirpath),
-                _make_path_record(varqc_d,             individual_reports_section.get_metric(VARQC_NAME),       base_dirpath),
-                _make_path_record(varqc_after_d,       individual_reports_section.get_metric(VARQC_AFTER_NAME), base_dirpath)
+                _make_path_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
+                _make_path_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
+                _make_path_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
+                _make_path_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath)
             ])
 
     # for (repr_name, links_by_sample) in to_add:

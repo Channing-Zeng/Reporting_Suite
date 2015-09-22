@@ -8,7 +8,7 @@ from os.path import isfile, exists, join, islink
 import time
 
 from source.logger import info, err, warn, critical, silent_err
-from source.file_utils import file_exists, file_transaction, verify_file
+from source.file_utils import file_exists, file_transaction, verify_file, verify_obj_by_path
 
 
 def call_pipe(cnf, cmdline, *args, **kwargs):
@@ -70,7 +70,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     # NEEDED TO REUSE?
     if output_fpath and cnf.reuse_intermediate and not overwrite:
-        if file_exists(output_fpath):
+        if verify_obj_by_path(output_fpath, silent=True):
             info(output_fpath + ' exists, reusing')
             return output_fpath
     if output_fpath and isfile(output_fpath):
