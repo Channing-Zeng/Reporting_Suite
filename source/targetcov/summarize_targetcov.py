@@ -44,7 +44,7 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
                 if sample.qualimap_html_fpath:
                     rows += [[sample.name, sample.qualimap_html_fpath]]
 
-            data_file = write_tsv_rows(rows, qualimap_output_dir, 'qualimap_results_by_sample')
+            data_file = write_tsv_rows(rows, join(qualimap_output_dir, 'qualimap_results_by_sample.tsv'))
             cmdline = '{qualimap} multi-bamqc --data {data_file} -outdir {qualimap_output_dir}'.format(**locals())
             ret_code = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=None))
 
@@ -128,9 +128,9 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
     # if orig_bed_rec and ready_bed_rec:
     #     orig_bed_rec.value = bed_fpath
 
-    txt_fpath = targqc_full_report.save_txt(output_dir, BCBioStructure.targqc_name)
-    tsv_fpath = targqc_full_report.save_tsv(output_dir, BCBioStructure.targqc_name)
-    html_fpath = targqc_full_report.save_html(output_dir, BCBioStructure.targqc_name,
+    txt_fpath = targqc_full_report.save_txt(join(output_dir, BCBioStructure.targqc_name + '.txt'))
+    tsv_fpath = targqc_full_report.save_tsv(join(output_dir, BCBioStructure.targqc_name + '.tsv'))
+    html_fpath = targqc_full_report.save_html(join(output_dir, BCBioStructure.targqc_name + '.html'),
         'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     return txt_fpath, tsv_fpath, html_fpath
@@ -143,14 +143,14 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
     correct_samples = []
 
     for sample in samples:
-        if not sample.targetcov_done():
-            err('Error: target coverage is not done (json, html, or detail tsv are not there)')
-        else:
-            correct_samples.append(sample)
-            # if not sample.ngscat_done():
-            # sample.ngscat_html_fpath = None
-            # if not sample.qualimap_done():
-            # sample.qualimap_html_fpath = None
+        # if not sample.targetcov_done():
+        #     err('Error: target coverage is not done (json, html, or detail tsv are not there)')
+        # else:
+        correct_samples.append(sample)
+        # if not sample.ngscat_done():
+        # sample.ngscat_html_fpath = None
+        # if not sample.qualimap_done():
+        # sample.qualimap_html_fpath = None
     samples = correct_samples
 
     # _make_targetcov_symlinks(samples)
@@ -235,8 +235,8 @@ def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
     report = make_flat_region_report(sample, selected_regions, depth_threshs)
 
     gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
-    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
-    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    txt_rep_fpath = report.save_txt(join(output_dir, gene_report_basename + '.txt'))
+    tsv_rep_fpath = report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
     info('')
     info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
     info('  ' + txt_rep_fpath)
@@ -501,7 +501,7 @@ def _get_targqc_records(records_by_report_type, header_storage):
         for record in records:
             new_metric = _get_targqc_metric(record.metric, header_storage, report_type)
             if not new_metric or new_metric.name not in filled_metric_names:
-                filled_metric_names.append(new_metric.name)
+                filled_metric_names.append(record.metric.name)
                 record.metric = new_metric
                 targqc_records.append(record)
     return targqc_records
@@ -654,8 +654,8 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
         f.close()
 
     gene_report_basename = 'Best.' + source.targetseq_name + source.detail_gene_report_baseending
-    txt_rep_fpath = report.save_txt(output_dir, gene_report_basename)
-    tsv_rep_fpath = report.save_tsv(output_dir, gene_report_basename)
+    txt_rep_fpath = report.save_txt(join(output_dir, gene_report_basename + '.txt'))
+    tsv_rep_fpath = report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
     info('')
     info('Best values for the regions (total ' + str(total_regions) + ') saved into:')
     info('  ' + txt_rep_fpath)

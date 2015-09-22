@@ -1,4 +1,5 @@
 from ext_modules.simplejson import load
+from os.path import join
 import source
 from source.logger import info
 from source.reporting import FullReport, SampleReport
@@ -13,7 +14,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
             jsons_by_sample_by_caller.values()[0], htmls_by_sample_by_caller.values()[0])
 
         full_summary_fpaths = report.save_into_files(
-            output_dir, base_fname=varqc_name, caption=caption)
+            join(output_dir, varqc_name), caption=caption)
 
         info()
         info('*' * 70)
@@ -31,7 +32,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
                     s_report.set_project_tag(tag_by_sample[s_report.sample.name])
 
             caller.summary_qc_report_fpaths = caller.summary_qc_report.save_into_files(
-                output_dir, base_fname=caller.suf + '.' + varqc_name,
+                join(output_dir, caller.suf + '.' + varqc_name),
                 caption=caption + ' for ' + caller.name)
 
         # Combining
@@ -45,7 +46,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
 
         combined_full_report = FullReport('', sample_reports)
         full_summary_fpaths = combined_full_report.save_into_files(
-            output_dir, base_fname=varqc_name, caption=caption)
+            join(output_dir, varqc_name), caption=caption)
 
         info()
         info('*' * 70)

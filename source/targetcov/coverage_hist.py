@@ -2,10 +2,10 @@ from os.path import join, basename, splitext
 from time import sleep
 
 from source.calling_process import call
-from source.file_utils import splitext_plus, add_suffix, safe_mkdir
+from source.file_utils import splitext_plus, add_suffix, safe_mkdir, file_transaction
 from source.logger import critical, info, warn, send_email, err
 # from source.ngscat import coverageHisto
-from source.ngscat.bed_file import verify_bam
+from source.ngscat.bed_file import verify_bam, verify_bed
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
@@ -58,23 +58,24 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
         bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath)
         info()
         info('Anylising bedcoverage output...')
-        regions, _, max_depth = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
+        regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
 
     else:
-        chroms = [l.split() for l in open(get_chr_len_fpath(cnf)).readlines()]
+        chroms = [l.split()[0] for l in open(get_chr_len_fpath(cnf)).readlines()]
 
-        stub = join(cnf.work_dir, splitext_plus(bam_fpath)[0])
-        if all(verify_bam(stub + '.' + chrom + '.bam', silent=True) for chrom in chroms):
+        stub = join(cnf.work_dir, basename(splitext_plus(bam_fpath)[0]))
+        if cnf.reuse_intermediate and all(verify_bam(stub + '.' + 'REF_' + chrom + '.bam', silent=True) for chrom in chroms):
             info('BAM ' + bam_fpath + ' is split, reusing...')
         else:
             cmdline = '{bamtools} split -in {bam_fpath} -stub {stub} -reference'.format(**locals())
             call(cnf, cmdline)
 
-        for chrom, ln in chroms:
+        for chrom in chroms:
+            bed_chrom = add_suffix(bed_fpath, chrom)
             grep = get_system_path(cnf, 'grep')
             cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
-            bed_chrom = add_suffix(bed_fpath, chrom)
-            call(cnf, cmdl, bed_chrom)
+            call(cnf, cmdl, output_fpath=bed_chrom)
+
             bam_chrom = add_suffix(bam_fpath, 'REF_' + chrom)
             bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_chrom, bam_chrom)
             info('Anylising bedcoverage output for ' + str(chrom) + '...')
@@ -223,4 +224,4 @@ def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_n
     # info('Sorting genes...')
     # regions = sorted(regions[:-1], key=Region.get_order_key)
 
-    return regions, total_region, max_depth
+    return regions  #, total_region, max_depth

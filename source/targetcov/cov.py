@@ -258,7 +258,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed,
-                                            exons_no_genes_bed, output_dir, gene_by_name)
+                                           exons_no_genes_bed, output_dir, gene_by_name)
 
     info()
     return depth_stats['ave_depth'], gene_by_name, [summary_report, per_gene_report]
@@ -359,9 +359,9 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     report.add_record('Deletions', mm_indels_stats['deletions'])
     report.add_record('Homopolymer indels', mm_indels_stats['homo_indels'])
 
-    report.save_json(output_dir, sample.name + '.' + source.targetseq_name)
-    report.save_txt (output_dir, sample.name + '.' + source.targetseq_name)
-    report.save_html(output_dir, sample.name + '.' + source.targetseq_name, caption='Target coverage statistics for ' + sample.name)
+    report.save_json(join(output_dir, sample.name + '.' + source.targetseq_name + '.json'))
+    report.save_txt (join(output_dir, sample.name + '.' + source.targetseq_name + '.txt'))
+    report.save_html(join(output_dir, sample.name + '.' + source.targetseq_name + '.html'), caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
     info('  ' + report.txt_fpath)
@@ -468,10 +468,9 @@ def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_a
 
     info('Saving report...')
     report = make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
-
     gene_report_basename = sample.name + '.' + source.targetseq_name + source.detail_gene_report_baseending
-    report.save_txt(output_dir, gene_report_basename)
-    report.save_tsv(output_dir, gene_report_basename)
+    report.save_txt(join(output_dir, gene_report_basename + '.txt'))
+    report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
     info('')
     info('Regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + report.txt_fpath)

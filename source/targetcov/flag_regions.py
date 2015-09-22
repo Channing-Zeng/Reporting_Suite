@@ -78,8 +78,8 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     report = make_flat_region_report(sample, final_regions, depth_threshs)
 
     gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
-    report.save_txt(output_dir, gene_report_basename)
-    report.save_tsv(output_dir, gene_report_basename)
+    report.save_txt(join(output_dir, gene_report_basename + '.txt'))
+    report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
     info('')
     info('Selected regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + report.txt_fpath)
@@ -387,8 +387,8 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sa
         rep_region.add_record('Hotspots depths/norm depths', depths)
 
     best_report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
-    report.save_txt(join(sample.dirpath, source.targetseq_name), best_report_basename)
-    report.save_tsv(join(sample.dirpath, source.targetseq_name), best_report_basename)
+    report.save_txt(join(sample.dirpath, source.targetseq_name, best_report_basename + '.txt'))
+    report.save_tsv(join(sample.dirpath, source.targetseq_name, best_report_basename + '.tsv'))
     info('')
     info('Oncomine variants coverage report (total: {0:,} variants, {0:,} variants below cut-off {0}, {0:,} regions) '
          'saved into:'.format(total_variants, total_variants_below_cutoff, depth_cutoff, total_regions))

@@ -1,4 +1,4 @@
-from os.path import relpath
+from os.path import relpath, join
 import source
 from source.reporting import FullReport, SampleReport
 from source.logger import step_greetings, info, send_email
@@ -22,7 +22,7 @@ def summary_reports(cnf, bcbio_structure):
         metric_storage=report_parser.metric_storage)
 
     final_summary_report_fpaths = full_report.save_into_files(
-        cnf.output_dir, bcbio_structure.ngscat_name, 'ngsCAT statistics')
+        join(cnf.output_dir, bcbio_structure.ngscat_name), 'ngsCAT statistics')
 
     info()
     info('*' * 70)

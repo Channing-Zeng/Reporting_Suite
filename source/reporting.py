@@ -20,7 +20,15 @@ class Record:
             metric=None,
             value=None,
             meta=None,
-            html_fpath=None):
+            html_fpath=None,
+
+            num = None,
+            cell_contents = None,
+            frac_width = None,
+            right_shift = None,
+            color = 'white',
+            text_color = 'black'):  #TODO: get rid of those
+
         self.metric = metric
         self.set_value(value)
         self.meta = meta or dict()
@@ -30,8 +38,8 @@ class Record:
         self.cell_contents = None
         self.frac_width = None
         self.right_shift = None
-        self.color = None
-        self.text_color = None
+        self.color = 'white'
+        self.text_color = 'black'
 
     def get_value(self):
         return self.value
@@ -78,7 +86,17 @@ class Metric:
             description=None,
             quality='More is better',  # "More is better", "Less is better", "Equal"
             unit='',
-            common=False):
+            common=False,
+
+            values = None,
+            min = None,
+            max = None,
+            med = None,
+            low_outer_fence = None,
+            low_inner_fence = None,
+            top_inner_fence = None,
+            top_outer_fence = None,
+            all_values_equal = False):  #TODO: get read of those
         self.name = name
         self.short_name = short_name
         self.description = description
@@ -163,23 +181,22 @@ class Report:
     def flatten(self, sections=None, human_readable=True):
         raise NotImplementedError()
 
-    def save_txt(self, output_dirpath, base_fname, sections=None):
-        fpath = write_txt_rows(self.flatten(sections, human_readable=True), output_dirpath, base_fname)
+    def save_txt(self, output_fpath, sections=None):
+        fpath = write_txt_rows(self.flatten(sections, human_readable=True), output_fpath)
         self.txt_fpath = fpath
         return fpath
 
-    def save_json(self, output_dirpath, base_fname, sections=None):
-        fpath = join(output_dirpath, base_fname + '.json')
-        self.dump(fpath)
-        self.json_fpath = fpath
-        return fpath
+    def save_json(self, output_fpath, sections=None):
+        self.dump(output_fpath)
+        self.json_fpath = output_fpath
+        return output_fpath
 
-    def save_tsv(self, output_dirpath, base_fname, sections=None):
-        fpath = write_tsv_rows(self.flatten(sections, human_readable=False), output_dirpath, base_fname)
+    def save_tsv(self, output_fpath, sections=None):
+        fpath = write_tsv_rows(self.flatten(sections, human_readable=False), output_fpath)
         self.tsv_fpath = fpath
         return fpath
 
-    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
+    def save_html(self, output_fpath, caption='', type_=None):
         # class Encoder(JSONEncoder):
         #     def default(self, o):
         #         if isinstance(o, (VariantCaller, BCBioSample)):
@@ -191,9 +208,7 @@ class Report:
         #     report=self,
         #     type_=type_,
         # ), separators=(',', ':'), cls=Encoder)
-        fpath = write_html_report(
-            self, type_,
-            output_dirpath, base_fname, caption)
+        fpath = write_html_report(self, type_, output_fpath, caption)
         self.html_fpath = fpath
         return fpath
 
@@ -210,6 +225,9 @@ class Report:
         else:
             return rec
 
+    def get_common_records(self):
+        raise NotImplementedError()
+
 
 class SampleReport(Report):
     def __init__(self, sample=None, html_fpath=None,
@@ -220,7 +238,6 @@ class SampleReport(Report):
         self.sample = sample
         self.html_fpath = html_fpath
         self.records = records or []
-        self.general_records = []
         self.metric_storage = metric_storage
         self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
@@ -240,6 +257,13 @@ class SampleReport(Report):
     # def set_display_name(self, name):
     #     self.display_name = name
     #     return self
+
+    def get_common_records(self):
+        common_records = []
+        for record in self.records:
+            if record.metric.common:
+                common_records.append(record)
+        return common_records
 
     def set_project_tag(self, tag):
         if not self.project_tag and tag:
@@ -287,8 +311,8 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, output_dirpath, base_fname, caption='', type_=None):
-        return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='SampleReport')
+    def save_html(self, output_fpath, caption='', type_=None):
+        return Report.save_html(self, output_fpath, caption=caption, type_='SampleReport')
 
     def __repr__(self):
         return self.get_display_name() + (', ' + self.report_name if self.report_name else '')
@@ -414,11 +438,13 @@ class PerRegionSampleReport(SampleReport):
 
 
 class FullReport(Report):
-    def __init__(self, name='', sample_reports=None, metric_storage=None, general_records=None):
+    def __init__(self, name='', sample_reports=None, metric_storage=None, general_records=None, base_fname=None):
         self.name = name
         self.sample_reports = sample_reports or []
         self.metric_storage = metric_storage
-        self.general_records = general_records
+        self._general_records = general_records
+        self.base_fname = base_fname
+        self.plots = []
 
         if metric_storage:
             for sample_report in sample_reports:
@@ -432,13 +458,13 @@ class FullReport(Report):
     def get_common_records(self):
         common_records = []
 
-        if self.general_records:
-            common_records.extend(self.general_records)
+        if self._general_records:
+            common_records.extend(self._general_records)
 
         if self.sample_reports:
             sample_report = self.sample_reports[0]
             for record in sample_report.records:
-                if record.metric.common:
+                if record.metric and record.metric.common:  #TODO: why can record.metric be None?
                     common_records.append(record)
         return common_records
 
@@ -490,18 +516,18 @@ class FullReport(Report):
 
         return full_report
 
-    def save_into_files(self, output_dirpath, base_fname, caption, sections=None):
+    def save_into_files(self, base_path, caption, sections=None):
         return \
-            self.save_txt(output_dirpath, base_fname, sections), \
-            self.save_tsv(output_dirpath, base_fname, sections), \
-            self.save_html(output_dirpath, base_fname, caption)
+            self.save_txt(base_path + '.txt', sections), \
+            self.save_tsv(base_path + '.tsv', sections), \
+            self.save_html(base_path + '.html', caption)
 
-    def save_html(self, output_dirpath, base_fname, caption='', type_=None, display_name=None):
+    def save_html(self, output_fpath, caption='', type_=None, display_name=None):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
-        return Report.save_html(self, output_dirpath, base_fname, caption=caption, type_='FullReport')
+        return Report.save_html(self, output_fpath, caption=caption, type_='FullReport')
 
     def __repr__(self):
         return self.name
@@ -662,11 +688,11 @@ def load_records(json_fpath):
 #             for sample_name, fpaths in report_fpath_by_sample.items()])
 
 
-def write_txt_rows(rows, output_dirpath, base_fname):
+def write_txt_rows(rows, output_fpath):
     if not rows:
         return None
 
-    output_fpath = join(output_dirpath, base_fname + '.txt')
+    # output_fpath = join(output_dirpath, base_fname + '.txt')
 
     col_widths = repeat(0)
     for row in rows:
@@ -685,11 +711,9 @@ def write_txt_rows(rows, output_dirpath, base_fname):
     return output_fpath
 
 
-def write_tsv_rows(rows, output_dirpath, base_fname):
+def write_tsv_rows(rows, output_fpath):
     if not rows:
         return None
-
-    output_fpath = join(output_dirpath, base_fname + '.tsv')
 
     with open(output_fpath, 'w') as out:
         for row in rows:

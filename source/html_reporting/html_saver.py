@@ -65,7 +65,7 @@ image_files = [
 def _build_report(report, type_):
     report_html = ''
     plots_html = ''
-    report_html += _build_common_records(report.general_records)
+    report_html += _build_common_records(report.get_common_records())
 
     for section in report.metric_storage.sections:
         column_names = [m.name for m in section.metrics]
@@ -82,7 +82,7 @@ def _build_report(report, type_):
 
 def _build_common_records(general_records):
     for rec in general_records:
-        rec.cell_contents = rec.format_html()
+        _calc_record_cell_contents(rec)
 
     table = '<table cellspacing="0" class="common_table" id="common_table">'
     for rec in general_records:
@@ -101,7 +101,7 @@ def __get_metric_name_html(metric, use_full_name=False):
     if metric.short_name and not use_full_name:
         metric_name = metric.short_name
         description = metric.description or metric.name
-        return '<a class="metric_name" rel="tooltip" title="' + description + '>' + metric_name + '</a>'
+        return '<a class="metric_name" rel="tooltip" title="' + description + '">' + metric_name + '</a>'
     else:
         return metric.name
 
@@ -110,12 +110,12 @@ def _build_total_report(report, section, column_order):
     html = ''
 
     if section.title:
-        html += '<h3 class="table_name">' + section.title + '</h3>'
+        html += '\n<h3 class="table_name">' + section.title + '</h3>'
     _calc_cell_contents(report, section)
 
-    table = '<table cellspacing="0" class="report_table tableSorter fix-align-char id="report_table_' + section.name + '">'
-    table += '\n<thead><tr class="top_row_tr">'
-    table += '<th class="top_left_td left_column_td" data-sortBy="numeric"><span>Sample</span></th>'
+    table = '\n<table cellspacing="0" class="report_table tableSorter fix-align-char" id="report_table_' + section.name + '">'
+    table += '\n<thead>\n<tr class="top_row_tr">'
+    table += '\n<th class="top_left_td left_column_td" data-sortBy="numeric"><span>Sample</span></th>'
 
     for col_num in range(len(section.metrics)):
         pos = column_order[col_num]
@@ -124,10 +124,10 @@ def _build_total_report(report, section, column_order):
             continue
         sort_by = 'nosort' if metric.all_values_equal else 'numeric'
         direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-        table += ('<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
+        table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
                   ' data-direction=' + direction + ' position=' + str(pos) + '>' +
                   '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
-    table += '</tr></thead><tbody>'
+    table += '\n</tr>\n</thead>\n<tbody>'
 
     i = 0
     if 'sample_reports' not in report.__dict__:
@@ -143,7 +143,7 @@ def _build_total_report(report, section, column_order):
             line_caption = '<span title="' + line_caption + '">' + line_caption[:max_sample_name_len] + '...</span>'
 
         second_row_tr = 'second_row_tr' if i == 0 else ''
-        table += '\n<tr class="' + second_row_tr + '"><td class="left_column_td td" data-sortAs=' + str(sample_reports_length - i) + '>'
+        table += '\n<tr class="' + second_row_tr + '">\n<td class="left_column_td td" data-sortAs=' + str(sample_reports_length - i) + '>'
         if sample_reports_length == 1:
             table += '<span class="sample_name">' + line_caption + '</span>'
         else:
@@ -161,7 +161,7 @@ def _build_total_report(report, section, column_order):
             else:
                 table += '<span class="sample_name">' + line_caption + '</span>'
 
-        table += '</td>'
+        table += '\n</td>'
 
         for col_num in range(len(section.metrics)):
             pos = column_order[col_num]
@@ -176,11 +176,11 @@ def _build_total_report(report, section, column_order):
                     rec = r
                     break
             if not rec:
-                table += "<td></td>"
+                table += "\n<td></td>"
                 continue
 
-            table += '<td metric="' + metric.name + '" style="background-color: ' + rec.color + '; color: ' + rec.text_color + \
-                     '" quality="' + metric.quality + '" class="td '
+            table += '\n<td metric="' + metric.name + '" style="background-color: ' + rec.color + '; color: ' + rec.text_color + \
+                     '" quality="' + str(metric.quality) + '" class="td '
             if rec.num:
                 table += ' number" number="' + str(rec.value) + ' data-sortAs="' + str(rec.value) + '>'
             else:
@@ -197,8 +197,8 @@ def _build_total_report(report, section, column_order):
                 else:  # varQC -- several variant callers for one sample are possible
                     if len(rec.html_fpath) == 0:
                         rec.value = None
-                        rec.format_html()
-                        table += rec.format_html() + '</td>'
+                        _calc_record_cell_contents(rec)
+                        table += rec.cell_contents + '</td>'
                     else:
                         caller_links = ', '.join('<a href="' + html_fpath + '">' + caller + '</a>'
                                                  for caller, html_fpath in rec.html_fpath.items()
@@ -207,9 +207,9 @@ def _build_total_report(report, section, column_order):
 
             else:
                 table += '<a style="' + str(padding_style) + '" ' + __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</a></td>'
-        table += '</tr>'
+        table += '\n</tr>'
         i += 1
-    table += '\n</tbody></table>\n'
+    table += '\n</tbody>\n</table>\n'
 
     html += table
     return html
@@ -298,7 +298,7 @@ def hsl2rgb(h, s, l):
         g = hue2rgb(p, q, h)
         b = hue2rgb(p, q, h - 1/3)
 
-    return [round(r * 255), round(g * 255), round(b * 255)]
+    return map(int, [round(r * 255), round(g * 255), round(b * 255)])
 
 
 def get_color(hue, lightness):
@@ -307,54 +307,66 @@ def get_color(hue, lightness):
     return '#' + ''.join(map(hex, hsl2rgb(hue / 360, 0.8, lightness / 100)))
 
 
+def _calc_record_cell_contents(rec):
+    rec.cell_contents = rec.format_html()
+    if rec.value is not None and (isinstance(rec.value, int) or isinstance(rec.value, float)):
+        rec.num = rec.value
+
+    #TODO: intPartTextWidth
+    return rec
+
+
 def _calc_cell_contents(report, section):
     max_frac_widths_by_metric = dict()
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     if 'sample_reports' in report.__dict__:
-        for sample_report in report.sample_reports:
-            for rec in sample_report.records:
-                rec.cell_contents = rec.format_html()
-                #TODO: intPartTextWidth
-
-            for rec in sample_report.records:
-                if rec.metric and rec.metric.name in section.metrics_by_name:
-                    if rec.metric.name not in max_frac_widths_by_metric or \
-                                    rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
-                        max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
-
-                if rec.num:
-                    if not rec.metric.values:
-                        rec.metric.values = []
-                    rec.metric.values.append(rec.num)
-
+        sample_reports = report.sample_reports
     else:
-        for rec in report.records:
-            if rec.metric.name in section.metrics_by_name:
-                if rec.num:
-                    if not rec.metric.values:
-                        rec.metric.values = []
-                    rec.metric.values.append(rec.num)
+        sample_reports = [report]
+
+    for sample_report in sample_reports:
+        for rec in sample_report.records:
+            _calc_record_cell_contents(rec)
+
+        for rec in sample_report.records:
+            if rec.metric and rec.metric.name in section.metrics_by_name:
+                if rec.metric.name not in max_frac_widths_by_metric or \
+                                rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
+                    max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+
+            if rec.num:
+                if not rec.metric.values:
+                    rec.metric.values = []
+                rec.metric.values.append(rec.num)
+
+    # else:
+    #     for rec in report.records:
+    #         if rec.metric.name in section.metrics_by_name:
+    #             if rec.num:
+    #                 if not rec.metric.values:
+    #                     rec.metric.values = []
+    #                 rec.metric.values.append(rec.num)
 
     for metric in section.metrics:
         if metric.values:
-            def _cmp(a, b):
+            def _cmp(a, b):  # None is always less than anything
                 if a and b:
-                    return a - b
+                    return cmp(a, b)
                 elif a:
-                    return a
+                    return 1
                 else:
-                    return b
+                    return -1
 
-            vals = sorted(metric.values(), cmp=_cmp)
+            vals = sorted(metric.values, cmp=_cmp)
             l = len(vals)
 
             metric.min = vals[0]
             metric.max = vals[l - 1]
             metric.all_values_equal = metric.min == metric.max
             metric.med = vals[(l - 1) / 2] if l % 2 != 0 else mean([vals[l / 2], vals[(l / 2) - 1]])
-            q1 = vals[floor((l - 1) / 4)]
-            q3 = vals[floor((l - 1) * 3 / 4)]
+            q1 = vals[int(floor((l - 1) / 4))]
+            q3 = vals[int(floor((l - 1) * 3 / 4))]
 
             d = q3 - q1
             metric.low_outer_fence = q1 - 3   * d
@@ -415,8 +427,8 @@ def _calc_cell_contents(report, section):
     return report
 
 
-def write_html_report(report, type_, output_dirpath, report_base_name, caption=''):
-    html_fpath = _init_html(output_dirpath, report_base_name + '.html', caption)
+def write_html_report(report, type_, html_fpath, caption=''):
+    html_fpath = _init_html(html_fpath, caption)
     report_html, plots_html = _build_report(report, type_)
     html_fpath = _insert_into_html(html_fpath, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
     html_fpath = _insert_into_html(html_fpath, report_html, 'report')
@@ -510,9 +522,9 @@ def _embed_css_and_scripts(html):
     return html
 
 
-def _init_html(results_dirpath, report_fname, caption=''):
+def _init_html(html_fpath, caption=''):
     # Temporary:
-    aux_dirpath = join(results_dirpath, aux_dirname)
+    aux_dirpath = join(dirname(html_fpath), aux_dirname)
     if isdir(aux_dirpath):
         shutil.rmtree(aux_dirpath)
     # Temporary.
@@ -524,7 +536,6 @@ def _init_html(results_dirpath, report_fname, caption=''):
 
     html = _embed_css_and_scripts(html)
 
-    html_fpath = os.path.join(results_dirpath, report_fname)
     if os.path.exists(html_fpath):
         os.remove(html_fpath)
 
@@ -540,7 +551,8 @@ def _insert_into_html(html_fpath, text, keyword):
         html_text = f_html.read()
 
     # substituting template text with json
-    html_text = re.sub('{{ ' + keyword + ' }}', text, html_text)
+    # html_text = re.sub('{{ ' + keyword + ' }}', text, html_text)
+    html_text = text.replace('{{ ' + keyword + ' }}', text)
 
     # writing substituted html to final file
     with open(html_fpath, 'w') as f_html:
