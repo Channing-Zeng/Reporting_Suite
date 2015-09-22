@@ -281,28 +281,29 @@ def hsl2rgb(h, s, l):
     if s == 0:
         r = g = b = l  # achromatic
     else:
-        def hue2rgb(p, q, t):
-            if t < 0: t += 1
-            if t > 1: t -= 1
-            if t < 1/6: return p + (q - p) * 6 * t
-            if t < 1/2: return q
-            if t < 2/3: return p + (q - p) * (2/3 - t) * 6
-            return p
-
-
-        q = l < 0.5 if l * (1 + s) else l + s - l * s
+        q = l * (1 + s) if l < 0.5 else l + s - l * s
         p = 2 * l - q
-        r = hue2rgb(p, q, h + 1/3)
+        r = hue2rgb(p, q, h + 1./3)
         g = hue2rgb(p, q, h)
-        b = hue2rgb(p, q, h - 1/3)
+        b = hue2rgb(p, q, h - 1./3)
 
     return map(int, [round(r * 255), round(g * 255), round(b * 255)])
+
+def hue2rgb(p, q, t):
+    if t < 0: t += 1
+    if t > 1: t -= 1
+    if t < 1./6: return p + (q - p) * 6 * t
+    if t < 1./2: return q
+    if t < 2./3: return p + (q - p) * (2./3 - t) * 6
+    return p
 
 
 def get_color(hue, lightness):
     lightness = lightness or 92
     # lightness = Math.round (Math.pow hue - 75, 2) / 350 + 35
-    return '#' + ''.join(map(hex, hsl2rgb(hue / 360, 0.8, lightness / 100)))
+    rgb = hsl2rgb(float(hue) / 360, 0.8, float(lightness) / 100)
+    hex_rgb = [hex(c)[2:] for c in rgb]
+    return '#' + ''.join(hex_rgb)
 
 
 def _calc_record_cell_contents(rec):
