@@ -49,7 +49,11 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     if isfile(marker_fpath):
         os.remove(marker_fpath)
     job_id = basename(marker_fpath.split('.')[0])
-    log_fpath = join(cnf.log_dir, job_id + '.log')
+    if cnf.log_dir:
+        err_fpath = log_fpath = join(cnf.log_dir, job_id + '.log')
+    else:
+        log_fpath = '/dev/null'
+        err_fpath = '/dev/null'
 
     queue = cnf.queue
     runner_script = adjust_system_path(cnf.qsub_runner)
@@ -57,7 +61,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     mem = threads * 15
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-        '-j n -o {log_fpath} -e {log_fpath} {hold_jid_line} '
+        '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '
         '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
     info('Submitting job ' + job_id)
     info(qsub_cmdline)
@@ -106,7 +110,7 @@ def wait_for_jobs(cnf, jobs):
         qdel = get_system_path(cnf, 'qdel', is_critical=False)
         command = ' '.join(j.job_id for j in jobs if not j.is_done)
         if qdel:
-            res = call(cnf, qdel + command, exit_on_error=False)
+            res = call(cnf, qdel + ' ' + command, exit_on_error=False)
             if res == 0:
                 info('All running jobs for this project has been deleted from queue.')
             else:

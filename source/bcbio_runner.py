@@ -725,7 +725,7 @@ class BCBioRunner:
             qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
             command = ' '.join(j.job_id for j in self.jobs_running if not j.is_done)
             if qdel:
-                res = call(self.cnf, qdel + command, exit_on_error=False)
+                res = call(self.cnf, qdel + ' ' + command, exit_on_error=False)
                 if res == 0:
                     info('All running jobs for this project has been deleted from queue.')
                 else:
