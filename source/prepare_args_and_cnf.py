@@ -174,10 +174,13 @@ def set_up_dirs(cnf):
 
     set_up_work_dir(cnf)
 
-    if not cnf.log_dir:
-        cnf.log_dir = join(cnf.work_dir, 'log')
-    safe_mkdir(cnf.log_dir)
-    info('Created log dir ' + cnf.log_dir)
+    if cnf.log_dir == '-':
+        cnf.log_dir = None
+    else:
+        if not cnf.log_dir:
+            cnf.log_dir = join(cnf.work_dir, 'log')
+        safe_mkdir(cnf.log_dir)
+        info('Created log dir ' + cnf.log_dir)
 
     set_up_log(cnf)
 
@@ -206,28 +209,29 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
     logger.address = remove_quotes(cnf.email) if cnf.email else ''
     logger.smtp_host = cnf.smtp_host
 
-    log_fname = (proc_name + '_' if proc_name else '') + (cnf.sample + '_' if cnf.sample else '') + '_log.txt'
-    log_fpath = join(cnf.log_dir, log_fname)
+    if cnf.log_dir:
+        log_fname = (proc_name + '_' if proc_name else '') + (cnf.sample + '_' if cnf.sample else '') + 'log.txt'
+        log_fpath = join(cnf.log_dir, log_fname)
 
-    if not proc_name:
-        i = 1
-        if file_exists(log_fpath):
-            bak_fpath = log_fpath + '.' + str(i)
-            while isfile(bak_fpath):
+        if not proc_name:
+            i = 1
+            if file_exists(log_fpath):
                 bak_fpath = log_fpath + '.' + str(i)
-                i += 1
-            try:
-                os.rename(log_fpath, bak_fpath)
-            except OSError:
-                pass
-        elif isfile(log_fpath):
-            try:
-                os.remove(log_fpath)
-            except OSError:
-                pass
+                while isfile(bak_fpath):
+                    bak_fpath = log_fpath + '.' + str(i)
+                    i += 1
+                try:
+                    os.rename(log_fpath, bak_fpath)
+                except OSError:
+                    pass
+            elif isfile(log_fpath):
+                try:
+                    os.remove(log_fpath)
+                except OSError:
+                    pass
 
-    info('log_fpath: ' + log_fpath)
-    logger.log_fpath = cnf.log = log_fpath
+        info('log_fpath: ' + log_fpath)
+        logger.log_fpath = cnf.log = log_fpath
 
 
 def determine_sys_cnf(opts):

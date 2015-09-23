@@ -528,11 +528,12 @@ class BCBioStructure:
         info('Project name: ' + self.project_name)
         # self.cnf.name = proc_name or self.project_name
 
-        self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log')
-        info('log_dirpath: ' + self.log_dirpath)
-        safe_mkdir(self.log_dirpath)
-        # info('cnf.name: ' + str(self.cnf.name))
-
+        if self.cnf.log_dir == '-':
+            self.log_dirpath = self.cnf.log_dir = None
+        else:
+            self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log')
+            info('log_dirpath: ' + self.log_dirpath)
+            safe_mkdir(self.log_dirpath)
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 
         self.work_dir = self.cnf.work_dir = self.cnf.work_dir or abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))

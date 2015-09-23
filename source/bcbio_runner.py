@@ -23,7 +23,8 @@ from source.config import defaults
 
 class Step:
     def __init__(self, cnf, run_id, name, script, dir_name=None,
-                 interpreter=None, short_name=None, paramln='', env_vars=None):
+                 interpreter=None, short_name=None, paramln='', env_vars=None,
+                 log_fpath_template=None):
         self.name = name
         self.dir_name = dir_name
         self.cnf = cnf
@@ -35,6 +36,7 @@ class Step:
         self.script = script
         self.interpreter = interpreter
         self.env_vars = env_vars
+        self.log_fpath_template = log_fpath_template
 
     def job_name(self, sample=None, caller=None):
         jn = self.short_name.upper() + '_' + self.run_id_ + \
@@ -196,14 +198,14 @@ class BCBioRunner:
             basic_params + \
             ' -t ' + str(self.summary_threads) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
-            ' --log-dir {log_dirpath}'
+            ' --log-dir -'
 
         # Params for those who doesn't call bcbio_structure
         params_for_one_sample = \
             basic_params + \
             ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
-            ' --log-dir {log_dirpath}' + \
+            ' --log-dir -' + \
             ' --genome {genome}'
 
         if cnf.email:
@@ -214,12 +216,16 @@ class BCBioRunner:
             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
             '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
+        # log_fpath = join(self.bcbio_structure.log_dirpath,
+        #      (step.name + ('_' + sample_name if sample_name else '') +
+        #                   ('_' + caller if caller else '')) + '.log')
 
         self.varannotate = Step(cnf, run_id,
             name=BCBioStructure.varannotate_name, short_name='va',
             interpreter='python',
             script=join('scripts', 'post', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varannotate_name + '-{caller}.log'),
             paramln=anno_paramline,
         )
         self.varqc = Step(cnf, run_id,
@@ -227,14 +233,16 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'varqc.py'),
             dir_name=BCBioStructure.varqc_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varqc_name + '-{caller}.log'),
             paramln=params_for_one_sample + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
-                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\''
+                    '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_name) + '_{sample}_{caller}\'',
         )
         self.varqc_after = Step(cnf, run_id,
             name=BCBioStructure.varqc_after_name, short_name='vqa',
             interpreter='python',
             script=join('scripts', 'post', 'varqc.py'),
             dir_name=BCBioStructure.varqc_after_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varqc_after_name + '-{caller}.log'),
             paramln=params_for_one_sample + ' --vcf \'{vcf}\' -o \'{output_dir}\' -s \'{sample}\' -c {caller} '
                     '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
                     '--proc-name ' + BCBioStructure.varqc_after_name
@@ -251,6 +259,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'targetcov.py'),
             dir_name=BCBioStructure.targqc_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
             paramln=targetcov_params,
         )
         self.abnormal_regions = Step(cnf, run_id,
@@ -258,6 +267,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'abnormal_regions.py'),
             dir_name=BCBioStructure.targqc_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
             paramln=params_for_one_sample + ' -o \'{output_dir}\' {caller_names} {vcfs} '
                     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
         )
@@ -266,6 +276,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'ngscat.py'),
             dir_name=BCBioStructure.ngscat_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
             paramln=params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
                     '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
         )
@@ -283,6 +294,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary-{caller}.log'),
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.varqc_after_summary = Step(cnf, run_id,
@@ -290,6 +302,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary-{caller}.log'),
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
                 ' --varqc-name ' + BCBioStructure.varqc_after_name +
                 ' --varqc-dir ' + BCBioStructure.varqc_after_dir
@@ -307,6 +320,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
             paramln=varfilter_paramline
         )
 
@@ -315,6 +329,7 @@ class BCBioRunner:
             interpreter='java',
             script='vcf_loader',
             dir_name='mongo_loader',
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'mongo_loader.log'),
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
 
@@ -329,6 +344,7 @@ class BCBioRunner:
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'seq2c.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
             dir_name=BCBioStructure.cnv_summary_dir,
             paramln=seq2c_cmdline
         )
@@ -341,6 +357,7 @@ class BCBioRunner:
             name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.targqc_name + '_summary.log'),
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=targqc_cmdline
         )
@@ -348,6 +365,7 @@ class BCBioRunner:
             name=BCBioStructure.fastqc_name, short_name='fastqc',
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'fastqc_summary.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.fastqc_name + '_summary.log'),
             dir_name=BCBioStructure.fastqc_summary_dir,
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
@@ -361,13 +379,8 @@ class BCBioRunner:
 
         output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
 
-        log_fpath = join(self.bcbio_structure.log_dirpath,
-             (step.name + ('_' + sample_name if sample_name else '') +
-                          ('_' + caller if caller else '')) + '.log')
-
-        log_dirpath = join(self.bcbio_structure.log_dirpath, step.name)
-        if caller: log_dirpath += '-' + caller
-        safe_mkdir(log_dirpath)
+        log_fpath = step.log_fpath_template.format(sample=sample_name, caller=caller)
+        safe_mkdir(dirname(log_fpath))
 
         done_markers_dirpath = join(self.bcbio_structure.work_dir, 'done_markers')
         marker_fpath = join(done_markers_dirpath,
@@ -376,7 +389,7 @@ class BCBioRunner:
               ('_' + caller if caller else '')) + '.done')
         safe_mkdir(done_markers_dirpath)
 
-        return output_dirpath, log_fpath, log_dirpath, marker_fpath
+        return output_dirpath, log_fpath, marker_fpath
 
 
     def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
@@ -384,7 +397,7 @@ class BCBioRunner:
         if sum(j.threads for j in self.jobs_running if not j.is_done) >= self.max_threads:
             self.wait_for_jobs(self.max_threads / 2)  # maximum nubmer of jobs were submitted; waiting for half them to finish
 
-        output_dirpath, log_err_fpath, log_dirpath, marker_fpath = \
+        output_dirpath, log_err_fpath, marker_fpath = \
             self.step_log_marker_and_output_paths(step, sample_name, caller_suf)
 
         if output_dirpath and not isdir(output_dirpath) and create_dir:
@@ -409,8 +422,7 @@ class BCBioRunner:
         # interpreter = get_system_path(self.cnf, step.interpreter, is_critical=True)
         tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
-        params = dict({'output_dir': output_dirpath, 'log_dirpath': log_dirpath}.items() +
-                      self.__dict__.items() + kwargs.items())
+        params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
         cmdline = tool_cmdline + ' ' + step.param_line.format(**params) + ' --done-marker ' + marker_fpath
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])

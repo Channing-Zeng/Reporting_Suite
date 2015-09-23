@@ -88,7 +88,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
        (' --reuse ' if cnf.reuse_intermediate else '') + \
         ' --genome ' + cnf.genome.name + \
         ' --project-name ' + cnf.project_name + ' ' \
-        ' --log-dir ' + cnf.log_dir
+        ' --log-dir -'
 
     targetcov_params = params_for_one_sample + \
         ' -s {sample.name}' + \
