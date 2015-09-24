@@ -695,7 +695,11 @@ class BCBioStructure:
             sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
             info('Phenotype: ' + str(sample.phenotype))
 
-            batch_names = sample_info['metadata']['batch']
+            if 'batch' in sample_info['metadata']:
+                batch_names = sample_info['metadata']['batch']
+            else:
+                batch_names = sample.name + '-batch'
+                
             if isinstance(batch_names, basestring):
                 batch_names = [batch_names]
 

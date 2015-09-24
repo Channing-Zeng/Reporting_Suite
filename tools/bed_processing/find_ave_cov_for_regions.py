@@ -15,7 +15,7 @@ def main():
 
     bedcov_hist_fpath, sample_name, bed_col_num = args
 
-    amplicons, _, _ = summarize_bedcoverage_hist_stats(bedcov_hist_fpath, sample_name, int(bed_col_num))
+    amplicons = summarize_bedcoverage_hist_stats(bedcov_hist_fpath, sample_name, int(bed_col_num))
 
     amplicons = sorted(amplicons, key=lambda a: (a.chrom, a.gene_name, a.start))
 

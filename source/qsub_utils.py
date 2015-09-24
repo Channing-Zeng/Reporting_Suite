@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import os
-from os.path import join, isfile, basename
+from os.path import join, isfile, basename, splitext
 from time import sleep
 
 from source.calling_process import call
@@ -48,12 +48,12 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     f, marker_fpath = make_tmpfile(cnf, prefix=job_name + '_' + str(cnf.project_name) + '_', suffix='.done_marker')
     if isfile(marker_fpath):
         os.remove(marker_fpath)
-    job_id = basename(marker_fpath.split('.')[0])
+    job_id = basename(splitext(marker_fpath)[0])
     if cnf.log_dir:
         err_fpath = log_fpath = join(cnf.log_dir, job_id + '.log')
     else:
-        log_fpath = '/dev/null'
-        err_fpath = '/dev/null'
+        fd, fpath = make_tmpfile(cnf, suffix=job_id + '.log', text=True)
+        err_fpath = log_fpath = fpath
 
     queue = cnf.queue
     runner_script = adjust_system_path(cnf.qsub_runner)
@@ -85,13 +85,17 @@ def wait_for_jobs(cnf, jobs):
                     if waiting:
                         info('', print_date=False)
                     if j.output_fpath:
-                        if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.name)):
-                            err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty')
+                        if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.repr)):
+                            err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty.' +
+                               ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
                         else:
                             os.rename(j.tx_output_fpath, j.output_fpath)
-                            info('Done ' + j.repr + ', saved to ' + j.output_fpath)
+                            info('Done ' + j.repr + ', saved to ' + j.output_fpath +
+                                ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+
                     else:
-                        info('Done ' + j.repr)
+                        info('Done ' + j.repr + ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+
                     waiting = False
 
             # check flags and wait if not all are done
