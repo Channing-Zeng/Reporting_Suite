@@ -642,6 +642,8 @@ class BCBioRunner:
                     wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
                     genome=self.bcbio_structure.samples[0].genome,
                     threads=self.summary_threads)
+            else:
+                info(self.seq2c.name + ' is not in steps ' + str(self.steps) + ', skipping Seq2C')
 
             if self.targqc_summary in self.steps:
                 wait_for_steps = []

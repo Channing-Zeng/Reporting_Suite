@@ -4,9 +4,11 @@ from os.path import splitext, basename, join, isfile
 import socket
 import sys
 import re
+from ext_modules import vcf_parser
+from ext_modules.vcf_parser.parser import _Info
 
 from source.calling_process import call_subprocess, call
-from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus
+from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix
 from source.logger import step_greetings, critical, info, err, warn
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
@@ -27,6 +29,17 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         rec.INFO['MQ_' + key.replace('.', '_')] = rec.genotype(key.split('.')[0])['MQ']
         return rec
     db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
+
+    info('Adding header meta info')
+    reader = vcf_parser.Reader(db_fpath)
+    for k in 'DP', 'MQ':
+        k = k + '_' + key.replace('.', '_')
+        reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
+    writer = vcf_parser.Writer(add_suffix(db_fpath, 'HEADERS'), reader)
+    while True:
+        rec = next(reader, None)
+        if rec:
+            writer.write_record(rec)
     db_fpath = bgzip_and_tabix(cnf, db_fpath)
 
     info('Annotating...')
