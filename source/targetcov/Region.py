@@ -81,9 +81,10 @@ class Region:
         return None
 
     def add_bases_for_depth(self, depth, bases):
-        assert depth not in self.bases_by_depth, \
-            'Duplicated depth ' + str(depth) + ' for the region ' + str(self)
-        self.bases_by_depth[depth] += bases
+        if depth in self.bases_by_depth:
+            err('Duplicated depth ' + str(depth) + ' for the region ' + str(self))
+        else:
+            self.bases_by_depth[depth] += bases
 
     def __str__(self):
         ts = [self.sample_name, self.chrom, self.start, self.end,

@@ -75,13 +75,13 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
             chrom_bed_fpath = add_suffix(bed_fpath, chrom)
             grep = get_system_path(cnf, 'grep')
             cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
-            call(cnf, cmdl, output_fpath=chrom_bed_fpath)
-
-            chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
-            bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
-            info('Anylising bedcoverage output for ' + str(chrom) + '...')
-            rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
-            regions.extend(rs)
+            call(cnf, cmdl, output_fpath=chrom_bed_fpath, exit_on_error=False)
+            if verify_bed(chrom_bed_fpath, silent=True):
+                chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
+                bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
+                info('Anylising bedcoverage output for ' + str(chrom) + '...')
+                rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
+                regions.extend(rs)
 
         # with open(bedcov_output_fpath, 'w') as f:
         #     for chrom, bedov_output in bedcov_by_chrom.items():

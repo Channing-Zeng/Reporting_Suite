@@ -25,7 +25,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Intersecting with ' + db_fpath + ', writing key ' + str(key))
 
     info('Preparing db...')
-    def _add_info_flag(l):
+    def _add_info_flag(l, i):
         if l.startswith('#'):
             return l
         fs = l.split('\t')
@@ -53,7 +53,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         if l.startswith('#CHROM'):
             ext_l = ''
             for ann in ['DP', 'MQ']:
-                ext_l += '##INFO=<ID=' + key.replace('.', '_') + '_' + ann + ',Number=1,Type=Integer,Description="">\n'
+                ext_l += '##INFO=<ID=' + key.replace('.', '_') + '_' + ann + ',Number=1,Type=Integer,Description="description">\n'
             return ext_l + l
         return l
     db_fpath = iterate_file(cnf, db_fpath, _add_header, suffix='INFO_HEADER')
@@ -115,17 +115,19 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     vcf_fpath = iterate_file(cnf, vcf_fpath, _move_info_to_format, suffix='FORMAT_FLAGS')
 
     info('Adding FORMAT header meta info...')
-    def _add_format_header(l):
+    def _add_format_header(l, i):
         if l.startswith('#CHROM'):
             ext_l = ''
-            for ann in ['DP', 'MQ']:
-                ext_l += '##FORMAT=<ID=' + key.replace('.', '_') + '_' + ann + ',Number=1,Type=Integer,Description="">\n'
+            ext_l += '##FORMAT=<ID=' + key.replace('.', '_') + '_DP,Number=1,Type=Integer,Description="Number of high-quality bases">\n'
+            ext_l += '##FORMAT=<ID=' + key.replace('.', '_') + '_MQ,Number=1,Type=Integer,Description="Average mapping quality">\n'
             return ext_l + l
         return l
     vcf_fpath = iterate_file(cnf, vcf_fpath, _add_format_header, suffix='FORMAT_HEADER')
 
     info()
-    return vcf_fpath
+    if vcf_fpath:
+        os.rename(vcf_fpath, input_fpath)
+    return input_fpath
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
