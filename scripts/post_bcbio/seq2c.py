@@ -34,6 +34,12 @@ def main():
                 dest='bed',
                 help='BED file to run targetSeq and Seq2C analysis on.')
             ),
+           (['--reannotate'], dict(
+                dest='reannotate',
+                help='re-annotate BED file with gene names',
+                action='store_true',
+                default=False)
+            ),
            # (['--dedup'], dict(
            #      dest='dedup',
            #      help='Remove duplicates from the input bedfile.')

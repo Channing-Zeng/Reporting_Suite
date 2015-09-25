@@ -340,6 +340,8 @@ class BCBioRunner:
             seq2c_cmdline += ' -c ' + cnf.controls
         if cnf.seq2c_opts:
             seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
+        if cnf.reannotate:
+            seq2c_cmdline += ' --reannotate '
         self.seq2c = Step(cnf, run_id,
             name=BCBioStructure.seq2c_name, short_name='seq2c',
             interpreter='python',
@@ -507,8 +509,8 @@ class BCBioRunner:
                                 self.targetcov, sample.name,
                                 bam=sample.bam, bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''), sample=sample.name, genome=sample.genome,
                                 caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps)
-                            if not sample.bed:  # WGS
-                                targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
+                            # if not sample.bed:  # WGS
+                            #     targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
 
                         # ngsCAT reports
                         if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):

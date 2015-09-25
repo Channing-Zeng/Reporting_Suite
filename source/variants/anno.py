@@ -16,6 +16,8 @@ from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotati
 
 
 def intersect_vcf(cnf, input_fpath, db_fpath, key):
+    vcf_fpath = input_fpath
+
     db_fpath = verify_file(db_fpath)
     if not db_fpath:
         return None
@@ -23,53 +25,107 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Intersecting with ' + db_fpath + ', writing key ' + str(key))
 
     info('Preparing db...')
-    def _add_info_flag(rec):
-        rec.INFO[key] = True
-        rec.INFO['DP_' + key.replace('.', '_')] = rec.genotype(key.split('.')[0])['DP']
-        rec.INFO['MQ_' + key.replace('.', '_')] = rec.genotype(key.split('.')[0])['MQ']
-        return rec
-    db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
+    def _add_info_flag(l):
+        if l.startswith('#'):
+            return l
+        fs = l.split('\t')
+        info_col, ft_keys, ft_vals = fs[-3], fs[-2], fs[-1]
+        ft_dict = dict(zip(ft_keys.split(':'), ft_vals.split(':')))
+        for ann in ['DP', 'MQ']:
+            val = ft_dict.get(ann, None)
+            if val:
+                # ft_keys[key.replace('.', '_') + '_' + ann] = val
+                # del ft_keys[ann]
+                info_col += ';' + key.replace('.', '_') + '_' + ann + '=' + val
+        # ft_items = ft_dict.items()
+        # ft_keys = [k for k, v in ft_items]
+        # ft_vals = [v for k, v in ft_items]
+        # return '\t'.join(fs[:-2]) + '\t' + ':'.join(ft_keys) + '\t' + ':'.join(ft_vals)
+        return '\t'.join(fs[:-3]) + '\t' + info_col + '\t' + '\t'.join(fs[-2:])
+        # rec.FORMAT[key.replace('.', '_') + '_DP'] = rec.genotype(key.split('.')[0])['DP']
+        # rec.INFO[key.replace('.', '_') + '_MQ'] = rec.genotype(key.split('.')[0])['MQ']
+        # return rec
+    # db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
+    db_fpath = iterate_file(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
 
     info('Adding header meta info...')
-    out_fpath = add_suffix(db_fpath, 'HEADERS')
-    if cnf.reuse_intermediate and verify_file(out_fpath, silent=True):
-        info(out_fpath + ' exists, reusing')
-    else:
-        reader = vcf_parser.Reader(open(db_fpath))
-        for k in 'DP', 'MQ':
-            k = k + '_' + key.replace('.', '_')
-            reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
+    def _add_header(l):
+        if l.startswith('#CHROM'):
+            ext_l = ''
+            for ann in ['DP', 'MQ']:
+                ext_l += '##INFO=<ID=' + key.replace('.', '_') + '_' + ann + ',Number=1,Type=Integer,Description="">\n'
+            return ext_l + l
+        return l
+    db_fpath = iterate_file(cnf, db_fpath, _add_header, suffix='INFO_HEADER')
 
-        with file_transaction(cnf.work_dir, out_fpath) as tx:
-            recs = []
-            cnt = 0
-            with open(tx, 'w') as f:
-                writer = vcf_parser.Writer(f, reader)
-                while True:
-                    cnt += 1
-                    rec = next(reader, None)
-                    if rec is None:
-                        break
-                    recs.append(rec)
-                    if cnt % 1000000 == 0:
-                        info('Written ' + str(cnt) + ' lines')
-                        writer.write_records(recs)
-                        recs = []
-                writer.write_records(recs)
-        db_fpath = out_fpath
-
+    # out_fpath = add_suffix(db_fpath, 'HEADERS')
+    # if cnf.reuse_intermediate and verify_file(out_fpath, silent=True):
+    #     info(out_fpath + ' exists, reusing')
+    # else:
+    #     reader = vcf_parser.Reader(open(db_fpath))
+    #     for k in 'DP', 'MQ':
+    #         k = k + '_' + key.replace('.', '_')
+    #         reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
+    #
+    #     with file_transaction(cnf.work_dir, out_fpath) as tx:
+    #         recs = []
+    #         cnt = 0
+    #         with open(tx, 'w') as f:
+    #             writer = vcf_parser.Writer(f, reader)
+    #             while True:
+    #                 cnt += 1
+    #                 rec = next(reader, None)
+    #                 if rec is None:
+    #                     break
+    #                 recs.append(rec)
+    #                 if cnt % 1000000 == 0:
+    #                     info('Written ' + str(cnt) + ' lines')
+    #                     writer.write_records(recs)
+    #                     recs = []
+    #             writer.write_records(recs)
+    #     db_fpath = out_fpath
     db_fpath = bgzip_and_tabix(cnf, db_fpath)
 
-    info('Annotating...')
+    info('Annotating using this db...')
     vcf_conf = {
         'path': db_fpath,
-        'annotations': [key, 'DP_' + key.replace('.', '_'), 'MQ_' + key.replace('.', '_')]}
-    output_fpath = _snpsift_annotate(cnf, vcf_conf, key, input_fpath)
-    if output_fpath:
-        os.rename(output_fpath, input_fpath)
+        'annotations': [key, key.replace('.', '_') + '_DP', key.replace('.', '_') + '_MQ']}
+    vcf_fpath = _snpsift_annotate(cnf, vcf_conf, key, vcf_fpath)
+
+    info('Moving INFO to FORMAT...')
+    def _move_info_to_format(l):
+        if l.startswith('#'):
+            return l
+        fs = l.split('\t')
+        info_col, ft_keys, ft_vals = fs[-3], fs[-2], fs[-1]
+        info_dict = dict([kv.split('=') if '=' in kv else (kv, True) for kv in info_col.split(';')])
+        ft_dict = dict(zip(ft_keys.split(':'), ft_vals.split(':')))
+        for ann in ['DP', 'MQ']:
+            k = key.replace('.', '_') + '_' + ann
+            ft_dict[k] = info_dict.get(k, '.')
+        ft_items = ft_dict.items()
+        ft_keys = [k for k, v in ft_items]
+        ft_vals = [v for k, v in ft_items]
+        return '\t'.join(fs[:-2]) + '\t' + ':'.join(ft_keys) + '\t' + ':'.join(ft_vals)
+
+        # rec.FORMAT[key.replace('.', '_') + '_DP'] = rec.genotype(key.split('.')[0])['DP']
+        # rec.INFO[key.replace('.', '_') + '_MQ'] = rec.genotype(key.split('.')[0])['MQ']
+        # return rec
+    # db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
+    vcf_fpath = iterate_file(cnf, vcf_fpath, _move_info_to_format, suffix='FORMAT_FLAGS')
+
+    info('Adding FORMAT header meta info...')
+    def _add_format_header(l):
+        if l.startswith('#CHROM'):
+            ext_l = ''
+            for ann in ['DP', 'MQ']:
+                ext_l += '##FORMAT=<ID=' + key.replace('.', '_') + '_' + ann + ',Number=1,Type=Integer,Description="">\n'
+            return ext_l + l
+        return l
+    vcf_fpath = iterate_file(cnf, vcf_fpath, _add_format_header, suffix='FORMAT_HEADER')
 
     info()
-    return input_fpath
+    return vcf_fpath
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
