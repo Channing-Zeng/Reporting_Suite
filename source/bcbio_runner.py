@@ -549,6 +549,28 @@ class BCBioRunner:
             # if self.vardict_steps:
             #     self._sumbit_vardict(self.bcbio_structure.batches)
 
+            if self.seq2c in self.steps:
+                self._submit_job(
+                    self.seq2c,
+                    wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
+                    genome=self.bcbio_structure.samples[0].genome,
+                    threads=self.summary_threads)
+            else:
+                info(self.seq2c.name + ' is not in steps ' + str(self.steps) + ', skipping Seq2C')
+
+            if self.targqc_summary in self.steps:
+                wait_for_steps = []
+                wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
+                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
+                # wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
+                self._submit_job(
+                    self.targqc_summary,
+                    wait_for_steps=wait_for_steps,
+                    threads=self.summary_threads)
+
+            if self.fastqc_summary in self.steps:
+                self._submit_job(self.fastqc_summary)
+                
             if self.varqc_summary in self.steps:
                 self._submit_job(
                     self.varqc_summary,
@@ -635,28 +657,6 @@ class BCBioRunner:
                         for v in self.bcbio_structure.variant_callers.values()
                         for s in v.samples
                         if self.varqc_after in self.steps])
-
-            if self.seq2c in self.steps:
-                self._submit_job(
-                    self.seq2c,
-                    wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
-                    genome=self.bcbio_structure.samples[0].genome,
-                    threads=self.summary_threads)
-            else:
-                info(self.seq2c.name + ' is not in steps ' + str(self.steps) + ', skipping Seq2C')
-
-            if self.targqc_summary in self.steps:
-                wait_for_steps = []
-                wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
-                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-                # wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
-                self._submit_job(
-                    self.targqc_summary,
-                    wait_for_steps=wait_for_steps,
-                    threads=self.summary_threads)
-
-            if self.fastqc_summary in self.steps:
-                self._submit_job(self.fastqc_summary)
 
             # if self.combined_report in self.steps:
             #     wait_for_steps = []
