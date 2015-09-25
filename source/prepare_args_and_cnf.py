@@ -213,23 +213,16 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
         log_fname = (proc_name + '_' if proc_name else '') + (cnf.sample + '_' if cnf.sample else '') + 'log.txt'
         log_fpath = join(cnf.log_dir, log_fname)
 
-        if not proc_name:
-            i = 1
-            if file_exists(log_fpath):
-                bak_fpath = log_fpath + '.' + str(i)
-                while isfile(bak_fpath):
-                    bak_fpath = log_fpath + '.' + str(i)
-                    i += 1
-                try:
-                    os.rename(log_fpath, bak_fpath)
-                except OSError:
-                    pass
-            elif isfile(log_fpath):
-                try:
-                    os.remove(log_fpath)
-                except OSError:
-                    pass
-
+        if file_exists(log_fpath):
+            timestamp = datetime.datetime.fromtimestamp(os.stat(log_fpath).st_mtime)
+            mv_log_fpath = log_fpath + '.' + timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+            try:
+                if isfile(mv_log_fpath):
+                    os.remove(mv_log_fpath)
+                if not isfile(mv_log_fpath):
+                    os.rename(log_fpath, mv_log_fpath)
+            except OSError:
+                pass
         info('log_fpath: ' + log_fpath)
         logger.log_fpath = cnf.log = log_fpath
 

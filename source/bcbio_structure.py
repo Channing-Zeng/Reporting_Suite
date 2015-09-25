@@ -533,13 +533,16 @@ class BCBioStructure:
             self.log_dirpath = self.cnf.log_dir = None
         else:
             self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log', 'postproc')
-            if isdir(self.log_dirpath):
-                timestamp = datetime.fromtimestamp(os.stat(self.log_dirpath).st_mtime)
-                mv_log_dirpath = self.log_dirpath + '.' + timestamp.strftime("%Y-%m-%d_%H-%M-%S")
-                if isdir(mv_log_dirpath):
-                    shutil.rmtree(mv_log_dirpath)
-                if not isdir(mv_log_dirpath):
-                    os.rename(self.log_dirpath, mv_log_dirpath)
+            safe_mkdir(dirname(self.log_dirpath))
+
+            # if isdir(self.log_dirpath):
+            #     timestamp = datetime.fromtimestamp(os.stat(self.log_dirpath).st_mtime)
+            #     mv_log_dirpath = self.log_dirpath + '.' + timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+            #     if isdir(mv_log_dirpath):
+            #         shutil.rmtree(mv_log_dirpath)
+            #     if not isdir(mv_log_dirpath):
+            #         os.rename(self.log_dirpath, mv_log_dirpath)
+
             info('log_dirpath: ' + self.log_dirpath)
             safe_mkdir(self.log_dirpath)
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
@@ -566,7 +569,7 @@ class BCBioStructure:
         for fname in listdir(self.date_dirpath):
             if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt']:
                 os.rename(join(self.date_dirpath, fname),
-                          join(self.log_dirpath, fname))
+                          join(dirname(self.log_dirpath), fname))
 
         info(' '.join(sys.argv))
         info()
