@@ -49,7 +49,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     db_fpath = iterate_file(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
 
     info('Adding header meta info...')
-    def _add_header(l):
+    def _add_header(l, i):
         if l.startswith('#CHROM'):
             ext_l = ''
             for ann in ['DP', 'MQ']:
@@ -93,7 +93,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     vcf_fpath = _snpsift_annotate(cnf, vcf_conf, key, vcf_fpath)
 
     info('Moving INFO to FORMAT...')
-    def _move_info_to_format(l):
+    def _move_info_to_format(l, i):
         if l.startswith('#'):
             return l
         fs = l.split('\t')
