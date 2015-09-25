@@ -532,7 +532,7 @@ class BCBioStructure:
         if self.cnf.log_dir == '-':
             self.log_dirpath = self.cnf.log_dir = None
         else:
-            self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log', 'postproc')
+            self.log_dirpath = self.cnf.log_dir = self.cnf.log_dir or join(self.date_dirpath, 'log', 'reporting')
             safe_mkdir(dirname(self.log_dirpath))
 
             # if isdir(self.log_dirpath):

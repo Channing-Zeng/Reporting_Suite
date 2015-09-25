@@ -8,7 +8,7 @@ from ext_modules import vcf_parser
 from ext_modules.vcf_parser.parser import _Info
 
 from source.calling_process import call_subprocess, call
-from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix
+from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction
 from source.logger import step_greetings, critical, info, err, warn
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.file_utils import file_exists, code_base_path
@@ -31,15 +31,24 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
 
     info('Adding header meta info')
-    reader = vcf_parser.Reader(db_fpath)
-    for k in 'DP', 'MQ':
-        k = k + '_' + key.replace('.', '_')
-        reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
-    writer = vcf_parser.Writer(add_suffix(db_fpath, 'HEADERS'), reader)
-    while True:
-        rec = next(reader, None)
-        if rec:
-            writer.write_record(rec)
+    out_fpath = add_suffix(db_fpath, 'HEADERS')
+    if cnf.reuse_intermediate and verify_file(out_fpath):
+        info(out_fpath + ' exists, reusing')
+    else:
+        reader = vcf_parser.Reader(db_fpath)
+        for k in 'DP', 'MQ':
+            k = k + '_' + key.replace('.', '_')
+            reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
+
+        with file_transaction(cnf.work_dir, out_fpath) as tx:
+            with open(tx, 'w') as f:
+                writer = vcf_parser.Writer(f, reader)
+                while True:
+                    rec = next(reader, None)
+                    if rec:
+                        writer.write_record(rec)
+        db_fpath = out_fpath
+
     db_fpath = bgzip_and_tabix(cnf, db_fpath)
 
     info('Annotating...')
@@ -59,13 +68,23 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
+    dbs = [(dbname, cnf.annotation[dbname])
+           for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
+           if dbname in cnf.annotation]
+
+    to_delete_id_ref = []
+    if 'dbsnp' in dbs:
+        to_delete_id_ref.append('rs')
+    if 'cosmic' in dbs:
+        to_delete_id_ref.append('COS')
+
     def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
         if rec.ID:
             if isinstance(rec.ID, basestring):
-                if rec.ID.startswith('rs') or rec.ID.startswith('COS'):
+                if any(rec.ID.startswith(pref) for pref in to_delete_id_ref):
                     rec.ID = None
             else:
-                rec.ID = [id for id in rec.ID if not id.startswith('rs') and not id.startswith('COS')]
+                rec.ID = [id_ for id_ in rec.ID if not any(id_.startswith(pref) for pref in to_delete_id_ref)]
 
         if not rec.FILTER:
             rec.FILTER = 'PASS'
@@ -74,10 +93,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 
     info('Removing previous rs and cosmic IDs')
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
-
-    dbs = [(dbname, cnf.annotation[dbname])
-           for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
-           if dbname in cnf.annotation]
 
     for dbname, dbconf in dbs:
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
@@ -201,17 +216,6 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     step_greetings('Annotating with ' + dbname)
 
-    info('Removing previous annotations...')
-    annotations = vcf_conf.get('annotations')
-
-    def delete_annos(rec):
-        for anno in annotations:
-            if anno in rec.INFO:
-                del rec.INFO[anno]
-        return rec
-    if annotations:
-        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='delANNO')
-
     executable = get_java_tool_cmdline(cnf, 'snpsift')
     java = get_system_path(cnf, 'java')
     info('Java version:')
@@ -225,6 +229,17 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             err('Please, privide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
             return
         verify_file(db_path, is_critical=True)
+
+    info('Removing previous annotations...')
+    annotations = vcf_conf.get('annotations')
+
+    def delete_annos(rec):
+        for anno in annotations:
+            if anno in rec.INFO:
+                del rec.INFO[anno]
+        return rec
+    if annotations:
+        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='delANNO')
 
     anno_line = ''
     if annotations:
@@ -305,12 +320,6 @@ def _snpeff(cnf, input_fpath):
 
     step_greetings('SnpEff')
 
-    info('Removing previous EFF annotations...')
-    res = remove_prev_eff_annotation(cnf, input_fpath)
-    if res:
-        input_fpath = res
-    info('')
-
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
     stats_fpath = join(cnf.work_dir, cnf.sample + '-' + cnf.caller + '.snpEff_summary.html')
@@ -347,6 +356,12 @@ def _snpeff(cnf, input_fpath):
     cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
                '-csvStats -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
+
+    info('Removing previous EFF annotations...')
+    res = remove_prev_eff_annotation(cnf, input_fpath)
+    if res:
+        input_fpath = res
+    info('')
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,

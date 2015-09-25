@@ -45,7 +45,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    f, marker_fpath = make_tmpfile(cnf, prefix=job_name + '_' + str(cnf.project_name) + '_', suffix='.done_marker')
+    f, marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.done_marker')
     if isfile(marker_fpath):
         os.remove(marker_fpath)
     job_id = basename(splitext(marker_fpath)[0])
