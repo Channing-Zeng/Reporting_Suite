@@ -163,6 +163,8 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
     pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
     safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
 
+    filter_values = set(variants.values())
+
     # Saving .anno.filt.vcf.gz and .anno.filt.pass.vcf
     if cnf.reuse_intermediate and verify_file(filt_vcf_fpath + '.gz') and verify_file(pass_filt_vcf_fpath):
         info(filt_vcf_fpath + '.gz' + ' and ' + pass_filt_vcf_fpath + ' exist; reusing.')
@@ -175,6 +177,11 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
 
                 for l in vcf_f:
                     if l.startswith('#'):
+                        if l.startswith('#CHROM'):
+                            filt_f.write('##FILTER=<ID=vcf2txt,Description="Hard-filtered by vcf2txt.pl">')
+                            filt_f.write('##FILTER=<ID=vcf2txt,Description="Hard-filtered by vardict2mut.pl">')
+                            for filt_val in filter_values:
+                                filt_f.write('##FILTER=<ID=' + filt_val + ',Description="">')
                         filt_f.write(l)
                         pass_f.write(l)
                     else:

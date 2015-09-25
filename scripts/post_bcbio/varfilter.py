@@ -6,9 +6,11 @@ import sys
 import os
 from joblib import Parallel, delayed
 from os.path import join, pardir, basename, dirname, islink, isdir, isfile
+from source.calling_process import call
+from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
-from source.logger import info, err, send_email, critical
+from source.logger import info, err, send_email, critical, warn
 from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines, verify_file
 from source.variants.vcf_processing import igvtools_index
@@ -218,6 +220,8 @@ def filter_all(cnf, bcbio_structure):
 
     errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
 
+    _combine_vcfs(cnf, callers, bcbio_structure.var_dirpath)
+
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in callers):
         info()
         info('Final variants:')
@@ -277,10 +281,29 @@ def _symlink_vcfs(callers, datestamp_var_dirpath):
                               base_filt_fpath + '.gz.tbi']:
                     if verify_file(fpath):
                         _symlink_to_dir(fpath, sample.dirpath)
-                        _symlink_to_dir(fpath, datestamp_var_dirpath)
+                        # _symlink_to_dir(fpath, datestamp_var_dirpath)
 
             BCBioStructure.move_vcfs_to_var(sample)
+
     return errory
+
+
+def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
+    info()
+    info('Combining final VCFs:')
+    for caller in callers:
+        combined_vcf_fpath = join(datestamp_var_dirpath, caller.name + '.vcf')
+        info(caller.name + ': writing to ' + combined_vcf_fpath)
+        gatk = get_java_tool_cmdline(cnf, 'gatk')
+        cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
+        for sample in caller.samples:
+            cmdl += ' --variant:' + sample.name + ' ' + sample.find_filt_vcf_by_callername(caller.name)
+        cmdl += ' -o' + combined_vcf_fpath
+        res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
+        if res:
+            info('Joined VCFs for caller ' + caller.name)
+        else:
+            warn('Could not join vcfs for caller ' + caller.name)
 
 
 def _symlink_to_dir(fpath, dirpath):

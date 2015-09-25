@@ -221,7 +221,6 @@ def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_n
     # if _total_regions_count % 100000 != 0:
     #     info('  Processed {0:,} regions'.format(_total_regions_count))
 
-    total_region = regions[-1]
     regions = regions[:-1]
     # info('Sorting genes...')
     # regions = sorted(regions[:-1], key=Region.get_order_key)

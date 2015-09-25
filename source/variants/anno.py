@@ -41,16 +41,21 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
             reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
 
         with file_transaction(cnf.work_dir, out_fpath) as tx:
+            recs = []
+            cnt = 0
             with open(tx, 'w') as f:
                 writer = vcf_parser.Writer(f, reader)
-                cnt = 0
                 while True:
                     cnt += 1
                     rec = next(reader, None)
-                    if rec:
-                        writer.write_record(rec)
+                    if rec is None:
+                        break
+                    recs.append(rec)
                     if cnt % 1000000 == 0:
-                        info('Written ' + str(cnf) + ' lines')
+                        info('Written ' + str(cnt) + ' lines')
+                        writer.write_records(recs)
+                        recs = []
+                writer.write_records(recs)
         db_fpath = out_fpath
 
     db_fpath = bgzip_and_tabix(cnf, db_fpath)

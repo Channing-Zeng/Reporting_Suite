@@ -552,14 +552,14 @@ class BCBioStructure:
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
 
-        # Moving raw variants in the date dir to var
+        # Moving raw variants in the date dir to var/raw
+        raw_dirpath = join(self.var_dirpath, 'raw')
+        safe_mkdir(raw_dirpath)
         for fname in os.listdir(self.date_dirpath):
             if '.vcf' in fname and '.anno.filt' not in fname:
-                if not isdir(self.var_dirpath):
-                    safe_mkdir(self.var_dirpath)
                 src_fpath = join(self.date_dirpath, fname)
-                dst_fpath = join(self.var_dirpath, fname)
-                info('Moving ' + src_fpath + ' to ' + self.var_dirpath)
+                dst_fpath = join(raw_dirpath, fname)
+                info('Moving ' + src_fpath + ' to ' + raw_dirpath)
                 try:
                     os.rename(src_fpath, dst_fpath)
                 except OSError:

@@ -6,13 +6,27 @@ from os.path import abspath, dirname, realpath, join
 import sys
 
 
-HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0)]
+HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]
 for i in range(22, 0, -1):
     HG19_CHROMS.append((str(i), i))
 
-MM10_CHROMS = [('X', 22), ('Y', 23), ('M', 24)]
+MM10_CHROMS = [('X', 22), ('Y', 23), ('M', 24), ('Un', 25)]
 for i in range(21, -1, -1):
     MM10_CHROMS.append((str(i), i))
+#
+# HG19_CHROMS_plus = [('Un_', 49)]
+# for c, i in HG19_CHROMS:
+#     HG19_CHROMS_plus.append((str(i) + '_', i + 25))
+#     HG19_CHROMS_plus.append((str(i), i))
+# HG19_CHROMS = HG19_CHROMS_plus
+#
+# MM10_CHROMS_plus = [('Un_', 49)]
+# for c, i in MM10_CHROMS:
+#     MM10_CHROMS_plus.append((str(i) + '_', i + 25))
+#     MM10_CHROMS_plus.append((str(i), i))
+# MM10_CHROMS = MM10_CHROMS_plus
+#
+# print str(HG19_CHROMS)
 
 
 class SortableByChrom:
@@ -31,7 +45,7 @@ class SortableByChrom:
             if chr_remainder == c:
                 return i
             elif chr_remainder.startswith(c):
-                return i + 24
+                return i + 25
 
         sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
         return None
@@ -51,12 +65,12 @@ class Region(SortableByChrom):
         return self._chrom_key, self.start, self.end, self.other_fields
 
 
-def main():
+def main(args):
     regions = []
 
     genome = None
-    if len(sys.argv) > 1:
-        genome = sys.argv[1]
+    if len(args) > 0:
+        genome = args[0]
     # if len(sys.argv) > 2:
     #     genome = sys.argv[2]
         sys.stderr.write('Genome: ' + genome + '\n')
@@ -83,4 +97,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
