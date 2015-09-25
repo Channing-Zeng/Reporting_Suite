@@ -30,12 +30,12 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         return rec
     db_fpath = iterate_vcf(cnf, db_fpath, _add_info_flag, suffix='INFO_FLAGS')
 
-    info('Adding header meta info')
+    info('Adding header meta info...')
     out_fpath = add_suffix(db_fpath, 'HEADERS')
-    if cnf.reuse_intermediate and verify_file(out_fpath):
+    if cnf.reuse_intermediate and verify_file(out_fpath, silent=True):
         info(out_fpath + ' exists, reusing')
     else:
-        reader = vcf_parser.Reader(db_fpath)
+        reader = vcf_parser.Reader(open(db_fpath))
         for k in 'DP', 'MQ':
             k = k + '_' + key.replace('.', '_')
             reader.infos[k] = _Info(id=k, num=1, type='Integer', desc=k + ' ' + key)
@@ -43,10 +43,14 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         with file_transaction(cnf.work_dir, out_fpath) as tx:
             with open(tx, 'w') as f:
                 writer = vcf_parser.Writer(f, reader)
+                cnt = 0
                 while True:
+                    cnt += 1
                     rec = next(reader, None)
                     if rec:
                         writer.write_record(rec)
+                    if cnt % 1000000 == 0:
+                        info('Written ' + str(cnf) + ' lines')
         db_fpath = out_fpath
 
     db_fpath = bgzip_and_tabix(cnf, db_fpath)

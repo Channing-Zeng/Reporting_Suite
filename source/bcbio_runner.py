@@ -570,7 +570,7 @@ class BCBioRunner:
 
             if self.fastqc_summary in self.steps:
                 self._submit_job(self.fastqc_summary)
-                
+
             if self.varqc_summary in self.steps:
                 self._submit_job(
                     self.varqc_summary,

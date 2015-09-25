@@ -614,7 +614,8 @@ class Reader(object):
         except:
             print line
             traceback.print_exc()
-            sys.exit(1)
+            # sys.exit(1)
+            return None
         else:
             return record
 
