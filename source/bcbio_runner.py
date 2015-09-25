@@ -294,7 +294,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary-{caller}.log'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary.log'),
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
         self.varqc_after_summary = Step(cnf, run_id,
@@ -302,7 +302,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_after_summary_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary-{caller}.log'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary.log'),
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
                 ' --varqc-name ' + BCBioStructure.varqc_after_name +
                 ' --varqc-dir ' + BCBioStructure.varqc_after_dir
