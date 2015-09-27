@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import shutil
 import os
 from os.path import splitext, basename, join, isfile
@@ -99,7 +100,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         fs = l.split('\t')
         info_col, ft_keys, ft_vals = fs[-3], fs[-2], fs[-1]
         info_dict = dict([kv.split('=') if '=' in kv else (kv, True) for kv in info_col.split(';')])
-        ft_dict = dict(zip(ft_keys.split(':'), ft_vals.split(':')))
+        ft_dict = OrderedDict(zip(ft_keys.split(':'), ft_vals.split(':')))
         for ann in ['DP', 'MQ']:
             k = key.replace('.', '_') + '_' + ann
             ft_dict[k] = info_dict.get(k, '.')
@@ -236,7 +237,7 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
         vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
     info('Adding SAMPLE=' + samplename + ' annotation...')
-    vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename)
+    vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename, number='1', type_='String', description='Sample name')
 
     final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
@@ -486,14 +487,21 @@ def _tracks(cnf, track_fpath, input_fpath):
     return iterate_file(cnf, output_fpath, proc_line, suffix='trk')
 
 
-def _add_annotation(cnf, input_fpath, key, value):
+def _add_annotation(cnf, input_fpath, key, value, number, type_, description):
     step_greetings('Adding annotation...')
-
     def proc_rec(rec):
         rec.INFO[key] = value
         return rec
+    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec)
 
-    output_fpath = iterate_vcf(cnf, input_fpath, proc_rec, suffix='plus')
+    info('Adding header meta info...')
+    def _add_format_header(l, i):
+        if l.startswith('#CHROM'):
+            ext_l = ''
+            ext_l += '##INFO=<ID={key},Number={number},Type={type_},Description="{description}">\n'.format(**locals())
+            return ext_l + l
+        return l
+    output_fpath = iterate_file(cnf, output_fpath, _add_format_header)
     return output_fpath
 
 
