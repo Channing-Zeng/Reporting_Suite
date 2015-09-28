@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from traceback import format_exc
 
 import __check_python_version
 
@@ -298,10 +299,16 @@ def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
         cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
         for sample in caller.samples:
             cmdl += ' --variant:' + sample.name + ' ' + sample.find_filt_vcf_by_callername(caller.name)
-        cmdl += ' -o' + combined_vcf_fpath
+        cmdl += ' -o ' + combined_vcf_fpath
         res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
         if res:
-            info('Joined VCFs for caller ' + caller.name)
+            info('Joined VCFs for caller ' + caller.name + ', saved into ' + combined_vcf_fpath)
+            if isfile(combined_vcf_fpath + '.tx.idx'):
+                try:
+                    os.remove(combined_vcf_fpath + '.tx.idx')
+                except OSError:
+                    err(format_exc())
+                    info()
         else:
             warn('Could not join vcfs for caller ' + caller.name)
 

@@ -178,10 +178,11 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
                 for l in vcf_f:
                     if l.startswith('#'):
                         if l.startswith('#CHROM'):
-                            filt_f.write('##FILTER=<ID=vcf2txt,Description="Hard-filtered by vcf2txt.pl">')
-                            filt_f.write('##FILTER=<ID=vcf2txt,Description="Hard-filtered by vardict2mut.pl">')
+                            filt_f.write('##FILTER=<ID=vcf2txt,Description="Hard-filtered by vcf2txt.pl">\n')
+                            filt_f.write('##FILTER=<ID=vardict2mut,Description="Hard-filtered by vardict2mut.pl">\n')
                             for filt_val in filter_values:
-                                filt_f.write('##FILTER=<ID=' + filt_val + ',Description="">')
+                                if filt_val != 'PASS':
+                                    filt_f.write('##FILTER=<ID=' + filt_val + ',Description="">\n')
                         filt_f.write(l)
                         pass_f.write(l)
                     else:

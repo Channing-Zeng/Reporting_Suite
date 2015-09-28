@@ -90,7 +90,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     info('Annotating using this db...')
     vcf_conf = {
         'path': db_fpath,
-        'annotations': [key, key.replace('.', '_') + '_DP', key.replace('.', '_') + '_MQ']}
+        'annotations': [key.replace('.', '_') + '_DP', key.replace('.', '_') + '_MQ']}
     vcf_fpath = _snpsift_annotate(cnf, vcf_conf, key, vcf_fpath)
 
     info('Moving INFO to FORMAT...')
@@ -98,17 +98,23 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
         if l.startswith('#'):
             return l
         fs = l.split('\t')
-        info_col, ft_keys, ft_vals = fs[-3], fs[-2], fs[-1]
-        info_dict = dict([kv.split('=') if '=' in kv else (kv, True) for kv in info_col.split(';')])
-        ft_dict = OrderedDict(zip(ft_keys.split(':'), ft_vals.split(':')))
+        info_dict = dict([kv.split('=') if '=' in kv else (kv, True) for kv in fs[7].split(';')])
+        ft_keys = fs[8].split(':')
+        all_ft_vals = [ft_vals.split(':') for ft_vals in fs[9:]]
+        ft_dicts = [OrderedDict(zip(ft_keys, ft_vals)) for ft_vals in all_ft_vals]
         for ann in ['DP', 'MQ']:
             k = key.replace('.', '_') + '_' + ann
-            ft_dict[k] = info_dict.get(k, '.')
-        ft_items = ft_dict.items()
-        ft_keys = [k for k, v in ft_items]
-        ft_vals = [v for k, v in ft_items]
-        return '\t'.join(fs[:-2]) + '\t' + ':'.join(ft_keys) + '\t' + ':'.join(ft_vals)
-
+            for ft_dict in ft_dicts:
+                ft_dict[k] = info_dict.get(k, '.')
+        all_ft_vals = []
+        for ft_dict in ft_dicts:
+            ft_items = ft_dict.items()
+            ft_keys = [k for k, v in ft_items]
+            all_ft_vals.append([v for k, v in ft_items])
+        l = '\t'.join(fs[:8]) + '\t' + ':'.join(ft_keys)
+        for ft_vals in all_ft_vals:
+            l += '\t' + ':'.join(ft_vals)
+        return l
         # rec.FORMAT[key.replace('.', '_') + '_DP'] = rec.genotype(key.split('.')[0])['DP']
         # rec.INFO[key.replace('.', '_') + '_MQ'] = rec.genotype(key.split('.')[0])['MQ']
         # return rec
@@ -307,7 +313,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
                 del rec.INFO[anno]
         return rec
     if annotations:
-        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='delANNO')
+        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='d')
 
     anno_line = ''
     if annotations:
@@ -350,7 +356,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
         return line
 
-    output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='f', ctx=dict(met_CHROM=False))
+    output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='fx', ctx=dict(met_CHROM=False))
     return output_fpath
 
 
@@ -498,7 +504,8 @@ def _add_annotation(cnf, input_fpath, key, value, number, type_, description):
     def _add_format_header(l, i):
         if l.startswith('#CHROM'):
             ext_l = ''
-            ext_l += '##INFO=<ID={key},Number={number},Type={type_},Description="{description}">\n'.format(**locals())
+            ext_l += '##INFO=<ID={key},Number={number},Type={type_},Description="{desc}">\n'.format(
+                key=key, number=number, type_=type_, desc=description)
             return ext_l + l
         return l
     output_fpath = iterate_file(cnf, output_fpath, _add_format_header)

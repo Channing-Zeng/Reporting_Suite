@@ -3,7 +3,9 @@ import math
 from collections import defaultdict, OrderedDict
 import os
 from os.path import join, splitext, basename, dirname, abspath, isfile
+from shutil import copyfile
 from time import sleep
+from traceback import format_exc
 from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
@@ -110,7 +112,7 @@ def _seq2c(cnf, bcbio_structure):
     __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, mapped_read_fpath)
     info()
 
-    combined_gene_depths_fpath = join(cnf.work_dir, 'gene_depths.seq2c.txt')
+    combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
     # __cov2cnv(cnf, bcbio_structure.sv_bed or bcbio_structure.bed, bcbio_structure.samples, dedupped_bam_by_sample, combined_gene_depths_fpath)
     __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, bcbio_structure.samples, dedupped_bam_by_sample, combined_gene_depths_fpath)
     info()
@@ -178,8 +180,18 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
 
     info('Preparing BED files')
     exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
-    _, _, _, seq2c_bed = \
+    _, _, target_bed, seq2c_bed = \
         prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.sv_bed)
+
+    output_dirpath = dirname(output_fpath)
+    seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
+    try:
+        copyfile(seq2c_bed, seq2c_exposed_fpath)
+    except OSError:
+        err(format_exc())
+        info()
+    else:
+        info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
 
     jobs_to_wait = []
     bedcov_output_by_sample = dict()
@@ -199,9 +211,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif ((bcbio_structure.bed == bcbio_structure.sv_bed or  # same bed files for targqc and seqc - can use ave coverages from targqc
-                  not bcbio_structure.bed and not bcbio_structure.sv_bed) and  # no bed and sv_file file specified at all - meaning WGS - using Exons
+        elif ((target_bed == seq2c_bed) and  # same bed files for targqc and seqc - can use ave coverages from targqc
                 verify_file(s.targetcov_detailed_tsv, silent=True)):
+            info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
             amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(bcbio_structure.bed is None))
             amplicons = (a for a in amplicons if a.gene_name and a.gene_name != '.')
