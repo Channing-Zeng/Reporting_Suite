@@ -42,6 +42,8 @@ class Record:
         self.right_shift = None
         self.color = 'white'
         self.text_color = 'black'
+        # self.color = lambda: self._color
+        # self.text_color = lambda: self._text_color
 
     def get_value(self):
         return self.value
@@ -97,6 +99,8 @@ class Metric:
             quality='More is better',  # "More is better", "Less is better", "Equal"
             unit='',
             common=False,
+            ok_threshold=None,
+            bottom=None,
 
             numbers=None,
             values=None,
@@ -114,6 +118,8 @@ class Metric:
         self.quality = quality
         self.common = common
         self.unit = unit
+        self.ok_threshold = ok_threshold
+        self.bottom = bottom
 
         self.numbers = []
         self.values = []

@@ -40,18 +40,18 @@ def get_header_metric_storage(depth_thresholds):
         sections=[
             ReportSection('reads', 'Reads', [
                 Metric('Reads'),
-                Metric('Mapped reads', short_name='Mapped', description='samtools view -c -F 4'),
-                Metric('Percentage of mapped reads', short_name='Mapped %', unit='%'),
+                Metric('Mapped reads', short_name='Mapped', description='samtools view -c -F 4', ok_threshold='Percentage of mapped reads', bottom=0),
+                Metric('Percentage of mapped reads', short_name='Mapped %', unit='%', ok_threshold=0.98, bottom=0),
                 # Metric('Unmapped reads', short_name='Unmapped', quality='Less is better', description='samtools view -c -f 4'),
                 # Metric('Percentage of unmapped reads', short_name='%', unit='%', quality='Less is better'),
-                Metric('Properly paired reads percent', short_name='Paired %', unit='%', description='Pecent of properly paired mapped reads (-f 2).'),
+                Metric('Properly paired reads percent', short_name='Paired %', unit='%', description='Pecent of properly paired mapped reads (-f 2).', ok_threshold=0.9, bottom=0),
 
                 Metric('Duplication rate', short_name='Dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
                 # Metric('Dedupped mapped reads', short_name='Dedupped', description='Mapped reads (-F 4), not makred as duplicates (-f 1024)'),
 
-                Metric('Read min length',                               'Min len',                     'Read min length'),
-                Metric('Read max length',                               'Max len',                     'Read max length'),
-                Metric('Read mean length',                              'Ave len',                     'Read mean length'),
+                Metric('Read min length',  'Min len', 'Read min length'),
+                Metric('Read max length',  'Max len', 'Read max length'),
+                Metric('Read mean length', 'Ave len', 'Read mean length'),
             ]),
 
             ReportSection('target_metrics', 'Target (duplicate reads are not counted)', [

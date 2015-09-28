@@ -330,9 +330,6 @@ def _calc_cell_contents(report, section):
                 _calc_record_cell_contents(rec)
 
         for rec in sample_report.records:
-            if '100x' in rec.metric.name:
-                pass
-
             if rec.metric.name in section.metrics_by_name:
                 if rec.metric.name not in max_frac_widths_by_metric or \
                                 rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
@@ -388,6 +385,14 @@ def _calc_cell_contents(report, section):
 
                     metric = rec.metric
 
+                    # For metrics where we know the "normal value" - we want to color everything above normal white,
+                    #   and everything below - red, starting from normal, finishing with bottom
+                    if metric.ok_threshold is not None:
+                        if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
+                            metric.med = metric.ok_threshold
+                            if metric.bottom is not None:
+                                metric.low_outer_fence = metric.bottom
+
                     # Color heatmap
                     if rec.num:
                         [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
@@ -397,6 +402,16 @@ def _calc_cell_contents(report, section):
                             [top_hue, low_hue] = [low_hue, top_hue]
                             [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
                             [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
+
+                        if metric.ok_threshold is not None:
+                            if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
+                                if rec.num >= metric.ok_threshold:
+                                    continue  # white on blak
+
+                                # rec_to_align_with = sample_report.find_record(sample_report.records, metric.threshold)
+                                # if rec_to_align_with:
+                                #     rec.text_color = lambda: rec_to_align_with.text_color()
+                                #     continue
 
                         if not metric.all_values_equal:
                             rec.text_color = 'black'
@@ -427,6 +442,17 @@ def _calc_cell_contents(report, section):
                                 k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
                                 brt = round(MEDIAN_BRT - (rec.num - metric.med) * k)
                                 rec.color = get_color(top_hue, brt)
+
+            for rec in sample_report.records:
+                if rec.metric and rec.metric.name in section.metrics_by_name:
+                    metric = rec.metric
+
+                    if metric.ok_threshold is not None:
+                        if isinstance(metric.ok_threshold, basestring):
+                            rec_to_align_with = sample_report.find_record(sample_report.records, metric.ok_threshold)
+                            if rec_to_align_with:
+                                rec.text_color = rec_to_align_with.text_color
+                                rec.color = rec_to_align_with.color
     return report
 
 
