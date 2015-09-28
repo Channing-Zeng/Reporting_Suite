@@ -572,11 +572,12 @@ class BCBioStructure:
             if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt']:
                 os.rename(join(self.date_dirpath, fname),
                           join(dirname(self.log_dirpath), fname))
-        project_summary_fpath = join(dirname(self.log_dirpath), 'project-summary.yaml')
-        if isfile(project_summary_fpath):
-            dst_fpath = join(self.date_dirpath, 'project-summary.txt')
-            info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
-            _extract_project_summary(project_summary_fpath, dst_fpath)
+        if self.log_dirpath:
+            project_summary_fpath = join(dirname(self.log_dirpath), 'project-summary.yaml')
+            if isfile(project_summary_fpath):
+                dst_fpath = join(self.date_dirpath, 'project-summary.txt')
+                info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
+                _extract_project_summary(project_summary_fpath, dst_fpath)
 
         info(' '.join(sys.argv))
         info()

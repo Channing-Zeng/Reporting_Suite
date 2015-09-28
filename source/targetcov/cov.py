@@ -296,13 +296,13 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     report.add_record('Reads', reads_stats['total'])
     report.add_record('Mapped reads', reads_stats['mapped'])
     # report.add_record('Unmapped reads', reads_stats['total'] - reads_stats['mapped'])
-    percent_mapped = 1.0 * reads_stats['mapped'] / reads_stats['total'] if reads_stats['total'] else None
+    percent_mapped = 1.0 * (reads_stats['mapped'] or 0) / reads_stats['total'] if reads_stats['total'] else None
     assert percent_mapped <= 1.0 or percent_mapped is None, str(percent_mapped)
     report.add_record('Percentage of mapped reads', percent_mapped)
     # percent_unmapped = 1.0 * (reads_stats['total'] - reads_stats['mapped']) / reads_stats['total'] if reads_stats['total'] else None
     # assert percent_unmapped <= 1.0 or percent_unmapped is None, str(percent_unmapped)
     # report.add_record('Percentage of unmapped reads', percent_unmapped)
-    total_paired_reads_pecent = 1.0 * reads_stats['paired'] / reads_stats['total'] if reads_stats['total'] else None
+    total_paired_reads_pecent = 1.0 * (reads_stats['paired'] or 0) / reads_stats['total'] if reads_stats['total'] else None
     assert total_paired_reads_pecent <= 1.0 or total_paired_reads_pecent is None, str(total_paired_reads_pecent)
     report.add_record('Properly paired reads percent', total_paired_reads_pecent)
     info('')
@@ -325,12 +325,12 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     else:
         report.add_record('Target', 'whole genome')
         report.add_record('Reference size', target_info.bases_num)
-        report.add_record('Genes in target', target_info.genes_num)
+    report.add_record('Genes in target', target_info.genes_num)
 
     bases_within_threshs = depth_stats['bases_within_threshs']
     v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
     report.add_record('Covered bases in target', v_covered_bases_in_targ)
-    v_percent_covered_bases_in_targ = 1.0 * v_covered_bases_in_targ / target_info.bases_num if target_info.bases_num else None
+    v_percent_covered_bases_in_targ = 1.0 * (v_covered_bases_in_targ or 0) / target_info.bases_num if target_info.bases_num else None
     report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
     assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
 
@@ -338,7 +338,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     # mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
     if 'mapped_on_target' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
-        percent_mapped_on_target = 1.0 *  reads_stats['mapped_on_target'] / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
+        percent_mapped_on_target = 1.0 * (reads_stats['mapped_on_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
         report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
         assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
         percent_mapped_off_target = 1.0 - percent_mapped_on_target
@@ -346,7 +346,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     if 'mapped_reads_on_padded_target' in reads_stats:
         # report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
-        percent_mapped_on_padded_target = 1.0 * reads_stats['mapped_reads_on_padded_target'] / reads_stats['mapped'] if reads_stats['mapped'] else None
+        percent_mapped_on_padded_target = 1.0 * (reads_stats['mapped_reads_on_padded_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] else None
         report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
         assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
@@ -361,7 +361,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
 
     for depth, bases in depth_stats['bases_within_threshs'].items():
-        percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
+        percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
         if percent_val > 0:
             report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
         assert percent_val <= 1.0 or percent_val is None, str(percent_val)

@@ -118,7 +118,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
     #         metric_storage=targqc_metric_storage)
         if tag_by_sample:
             sample_report.set_project_tag(tag_by_sample[sample_report.sample.name])
-        sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath)
+        sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
         # targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)

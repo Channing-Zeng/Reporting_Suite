@@ -298,12 +298,15 @@ class SampleReport(Report):
     #         name = name + ' ' + self.caller_tag
     #     return name
 
-    def add_record(self, metric_name, value, meta=None, html_fpath=None):
+    def add_record(self, metric_name, value, meta=None, html_fpath=None, silent=False):
         metric = self.metric_storage.find_metric(metric_name.strip())
-        assert metric, metric_name
+        if not metric:
+            err('Could not find metric ' + metric_name)
+            return None
         rec = Record(metric, value, meta, html_fpath=html_fpath)
         self.records.append(rec)
-        info(metric_name + ': ' + rec.format(human_readable=True))
+        if not silent:
+            info(metric_name + ': ' + rec.format(human_readable=True))
         return rec
 
     def flatten(self, sections=None, human_readable=True):
