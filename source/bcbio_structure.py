@@ -9,6 +9,8 @@ from collections import defaultdict, OrderedDict
 from os.path import join, abspath, exists, pardir, splitext, basename, islink, dirname, realpath
 from optparse import OptionParser
 from distutils import file_util
+from traceback import format_exc
+import yaml
 
 import source
 from source import logger, BaseSample
@@ -570,6 +572,11 @@ class BCBioStructure:
             if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt']:
                 os.rename(join(self.date_dirpath, fname),
                           join(dirname(self.log_dirpath), fname))
+        project_summary_fpath = join(dirname(self.log_dirpath), 'project-summary.yaml')
+        if isfile(project_summary_fpath):
+            dst_fpath = join(self.date_dirpath, 'project-summary.txt')
+            info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
+            _extract_project_summary(project_summary_fpath, dst_fpath)
 
         info(' '.join(sys.argv))
         info()
@@ -934,8 +941,39 @@ def ungzip_if_needed(cnf, fpath):
     return fpath
 
 
-# def get_trailing_number(string):
-#     m = re.search(r'\d+$', string)
-#     return int(m.group()) if m else None
+def _extract_project_summary(project_summary_fpath, dst_fpath):
+    """Script to generate a tab delimited summary file from a
+    project-summary.yaml file that exists in the bcbio
+    final/YYYY_MM_DD_project/ folder.
+    """
+    try:
+        with open(project_summary_fpath) as f:
+            sett = yaml.safe_load(project_summary_fpath)
 
+        myMetrics = []  # names of different metrics for all samples
+        mySamples = []  # names of samples
+        myDict = dict()  # metric-value pairs for all samples
+        for sample in sett['samples']:
+            mySamples.append(sample['description'])  # get sample name
+            myDict[sample['description']] = {}
+            # loop through metrics for this sample
+            for myKey in sample['summary']['metrics']:
+                myDict[sample['description']][myKey.strip()] = sample['summary']['metrics'][myKey]
+                if myKey.strip() not in myMetrics:
+                    myMetrics.append(myKey.strip())
 
+            summaryString = 'Sample\t' + "\t".join(myMetrics) + "\n"
+            for mySample in sorted(myDict.keys()):  # loop through samples
+                summaryString += mySample + "\t"
+                for myKey in myMetrics:  # loop through metrics
+                    summaryString += str(myDict[mySample].get(myKey, '')) + "\t"
+                summaryString += "\n"
+            with open(dst_fpath, 'w') as out:
+                out.write(summaryString)
+    except:
+        err(format_exc())
+        err('Cannot extract project summary')
+        err()
+    else:
+        if verify_file(dst_fpath):
+            err('Could not extract project summary')
