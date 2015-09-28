@@ -69,7 +69,15 @@ class Record:
         return self.metric.format(self.value, human_readable=human_readable)
 
     def format_html(self):
-        return self.metric.format(self.value, human_readable=True, is_html=True)
+        val = self.value
+        # if self.html_fpath:
+        #     if isinstance(self.html_fpath, dict):
+        #         val = self.value + ': '
+        #         val += ', '.join('<a href="' + v + '">' + k + '</a>'
+        #                          for k, v in self.html_fpath.items())
+        #     else:
+        #         val = '<a href="' + self.html_fpath + '">' + self.value + '</a>'
+        return self.metric.format(val, human_readable=True, is_html=True)
 
     def __repr__(self):
         return self.metric.name + ' ' + self.metric.format(self.value, human_readable=True)
@@ -90,15 +98,16 @@ class Metric:
             unit='',
             common=False,
 
-            values = None,
-            min = None,
-            max = None,
-            med = None,
-            low_outer_fence = None,
-            low_inner_fence = None,
-            top_inner_fence = None,
-            top_outer_fence = None,
-            all_values_equal = False):  #TODO: get read of those
+            numbers=None,
+            values=None,
+            min=None,
+            max=None,
+            med=None,
+            low_outer_fence=None,
+            low_inner_fence=None,
+            top_inner_fence=None,
+            top_outer_fence=None,
+            all_values_equal=False):  # TODO: get read of those
         self.name = name
         self.short_name = short_name
         self.description = description
@@ -106,6 +115,7 @@ class Metric:
         self.common = common
         self.unit = unit
 
+        self.numbers = []
         self.values = []
         self.min = None
         self.max = None
@@ -288,10 +298,10 @@ class SampleReport(Report):
     #         name = name + ' ' + self.caller_tag
     #     return name
 
-    def add_record(self, metric_name, value, meta=None):
+    def add_record(self, metric_name, value, meta=None, html_fpath=None):
         metric = self.metric_storage.find_metric(metric_name.strip())
         assert metric, metric_name
-        rec = Record(metric, value, meta)
+        rec = Record(metric, value, meta, html_fpath=html_fpath)
         self.records.append(rec)
         info(metric_name + ': ' + rec.format(human_readable=True))
         return rec
@@ -502,6 +512,12 @@ class FullReport(Report):
         return rows
 
     @staticmethod
+    def _sync_sections(dst_section, src_section):
+        for metric in src_section.metrics:
+            if not dst_section.find_metric(metric.name):
+                dst_section.add_metric(metric)
+
+    @staticmethod
     def construct_from_sample_report_jsons(samples, output_dirpath,
             jsons_by_sample, htmls_by_sample, bcbio_structure=None):
         full_report = FullReport()
@@ -514,7 +530,15 @@ class FullReport(Report):
                     sample_report.html_fpath = relpath(htmls_by_sample[sample.name], output_dirpath) \
                         if sample.name in htmls_by_sample else None
                     full_report.sample_reports.append(sample_report)
-                    metric_storage = metric_storage or sample_report.metric_storage
+                    if metric_storage is None:
+                        metric_storage = sample_report.metric_storage
+                    else:  # Maximize metric storage
+                        FullReport._sync_sections(metric_storage.general_section, sample_report.metric_storage.general_section)
+                        for section in sample_report.metric_storage.sections:
+                            if section.name not in metric_storage.sections_by_name:
+                                metric_storage.add_section(section)
+                            else:
+                                FullReport._sync_sections(metric_storage.sections_by_name[section.name], section)
 
         for sample_report in full_report.sample_reports:
             sample_report.metric_storage = metric_storage
@@ -570,7 +594,8 @@ class ReportSection:
         return self.metrics
 
     def find_metric(self, metric_name):
-        return next((m for m in self.get_metrics() if m.name == metric_name), None)
+        return self.metrics_by_name.get(metric_name, None)
+        # return next((m for m in self.get_metrics() if m.name == metric_name), None)
 
     def remove_metric(self, metric_name):
         metric = self.metrics_by_name[metric_name]
@@ -612,6 +637,10 @@ class MetricStorage:
             section = ReportSection('metrics_list', '', metrics_list)
             self.sections_by_name[''] = section
             self.sections.append(section)
+
+    def add_section(self, section):
+        self.sections.append(section)
+        self.sections_by_name[section.name] = section
 
     def add_metric(self, metric, section_name=''):
         self.sections_by_name[section_name].add_metric(metric)

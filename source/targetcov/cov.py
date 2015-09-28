@@ -82,7 +82,8 @@ def get_header_metric_storage(depth_thresholds):
                 Metric('Insertions',            'Insertions',         'Insertions, inside of regions', quality='Less is better'),
                 Metric('Deletions',             'Deletions',          'Deletions, inside of regions', quality='Less is better'),
                 Metric('Homopolymer indels',    'Homopolymer indels', 'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
-                # Metric('Duplication rate',      'Duplication rate',   'Duplication rate (inside of regions)')
+                Metric('Qualimap',              'Qualimap',           'Qualimap report'),
+                Metric('ngsCAT',                'ngsCAT',             'ngsCAT report')
             ])
         ])
 
@@ -267,7 +268,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
 
 def make_az300_reports(cnf, per_gene_report):
-    if not verify_file(cnf.genome.az300):
+    if not verify_file(cnf.genome.az300, silent=True):
         return []
     info('Generating tables for AZ300')
     with open(cnf.genome.az300) as f:
@@ -289,6 +290,7 @@ def get_records_by_metrics(records, metrics):
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds))
+    report.add_record('Qualimap', value='Qualimap', html_fpath=sample.qualimap_html_fpath)
 
     info('* General coverage statistics *')
     report.add_record('Reads', reads_stats['total'])
@@ -334,7 +336,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     info('Getting number of mapped reads on target...')
     # mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
-    if reads_stats['mapped_on_target']:
+    if 'mapped_on_target' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
         percent_mapped_on_target = 1.0 *  reads_stats['mapped_on_target'] / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
         report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
@@ -360,7 +362,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     for depth, bases in depth_stats['bases_within_threshs'].items():
         percent_val = 1.0 * bases / target_info.bases_num if target_info.bases_num else 0
-        report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
+        if percent_val > 0:
+            report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
         assert percent_val <= 1.0 or percent_val is None, str(percent_val)
     info()
 

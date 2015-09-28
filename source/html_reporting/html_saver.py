@@ -118,13 +118,16 @@ def _build_total_report(report, section, column_order):
     for col_num in range(len(section.metrics)):
         pos = column_order[col_num]
         metric = section.metrics[pos]
-        if not metric.values:
-            continue
-        sort_by = 'nosort' if metric.all_values_equal else 'numeric'
-        direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-        table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
-                  ' data-direction=' + direction + ' position=' + str(pos) + '>' +
-                  '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+        if metric.numbers:
+            sort_by = 'nosort' if metric.all_values_equal else 'numeric'
+            direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
+            table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
+                      ' data-direction=' + direction + ' position=' + str(pos) + '>' +
+                      '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+        elif metric.values:
+            table += ('\n<th class="second_through_last_col_headers_td">' +
+                      '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+
     table += '\n</tr>\n</thead>\n<tbody>'
 
     i = 0
@@ -164,17 +167,13 @@ def _build_total_report(report, section, column_order):
         for col_num in range(len(section.metrics)):
             pos = column_order[col_num]
             metric = section.metrics[pos]
+            if '100x' in metric.name:
+                pass
             if not metric.values:
                 continue
-            rec = None
-            for r in sample_report.records:
-                if not r.metric:
-                    continue
-                if r.metric.name == metric.name:
-                    rec = r
-                    break
+            rec = sample_report.find_record(sample_report.records, metric.name)
             if not rec:
-                table += "\n<td></td>"
+                table += "\n<td>-</td>"
                 continue
 
             table += '\n<td metric="' + metric.name + '" style="background-color: ' + rec.color + '; color: ' + rec.text_color + \
@@ -198,9 +197,10 @@ def _build_total_report(report, section, column_order):
                         _calc_record_cell_contents(rec)
                         table += rec.cell_contents + '</td>'
                     else:
-                        caller_links = ', '.join('<a href="' + html_fpath + '">' + caller + '</a>'
-                                                 for caller, html_fpath in rec.html_fpath.items()
-                                                 if html_fpath)
+                        caller_links = ', '.join(
+                            '<a href="' + html_fpath + '">' + caller + '</a>'
+                            for caller, html_fpath in rec.html_fpath.items()
+                            if html_fpath)
                         table += rec.cell_contents + '(' + caller_links + ')</td>'
 
             else:
@@ -326,19 +326,21 @@ def _calc_cell_contents(report, section):
 
     for sample_report in sample_reports:
         for rec in sample_report.records:
-            _calc_record_cell_contents(rec)
+            if rec.metric.name in section.metrics_by_name:
+                _calc_record_cell_contents(rec)
 
         for rec in sample_report.records:
-            if rec.metric and rec.metric.name in section.metrics_by_name:
+            if '100x' in rec.metric.name:
+                pass
+
+            if rec.metric.name in section.metrics_by_name:
                 if rec.metric.name not in max_frac_widths_by_metric or \
                                 rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
                     max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
-
-            if rec.num:
-                if not rec.metric.values:
-                    rec.metric.values = []
-                rec.metric.values.append(rec.num)
-
+                if rec.num:
+                    rec.metric.numbers.append(rec.num)
+                if rec.value is not None:
+                    rec.metric.values.append(rec.value)
     # else:
     #     for rec in report.records:
     #         if rec.metric.name in section.metrics_by_name:
@@ -348,7 +350,7 @@ def _calc_cell_contents(report, section):
     #                 rec.metric.values.append(rec.num)
 
     for metric in section.metrics:
-        if metric.values:
+        if metric.numbers:
             def _cmp(a, b):  # None is always less than anything
                 if a and b:
                     return cmp(a, b)
@@ -357,15 +359,17 @@ def _calc_cell_contents(report, section):
                 else:
                     return -1
 
-            vals = sorted(metric.values, cmp=_cmp)
-            l = len(vals)
+            numbers = sorted(
+                [v for v in metric.numbers],
+                cmp=_cmp)
+            l = len(numbers)
 
-            metric.min = vals[0]
-            metric.max = vals[l - 1]
+            metric.min = numbers[0]
+            metric.max = numbers[l - 1]
             metric.all_values_equal = metric.min == metric.max
-            metric.med = vals[(l - 1) / 2] if l % 2 != 0 else mean([vals[l / 2], vals[(l / 2) - 1]])
-            q1 = vals[int(floor((l - 1) / 4))]
-            q3 = vals[int(floor((l - 1) * 3 / 4))]
+            metric.med = numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]])
+            q1 = numbers[int(floor((l - 1) / 4))]
+            q3 = numbers[int(floor((l - 1) * 3 / 4))]
 
             d = q3 - q1
             metric.low_outer_fence = q1 - 3   * d
