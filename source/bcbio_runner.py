@@ -805,34 +805,32 @@ class BCBioRunner:
 
         for sample in self.bcbio_structure.samples:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
-            cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
+            sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
             for cnv_caller in ['-cn_mops', '-cnvkit', '-lumpy']:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
-                        cnv_caller_dirpath = join(cnv_dirpath, cnv_caller[1:])
-                        safe_mkdir(cnv_caller_dirpath)
+                        # Copy to <sample>/cnv
+                        safe_mkdir(sample_cnv_dirpath)
                         try:
-                            os.rename(join(sample_dirpath, fname), join(cnv_caller_dirpath, fname))
+                            os.rename(join(sample_dirpath, fname), join(sample_cnv_dirpath, fname))
                         except OSError:
                             err(format_exc())
                             info()
                             pass
 
-            if isdir(cnv_dirpath):
-                for fname in os.listdir(cnv_dirpath):
-                    if not fname.startswith('.'):
-                        src_fpath = join(cnv_dirpath, fname)
-
+                        # Symlink to <datestamp>/cnv/<cnvcaller>
+                        dst_dirpath = join(cnv_summary_dirpath, cnv_caller[1:])
                         dst_fname = fname
                         if sample.name not in fname:
                             dst_fname = sample.name + '.' + dst_fname
+                        dst_fpath = join(dst_dirpath, dst_fname)
 
-                        dst_fpath = join(cnv_summary_dirpath, dst_fname)
                         try:
+                            safe_mkdir(dst_dirpath)
                             if islink(dst_fpath):
                                 os.unlink(dst_fpath)
-                            symlink_plus(src_fpath, dst_fpath)
+                            symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
                         except OSError:
                             pass
 
