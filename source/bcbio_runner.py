@@ -7,6 +7,7 @@ import base64
 from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
 import datetime
 from time import sleep
+from traceback import format_exc
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
@@ -806,13 +807,17 @@ class BCBioRunner:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-            for fname in os.listdir(sample_dirpath):
-                if any(s in fname for s in ['-cn_mops', '-cnvkit', '-lumpy']):
-                    if not isdir(cnv_dirpath): safe_mkdir(cnv_dirpath)
-                    try:
-                        os.rename(join(sample_dirpath, fname), join(cnv_dirpath, fname))
-                    except OSError:
-                        pass
+            for cnv_caller in ['-cn_mops', '-cnvkit', '-lumpy']:
+                for fname in os.listdir(sample_dirpath):
+                    if cnv_caller in fname:
+                        cnv_caller_dirpath = join(cnv_dirpath, cnv_caller[1:])
+                        safe_mkdir(cnv_caller_dirpath)
+                        try:
+                            os.rename(join(sample_dirpath, fname), join(cnv_caller_dirpath, fname))
+                        except OSError:
+                            err(format_exc())
+                            info()
+                            pass
 
             if isdir(cnv_dirpath):
                 for fname in os.listdir(cnv_dirpath):
