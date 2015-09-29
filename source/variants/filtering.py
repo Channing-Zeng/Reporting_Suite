@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 import os
 from os.path import basename, join, isfile, dirname, islink, abspath, isdir, splitext
+from random import random
 from time import sleep
 import traceback
 
@@ -423,18 +424,20 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
     res = None
     tries = 0
     MAX_TRIES = 10
+    WAIT_MINUTES = int(random() * 60) + 30
     err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(vcf2txt_out_fpath))[0] + '.err')
     while True:
         stderr_dump = []
+        output_didnt_exist = not verify_file(vcf2txt_out_fpath, silent=True)
         res = call(cnf, cmdline, vcf2txt_out_fpath, stderr_dump=stderr_dump, exit_on_error=False)
         if res is not None:
             return res
         else:
             tries += 1
-            msg = 'vcf2txt.pl crashed:\n' + cmdline + '\n' + \
+            msg = 'vcf2txt.pl crashed:\n' + cmdline + ' > ' + vcf2txt_out_fpath + '\n' + \
                   (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
             if tries < MAX_TRIES:
-                msg += '\n\nRerunning in 120 minutes (tries ' + str(tries) + '/10)'
+                msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ')'
 
             send_email(msg=msg,
                        subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']',
@@ -442,8 +445,11 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
             err(msg)
             if tries == MAX_TRIES:
                 break
-            sleep(120 * 60)
+            sleep(WAIT_MINUTES * 60)
             info()
+            if output_didnt_exist and verify_file(vcf2txt_out_fpath, silent=True):
+                info('Output was created while sleeping: ' + vcf2txt_out_fpath)
+                break
 
     return res
 

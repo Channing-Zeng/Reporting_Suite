@@ -1,4 +1,5 @@
 from os.path import join, basename, splitext
+from random import random
 from time import sleep
 
 from source.calling_process import call
@@ -76,8 +77,8 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
             grep = get_system_path(cnf, 'grep')
             cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
             call(cnf, cmdl, output_fpath=chrom_bed_fpath, exit_on_error=False)
-            if verify_bed(chrom_bed_fpath, silent=True):
-                chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
+            chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
+            if verify_bed(chrom_bed_fpath, silent=True) and verify_bam(chrom_bam_fpath, silent=True):
                 bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
                 info('Anylising bedcoverage output for ' + str(chrom) + '...')
                 rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
@@ -124,7 +125,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
     res = None
     tries = 0
     MAX_TRIES = 2
-    WAIT_MINUTES = 30
+    WAIT_MINUTES = int(random() * 60) + 30
     err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output_fpath))[0] + '.err')
     while True:
         stderr_dump = []
@@ -133,7 +134,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
             return res
         else:
             tries += 1
-            msg = 'bedtools coverage crashed:\n' + cmdline + '\n' + \
+            msg = 'bedtools coverage crashed:\n' + cmdline + ' > ' + bedcov_output_fpath + '\n' + \
                   (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
             if tries < MAX_TRIES:
                 msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
