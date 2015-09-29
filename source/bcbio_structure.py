@@ -949,7 +949,7 @@ def _extract_project_summary(project_summary_fpath, dst_fpath):
     """
     try:
         with open(project_summary_fpath) as f:
-            sett = yaml.safe_load(project_summary_fpath)
+            sett = yaml.safe_load(f)
 
         myMetrics = []  # names of different metrics for all samples
         mySamples = []  # names of samples
