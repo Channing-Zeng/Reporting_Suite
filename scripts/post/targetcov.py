@@ -2,7 +2,7 @@
 import __check_python_version
 
 import os
-from os.path import isfile, join, basename, splitext
+from os.path import isfile, join, basename, splitext, dirname
 import sys
 import shutil
 from source import BaseSample, TargQC_Sample
@@ -18,7 +18,7 @@ from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.tools_from_cnf import get_system_path
 from source.utils import info
-from source.file_utils import adjust_path
+from source.file_utils import adjust_path, safe_mkdir
 
 
 def main(args):
@@ -121,6 +121,8 @@ def main(args):
 def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
     picard = get_system_path(cnf, 'java', 'picard')
     if picard:
+        safe_mkdir(dirname(sample.picard_ins_size_hist_txt_fpath))
+        safe_mkdir(dirname(sample.picard_ins_size_hist_pdf_fpath))
         info()
         info('Picard ins size hist for "' + basename(bam_fpath) + '"')
         cmdline = '{picard} CollectInsertSizeMetrics' \
