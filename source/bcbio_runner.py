@@ -807,7 +807,7 @@ class BCBioRunner:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-            for cnv_caller in ['-cn_mops', '-cnvkit', '-lumpy']:
+            for cnv_caller in ['-cn_mops', '-cnvkit', '-lumpy', '-manta', '-wham']:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv
