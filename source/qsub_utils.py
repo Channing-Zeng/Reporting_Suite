@@ -40,7 +40,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
         else:
             if isfile(output_fpath):
                 os.remove(output_fpath)
-        cmdline += ' > ' + output_fpath
+        cmdline += ' > ' + out_fpath
 
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
