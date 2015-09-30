@@ -18,7 +18,7 @@ from source.logger import info, err, critical, warn
 from source.calling_process import call
 from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
-from source.ngscat.bed_file import verify_bed, verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, set_up_log, set_up_work_dir, \
     detect_sys_cnf_by_location, check_genome_resources, check_inputs
 from source.tools_from_cnf import get_system_path

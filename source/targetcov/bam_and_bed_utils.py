@@ -4,7 +4,7 @@ import sys
 from subprocess import check_output
 from collections import OrderedDict
 from source.calling_process import call, call_pipe
-from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file
+from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -648,4 +648,91 @@ def intersect_bed(cnf, bed1, bed2):
     call(cnf, cmdline, output_fpath)
     return output_fpath
 
+def verify_bam(fpath, description='', is_critical=False, silent=False):
+    if not verify_file(fpath, description, is_critical=is_critical, silent=silent):
+        return None
 
+    fpath = adjust_path(fpath)
+
+    logfn = critical if is_critical else err
+    if not fpath.endswith('.bam'):
+        logfn('The file ' + fpath + ' is supposed to be BAM but does not have the .bam '
+            'extension. Please, make sure you pass proper file.')
+        return None
+
+    textchars = ''.join(map(chr, [7, 8, 9, 10, 12, 13, 27] + range(0x20, 0x100)))
+    is_binary_string = lambda baitiki: bool(baitiki.translate(None, textchars))
+    if not is_binary_string(open(fpath).read(3)):
+        logfn('The BAM file ' + fpath + ' must be a binary file.')
+        return None
+
+    return fpath
+
+
+def verify_bed(fpath, description='', is_critical=False, silent=False):
+    if not verify_file(fpath, description, is_critical=is_critical, silent=silent):
+        return None
+
+    fpath = adjust_path(fpath)
+
+    error = BedFile(fpath).checkformat()
+    if error:
+        fn = critical if is_critical else err
+        fn('Error: incorrect bed file format (' + fpath + '): ' + str(error) + '\n')
+        return None
+
+    return fpath
+
+
+class BedFile:
+    def __init__(self, _filename):
+        self.filename = _filename
+        self.chrs = None
+        self.nregions = None
+
+    def checkformat(self):
+        """************************************************************************************************************************************************************
+        Task: checks the format of the bed file. The only requirements checked are that each line presents at least 3 tab separated columns, the
+            two on the right must present integer values indicating the start/end position respectively. Right value must be greater than the
+            left value.
+        Outputs:
+            err: string containing the detected error. Empty string in case of a correct format.
+        ************************************************************************************************************************************************************"""
+
+        fd = file(self.filename)
+
+        line = fd.readline()
+        fields = line.split('\t')
+        lc = 1
+        err = ''
+
+        # Checks that the two columns on the right contain integer values
+        try:
+            # Parses each line and checks that there are at least 3 fields, the two on the right containing integer values and being the right one
+            # greater than the left one
+            while (line <> '' and len(fields) > 2 and int(fields[1]) < int(fields[2])):
+                lc += 1
+                line = fd.readline()
+                fields = line.split('\t')
+        except ValueError:
+            err += 'Incorrect start/end values at line ' + str(lc) + '\n'
+            err += 'Start/End coordinates must be indicated with integer values. The right value must be greater than the left value.\n'
+            err += 'Line found: ' + line
+            fd.close()
+
+            return err
+
+        # If it get to this point means that either the file ended or there is a line with less than 3 fields
+        if (line <> ''):
+            err += 'Incorrect line format at line ' + str(lc) + '\n'
+            err += 'At least three columns are expected in each line\n'
+            err += 'The right value must be greater than the left value.\n'
+            err += 'Line found: ' + line
+            fd.close()
+
+        return err
+
+    def count_lines(self, filename=None):
+        if filename is None:
+            filename = self.filename
+        return len(open(filename).readlines())

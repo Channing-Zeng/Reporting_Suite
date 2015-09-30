@@ -16,7 +16,7 @@ from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
 from source.logger import info, err, critical, send_email, warn
-from source.ngscat.bed_file import verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bam
 from source.utils import is_us
 from source.webserver.exposing import sync_with_ngs_server
 from source.config import defaults

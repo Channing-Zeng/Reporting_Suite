@@ -15,7 +15,7 @@ from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
 from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
-from source.ngscat.bed_file import verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bam
 from source.tools_from_cnf import get_java_tool_cmdline, get_system_path, get_script_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists

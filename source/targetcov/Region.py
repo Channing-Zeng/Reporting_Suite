@@ -1,13 +1,11 @@
 from collections import defaultdict, OrderedDict
 import math
 import os
-from os.path import isfile, join
-from source.calling_process import call
-from source.file_utils import file_transaction, intermediate_fname
+from os.path import isfile
+from source.file_utils import file_transaction
 
 from source.logger import info, err, critical
-from source.ngscat.bed_file import verify_bed
-from source.targetcov.bam_and_bed_utils import get_gene_names
+from source.targetcov.bam_and_bed_utils import verify_bed
 
 
 HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]

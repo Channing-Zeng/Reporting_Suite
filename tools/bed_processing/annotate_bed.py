@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import tempfile
-import shutil
-
 import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
 
 import subprocess
 import sys
 import os
+import tempfile
+import shutil
 from os.path import abspath, dirname, realpath, join, exists
 
 from source.logger import critical

@@ -6,7 +6,7 @@ from source.calling_process import call
 from source.file_utils import splitext_plus, add_suffix, safe_mkdir, file_transaction
 from source.logger import critical, info, warn, send_email, err
 # from source.ngscat import coverageHisto
-from source.ngscat.bed_file import verify_bam, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path

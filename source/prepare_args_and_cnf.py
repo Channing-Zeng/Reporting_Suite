@@ -13,7 +13,7 @@ from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, 
 from source.config import defaults, Config
 from source.logger import info, critical, warn, err
 from source.file_utils import which, file_exists, safe_mkdir
-from source.ngscat.bed_file import verify_bam, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 from source.utils import is_uk, is_us, is_cloud
 from source.utils import is_china
 from source.utils import is_local

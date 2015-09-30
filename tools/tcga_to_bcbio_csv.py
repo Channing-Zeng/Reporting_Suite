@@ -7,7 +7,7 @@ import os
 import sys
 import traceback
 import pysam
-from source.ngscat.bed_file import verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bam
 from source import verify_file
 from source.logger import err
 from source.file_utils import verify_dir, safe_mkdir, adjust_path

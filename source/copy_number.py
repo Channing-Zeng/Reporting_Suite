@@ -15,7 +15,7 @@ from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser, file_transaction, \
     add_suffix, splitext_plus
 from source.logger import info, err, step_greetings, critical, send_email, warn
-from source.ngscat.bed_file import verify_bed, verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting import write_tsv_rows, Record, SampleReport
 from source.targetcov.Region import Region, GeneInfo

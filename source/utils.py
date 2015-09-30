@@ -8,13 +8,9 @@ import re
 
 from collections import OrderedDict
 from os.path import join, basename
-import datetime
-import tempfile
-from source.calling_process import call_subprocess
-from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
-from source.file_utils import file_exists, verify_file, file_transaction, safe_mkdir
-from tools.bed_processing.sort_bed import SortableByChrom
+from source.file_utils import file_exists, verify_file, file_transaction
+from source.targetcov.Region import SortableByChrom
 
 
 class OrderedDefaultDict(OrderedDict):

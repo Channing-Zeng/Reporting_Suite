@@ -5,7 +5,7 @@ from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict, defaultdict
 
 import source
-from source.ngscat.bed_file import verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bed
 from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, PerRegionSampleReport, Report
 from source.logger import step_greetings, info, warn, err
 from source.qualimap import report_parser as qualimap_report_parser

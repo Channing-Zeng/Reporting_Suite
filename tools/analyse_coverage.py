@@ -16,7 +16,7 @@ from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, 
     file_exists, isfile
 from source.main import set_up_dirs
 from source.targetcov.submit_jobs import run_targqc
-from source.ngscat.bed_file import verify_bam, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 
 
 def main():
