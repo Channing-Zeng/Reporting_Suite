@@ -717,9 +717,13 @@ class BCBioRunner:
                     bcbio_final_dirpath=self.bcbio_structure.final_dirpath,
                     summary_report_fpath=html_report_fpath)
                 if not html_report_url:
-                    if is_us() and '/analysis/' in html_report_fpath:
-                        rel_url = html_report_fpath.split('/analysis/')[1]
-                        html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/analysis/' + rel_url)
+                    if is_us():
+                        if '/analysis/' in html_report_fpath:
+                            rel_url = html_report_fpath.split('/analysis/')[1]
+                            html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/analysis/' + rel_url)
+                        if '/datasets/' in html_report_fpath:
+                            rel_url = html_report_fpath.split('/datasets/')[1]
+                            html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/datasets/' + rel_url)
 
             _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
 
@@ -837,7 +841,7 @@ def _final_email_notification(html_report_url, jira_url, bs):
     txt = 'Post-processing finished for ' + bs.project_name + '\n'
     txt += '\n'
     txt += 'Path: ' + bs.final_dirpath + '\n'
-    txt += 'Report: ' + (html_report_url or bs.project_level_report_fpath) + '\n'
+    txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url
     send_email(txt, subj)

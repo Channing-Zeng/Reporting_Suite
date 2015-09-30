@@ -65,6 +65,7 @@ def sync_with_ngs_server(
     else:
         return None
 
+    html_report_url = None
     if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
         if jira_case is None and is_az() and jira_url:
             info('Getting info from JIRA...')
@@ -79,7 +80,6 @@ def sync_with_ngs_server(
             # html_report_fpath=summary_report_fpath,
             # html_report_url=html_report_url)
 
-        html_report_url = None
         if bcbio_final_dirpath:
             html_report_url = join(loc.report_url_base,                                          # http://ngs.usbod.astrazeneca.net/reports/
                                    relpath(proj_dirpath_on_server, loc.reports_dirpath),         # project_name/dataset/project_name
@@ -88,8 +88,6 @@ def sync_with_ngs_server(
             html_report_url = join(loc.report_url_base,
                                    relpath(proj_dirpath_on_server, loc.reports_dirpath),
                                    relpath(summary_report_fpath, dataset_dirpath))
-        else:
-            return None
 
         html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
         info('HTML url: ' + html_report_full_url)
@@ -104,7 +102,6 @@ def sync_with_ngs_server(
                 samples_num=len(sample_names),
                 analysis_dirpath=dirname(bcbio_final_dirpath) if bcbio_final_dirpath else None,
                 html_report_url=html_report_url)
-
     return html_report_url
 
 
