@@ -310,6 +310,7 @@ def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
                 except OSError:
                     err(format_exc())
                     info()
+            bgzip_and_tabix(cnf, combined_vcf_fpath)
         else:
             warn('Could not join vcfs for caller ' + caller.name)
 
