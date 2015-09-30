@@ -102,7 +102,7 @@ def log(msg=''):
 
 
 class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, genome, symbol=None, exon=None, strand=None, feature=None, biotype=None):
+    def __init__(self, chrom, start, end, genome=None, symbol=None, exon=None, strand=None, feature=None, biotype=None):
         SortableByChrom.__init__(self, chrom, genome)
         self.chrom = chrom
         self.start = start
