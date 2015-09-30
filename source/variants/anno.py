@@ -242,13 +242,14 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     if not cnf.get('no_correct_vcf'):
         vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
+    info()
     info('Adding SAMPLE=' + samplename + ' annotation...')
     vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename, number='1', type_='String', description='Sample name')
 
     final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
 
-    # Moving final VCF
+    info('Moving final VCF ' + vcf_fpath + ' to ' + final_vcf_fpath)
     if isfile(final_vcf_fpath):
         os.remove(final_vcf_fpath)
     if isfile(final_vcf_fpath + '.gz'):

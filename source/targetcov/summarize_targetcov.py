@@ -606,7 +606,12 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
         return v.strip() if v.strip() not in ['.', '-', ''] else None
 
     total_regions = 0
-    open_tsv_files = [open(s.targetcov_detailed_tsv) for s in samples]
+    fpaths = [s.targetcov_detailed_tsv for s in samples if verify_file(s.targetcov_detailed_tsv)]
+    if not fpaths:
+        err('No targetcov detailed per-gene report was generated; skipping.')
+        return None
+
+    open_tsv_files = [open(fpath) for fpath in fpaths]
 
     first_col = 0
     while True:
