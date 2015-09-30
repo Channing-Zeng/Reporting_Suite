@@ -10,6 +10,7 @@ import os
 from os.path import abspath, dirname, realpath, join, exists
 
 from source.logger import critical
+from source.targetcov.Region import SortableByChrom
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 from os.path import getsize
@@ -101,10 +102,10 @@ def log(msg=''):
     sys.stderr.write(msg + '\n')
 
 
-class Region:
-    def __init__(self, chrom, start, end, symbol=None, exon=None, strand=None, feature=None, biotype=None):
+class Region(SortableByChrom):
+    def __init__(self, chrom, start, end, genome, symbol=None, exon=None, strand=None, feature=None, biotype=None):
+        SortableByChrom.__init__(self, chrom, genome)
         self.chrom = chrom
-        self.__chrom_key = self.__make_chrom_key()
         self.start = start
         self.end = end
         self.symbol = symbol
@@ -116,28 +117,10 @@ class Region:
 
     def __str__(self):
         fs = [self.chrom, '{}'.format(self.start), '{}'.format(self.end), self.symbol or '.']
-
         return '\t'.join(fs) + '\n'
 
-    def __make_chrom_key(self):
-        CHROMS = [('Y', 23), ('X', 24), ('M', 0)]
-        for i in range(22, 0, -1):
-            CHROMS.append((str(i), i))
-
-        chr_remainder = self.chrom
-        if self.chrom.startswith('chr'):
-            chr_remainder = self.chrom[3:]
-        for (c, i) in CHROMS:
-            if chr_remainder == c:
-                return i
-            elif chr_remainder.startswith(c):
-                return i + 24
-
-        sys.stderr.write('Cannot parse chromosome ' + self.chrom + '\n')
-        return None
-
     def get_key(self):
-        return self.__chrom_key, self.start, self.end, self.symbol
+        return SortableByChrom.get_key(self), self.start, self.end, self.symbol
 
 
 def merge_fields(consensus_field, other_field):
