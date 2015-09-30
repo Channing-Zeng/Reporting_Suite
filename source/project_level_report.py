@@ -18,7 +18,7 @@ from source.html_reporting.html_saver import _write_static_html_report
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
 PRE_FASTQC_NAME       = 'Raw ' + FASTQC_NAME
-SEQQC_NAME            = 'Seq QC'
+SEQQC_NAME            = 'Targ QC'
 PRE_SEQQC_NAME        = 'Pre ' + SEQQC_NAME
 VARQC_NAME            = 'Var QC'
 VARQC_AFTER_NAME      = 'Var QC after filtering'

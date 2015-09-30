@@ -21,7 +21,7 @@ class Location:
         self.report_url_base = report_url_base
         self.website_url_base = website_url_base
         self.csv_fpath = csv_fpath
-        self.reports_dirapth = reports_dirpath
+        self.reports_dirpath = reports_dirpath
         self.proper_path_should_contain = proper_path_should_contain
 
 us = Location('US',
@@ -65,23 +65,12 @@ def sync_with_ngs_server(
     else:
         return None
 
-    html_report_url = None
-    if bcbio_final_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'bcbio', project_name, relpath(summary_report_fpath, dirname(dirname(bcbio_final_dirpath))))
-    elif dataset_dirpath:
-        html_report_url = join(loc.report_url_base, project_name, 'dataset', project_name, relpath(summary_report_fpath, dataset_dirpath))
-    else:
-        return None
-    
-    html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
-    info('HTML url: ' + html_report_full_url)
-
     if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
         if jira_case is None and is_az() and jira_url:
             info('Getting info from JIRA...')
             jira_case = retrieve_jira_info(jira_url)
 
-        _symlink_dirs(
+        proj_dirpath_on_server = _symlink_dirs(
             cnf=cnf,
             loc=loc,
             project_name=project_name,
@@ -89,6 +78,21 @@ def sync_with_ngs_server(
             dataset_dirpath=dataset_dirpath)
             # html_report_fpath=summary_report_fpath,
             # html_report_url=html_report_url)
+
+        html_report_url = None
+        if bcbio_final_dirpath:
+            html_report_url = join(loc.report_url_base,                                          # http://ngs.usbod.astrazeneca.net/reports/
+                                   relpath(proj_dirpath_on_server, loc.reports_dirpath),         # project_name/dataset/project_name
+                                   relpath(summary_report_fpath, dirname(bcbio_final_dirpath)))  # final/2015_01_01_project/project.html
+        elif dataset_dirpath:
+            html_report_url = join(loc.report_url_base,
+                                   relpath(proj_dirpath_on_server, loc.reports_dirpath),
+                                   relpath(summary_report_fpath, dataset_dirpath))
+        else:
+            return None
+
+        html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
+        info('HTML url: ' + html_report_full_url)
 
         if verify_file(loc.csv_fpath, 'Project list'):
             write_to_csv_file(
@@ -105,15 +109,18 @@ def sync_with_ngs_server(
 
 
 def _symlink_dirs(cnf, loc, project_name, final_dirpath, dataset_dirpath):  #, html_report_fpath, html_report_url):
-    info(loc.loc_id + ', symlinking to ' + loc.reports_dirapth)
+    info(loc.loc_id + ', symlinking to ' + loc.reports_dirpath)
+    dst_project_dirpath = None
 
     if dataset_dirpath:
-        dst = join(loc.reports_dirapth, project_name, 'dataset', project_name)
-        (symlink_to_ngs if is_us() else local_symlink)(dataset_dirpath, dst)
+        dst_project_dirpath = join(loc.reports_dirpath, project_name, 'dataset', project_name)
+        (symlink_to_ngs if is_us() else local_symlink)(dataset_dirpath, dst_project_dirpath)
 
     if final_dirpath:
-        dst = join(loc.reports_dirapth, project_name, 'bcbio', project_name)
-        (symlink_to_ngs if is_us() else local_symlink)(dirname(final_dirpath), dst)
+        dst_project_dirpath = join(loc.reports_dirpath, project_name, 'bcbio', project_name)  # before "final"!
+        (symlink_to_ngs if is_us() else local_symlink)(dirname(final_dirpath), dst_project_dirpath)
+
+    return dst_project_dirpath
 
 
 def local_symlink(src, dst):
@@ -247,7 +254,6 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
             d['Sample Number'] = str(samples_num)
 
         new_line = ','.join(__re_quote(d[k]) or '' for k in header_keys)
-        info('Writing line: ' + new_line)
 
         with open(tx_fpath, 'w') as f:
             os.umask(0002)
@@ -266,6 +272,9 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
                     else:
                         f.write(l)
             f.write(new_line + '\n')
+        info()
+        info('New line: ' + new_line)
+        info()
 
 
 def __unquote(s):

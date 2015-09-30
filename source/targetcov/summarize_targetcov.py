@@ -142,7 +142,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
     txt_fpath = targqc_full_report.save_txt(join(output_dir, BCBioStructure.targqc_name + '.txt'))
     tsv_fpath = targqc_full_report.save_tsv(join(output_dir, BCBioStructure.targqc_name + '.tsv'))
     html_fpath = targqc_full_report.save_html(join(output_dir, BCBioStructure.targqc_name + '.html'),
-        'Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
+        'TargQC')
 
     return txt_fpath, tsv_fpath, html_fpath
 
