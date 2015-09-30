@@ -474,10 +474,11 @@ class Reader(object):
                     continue
 
                 if i >= len(samp_fmt._nums):
-                    print 'Error: i = ' + str(i) + ', samp_fmt._nums = ' + str(samp_fmt._nums) + \
-                          ', nfields = ' + str(nfields) + ', samp_fmt._fields = ' + str(samp_fmt._fields) + \
-                          ', sample = ' + str(sample)
-                    exit()
+                    # print 'Error: i = ' + str(i) + ', samp_fmt._nums = ' + str(samp_fmt._nums) + \
+                    #       ', nfields = ' + str(nfields) + ', samp_fmt._fields = ' + str(samp_fmt._fields) + \
+                    #       ', sample = ' + str(sample)
+                    err('i >= len(samp_fmt._nums)' + ' - i=' + str(i) + ', len(samp_fmt._nums)=' + str(len(samp_fmt._nums)) + ', name=' + name + ', vals=' + str(vals))
+                    break
                 entry_num = samp_fmt._nums[i]
                 entry_type = samp_fmt._types[i]
 

@@ -168,7 +168,7 @@ def _log(out, msg='', ending='\n', print_date=True, severity=None):
 
     if log_fpath:
         try:
-            open(log_fpath, 'a').write(msg + '\n')
+            open(log_fpath, 'a').write(msg + ending)
         except IOError:
             sys.stderr.write('Logging: cannot append to ' + log_fpath + '\n')
             try:

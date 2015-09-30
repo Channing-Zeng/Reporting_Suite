@@ -204,6 +204,7 @@ def filter_all(cnf, bcbio_structure):
 
     for caller in callers:
         filter_for_variant_caller(caller, cnf, bcbio_structure)
+    info('Done filtering for all variant callers.')
 
     global glob_cnf
     glob_cnf = cnf

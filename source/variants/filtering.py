@@ -98,7 +98,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
         err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
 
     write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
-
+    info('Done filtering with vcf2txt/vardict2mut.')
     return res
 
 
@@ -223,6 +223,8 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
 
         info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_tsv_fpath)
 
+    info('Done postprocessing filtered VCF.')
+
 
 def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):
     info('')
@@ -259,6 +261,8 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
                 (cnf.work_dir, next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
                  variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
                  for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+        info('Done postprocessing all filtered VCFs.')
+
     except OSError:
         traceback.print_exc()
         warn('Running sequencially instead in ' + str(threads_num) + ' threads')
@@ -268,10 +272,15 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
                     (cnf.work_dir, next(s for s in samples if s.name == s_name), caller_name, anno_vcf_fpath,
                      variants_by_sample[s_name], mutations_by_sample[s_name], vcf2txt_res_fpath)
                      for s_name, anno_vcf_fpath in zip(sample_names, anno_vcf_fpaths))
+            info('Done postprocessing all filtered VCFs.')
+
         except OSError:
             traceback.print_exc()
             err('Cannot postprocess VCF - skipping')
             err()
+
+    info('Filtered VCFs are written.')
+
 
 
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
@@ -329,6 +338,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, single_vcf_by_sample, vcf2txt_fpath)
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
+        info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
 
     if paired_vcf_by_sample:
         info('*' * 70)
@@ -342,6 +352,7 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, bcbio_structure, caller.name, paired_vcf_by_sample, vcf2txt_fpath)
         caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
         caller.paired_mut_res_fpath = mut_fpath
+        info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
 
     info('-' * 70)
     info()
@@ -362,6 +373,7 @@ def __filter_for_vcfs(cnf, bcbio_structure, caller_name, vcf_fpaths, vcf2txt_res
 
     mut_fpath = filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths.values(), vcf2txt_res_fpath, sample_by_name, caller_name,
          bcbio_structure.samples[0].min_af, threads_num)
+    info('Done filtering with vcf2txt/vardict2mut, result is ' + str(mut_fpath))
     if not mut_fpath:
         return None, None
 
