@@ -115,7 +115,7 @@ class BCBioRunner:
         self.max_threads = self.cnf.threads
         total_samples_num = len(self.bcbio_structure.samples)
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
-        self.summary_threads = min(self.max_threads, total_samples_num)
+        self.filtering_threads = min(self.max_threads, total_samples_num)
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self._init_steps(cnf, self.run_id)
@@ -197,7 +197,6 @@ class BCBioRunner:
 
         summaries_cmdline_params = \
             basic_params + \
-            ' -t ' + str(self.summary_threads) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
             ' --log-dir -'
 
@@ -313,8 +312,8 @@ class BCBioRunner:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
         if cnf.min_freq is not None:
             varfilter_paramline += ' --freq ' + str(cnf.min_freq)
-        if not self.bcbio_structure.bed:
-            varfilter_paramline.replace(' -t ' + str(self.summary_threads), ' -t 1')
+        if self.bcbio_structure.bed:  # unless WGS
+            varfilter_paramline += ' -t ' + str(self.filtering_threads)
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',
@@ -556,8 +555,7 @@ class BCBioRunner:
                 self._submit_job(
                     self.seq2c,
                     wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
-                    genome=self.bcbio_structure.samples[0].genome,
-                    threads=self.summary_threads)
+                    genome=self.bcbio_structure.samples[0].genome)
             else:
                 info(self.seq2c.name + ' is not in steps ' + str(self.steps) + ', skipping Seq2C')
 
@@ -568,8 +566,7 @@ class BCBioRunner:
                 # wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
                 self._submit_job(
                     self.targqc_summary,
-                    wait_for_steps=wait_for_steps,
-                    threads=self.summary_threads)
+                    wait_for_steps=wait_for_steps)
 
             if self.fastqc_summary in self.steps:
                 self._submit_job(self.fastqc_summary)
@@ -595,7 +592,7 @@ class BCBioRunner:
                             for s in caller.samples
                             if self.varannotate in self.steps] + wait_for_callers_steps,
                         create_dir=False,
-                        threads=self.summary_threads)
+                        threads=self.filtering_threads)
                     if not self.bcbio_structure.bed:  # WGS
                         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 

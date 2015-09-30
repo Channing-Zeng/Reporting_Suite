@@ -6,7 +6,6 @@ from os.path import join, splitext, basename, dirname, abspath, isfile
 from shutil import copyfile
 from time import sleep
 from traceback import format_exc
-from joblib import Parallel, delayed
 import sys
 from ext_modules.simplejson import load
 from subprocess import check_output
