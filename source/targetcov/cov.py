@@ -61,19 +61,20 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
             ]),
         ])
 
+    trg_name = 'target' if not is_wgs else 'genome'
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
-            Metric('Average target coverage depth', short_name='Avg'),
-            Metric('Std. dev. of target coverage depth', short_name='Std dev', quality='Less is better'),
-            Metric('Maximum target coverage depth', short_name='Max'),
-            Metric('Percentage of target within 20% of mean depth', short_name='&#177;20% avg', unit='%')
-        ])
+        Metric('Average ' + trg_name + ' coverage depth', short_name='Avg'),
+        Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='Std dev', quality='Less is better'),
+        Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max'),
+        Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% avg', unit='%')
+    ])
     for depth in depth_thresholds:
-        name = 'Part of target covered at least by ' + str(depth) + 'x'
+        name = 'Part of ' + trg_name + ' covered at least by ' + str(depth) + 'x'
         depth_section.add_metric(Metric(name, short_name=str(depth) + 'x', description=name, unit='%'))
     sections.append(depth_section)
 
     sections.append(
-        ReportSection('qualimap', 'Qualimap metrics, inside the regions (unless it is a WGS study)', [
+        ReportSection('qualimap', 'Qualimap stats' + ('' if is_wgs else ' within the target'), [
             Metric('Mean Mapping Quality',  'Mean MQ',            'Mean mapping quality, inside of regions'),
             Metric('Mismatches',            'Mismatches',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
             Metric('Insertions',            'Insertions',         'Insertions, inside of regions', quality='Less is better'),
@@ -227,7 +228,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     # bam_fpath, bam_stats, dedup_bam_stats = _dedup_and_flag_stat(cnf, bam_fpath)
     gene_by_name = build_gene_objects_list(cnf, sample.name, exons_bed, gene_names_list)
 
-    ref_fapth = cnf.genome.seq
+    # ref_fapth = cnf.genome.seq
     original_target_bed = cnf.original_target_bed or target_bed
     target_info = TargetInfo(
         fpath=target_bed, bed=target_bed, original_target_bed=original_target_bed,
@@ -259,6 +260,8 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
         reads_stats['mapped_reads_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
+    elif exons_no_genes_bed:
+        reads_stats['mapped_reads_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath)
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
@@ -293,7 +296,7 @@ def get_records_by_metrics(records, metrics):
 
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
-    report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is not None))
+    report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
     report.add_record('Qualimap', value='Qualimap', html_fpath=sample.qualimap_html_fpath)
 
     info('* General coverage statistics *')
@@ -337,12 +340,11 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
     v_percent_covered_bases_in_targ = 1.0 * (v_covered_bases_in_targ or 0) / target_info.bases_num if target_info.bases_num else None
     assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
-    if target_info.bed:
-        report.add_record('Covered bases in target', v_covered_bases_in_targ)
-        report.add_record('Percentage of target covered by at least 1 read', v_percent_covered_bases_in_targ)
-    else:
-        report.add_record('Covered bases in genome', v_covered_bases_in_targ)
-        report.add_record('Percentage of genome covered by at least 1 read', v_percent_covered_bases_in_targ)
+
+    trg_name = 'target' if target_info.bed else 'genome'
+
+    report.add_record('Covered bases in ' + trg_name, v_covered_bases_in_targ)
+    report.add_record('Percentage of ' + trg_name + ' covered by at least 1 read', v_percent_covered_bases_in_targ)
 
     if target_info.bed:
         info('Getting number of mapped reads on target...')
@@ -355,26 +357,34 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
             percent_mapped_off_target = 1.0 - percent_mapped_on_target
             report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
 
+        read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
+        report.add_record('Read bases mapped on target', read_bases_on_targ)
+
         if 'mapped_reads_on_padded_target' in reads_stats:
             # report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
             percent_mapped_on_padded_target = 1.0 * (reads_stats['mapped_reads_on_padded_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] else None
             report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
             assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
-    read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
-    report.add_record('Read bases mapped on target', read_bases_on_targ)
+    elif 'mapped_reads_on_exome' in reads_stats:
+        # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
+        percent_mapped_on_exome = 1.0 * (reads_stats['mapped_reads_on_exome'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
+        report.add_record('Percentage of reads mapped on exome', percent_mapped_on_exome)
+        assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
+        percent_mapped_off_exome = 1.0 - percent_mapped_on_exome
+        report.add_record('Percentage of reads mapped off exome ', percent_mapped_off_exome)
 
     info('')
-    report.add_record('Average target coverage depth', depth_stats['ave_depth'])
-    report.add_record('Std. dev. of target coverage depth', depth_stats['stddev_depth'])
-    report.add_record('Maximum target coverage depth', depth_stats['max_depth'])
-    report.add_record('Percentage of target within 20% of mean depth', depth_stats['wn_20_percent'])
+    report.add_record('Average ' + trg_name + ' coverage depth', depth_stats['ave_depth'])
+    report.add_record('Std. dev. of ' + trg_name + ' coverage depth', depth_stats['stddev_depth'])
+    report.add_record('Maximum ' + trg_name + ' coverage depth', depth_stats['max_depth'])
+    report.add_record('Percentage of ' + trg_name + ' within 20% of mean depth', depth_stats['wn_20_percent'])
     assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
 
     for depth, bases in depth_stats['bases_within_threshs'].items():
         percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
         if percent_val > 0:
-            report.add_record('Part of target covered at least by ' + str(depth) + 'x', percent_val)
+            report.add_record('Part of ' + trg_name + ' covered at least by ' + str(depth) + 'x', percent_val)
         assert percent_val <= 1.0 or percent_val is None, str(percent_val)
     info()
 
