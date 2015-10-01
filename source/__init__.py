@@ -141,6 +141,11 @@ class BaseSample:
                     else:
                         prev_was_num = False
                     cur_part.append(c)
+        if cur_part:
+            part = ''.join(cur_part)
+            if prev_was_num:
+                part = int(part)
+            parts.append(part)
 
         return tuple(parts)
 

@@ -387,8 +387,8 @@ class PerRegionSampleReport(SampleReport):
                     rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
         header_row = []
-        ms = self.metric_storage.get_metrics(sections, skip_general_section=True)
-        for i, m in enumerate(ms):
+        metrics = self.metric_storage.get_metrics(sections, skip_general_section=True)
+        for i, m in enumerate(metrics):
             header_row.append(('#' if i == 0 else '') + m.get_display_name())
         rows.append(header_row)
 

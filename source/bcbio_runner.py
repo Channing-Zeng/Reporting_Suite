@@ -722,8 +722,10 @@ class BCBioRunner:
                             if '/' + key + '/' in html_report_fpath:
                                 rel_url = html_report_fpath.split('/' + key + '/')[1]
                                 html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/' + key + '/' + rel_url)
-
             _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
+            if html_report_url:
+                info()
+                info('HTML report url: ' + html_report_url)
 
         except KeyboardInterrupt:
             qdel = get_system_path(self.cnf, 'qdel', is_critical=False)

@@ -42,7 +42,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
                 s_report.set_caller_tag(caller.name)
                 sample_reports.append(s_report)
 
-        sample_reports = [sr for _, _, sr in sorted((sr.sample.key_to_sort(), sr.caller_tag, sr) for sr in sample_reports)]
+        sample_reports.sort(key=lambda sr: (sr.sample.key_to_sort(), sr.caller_tag))
 
         combined_full_report = FullReport('', sample_reports)
         full_summary_fpaths = combined_full_report.save_into_files(

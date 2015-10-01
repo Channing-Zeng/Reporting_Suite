@@ -241,10 +241,11 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
 
-    depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
-        depth_stats['bases_by_depth'],
-        target_stats['target_size'] or target_stats['reference_size'],
-        cnf.coverage_reports.depth_thresholds)
+    if 'bases_by_depth' in depth_stats:
+        depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
+            depth_stats['bases_by_depth'],
+            target_stats['target_size'] or target_stats['reference_size'],
+            cnf.coverage_reports.depth_thresholds)
 
     depth_stats['wn_20_percent'] = calc_rate_within_normal(
         depth_stats['bases_by_depth'],
@@ -336,15 +337,16 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     report.add_record('Genes in target', target_info.genes_num)
 
-    bases_within_threshs = depth_stats['bases_within_threshs']
-    v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
-    v_percent_covered_bases_in_targ = 1.0 * (v_covered_bases_in_targ or 0) / target_info.bases_num if target_info.bases_num else None
-    assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
-
     trg_name = 'target' if target_info.bed else 'genome'
 
-    report.add_record('Covered bases in ' + trg_name, v_covered_bases_in_targ)
-    report.add_record('Percentage of ' + trg_name + ' covered by at least 1 read', v_percent_covered_bases_in_targ)
+    if 'bases_within_threshs' in depth_stats:
+        bases_within_threshs = depth_stats['bases_within_threshs']
+        v_covered_bases_in_targ = bases_within_threshs.items()[0][1]
+        v_percent_covered_bases_in_targ = 1.0 * (v_covered_bases_in_targ or 0) / target_info.bases_num if target_info.bases_num else None
+        assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
+
+        report.add_record('Covered bases in ' + trg_name, v_covered_bases_in_targ)
+        report.add_record('Percentage of ' + trg_name + ' covered by at least 1 read', v_percent_covered_bases_in_targ)
 
     if target_info.bed:
         info('Getting number of mapped reads on target...')
