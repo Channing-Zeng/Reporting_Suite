@@ -263,6 +263,26 @@ def filter_all(cnf, bcbio_structure):
             else:
                 err('  For ' + str(sample_name) + ' VCF ' + str(fpath) + ' cannot be read')
 
+    vardict_caller = next((c for c in callers if 'vardict' in c.name), None)
+    if vardict_caller:
+        _make_clinical_reports(cnf, vardict_caller)
+
+
+def _make_clinical_reports(cnf, vardict_caller):
+    if not verify_file(cnf.key_genes, silent=True):
+        return None
+
+    info('Generating tables for AZ 300')
+    with open(cnf.key_genes) as f:
+        key_gene_names = set([l.strip() for l in f.readlines()])
+
+    for sample in vardict_caller.samples:
+        pass
+        # grep sample.name in vardict_caller.single_mut_res_fpath
+        # grep sample.name in vardict_caller.paired_mut_res_fpath
+        # select green fields
+        # make PerRegionSampleReport and save_tsv()
+
 
 def _symlink_vcfs(callers, datestamp_var_dirpath):
     info()

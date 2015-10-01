@@ -41,6 +41,8 @@ genomes:
     exons: ~/Dropbox/az/reference_data/Exons/Exons.with_genes.chr21.bed
     az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
 
+key_genes: ~/Dropbox/az/reference_data/az_key_genes.txt
+
 queue: ngs.q
 
 qsub_runner: test/qsub_runner_local.sh

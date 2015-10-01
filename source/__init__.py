@@ -56,7 +56,8 @@ mut_pass_suffix = 'PASS'
 
 class BaseSample:
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
-                 targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None, fastqc_dirpath=None, picard_dirpath=None):
+                 targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None,
+                 fastqc_dirpath=None, picard_dirpath=None):
         self.name = name
         self.bam = bam
         self.bed = bed
@@ -78,6 +79,7 @@ class BaseSample:
             self.targetcov_detailed_tsv       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
             self.targetcov_norm_depth_vcf_txt = None
             self.targetcov_norm_depth_vcf_tsv = None
+            self.clinical_targqc_tsv          = join(self.targqc_dirpath, name + '.clinical.tsv')
 
         if ngscat_dirpath:
             self.ngscat_dirpath = ngscat_dirpath

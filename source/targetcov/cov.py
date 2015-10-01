@@ -53,11 +53,11 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
         sections.extend([
             ReportSection('target_metrics_wgs', 'Genome coverage', [
                 Metric('Covered bases in genome', short_name='Genome covered', unit='bp'),
-                Metric('Percentage of genome covered by at least 1 read', short_name='%', unit='%'),
+                Metric('Percentage of genome covered by at least 1 read', short_name='Genome cvrd %', unit='%'),
                 Metric('Covered bases in exome', short_name='Exome covered', unit='bp'),
                 Metric('Percentage of exome covered by at least 1 read', short_name='%', unit='%'),
                 Metric('Percentage of reads mapped on exome', short_name='% reads on exome', unit='%'),
-                Metric('Percentage of reads mapped off exome', short_name='% reads off exome', unit='%', quality='Less is better'),
+                Metric('Percentage of reads mapped off exome', short_name='% off exome', unit='%', quality='Less is better'),
             ]),
         ])
 
@@ -272,22 +272,42 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed,
                                            exons_no_genes_bed, output_dir, gene_by_name)
 
-    az300_report_fpaths = make_az300_reports(cnf, per_gene_report)
+    key_genes_report = make_key_genes_reports(cnf, sample, gene_by_name, depth_stats['ave_depth'])
 
     info()
-    return depth_stats['ave_depth'], gene_by_name, [summary_report, per_gene_report]
+    return depth_stats['ave_depth'], gene_by_name, [summary_report, per_gene_report, key_genes_report]
 
 
-def make_az300_reports(cnf, per_gene_report):
-    if not verify_file(cnf.genome.az300, silent=True):
-        return []
+def make_key_genes_reports(cnf, sample, gene_by_name, ave_depth):
+    if not verify_file(cnf.key_genes, silent=True):
+        return None
+
     info('Generating tables for AZ300')
-    with open(cnf.genome.az300) as f:
-        az300_gene_names = [l.strip() for l in f.readlines()]
+    with open(cnf.key_genes) as f:
+        key_gene_names = set([l.strip() for l in f.readlines()])
 
-    for gn in az300_gene_names:
-        cmdl = 'grep "Gene" | grep "{gn}" {per_gene_report.tsv_fpath}'.format(**locals())
-        # call(cmdl, )
+    genes = [g for g in gene_by_name.values() if g.name in key_gene_names]
+
+    thresh = 0
+    for t in cnf.coverage_reports.depth_thresholds:
+        if t >= ave_depth / 2:
+            thresh = t
+
+    ms = MetricStorage(
+        sections=[ReportSection(metrics=[
+            Metric('Gene'),
+            Metric('Mean coverage'),
+            Metric('% covered at {}x'.format(thresh), unit='%')])])
+    report = PerRegionSampleReport(sample=sample, metric_storage=ms)
+
+    for g in genes:
+        rep_region = report.add_region()
+        rep_region.add_record('Sample', sample.name)
+        rep_region.add_record('Mean coverage', ave_depth)
+        rep_region.add_record('% covered at {}x'.format(thresh), g.rates_within_threshs[thresh])
+
+    report.save_tsv(sample.sample.clinical_targqc_tsv)
+    return report
 
 
 def get_records_by_metrics(records, metrics):
@@ -511,9 +531,8 @@ def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_a
 
     info('Saving report...')
     report = make_flat_region_report(sample, final_regions, cnf.coverage_reports.depth_thresholds)
-    gene_report_basename = sample.name + '.' + source.targetseq_name + source.detail_gene_report_baseending
-    report.save_txt(join(output_dir, gene_report_basename + '.txt'))
-    report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
+    report.save_txt(sample.targetcov_detailed_txt)
+    report.save_tsv(sample.targetcov_detailed_tsv)
     info('')
     info('Regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + report.txt_fpath)

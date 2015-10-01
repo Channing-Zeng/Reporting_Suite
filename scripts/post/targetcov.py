@@ -188,10 +188,15 @@ def finalize_one(cnf, *args):
             info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
 
     if len(args) >= 3:
-        selected_regions_report = args[2]
-        if selected_regions_report.txt_fpath:
-            info('Selected regions: ' + selected_regions_report.txt_fpath +
-                 ' (' + str(len(selected_regions_report.regions)) + ' regions)')
+        key_genes_report = args[2]
+        if key_genes_report:
+            info('Key genes: ' + key_genes_report.tsv_fpath)
+
+        # selected_regions_report = args[2]
+        # if selected_regions_report.txt_fpath:
+        #     info('Selected regions: ' + selected_regions_report.txt_fpath +
+        #          ' (' + str(len(selected_regions_report.regions)) + ' regions)')
+
 
 
 if __name__ == '__main__':
