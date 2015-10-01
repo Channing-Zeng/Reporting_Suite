@@ -718,12 +718,10 @@ class BCBioRunner:
                     summary_report_fpath=html_report_fpath)
                 if not html_report_url:
                     if is_us():
-                        if '/analysis/' in html_report_fpath:
-                            rel_url = html_report_fpath.split('/analysis/')[1]
-                            html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/analysis/' + rel_url)
-                        if '/datasets/' in html_report_fpath:
-                            rel_url = html_report_fpath.split('/datasets/')[1]
-                            html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/datasets/' + rel_url)
+                        for key in ['analysis', 'datasets', 'scratch']:
+                            if '/' + key + '/' in html_report_fpath:
+                                rel_url = html_report_fpath.split('/' + key + '/')[1]
+                                html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/' + key + '/' + rel_url)
 
             _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
 
