@@ -4,6 +4,8 @@ table.tableSorter th div.sortArrow {
     display: inline-block;
     vertical-align: 2px;
     position: relative;
+    padding-left: 2px;
+    margin-right: -8px;
 }
 
 table.tableSorter th div.sortArrow div.sortArrowDescending {

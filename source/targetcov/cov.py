@@ -1,7 +1,7 @@
 # coding=utf-8
 
 from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile, abspath, realpath, splitext, normpath, dirname
+from os.path import join, basename, isfile, abspath, realpath, splitext, normpath, dirname, relpath
 import shutil
 
 import source
@@ -201,8 +201,8 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
         mapped_rate              = find_rec('Mapped reads %'),
         unmapped                 = find_rec('Unmapped reads'),
         unmapped_rate            = find_rec('Unmapped reads %'),
-        mapped_on_target         = find_rec('Mapped reads (on target)'),
-        mapped_rate_on_target    = find_rec('Mapped reads % (on target)'),
+        # mapped_on_target         = find_rec('Mapped reads (on target)'),
+        # mapped_rate_on_target    = find_rec('Mapped reads % (on target)'),
         paired                   = find_rec('Paired reads'),
         paired_rate              = find_rec('Paired reads %'),
         dup                      = find_rec('Duplicated reads (flagged)'),
@@ -259,10 +259,13 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
         target_info.bases_num = target_stats['reference_size']
 
     if target_info.bed:
+        reads_stats['mapped_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath)
+
+    if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
-        reads_stats['mapped_reads_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
+        reads_stats['mapped_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
     elif exons_no_genes_bed:
-        reads_stats['mapped_reads_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath)
+        reads_stats['mapped_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath)
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
@@ -298,7 +301,7 @@ def get_records_by_metrics(records, metrics):
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
-    report.add_record('Qualimap', value='Qualimap', html_fpath=sample.qualimap_html_fpath)
+    report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir))
 
     info('* General coverage statistics *')
     report.add_record('Reads', reads_stats['total'])
@@ -362,15 +365,15 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
         report.add_record('Read bases mapped on target', read_bases_on_targ)
 
-        if 'mapped_reads_on_padded_target' in reads_stats:
+        if 'mapped_on_padded_target' in reads_stats:
             # report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
-            percent_mapped_on_padded_target = 1.0 * (reads_stats['mapped_reads_on_padded_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] else None
+            percent_mapped_on_padded_target = 1.0 * (reads_stats['mapped_on_padded_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] else None
             report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
             assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
-    elif 'mapped_reads_on_exome' in reads_stats:
+    elif 'mapped_on_exome' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
-        percent_mapped_on_exome = 1.0 * (reads_stats['mapped_reads_on_exome'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
+        percent_mapped_on_exome = 1.0 * (reads_stats['mapped_on_exome'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
         report.add_record('Percentage of reads mapped on exome', percent_mapped_on_exome)
         assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
         percent_mapped_off_exome = 1.0 - percent_mapped_on_exome
