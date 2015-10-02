@@ -134,30 +134,37 @@ def main():
                 for sample in ds.samples)
         lefts = [l for l, r in fastqs]
         rights = [r for l, r in fastqs]
-        info()
-        info('Alignming ' + str(ds_to) + ' random reads to the reference')
-        aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
-            get_system_path(cnf, 'samtools', is_critical=True),
-            get_system_path(cnf, 'bwa', is_critical=True),
-            get_system_path(cnf, 'seqtk', is_critical=True),
-            cnf.genome.seq) for s, l, r in zip(ds.samples, lefts, rights))
-        for sample, bam_fpath in zip(ds.samples, aligned):
-            bam_by_sample[sample.name] = bam_fpath
 
-        if cnf.metamapping:
+        samtools = get_system_path(cnf, 'samtools')
+        bwa = get_system_path(cnf, 'bwa')
+        seqtk = get_system_path(cnf, 'seqtk')
+        if samtools and bwa and seqtk:
             info()
-            info('Metamapping for contamination')
-            safe_mkdir(ds.downsample_metamapping_dirpath)
-            run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
+            info('Alignming ' + str(ds_to) + ' random reads to the reference')
+            aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
+                samtools,
+                bwa,
+                seqtk,
+                cnf.genome.seq) for s, l, r in zip(ds.samples, lefts, rights))
+            for sample, bam_fpath in zip(ds.samples, aligned):
+                bam_by_sample[sample.name] = bam_fpath
 
-        if cnf.targqc:
-            info()
-            cnf.work_dir = join(cnf.work_dir, source.targqc_name)
-            safe_mkdir(cnf.work_dir)
-            info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
-            safe_mkdir(ds.downsample_targqc_dirpath)
-            ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
-            cnf.work_dir = dirname(cnf.work_dir)
+            if cnf.metamapping:
+                info()
+                info('Metamapping for contamination')
+                safe_mkdir(ds.downsample_metamapping_dirpath)
+                run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
+
+            if cnf.targqc:
+                info()
+                cnf.work_dir = join(cnf.work_dir, source.targqc_name)
+                safe_mkdir(cnf.work_dir)
+                info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
+                safe_mkdir(ds.downsample_targqc_dirpath)
+                ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
+                cnf.work_dir = dirname(cnf.work_dir)
+        else:
+            err('For downsampled targqc and metamappint, bwa, samtools and seqtk are required.')
 
     if cnf.fastqc:
         if not cnf.expose_to_ngs_server_only:

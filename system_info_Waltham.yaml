@@ -46,7 +46,7 @@ resources:
   fastqc:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/fastqc
   bwa:
-    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bwa
+    path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
 
 genomes:
   hg38:
