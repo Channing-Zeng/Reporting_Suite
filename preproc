@@ -3,15 +3,10 @@ import __check_python_version  # checking for python version and adding site dir
 
 import os
 import sys
-import base64
-import getpass
 import datetime
-import hashlib
 from optparse import OptionParser
-from os.path import join, isfile, basename, isdir, expanduser, exists, dirname, splitext
-import shutil
+from os.path import join, isfile, basename, isdir, exists, dirname, splitext
 from collections import OrderedDict, namedtuple
-import tempfile
 import subprocess
 from joblib import Parallel, delayed
 import source
@@ -65,7 +60,7 @@ def proc_opts():
     (opts, args) = parser.parse_args()
     jira_url = None
     if len(args) < 1:
-        warn('No JIRA path was specified')
+        critical(usage)
     if len(args) < 2:
         info('No dataset path specified, assuming it is the current working directory')
         dataset_dirpath = adjust_path(os.getcwd())
