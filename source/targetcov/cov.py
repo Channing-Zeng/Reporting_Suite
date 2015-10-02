@@ -125,7 +125,8 @@ def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None):
         bed = '--bed ' + qualimap_bed_fpath
 
     qm = get_system_path(cnf, 'python', join('scripts', 'post', 'qualimap.py'))
-    cmdl = '{qm} --bam {bam_fpath} {bed} -o {sample.qualimap_dirpath} -t {cnf.threads}'.format(**locals())
+    cmdl = '{qm} --project-name {cnf.project_name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
+           '--bam {bam_fpath} {bed} -o {sample.qualimap_dirpath} -t {cnf.threads}'.format(**locals())
     call(cnf, cmdl, sample.qualimap_html_fpath, stdout_to_outputfile=False)
     return sample.qualimap_dirpath
 
@@ -247,10 +248,10 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
             target_stats['target_size'] or target_stats['reference_size'],
             cnf.coverage_reports.depth_thresholds)
 
-    depth_stats['wn_20_percent'] = calc_rate_within_normal(
-        depth_stats['bases_by_depth'],
-        depth_stats['ave_depth'],
-        target_stats['target_size'] or target_stats['reference_size'])
+        depth_stats['wn_20_percent'] = calc_rate_within_normal(
+            depth_stats['bases_by_depth'],
+            depth_stats['ave_depth'],
+            target_stats['target_size'] or target_stats['reference_size'])
 
     if target_stats['target_size']:
         target_info.bases_num = target_stats['target_size']

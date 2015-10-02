@@ -55,10 +55,11 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
 
     regions = []
     bamtools = get_system_path(cnf, 'bamtools')
-    info('Anylising bedcoverage output...')
     if not bamtools:
+        info('Running bedcoverage -hist...')
         bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath)
         info()
+        info('Analysing bedcoverage -hist output...')
         regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
 
     else:
