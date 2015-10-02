@@ -7,12 +7,8 @@ from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 
 
-def make_key_genes_reports(cnf, sample):
-    cnf.key_genes = verify_file(cnf.key_genes, is_critical=True)
-    info('Generating tables for AZ300')
-
-    with open(cnf.key_genes) as f:
-        key_gene_names = set([l.strip() for l in f.readlines()])
+def make_key_genes_reports(cnf, key_gene_names, sample):
+    info('Preparing coverage stats key gene tables')
 
     ave_depth = get_ave_coverage(sample, sample.targetcov_json_fpath)
 
@@ -41,6 +37,7 @@ def make_key_genes_reports(cnf, sample):
                             continue
 
     key_genes_report.save_tsv(sample.clinical_targqc_tsv, human_readable=True)
+    info('Saved to ' + key_genes_report.tsv_fpath)
     return key_genes_report
 
 
@@ -55,12 +52,12 @@ def get_ave_coverage(sample, targqc_json_fpath):
 
 
 def make_mutations_report(cnf, sample, gene_names, mutations_fpath):
-    if not verify_file(cnf.key_genes, silent=True):
-        return None
+    info('Preparing mutations stats for key gene tables')
+    # 3. Parse mutaions
+    # 4. Select mutations
+    # 5. Make mutaions report
 
-    info('Generating tables for AZ 300')
-    with open(cnf.key_genes) as f:
-        key_gene_names = set([l.strip() for l in f.readlines()])
+
 
     # grep sample.name in vardict_caller.single_mut_res_fpath
     # grep sample.name in vardict_caller.paired_mut_res_fpath

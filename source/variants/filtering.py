@@ -282,7 +282,6 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
     info('Filtered VCFs are written.')
 
 
-
 def filter_for_variant_caller(caller, cnf, bcbio_structure):
     info('Running for ' + caller.name)
 
@@ -431,22 +430,53 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
     if dbsnp_multi_mafs and verify_file(dbsnp_multi_mafs):
         cmdline += ' -A ' + dbsnp_multi_mafs
 
-    cmdline += ' ' + ' '.join(vcf_fpaths)
+    if cnf.is_wgs:
+        info('WGS; running vcftxt separately for each sample to save memory.')
+        vcf2txt_outputs_by_vcf_fpath = OrderedDict()
+        for vcf_fpath in vcf_fpaths:
+            sample_output_fpath = add_suffix(vcf2txt_out_fpath, splitext(basename(vcf_fpath))[0])
+            res = __run_vcf2txt(cnf, cmdline + ' ' + vcf_fpath, sample_output_fpath)
+            if res:
+                vcf2txt_outputs_by_vcf_fpath[vcf_fpath] = sample_output_fpath
 
+        info('Joining vcf2txt ouputs... (' + str(len(vcf2txt_outputs_by_vcf_fpath)) +
+             ' out of ' + str(len(vcf_fpaths)) + ' successful), ' +
+             'writing to ' + vcf2txt_out_fpath)
+        with file_transaction(cnf.work_dir, vcf2txt_out_fpath) as tx:
+            with open(tx, 'w') as out:
+                for i, (vcf_fpath, sample_output_fpath) in enumerate(vcf2txt_outputs_by_vcf_fpath.items()):
+                    info('   Reading ' + sample_output_fpath)
+                    with open(sample_output_fpath) as inp:
+                        for j, l in enumerate(inp):
+                            if j == 0 and i != 0:
+                                continue
+                            out.write(l)
+        if verify_file(vcf2txt_out_fpath):
+            info('Saved ' + vcf2txt_out_fpath)
+            return vcf2txt_out_fpath
+        else:
+            return None
+
+    else:
+        res = __run_vcf2txt(cnf, cmdline + ' ' + ' '.join(vcf_fpaths), vcf2txt_out_fpath)
+        return res
+
+
+def __run_vcf2txt(cnf, cmdline, output_fpath):
     res = None
     tries = 0
-    MAX_TRIES = 10
+    MAX_TRIES = 1
     WAIT_MINUTES = int(random() * 60) + 30
-    err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(vcf2txt_out_fpath))[0] + '.err')
+    err_fpath = join(cnf.work_dir, 'varfilter_' + splitext(basename(output_fpath))[0] + '.err')
     while True:
         stderr_dump = []
-        output_didnt_exist = not verify_file(vcf2txt_out_fpath, silent=True)
-        res = call(cnf, cmdline, vcf2txt_out_fpath, stderr_dump=stderr_dump, exit_on_error=False)
+        output_didnt_exist = not verify_file(output_fpath, silent=True)
+        res = call(cnf, cmdline, output_fpath, stderr_dump=stderr_dump, exit_on_error=False)
         if res is not None:
             return res
         else:
             tries += 1
-            msg = 'vcf2txt.pl crashed:\n' + cmdline + ' > ' + vcf2txt_out_fpath + '\n' + \
+            msg = 'vcf2txt.pl crashed:\n' + cmdline + ' > ' + output_fpath + '\n' + \
                   (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
             if tries < MAX_TRIES:
                 msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ')'
@@ -459,9 +489,7 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
                 break
             sleep(WAIT_MINUTES * 60)
             info()
-            if output_didnt_exist and verify_file(vcf2txt_out_fpath, silent=True):
-                info('Output was created while sleeping: ' + vcf2txt_out_fpath)
+            if output_didnt_exist and verify_file(output_fpath, silent=True):
+                info('Output was created while sleeping: ' + output_fpath)
                 break
-
     return res
-

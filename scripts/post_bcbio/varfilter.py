@@ -38,6 +38,11 @@ def main():
             help='Variant caller name to process. If not set, processed all variant callers'
         )),
 
+        (['--wgs'], dict(
+            dest='is_wgs',
+            help='Splits vcf2txt runs by samples, thus turns off cohort filtering'
+        )),
+
         (['-b', '--bias'], dict(
             dest='bias',
             action='store_true',
@@ -298,7 +303,9 @@ def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
         gatk = get_java_tool_cmdline(cnf, 'gatk')
         cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
         for sample in caller.samples:
-            cmdl += ' --variant:' + sample.name + ' ' + sample.find_filt_vcf_by_callername(caller.name)
+            vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+            if vcf_fpath:
+                cmdl += ' --variant:' + sample.name + ' ' + sample.find_filt_vcf_by_callername(caller.name)
         cmdl += ' -o ' + combined_vcf_fpath
         res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
         if res:
