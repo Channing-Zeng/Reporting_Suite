@@ -20,7 +20,7 @@ metric_storage = MetricStorage(
             Metric('Novel, %',            '%',                   '% novel varinats', unit='%'),
             # Metric('dbsnp_loci',          'Loci in dnSNP',       'Loci in dbSNP (just CHROM:POS matches, regardless if allele is the same)'),
             # Metric('dbsnp_loci_percent',  '%',                   '% loci in dbSNP (just CHROM:POS matches, regardless if allele is the same)', unit='%'),
-            Metric('In dbSNP',            'dnSNP',               'Variants in dbSNP'),
+            Metric('In dbSNP',            'dbSNP',               'Variants in dbSNP'),
             Metric('In dbSNP, %',         '%',                   '% variants in dbSNP', unit='%'),
             # Metric('cosmic_loci',         'Loci in Cosmic',      'Loci in Cosmic (just CHROM:POS matches, regardless if allele is the same)'),
             # Metric('cosmic_loci_percent', '%',                   '% loci in Cosmic (just CHROM:POS matches, regardless if allele is the same)', unit='%'),
