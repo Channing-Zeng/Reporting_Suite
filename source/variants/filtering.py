@@ -106,42 +106,39 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
     vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
     cmdline = None
 
-    if not is_local():
-        vardict2mut = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
+    # if not is_local():
+    vardict2mut = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
 
-        c = cnf.variant_filtering
-        min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
+    c = cnf.variant_filtering
+    min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
-        cmdline = ('{vardict2mut} '
-            '-D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} '
-            '{vcf2txt_res_fpath} '
-            '--ruledir {cnf.genome.ruledir} '
-            '--filter_common_snp {cnf.genome.filter_common_snp} '
-            '--snpeffect_export_polymorphic {cnf.genome.snpeffect_export_polymorphic} '
-            '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
-            '--actionable_hotspot {cnf.genome.actionable_hotspot} '
-            '--actionable {cnf.genome.actionable} '
-            '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
-        )
+    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} {vcf2txt_res_fpath} '
+    if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
+    if cnf.genome.filter_common_snp: cmdline += '--ruledir {cnf.genome.filter_common_snp} '
+    if cnf.genome.snpeffect_export_polymorphic: cmdline += '--ruledir {cnf.genome.snpeffect_export_polymorphic} '
+    if cnf.genome.filter_common_artifacts: cmdline += '--ruledir {cnf.genome.filter_common_artifacts} '
+    if cnf.genome.actionable_hotspot: cmdline += '--ruledir {cnf.genome.actionable_hotspot} '
+    if cnf.genome.actionable: cmdline += '--ruledir {cnf.genome.actionable} '
+    if cnf.genome.compendia_ms7_hotspot: cmdline += '--ruledir {cnf.genome.compendia_ms7_hotspot} '
 
-    else:
-        pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
-
-        with open(vcf2txt_res_fpath) as f:
-            try:
-                pass_col_num = f.readline().split().index('PASS') + 1
-            except ValueError:
-                critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
-
-        cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
-                  'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
-                  'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
-                  'grep -v NON_CODING'
-
-        polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
-        if polymorphic_variants:
-            poly_vars = abspath(polymorphic_variants)
-            cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
+    # else:
+    #     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
+    #
+    #     with open(vcf2txt_res_fpath) as f:
+    #         try:
+    #             pass_col_num = f.readline().split().index('PASS') + 1
+    #         except ValueError:
+    #             critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
+    #
+    #     cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
+    #               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
+    #               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
+    #               'grep -v NON_CODING'
+    #
+    #     polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
+    #     if polymorphic_variants:
+    #         poly_vars = abspath(polymorphic_variants)
+    #         cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
 
     cmdline = cmdline.format(**locals())
     res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)

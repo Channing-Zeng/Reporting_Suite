@@ -38,9 +38,9 @@ def main(args):
     with open(cnf.key_genes) as f:
         key_gene_names = set([l.strip() for l in f.readlines()])
 
-    key_genes_report = make_key_genes_reports(cnf, key_gene_names, sample)
+    key_genes_report = make_key_genes_reports(cnf, sample, key_gene_names)
 
-    mutations_report = make_mutations_report(cnf, key_gene_names, sample, cnf.mutations_fpath)
+    mutations_report = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
 
     _finalize_all(key_genes_report, mutations_report)
 
@@ -56,7 +56,6 @@ def main(args):
 
 
 def _finalize_all(key_genes_report, mutations_report):
-    info()
     if key_genes_report and key_genes_report.tsv_fpath:
         info('Coverage stats: ' + key_genes_report.tsv_fpath)
 

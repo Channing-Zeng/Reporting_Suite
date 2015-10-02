@@ -85,7 +85,7 @@ class BaseSample:
         if clinical_report_dirpath:
             self.clinical_report_dirpath = clinical_report_dirpath
             self.clinical_targqc_tsv          = join(self.clinical_report_dirpath, name + '.coverage.tsv')
-            self.clinical_mutaions_tsv        = join(self.clinical_report_dirpath, name + '.mutations.tsv')
+            self.clinical_mutation_tsv        = join(self.clinical_report_dirpath, name + '.mutations.tsv')
 
         if ngscat_dirpath:
             self.ngscat_dirpath = ngscat_dirpath
