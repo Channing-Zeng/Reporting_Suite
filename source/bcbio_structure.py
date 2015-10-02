@@ -484,7 +484,6 @@ class BCBioStructure:
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
         self.batches = OrderedDefaultDict(Batch)
-        self.paired = False
         self.samples = []
         self.variant_callers = OrderedDict()
 
