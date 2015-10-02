@@ -4,6 +4,7 @@ from source.file_utils import verify_file
 from source.logger import info
 from source import targetcov
 
+
 project_kind_by_prefix = {
     'Bio_': 'bioscience',
     'Dev_': 'dev',
@@ -79,6 +80,7 @@ class BaseSample:
             self.targetcov_detailed_tsv       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
             self.targetcov_norm_depth_vcf_txt = None
             self.targetcov_norm_depth_vcf_tsv = None
+            self.flagged_regions_tsv          = join(self.targqc_dirpath, name + '.flagged.tsv')
             self.clinical_targqc_tsv          = join(self.targqc_dirpath, name + '.clinical.tsv')
 
         if ngscat_dirpath:

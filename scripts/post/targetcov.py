@@ -4,6 +4,7 @@ import __check_python_version
 import os
 from os.path import isfile, join, basename, splitext, dirname
 import sys
+from traceback import format_exc
 import shutil
 from source import BaseSample, TargQC_Sample
 from source.calling_process import call
@@ -169,10 +170,12 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
     picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
     if cnf.extended:
-        info('Generating flagged regions report...')
-        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample,
-            avg_depth, gene_by_name, cnf.coverage_reports.depth_thresholds)
-        reports.append(flagged_report)
+        try:
+            info('Generating flagged regions report...')
+            flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
+            reports.append(flagged_report)
+        except:
+            err(format_exc())
 
     return reports
 
@@ -187,16 +190,14 @@ def finalize_one(cnf, *args):
         if gene_report.txt_fpath:
             info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
 
-    if len(args) >= 3:
-        key_genes_report = args[2]
-        if key_genes_report:
-            info('Key genes: ' + key_genes_report.tsv_fpath)
-
-        # selected_regions_report = args[2]
-        # if selected_regions_report.txt_fpath:
-        #     info('Selected regions: ' + selected_regions_report.txt_fpath +
-        #          ' (' + str(len(selected_regions_report.regions)) + ' regions)')
-
+    if len(args) > 2:
+        # key_genes_report = args[2]
+        # if key_genes_report:
+        #     info('Key genes: ' + key_genes_report.tsv_fpath)
+        selected_regions_report = args[2]
+        if selected_regions_report.txt_fpath:
+            info('Flagged regions: ' + selected_regions_report.txt_fpath +
+                 ' (' + str(len(selected_regions_report.regions)) + ' regions)')
 
 
 if __name__ == '__main__':

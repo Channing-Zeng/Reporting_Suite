@@ -211,48 +211,48 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
     return html_fpath
 
 
-def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
-    report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
-    report.add_record('Sample', sample.name)
-
-    ''' 1. Detect depth threshold (ave sample coverage/4 but > 25x)
-        2. Select regions covered in less than 100% at threshold
-        3. Sort by % at threshold
-        4. Select those prats where % = 0, save to BED
-        5. Find OH at those regions
-        6. Intersect OH with tracks
-    '''
-
-    ave_coverages_per_sample = {
-        s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
-        for s in samples if verify_file(s.targetcov_json_fpath)}
-
-    regions = []
-    for gene in genes:
-        regions.extend(gene.get_exons())
-
-    depth_cutoff = max(average_coverage / 4, 25)
-    for thresh in depth_threshs[::-1]:
-        if thresh < depth_cutoff:
-            depth_cutoff = thresh
-            break
-
-    sorted_by_thresh = sorted(regions, key=lambda r: [r.rates_within_threshs[t] for t in depth_threshs])
-
-    low_cov_regions = [r for r in sorted_by_thresh if r.rates_within_threshs[depth_cutoff] < 1]
-
-    selected_regions = low_cov_regions
-
-    report = make_flat_region_report(sample, selected_regions, depth_threshs)
-
-    gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
-    txt_rep_fpath = report.save_txt(join(output_dir, gene_report_basename + '.txt'))
-    tsv_rep_fpath = report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
-    info('')
-    info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
-    info('  ' + txt_rep_fpath)
-
-    return txt_rep_fpath
+# def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
+#     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
+#     report.add_record('Sample', sample.name)
+#
+#     ''' 1. Detect depth threshold (ave sample coverage/2 but > 25x)
+#         2. Select regions covered in less than 80% at threshold
+#         3. Sort by % at threshold
+#         4. Select those parts of those regions where % = 0, save to BED
+#         5. Find HotSpots at those regions
+#         6. Intersect HotSpots with tracks
+#     '''
+#
+#     ave_coverages_per_sample = {
+#         s.name: get_ave_coverage(cnf, s.targetcov_json_fpath)
+#         for s in samples if verify_file(s.targetcov_json_fpath)}
+#
+#     regions = []
+#     for gene in genes:
+#         regions.extend(gene.get_exons())
+#
+#     depth_cutoff = max(ave_depth / 4, 25)
+#     for thresh in depth_threshs[::-1]:
+#         if thresh < depth_cutoff:
+#             depth_cutoff = thresh
+#             break
+#
+#     sorted_by_thresh = sorted(regions, key=lambda r: [r.rates_within_threshs[t] for t in depth_threshs])
+#
+#     low_cov_regions = [r for r in sorted_by_thresh if r.rates_within_threshs[depth_cutoff] < 1]
+#
+#     selected_regions = low_cov_regions
+#
+#     report = make_flat_region_report(sample, selected_regions, depth_threshs)
+#
+#     gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
+#     txt_rep_fpath = report.save_txt(join(output_dir, gene_report_basename + '.txt'))
+#     tsv_rep_fpath = report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
+#     info('')
+#     info('Selected regions (total ' + str(len(selected_regions)) + ') saved into:')
+#     info('  ' + txt_rep_fpath)
+#
+#     return txt_rep_fpath
 
 
 def _clip_vcf_by_bed(cnf, vcf_fpath, bed_fpath):
@@ -584,26 +584,27 @@ def select_best(values, fn=max):
     return fn(vs) if len(vs) > 0 else None
 
 
+def get_int_val(v):
+    v = _get_num(v)
+    return int(v) if v else None
+
+def get_float_val(v):
+    v = _get_num(v)
+    return float(v) if v else None
+
+def _get_num(v):
+    v = get_val(v)
+    return ''.join(c for c in v if c.isdigit() or c == '.') if v else None
+
+def get_val(v):
+    return v.strip() if v.strip() not in ['.', '-', ''] else None
+
+
 def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
     metric_storage = get_detailed_metric_storage(depth_threshs)
 
     report = PerRegionSampleReport(sample='Best', metric_storage=metric_storage)
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
-
-    def get_int_val(v):
-        v = _get_num(v)
-        return int(v) if v else None
-
-    def get_float_val(v):
-        v = _get_num(v)
-        return float(v) if v else None
-
-    def _get_num(v):
-        v = get_val(v)
-        return ''.join(c for c in v if c.isdigit() or c == '.') if v else None
-
-    def get_val(v):
-        return v.strip() if v.strip() not in ['.', '-', ''] else None
 
     total_regions = 0
     fpaths = [s.targetcov_detailed_tsv for s in samples if verify_file(s.targetcov_detailed_tsv)]

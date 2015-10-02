@@ -209,8 +209,8 @@ class Report:
         self.json_fpath = output_fpath
         return output_fpath
 
-    def save_tsv(self, output_fpath, sections=None):
-        fpath = write_tsv_rows(self.flatten(sections, human_readable=False), output_fpath)
+    def save_tsv(self, output_fpath, sections=None, human_readable=False):
+        fpath = write_tsv_rows(self.flatten(sections, human_readable=human_readable), output_fpath)
         self.tsv_fpath = fpath
         return fpath
 

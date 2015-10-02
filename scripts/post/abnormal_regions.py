@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 import __check_python_version
 
 import sys
@@ -8,9 +7,9 @@ from source import BaseSample
 from source.file_utils import adjust_path
 from source.logger import send_email
 from source.prepare_args_and_cnf import check_system_resources
-from source.targetcov.flag_regions import make_flagged_regions_reports
 from source.main import read_opts_and_cnfs
 from source.runner import run_one
+from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.utils import info
 
 
@@ -51,8 +50,8 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_all(targetcov_dir):
-    make_flagged_regions_reports()
+def process_all(targetcov_dirpath):
+    generate_flagged_regions_report()
     pass
     # read all detail reports
     # normalize

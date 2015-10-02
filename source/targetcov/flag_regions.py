@@ -20,31 +20,40 @@ from source.utils import median
 from source.variants.vcf_processing import bgzip_and_tabix
 
 
+DEPTH_THRESH_FROM_AVE_COV = 0.5
+MIN_DEPTH_PERCENT_AT_THRESH = 0.8
+
+
+def get_depth_cutoff(ave_depth, depth_thresholds):
+    depth_cutoff = ave_depth * DEPTH_THRESH_FROM_AVE_COV
+    for thresh in depth_thresholds[::-1]:
+        if thresh < depth_cutoff:
+            return thresh
+    return 1
+
+
 def get_ave_sample_coverage(cnf, report_fpath):
     records = load_records(report_fpath)
     return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
 
 
-def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_name, depth_threshs):
+def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_name):
+    depth_threshs = cnf.coverage_reports.depth_thresholds
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
     report.add_record('Sample', sample.name)
 
-    ''' 1. Detect depth threshold (ave sample coverage/4 but > 25x)
-        2. Select regions covered in less than 100% at threshold
+    ''' 1. Detect depth threshold (ave sample coverage * DEPTH_THRESH_FROM_AVE_COV)
+        2. Select regions covered in less than MIN_DEPTH_PERCENT_AT_THRESH at threshold
         3. Sort by % at threshold
-        4. Select those prats where % = 0, save to BED
-        5. Find OH at those regions
-        6. Intersect OH with tracks
+        4. Select those parts of those regions where % = 0, save to BED
+        5. Find HotSpots at those regions
+        6. Intersect HotSpots with tracks
 
         For each gene where are regions with parts % = 0:
             sort them by part where % = 0
     '''
 
-    depth_cutoff = max(ave_depth / 4, 25)
-    for thresh in depth_threshs[::-1]:
-        if thresh < depth_cutoff:
-            depth_cutoff = thresh
-            break
+    depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
 
     # for gene in gene_by_name.values():
     #     total_size = 0
@@ -57,9 +66,10 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
 
     genes_sorted = sorted(gene_by_name.values(), key=lambda g: [g.rates_within_threshs[t] for t in depth_threshs])
 
+    info('Selecting and saving low-covereg genes')
     low_cov_genes = [g for g in genes_sorted if
-        any(e.rates_within_threshs[depth_cutoff] < 1 for e in g.get_exons()) or \
-        any(a.rates_within_threshs[depth_cutoff] < 1 for a in g.get_amplicons())]
+        any(e.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for e in g.get_exons()) or \
+        any(a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for a in g.get_amplicons())]
 
     final_regions = []
     for gene in low_cov_genes:
@@ -67,19 +77,17 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
         final_regions.extend(gene.get_exons())
         final_regions.append(gene)
 
-    bed_fpath = join(cnf.work_dir, 'selected_regions.bed')
-    save_regions_to_bed(cnf, final_regions, bed_fpath)
+    selected_regions_bed_fpath = join(cnf.work_dir, 'selected_regions.bed')
+    save_regions_to_bed(cnf, final_regions, selected_regions_bed_fpath)
     # TODO: extract only those subregions where cov is 0
 
-    # variants
-    _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_depth, 'oncomine',
-                                                 bed_fpath, depth_cutoff)
+    # Roport cov for Hotspots
+    _report_normalize_coverage_for_variant_sites(
+        cnf, output_dir, sample, ave_depth, 'oncomine', selected_regions_bed_fpath, depth_cutoff)
 
     report = make_flat_region_report(sample, final_regions, depth_threshs)
 
-    gene_report_basename = sample.name + '.' + source.targetseq_name + '.selected_regions'
-    report.save_txt(join(output_dir, gene_report_basename + '.txt'))
-    report.save_tsv(join(output_dir, gene_report_basename + '.tsv'))
+    report.save_tsv(sample.flagged_regions_tsv)
     info('')
     info('Selected regions (total ' + str(len(final_regions)) + ') saved into:')
     info('  ' + report.txt_fpath)
