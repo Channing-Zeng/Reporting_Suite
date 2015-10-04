@@ -6,6 +6,7 @@ import os
 import shutil
 from os.path import isfile, exists, join, islink
 import time
+import select
 
 from source.logger import info, err, warn, critical, silent_err
 from source.file_utils import file_exists, file_transaction, verify_file, verify_obj_by_path
@@ -99,8 +100,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None, stderr_dump=None):
-        stdout = subprocess.PIPE
-        stderr = subprocess.STDOUT
+        stdout = subprocess.PIPE  # goes to proc.stdout
+        stderr = subprocess.PIPE  # goes to proc.stderr
 
         if cnf.verbose or return_proc or check_output:
             if out_fpath:
@@ -109,14 +110,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
-                    stderr = subprocess.PIPE
+                    stderr = subprocess.STDOUT
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.PIPE
-                    stderr = subprocess.STDOUT
+                    stderr = subprocess.STDOUT  #TODO: fix interlacing err/out and change to PIPE here
             else:
                 if not silent:
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
@@ -140,10 +141,29 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 return proc
 
             else:
+                # streams = []
+                # if proc.stderr and print_stderr:
+                #     streams.append(proc.stderr.fileno())
+                # if proc.stdout:
+                #     streams.append(proc.stdout.fileno())
+                #
+                # ret = select.select(streams, [], [])
+                # for fd in ret[0]:
+                #     if proc.stdout and fd == proc.stdout.fileno():
+                #         line = proc.stdout.readline().rstrip()
+                #         info('  ' + line)
+                #     if proc.stderr and fd == proc.stderr.fileno():
+                #         line = proc.stderr.readline().rstrip()
+                #         if stdout_to_outputfile:  # if output fpath is specified, then we usually write stdout to the file, and piping stderr (redirect to stdout)
+                #             info('  ' + line)
+                #         else:
+                #             warn('  ' + line)
+                #             stderr_dump.append(line)
+
                 # PRINT STDOUT AND STDERR
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
-                        if stderr == subprocess.STDOUT:
+                        if stderr == subprocess.PIPE:
                             silent_err('   ' + line.strip())
                         else:
                             info('   ' + line.strip())
@@ -302,3 +322,20 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         return output_fpath
     else:
         return res
+
+
+# def process_out(p):
+#     while True:
+#         reads = [p.stdout.fileno(), p.stderr.fileno()]
+#         ret = select.select(reads, [], [])
+#
+#         for fd in ret[0]:
+#             if fd == p.stdout.fileno():
+#                 read = p.stdout.readline()
+#                 info(read)
+#             if fd == p.stderr.fileno():
+#                 read = p.stderr.readline()
+#                 warn(read)
+#
+#         if p.poll() is not None:
+#             break

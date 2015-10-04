@@ -1,14 +1,16 @@
 #!/bin/bash
-set -x
+#set -x
 
 runner=${18}
-marker=${19}
-params=${20}
+done_marker=${19}
+err_marker=${20}
+params=${21}
 out=${11}
 err=${13}
-cmdline="${runner} ${marker} \"${params}\""
+cmdline="${runner} ${done_marker} ${err_marker} \"${params}\""
 echo "${params}"
-eval "${cmdline}" >${out} 2>${err} &
+echo "${out}"
+eval "${cmdline}" | tee ${out}
 #cat ${err}
 
-set +x
+#set +x

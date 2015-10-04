@@ -11,6 +11,8 @@ resources:
     path: ext_tools/snpEff/SnpSift.jar
   qsub:
     path: tools/qsub.sh
+  qdel:
+    path: tools/qdel.sh
   vardict_pl:
     path: ~/vagrant/VarDict/vardict.pl
   testsomatic_r:

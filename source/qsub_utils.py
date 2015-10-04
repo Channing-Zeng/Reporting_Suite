@@ -11,12 +11,13 @@ from source.file_utils import make_tmpfile, adjust_system_path, verify_file
 
 
 class JobRunning:
-    def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker,
+    def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker_fpath, error_marker_fpath,
                  output_fpath=None, tx_output_fpath=None, sample=None, **kwargs):
         self.job_id = job_id
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
-        self.done_marker = done_marker
+        self.done_marker = done_marker_fpath
+        self.error_marker = error_marker_fpath
         self.repr = job_id
         self.is_done = False
         self.output_fpath = output_fpath
@@ -45,10 +46,11 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    f, marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.done_marker')
-    if isfile(marker_fpath):
-        os.remove(marker_fpath)
-    job_id = basename(splitext(marker_fpath)[0])
+    f, done_marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.done')
+    f, error_marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.error')
+    if isfile(done_marker_fpath): os.remove(done_marker_fpath)
+    if isfile(error_marker_fpath): os.remove(error_marker_fpath)
+    job_id = basename(splitext(done_marker_fpath)[0])
     if cnf.log_dir:
         err_fpath = log_fpath = join(cnf.log_dir, job_id + '.log')
     else:
@@ -62,11 +64,11 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub_cmdline = (
         '{qsub} -pe smp {threads} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '
-        '-N {job_id} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
+        '-N {job_id} {runner_script} {done_marker_fpath} {error_marker_fpath} "{cmdline}"'.format(**locals()))
     info('Submitting job ' + job_id)
     info(qsub_cmdline)
-    job = JobRunning(job_id, log_fpath, qsub_cmdline, marker_fpath,
-        output_fpath=output_fpath, tx_output_fpath=out_fpath, **kwargs)
+    job = JobRunning(job_id, log_fpath, qsub_cmdline, done_marker_fpath, error_marker_fpath,
+                     output_fpath=output_fpath, tx_output_fpath=out_fpath, **kwargs)
     call(cnf, qsub_cmdline, silent=True)
     return job
 
@@ -103,7 +105,7 @@ def wait_for_jobs(cnf, jobs):
                 if not waiting:
                     waiting = True
                     info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                         ', '.join(set([j.repr for j in jobs if not j.is_done])))
+                         ', '.join([j.repr for j in jobs if not j.is_done]))
                     info('', print_date=True, ending='')
                 sleep(10)
                 info('.', print_date=False, ending='')

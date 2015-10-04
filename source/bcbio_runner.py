@@ -79,14 +79,16 @@ class Steps(list):
 
 
 class JobRunning:
-    def __init__(self, step, job_id, sample_name, caller_suf, log_fpath, qsub_cmdline, done_marker, threads):
+    def __init__(self, step, job_id, sample_name, caller_suf, log_fpath,
+                 qsub_cmdline, done_marker_fpath, error_marker_fpath, threads):
         self.step = step
         self.job_id = job_id
         self.sample_name = sample_name
         self.caller_suf = caller_suf
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
-        self.done_marker = done_marker
+        self.done_marker = done_marker_fpath
+        self.error_marker = error_marker_fpath
         self.repr = step.name
         self.threads = threads
         if sample_name:
@@ -94,6 +96,7 @@ class JobRunning:
         if caller_suf:
             self.repr += ', ' + caller_suf
         self.is_done = False
+        self.has_errored = False
 
 
 # noinspection PyAttributeOutsideInit
@@ -386,21 +389,29 @@ class BCBioRunner:
         safe_mkdir(dirname(log_fpath))
 
         done_markers_dirpath = join(self.bcbio_structure.work_dir, 'done_markers')
-        marker_fpath = join(done_markers_dirpath,
-             (step.name + '_' + step.run_id_ +
-              ('_' + sample_name if sample_name else '') +
-              ('_' + caller if caller else '')) + '.done')
         safe_mkdir(done_markers_dirpath)
 
-        return output_dirpath, log_fpath, marker_fpath
+        marker = join(done_markers_dirpath,
+             (step.name + '_' + step.run_id_ +
+              ('_' + sample_name if sample_name else '') +
+              ('_' + caller if caller else '')))
+        return output_dirpath, log_fpath, marker + '.done', marker + '.error'
 
 
     def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
                     log_out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
+        job_name = step.job_name(sample_name, caller_suf)
+
+        for jn in wait_for_steps or []:
+            j = next((j for j in self.jobs_running if j.job_id == jn), None)
+            if j and j.has_errored:
+                warn('Job ' + j.job_id + ' has failed, and it required to run this job ' + job_name)
+                return None
+
         if sum(j.threads for j in self.jobs_running if not j.is_done) >= self.max_threads:
             self.wait_for_jobs(self.max_threads / 2)  # maximum nubmer of jobs were submitted; waiting for half them to finish
 
-        output_dirpath, log_err_fpath, marker_fpath = \
+        output_dirpath, log_err_fpath, done_marker_fpath, error_marker_fpath = \
             self.step_log_marker_and_output_paths(step, sample_name, caller_suf)
 
         if output_dirpath and not isdir(output_dirpath) and create_dir:
@@ -426,29 +437,31 @@ class BCBioRunner:
         tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
         params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
-        cmdline = tool_cmdline + ' ' + step.param_line.format(**params) + ' --done-marker ' + marker_fpath
+        cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
-        job_name = step.job_name(sample_name, caller_suf)
         qsub = get_system_path(self.cnf, 'qsub')
         mem = str(threads * 15)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         bash = get_system_path(self.cnf, 'bash')
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -S {bash} -q {queue} '
-            '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
-            '-N {job_name} {runner_script} {marker_fpath} "{cmdline}"'.format(**locals()))
+            '{qsub} -pe smp {threads} -S {bash} -q {queue} -j n '
+            '-o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} -N {job_name} '
+            '{runner_script} {done_marker_fpath} {error_marker_fpath} '
+            '"{cmdline}"'.format(**locals()))
+        # print qsub_cmdline
 
         if self.cnf.verbose:
-            info(step.name)
+            info(step.name + (' - ' + sample_name if sample_name else '') + (' - ' + caller_suf if caller_suf else ''))
             info(qsub_cmdline)
         else:
             print step.name,
 
-        if isfile(marker_fpath):
-            os.remove(marker_fpath)
-        job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline, marker_fpath, threads=threads)
+        if isfile(done_marker_fpath): os.remove(done_marker_fpath)
+        if isfile(error_marker_fpath): os.remove(error_marker_fpath)
+        job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline,
+                         done_marker_fpath, error_marker_fpath, threads=threads)
         self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars)
 
@@ -472,17 +485,12 @@ class BCBioRunner:
 
         callers = self.bcbio_structure.variant_callers.values()
 
-        # qualimap_bed = None
-        # if self.qualimap in self.steps and self.bcbio_structure.bed:
-        #     qualimap_bed = self._qualimap_bed(self.bcbio_structure.bed)
-
         try:
             targqc_wait_for_steps = []
             for sample in self.bcbio_structure.samples:
                 if not (any(step in self.steps for step in
                             [self.targetcov,
                              self.seq2c,
-                             # self.qualimap,
                              self.ngscat,
                              self.varqc,
                              self.varqc_after,
@@ -498,7 +506,6 @@ class BCBioRunner:
                 # BAMS
                 if any(step in self.steps for step in [
                        self.targetcov,
-                       # self.qualimap,
                        self.ngscat]):
                     if not sample.bam or not verify_bam(sample.bam):
                         err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
@@ -522,15 +529,6 @@ class BCBioRunner:
                                     self.ngscat, sample.name, bam=sample.bam, bed=self.bcbio_structure.bed or self.cnf.genomes[sample.genome].exons,
                                     sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
-                        # # Qualimap
-                        # if self.qualimap in self.steps:
-                        #     qualimap_gff_cmdl = ''
-                        #     if self.bcbio_structure.bed:
-                        #         qualimap_gff_cmdl = ' --bed ' + qualimap_bed + ' '
-                        #     self._submit_job(
-                        #         self.qualimap, sample.name, bam=sample.bam, sample=sample.name,
-                        #         genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
-
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
                     vcf_fpath = sample.vcf_by_callername.get(caller.name)
@@ -549,22 +547,16 @@ class BCBioRunner:
             if not self.cnf.verbose:
                 info('', ending='')
 
-            # if self.vardict_steps:
-            #     self._sumbit_vardict(self.bcbio_structure.batches)
-
             if self.seq2c in self.steps:
                 self._submit_job(
                     self.seq2c,
                     wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
                     genome=self.bcbio_structure.samples[0].genome)
-            else:
-                info(self.seq2c.name + ' is not in steps ' + str(self.steps) + ', skipping Seq2C')
 
             if self.targqc_summary in self.steps:
                 wait_for_steps = []
                 wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
                 wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
-                # wait_for_steps += [self.qualimap.job_name(s.name) for s in self.bcbio_structure.samples if self.qualimap in self.steps]
                 self._submit_job(
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
@@ -630,9 +622,9 @@ class BCBioRunner:
             if self.varqc_after in self.steps:
                 info('VarQC_postVarFilter:')
                 for caller in self.bcbio_structure.variant_callers.values():
-                    info('  ' + caller.name)
+                    info('caller: ' + caller.name)
                     for sample in caller.samples:
-                        info('    ' + sample.name)
+                        info('sample: ' + sample.name)
                         raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
                         if not raw_vcf_fpath:
                             if sample.phenotype != 'normal':
@@ -706,6 +698,11 @@ class BCBioRunner:
                     info('  ' + job.repr)
 
             self.wait_for_jobs()
+            info('Finished. Jobs done: ' + str(len([j for j in self.jobs_running if j.is_done])) +
+                 ', jobs errored: ' + str(len([j for j in self.jobs_running if j.has_errored])) +
+                 ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
+                 ', total was: ' + str(len([j for j in self.jobs_running]))
+            )
 
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 
@@ -753,12 +750,18 @@ class BCBioRunner:
         while True:
             # set flags for all done jobs
             for j in self.jobs_running:
-                if not j.is_done and isfile(j.done_marker):
-                    j.is_done = True
-                    if is_waiting:
-                        info('', print_date=False)
-                    info('Done ' + j.repr)
-                    is_waiting = False
+                if not j.is_done:
+                    if isfile(j.done_marker):
+                        j.is_done = True
+                        if is_waiting: info('', print_date=False)
+                        info('Done ' + j.repr)
+                    if isfile(j.error_marker):
+                        j.is_done = True
+                        j.has_errored = True
+                        if is_waiting: info('', print_date=False)
+                        info('Finished with error: ' + j.repr + '. Please, check the log: ' + str(j.log_fpath))
+                    if j.is_done:
+                        is_waiting = False
 
             # check flags and wait if not all are done
             if sum(1 for j in self.jobs_running if not j.is_done) <= number_of_jobs_allowed_to_left_running:
@@ -766,8 +769,12 @@ class BCBioRunner:
             else:
                 if not is_waiting:
                     is_waiting = True
-                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
-                         ', '.join(set([j.step.name for j in self.jobs_running if not j.is_done])))
+                    strs = []
+                    for j in self.jobs_running:
+                        if not j.is_done:
+                            l = sum(1 for j2 in self.jobs_running if not j2.is_done and j2.step.name == j.step.name)
+                            strs.append(j.step.name + ' (' + str(l) + ')')
+                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' + ', '.join(strs))
                     info('', print_date=True, ending='')
                 sleep(20)
                 info('.', print_date=False, ending='')

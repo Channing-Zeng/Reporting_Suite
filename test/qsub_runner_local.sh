@@ -1,15 +1,25 @@
 #!/bin/bash
 #set -x
 
-date >&2
-hostname >&2
-echo >&2
-echo "$2" >&2
-echo >&2
-echo >&2
-bash -c "$2"
-echo "$?">$1
-echo >&2
-date >&2
+DONE_MARKER_FILE=$1
+ERROR_MARKER_FILE=$2
+CMDLINE=$3
+
+date
+hostname
+echo
+echo "${CMDLINE}"
+echo
+echo
+eval "${CMDLINE}"
+status=$?
+if [ "${status}" -ne 0 ]; then
+    echo "${status}">${ERROR_MARKER_FILE}
+    echo "Error: command returned code ${status}" >&2
+else
+    echo "${status}">${DONE_MARKER_FILE}
+fi
+echo
+date
 
 #set +x
