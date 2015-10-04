@@ -1,0 +1,25 @@
+# Template for paired (tumor/normal) variant calling in targetSeq
+# see http://bcbio-nextgen.readthedocs.org/en/latest/contents/configuration.html for more options!
+---
+details:
+  - analysis: variant2
+    genome_build: hg19 # [hg19, GRCh37, mm10, rn5]
+    algorithm:
+      background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+      aligner: bwa # [bwa, bowtie, bowtie2, mosaik, novoalign, false], set to false for targeted panels that use pcr
+      mark_duplicates: true # set to false for PCR panels
+      recalibrate: false # gatk  # [gatk, false]
+      realign: false # [gatk, gkno, false]
+      variantcaller: [vardict-java,mutect,freebayes] # Valid values are "mutect", "varscan", "freebayes", "vardict" (experimental)
+      ensemble:
+        numpass: 2
+      svcaller: [cnvkit] # for cnv analysis [cnvkit, cn.mops, hydra, lumpy]
+      sv_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed 
+      platform: Illumina
+      quality_format: Standard
+      coverage_interval: amplicon # [genome, regional, amplicon], can be left empty for bcbio to detect (affects cnvkit mainly)
+      coverage_depth_max: 0 #
+      variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ_V2.bed
+      min_allele_fraction: 0.1 # AF percentage minimum in (0,100)
+      clinical_reporting: false # Tune output for clinical reporting. Modifies snpEff parameters to use HGVS notational on canonical transcripts [false, true].
+      #tools_off: [gemini]

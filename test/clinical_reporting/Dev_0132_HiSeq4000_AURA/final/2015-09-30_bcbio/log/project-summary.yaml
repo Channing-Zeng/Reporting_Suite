@@ -1,0 +1,769 @@
+date: '2015-10-02 11:46:35.483333'
+upload: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/final
+bcbio_system: ''
+samples:
+- description: AURA-165_S17
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-165_S17-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '152518434'
+      Duplicates pct: 84.6012%
+      Mapped reads: '179565148'
+      Mapped reads pct: 99.6039%
+      Median insert size: '166'
+      Name: AURA-165_S17
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '180279255'
+      mapped: 179565148
+      offtarget: 45748453
+- description: AURA-161_S13
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-161_S13-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '53'
+      Duplicates: '72925343'
+      Duplicates pct: 85.1202%
+      Mapped reads: '85028533'
+      Mapped reads pct: 99.2474%
+      Median insert size: '162'
+      Name: AURA-161_S13
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '85673336'
+      mapped: 85028533
+      offtarget: 26850963
+- description: AURA-168_S20
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-168_S20-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '47'
+      Duplicates: '32281480'
+      Duplicates pct: 87.3949%
+      Mapped reads: '36735852'
+      Mapped reads pct: 99.4541%
+      Median insert size: '174'
+      Name: AURA-168_S20
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '36937480'
+      mapped: 36735852
+      offtarget: 9393155
+- description: AURA-157_S9
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-157_S9-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '46510688'
+      Duplicates pct: 84.6139%
+      Mapped reads: '54542765'
+      Mapped reads pct: 99.2261%
+      Median insert size: '167'
+      Name: AURA-157_S9
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '54968169'
+      mapped: 54542765
+      offtarget: 13895171
+- description: AURA-164_S16
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-164_S16-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '182618377'
+      Duplicates pct: 85.7913%
+      Mapped reads: '211830615'
+      Mapped reads pct: 99.5147%
+      Median insert size: '166'
+      Name: AURA-164_S16
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '212863569'
+      mapped: 211830615
+      offtarget: 54318477
+- description: AURA-169_S21
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-169_S21-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '47'
+      Duplicates: '94720549'
+      Duplicates pct: 86.8148%
+      Mapped reads: '108575991'
+      Mapped reads pct: 99.5138%
+      Median insert size: '171'
+      Name: AURA-169_S21
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '109106456'
+      mapped: 108575991
+      offtarget: 27799787
+- description: AURA-163_S15
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-163_S15-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '41247204'
+      Duplicates pct: 84.411%
+      Mapped reads: '48547813'
+      Mapped reads pct: 99.3514%
+      Median insert size: '170'
+      Name: AURA-163_S15
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '48864729'
+      mapped: 48547813
+      offtarget: 12301672
+- description: AURA-167_S19
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-167_S19-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '47213986'
+      Duplicates pct: 86.4416%
+      Mapped reads: '54330591'
+      Mapped reads pct: 99.471%
+      Median insert size: '170'
+      Name: AURA-167_S19
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '54619542'
+      mapped: 54330591
+      offtarget: 13704849
+- description: AURA-162_S14
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-162_S14-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '176769766'
+      Duplicates pct: 83.8927%
+      Mapped reads: '210073755'
+      Mapped reads pct: 99.6984%
+      Median insert size: '163'
+      Name: AURA-162_S14
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '210709328'
+      mapped: 210073755
+      offtarget: 55052887
+- description: AURA-155_S7
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-155_S7-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '105906708'
+      Duplicates pct: 85.0575%
+      Mapped reads: '123778533'
+      Mapped reads pct: 99.411%
+      Median insert size: '169'
+      Name: AURA-155_S7
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '124511929'
+      mapped: 123778533
+      offtarget: 31371986
+- description: AURA-160_S12
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-160_S12-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '47'
+      Duplicates: '113223013'
+      Duplicates pct: 87.0079%
+      Mapped reads: '129374344'
+      Mapped reads pct: 99.4196%
+      Median insert size: '169'
+      Name: AURA-160_S12
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '130129646'
+      mapped: 129374344
+      offtarget: 33033053
+- description: AURA-159_S11
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-159_S11-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '47'
+      Duplicates: '134359005'
+      Duplicates pct: 83.6583%
+      Mapped reads: '160038177'
+      Mapped reads pct: 99.6474%
+      Median insert size: '172'
+      Name: AURA-159_S11
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '160604414'
+      mapped: 160038177
+      offtarget: 41033078
+- description: AURA-158_S10
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-158_S10-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '21886285'
+      Duplicates pct: 85.1472%
+      Mapped reads: '25393748'
+      Mapped reads pct: 98.7928%
+      Median insert size: '167'
+      Name: AURA-158_S10
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '25704047'
+      mapped: 25393748
+      offtarget: 6528405
+- description: AURA-156_S8
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-156_S8-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '47'
+      Duplicates: '63829079'
+      Duplicates pct: 86.7484%
+      Mapped reads: '73174134'
+      Mapped reads pct: 99.449%
+      Median insert size: '169'
+      Name: AURA-156_S8
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '73579538'
+      mapped: 73174134
+      offtarget: 18500527
+- description: AURA-166_S18
+  dirs:
+    fastq: null
+    galaxy: /gpfs/group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/galaxy
+    work: /gpfs/ngs/oncology/Analysis/dev/Dev_0132_HiSeq4000_AURA/bcbio/work
+  genome_build: hg19
+  genome_resources:
+    aliases:
+      ensembl: homo_sapiens
+      human: true
+      snpeff: hg19
+    rnaseq:
+      dexseq: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.dexseq.gff
+      gene_bed: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.bed
+      rRNA_fa: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/rRNA.fa
+      refflat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.refFlat
+      transcriptome_index:
+        tophat: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/tophat/hg19_transcriptome.ver
+      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+      transcripts_mask: /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts-mask.gtf
+    variation:
+      ancestral: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/human_ancestor.fa.rz
+      cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+      dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+      lcr: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/LCR.bed.gz
+      qsignature: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/qsignature.vcf
+      sv_repeat: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/sv_repeat_telomere_centromere.bed
+      train_1000g: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/1000G_phase1.snps.high_confidence.vcf.gz
+      train_hapmap: ../variation/bcbio/hapmap_3.3.vcf.gz
+      train_indels: /ngs/reference_data/genomes/Hsapiens/hg19/variation/bcbio/Mills_and_1000G_gold_standard.indels.vcf.gz
+      train_omni: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    version: 12
+  metadata:
+    batch: AURA-166_S18-Batch
+    phenotype: tumor
+  sam_ref: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+  summary:
+    metrics:
+      '%GC': '48'
+      Duplicates: '44607828'
+      Duplicates pct: 86.0889%
+      Mapped reads: '51442804'
+      Mapped reads pct: 99.2797%
+      Median insert size: '171'
+      Name: AURA-166_S18
+      Quality format: standard
+      Sequence length: 30-150
+      Sequences flagged as poor quality: '0'
+      Total reads: '51816014'
+      mapped: 51442804
+      offtarget: 13073046

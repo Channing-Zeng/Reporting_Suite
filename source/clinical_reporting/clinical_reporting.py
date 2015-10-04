@@ -84,7 +84,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 sample_name, chrom, start, id, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                     aa_len, gene, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                     cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
-                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status, paired_pval, paired_oddratiom, \
+                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
                     m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
                     n_sample, n_var, pcnt_sample, ave_af, filter_, var_type, var_class, status = fs[:67]  # 67 of them
             else:
@@ -94,7 +94,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                     mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
                     n_sample, n_var, pcnt_sample, ave_af, filter_, var_type, var_class, status = fs[:50]  # 50 of them
 
-            if sample_name == sample.name:  # and gene in key_gene_names:
+            if sample_name == sample.name and gene in key_gene_names:
                 reg = report.add_region()
                 reg.add_record('Gene & Transcript', gene + ' ' + transcript)
                 reg.add_record('Variant', codon_change + (' p.' + aa_change if aa_change else ''))

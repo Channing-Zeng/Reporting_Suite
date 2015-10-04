@@ -1,0 +1,63 @@
+details:
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    clinical_reporting: false
+    coverage_depth_max: 0
+    coverage_interval: amplicon
+    ensemble:
+      numpass: 2
+    mark_duplicates: true
+    min_allele_fraction: 0.1
+    platform: Illumina
+    quality_format: Standard
+    realign: false
+    recalibrate: false
+    sv_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed
+    svcaller:
+    - cnvkit
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ_V2.bed
+    variantcaller:
+    - vardict-java
+  analysis: variant2
+  description: AURA-155_S7
+  files:
+  - /ngs/oncology/datasets/hiseq4000/Dev_0132_HiSeq4000_AURA/fastq/AURA-155_S7_R1.fastq.gz
+  - /ngs/oncology/datasets/hiseq4000/Dev_0132_HiSeq4000_AURA/fastq/AURA-155_S7_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: AURA-155_S7-Batch
+    phenotype: tumor
+- algorithm:
+    aligner: bwa
+    background: /ngs/reference_data/genomes/Hsapiens/hg19/variation/refseq_exome_10bp_hg19_300_1kg_normal_panel.hg19.vcf
+    clinical_reporting: false
+    coverage_depth_max: 0
+    coverage_interval: amplicon
+    ensemble:
+      numpass: 2
+    mark_duplicates: true
+    min_allele_fraction: 0.1
+    platform: Illumina
+    quality_format: Standard
+    realign: false
+    recalibrate: false
+    sv_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed
+    svcaller:
+    - cnvkit
+    variant_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ_V2.bed
+    variantcaller:
+    - vardict-java
+  analysis: variant2
+  description: AURA-156_S8
+  files:
+  - /ngs/oncology/datasets/hiseq4000/Dev_0132_HiSeq4000_AURA/fastq/AURA-156_S8_R1.fastq.gz
+  - /ngs/oncology/datasets/hiseq4000/Dev_0132_HiSeq4000_AURA/fastq/AURA-156_S8_R2.fastq.gz
+  genome_build: hg19
+  metadata:
+    batch: AURA-156_S8-Batch
+    phenotype: tumor
+fc_date: '2015-09-30'
+fc_name: bcbio
+upload:
+  dir: ../final
