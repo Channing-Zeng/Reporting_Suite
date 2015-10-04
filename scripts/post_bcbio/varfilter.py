@@ -40,6 +40,8 @@ def main():
 
         (['--wgs'], dict(
             dest='is_wgs',
+            action='store_false',
+            default=True,
             help='Splits vcf2txt runs by samples, thus turns off cohort filtering'
         )),
 
@@ -164,6 +166,7 @@ def main():
         (['-u'], dict(
             dest='count_undetermined',
             action='store_false',
+            default=True,
             help='Undeteremined won\'t be counted for the sample count.'
         )),
 
