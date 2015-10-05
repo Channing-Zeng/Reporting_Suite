@@ -1,7 +1,9 @@
 from collections import OrderedDict
 from json import load, dump, JSONEncoder, dumps
 
+import source
 from source import verify_file, info
+from source.file_utils import add_suffix
 from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
@@ -56,6 +58,16 @@ def get_ave_coverage(sample, targqc_json_fpath):
     return r.value
 
 
+def is_sample_presents_in_file(sample_name, mutations_fpath):
+    with open(mutations_fpath) as f:
+        for i, l in enumerate(f):
+            if i == 0:
+                continue
+            fs = l.strip().split('\t')
+            if fs[0] == sample_name:
+                return True
+    return False
+
 def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
@@ -73,6 +85,13 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
+    if not verify_file(mutations_fpath, silent=True):
+        single_mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
+        paired_mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
+        if verify_file(single_mutations_fpath, silent=True) and is_sample_presents_in_file(sample.name, single_mutations_fpath):
+            mutations_fpath = single_mutations_fpath
+        elif verify_file(paired_mutations_fpath, silent=True):
+            mutations_fpath = paired_mutations_fpath
 
     info('Reading mutations from ' + mutations_fpath)
     with open(mutations_fpath) as f:

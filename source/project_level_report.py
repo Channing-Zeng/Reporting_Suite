@@ -1,3 +1,4 @@
+import json
 import os
 from os.path import join, relpath, dirname, basename, pardir, normpath, realpath
 from collections import OrderedDict, namedtuple
@@ -25,6 +26,7 @@ VARQC_AFTER_NAME      = 'Var QC after filtering'
 MUTATIONS_NAME        = 'Mutations'
 MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
 MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
+GENDER                = 'Gender'
 
 
 metric_storage = MetricStorage(
@@ -49,6 +51,7 @@ metric_storage = MetricStorage(
         # Metric(MUTATIONS_NAME),
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
+        Metric(GENDER),
     ])])
 
 
@@ -203,12 +206,16 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)])
             varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
             varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-
+            if verify_file(s.targetcov_json_fpath):
+                targqc_json = json.loads(open(s.targetcov_json_fpath).read(),object_pairs_hook=OrderedDict)
+                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
+                gender = sample_report.find_record(sample_report.records, 'Gender').value
             sample_reports_records[s.name].extend([
                 _make_path_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
                 _make_path_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
                 _make_path_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
-                _make_path_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath)
+                _make_path_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
+                Record(metric=individual_reports_section.find_metric(GENDER), value=gender) if gender else None,
             ])
 
     # for (repr_name, links_by_sample) in to_add:
@@ -337,6 +344,8 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 
+        elif rec.metric.name == 'Gender':
+            d['contents'] = rec.value
         else:
             d['contents'] = '-'
 

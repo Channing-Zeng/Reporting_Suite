@@ -455,6 +455,9 @@ class BCBioStructure:
     qualimap_name = qualimap_dir = 'qualimap'
     picard_name      = 'picard'
 
+    clinreport_name  = 'clinicalReport'
+    clinreport_dir   = 'clinicalReport'
+
     fastqc_repr      = 'FastQC'
     varqc_repr       = 'VarQC'
     varqc_after_repr = 'VarQC after filtering'

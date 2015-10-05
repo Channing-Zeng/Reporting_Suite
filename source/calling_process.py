@@ -110,7 +110,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
-                    stderr = subprocess.STDOUT
+                    stderr = subprocess.PIPE
                 else:
                     if output_fpath:
                         cmdl = cmdl.replace(output_fpath, out_fpath)

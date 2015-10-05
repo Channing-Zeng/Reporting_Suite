@@ -118,15 +118,16 @@ def _build_total_report(report, section, column_order):
     for col_num in range(len(section.metrics)):
         pos = column_order[col_num]
         metric = section.metrics[pos]
-        if metric.numbers:
-            sort_by = 'nosort' if metric.all_values_equal else 'numeric'
-            direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-            table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
-                      ' data-direction=' + direction + ' position=' + str(pos) + '>' +
-                      '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
-        elif metric.values:
-            table += ('\n<th class="second_through_last_col_headers_td">' +
-                      '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+        if not metric.is_hidden:
+            if metric.numbers:
+                sort_by = 'nosort' if metric.all_values_equal else 'numeric'
+                direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
+                table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
+                          ' data-direction=' + direction + ' position=' + str(pos) + '>' +
+                          '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+            elif metric.values:
+                table += ('\n<th class="second_through_last_col_headers_td">' +
+                          '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
 
     table += '\n</tr>\n</thead>\n<tbody>'
 
@@ -170,6 +171,8 @@ def _build_total_report(report, section, column_order):
             if '100x' in metric.name:
                 pass
             if not metric.values:
+                continue
+            if metric.is_hidden:
                 continue
             rec = sample_report.find_record(sample_report.records, metric.name)
             if not rec:

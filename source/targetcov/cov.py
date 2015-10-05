@@ -24,6 +24,7 @@ from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
+chr_y_bed = '~/git/Reporting_Suite/source/targetcov/chrY.bed'
 
 def get_header_metric_storage(depth_thresholds, is_wgs=False):
     sections = [
@@ -36,6 +37,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
             Metric('Read min length',  'Min len', 'Read min length'),
             Metric('Read max length',  'Max len', 'Read max length'),
             Metric('Read mean length', 'Ave len', 'Read mean length'),
+            Metric('Gender', is_hidden=True),
         ]),
     ]
     if not is_wgs:
@@ -224,6 +226,20 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
     return depth_stats, reads_stats, mm_indels_stats, target_stats
 
 
+def _get_gender(sample, bam_fpath, cnf):
+    if not bam_fpath:
+        critical(sample.name + ': BAM file is required.')
+    if not isfile(bam_fpath + '.bai'):
+        info('Indexing bam ' + bam_fpath)
+        index_bam(cnf, bam_fpath)
+
+    reads_mapped_on_chr_y = number_mapped_reads_on_target(cnf, chr_y_bed, bam_fpath)
+    if reads_mapped_on_chr_y > 100:
+        return 'M'
+    else:
+        return 'F'
+
+
 def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     # bam_fpath, bam_stats, dedup_bam_stats = _dedup_and_flag_stat(cnf, bam_fpath)
@@ -241,6 +257,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
+    reads_stats['gender'] = _get_gender(sample, cnf.bam, cnf)
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
@@ -291,6 +308,7 @@ def get_records_by_metrics(records, metrics):
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
     report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir))
+    report.add_record('Gender', reads_stats['gender'], silent=True)
 
     info('* General coverage statistics *')
     report.add_record('Reads', reads_stats['total'])

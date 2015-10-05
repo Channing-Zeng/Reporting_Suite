@@ -8,6 +8,7 @@ from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile
 import datetime
 from time import sleep
 from traceback import format_exc
+import source
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
@@ -327,6 +328,22 @@ class BCBioRunner:
             paramln=varfilter_paramline
         )
 
+        vardict_txt_fname = source.mut_fname_template.format(caller_name='vardict')
+        vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
+        mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+        clinreport_paramline = params_for_one_sample + ' --targqc-dir ' + join(self.final_dir, '{sample}', BCBioStructure.targqc_dir) \
+                               + ' --mutations ' + mutations_fpath + ' -s \'{sample}\'' \
+                               + ' -o \'{output_dir}\''
+
+        self.clinreport = Step(cnf, run_id,
+            name=BCBioStructure.clinreport_name, short_name='clin',
+            interpreter='python',
+            script=join('scripts', 'post', 'clinical_report.py'),
+            dir_name=BCBioStructure.clinreport_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.clinreport_name + '.log'),
+            paramln=clinreport_paramline
+        )
+
         self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',
             interpreter='java',
@@ -589,6 +606,21 @@ class BCBioRunner:
                     if not self.bcbio_structure.bed:  # WGS
                         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
+            if  'vardict' in self.bcbio_structure.variant_callers:
+                for sample in self.bcbio_structure.variant_callers['vardict'].samples:
+                    wait_for_steps = []
+                    wait_for_steps += [self.targqc_summary.job_name(sample.name)] if self.targqc_summary in self.steps else []
+                    wait_for_steps += [self.varqc_summary.job_name(sample.name, 'vardict')] if self.varqc_summary in self.steps else []
+                    self._submit_job(
+                        self.clinreport,
+                        sample.name,
+                        sample=sample.name, genome=sample.genome,
+                        wait_for_steps=wait_for_steps,
+                        threads=self.filtering_threads)
+                else:
+                    warn('Warning: . Clinical report cannot be created.')
+
+
             # TargetSeq reports
             # if self.abnormal_regions in self.steps:
             #     for sample in self.bcbio_structure.samples:
@@ -774,7 +806,7 @@ class BCBioRunner:
                         if not j.is_done:
                             l = sum(1 for j2 in self.jobs_running if not j2.is_done and j2.step.name == j.step.name)
                             strs.append(j.step.name + ' (' + str(l) + ')')
-                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' + ', '.join(strs))
+                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). Jobs running: ' + ', '.join(strs))
                     info('', print_date=True, ending='')
                 sleep(20)
                 info('.', print_date=False, ending='')

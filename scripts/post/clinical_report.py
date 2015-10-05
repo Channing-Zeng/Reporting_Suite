@@ -21,7 +21,6 @@ def main(args):
             )),
         ],
         required_keys=['targqc_dirpath', 'mutations_fpath'],
-        file_keys=['mutations_fpath'],
         dir_keys=['targqc_dirpath'],
         key_for_sample_name=None
     )

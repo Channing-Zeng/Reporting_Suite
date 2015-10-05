@@ -101,6 +101,7 @@ class Metric:
             common=False,
             ok_threshold=None,
             bottom=None,
+            is_hidden=False,
 
             numbers=None,
             values=None,
@@ -120,6 +121,7 @@ class Metric:
         self.unit = unit
         self.ok_threshold = ok_threshold
         self.bottom = bottom
+        self.is_hidden = is_hidden
 
         self.numbers = []
         self.values = []

@@ -88,7 +88,7 @@ def wait_for_jobs(cnf, jobs):
                         info('', print_date=False)
                     if j.output_fpath:
                         if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.repr)):
-                            err('Job ' + j.repr + ' was unsucsessful: ' + j.tx_output_fpath + ' does not exist or empty.' +
+                            err('Job ' + j.repr + ' was unsuccessful: ' + j.tx_output_fpath + ' does not exist or empty.' +
                                ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
                         else:
                             os.rename(j.tx_output_fpath, j.output_fpath)
@@ -104,7 +104,7 @@ def wait_for_jobs(cnf, jobs):
             if not all(j.is_done for j in jobs):
                 if not waiting:
                     waiting = True
-                    info('Waiting for the jobs to be proccesed on a GRID (monitor with qstat). Jobs running: ' +
+                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). Jobs running: ' +
                          ', '.join([j.repr for j in jobs if not j.is_done]))
                     info('', print_date=True, ending='')
                 sleep(10)
@@ -120,7 +120,7 @@ def wait_for_jobs(cnf, jobs):
             if res == 0:
                 info('All running jobs for this project has been deleted from queue.')
             else:
-                warn('Can\'t run qdel. Please kill the remaning jobs manually using the following command:')
+                warn('Can\'t run qdel. Please kill the remaining jobs manually using the following command:')
                 warn('  qdel ' + command)
         else:
             warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
