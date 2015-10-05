@@ -139,7 +139,6 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     info('run_annotators')
-    exit(1)
     annotated = False
     original_vcf = cnf.vcf
 

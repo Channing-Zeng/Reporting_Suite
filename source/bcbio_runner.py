@@ -15,7 +15,7 @@ from source.project_level_report import make_project_level_report
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
-from source.logger import info, err, critical, send_email, warn
+from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam
 from source.utils import is_us
 from source.webserver.exposing import sync_with_ngs_server
@@ -463,7 +463,7 @@ class BCBioRunner:
         job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline,
                          done_marker_fpath, error_marker_fpath, threads=threads)
         self.jobs_running.append(job)
-        call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars)
+        call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars, exit_on_error=is_local())
 
         if self.cnf.verbose: info()
         return output_dirpath

@@ -10,7 +10,14 @@ err=${13}
 cmdline="${runner} ${done_marker} ${err_marker} \"${params}\""
 echo "${params}"
 echo "${out}"
-eval "${cmdline}" | tee ${out}
+eval "${cmdline}" 2>&1 | tee ${out}
+status=$?
+
+if [ "${status}" -ne 0 ]; then
+    exit 1
+else
+fi
+
 #cat ${err}
 
 #set +x
