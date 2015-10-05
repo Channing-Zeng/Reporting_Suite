@@ -105,11 +105,11 @@ def check_inputs(cnf, file_keys=list(), dir_keys=list()):
 
     for key in dir_keys:
         if key and key in cnf and cnf[key]:
-            cnf[key] = adjust_system_path(cnf[key])
+            cnf[key] = adjust_path(cnf[key])
             if not verify_dir(cnf[key], key):
                 errors.append('Directory ' + cnf[key] + ' is empty or cannot be found')
             else:
-                cnf[key] = abspath(expanduser(cnf[key]))
+                cnf[key] = adjust_path(cnf[key])
 
     return errors
 
