@@ -1,0 +1,468 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <style type="text/css" rel="stylesheet" name="bootstrap/bootstrap.min.css">
+        /*!
+         * Bootstrap v2.0.4
+         *
+         * Copyright 2012 Twitter, Inc
+         * Licensed under the Apache License v2.0
+         * http://www.apache.org/licenses/LICENSE-2.0
+         *
+         * Designed and built with all the love in the world @twitter by @mdo and @fat.
+         */
+        .clearfix{*zoom:1;}.clearfix:before,.clearfix:after{display:table;content:"";}
+        .clearfix:after{clear:both;}
+        .hide-text{font:0/0 a;color:transparent;text-shadow:none;background-color:transparent;border:0;}
+        .input-block-level{display:block;width:100%;min-height:28px;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;-ms-box-sizing:border-box;box-sizing:border-box;}
+        .tooltip{position:absolute;z-index:1020;display:block;visibility:visible;padding:5px;font-size:11px;opacity:0;filter:alpha(opacity=0);}.tooltip.in{opacity:0.8;filter:alpha(opacity=80);}
+        .tooltip.top{margin-top:-2px;}
+        .tooltip.right{margin-left:2px;}
+        .tooltip.bottom{margin-top:2px;}
+        .tooltip.left{margin-left:-2px;}
+        .tooltip.top .tooltip-arrow{bottom:0;left:50%;margin-left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid #000000;}
+        .tooltip.left .tooltip-arrow{top:50%;right:0;margin-top:-5px;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:5px solid #000000;}
+        .tooltip.bottom .tooltip-arrow{top:0;left:50%;margin-left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:5px solid #000000;}
+        .tooltip.right .tooltip-arrow{top:50%;left:0;margin-top:-5px;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:5px solid #000000;}
+        .tooltip-inner{max-width:200px;padding:3px 8px;color:#ffffff;text-align:center;text-decoration:none;background-color:#000000;-webkit-border-radius:4px;-moz-border-radius:4px;border-radius:4px;}
+        .tooltip-arrow{position:absolute;width:0;height:0;}
+        
+    </style>
+    <style type="text/css" rel="stylesheet" name="common.css">
+        body {
+          margin: 0;
+          font-family: Lucida Grande, Verdana, Arial, sans-serif;
+          font-size: 12px;
+          color: black;
+          padding: 0;
+          padding-bottom: 30px; }
+        
+        .content {
+          margin-left: 120px;
+          padding-top: 50px;
+          clear: both; }
+        
+        #header {
+          display: block;
+          width: 100%;
+          margin-bottom: 1em; }
+        
+        h4 {
+          margin-bottom: 0; }
+        
+        .report-header {
+          margin: 5px 0 5px 0; }
+        
+        a {
+          text-decoration: none;
+          color: #0077b5;
+          border-bottom: 1px solid #487b95;
+          border-color: rgba(12, 79, 114, 0.2); }
+        
+        a:visited {
+          text-decoration: none;
+          color: #8c66b2;
+          border-bottom: 1px solid #8c66b2;
+          border-color: rgba(102, 51, 153, 0.2); }
+        
+        a:hover {
+          text-decoration: none;
+          color: #bb3333;
+          border-bottom: 1px solid #ffcccc;
+          border-color: rgba(255, 0, 0, 0.2); }
+        
+        a.dark_bg_link {
+          color: white;
+          border-bottom: 1px solid #cccccc; }
+        
+        a.dark_bg_link:hover {
+          color: white;
+          border-bottom: 1px solid white; }
+        
+        .leading_link_dot {
+          border-bottom: white solid 1px; }
+        
+        a.header_link, a.header_link:hover, a.header_link:visited {
+          color: black;
+          border-bottom: 1px solid #bbbbbb; }
+        
+        .dotted-link {
+          cursor: pointer;
+          text-decoration: none;
+          color: #0077b5;
+          border-bottom: 1px dashed #487b95;
+          border-color: rgba(12, 79, 114, 0.2); }
+        
+        .dotted-link:hover {
+          text-decoration: none;
+          color: #bb3333 !important;
+          border-bottom: 1px dashed #bb3333 !important;
+          border-color: rgba(255, 0, 0, 0.2) !important; }
+        
+        .js:visited {
+          color: #0077b5;
+          border-bottom: 1px dashed #487b95;
+          border-color: rgba(12, 79, 114, 0.2); }
+        
+        .selected-switch {
+          background-color: lightgoldenrodyellow; }
+        
+        .json-code {
+          display: none; }
+        
+        .smallcapitals {
+          font-size: 0.875em;
+          letter-spacing: 0.15em;
+          margin-right: -0.15em; }
+        
+        .highlight {
+          background-color: #fff9b5;
+          padding: 0 3px;
+          margin-left: -3px; }
+        
+        .not-available {
+          color: gray; }
+        
+        ul.list {
+          list-style-type: none;
+          padding: 0 0 0 2em;
+          margin: -0.5em 0 0 0; }
+        
+        ul.list li {
+          margin-bottom: 0.7em; }
+        
+        ul.mdash {
+          margin: -1em 0 0 0;
+          padding: 0 0 0 2em; }
+        
+        ul.mdash li {
+          margin-bottom: 0.7em;
+          list-style-type: none;
+          text-indent: -1.3em; }
+        
+        ul.mdash li:before {
+          content: "\2014\a0"; }
+        
+        .small_line_indent {
+          height: 0;
+          margin-top: -7px; }
+        
+        .tooltip {
+          font-size: 0.9em;
+          margin-bottom: 5px; }
+        
+        .tooltip.in {
+          opacity: 1; }
+        
+        .tooltip-inner {
+          text-align: left; }
+        
+        .tooltip-link,
+        .tooltip-link:visited {
+          text-decoration: none;
+          color: black;
+          border-bottom: 1px dashed #bbbbbb;
+          cursor: hand; }
+        
+        .tooltip-link:hover {
+          text-decoration: none;
+          color: #bb3333;
+          border-bottom: 1px dashed #bb3333; }
+        
+        .tooltip-meta,
+        .tooltip-meta:visited {
+          text-decoration: none;
+          color: inherit;
+          cursor: hand;
+          border-bottom: none; }
+        
+        .tooltip-meta:hover {
+          text-decoration: none;
+          color: inherit;
+          border-bottom: none; }
+        
+        .hs {
+          margin-left: 0.2em; }
+        
+        .rhs {
+          font-size: 50%;
+          line-height: 1; }
+        
+        .wrapword {
+          white-space: -moz-pre-wrap !important;
+          white-space: -pre-wrap;
+          white-space: -o-pre-wrap;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          word-break: break-all;
+          white-space: normal; }
+        
+        .space_1px {
+          height: 1px; }
+        
+        .space_2px {
+          height: 2px; }
+        
+        .space_3px {
+          height: 3px; }
+        
+        .space_4px {
+          height: 4px; }
+        
+        .space_5px {
+          height: 5px; }
+        
+        .space_6px {
+          height: 6px; }
+        
+        .space_7px {
+          height: 7px; }
+        
+        .space_8px {
+          height: 8px; }
+        
+        .space_9px {
+          height: 9px; }
+        
+        .space_10px {
+          height: 10px; }
+        
+        .space_30px {
+          height: 30px; }
+        
+    </style>
+    <style type="text/css" rel="stylesheet" name="report.css">
+        #report {
+          margin: 0 100px 50px 0;
+          min-width: 532px;
+          font-size: 1em; }
+          #report .table_name {
+            margin-bottom: 5px; }
+          #report table.common_table {
+            padding-right: 50px !important; }
+            #report table.common_table span.metric_name {
+              font-weight: bold; }
+          #report table.report_table {
+            padding-right: 50px !important;
+            margin-bottom: 30px;
+            border-width: 0;
+            border-spacing: 0;
+            border-collapse: collapse; }
+            #report table.report_table * {
+              border-spacing: 0;
+              border-collapse: collapse; }
+            #report table.report_table td, #report table.report_table th {
+              white-space: nowrap;
+              text-align: left;
+              padding: 2px 3px 2px 3px; }
+            #report table.report_table td.number {
+              padding-top: 0;
+              padding-bottom: 0; }
+              #report table.report_table td.number a {
+                padding-top: 2px;
+                padding-bottom: 2px; }
+            #report table.report_table tbody tr:first-child td {
+              border-top: 1px solid #bbbbbb; }
+            #report table.report_table td.left_column_td, #report table.report_table th.left_column_td {
+              padding-left: 0 !important; }
+              #report table.report_table td.left_column_td a, #report table.report_table th.left_column_td a {
+                padding-left: 0 !important; }
+            #report table.report_table a.metric_name {
+              border-bottom: none;
+              color: black; }
+            #report table.report_table td.number {
+              text-align: left; }
+            #report table.report_table tr.top_row_tr td, #report table.report_table tr.top_row_tr th, #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
+              font-weight: bold; }
+            #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
+              height: 20px;
+              vertical-align: bottom; }
+            #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
+              display: none; }
+          #report table.static_report td, #report table.static_report th {
+            padding-right: 10px; }
+        
+        #contigs_are_ordered {
+          z-index: 0;
+          position: relative; }
+        
+        table.moving_table {
+          box-shadow: 0px 0 5px 1px #888888;
+          -moz-box-shadow: 0px 0 5px 1px #888888;
+          -webkit-box-shadow: 0px 0 5px 1px #888888;
+          background-color: white;
+          z-index: 3 !important;
+          border-width: 0;
+          border-spacing: 0;
+          border-collapse: collapse; }
+        
+        table.draggable {
+          border-width: 0;
+          border-spacing: 0;
+          border-collapse: collapse; }
+          table.draggable .drag_handle {
+            padding: 2px 0 0 0;
+            margin: 0 0 0 1px;
+            cursor: grab;
+            cursor: -moz-grab;
+            cursor: -webkit-grab; }
+          table.draggable .drag_handle .drag_image {
+            height: 9px;
+            width: 9px;
+            display: inline-block;
+            background: url("img/draggable.png") no-repeat; }
+          table.draggable .drag_handle:active, table.draggable td.cell_of_moving_table .drag_handle {
+            cursor: grabbing !important;
+            cursor: -moz-grabbing !important;
+            cursor: -webkit-grabbing !important; }
+          table.draggable td.cell_of_moving_table {
+            padding-left: 14px !important;
+            padding-right: 0.6em !important; }
+          table.draggable td.hovered_column_td {
+            background-color: #cccccc; }
+          table.draggable td.cell_of_empty_space * {
+            visibility: hidden; }
+          table.draggable td.cell_of_empty_space {
+            border: none !important; }
+          table.draggable td.top_cell_of_empty_space {
+            border-top: 1px solid #888888 !important; }
+        
+        .plot-switch {
+          margin-left: 10px; }
+        
+        .plot-wrapper {
+          padding-right: 80px; }
+        
+        .plot-header {
+          margin-left: 0;
+          font-weight: bold;
+          height: 1.5em;
+          display: block; }
+        
+        .plots {
+          margin-top: 2px;
+          margin-bottom: 0; }
+          .plots td {
+            vertical-align: top;
+            white-space: nowrap; }
+        
+        #legend-placeholder {
+          margin-top: -2px;
+          margin-left: -5px;
+          position: relative;
+          z-index: 0; }
+        
+        .legendColorBox div {
+          display: none; }
+        
+        #legend-placeholder td {
+          vertical-align: top;
+          white-space: nowrap; }
+        
+        #plot-placeholder {
+          min-width: 500px;
+          width: 100%;
+          min-height: 400px;
+          height: 50%;
+          margin-left: -125px;
+          margin-right: 20px;
+          z-index: 2; }
+        
+        #plot_tip {
+          position: absolute;
+          opacity: 1;
+          padding: 2px 5px 2px 5px;
+          z-index: 1; }
+        
+        #plot_tip_vertical_rule, #plot_tip_horizontal_rule {
+          position: absolute;
+          border: 1px solid #bbbbbb;
+          z-index: -2; }
+        
+        #plot_tip_vertical_rule {
+          border-left: 1px; }
+        
+        #plot_tip_horizontal_rule {
+          border-top: 1px; }
+        
+        .white_stroked {
+          color: black;
+          background-color: white;
+          text-shadow: -3px -3px 0 white, 3px -3px 0 white, -3px 3px 0 white, 3px 3px 0 white; }
+        
+        #extended_link {
+          display: block; }
+        
+        .meta_info_span {
+          height: 100%;
+          width: 100%;
+          display: inline-block; }
+        
+        .qc_meta_table td {
+          padding-right: 5px; }
+        
+    </style>
+</head>
+
+<body>
+<div class="content">
+    <div id='report'>
+            <h1 class="report-header">Dev_0132_HiSeq4000_AURA</h1>
+            <p>Sample: AURA-155_S7</p>
+            <p>Sex: Dev_0132_HiSeq4000_AURA</p>
+
+            <div class="row placeholders">
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                    <h4 class="section_header">Gender</h4>
+                    <!---->
+                    <!---->
+                    <!---->
+                    <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
+                    <!---->
+                </div>
+            </div>
+            <div class="space_30px"></div>
+
+            <div class="table-responsive">
+                <h1>Detailed variant analysis</h1>
+                <table class="table table-striped report_table static_report">
+                    <thead>
+                        <tr class="top_row_tr">
+                            <th class="top_left_td left_column_td">Gene & Transcript</th>
+                            <th class="second_through_last_col_headers_td">Variant</th>
+                            <th class="second_through_last_col_headers_td">Allele</th>
+                            <th class="second_through_last_col_headers_td">Genomic Pos.</th>
+                            <th class="second_through_last_col_headers_td">Depth</th>
+                            <th class="second_through_last_col_headers_td">Frequency</th>
+                            <th class="second_through_last_col_headers_td">AA length</th>
+                            <th class="second_through_last_col_headers_td">ID</th>
+                            <th class="second_through_last_col_headers_td">Type</th>
+                            <th class="second_through_last_col_headers_td">Classification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-responsive">
+                <h1>Coverage analysis</h1>
+                <table class="table table-striped report_table static_report">
+                    <thead>
+                        <tr class="top_row_tr">
+                            <th class="top_left_td left_column_td">Gene</th>
+                            <th class="second_through_last_col_headers_td">Mean coverage</th>
+                            <th class="second_through_last_col_headers_td">% covered at 50x</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+    </div>
+</div>
+</body>
+</html>

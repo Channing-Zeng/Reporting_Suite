@@ -1,10 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" type="text/css" href="/static/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/common.css" />
+    <link rel="stylesheet" type="text/css" href="/static/report.css" />
 </head>
-<body>
 
+<body>
+<div class="content">
+    <div id='report'>
+        {.section general}
+            <h1 class="report-header">{project_name}</h1>
+            <p>Sample: {sample}</p>
+            <p>Sex: {sex}</p>
+
+            <div class="row placeholders">
+                <div class="col-xs-6 col-sm-3 placeholder">
+                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                    <h4 class="section_header">Gender</h4>
+                    <!--{.section basecalls}-->
+                    <!--<span class="text-muted">{contents}<br></span>-->
+                    <!--{.end}-->
+                    <!--{.section raw_fastqc}-->
+                    <!--<span class="text-muted">{contents}<br></span>-->
+                    <!--{.end}-->
+                    <!--{.section fastqc}-->
+                    <!--<span class="text-muted">{contents}</span>-->
+                    <!--{.or}-->
+                    <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
+                    <!--{.end}-->
+                </div>
+            </div>
+            <div class="space_30px"></div>
+        {.end}
+
+        {.section variants}
+            <div class="table-responsive">
+                <h1>Detailed variant analysis</h1>
+                <table class="table table-striped report_table static_report">
+                    <thead>
+                        <tr class="top_row_tr">
+                            <th class="top_left_td left_column_td">{first_col_header}</th>
+                            {.repeated section metric_names}
+                            <th class="second_through_last_col_headers_td">{@}</th>
+                            {.end}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {.repeated section report_rows}
+                            <tr>
+                                <td class="left_column_td">{first_col}</td>
+                                {.repeated section records}
+                                    <td class="td">{@}</td>
+                                {.end}
+                            </tr>
+                        {.end}
+                    </tbody>
+                </table>
+            </div>
+        {.end}
+
+        {.section coverage}
+            <div class="table-responsive">
+                <h1>Coverage analysis</h1>
+                <table class="table table-striped report_table static_report">
+                    <thead>
+                        <tr class="top_row_tr">
+                            <th class="top_left_td left_column_td">{first_col_header}</th>
+                            {.repeated section metric_names}
+                            <th class="second_through_last_col_headers_td">{@}</th>
+                            {.end}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {.repeated section report_rows}
+                            <tr>
+                                <td class="left_column_td">{first_col}</td>
+                                {.repeated section records}
+                                    <td class="td">{@}</td>
+                                {.end}
+                            </tr>
+                        {.end}
+                    </tbody>
+                </table>
+            </div>
+        {.end}
+    </div>
+</div>
 </body>
 </html>

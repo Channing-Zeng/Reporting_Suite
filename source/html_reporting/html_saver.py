@@ -576,8 +576,9 @@ def _insert_into_html(html, text, keyword):
     return html
 
 
-def _write_static_html_report(work_dir, data_dict, html_fpath):
-    with open(static_template_fpath) as f:
+def write_static_html_report(work_dir, data_dict, html_fpath, tmpl_fpath=None):
+    tmpl_fpath = tmpl_fpath or static_template_fpath
+    with open(tmpl_fpath) as f:
         html = f.read()
 
     html = jsontemplate.expand(html, data_dict)

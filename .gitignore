@@ -67,7 +67,6 @@ test/NGS-99-update__only_reports
 test/html_reports/NGS-99-update__only_reports
 test/html_reports/EXT_021_Courtagen_Faslodex_HaloPlex__only_reports
 test/html_reports/TS_0023_TGEN_DLBCL__only_reports
-test/html_reports/TS_0023_TGEN_DLBCL__only_reports
 test/bcbio
 test/dropbox
 

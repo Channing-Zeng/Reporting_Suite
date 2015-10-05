@@ -1,18 +1,20 @@
 from collections import OrderedDict
 from json import load, dump, JSONEncoder, dumps
+import os
+from os.path import join, islink, dirname, abspath
 
 import source
 from source import verify_file, info
 from source.file_utils import add_suffix
+from source.file_utils import adjust_path
+from source.html_reporting.html_saver import write_static_html_report
 from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 
 
-def make_key_genes_reports(cnf, sample, key_gene_names):
+def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     info('Preparing coverage stats key gene tables')
-
-    ave_depth = get_ave_coverage(sample, sample.targetcov_json_fpath)
 
     depth_cutoff = get_depth_cutoff(ave_depth, cnf.coverage_reports.depth_thresholds)
 
@@ -48,6 +50,24 @@ def make_key_genes_reports(cnf, sample, key_gene_names):
     return key_genes_report
 
 
+def get_target_fraction(sample, targqc_json_fpath):
+    with open(targqc_json_fpath) as f:
+        data = load(f, object_pairs_hook=OrderedDict)
+    sr = SampleReport.load(data, sample, None)
+    r = sr.find_record(sr.records, 'Percentage of target covered by at least 1 read')
+    if not r:
+        r = sr.find_record(sr.records, 'Percentage of genome covered by at least 1 read')
+    return r.value if r else None
+
+
+def get_gender(sample, targqc_json_fpath):
+    with open(targqc_json_fpath) as f:
+        data = load(f, object_pairs_hook=OrderedDict)
+    sr = SampleReport.load(data, sample, None)
+    r = sr.find_record(sr.records, 'Gender')
+    return r.value if r else None
+
+
 def get_ave_coverage(sample, targqc_json_fpath):
     with open(targqc_json_fpath) as f:
         data = load(f, object_pairs_hook=OrderedDict)
@@ -55,7 +75,15 @@ def get_ave_coverage(sample, targqc_json_fpath):
     r = sr.find_record(sr.records, 'Average target coverage depth')
     if not r:
         r = sr.find_record(sr.records, 'Average genome coverage depth')
-    return r.value
+    return r.value if r else None
+
+
+def get_total_variants_number(sample, varqc_json_fpath):
+    with open(varqc_json_fpath) as f:
+        data = load(f, object_pairs_hook=OrderedDict)
+    sr = SampleReport.load(data, sample, None)
+    r = sr.find_record(sr.records, 'Total variants')
+    return r.value if r else None
 
 
 def is_sample_presents_in_file(sample_name, mutations_fpath):
@@ -135,3 +163,113 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('-' * 70)
     info()
     return report
+
+
+def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
+                              ave_depth, target_frac, gender, total_variants, total_key_genes):
+    # metric name in FullReport --> metric name in Static HTML
+    # metric_names = OrderedDict([
+    #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
+    #     (BCBioStructure.fastqc_repr, 'FastQC'),
+    #     # ('BAM', 'BAM'),
+    #     (BCBioStructure.targqc_repr, 'SeqQC'),
+    #     # ('Downsampled ' + BCBioStructure.targqc_repr, 'Downsampled SeqQC'),
+    #     # ('Mutations', 'Mutations'),
+    #     # ('Mutations for separate samples', 'Mutations for separate samples'),
+    #     # ('Mutations for paired samples', 'Mutations for paired samples'),
+    #     (BCBioStructure.varqc_repr, 'VarQC'),
+    #     (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
+
+    def __process_record(rec, short=False):
+        d = rec.__dict__.copy()
+
+        if isinstance(rec.html_fpath, basestring):
+            d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
+
+        elif isinstance(rec.html_fpath, dict):
+            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
+            if not short:
+                d['contents'] = rec.metric.name + ': ' + d['contents']
+
+        else:
+            d['contents'] = '-'
+
+        d['metric'] = rec.metric.__dict__
+        return d
+
+    def _get_summary_report_name(rec):
+        return rec.value.lower().replace(' ', '_')
+
+    # common records (summary reports)
+    general_dict = dict()
+    general_dict['project_name'] = cnf.project_name
+    general_dict['sample'] = sample.name
+    general_dict['sex'] = cnf.project_name
+    general_dict['project_name'] = cnf.project_name
+
+    mutations_dict = dict()
+    mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
+    mutations_dict['metric_names'] = [m.name for m in mutations_report.metric_storage.get_metrics()[1:]]
+
+    mutations_dict['rows'] = [dict(first_col=region.records[0], records=region.records[1:])
+        for region in mutations_report.regions]
+
+    coverage_dict = dict()
+    coverage_dict['first_col_header'] = coverage_report.metric_storage.get_metrics()[0].name
+    coverage_dict['metric_names'] = [m.name for m in coverage_report.metric_storage.get_metrics()[1:]]
+    coverage_dict['rows'] = [dict(first_col=region.records[0], records=region.records[1:])
+        for region in coverage_report.regions]
+
+    # if full_report.sample_reports:
+    #     # individual records
+    #     main_dict = dict()
+    #     main_dict["sample_reports"] = []
+    #
+    #     metrics = metric_storage.get_metrics(skip_general_section=True)
+    #     metrics_with_values_set = set()
+    #     for sample_report in full_report.sample_reports:
+    #         for m in metric_storage.get_metrics(skip_general_section=True):
+    #             r = next((r for r in sample_report.records if r.metric.name == m.name), None)
+    #             if r:
+    #                 metrics_with_values_set.add(m)
+    #
+    #     metrics = [m for m in metrics if m in metrics_with_values_set]
+    #     main_dict['metric_names'] = [m.name for m in metrics]
+    #
+    #     for sample_report in full_report.sample_reports:
+    #         ready_records = []
+    #         for m in metrics:
+    #             r = next((r for r in sample_report.records if r.metric.name == m.name), None)
+    #             if r:
+    #                 ready_records.append(__process_record(r, short=True))
+    #             else:
+    #                 ready_records.append(__process_record(Record(metric=m, value=None), short=True))
+    #         assert len(ready_records) == len(main_dict["metric_names"])
+    #
+    #         sample_report_dict = dict()
+    #         sample_report_dict["records"] = ready_records
+    #         sample_report_dict["sample_name"] = sample_report.get_display_name()
+    #         main_dict["sample_reports"].append(sample_report_dict)
+    #
+    # regions_dict = dict()
+
+    sample.clinical_html = write_static_html_report(cnf.work_dir, {
+        'general': general_dict,
+        'variants': mutations_dict,
+        'coverage': coverage_dict,
+    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
+
+    clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
+    if islink(clin_rep_symlink):
+        os.unlink(clin_rep_symlink)
+    os.symlink(sample.clinical_html, clin_rep_symlink)
+
+    info('Saved clinical report to ' + clin_rep_symlink)
+    info('-' * 70)
+    info()
+    return clin_rep_symlink
+
+
+
+
+

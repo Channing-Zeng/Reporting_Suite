@@ -5,7 +5,8 @@ import sys
 import shutil
 
 from source import BaseSample, info, verify_file
-from source.clinical_reporting.clinical_reporting import make_key_genes_reports, make_mutations_report
+from source.clinical_reporting.clinical_reporting import make_key_gene_cov_report, make_mutations_report, \
+    make_clinical_html_report, get_target_fraction, get_ave_coverage, get_gender, get_total_variants_number
 from source.prepare_args_and_cnf import check_system_resources
 from source.main import read_opts_and_cnfs
 
@@ -19,8 +20,15 @@ def main(args):
             (['--mutations'], dict(
                 dest='mutations_fpath',
             )),
+            (['--varqc'], dict(
+                dest='varqc_json_fpath',
+            )),
+            (['--varqc-after'], dict(
+                dest='varqc_after_json_fpath',
+            )),
         ],
-        required_keys=['targqc_dirpath', 'mutations_fpath'],
+        required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath'],
+        file_keys=['mutations_fpath', 'varqc_json_fpath', 'varqc_after_json_fpath'],
         dir_keys=['targqc_dirpath'],
         key_for_sample_name=None
     )
@@ -37,11 +45,19 @@ def main(args):
     with open(cnf.key_genes) as f:
         key_gene_names = set([l.strip() for l in f.readlines()])
 
-    key_genes_report = make_key_genes_reports(cnf, sample, key_gene_names)
+    ave_depth = get_ave_coverage(sample, sample.targetcov_json_fpath)
+    target_frac = get_target_fraction(sample, sample.targetcov_json_fpath)
+    gender = get_gender(sample, sample.targetcov_json_fpath)
+    total_variants = get_total_variants_number(sample, cnf.varqc_json_fpath)
 
+    key_genes_report = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
     mutations_report = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
 
-    _finalize_all(key_genes_report, mutations_report)
+    html_fpath = make_clinical_html_report(
+        cnf, sample, key_genes_report, mutations_report,
+        ave_depth, target_frac, gender, total_variants, len(key_gene_names))
+
+    info('Clinical report: ' + html_fpath)
 
     '''
     TODO:
@@ -52,14 +68,6 @@ def main(args):
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
-
-
-def _finalize_all(key_genes_report, mutations_report):
-    if key_genes_report and key_genes_report.tsv_fpath:
-        info('Coverage stats: ' + key_genes_report.tsv_fpath)
-
-    if mutations_report and mutations_report.tsv_fpath:
-        info('Mutations stats: ' + mutations_report.tsv_fpath)
 
 
 if __name__ == '__main__':

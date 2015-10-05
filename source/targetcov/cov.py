@@ -347,7 +347,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     report.add_record('Genes in target', target_info.genes_num)
 
-    trg_name = 'target' if target_info.bed else 'genome'
+    trg_type = 'target' if target_info.bed else 'genome'
 
     if 'bases_within_threshs' in depth_stats:
         bases_within_threshs = depth_stats['bases_within_threshs']
@@ -355,8 +355,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         v_percent_covered_bases_in_targ = 1.0 * (v_covered_bases_in_targ or 0) / target_info.bases_num if target_info.bases_num else None
         assert v_percent_covered_bases_in_targ <= 1.0 or v_percent_covered_bases_in_targ is None, str(v_percent_covered_bases_in_targ)
 
-        report.add_record('Covered bases in ' + trg_name, v_covered_bases_in_targ)
-        report.add_record('Percentage of ' + trg_name + ' covered by at least 1 read', v_percent_covered_bases_in_targ)
+        report.add_record('Covered bases in ' + trg_type, v_covered_bases_in_targ)
+        report.add_record('Percentage of ' + trg_type + ' covered by at least 1 read', v_percent_covered_bases_in_targ)
 
     if target_info.bed:
         info('Getting number of mapped reads on target...')
@@ -387,16 +387,16 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         report.add_record('Percentage of reads mapped off exome ', percent_mapped_off_exome)
 
     info('')
-    report.add_record('Average ' + trg_name + ' coverage depth', depth_stats['ave_depth'])
-    report.add_record('Std. dev. of ' + trg_name + ' coverage depth', depth_stats['stddev_depth'])
-    report.add_record('Maximum ' + trg_name + ' coverage depth', depth_stats['max_depth'])
-    report.add_record('Percentage of ' + trg_name + ' within 20% of mean depth', depth_stats['wn_20_percent'])
+    report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])
+    report.add_record('Std. dev. of ' + trg_type + ' coverage depth', depth_stats['stddev_depth'])
+    report.add_record('Maximum ' + trg_type + ' coverage depth', depth_stats['max_depth'])
+    report.add_record('Percentage of ' + trg_type + ' within 20% of mean depth', depth_stats['wn_20_percent'])
     assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
 
     for depth, bases in depth_stats['bases_within_threshs'].items():
         percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
         if percent_val > 0:
-            report.add_record('Part of ' + trg_name + ' covered at least by ' + str(depth) + 'x', percent_val)
+            report.add_record('Part of ' + trg_type + ' covered at least by ' + str(depth) + 'x', percent_val)
         assert percent_val <= 1.0 or percent_val is None, str(percent_val)
     info()
 
