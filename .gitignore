@@ -52,17 +52,18 @@ test/data/big
 test/results_*
 
 # Bcbio tests
-test/**/vardict
-test/**/qc
-test/**/varQC
-test/**/targetSeq
-test/**/varFilter
-test/**/*.anno.filt.*
+#test/**/vardict
+#test/**/qc
+#test/**/varQC
+#test/**/targetSeq
+#test/**/varFilter
+#test/**/*.anno.filt.*
 test/**/scripts/*.map
-test/**/2014-*
+#test/**/2014-*
 
-test/*.maf
-test/*.vcf
+#test/*.maf
+#test/*.vcf
+test/NGS-99-update__only_reports
 test/dropbox
 
 test/targqc_on_bams_test/
