@@ -338,6 +338,7 @@ class BCBioRunner:
                ' --targqc-dir ' + join(self.final_dir, '{sample}', BCBioStructure.targqc_dir) +
                ' --mutations ' + mutations_fpath + ' -s {sample}' +
                ' --varqc {varqc}' +
+               ' --seq2c ' + join(self.final_dir, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv') +
                ' -s {sample} -o {output_dir} ' +
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
 

@@ -1,16 +1,17 @@
 from collections import OrderedDict
 from json import load, dump, JSONEncoder, dumps
 import os
-from os.path import join, islink, dirname, abspath
+from os.path import join, islink, dirname, abspath, relpath
 
 import source
 from source import verify_file, info
-from source.file_utils import add_suffix
+from source.file_utils import add_suffix, verify_module
 from source.file_utils import adjust_path
 from source.html_reporting.html_saver import write_static_html_report
 from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
+from tools import seq2c_plots
 
 
 def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
@@ -30,11 +31,26 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
                             stats_by_genename[gene_name] = get_float_val(fs[9]), get_float_val(field)
                             continue
 
-    clinical_cov_metric_storage = MetricStorage(
-        sections=[ReportSection(metrics=[
+    clinical_cov_metrics = [
             Metric('Gene'),
             Metric('Mean coverage'),
-            Metric('% covered at {}x'.format(depth_cutoff), unit='%')])])
+            Metric('% covered at {}x'.format(depth_cutoff), unit='%')]
+    seq2c_tsv = cnf.seq2c_tsv_fpath
+    seq2c_data_by_genename = dict()
+    if verify_file(seq2c_tsv, silent=True):
+        with open(seq2c_tsv) as f_inp:
+            for i, l in enumerate(f_inp):
+                if i == 0:
+                    continue
+                fs = l.strip().split('\t')
+                gene_name = fs[1]
+                if fs[0] == sample.name and gene_name in key_gene_names and fs[9] in ['Del', 'Amp']:
+                    seq2c_data_by_genename[gene_name] = fs[9] + ',' + fs[8]
+        if seq2c_data_by_genename:
+            clinical_cov_metrics.append(Metric('SNV'))
+
+    clinical_cov_metric_storage = MetricStorage(
+        sections=[ReportSection(metrics=clinical_cov_metrics)])
     key_genes_report = PerRegionSampleReport(sample=sample, metric_storage=clinical_cov_metric_storage)
     for gene_name in key_gene_names:
         ave_cov, depth_in_thresh = stats_by_genename.get(gene_name, (None, None))
@@ -42,6 +58,8 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
         reg.add_record('Gene', gene_name)
         reg.add_record('Mean coverage', ave_cov)
         reg.add_record('% covered at {}x'.format(depth_cutoff), depth_in_thresh)
+        if seq2c_data_by_genename:
+            reg.add_record('SNV', seq2c_data_by_genename[gene_name] if gene_name in seq2c_data_by_genename else '')
 
     key_genes_report.save_tsv(sample.clinical_targqc_tsv, human_readable=True)
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
@@ -168,7 +186,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
 
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
-                              ave_depth, target_frac, gender, total_variants, total_key_genes):
+                              ave_depth, target_frac, gender, total_variants, total_key_genes, key_gene_names):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -206,7 +224,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     general_dict = dict()
     general_dict['project_name'] = cnf.project_name
     general_dict['sample'] = sample.name
-    general_dict['sex'] = cnf.project_name
+    general_dict['sex'] = gender
     general_dict['project_name'] = cnf.project_name
 
     mutations_dict = dict()
@@ -258,11 +276,19 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     #
     # regions_dict = dict()
 
+    if cnf.seq2c_tsv_fpath:
+        if verify_module('matplotlib'):
+            seq2c_plot_fpath = seq2c_plots._draw_seq2c_plot(cnf, key_gene_names)
+        else:
+            seq2c_plot_fpath = None
+        plots = [relpath(seq2c_plot_fpath, cnf.output_dir)]
+    else:
+        plots = None
     sample.clinical_html = write_static_html_report(cnf.work_dir, {
         'general': general_dict,
         'variants': mutations_dict,
         'coverage': coverage_dict,
-    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
+    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'), plots=plots)
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
     # if islink(clin_rep_symlink):

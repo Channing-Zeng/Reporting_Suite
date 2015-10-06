@@ -10,6 +10,7 @@ from source.copy_number import cnv_reports
 from source.logger import info
 from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.tools_from_cnf import get_script_cmdline, get_system_path
+from tools import seq2c_plots
 
 
 def main():

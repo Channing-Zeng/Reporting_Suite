@@ -186,7 +186,12 @@ table.draggable {
   column-count: 4;
   -moz-column-count: 4;
   -webkit-column-count: 4; }
-  .clinical_report .multi-col-layout tr td.right_column_td {
+
+.clinical_report .multi-col-layout tr td.right_column_td {
     border-right: 1px solid #bbb; }
+
+.cnv_plot img {
+  max-width: 90%;
+}
 
 /*# sourceMappingURL=report.css.map */

@@ -26,9 +26,12 @@ def main(args):
             (['--varqc-after'], dict(
                 dest='varqc_after_json_fpath',
             )),
+            (['--seq2c'], dict(
+                dest='seq2c_tsv_fpath',
+            )),
         ],
         required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath'],
-        file_keys=['mutations_fpath', 'varqc_json_fpath', 'varqc_after_json_fpath'],
+        file_keys=['varqc_json_fpath', 'varqc_after_json_fpath'],
         dir_keys=['targqc_dirpath'],
         key_for_sample_name=None
     )
@@ -43,7 +46,7 @@ def main(args):
     info('Building clinical report for AZ 300 key genes ' + str(cnf.key_genes))
     cnf.key_genes = verify_file(cnf.key_genes, is_critical=True, description='300 AZ key genes')
     with open(cnf.key_genes) as f:
-        key_gene_names = set([l.strip() for l in f.readlines()])
+        key_gene_names = set([l.strip() for l in f.readlines() if l.strip() != ''])
 
     ave_depth = get_ave_coverage(sample, sample.targetcov_json_fpath)
     target_frac = get_target_fraction(sample, sample.targetcov_json_fpath)
@@ -55,7 +58,7 @@ def main(args):
 
     html_fpath = make_clinical_html_report(
         cnf, sample, key_genes_report, mutations_report,
-        ave_depth, target_frac, gender, total_variants, len(key_gene_names))
+        ave_depth, target_frac, gender, total_variants, len(key_gene_names), key_gene_names)
 
     info('Clinical report: ' + html_fpath)
 
