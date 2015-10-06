@@ -645,16 +645,16 @@ def _verify_sample_info(vcf_conf, vcf_header_samples):
 
 
 def remove_prev_eff_annotation(cnf, input_fpath):
-    field_to_del = 'EFF'
+    fields_to_del = ['EFF', 'ANN']
 
     def proc_line(l, i):
         if l.startswith('##SnpEff'):
             return None
 
-        elif field_to_del in l:
+        elif any(f in l for f in fields_to_del):
             if l.startswith('##INFO='):
                 try:
-                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] == field_to_del:
+                    if l.split('=', 1)[1].split(',', 1)[0].split('=')[1] in fields_to_del:
                         return None
                 except IndexError:
                     critical('Incorrect VCF at line: ' + l)
@@ -663,14 +663,14 @@ def remove_prev_eff_annotation(cnf, input_fpath):
                 fields = l.split('\t')
                 info_line = fields[7]
                 info_pairs = [attr.split('=') for attr in info_line.split(';')]
-                info_pairs = filter(lambda pair: pair[0] != field_to_del, info_pairs)
-                info_line = ';'.join('='.join(pair) if len(pair) == 2 and pair[0] != field_to_del
+                info_pairs = filter(lambda pair: pair[0] not in fields_to_del, info_pairs)
+                info_line = ';'.join('='.join(pair) if len(pair) == 2 and pair[0] not in fields_to_del
                                      else pair[0] for pair in info_pairs)
                 fields = fields[:7] + [info_line] + fields[8:]
                 return '\t'.join(fields)
         return l
 
-    return iterate_file(cnf, input_fpath, proc_line, suffix='no_' + field_to_del.lower())
+    return iterate_file(cnf, input_fpath, proc_line, suffix='noEFF')
 
 
 def igvtools_index(cnf, vcf_fpath):
