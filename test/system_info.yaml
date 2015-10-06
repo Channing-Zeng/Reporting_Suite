@@ -30,7 +30,7 @@ resources:
 
 
 genomes:
-  hg19:
+  hg19-chr21:
     seq: ~/Dropbox/az/reference_data/chr21.fa
 
     dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf
@@ -42,6 +42,10 @@ genomes:
 
     exons: ~/Dropbox/az/reference_data/Exons/Exons.with_genes.chr21.bed
     az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
+
+  hg19:
+    seq: ~/Dropbox/az/reference_data/hg19.fa
+
 
 key_genes: ~/Dropbox/az/reference_data/az_key_genes.txt
 
