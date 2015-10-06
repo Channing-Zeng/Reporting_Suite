@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr'),
+        Metric('Chr', with_heatmap=False),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -59,7 +59,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
         chrom, gene_ave_depth, depth_in_thresh = stats_by_genename.get(gene_name, (None, None, None))
         reg = key_genes_report.add_region()
         reg.add_record('Gene', gene_name)
-        reg.add_record('Chr', chrom.replace('chr', '') if chrom else None, parse=False)
+        reg.add_record('Chr', chrom.replace('chr', '') if chrom else None)
         reg.add_record('Ave depth', gene_ave_depth)
         m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(depth_cutoff))
         reg.add_record(m.name, depth_in_thresh)
@@ -138,7 +138,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('Transcript'),  # Gene & Transcript
             Metric('Variant'),            # c.244G>A, p.Glu82Lys
             # Metric('Allele'),             # Het.
-            Metric('Chr'),       # chr11
+            Metric('Chr', with_heatmap=False, align='right'),       # chr11
             Metric('Position'),       # g.47364249
             Metric('Change'),       # G>A
             Metric('Depth'),              # 658
@@ -188,7 +188,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Transcript', transcript)
                 reg.add_record('Variant', codon_change + (' p.' + aa_change if aa_change else ''))
                 # reg.add_record('Allele', allele_record)
-                reg.add_record('Chr', chrom.replace('chr', '') if chrom else None, parse=False)
+                reg.add_record('Chr', chrom.replace('chr', '') if chrom else None)
                 reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
                 reg.add_record('Change', ref + '>' + alt)
                 reg.add_record('Depth', depth)

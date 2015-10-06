@@ -130,6 +130,7 @@ class Metric:
             bottom=None,
             is_hidden=False,
             with_heatmap=True,
+            align=None,
 
             numbers=None,
             values=None,
@@ -151,6 +152,7 @@ class Metric:
         self.bottom = bottom
         self.is_hidden = is_hidden
         self.with_heatmap = with_heatmap
+        self.align = align
 
         self.numbers = []
         self.values = []
@@ -916,8 +918,11 @@ def make_cell_td(rec, td_classes=''):
         html += "\n<td>-</td>"
         return html
 
-    html += '\n<td metric="' + rec.metric.name + '" style="background-color: ' + rec.color + '; color: ' + rec.text_color + \
-            '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' '
+    html += ('\n<td metric="' + rec.metric.name +
+             '" style="background-color: ' + rec.color + '; color: ' + rec.text_color)
+    if rec.metric.align:
+        html += '; text-align: ' + rec.metric.align
+    html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' '
     if rec.num:
         html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value) + '">'
     else:
@@ -944,8 +949,8 @@ def make_cell_td(rec, td_classes=''):
                 html += rec.cell_contents + '(' + caller_links + ')</td>'
 
     else:
-        html += '<a style="' + str(padding_style) + '" ' + \
-                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</a></td>'
+        html += '<span style="' + str(padding_style) + '" ' + \
+                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</span></td>'
     return html
 
 
@@ -1066,7 +1071,8 @@ def __get_meta_tag_contents(rec):
     #
     #         return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\" title=\"#{meta_table}\""
     # else
-    return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
+    return ''
+    # return "class=\"meta_info_span tooltip-meta\" rel=\"tooltip\""
 
 
 def _calc_record_cell_contents(rec):
@@ -1337,6 +1343,7 @@ def _embed_css_and_scripts(html):
             (js_line_tmpl, js_files, js_l_tag, js_r_tag),
             (css_line_tmpl, css_files, css_l_tag, css_r_tag)]:
         for rel_fpath in files:
+            info('Embedding ' + rel_fpath + '...')
             with open(join(static_dirpath, join(*rel_fpath.split('/')))) as f:
                 contents = f.read()
                 contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
