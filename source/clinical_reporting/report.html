@@ -14,30 +14,54 @@
 <body>
 <div class="content">
     <div id='report' class="clinical_report">
-        {.section general}
-            <h1 class="report-header">{project_name}</h1>
-            <p>Sample: {sample}</p>
-            <p>Sex: {sex}</p>
+        <div id='header'></div>
 
-            <div class="row placeholders">
-                <div class="col-xs-6 col-sm-3 placeholder">
-                    <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                    <h4 class="section_header">Gender</h4>
-                    <!--{.section basecalls}-->
-                    <!--<span class="text-muted">{contents}<br></span>-->
-                    <!--{.end}-->
-                    <!--{.section raw_fastqc}-->
-                    <!--<span class="text-muted">{contents}<br></span>-->
-                    <!--{.end}-->
-                    <!--{.section fastqc}-->
-                    <!--<span class="text-muted">{contents}</span>-->
-                    <!--{.or}-->
-                    <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
-                    <!--{.end}-->
-                </div>
+        <div style="width: 1127px">
+            <div style="float: left; margin-right: 50px;">
+            {.section sample}
+                <h1 class="report-header">{sample}</h1>
+                <p><b>Project:</b> {project_name}</p>
+                <p><b>Sex:</b> {sex}</p>
+                <p><b>Genome reference:</b> {genome_build}</p>
+
+                <!--<div class="row placeholders">-->
+                    <!--<div class="col-xs-6 col-sm-3 placeholder">-->
+                        <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                        <!--<h4 class="section_header">Gender</h4>-->
+                        <!--{.section basecalls}-->
+                        <!--<span class="text-muted">{contents}<br></span>-->
+                        <!--{.end}-->
+                        <!--{.section raw_fastqc}-->
+                        <!--<span class="text-muted">{contents}<br></span>-->
+                        <!--{.end}-->
+                        <!--{.section fastqc}-->
+                        <!--<span class="text-muted">{contents}</span>-->
+                        <!--{.or}-->
+                        <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
+                        <!--{.end}-->
+                    <!--</div>-->
+                <!--</div>-->
+                <div class="space_30px"></div>
+            {.end}
             </div>
-            <div class="space_30px"></div>
-        {.end}
+
+            <div style="float: right">
+            {.section approach}
+                <h1 class="report-header">Approach</h1>
+                <p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's {target_type} was performed and covered {target_fraction}
+                    of all positions at {min_depth} minimal and {ave_depth} average coverage,
+                    resulting in {total_variants} variants compared to a reference genome.
+                    These data were analyzed to identify previously reported and novel variants
+                    in {total_key_genes} genes that have been previously implicated
+                    in various cancers (see Supplement for a list of genes and coverage information).
+                    <!--All genes relevant to the indication had adequate coverage (>95% at 8X).-->
+                    <!--Please note that the presence of pathogenic variants in genes not analyzed-->
+                    <!--or with incomplete coverage cannot be fully excluded.-->
+                </p>
+            {.end}
+            </div>
+            <div style="clear: both"></div>
+        </div>
 
         {.section variants}
             <div class="table-responsive">
@@ -45,18 +69,16 @@
                 <table class="table table-striped report_table static_report">
                     <thead>
                         <tr class="top_row_tr">
-                            <th class="top_left_td left_column_td">{first_col_header}</th>
                             {.repeated section metric_names}
-                            <th class="second_through_last_col_headers_td">{@}</th>
+                                <th class="">{@}</th>
                             {.end}
                         </tr>
                     </thead>
                     <tbody>
                         {.repeated section rows}
                             <tr>
-                                <td class="left_column_td long_line"><span>{first_col}</span></td>
                                 {.repeated section records}
-                                    <td class="td long_line"><span>{@}</span></td>
+                                    {@}
                                 {.end}
                             </tr>
                         {.end}
@@ -68,28 +90,29 @@
         {.section coverage}
             <div class="table-responsive">
                 <h1>Coverage analysis</h1>
-                <div class="multi-col-layout">
-                <table class="table table-striped report_table static_report">
-                    <thead>
-                        <tr class="top_row_tr">
-                            <th class="top_left_td left_column_td">{first_col_header}</th>
-                            {.repeated section metric_names}
-                            <th class="second_through_last_col_headers_td">{@}</th>
-                            {.end}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {.repeated section rows}
-                            <tr>
-                                <td class="left_column_td long_line"><span>{first_col}</span></td>
-                                {.repeated section records}
-                                <td class="td long_line"><span>{@}</span></td>
+                <!--<div class="multi-col-layout">-->
+                {.repeated section columns}
+                    <table class="table table-striped report_table static_report" style="float: left; margin-right: 70px;">
+                        <thead>
+                            <tr class="top_row_tr">
+                                {.repeated section metric_names}
+                                    <th class="">{@}</th>
                                 {.end}
                             </tr>
-                        {.end}
-                    </tbody>
-                </table>
-                </div>
+                        </thead>
+                        <tbody>
+                            {.repeated section rows}
+                                <tr>
+                                    {.repeated section records}
+                                        {@}
+                                    {.end}
+                                </tr>
+                            {.end}
+                        </tbody>
+                    </table>
+                {.end}
+                <!--</div>-->
+                <div style="clear: both"></div>
             </div>
         {.end}
     </div>
