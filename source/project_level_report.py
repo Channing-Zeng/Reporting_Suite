@@ -27,6 +27,7 @@ MUTATIONS_NAME        = 'Mutations'
 MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
 MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
 GENDER                = 'Gender'
+CLINICAL_NAME         = 'Clinical report'
 
 
 metric_storage = MetricStorage(
@@ -52,6 +53,7 @@ metric_storage = MetricStorage(
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
         Metric(GENDER),
+        Metric(CLINICAL_NAME),
     ])])
 
 
@@ -206,17 +208,24 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)])
             varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
             varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-            if verify_file(s.targetcov_json_fpath):
-                targqc_json = json.loads(open(s.targetcov_json_fpath).read(),object_pairs_hook=OrderedDict)
-                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
-                gender = sample_report.find_record(sample_report.records, 'Gender').value
+
             sample_reports_records[s.name].extend([
                 _make_path_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
                 _make_path_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
                 _make_path_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
                 _make_path_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
-                Record(metric=individual_reports_section.find_metric(GENDER), value=gender) if gender else None,
             ])
+
+            if s.clinical_html:
+                sample_reports_records[s.name].append(_make_path_record(s.clinical_html,
+                    individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath))
+
+            if verify_file(s.targetcov_json_fpath):
+                targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
+                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
+                gender_rec = sample_report.find_record(sample_report.records, GENDER)
+                if gender_rec:
+                    sample_reports_records[s.name].append(gender_rec)
 
     # for (repr_name, links_by_sample) in to_add:
     #     cur_metric = Metric(repr_name)

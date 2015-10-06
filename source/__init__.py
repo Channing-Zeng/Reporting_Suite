@@ -34,6 +34,8 @@ qualimap_repr            = 'Qualimap'
 targqc_repr              = 'Target QC'
 fastqc_repr              = 'FastQC'
 
+clinreport_name = clinreport_dir = 'clinicalReport'
+
 seq2c_name               = 'Seq2C'
 seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
 

@@ -118,7 +118,7 @@ def finalize_one(cnf, anno_vcf_fpath):
         info('Saved final VCF to ' + anno_vcf_fpath)
 
         if is_gz(anno_vcf_fpath):
-            info(anno_vcf_fpath + ' is in correct gzip format')
+            # info(anno_vcf_fpath + ' is in correct gzip format')
             open_gzipsafe(anno_vcf_fpath)
         else:
             warn('Not a gzip:' + anno_vcf_fpath)

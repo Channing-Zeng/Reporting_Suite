@@ -15,7 +15,6 @@ status=$?
 
 if [ "${status}" -ne 0 ]; then
     exit 1
-else
 fi
 
 #cat ${err}

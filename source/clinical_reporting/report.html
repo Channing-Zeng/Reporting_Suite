@@ -6,11 +6,14 @@
     <link rel="stylesheet" type="text/css" href="/static/bootstrap/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="/static/common.css" />
     <link rel="stylesheet" type="text/css" href="/static/report.css" />
+    <link rel="stylesheet" type="text/css" href="/static/scripts/utils.js" />
+    <script type="text/javascript" src="/static/bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="/static/scripts/static_report.js"></script>
 </head>
 
 <body>
 <div class="content">
-    <div id='report'>
+    <div id='report' class="clinical_report">
         {.section general}
             <h1 class="report-header">{project_name}</h1>
             <p>Sample: {sample}</p>
@@ -49,11 +52,11 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {.repeated section report_rows}
+                        {.repeated section rows}
                             <tr>
-                                <td class="left_column_td">{first_col}</td>
+                                <td class="left_column_td long_line"><span>{first_col}</span></td>
                                 {.repeated section records}
-                                    <td class="td">{@}</td>
+                                    <td class="td long_line"><span>{@}</span></td>
                                 {.end}
                             </tr>
                         {.end}
@@ -65,6 +68,7 @@
         {.section coverage}
             <div class="table-responsive">
                 <h1>Coverage analysis</h1>
+                <div class="multi-col-layout">
                 <table class="table table-striped report_table static_report">
                     <thead>
                         <tr class="top_row_tr">
@@ -75,16 +79,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {.repeated section report_rows}
+                        {.repeated section rows}
                             <tr>
-                                <td class="left_column_td">{first_col}</td>
+                                <td class="left_column_td long_line"><span>{first_col}</span></td>
                                 {.repeated section records}
-                                    <td class="td">{@}</td>
+                                <td class="td long_line"><span>{@}</span></td>
                                 {.end}
                             </tr>
                         {.end}
                     </tbody>
                 </table>
+                </div>
             </div>
         {.end}
     </div>

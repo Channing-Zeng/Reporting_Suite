@@ -328,21 +328,27 @@ class BCBioRunner:
             paramln=varfilter_paramline
         )
 
-        vardict_txt_fname = source.mut_fname_template.format(caller_name='vardict')
-        vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
-        mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
-        clinreport_paramline = params_for_one_sample + ' --targqc-dir ' + join(self.final_dir, '{sample}', BCBioStructure.targqc_dir) \
-                               + ' --mutations ' + mutations_fpath + ' -s \'{sample}\'' \
-                               + ' -o \'{output_dir}\''
+        self.clinical_report_caller = self.bcbio_structure.variant_callers.get('vardict') or \
+                                 self.bcbio_structure.variant_callers.get('vardict-java')
+        if self.clinical_report_caller:
+            vardict_txt_fname = source.mut_fname_template.format(caller_name=self.clinical_report_caller.name)
+            vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
+            mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+            clinreport_paramline = (params_for_one_sample +
+               ' --targqc-dir ' + join(self.final_dir, '{sample}', BCBioStructure.targqc_dir) +
+               ' --mutations ' + mutations_fpath + ' -s {sample}' +
+               ' --varqc {varqc}' +
+               ' -s {sample} -o {output_dir} ' +
+               ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
 
-        self.clinreport = Step(cnf, run_id,
-            name=BCBioStructure.clinreport_name, short_name='clin',
-            interpreter='python',
-            script=join('scripts', 'post', 'clinical_report.py'),
-            dir_name=BCBioStructure.clinreport_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.clinreport_name + '.log'),
-            paramln=clinreport_paramline
-        )
+            self.clin_report = Step(cnf, run_id,
+                name=source.clinreport_name, short_name='clin',
+                interpreter='python',
+                script=join('scripts', 'post', 'clinical_report.py'),
+                dir_name=source.clinreport_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, source.clinreport_name + '.log'),
+                paramln=clinreport_paramline
+            )
 
         self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',
@@ -606,20 +612,19 @@ class BCBioRunner:
                     if not self.bcbio_structure.bed:  # WGS
                         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
-            if  'vardict' in self.bcbio_structure.variant_callers:
-                for sample in self.bcbio_structure.variant_callers['vardict'].samples:
-                    wait_for_steps = []
-                    wait_for_steps += [self.targqc_summary.job_name(sample.name)] if self.targqc_summary in self.steps else []
-                    wait_for_steps += [self.varqc_summary.job_name(sample.name, 'vardict')] if self.varqc_summary in self.steps else []
-                    self._submit_job(
-                        self.clinreport,
-                        sample.name,
-                        sample=sample.name, genome=sample.genome,
-                        wait_for_steps=wait_for_steps,
-                        threads=self.filtering_threads)
-                else:
-                    warn('Warning: . Clinical report cannot be created.')
-
+            for sample in self.clinical_report_caller.samples:
+                wait_for_steps = []
+                wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
+                wait_for_steps += [self.varqc.job_name(sample.name, caller=self.clinical_report_caller.name)] if self.varqc in self.steps else []
+                wait_for_steps += [self.varfilter.job_name(caller=self.clinical_report_caller.name)] if self.varfilter in self.steps else []
+                self._submit_job(
+                    self.clin_report,
+                    sample.name,
+                    sample=sample.name, genome=sample.genome, varqc=sample.find_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                    wait_for_steps=wait_for_steps,
+                    threads=self.filtering_threads)
+            else:
+                warn('Warning: Clinical report cannot be created.')
 
             # TargetSeq reports
             # if self.abnormal_regions in self.steps:

@@ -227,3 +227,33 @@ table.draggable
 .qc_meta_table
     td
         padding-right: 5px
+
+.long_line
+    white-space: nowrap
+    overflow: hidden              /* "overflow" value must be different from  visible"*/
+    -o-text-overflow: ellipsis    /* Opera < 11*/
+    text-overflow:    ellipsis    /* IE, Safari (WebKit), Opera >= 11, FF > 6 */
+
+.long_line:hover
+    overflow: visible              /* "overflow" value must be different from  visible"*/
+    -o-text-overflow: unset    /* Opera < 11*/
+    text-overflow:    unset    /* IE, Safari (WebKit), Opera >= 11, FF > 6 */
+    //text-shadow: 0 0 2px white   //, -1px -1px 0 white, 1px -1px 0 white, -1px  1px 0 white, 1px  1px 0 white
+    //span
+    //    background-color: white
+    //    z-index: 100
+    //    opacity: 1
+
+
+.clinical_report
+    td, th
+        max-width: 200px
+        margin-right: 5px
+
+.clinical_report
+    .multi-col-layout
+        column-count: 4
+        -moz-column-count: 4
+        -webkit-column-count: 4
+        tr td.right_column_td
+            border-right: 1px solid #bbb

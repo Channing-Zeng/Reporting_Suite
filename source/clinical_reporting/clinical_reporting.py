@@ -101,10 +101,11 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
-            Metric('Gene & Transcript'),  # Gene & Transcript
+            Metric('Gene'),  # Gene & Transcript
+            Metric('Transcript'),  # Gene & Transcript
             Metric('Variant'),            # c.244G>A, p.Glu82Lys
             Metric('Allele'),             # Het.
-            Metric('Genomic Pos.'),       # hg19 chr11:g.47364249G>A
+            Metric('Genomic Position'),       # hg19 chr11:g.47364249G>A
             Metric('Depth'),              # 658
             Metric('Frequency'),          # .19
             Metric('AA length'),          # 128
@@ -143,20 +144,21 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
             if sample_name == sample.name and gene in key_gene_names:
                 reg = report.add_region()
-                reg.add_record('Gene & Transcript', gene + ' ' + transcript)
+                reg.add_record('Gene', gene)
+                reg.add_record('Transcript', transcript)
                 reg.add_record('Variant', codon_change + (' p.' + aa_change if aa_change else ''))
                 reg.add_record('Allele', None)
-                reg.add_record('Genomic Pos.', str(cnf.genome) + ' ' + chrom + ':g.' +
+                reg.add_record('Genomic Position', str(cnf.genome) + ' ' + chrom + ':g.' +
                                    (Metric.format_value(int(start), human_readable=True) if start else '') +
                                    ' ' + ref + '>' + alt)
                 reg.add_record('Depth', depth)
                 reg.add_record('Frequency', af)
                 reg.add_record('AA length', aa_len)
-                reg.add_record('ID', id)
-                reg.add_record('Type', type_)
+                reg.add_record('ID', ' '.join(id.split(';')))
+                reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
                 if status == 'likely':
                     status += ' pathogenic'
-                reg.add_record('Classification', status)
+                reg.add_record('Classification', status[0].upper() + status[1:] if status else status)
 
     report.save_tsv(sample.clinical_mutation_tsv, human_readable=True)
     info('Saved mutations report to ' + report.tsv_fpath)
@@ -210,15 +212,18 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     mutations_dict = dict()
     mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
     mutations_dict['metric_names'] = [m.name for m in mutations_report.metric_storage.get_metrics()[1:]]
-
-    mutations_dict['rows'] = [dict(first_col=region.records[0], records=region.records[1:])
-        for region in mutations_report.regions]
+    mutations_dict['rows'] = [
+        dict(first_col=region.records[0].value, records=[
+                Metric.format_value(r.value) for r in region.records[1:]])
+            for region in mutations_report.regions]
 
     coverage_dict = dict()
     coverage_dict['first_col_header'] = coverage_report.metric_storage.get_metrics()[0].name
     coverage_dict['metric_names'] = [m.name for m in coverage_report.metric_storage.get_metrics()[1:]]
-    coverage_dict['rows'] = [dict(first_col=region.records[0], records=region.records[1:])
-        for region in coverage_report.regions]
+    coverage_dict['rows'] = [
+        dict(first_col=region.records[0].value, records=[
+                Metric.format_value(r.value) for r in region.records[1:]])
+            for region in coverage_report.regions]
 
     # if full_report.sample_reports:
     #     # individual records
@@ -260,9 +265,9 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
-    if islink(clin_rep_symlink):
-        os.unlink(clin_rep_symlink)
-    os.symlink(sample.clinical_html, clin_rep_symlink)
+    # if islink(clin_rep_symlink):
+    #     os.unlink(clin_rep_symlink)
+    # os.symlink(sample.clinical_html, clin_rep_symlink)
 
     info('Saved clinical report to ' + clin_rep_symlink)
     info('-' * 70)
@@ -270,6 +275,11 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     return clin_rep_symlink
 
 
+def tooltip_long(string, max_len=30):
+    if len(string) < max_len:
+        return string
+    else:
+        return '<a class="tooltip-link" rel="tooltip" title="' + string + '">' + string[:max_len - 2] + '...</a>'
 
 
 

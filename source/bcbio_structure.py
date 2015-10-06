@@ -264,6 +264,7 @@ class BCBioSample(BaseSample):
             ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
             qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
             picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
+            clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
 
         self.sv_bed = None
@@ -307,13 +308,13 @@ class BCBioSample(BaseSample):
                     ('.gz' if gz else ''))
 
     # varqc
-    def find_varqc_fpath_by_callername(self, callername):
-        fpath = self.get_varqc_fpath_by_callername(callername)
+    def find_varqc_fpath_by_callername(self, callername, ext='.html'):
+        fpath = self.get_varqc_fpath_by_callername(callername, ext=ext)
         return verify_file(fpath)
 
-    def get_varqc_fpath_by_callername(self, callername):
+    def get_varqc_fpath_by_callername(self, callername, ext='.html'):
         return join(self.dirpath, BCBioStructure.varqc_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.varqc_name + '.html')
+                    self.name + '-' + callername + '.' + BCBioStructure.varqc_name + ext)
 
     # filtered
     def find_filt_vcf_by_callername(self, callername):
@@ -328,13 +329,13 @@ class BCBioSample(BaseSample):
                     ('.gz' if gz else ''))
 
     # varqc after filtering
-    def find_varqc_after_fpath_by_callername(self, callername):
-        fpath = self.get_varqc_after_fpath_by_callername(callername)
+    def find_varqc_after_fpath_by_callername(self, callername, ext='.html'):
+        fpath = self.get_varqc_after_fpath_by_callername(callername, ext=ext)
         return verify_file(fpath)
 
-    def get_varqc_after_fpath_by_callername(self, callername):
+    def get_varqc_after_fpath_by_callername(self, callername, ext='.html'):
         return join(self.dirpath, BCBioStructure.varqc_after_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.varqc_after_name + '.html')
+                    self.name + '-' + callername + '.' + BCBioStructure.varqc_after_name + ext)
 
     # filtered passed
     def find_pass_filt_vcf_by_callername(self, callername):
@@ -454,9 +455,6 @@ class BCBioStructure:
     ngscat_name = ngscat_dir = 'ngscat'
     qualimap_name = qualimap_dir = 'qualimap'
     picard_name      = 'picard'
-
-    clinreport_name  = 'clinicalReport'
-    clinreport_dir   = 'clinicalReport'
 
     fastqc_repr      = 'FastQC'
     varqc_repr       = 'VarQC'
