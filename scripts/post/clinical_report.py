@@ -8,8 +8,11 @@ from source import BaseSample, info, verify_file
 from source.clinical_reporting.clinical_reporting import make_key_gene_cov_report, make_mutations_report, \
     make_clinical_html_report, get_target_fraction, get_ave_coverage, get_gender, get_total_variants_number, \
     get_min_coverage
-from source.prepare_args_and_cnf import check_system_resources
+from source.file_utils import verify_module
+from source.logger import warn
+from source.prepare_args_and_cnf import check_system_resources, check_genome_resources
 from source.main import read_opts_and_cnfs
+from tools import seq2c_plots
 
 
 def main(args):
@@ -34,12 +37,13 @@ def main(args):
                 dest='seq2c_tsv_fpath',
             )),
         ],
-        required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath'],
-        file_keys=['mutations_fpath', 'varqc_json_fpath', 'varqc_after_json_fpath'],
+        required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath', 'seq2c_tsv_fpath'],
+        file_keys=['mutations_fpath', 'varqc_json_fpath', 'varqc_after_json_fpath', 'seq2c_tsv_fpath'],
         dir_keys=['targqc_dirpath'],
         key_for_sample_name=None
     )
 
+    check_genome_resources(cnf)
     check_system_resources(
         cnf,
         required=['samtools', 'bedtools'],
@@ -62,8 +66,18 @@ def main(args):
     key_genes_report = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
     mutations_report = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
 
+    seq2c_plot_fpath = None
+    if not cnf.seq2c_tsv_fpath:
+        warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
+    else:
+        if not verify_module('matplotlib'):
+            warn('No matplotlib, skipping plotting Seq2C')
+        else:
+            seq2c_plot_fpath = seq2c_plots.draw_seq2c_plot(cnf, cnf.seq2c_tsv_fpath, sample.name, cnf.output_dir, key_gene_names)
+
     html_fpath = make_clinical_html_report(cnf, sample, key_genes_report, mutations_report,
-        cnf.target_type, min_depth, ave_depth, target_fraction, gender, total_variants, key_gene_names)
+        cnf.target_type, min_depth, ave_depth, target_fraction, gender, total_variants,
+        key_gene_names, seq2c_plot_fpath)
 
     info('Clinical report: ' + html_fpath)
 

@@ -2,7 +2,6 @@ from collections import OrderedDict
 from json import load, dump, JSONEncoder, dumps
 import os
 from os.path import join, islink, dirname, abspath, relpath
-from pysam.cvcf import defaultdict
 
 import source
 from source import verify_file, info
@@ -60,7 +59,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
         chrom, gene_ave_depth, depth_in_thresh = stats_by_genename.get(gene_name, (None, None, None))
         reg = key_genes_report.add_region()
         reg.add_record('Gene', gene_name)
-        reg.add_record('Chr', chrom.replace('chr', ''), parse=False)
+        reg.add_record('Chr', chrom.replace('chr', '') if chrom else None, parse=False)
         reg.add_record('Ave depth', gene_ave_depth)
         m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(depth_cutoff))
         reg.add_record(m.name, depth_in_thresh)
@@ -106,9 +105,9 @@ def get_min_coverage(sample, targqc_json_fpath):
     with open(targqc_json_fpath) as f:
         data = load(f, object_pairs_hook=OrderedDict)
     sr = SampleReport.load(data, sample, None)
-    r = sr.find_record(sr.records, 'Minimal target coverage depth')
+    r = sr.find_record(sr.records, 'Minimum target coverage depth')
     if not r:
-        r = sr.find_record(sr.records, 'Minimal genome coverage depth')
+        r = sr.find_record(sr.records, 'Minimum genome coverage depth')
     return r.value if r else None
 
 
@@ -189,7 +188,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Transcript', transcript)
                 reg.add_record('Variant', codon_change + (' p.' + aa_change if aa_change else ''))
                 # reg.add_record('Allele', allele_record)
-                reg.add_record('Chr', chrom.replace('chr', ''), parse=False)
+                reg.add_record('Chr', chrom.replace('chr', '') if chrom else None, parse=False)
                 reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
                 reg.add_record('Change', ref + '>' + alt)
                 reg.add_record('Depth', depth)
@@ -209,7 +208,8 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
 
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
-          target_type, min_depth, ave_depth, target_fraction, gender, total_variants, key_gene_names):
+          target_type, min_depth, ave_depth, target_fraction, gender, total_variants,
+          key_gene_names, seq2c_plot_fpath=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -248,7 +248,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     sample_dict['sample'] = sample.name.replace('_', ' ')
     sample_dict['project_name'] = cnf.project_name.replace('_', ' ')
     sample_dict['sex'] = gender
-    sample_dict['genome_build'] = cnf.genome
+    sample_dict['genome_build'] = cnf.genome.name
 
     approach_dict = dict()
     approach_dict['target_type'] = cnf.target
@@ -279,54 +279,20 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
                 for region in coverage_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
         coverage_dict['columns'].append(column_dict)
 
-    # if full_report.sample_reports:
-    #     # individual records
-    #     main_dict = dict()
-    #     main_dict["sample_reports"] = []
-    #
-    #     metrics = metric_storage.get_metrics(skip_general_section=True)
-    #     metrics_with_values_set = set()
-    #     for sample_report in full_report.sample_reports:
-    #         for m in metric_storage.get_metrics(skip_general_section=True):
-    #             r = next((r for r in sample_report.records if r.metric.name == m.name), None)
-    #             if r:
-    #                 metrics_with_values_set.add(m)
-    #
-    #     metrics = [m for m in metrics if m in metrics_with_values_set]
-    #     main_dict['metric_names'] = [m.name for m in metrics]
-    #
-    #     for sample_report in full_report.sample_reports:
-    #         ready_records = []
-    #         for m in metrics:
-    #             r = next((r for r in sample_report.records if r.metric.name == m.name), None)
-    #             if r:
-    #                 ready_records.append(__process_record(r, short=True))
-    #             else:
-    #                 ready_records.append(__process_record(Record(metric=m, value=None), short=True))
-    #         assert len(ready_records) == len(main_dict["metric_names"])
-    #
-    #         sample_report_dict = dict()
-    #         sample_report_dict["records"] = ready_records
-    #         sample_report_dict["sample_name"] = sample_report.get_display_name()
-    #         main_dict["sample_reports"].append(sample_report_dict)
-    #
-    # regions_dict = dict()
+    seq2c_plot_dict = dict()
+    if seq2c_plot_fpath:
+        import base64
+        with open(seq2c_plot_fpath, 'rb') as f:
+            encoded_string = base64.b64encode(f.read())
+        seq2c_plot_dict['plot_src'] = 'data:image/png;base64,' + encoded_string
 
-    if cnf.seq2c_tsv_fpath:
-        if verify_module('matplotlib'):
-            seq2c_plot_fpath = seq2c_plots._draw_seq2c_plot(cnf, key_gene_names)
-        else:
-            seq2c_plot_fpath = None
-        plots = [relpath(seq2c_plot_fpath, cnf.output_dir)]
-    else:
-        plots = None
-        
     sample.clinical_html = write_static_html_report(cnf.work_dir, {
         'sample': sample_dict,
         'approach': approach_dict,
         'variants': mutations_dict,
         'coverage': coverage_dict,
-    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'), plots=plots)
+        'seq2c_plot': seq2c_plot_dict,
+    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
     if islink(clin_rep_symlink):

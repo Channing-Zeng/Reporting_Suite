@@ -1380,16 +1380,10 @@ def _insert_into_html(html, text, keyword):
     return html
 
 
-def write_static_html_report(work_dir, data_dict, html_fpath, tmpl_fpath=None, plots=None):
+def write_static_html_report(work_dir, data_dict, html_fpath, tmpl_fpath=None):
     tmpl_fpath = tmpl_fpath or static_template_fpath
     with open(tmpl_fpath) as f:
         html = f.read()
-        
-    if plots:
-        plots_html = ''.join('<img src="' + plot + '"/>' for plot in plots)
-        html = _insert_into_html(html, plots_html, 'plots')
-    else:
-        html = _insert_into_html(html, '', 'plots')
 
     html = jsontemplate.expand(html, data_dict)
 
