@@ -428,16 +428,16 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.extra_options:
         opts += ''
 
+    info('Removing previous snpEff annotations...')
+    res = remove_prev_eff_annotation(cnf, input_fpath)
+    if not res:
+        err('Could not remove preivous snpEff annotations')
+        return None, None, None
+    input_fpath = res
+
     cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
                '-csvStats -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
-
-    info('Removing previous EFF annotations...')
-    res = remove_prev_eff_annotation(cnf, input_fpath)
-    if res:
-        input_fpath = res
-    info('')
-
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)
