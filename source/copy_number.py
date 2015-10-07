@@ -107,7 +107,7 @@ def _seq2c(cnf, bcbio_structure):
     dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
 
     info('Getting reads and cov stats')
-    mapped_read_fpath = join(cnf.work_dir, 'mapped_reads_by_sample.txt')
+    mapped_read_fpath = join(cnf.output_dir, 'mapped_reads_by_sample.tsv')
     __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, mapped_read_fpath)
     info()
 
