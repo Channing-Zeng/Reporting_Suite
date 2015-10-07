@@ -847,6 +847,7 @@ css_files = [
     'bootstrap/bootstrap.min.css',
     'common.css',
     'report.css',
+    'clinical_report.css',
     'table_sorter/style.css'
 ]
 js_files = [
@@ -1283,6 +1284,7 @@ def write_html_report(report, type_, html_fpath, caption=''):
     html = _insert_into_html(html, plots_html, 'plots')
 
     html = _embed_css_and_scripts(html)
+    html = _embed_images(html, dirname(html_fpath))
 
     with open(html_fpath, 'w') as f:
         f.write(html)
@@ -1328,6 +1330,15 @@ def _copy_aux_files(results_dirpath):
 
         else:
             copy_aux_file(aux_f_relpath)
+
+
+def _embed_images(html, report_dirpath):
+    # TODO: search for <img> tags and replace with code64, as follows:
+    # import base64
+    # with open(seq2c_plot_fpath, 'rb') as f:
+    #     encoded_string = base64.b64encode(f.read())
+    # contents = 'data:image/png;base64,' + encoded_string
+    return html
 
 
 def _embed_css_and_scripts(html):

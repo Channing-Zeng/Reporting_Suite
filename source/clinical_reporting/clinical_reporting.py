@@ -281,6 +281,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
 
     seq2c_plot_dict = dict()
     if seq2c_plot_fpath:
+        # seq2c_plot_dict['plot_src'] = relpath(seq2c_plot_fpath, cnf.output_dir)
         import base64
         with open(seq2c_plot_fpath, 'rb') as f:
             encoded_string = base64.b64encode(f.read())
