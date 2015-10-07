@@ -67,8 +67,8 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
         Metric('Average ' + trg_name + ' coverage depth', short_name='Avg'),
         Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='Std dev', quality='Less is better'),
-        Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
-        Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max'),
+        # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
+        # Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max', is_hidden=True),
         Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% avg', unit='%')
     ])
     for depth in depth_thresholds:
@@ -190,8 +190,8 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
         return next((r.value for r in qualimap_records if r.metric.name.startswith(name)), None)
 
     depth_stats['ave_depth'] = find_rec('Coverage Mean')
-    depth_stats['min_depth'] = find_rec('Coverage Min')
-    depth_stats['max_depth'] = find_rec('Coverage Max')
+    # depth_stats['min_depth'] = find_rec('Coverage Min')
+    # depth_stats['max_depth'] = find_rec('Coverage Max')
     depth_stats['stddev_depth'] = find_rec('Coverage Standard Deviation')
 
     target_stats = dict(
@@ -244,7 +244,6 @@ def _get_gender(sample, bam_fpath, cnf):
 
 def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
-    # bam_fpath, bam_stats, dedup_bam_stats = _dedup_and_flag_stat(cnf, bam_fpath)
     gene_by_name = build_gene_objects_list(cnf, sample.name, exons_bed, gene_names_list)
 
     # ref_fapth = cnf.genome.seq
@@ -277,6 +276,10 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
         target_info.fraction  = target_stats['target_fraction']
     else:
         target_info.bases_num = target_stats['reference_size']
+
+    sample.dedup_bam = add_suffix(bam_fpath, source.dedup_bam)
+    remove_dups(cnf, bam_fpath, sample.dedup_bam)
+    bam_fpath = sample.dedup_bam
 
     if target_info.bed:
         reads_stats['mapped_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath)
@@ -391,8 +394,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     info('')
     report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])
     report.add_record('Std. dev. of ' + trg_type + ' coverage depth', depth_stats['stddev_depth'])
-    report.add_record('Minimal ' + trg_type + ' coverage depth', depth_stats['min_depth'])
-    report.add_record('Maximum ' + trg_type + ' coverage depth', depth_stats['max_depth'])
+    # report.add_record('Minimal ' + trg_type + ' coverage depth', depth_stats['min_depth'])
+    # report.add_record('Maximum ' + trg_type + ' coverage depth', depth_stats['max_depth'])
     report.add_record('Percentage of ' + trg_type + ' within 20% of mean depth', depth_stats['wn_20_percent'])
     assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
 

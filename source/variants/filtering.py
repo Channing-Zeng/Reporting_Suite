@@ -112,7 +112,10 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
-    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} {vcf2txt_res_fpath} '
+    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} '
+    if cnf.min_hotspot_freq is not None and cnf.min_hotspot_freq != 'default':
+        cmdline += '-F ' + str(cnf.min_hotspot_freq)
+    cmdline += ' {vcf2txt_res_fpath} '
     if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
     if cnf.genome.filter_common_snp: cmdline += '--ruledir {cnf.genome.filter_common_snp} '
     if cnf.genome.snpeffect_export_polymorphic: cmdline += '--ruledir {cnf.genome.snpeffect_export_polymorphic} '

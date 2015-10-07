@@ -92,18 +92,18 @@ def _seq2c(cnf, bcbio_structure):
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
     info('Deduplicating BAMs if needed')
-    dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
-    safe_mkdir(dedup_bam_dirpath)
+    # dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
+    # safe_mkdir(dedup_bam_dirpath)
     dedupped_bam_by_sample = dict()
     dedup_jobs = []
     for s in bcbio_structure.samples:
-        dedup_bam_fpath = join(dedup_bam_dirpath, add_suffix(basename(s.bam), source.dedup_bam))
-        dedupped_bam_by_sample[s.name] = dedup_bam_fpath
-        if verify_bam(dedup_bam_fpath, silent=True):
-            info(dedup_bam_fpath + ' exists')
+        s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
+        dedupped_bam_by_sample[s.name] = s.dedup_bam
+        if verify_bam(s.dedup_bam, silent=True):
+            info(s.dedup_bam + ' exists')
         else:
-            info('Deduplicating bam file ' + dedup_bam_fpath)
-            dedup_jobs.append(remove_dups(cnf, s.bam, dedup_bam_fpath, use_grid=True))
+            info('Deduplicating bam file ' + s.dedup_bam)
+            dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
     dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
 
     info('Getting reads and cov stats')

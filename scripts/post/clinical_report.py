@@ -58,7 +58,6 @@ def main(args):
         key_gene_names = set([l.strip() for l in f.readlines() if l.strip() != ''])
 
     ave_depth = get_ave_coverage(sample, sample.targetcov_json_fpath)
-    min_depth = get_min_coverage(sample, sample.targetcov_json_fpath)
     target_fraction = get_target_fraction(sample, sample.targetcov_json_fpath)
     gender = get_gender(sample, sample.targetcov_json_fpath)
     total_variants = get_total_variants_number(sample, cnf.varqc_json_fpath)
@@ -76,7 +75,7 @@ def main(args):
             seq2c_plot_fpath = seq2c_plots.draw_seq2c_plot(cnf, cnf.seq2c_tsv_fpath, sample.name, cnf.output_dir, key_gene_names)
 
     html_fpath = make_clinical_html_report(cnf, sample, key_genes_report, mutations_report,
-        cnf.target_type, min_depth, ave_depth, target_fraction, gender, total_variants,
+        cnf.target_type, ave_depth, target_fraction, gender, total_variants,
         key_gene_names, seq2c_plot_fpath)
 
     info('Clinical report: ' + html_fpath)

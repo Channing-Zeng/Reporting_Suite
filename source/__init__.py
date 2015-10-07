@@ -1,6 +1,7 @@
 from os.path import join, splitext
 from collections import OrderedDict
-from source.file_utils import verify_file
+import source
+from source.file_utils import verify_file, add_suffix
 from source.logger import info
 from source import targetcov
 
@@ -63,6 +64,7 @@ class BaseSample:
                  fastqc_dirpath=None, picard_dirpath=None, clinical_report_dirpath=None):
         self.name = name
         self.bam = bam
+        self.dedup_bam = None
         self.bed = bed
         self.qualimap_bed = None
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath

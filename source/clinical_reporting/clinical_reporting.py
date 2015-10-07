@@ -208,7 +208,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
 
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
-          target_type, min_depth, ave_depth, target_fraction, gender, total_variants,
+          target_type, ave_depth, target_fraction, gender, total_variants,
           key_gene_names, seq2c_plot_fpath=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
@@ -251,9 +251,9 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     sample_dict['genome_build'] = cnf.genome.name
 
     approach_dict = dict()
-    approach_dict['target_type'] = cnf.target
+    approach_dict['target_type'] = cnf.target_type
     approach_dict['target_fraction'] = Metric.format_value(target_fraction, is_html=True, unit='%')
-    approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
+    # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
     approach_dict['ave_depth'] = Metric.format_value(ave_depth, is_html=True)
     approach_dict['total_variants'] = Metric.format_value(total_variants, is_html=True)
     approach_dict['total_key_genes'] = Metric.format_value(len(key_gene_names), is_html=True)

@@ -960,7 +960,7 @@ def _build_total_report(report, section, column_order):
 
     if section.title:
         html += '\n<h3 class="table_name">' + section.title + '</h3>'
-    calc_cell_contents(report, report.sample_reports if 'sample_reports' in report.__dict__() else report, section)
+    calc_cell_contents(report, report.sample_reports if 'sample_reports' in report.__dict__ else [report], section)
 
     table = '\n<table cellspacing="0" class="report_table tableSorter fix-align-char" id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'

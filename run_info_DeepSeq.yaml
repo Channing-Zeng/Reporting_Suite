@@ -25,6 +25,8 @@ variant_filtering:
 
   min_freq:           0.005   # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
+# min_hotspot_freq:   default # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
+                              # Default: 0.01 or half _min_freq_, whichever is less.
 # min_mq:             10      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
   min_vd:             3       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
 

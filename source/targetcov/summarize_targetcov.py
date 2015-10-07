@@ -14,6 +14,7 @@ from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage, get_header_metric_storage
 
 # from source.targetcov.flag_regions import DepthsMetric
+from source.targetcov.flag_regions import DepthsMetric
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
@@ -80,7 +81,7 @@ def _make_targetcov_symlinks(samples):
         info('TargetCov TXT symlink saved to ' + new_link)
 
 
-def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fpath=None):
+def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
     header_storage = get_header_metric_storage(cnf.coverage_reports.depth_thresholds)
 
     # targqc_metric_storage = _get_targqc_metric_storage([
@@ -118,7 +119,14 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None, bed_fp
     #         metric_storage=targqc_metric_storage)
         if tag_by_sample:
             sample_report.set_project_tag(tag_by_sample[sample_report.sample.name])
-        sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
+        if verify_file(sample_report.sample.ngscat_html_fpath):
+            sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
+        if verify_file(sample_report.sample.qualimap_html_fpath):
+            r = sample_report.find_record(sample_report.records, 'Qualimap')
+            if r:
+                r.html_fpath = sample_report.sample.qualimap_html_fpath
+            else:
+                sample_report.add_record(metric_name='Qualimap', value='Qualimap', html_fpath=sample_report.sample.qualimap_html_fpath, silent=True)
         # targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
@@ -166,7 +174,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
 
     # _make_targetcov_symlinks(samples)
 
-    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample, bed_fpath)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample)
 
     best_for_regions_fpath = None
     if any(verify_file(s.targetcov_detailed_tsv, silent=True) for s in samples):
@@ -684,7 +692,8 @@ def get_bed_targqc_inputs(cnf, bed_fpath=None):
     bed_fpath = verify_bed(bed_fpath, description='input bed file')
 
     exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
-    info('Exons: ' + exons_bed_fpath)
+    if exons_bed_fpath:
+        info('Exons: ' + exons_bed_fpath)
 
     if bed_fpath:
         info('Using amplicons/capture panel ' + bed_fpath)

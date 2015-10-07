@@ -18,9 +18,11 @@
 </div>
 
 <div class="content">
+    <!--<h1>Clinical report</h1>-->
+
     <div id='report' class="clinical_report">
         <div style="width: 1127px">
-            <div style="float: left; margin-right: 50px;">
+            <div style="float: left; margin-right: 55px;">
             {.section sample}
                 <h1 class="report-header">{sample}</h1>
                 <p><b>Project:</b> {project_name}</p>
@@ -48,11 +50,12 @@
             {.end}
             </div>
 
-            <div style="float: right">
+            <div style="float: right; margin-left: 10px;">
             {.section approach}
                 <h1 class="report-header">Approach</h1>
-                <p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's {target_type} was performed and covered {target_fraction}
-                    of all positions at {min_depth} minimal and {ave_depth} average coverage,
+                <p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's
+                    {target_type} was performed and covered {target_fraction}
+                    of all positions at {ave_depth} average coverage,
                     resulting in {total_variants} variants compared to a reference genome.
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} genes that have been previously implicated

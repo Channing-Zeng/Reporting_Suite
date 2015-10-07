@@ -100,6 +100,13 @@ def main():
                  'Default %f. Used with -r and -n' % dfts['ave_freq'],
         )),
 
+        (['--min-hotspot-freq'], dict(
+            dest='min_hotspot_freq',
+            type='float',
+            help='The minimum allele frequency hotspot somatic mutations, typically lower then -f.'
+                 'Default: 0.01 or half _min_freq_, whichever is less',
+        )),
+
         (['-n'], dict(
             dest='sample_cnt',
             type='int',
