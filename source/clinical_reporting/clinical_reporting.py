@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr', with_heatmap=False),
+        Metric('Chr', with_heatmap=False, align='right'),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -48,7 +48,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
                 fs = l.strip().split('\t')
                 gene_name = fs[1]
                 if fs[0] == sample.name and gene_name in key_gene_names and fs[9] in ['Del', 'Amp']:
-                    seq2c_data_by_genename[gene_name] = fs[9] + ',' + fs[8]
+                    seq2c_data_by_genename[gene_name] = fs[9] + ', ' + fs[8]
         if seq2c_data_by_genename:
             clinical_cov_metrics.append(Metric('SNV'))
 
@@ -143,7 +143,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('Change'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
-            Metric('AA length'),          # 128
+            Metric('AA length', with_heatmap=False),          # 128
             Metric('ID'),                 # rs352343, COSM2123
             Metric('Type'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic

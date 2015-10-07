@@ -87,18 +87,22 @@
         {.end}
 
         {.section seq2c_plot}
-        <div class="cnv_plot" style="margin-left: -20px;">
-            <img src="{plot_src}" width="1241px" alt="Seq2C log2 ratios"/>
-        </div>
+            <h1>Seq2C log2 ratios (CNV)</h1>
+            <div class="cnv_plot" style="margin-left: -20px;">
+                <img src="{plot_src}" width="1241px" alt="Seq2C log2 ratios"/>
+            </div>
         {.or}
         {.end}
 
         {.section coverage}
-            <div class="table-responsive">
-                <h1>Coverage analysis</h1>
+            <h1>Coverage analysis</h1>
+            <table width="100%">
+                <tr>
                 <!--<div class="multi-col-layout">-->
                 {.repeated section columns}
-                    <table class="table table-striped report_table static_report" style="float: left; margin-right: 70px;">
+                    <td style="">
+                    <table class="table table-striped report_table static_report"
+                           style="margin-right: 40px;">
                         <thead>
                             <tr class="top_row_tr">
                                 {.repeated section metric_names}
@@ -116,10 +120,11 @@
                             {.end}
                         </tbody>
                     </table>
+                    </td>
                 {.end}
                 <!--</div>-->
-                <div style="clear: both"></div>
-            </div>
+                </tr>
+            </table>
         {.end}
     </div>
 </div>
