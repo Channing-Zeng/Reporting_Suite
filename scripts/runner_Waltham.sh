@@ -3,6 +3,7 @@
 
 DONE_MARKER_FILE=$1
 ERROR_MARKER_FILE=$2
+CMDLINE=$3
 
 date >&2
 hostname >&2
