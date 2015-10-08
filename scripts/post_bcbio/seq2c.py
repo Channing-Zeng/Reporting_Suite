@@ -8,9 +8,7 @@ from source.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.calling_process import call
 from source.copy_number import cnv_reports
 from source.logger import info
-from source.targetcov.bam_and_bed_utils import prepare_beds
-from source.tools_from_cnf import get_script_cmdline, get_system_path
-from tools import seq2c_plots
+from source.tools_from_cnf import get_system_path
 
 
 def main():

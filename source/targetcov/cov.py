@@ -312,7 +312,7 @@ def get_records_by_metrics(records, metrics):
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
-    report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir))
+    report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
     report.add_record('Gender', reads_stats['gender'], silent=True)
 
     info('* General coverage statistics *')
@@ -386,24 +386,27 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     elif 'mapped_on_exome' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
         percent_mapped_on_exome = 1.0 * (reads_stats['mapped_on_exome'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
-        report.add_record('Percentage of reads mapped on exome', percent_mapped_on_exome)
-        assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
-        percent_mapped_off_exome = 1.0 - percent_mapped_on_exome
-        report.add_record('Percentage of reads mapped off exome ', percent_mapped_off_exome)
+        if percent_mapped_on_exome:
+            report.add_record('Percentage of reads mapped on exome', percent_mapped_on_exome)
+            assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
+            percent_mapped_off_exome = 1.0 - percent_mapped_on_exome
+            report.add_record('Percentage of reads mapped off exome ', percent_mapped_off_exome)
 
     info('')
     report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])
     report.add_record('Std. dev. of ' + trg_type + ' coverage depth', depth_stats['stddev_depth'])
     # report.add_record('Minimal ' + trg_type + ' coverage depth', depth_stats['min_depth'])
     # report.add_record('Maximum ' + trg_type + ' coverage depth', depth_stats['max_depth'])
-    report.add_record('Percentage of ' + trg_type + ' within 20% of mean depth', depth_stats['wn_20_percent'])
-    assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
+    if 'wn_20_percent' in depth_stats:
+        report.add_record('Percentage of ' + trg_type + ' within 20% of mean depth', depth_stats['wn_20_percent'])
+        assert depth_stats['wn_20_percent'] <= 1.0 or depth_stats['wn_20_percent'] is None, str( depth_stats['wn_20_percent'])
 
-    for depth, bases in depth_stats['bases_within_threshs'].items():
-        percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
-        if percent_val > 0:
-            report.add_record('Part of ' + trg_type + ' covered at least by ' + str(depth) + 'x', percent_val)
-        assert percent_val <= 1.0 or percent_val is None, str(percent_val)
+    if 'bases_within_threshs' in depth_stats:
+        for depth, bases in depth_stats['bases_within_threshs'].items():
+            percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
+            if percent_val > 0:
+                report.add_record('Part of ' + trg_type + ' covered at least by ' + str(depth) + 'x', percent_val)
+            assert percent_val <= 1.0 or percent_val is None, str(percent_val)
     info()
 
     report.add_record('Read mean length', reads_stats['ave_len'])

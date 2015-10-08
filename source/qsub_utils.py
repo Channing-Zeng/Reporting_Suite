@@ -111,21 +111,25 @@ def wait_for_jobs(cnf, jobs):
                 info('.', print_date=False, ending='')
             else:
                 break
-
-    except KeyboardInterrupt:
-        qdel = get_system_path(cnf, 'qdel', is_critical=False)
-        command = ' '.join(j.job_id for j in jobs if not j.is_done)
-        if qdel:
-            res = call(cnf, qdel + ' ' + command, exit_on_error=False)
-            if res == 0:
-                info('All running jobs for this project has been deleted from queue.')
-            else:
-                warn('Can\'t run qdel. Please kill the remaining jobs manually using the following command:')
-                warn('  qdel ' + command)
-        else:
-            warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
-            warn('  qdel ' + command)
-        info()
+    except:
         raise
+    finally:
+        del_jobs(cnf, jobs)
 
     return jobs
+
+
+def del_jobs(cnf, jobs_running):
+    qdel = get_system_path(cnf, 'qdel', is_critical=False)
+    command = ' '.join(j.job_id for j in jobs_running if not j.is_done)
+    if qdel:
+        res = call(cnf, qdel + ' ' + command, exit_on_error=False)
+        if res == 0:
+            info('All running jobs for this project has been deleted from queue.')
+        else:
+            warn('Can\'t run qdel. Please kill the remaning jobs manually using the following command:')
+            warn('  qdel ' + command)
+    else:
+        warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
+        warn('  qdel ' + command)
+    info()

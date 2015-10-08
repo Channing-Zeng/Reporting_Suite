@@ -13,6 +13,7 @@ from source.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
 from source.project_level_report import make_project_level_report
+from source.qsub_utils import del_jobs
 from source.tools_from_cnf import get_system_path
 
 from source.file_utils import file_exists, safe_mkdir
@@ -770,21 +771,11 @@ class BCBioRunner:
                 info()
                 info('HTML report url: ' + html_report_url)
 
-        except KeyboardInterrupt:
-            qdel = get_system_path(self.cnf, 'qdel', is_critical=False)
-            command = ' '.join(j.job_id for j in self.jobs_running if not j.is_done)
-            if qdel:
-                res = call(self.cnf, qdel + ' ' + command, exit_on_error=False)
-                if res == 0:
-                    info('All running jobs for this project has been deleted from queue.')
-                else:
-                    warn('Can\'t run qdel. Please kill the remaning jobs manually using the following command:')
-                    warn('  qdel ' + command)
-            else:
-                warn('Can\'t find qdel. Please kill the remaning jobs manually using the following command:')
-                warn('  qdel ' + command)
-            info()
+        except:
             raise
+        finally:
+            del_jobs(self.cnf, self.jobs_running)
+
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()

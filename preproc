@@ -225,7 +225,7 @@ def main():
     subj = ds.project_report_html_fpath or ds.project_name
     txt = 'Preproc finished for ' + ds.project_name + '\n'
     txt += '\n'
-    txt += 'Path: ' + ds.final_dirpath + '\n'
+    txt += 'Path: ' + ds.dirpath + '\n'
     txt += 'Report: ' + str(ds.project_report_html_fpath) + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url
@@ -277,7 +277,7 @@ def run_targqc(cnf, ds, bam_by_sample):
     bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in ds.samples)
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
            '--work-dir {cnf.work_dir} --log-dir {cnf.log_dir} --project-name {cnf.project_name} ' \
-           '-o {ds.downsample_targqc_dirpath}'.format(**locals())
+           '-o {ds.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
     if cnf.reuse:
         cmdl += ' --reuse'
     call(cnf, cmdl)

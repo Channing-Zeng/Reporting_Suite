@@ -11,9 +11,9 @@ from source.bcbio_runner import Step
 from source.file_utils import safe_mkdir, verify_file, verify_dir
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import fix_bed_for_qualimap, prepare_beds, extract_gene_names_and_filter_exons
-from source.utils import get_system_path
 from source.calling_process import call
 from source.targetcov.summarize_targetcov import summarize_targqc
+from source.tools_from_cnf import get_system_path
 
 
 def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpath):

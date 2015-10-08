@@ -100,8 +100,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     # RUN AND PRINT OUTPUT
     def do(cmdl, out_fpath=None, stderr_dump=None):
-        stdout = subprocess.PIPE  # goes to proc.stdout
-        stderr = subprocess.PIPE  # goes to proc.stderr
+        stdout = subprocess.PIPE    # goes to proc.stdout
+        stderr = subprocess.STDOUT  # goes to proc.stderr
 
         if cnf.verbose or return_proc or check_output:
             if out_fpath:

@@ -68,7 +68,7 @@ def proc_args(argv):
     target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
     exons_no_genes_bed = None
     if not target_bed:
-        info('No bed is specified, using exons instead: ' + exons_bed)
+        info('No bed is specified, using exons instead: ' + str(exons_bed))
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)

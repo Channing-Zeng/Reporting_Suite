@@ -24,7 +24,7 @@ resources:
   picard:
     path: ext_tools/picard/picard.jar
   seqtk:
-    path: ~/vagrant/seqtk/seqtk
+    path: /usr/local/bin/seqtk
   qualimap:
     path: ext_tools/qualimap/qualimap
 
