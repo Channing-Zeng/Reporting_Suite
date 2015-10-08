@@ -70,7 +70,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
     info('-' * 70)
     info()
-    return key_genes_report
+    return key_genes_report, seq2c_data_by_genename
 
 
 def get_target_fraction(sample, targqc_json_fpath):
@@ -207,9 +207,64 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     return report
 
 
+def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, mutations_report, seq2c_data_by_genename):
+    info('Preparing mutations stats for key gene tables')
+
+    clinical_action_metric_storage = MetricStorage(
+        sections=[ReportSection(metrics=[
+            Metric('Gene'),  # Gene & Transcript
+            Metric('Variant'),            # c.244G>A, p.Glu82Lys
+            Metric('Type'),               # Frameshift
+            Metric('Types of recurrent alterations'), # Mutation
+            Metric('Rationale'),          # Translocations predict sensitivity
+            Metric('Therapeutic Agents'), # Sorafenib
+        ])])
+    report = PerRegionSampleReport(sample=sample, metric_storage=clinical_action_metric_storage)
+    actionable_gene_names = actionable_genes.keys()
+    for gene in actionable_gene_names:
+        if gene not in key_gene_names:
+            continue
+        possible_mutations = actionable_genes[gene][1].split('; ')
+        skipped_mutations = ['Rearrangement', 'Fusion']
+        possible_mutations = [mutation for mutation in possible_mutations if mutation not in skipped_mutations]
+        if not possible_mutations:
+            continue
+        variants = []
+        types = []
+        amp_del = None
+        for region in mutations_report.regions:
+            if mutations_report.find_record(region.records, 'Gene').value == gene:
+                variant = mutations_report.find_record(region.records, 'Variant').value
+                variants.append(variant if variant else '.')
+                types.append(mutations_report.find_record(region.records, 'Type').value)
+        if gene in seq2c_data_by_genename:
+            amp_del = seq2c_data_by_genename[gene]
+
+        if 'Amplification' in possible_mutations and (not amp_del or 'Amp' not in amp_del):
+            possible_mutations.remove('Amplification')
+        if 'Deletion' in possible_mutations and (not amp_del or 'Del' not in amp_del):
+            possible_mutations.remove('Deletion')
+        if not possible_mutations or (not variants and 'Amplification' not in possible_mutations and 'Deletion' not in possible_mutations):
+            continue
+
+        reg = report.add_region()
+        reg.add_record('Gene', gene)
+        reg.add_record('Variant', ', '.join(variants))
+        reg.add_record('Type', ', '.join(types))
+        reg.add_record('Types of recurrent alterations', actionable_genes[gene][1])
+        reg.add_record('Rationale', actionable_genes[gene][0])
+        reg.add_record('Therapeutic Agents', actionable_genes[gene][2])
+
+    report.save_tsv(sample.clinical_target_tsv, human_readable=True)
+    info('Saved report for actionable genes to ' + report.tsv_fpath)
+    info('-' * 70)
+    info()
+    return report
+
+
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
           target_type, ave_depth, target_fraction, gender, total_variants,
-          key_gene_names, seq2c_plot_fpath=None):
+          key_gene_names, actionable_genes_report, seq2c_plot_fpath=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -287,12 +342,20 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
             encoded_string = base64.b64encode(f.read())
         seq2c_plot_dict['plot_src'] = 'data:image/png;base64,' + encoded_string
 
+    actionable_genes_dict = dict()
+    actionable_genes_dict['metric_names'] = [m.name for m in actionable_genes_report.metric_storage.get_metrics()]
+    calc_cell_contents(actionable_genes_report, actionable_genes_report.regions, actionable_genes_report.metric_storage.sections[0])
+    actionable_genes_dict['rows'] = [
+        dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
+            for region in actionable_genes_report.regions]
+
     sample.clinical_html = write_static_html_report(cnf.work_dir, {
         'sample': sample_dict,
         'approach': approach_dict,
         'variants': mutations_dict,
         'coverage': coverage_dict,
         'seq2c_plot': seq2c_plot_dict,
+        'actionable_genes': actionable_genes_dict,
     }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
