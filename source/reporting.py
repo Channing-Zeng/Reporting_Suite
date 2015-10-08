@@ -130,7 +130,7 @@ class Metric:
             bottom=None,
             is_hidden=False,
             with_heatmap=True,
-            align=None,
+            style='',
 
             numbers=None,
             values=None,
@@ -152,7 +152,7 @@ class Metric:
         self.bottom = bottom
         self.is_hidden = is_hidden
         self.with_heatmap = with_heatmap
-        self.align = align
+        self.style = style
 
         self.numbers = []
         self.values = []
@@ -920,9 +920,8 @@ def make_cell_td(rec, td_classes=''):
         return html
 
     html += ('\n<td metric="' + rec.metric.name +
-             '" style="background-color: ' + rec.color + '; color: ' + rec.text_color)
-    if rec.metric.align:
-        html += '; text-align: ' + rec.metric.align
+             '" style="background-color: ' + rec.color + '; color: ' + rec.text_color +
+             '; ' + rec.metric.style)
     html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' '
     if rec.num:
         html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value) + '">'
@@ -1186,8 +1185,8 @@ def calc_cell_contents(report, rows, section):
             metric.min = numbers[0]
             metric.max = numbers[l - 1]
             metric.all_values_equal = metric.min == metric.max
-            metric.med = metric.med or \
-                (numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]]))
+            if metric.med is None:
+                metric.med = numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]])
             q1 = numbers[int(floor((l - 1) / 4))]
             q3 = numbers[int(floor((l - 1) * 3 / 4))]
 

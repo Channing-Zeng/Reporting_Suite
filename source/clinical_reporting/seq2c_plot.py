@@ -42,7 +42,7 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
                 continue
             fs = l.strip().split('\t')
             if fs[0] == sample_name and len(fs) > 12 and fs[1] in key_gene_names:
-                sample, gene, chr, start, end, length, log2r, sig, type, amp_del, ab_seg, total_seg, ab_log2r = fs [:13]
+                sample, gene, chr, start, end, length, log2r, sig, type, amp_del, ab_seg, total_seg, ab_log2r = fs[:13]
                 x_vals = [chr_cum_lengths[chr_names.index(chr)] + (int(start) + int(end))/2]
                 point_y = float(ab_log2r)
                 y_vals = [point_y]

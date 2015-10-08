@@ -50,7 +50,7 @@
             {.end}
             </div>
 
-            <div style="float: right; margin-left: 10px;">
+            <div style="float: left; margin-left: 10px;">
             {.section approach}
                 <h1 class="report-header">Approach</h1>
                 <p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's
@@ -69,9 +69,19 @@
             <div style="clear: both"></div>
         </div>
 
+        <div>
+            <a class=".dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class=".dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class=".dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class=".dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+        </div>
+
+        <div class="space_7px"></div>
+
+        <a name="variants"></a>
+        <h1>Detailed variant analysis</h1>
         {.section variants}
             <div class="table-responsive">
-                <h1>Detailed variant analysis</h1>
                 <table class="table table-striped report_table static_report">
                     <thead>
                         <tr class="top_row_tr">
@@ -91,16 +101,21 @@
                     </tbody>
                 </table>
             </div>
+        {.or}
+            <p>No variants detected in key regions.</p>
         {.end}
 
+        <a name="seq2c"></a>
+        <h1>Seq2C log2 ratios (CNV)</h1>
         {.section seq2c_plot}
-            <h1>Seq2C log2 ratios (CNV)</h1>
             <div class="cnv_plot" style="margin-left: -20px;">
                 <img src="{plot_src}" width="1241px" alt="Seq2C log2 ratios"/>
             </div>
         {.or}
+            <p>Seq2C log is not available</p>
         {.end}
 
+        <a name="coverage"></a>
         {.section coverage}
             <h1>Coverage analysis</h1>
             <table width="100%">
@@ -134,10 +149,11 @@
             </table>
         {.end}
 
+        <a name="actionable"></a>
+        <h1>Mutations in actionable genes</h1>
         {.section actionable_genes}
             <div class="table-responsive">
-            <h1>Mutations in actionable genes</h1>
-                <table class="table table-striped report_table static_report" width="100%">
+                <table class="table table-striped report_table static_report">
                     <thead>
                         <tr class="top_row_tr">
                             {.repeated section metric_names}
@@ -156,6 +172,8 @@
                     </tbody>
                 </table>
             </div>
+        {.or}
+            <p>Actionable genes are no available.</p>
         {.end}
     </div>
 </div>

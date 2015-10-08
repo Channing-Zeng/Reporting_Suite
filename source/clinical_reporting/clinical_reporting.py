@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr', with_heatmap=False, align='right'),
+        Metric('Chr', with_heatmap=False, style="text-align: right"),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -136,11 +136,12 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Variant'),            # c.244G>A, p.Glu82Lys
+            Metric('Codon chg', style='max-width: 100px;'),            # c.244G>A
+            Metric('AA chg', style='max-width: 100px;'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
-            Metric('Chr', with_heatmap=False, align='right'),       # chr11
+            Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change'),       # G>A
+            Metric('Change', style='max-width: 100px;'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
             Metric('AA length', with_heatmap=False),          # 128
@@ -186,7 +187,8 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg = report.add_region()
                 reg.add_record('Gene', gene)
                 reg.add_record('Transcript', transcript)
-                reg.add_record('Variant', codon_change + (' p.' + aa_change if aa_change else ''))
+                reg.add_record('Codon chg', codon_change)
+                reg.add_record('AA chg', 'p.' + aa_change if aa_change else None)
                 # reg.add_record('Allele', allele_record)
                 reg.add_record('Chr', chrom.replace('chr', '') if chrom else None)
                 reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
@@ -207,17 +209,30 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     return report
 
 
+ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
+def proc_actionable_genes(cnf, sample, key_gene_names, mutations_report, seq2c_data_by_genename):
+    act_fpath = verify_file(ACTIONABLE_GENES_FPATH, is_critical=False, description='Actionable genes')
+    if act_fpath:
+        with open(act_fpath) as f:
+            actionable_gene_table = [l.split('\t') for l in f.readlines()]
+            actionable_gene_dict = dict((l[0], l[1:]) for l in actionable_gene_table)
+
+        return make_actionable_genes_report(cnf, sample, key_gene_names,
+            actionable_gene_dict, mutations_report, seq2c_data_by_genename)
+    return None
+
+
 def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, mutations_report, seq2c_data_by_genename):
     info('Preparing mutations stats for key gene tables')
 
     clinical_action_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
-            Metric('Variant'),            # c.244G>A, p.Glu82Lys
+            Metric('Variant', style='max-width: 100px;'),            # p.Glu82Lys
             Metric('Type'),               # Frameshift
-            Metric('Types of recurrent alterations'), # Mutation
-            Metric('Rationale'),          # Translocations predict sensitivity
-            Metric('Therapeutic Agents'), # Sorafenib
+            Metric('Types of rec. alt\'s'),  # Mutation
+            Metric('Rationale', style='width: 400px;'),          # Translocations predict sensitivity
+            Metric('Therapeutic Agents'),  # Sorafenib
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_action_metric_storage)
     actionable_gene_names = actionable_genes.keys()
@@ -234,7 +249,7 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
         amp_del = None
         for region in mutations_report.regions:
             if mutations_report.find_record(region.records, 'Gene').value == gene:
-                variant = mutations_report.find_record(region.records, 'Variant').value
+                variant = mutations_report.find_record(region.records, 'AA chg').value
                 variants.append(variant if variant else '.')
                 types.append(mutations_report.find_record(region.records, 'Type').value)
         if gene in seq2c_data_by_genename:
@@ -251,7 +266,7 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
         reg.add_record('Gene', gene)
         reg.add_record('Variant', ', '.join(variants))
         reg.add_record('Type', ', '.join(types))
-        reg.add_record('Types of recurrent alterations', actionable_genes[gene][1])
+        reg.add_record('Types of rec. alt\'s', actionable_genes[gene][1])
         reg.add_record('Rationale', actionable_genes[gene][0])
         reg.add_record('Therapeutic Agents', actionable_genes[gene][2])
 
@@ -265,38 +280,25 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
           target_type, ave_depth, target_fraction, gender, total_variants,
           key_gene_names, actionable_genes_report, seq2c_plot_fpath=None):
-    # metric name in FullReport --> metric name in Static HTML
-    # metric_names = OrderedDict([
-    #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
-    #     (BCBioStructure.fastqc_repr, 'FastQC'),
-    #     # ('BAM', 'BAM'),
-    #     (BCBioStructure.targqc_repr, 'SeqQC'),
-    #     # ('Downsampled ' + BCBioStructure.targqc_repr, 'Downsampled SeqQC'),
-    #     # ('Mutations', 'Mutations'),
-    #     # ('Mutations for separate samples', 'Mutations for separate samples'),
-    #     # ('Mutations for paired samples', 'Mutations for paired samples'),
-    #     (BCBioStructure.varqc_repr, 'VarQC'),
-    #     (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
-
-    def __process_record(rec, short=False):
-        d = rec.__dict__.copy()
-
-        if isinstance(rec.html_fpath, basestring):
-            d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
-
-        elif isinstance(rec.html_fpath, dict):
-            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
-            if not short:
-                d['contents'] = rec.metric.name + ': ' + d['contents']
-
-        else:
-            d['contents'] = '-'
-
-        d['metric'] = rec.metric.__dict__
-        return d
-
-    def _get_summary_report_name(rec):
-        return rec.value.lower().replace(' ', '_')
+    # def __process_record(rec, short=False):
+    #     d = rec.__dict__.copy()
+    #
+    #     if isinstance(rec.html_fpath, basestring):
+    #         d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
+    #
+    #     elif isinstance(rec.html_fpath, dict):
+    #         d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
+    #         if not short:
+    #             d['contents'] = rec.metric.name + ': ' + d['contents']
+    #
+    #     else:
+    #         d['contents'] = '-'
+    #
+    #     d['metric'] = rec.metric.__dict__
+    #     return d
+    #
+    # def _get_summary_report_name(rec):
+    #     return rec.value.lower().replace(' ', '_')
 
     # common records (summary reports)
     sample_dict = dict()
@@ -314,12 +316,13 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     approach_dict['total_key_genes'] = Metric.format_value(len(key_gene_names), is_html=True)
 
     mutations_dict = dict()
-    # mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
-    mutations_dict['metric_names'] = [m.name for m in mutations_report.metric_storage.get_metrics()]
-    calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
-    mutations_dict['rows'] = [
-        dict(records=[make_cell_td(r, td_classes='long_line') for r in region.records])
-            for region in mutations_report.regions]
+    if mutations_report.regions:
+        # mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
+        mutations_dict['metric_names'] = [m.name for m in mutations_report.metric_storage.get_metrics()]
+        calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
+        mutations_dict['rows'] = [
+            dict(records=[make_cell_td(r, td_classes='long_line') for r in region.records])
+                for region in mutations_report.regions]
 
     coverage_dict = dict(columns=[])
     GENE_COL_NUM = 3
@@ -343,11 +346,12 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
         seq2c_plot_dict['plot_src'] = 'data:image/png;base64,' + encoded_string
 
     actionable_genes_dict = dict()
-    actionable_genes_dict['metric_names'] = [m.name for m in actionable_genes_report.metric_storage.get_metrics()]
-    calc_cell_contents(actionable_genes_report, actionable_genes_report.regions, actionable_genes_report.metric_storage.sections[0])
-    actionable_genes_dict['rows'] = [
-        dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
-            for region in actionable_genes_report.regions]
+    if actionable_genes_report:
+        actionable_genes_dict['metric_names'] = [m.name for m in actionable_genes_report.metric_storage.get_metrics()]
+        calc_cell_contents(actionable_genes_report, actionable_genes_report.regions, actionable_genes_report.metric_storage.sections[0])
+        actionable_genes_dict['rows'] = [
+            dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
+                for region in actionable_genes_report.regions]
 
     sample.clinical_html = write_static_html_report(cnf.work_dir, {
         'sample': sample_dict,
@@ -356,7 +360,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
         'coverage': coverage_dict,
         'seq2c_plot': seq2c_plot_dict,
         'actionable_genes': actionable_genes_dict,
-    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'report.html'))
+    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'))
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
     if islink(clin_rep_symlink):
