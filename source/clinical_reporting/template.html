@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="/static/clinical_report.css" />
     <script type="text/javascript" src="/static/bootstrap/bootstrap-tooltip-vlad.js"></script>
     <script type="text/javascript" src="/static/scripts/utils.js"></script>
+    <script type="text/javascript" src="/static/jquery-1.8.2.min.js"></script>
 </head>
 
 <body>
@@ -18,7 +19,7 @@
 </div>
 
 <div class="content">
-    <!--<h1>Clinical report</h1>-->
+    <div style="margin-top: -120px; margin-bottom: 45px; color: white;"><h1>Clinical report</h1></div>
 
     <div id='report' class="clinical_report">
         <div style="width: 1127px">
@@ -70,23 +71,25 @@
         </div>
 
         <div>
-            <a class=".dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
-            <a class=".dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class=".dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class=".dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
         </div>
 
-        <div class="space_7px"></div>
+        <div class="space_8px"></div>
+        <div class="space_8px"></div>
+        <div class="space_8px"></div>
 
         <a name="variants"></a>
         <h1>Detailed variant analysis</h1>
         {.section variants}
-            <div class="table-responsive">
-                <table class="table table-striped report_table static_report">
+            <div>
+                <table class="report_table static_report">
                     <thead>
                         <tr class="top_row_tr">
                             {.repeated section metric_names}
-                                <th class="">{@}</th>
+                                {@}
                             {.end}
                         </tr>
                     </thead>
@@ -123,25 +126,25 @@
                 <!--<div class="multi-col-layout">-->
                 {.repeated section columns}
                     <td style="">
-                    <table class="table table-striped report_table static_report"
-                           style="margin-right: 40px;">
-                        <thead>
-                            <tr class="top_row_tr">
-                                {.repeated section metric_names}
-                                    <th class="">{@}</th>
-                                {.end}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {.repeated section rows}
-                                <tr>
-                                    {.repeated section records}
+                        <table class="report_table static_report"
+                               style="margin-right: 40px;">
+                            <thead>
+                                <tr class="top_row_tr">
+                                    {.repeated section metric_names}
                                         {@}
                                     {.end}
                                 </tr>
-                            {.end}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {.repeated section rows}
+                                    <tr>
+                                        {.repeated section records}
+                                            {@}
+                                        {.end}
+                                    </tr>
+                                {.end}
+                            </tbody>
+                        </table>
                     </td>
                 {.end}
                 <!--</div>-->
@@ -152,12 +155,12 @@
         <a name="actionable"></a>
         <h1>Mutations in actionable genes</h1>
         {.section actionable_genes}
-            <div class="table-responsive">
-                <table class="table table-striped report_table static_report">
+            <div>
+                <table class="report_table static_report actionable_table">
                     <thead>
                         <tr class="top_row_tr">
                             {.repeated section metric_names}
-                                <th class="">{@}</th>
+                                {@}
                             {.end}
                         </tr>
                     </thead>

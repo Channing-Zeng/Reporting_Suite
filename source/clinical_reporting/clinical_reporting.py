@@ -8,7 +8,7 @@ from source import verify_file, info
 from source.file_utils import add_suffix, verify_module
 from source.file_utils import adjust_path
 from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
-    calc_cell_contents, make_cell_td, write_static_html_report
+    calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from tools import seq2c_plots
@@ -136,12 +136,12 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', style='max-width: 100px;'),            # c.244G>A
-            Metric('AA chg', style='max-width: 100px;'),            # p.Glu82Lys
+            Metric('Codon chg', style='max-width: 80px;'),            # c.244G>A
+            Metric('AA chg', style='max-width: 80px;'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change', style='max-width: 100px;'),       # G>A
+            Metric('Change', style='max-width: 80px;'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
             Metric('AA length', with_heatmap=False),          # 128
@@ -228,10 +228,10 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     clinical_action_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
-            Metric('Variant', style='max-width: 100px;'),            # p.Glu82Lys
-            Metric('Type'),               # Frameshift
-            Metric('Types of rec. alt\'s'),  # Mutation
-            Metric('Rationale', style='width: 400px;'),          # Translocations predict sensitivity
+            Metric('Variant', style='min-width: 80px; max-width: 80px; white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
+            Metric('Type', style='min-width: 120px; white-space: pre; !important', class_='long_line'),               # Frameshift
+            Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations', style='min-width: 100px; white-space: pre;'),  # Mutation
+            Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
             Metric('Therapeutic Agents'),  # Sorafenib
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_action_metric_storage)
@@ -264,9 +264,9 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
 
         reg = report.add_region()
         reg.add_record('Gene', gene)
-        reg.add_record('Variant', ', '.join(variants))
-        reg.add_record('Type', ', '.join(types))
-        reg.add_record('Types of rec. alt\'s', actionable_genes[gene][1])
+        reg.add_record('Variant', '\n'.join(variants))
+        reg.add_record('Type', '\n'.join(types))
+        reg.add_record('Types of recurrent alterations', actionable_genes[gene][1].replace('; ', '\n'))
         reg.add_record('Rationale', actionable_genes[gene][0])
         reg.add_record('Therapeutic Agents', actionable_genes[gene][2])
 
@@ -318,8 +318,8 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     mutations_dict = dict()
     if mutations_report.regions:
         # mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
-        mutations_dict['metric_names'] = [m.name for m in mutations_report.metric_storage.get_metrics()]
         calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
+        mutations_dict['metric_names'] = [make_cell_th(m) for m in mutations_report.metric_storage.get_metrics()]
         mutations_dict['rows'] = [
             dict(records=[make_cell_td(r, td_classes='long_line') for r in region.records])
                 for region in mutations_report.regions]
@@ -331,7 +331,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     for i in range(GENE_COL_NUM):
         column_dict = dict()
         # column_dict['first_col_header'] = coverage_report.metric_storage.get_metrics()[0].name
-        column_dict['metric_names'] = [m.name for m in coverage_report.metric_storage.get_metrics()]
+        column_dict['metric_names'] = [make_cell_th(m) for m in coverage_report.metric_storage.get_metrics()]
         column_dict['rows'] = [
             dict(records=[make_cell_td(r, td_classes='') for r in region.records])
                 for region in coverage_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
@@ -347,8 +347,8 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
 
     actionable_genes_dict = dict()
     if actionable_genes_report:
-        actionable_genes_dict['metric_names'] = [m.name for m in actionable_genes_report.metric_storage.get_metrics()]
         calc_cell_contents(actionable_genes_report, actionable_genes_report.regions, actionable_genes_report.metric_storage.sections[0])
+        actionable_genes_dict['metric_names'] = [make_cell_th(m) for m in actionable_genes_report.metric_storage.get_metrics()]
         actionable_genes_dict['rows'] = [
             dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
                 for region in actionable_genes_report.regions]

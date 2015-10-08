@@ -131,6 +131,7 @@ class Metric:
             is_hidden=False,
             with_heatmap=True,
             style='',
+            class_='',
 
             numbers=None,
             values=None,
@@ -153,6 +154,7 @@ class Metric:
         self.is_hidden = is_hidden
         self.with_heatmap = with_heatmap
         self.style = style
+        self.class_ = class_
 
         self.numbers = []
         self.values = []
@@ -912,7 +914,28 @@ def __get_metric_name_html(metric, use_full_name=False):
         return metric.name
 
 
+def make_cell_th(metric, pos=''):
+    # return '<th class="' + metric.class_ + '" style="' + metric.style + '">' + metric.name + '</th>'
+    if metric.is_hidden:
+        return ''
+
+    html = ''
+    if metric.numbers:
+        sort_by = 'nosort' if metric.all_values_equal else 'numeric'
+        direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
+        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td ' + metric.class_ + '" data-sortBy=' + sort_by +
+                 ' data-direction=' + direction + ' position=' + str(pos) + '>' +
+                 '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+    elif metric.values:
+        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td ' + metric.class_ + '">' +
+                 '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+    return html
+
+
 def make_cell_td(rec, td_classes=''):
+    if rec.metric.is_hidden:
+        return ''
+
     html = ''
 
     if rec is None:
@@ -922,7 +945,7 @@ def make_cell_td(rec, td_classes=''):
     html += ('\n<td metric="' + rec.metric.name +
              '" style="background-color: ' + rec.color + '; color: ' + rec.text_color +
              '; ' + rec.metric.style)
-    html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' '
+    html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' ' + rec.metric.class_ + ' '
     if rec.num:
         html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value) + '">'
     else:
@@ -968,16 +991,7 @@ def _build_total_report(report, section, column_order):
     for col_num in range(len(section.metrics)):
         pos = column_order[col_num]
         metric = section.metrics[pos]
-        if not metric.is_hidden:
-            if metric.numbers:
-                sort_by = 'nosort' if metric.all_values_equal else 'numeric'
-                direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-                table += ('\n<th class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
-                          ' data-direction=' + direction + ' position=' + str(pos) + '>' +
-                          '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
-            elif metric.values:
-                table += ('\n<th class="second_through_last_col_headers_td">' +
-                          '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+        table += make_cell_th(metric, pos)
 
     table += '\n</tr>\n</thead>\n<tbody>'
 
@@ -1167,7 +1181,6 @@ def calc_cell_contents(report, rows, section):
                     metric.med = metric.ok_threshold
                     if metric.bottom is not None:
                         metric.low_outer_fence = metric.bottom
-                continue
 
             def _cmp(a, b):  # None is always less than anything
                 if a and b:
@@ -1191,10 +1204,10 @@ def calc_cell_contents(report, rows, section):
             q3 = numbers[int(floor((l - 1) * 3 / 4))]
 
             d = q3 - q1
-            metric.low_outer_fence = metric.low_outer_fence or q1 - 3   * d
-            metric.low_inner_fence = metric.low_inner_fence or q1 - 1.5 * d
-            metric.top_inner_fence = metric.top_inner_fence or q3 + 1.5 * d
-            metric.top_outer_fence = metric.top_outer_fence or q3 + 3   * d
+            metric.low_outer_fence = metric.low_outer_fence if metric.low_outer_fence is not None else q1 - 3   * d
+            metric.low_inner_fence = metric.low_inner_fence if metric.low_inner_fence is not None else q1 - 1.5 * d
+            metric.top_inner_fence = metric.top_inner_fence if metric.top_inner_fence is not None else q3 + 1.5 * d
+            metric.top_outer_fence = metric.top_outer_fence if metric.top_outer_fence is not None else q3 + 3   * d
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for row in rows:
@@ -1353,7 +1366,7 @@ def _embed_css_and_scripts(html):
             (js_line_tmpl, js_files, js_l_tag, js_r_tag),
             (css_line_tmpl, css_files, css_l_tag, css_r_tag)]:
         for rel_fpath in files:
-            info('Embedding ' + rel_fpath + '...')
+            info('Embedding ' + rel_fpath + '...', ending=' ')
             with open(join(static_dirpath, join(*rel_fpath.split('/')))) as f:
                 contents = f.read()
                 contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
@@ -1378,6 +1391,8 @@ def _embed_css_and_scripts(html):
                     err()
                     err('Encoding problem embeding this file into html: ' + rel_fpath)
                     err()
+                else:
+                    info('Done.', print_date=False)
 
                 # try:
                 #     html = html_ascii.encode('ascii').replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)

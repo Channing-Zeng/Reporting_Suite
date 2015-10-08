@@ -89,6 +89,8 @@ def get_chr_len_fpath(cnf):
                 chrom = record.id
                 chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), len(record.seq)])
 
+    chr_lengths = sorted(chr_lengths, key=lambda (k, l): (k.get_key(), l))
+
     with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
         with open(tx, 'w') as handle:
             # for c, l in sorted(chr_lengths, key=lambda (c, l): c.get_key()):
