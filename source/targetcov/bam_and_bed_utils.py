@@ -54,7 +54,7 @@ def remove_comments(cnf, bed_fpath):
 def prepare_beds(cnf, exons_bed=None, target_bed=None):
     if exons_bed is None and target_bed is None:
         warn('No bed specified (WGS?) and no exons in the system config; cannot run on target.')
-        return None, None
+        return None, None, None, None
 
     if exons_bed and target_bed and abspath(exons_bed) == abspath(target_bed):
         warn('Same file used for exons and amplicons: ' + exons_bed)

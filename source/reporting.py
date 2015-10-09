@@ -13,7 +13,7 @@ import shutil
 
 from source.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, file_exists
-from source.logger import critical, info, err
+from source.logger import critical, info, err, warn
 from source.utils import mean
 
 
@@ -589,6 +589,7 @@ class FullReport(Report):
             sample_report.metric_storage = metric_storage
             for rec in sample_report.records:
                 rec.metric = metric_storage.find_metric(rec.metric.name)
+            sample_report.records = [r for r in sample_report.records if r.metric is not None]
 
         full_report.metric_storage = metric_storage
 
@@ -933,6 +934,9 @@ def make_cell_th(metric, pos=''):
 
 
 def make_cell_td(rec, td_classes=''):
+    if not rec.metric:
+        warn('rec.metric is None. (rec.value = ' + str(rec.value) + ')')
+
     if rec.metric.is_hidden:
         return ''
 

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import matplotlib
 from source.logger import warn
 matplotlib.use('Agg')
@@ -20,7 +21,7 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
     if not verify_file(seq2c_tsv_fpath, 'Seq2C.tsv'):
         return None
 
-    chr_names_lengths = dict((chr_, l) for chr_, l in get_chr_lengths(cnf).items() if '_' not in chr_) # not drawing extra chromosomes chr1_blablabla
+    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in get_chr_lengths(cnf).items() if '_' not in chr_) # not drawing extra chromosomes chr1_blablabla
     chr_names = chr_names_lengths.keys()
     chr_short_names = [chr_[3:] for chr_ in chr_names_lengths.keys()]
     chr_lengths = [chr_ for chr_ in chr_names_lengths.values()]
@@ -57,7 +58,6 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
             if sname != sample_name:
                 continue
 
-            color = 'b'
             if len(fs) > 12:
                 marker = 'o'
                 sname, gname, chr_, start, end, length, log2r, sig, type_, amp_del, ab_seg, total_seg, ab_log2r = fs[:13]
@@ -67,8 +67,12 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
             else:
                 sname, gname, chr_, start, end, length, log2r = fs[:7]
                 marker = '.'
-                if log2r > 2 or log2r < -2:
-                    color = 'r'
+
+            log2r = float(log2r)
+            if -2 <= log2r <= 2:
+                color = 'b'
+            else:
+                color = 'r'
             max_y, min_y = add_rec_to_plot(chr_, start, end, log2r, color + marker, max_y, min_y)
 
     matplotlib.pyplot.ylim([min_y * 1.05, max_y * 1.05])

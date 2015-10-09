@@ -131,7 +131,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
 
-    orig_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target'), None)
+    # orig_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target'), None)
     # ready_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target ready'), None)
 
     # if not ready_bed_rec:
@@ -149,8 +149,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
 
     txt_fpath = targqc_full_report.save_txt(join(output_dir, BCBioStructure.targqc_name + '.txt'))
     tsv_fpath = targqc_full_report.save_tsv(join(output_dir, BCBioStructure.targqc_name + '.tsv'))
-    html_fpath = targqc_full_report.save_html(join(output_dir, BCBioStructure.targqc_name + '.html'),
-        'TargQC')
+    html_fpath = targqc_full_report.save_html(join(output_dir, BCBioStructure.targqc_name + '.html'), 'TargQC')
 
     return txt_fpath, tsv_fpath, html_fpath
 
