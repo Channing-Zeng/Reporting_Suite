@@ -35,8 +35,6 @@ if is_local():
     NGS_WEBSERVER_PREPROC_DIR = '/Users/vlad/Sites/reports'
 
 def proc_opts():
-    info(' '.join(sys.argv))
-    info()
     usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--bed BED] [--project-name STR] [--expose-only]'
     description = 'This script runs preprocessing. ' + usage
 
@@ -72,13 +70,6 @@ def proc_opts():
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
-    # check_genome_resources(cnf)
-    check_system_resources(cnf, optional=['fastq'])
-    check_genome_resources(cnf)
-
-    if cnf.project_name:
-        info('Project name: ' + cnf.project_name)
-
     if cnf.work_dir:
         cnf.debug = True
     else:
@@ -86,12 +77,22 @@ def proc_opts():
         safe_mkdir(all_work_dir)
         cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
         # cnf.work_dir = tempfile.mkdtemp(dir=all_work_dir)
-        info('Creating a temporary working directory: ' + cnf.work_dir)
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
     subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+
+    info(' '.join(sys.argv))
+    info()
+    info('Created a temporary working directory: ' + cnf.work_dir)
+
+    # check_genome_resources(cnf)
+    check_system_resources(cnf, optional=['fastq'])
+    check_genome_resources(cnf)
+
+    if cnf.project_name:
+        info('Project name: ' + cnf.project_name)
 
     return cnf, dataset_dirpath, jira_url
 

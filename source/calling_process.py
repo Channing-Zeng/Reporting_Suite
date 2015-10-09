@@ -124,12 +124,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             if check_output:
                 res = subprocess.check_output(cmdl, shell=True, stderr=stderr,
-                    stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
+                    stdin=open(stdin_fpath) if stdin_fpath else None, env=env,
+                    executable='/bin/bash')
                 clean()
                 return res
 
             proc = subprocess.Popen(cmdl, shell=True, stdout=stdout, stderr=stderr,
-                stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
+                stdin=open(stdin_fpath) if stdin_fpath else None, env=env,
+                executable='/bin/bash')
 
             if stderr_dump is None:
                 stderr_dump = []
@@ -233,7 +235,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             ret_code = subprocess.call(
                 cmdl, shell=True, stdout=stdout, stderr=stderr,
-                stdin=open(stdin_fpath) if stdin_fpath else None, env=env)
+                stdin=open(stdin_fpath) if stdin_fpath else None, env=env,
+                executable='/bin/bash')
 
             # PRINT STDOUT AND STDERR
             if ret_code != 0:

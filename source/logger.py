@@ -122,14 +122,14 @@ def send_email(msg='', subj='', only_me=False):
 
         try:
             try_send(smtp_host)
-        except socket.error:
+        except:
             warn('Could not send email using the sever "' + smtp_host + '" with exception: ')
             warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
             if smtp_host != 'localhost':
                 warn('Trying "localhost" as a server...')
                 try:
                     try_send('localhost')
-                except socket.error:
+                except:
                     warn('Could not send email using the sever "localhost" with exception: ')
                     warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
                     print_msg()

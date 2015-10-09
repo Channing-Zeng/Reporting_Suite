@@ -4,6 +4,7 @@ import sys
 from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir, isfile
 from optparse import OptionParser
 from shutil import rmtree
+from traceback import print_exc
 from source.bcbio_structure import ungzip_if_needed
 
 from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path, \
@@ -23,7 +24,7 @@ def read_opts_and_cnfs(extra_opts,
                        required_keys,
                        file_keys=list(),
                        dir_keys=list(),
-                       description=None,
+                       description='',
                        extra_msg=None,
                        proc_name=None):
     options = extra_opts + [
@@ -83,6 +84,18 @@ def read_opts_and_cnfs(extra_opts,
     for args, kwargs in options:
         parser.add_option(*args, **kwargs)
 
+    req_keys_usage = ''
+    if required_keys:
+        req_keys_usage = '\nRequired options:'
+    for args, kwargs in options:
+        try:
+            if kwargs['dest'] in required_keys:
+                req_keys_usage += '\n  ' + '/'.join(args)
+        except:
+            print_exc()
+            pass
+    parser.set_usage(parser.get_usage() + req_keys_usage)
+
     (opts, args) = parser.parse_args()
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
@@ -99,12 +112,14 @@ def read_opts_and_cnfs(extra_opts,
     if cnf.sample:
         cnf.sample = remove_quotes(cnf.sample)
     else:
-        if not key_for_sample_name or not cnf[key_for_sample_name]:
-            if cnf.sample:
-                critical('Error: ' + (key_for_sample_name or 'key_for_sample_name') +
-                    ' must be provided in options or in ' + cnf.run_cnf + '.')
-        key_fname = basename(cnf[key_for_sample_name])
-        cnf.sample = key_fname.split('.')[0]
+        if key_for_sample_name:
+            if cnf[key_for_sample_name]:
+                key_fname = basename(cnf[key_for_sample_name])
+                cnf.sample = key_fname.split('.')[0]
+            else:
+                critical('Error: --sample or ' + (str(key_for_sample_name)) + ' must be provided in options.')
+        else:
+            critical('Error: --sample must be provided in options.')
 
     if cnf.caller:
         cnf.caller = remove_quotes(cnf.caller)

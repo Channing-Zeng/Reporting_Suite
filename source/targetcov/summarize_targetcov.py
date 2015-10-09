@@ -51,7 +51,7 @@ def _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report):
                 qualimap_plots_dirpath = join(qualimap_output_dir, 'images_multisampleBamQcReport')
                 cmdline = '{qualimap} multi-bamqc --data {data_fpath} -outdir {qualimap_output_dir}'.format(**locals())
                 res = call(cnf, cmdline, exit_on_error=False, return_err_code=True, env_vars=dict(DISPLAY=None),
-                                output_fpath=qualimap_plots_dirpath, output_is_dir=True)
+                           output_fpath=qualimap_plots_dirpath, output_is_dir=True)
                 if res is None or not verify_dir(qualimap_plots_dirpath):
                     warn('Warning: Qualimap for multi-sample analysis failed to finish. TargQC will not contain plots.')
                     return None
