@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from itertools import chain
-import matplotlib
 from source.logger import warn
+
+import matplotlib
 matplotlib.use('Agg')
 import matplotlib.ticker as ticker
 import matplotlib.pyplot
@@ -9,10 +10,10 @@ from os.path import join
 from source import verify_file, info
 from source.utils import get_chr_lengths
 
-cnv_plot_ending = '.cnv.png'
+cnv_plot_ending = '.seq2c.png'
 
 
-def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_names=None):
+def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_names=None, chr_lens=None):
     info('Seq2C plot builder')
     plot_fpath = join(output_dir, sample_name + cnv_plot_ending)
     if cnf.reuse_intermediate and verify_file(plot_fpath, silent=True):
@@ -22,7 +23,8 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
     if not verify_file(seq2c_tsv_fpath, 'Seq2C.tsv'):
         return None
 
-    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in get_chr_lengths(cnf).items() if '_' not in chr_) # not drawing extra chromosomes chr1_blablabla
+    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (chr_lens or get_chr_lengths(cnf)).items()
+                                    if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
     chr_names = chr_names_lengths.keys()
     chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
     chr_lengths = [chrom for chrom in chr_names_lengths.values()]

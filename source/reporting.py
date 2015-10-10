@@ -132,6 +132,7 @@ class Metric:
             with_heatmap=True,
             style='',
             class_='',
+            align=None,  # TODO: legacy, remove
 
             numbers=None,
             values=None,

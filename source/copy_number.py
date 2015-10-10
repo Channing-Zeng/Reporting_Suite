@@ -9,11 +9,13 @@ from traceback import format_exc
 import sys
 from ext_modules.simplejson import load
 from subprocess import check_output
+from joblib import Parallel, delayed
 from source.bcbio_structure import BCBioStructure
 from source.calling_process import call_subprocess, call_pipe, call
+from source.clinical_reporting.seq2c_plot import draw_seq2c_plot
 from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser, file_transaction, \
-    add_suffix, splitext_plus
+    add_suffix, splitext_plus, verify_module
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.qsub_utils import submit_job, wait_for_jobs
@@ -22,7 +24,7 @@ from source.targetcov.Region import Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
     group_and_merge_regions_by_gene, bedtools_version, prepare_beds, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
-from source.utils import OrderedDefaultDict, get_chr_len_fpath
+from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths
 from source.utils import median, mean
 import source
 from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
@@ -34,6 +36,16 @@ def cnv_reports(cnf, bcbio_structure):
     info('Calculating normalized coverages for CNV...')
     cnv_report_fpath = _seq2c(cnf, bcbio_structure)
 
+    if not verify_module('matplotlib'):
+        warn('No matplotlib, skipping plotting Seq2C')
+    else:
+        Parallel(n_jobs=cnf.threads) \
+            (delayed(draw_seq2c_plot)(CallCnf(cnf.__dict__), cnv_report_fpath, s.name,
+                    cnf.output_dir, chr_lens=get_chr_lengths(cnf))
+                for s in bcbio_structure.samples)
+
+        for s in bcbio_structure.samples:
+            plot_fpath = draw_seq2c_plot(cnf, cnv_report_fpath, s.name, cnf.output_dir)
     info()
     info('*' * 70)
     if cnv_report_fpath:
