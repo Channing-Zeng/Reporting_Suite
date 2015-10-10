@@ -5,6 +5,7 @@ import sys
 import shutil
 
 from source import BaseSample, info, verify_file
+from source.clinical_reporting import seq2c_plot
 from source.clinical_reporting.clinical_reporting import make_key_gene_cov_report, make_mutations_report, \
     make_clinical_html_report, get_target_fraction, get_ave_coverage, get_gender, get_total_variants_number, \
     get_min_coverage, make_actionable_genes_report, proc_actionable_genes
@@ -12,7 +13,6 @@ from source.file_utils import verify_module
 from source.logger import warn
 from source.prepare_args_and_cnf import check_system_resources, check_genome_resources
 from source.main import read_opts_and_cnfs
-from tools import seq2c_plots
 from os.path import join
 
 
@@ -74,7 +74,7 @@ def main(args):
         if not verify_module('matplotlib'):
             warn('No matplotlib, skipping plotting Seq2C')
         else:
-            seq2c_plot_fpath = seq2c_plots.draw_seq2c_plot(cnf, cnf.seq2c_tsv_fpath, sample.name, cnf.output_dir, key_gene_names)
+            seq2c_plot_fpath = seq2c_plot.draw_seq2c_plot(cnf, cnf.seq2c_tsv_fpath, sample.name, cnf.output_dir, key_gene_names)
 
     html_fpath = make_clinical_html_report(cnf, sample, key_genes_report, mutations_report,
         cnf.target_type, ave_depth, target_fraction, gender, total_variants,

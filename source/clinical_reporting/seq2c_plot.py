@@ -100,17 +100,19 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
                 # else:
                 #     color = 'r'
 
-    matplotlib.pyplot.scatter(nrm_xs, nrm_ys, marker='.', color='0.3', s=1)
-    matplotlib.pyplot.scatter(amp_xs, amp_ys, marker='.', color='b', s=2)
-    matplotlib.pyplot.scatter(del_xs, del_ys, marker='.', color='r', s=2)
-    # for x, y, g in zip(amp_xs, amp_ys, amp_gs):
-    #     ax.text(x, y, g, fontsize=9, color='g',
-    #             verticalalignment='center',
-    #             horizontalalignment='center')
-    # for x, y, g in zip(del_xs, del_ys, del_gs):
-    #     ax.text(x, y, g, fontsize=9, color='r',
-    #             verticalalignment='center',
-    #             horizontalalignment='center')
+    matplotlib.pyplot.scatter(nrm_xs, nrm_ys, marker='.', color='k', s=1)
+    matplotlib.pyplot.scatter(amp_xs, amp_ys, marker='o', color='b', s=2)
+    matplotlib.pyplot.scatter(del_xs, del_ys, marker='o', color='r', s=2)
+    if len(amp_xs) <= 10 or len(amp_xs) + len(del_xs) < 40:
+        for x, y, g in zip(amp_xs, amp_ys, amp_gs):
+            ax.text(x, y, g, fontsize=9, color='g',
+                    verticalalignment='center',
+                    horizontalalignment='center')
+    if len(del_xs) <= 10 or len(amp_xs) + len(del_xs) < 40:
+        for x, y, g in zip(del_xs, del_ys, del_gs):
+            ax.text(x, y, g, fontsize=9, color='r',
+                    verticalalignment='center',
+                    horizontalalignment='center')
 
     matplotlib.pyplot.ylim(
         ymax=max(chain(nrm_ys, amp_ys, del_ys, [2])) * 1.05,
