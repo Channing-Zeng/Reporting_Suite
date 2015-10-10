@@ -934,17 +934,18 @@ def make_cell_th(metric, pos=''):
 
 
 def make_cell_td(rec, td_classes=''):
-    if not rec.metric:
-        warn('rec.metric is None. (rec.value = ' + str(rec.value) + ')')
-
-    if rec.metric.is_hidden:
-        return ''
-
     html = ''
 
     if rec is None:
         html += "\n<td>-</td>"
         return html
+
+    if not rec.metric:
+        warn('rec.metric is None. (rec.value = ' + str(rec.value) + ')')
+        return ''
+
+    if rec.metric.is_hidden:
+        return ''
 
     html += ('\n<td metric="' + rec.metric.name +
              '" style="background-color: ' + rec.color + '; color: ' + rec.text_color +
@@ -1038,7 +1039,8 @@ def _build_total_report(report, section, column_order):
             if not metric.values: continue
             if metric.is_hidden: continue
             rec = sample_report.find_record(sample_report.records, metric.name)
-            table += make_cell_td(rec)
+            if rec:
+                table += make_cell_td(rec)
 
         table += '\n</tr>'
         i += 1

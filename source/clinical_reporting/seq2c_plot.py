@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from itertools import chain
 import matplotlib
 from source.logger import warn
 matplotlib.use('Agg')
@@ -23,59 +24,95 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
 
     chr_names_lengths = OrderedDict((chr_, l) for chr_, l in get_chr_lengths(cnf).items() if '_' not in chr_) # not drawing extra chromosomes chr1_blablabla
     chr_names = chr_names_lengths.keys()
-    chr_short_names = [chr_[3:] for chr_ in chr_names_lengths.keys()]
-    chr_lengths = [chr_ for chr_ in chr_names_lengths.values()]
+    chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
+    chr_lengths = [chrom for chrom in chr_names_lengths.values()]
 
     fig = matplotlib.pyplot.figure(figsize=(25, 5))
-    matplotlib.pyplot.xlim([0, len(chr_lengths) + 2])
-    chr_cum_lengths = [sum(chr_lengths[:i]) for i in range(len(chr_lengths)+1)]
-    matplotlib.pyplot.xticks(chr_cum_lengths, [])
+    matplotlib.pyplot.xlim([0, len(chr_lengths) + 1])
+    chr_cum_lens = [sum(chr_lengths[:i]) for i in range(len(chr_lengths)+1)]
+    matplotlib.pyplot.xticks(chr_cum_lens, [])
 
     ax = matplotlib.pyplot.gca()
-    chr_names_coords = [chr_cum_lengths[i+1] - chr_lengths[i]/2 for i in range(len(chr_lengths))]
+    chr_names_coords = [chr_cum_lens[i+1] - chr_lengths[i]/2 for i in range(len(chr_lengths))]
     ax.xaxis.set_minor_locator(ticker.FixedLocator(chr_names_coords))
     ax.xaxis.set_minor_formatter(ticker.FixedFormatter(chr_short_names))
 
-    max_y = 0
-    min_y = 0
-    def add_rec_to_plot(chr_, start, end, log2r, marker, max_y, min_y):
-        x_vals = [chr_cum_lengths[chr_names.index(chr_)] + (int(start) + int(end))/2]
-        point_y = float(log2r)
-        y_vals = [point_y]
-        max_y = max(max_y, point_y)
-        min_y = min(min_y, point_y)
-        matplotlib.pyplot.plot(x_vals, y_vals, marker, markersize=2)
-        return max_y, min_y
+    # def add_rec_to_plot(chr_, start, end, log2r, max_y, min_y, marker, color, label=None):
+    #     x_vals = [chr_cum_lengths[chr_names.index(chr_)] + (int(start) + int(end))/2]
+    #     point_y = float(log2r)
+    #     y_vals = [point_y]
+    #     max_y = max(max_y, point_y)
+    #     min_y = min(min_y, point_y)
+    #     if label:
+    #         matplotlib.pyplot.plot(x_vals, y_vals, marker, markersize=2, label=label)
+    #     else:
+    #         matplotlib.pyplot.plot(x_vals, y_vals, marker, markersize=2)
+    #     return max_y, min_y
 
+    chr_cum_len_by_chrom = dict(zip(chr_names, chr_cum_lens))
+    nrm_xs = []
+    nrm_ys = []
+    amp_xs = []
+    amp_ys = []
+    amp_gs = []
+    del_xs = []
+    del_ys = []
+    del_gs = []
     with open(seq2c_tsv_fpath) as f:
         for i, l in enumerate(f):
-            if i == 0:
-                continue
-            fs = l.strip().split('\t')
+            if i == 0: continue
+            fs = l[:-1].split('\t')
             sname, gname = fs[0], fs[1]
-            if key_gene_names and gname not in key_gene_names:
-                continue
-            if sname != sample_name:
-                continue
+            if key_gene_names and gname not in key_gene_names: continue
+            if sname != sample_name: continue
 
-            if len(fs) > 12:
-                marker = 'o'
-                sname, gname, chr_, start, end, length, log2r, sig, type_, amp_del, ab_seg, total_seg, ab_log2r = fs[:13]
-                if ab_log2r:
-                    log2r = ab_log2r
-                    marker = 'x'
-            else:
-                sname, gname, chr_, start, end, length, log2r = fs[:7]
-                marker = '.'
+            sname, gname, chrom, start, end, length, log2r, sig, type_, amp_del, ab_seg, total_seg, \
+                ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
+            x = chr_cum_len_by_chrom[chrom] + (int(start)+int(end))/2
 
-            log2r = float(log2r)
-            if -2 <= log2r <= 2:
-                color = 'b'
-            else:
-                color = 'r'
-            max_y, min_y = add_rec_to_plot(chr_, start, end, log2r, color + marker, max_y, min_y)
+            if not ab_log2r or type_ == 'BP':  # breakpoint, meaning part of exon is not amplified
+                nrm_xs.append(x)
+                nrm_ys.append(float(log2r))
+                # add_rec_to_plot(chrom, start, end, log2r, max_y, min_y, marker='b.')
 
-    matplotlib.pyplot.ylim([min_y * 1.05, max_y * 1.05])
+            if ab_log2r:
+                y = float(ab_log2r)
+                if amp_del == 'Amp':
+                    amp_xs.append(x)
+                    amp_ys.append(y)
+                    amp_gs.append(gname)
+                elif amp_del == 'Del':
+                    del_xs.append(x)
+                    del_ys.append(y)
+                    del_gs.append(gname)
+                else:
+                    warn('Event is not Amp or Del, it\'s ' + amp_del)
+
+                # max_y, min_y = add_rec_to_plot(chrom, start, end, log2r, max_y, min_y, marker=color + 'o', label=gname)
+
+                # log2r = float(log2r)
+                # if -0.5 < log2r < 0.5:
+                #     color = 'k'
+                # elif -1.5 < log2r < 1.5:
+                #     color = 'g'
+                # else:
+                #     color = 'r'
+
+    matplotlib.pyplot.scatter(nrm_xs, nrm_ys, marker='.', color='0.3', s=1)
+    matplotlib.pyplot.scatter(amp_xs, amp_ys, marker='.', color='b', s=2)
+    matplotlib.pyplot.scatter(del_xs, del_ys, marker='.', color='r', s=2)
+    # for x, y, g in zip(amp_xs, amp_ys, amp_gs):
+    #     ax.text(x, y, g, fontsize=9, color='g',
+    #             verticalalignment='center',
+    #             horizontalalignment='center')
+    # for x, y, g in zip(del_xs, del_ys, del_gs):
+    #     ax.text(x, y, g, fontsize=9, color='r',
+    #             verticalalignment='center',
+    #             horizontalalignment='center')
+
+    matplotlib.pyplot.ylim(
+        ymax=max(chain(nrm_ys, amp_ys, del_ys, [2])) * 1.05,
+        ymin=min(chain(nrm_ys, amp_ys, del_ys, [-2])) * 1.05)
     matplotlib.pyplot.tick_params(
         axis='x',
         which='minor',
