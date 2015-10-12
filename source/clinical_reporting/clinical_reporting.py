@@ -11,7 +11,6 @@ from source.reporting import MetricStorage, Metric, PerRegionSampleReport, Repor
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
-from tools import seq2c_plots
 
 
 def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
@@ -360,7 +359,11 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
         'coverage': coverage_dict,
         'seq2c_plot': seq2c_plot_dict,
         'actionable_genes': actionable_genes_dict,
-    }, sample.clinical_html, tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'))
+    }, sample.clinical_html,
+       tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
+       extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js')],
+       extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
+                         join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
     if islink(clin_rep_symlink):

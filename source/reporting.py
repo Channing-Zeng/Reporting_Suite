@@ -3,7 +3,7 @@
 from collections import OrderedDict, defaultdict
 from itertools import repeat, izip, chain
 import os
-from os.path import join, relpath, dirname, abspath, splitext, isdir
+from os.path import join, relpath, dirname, abspath, splitext, isdir, basename
 from json import load, dump, JSONEncoder, dumps
 from math import floor
 import traceback
@@ -12,7 +12,7 @@ from ext_modules.jsontemplate import jsontemplate
 import shutil
 
 from source.bcbio_structure import BCBioSample
-from source.file_utils import file_transaction, file_exists
+from source.file_utils import file_transaction, file_exists, verify_file
 from source.logger import critical, info, err, warn
 from source.utils import mean
 
@@ -251,7 +251,8 @@ class Report:
         self.tsv_fpath = fpath
         return fpath
 
-    def save_html(self, output_fpath, caption='', type_=None):
+    def save_html(self, output_fpath, caption='', type_=None,
+                  extra_js_fpaths=list(), extra_css_fpaths=list()):
         # class Encoder(JSONEncoder):
         #     def default(self, o):
         #         if isinstance(o, (VariantCaller, BCBioSample)):
@@ -263,7 +264,8 @@ class Report:
         #     report=self,
         #     type_=type_,
         # ), separators=(',', ':'), cls=Encoder)
-        fpath = write_html_report(self, type_, output_fpath, caption)
+        fpath = write_html_report(self, type_, output_fpath, caption=caption,
+              extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
         self.html_fpath = fpath
         return fpath
 
@@ -371,8 +373,9 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, output_fpath, caption='', type_=None):
-        return Report.save_html(self, output_fpath, caption=caption, type_='SampleReport')
+    def save_html(self, output_fpath, caption='', type_=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
+        return Report.save_html(self, output_fpath, caption=caption, type_='SampleReport',
+                                extra_js_fpaths=list(), extra_css_fpaths=list())
 
     def __repr__(self):
         return self.get_display_name() + (', ' + self.report_name if self.report_name else '')
@@ -461,7 +464,8 @@ class PerRegionSampleReport(SampleReport):
 
         return rows
 
-    def save_html(self, output_fpath, caption='', type_=None):
+    def save_html(self, output_fpath, caption='', type_=None,
+                  extra_js_fpaths=list(), extra_css_fpaths=list()):
         return None
         # sample_reports = []
         # fr = FullReport(self.report_name, sample_reports, self.metric_storage)
@@ -602,12 +606,14 @@ class FullReport(Report):
             self.save_tsv(base_path + '.tsv', sections), \
             self.save_html(base_path + '.html', caption)
 
-    def save_html(self, output_fpath, caption='', type_=None, display_name=None):
+    def save_html(self, output_fpath, caption='', type_=None, display_name=None,
+                  extra_js_fpaths=list(), extra_css_fpaths=list()):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
-        return Report.save_html(self, output_fpath, caption=caption, type_='FullReport')
+        return Report.save_html(self, output_fpath, caption=caption, type_='FullReport',
+            extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
 
     def __repr__(self):
         return self.name
@@ -851,7 +857,6 @@ css_files = [
     'bootstrap/bootstrap.min.css',
     'common.css',
     'report.css',
-    'clinical_report.css',
     'table_sorter/style.css'
 ]
 js_files = [
@@ -1289,7 +1294,7 @@ def calc_cell_contents(report, rows, section):
     return report
 
 
-def write_html_report(report, type_, html_fpath, caption=''):
+def write_html_report(report, type_, html_fpath, caption='', extra_js_fpaths=list(), extra_css_fpaths=list()):
     with open(template_fpath) as template_file:
         html = template_file.read()
 
@@ -1302,7 +1307,7 @@ def write_html_report(report, type_, html_fpath, caption=''):
     plots_html = ''.join('<img src="' + plot + '"/>' for plot in report.plots)
     html = _insert_into_html(html, plots_html, 'plots')
 
-    html = _embed_css_and_scripts(html)
+    html = _embed_css_and_scripts(html, extra_js_fpaths, extra_css_fpaths)
     html = _embed_images(html, dirname(html_fpath))
 
     with open(html_fpath, 'w') as f:
@@ -1310,45 +1315,45 @@ def write_html_report(report, type_, html_fpath, caption=''):
     return html_fpath
 
 
-def _copy_aux_files(results_dirpath):
-    aux_dirpath = join(results_dirpath, aux_dirname)
-
-    if isdir(aux_dirpath):
-        shutil.rmtree(aux_dirpath)
-
-    if not isdir(aux_dirpath):
-        try:
-            os.mkdir(aux_dirpath)
-        except OSError:
-            pass
-
-    def copy_aux_file(fname):
-        src_fpath = join(static_dirpath, fname)
-
-        if file_exists(src_fpath):
-            dst_fpath = join(aux_dirpath, fname)
-
-            if not file_exists(dirname(dst_fpath)):
-                try:
-                    os.makedirs(dirname(dst_fpath))
-                except OSError:
-                    pass
-            try:
-                shutil.copyfile(src_fpath, dst_fpath)
-            except OSError:
-                pass
-
-    for aux_f_relpath in js_files + css_files + image_files:
-        if aux_f_relpath.endswith('.js'):
-            for ext in ['.js', '.coffee', '.map']:
-                copy_aux_file(splitext(aux_f_relpath)[0] + ext)
-
-        elif aux_f_relpath.endswith('.css'):
-            for ext in ['.css', '.sass']:
-                copy_aux_file(splitext(aux_f_relpath)[0] + ext)
-
-        else:
-            copy_aux_file(aux_f_relpath)
+# def _copy_aux_files(results_dirpath, extra_files=list()):
+#     aux_dirpath = join(results_dirpath, aux_dirname)
+#
+#     if isdir(aux_dirpath):
+#         shutil.rmtree(aux_dirpath)
+#
+#     if not isdir(aux_dirpath):
+#         try:
+#             os.mkdir(aux_dirpath)
+#         except OSError:
+#             pass
+#
+#     def copy_aux_file(fname):
+#         src_fpath = join(static_dirpath, fname)
+#
+#         if file_exists(src_fpath):
+#             dst_fpath = join(aux_dirpath, fname)
+#
+#             if not file_exists(dirname(dst_fpath)):
+#                 try:
+#                     os.makedirs(dirname(dst_fpath))
+#                 except OSError:
+#                     pass
+#             try:
+#                 shutil.copyfile(src_fpath, dst_fpath)
+#             except OSError:
+#                 pass
+#
+#     for aux_f_relpath in js_files + css_files + image_files + extra_files:
+#         if aux_f_relpath.endswith('.js'):
+#             for ext in ['.js', '.coffee', '.map']:
+#                 copy_aux_file(splitext(aux_f_relpath)[0] + ext)
+#
+#         elif aux_f_relpath.endswith('.css'):
+#             for ext in ['.css', '.sass']:
+#                 copy_aux_file(splitext(aux_f_relpath)[0] + ext)
+#
+#         else:
+#             copy_aux_file(aux_f_relpath)
 
 
 def _embed_images(html, report_dirpath):
@@ -1360,7 +1365,7 @@ def _embed_images(html, report_dirpath):
     return html
 
 
-def _embed_css_and_scripts(html):
+def _embed_css_and_scripts(html, extra_js_fpaths=list(), extra_css_fpaths=list()):
     js_line_tmpl = '<script type="text/javascript" src="/static/{file_rel_path}"></script>'
     js_l_tag = '<script type="text/javascript" name="{}">'
     js_r_tag = '    </script>'
@@ -1370,11 +1375,18 @@ def _embed_css_and_scripts(html):
     css_r_tag = '    </style>'
 
     for line_tmpl, files, l_tag, r_tag in [
-            (js_line_tmpl, js_files, js_l_tag, js_r_tag),
-            (css_line_tmpl, css_files, css_l_tag, css_r_tag)]:
+            (css_line_tmpl, extra_css_fpaths + css_files, css_l_tag, css_r_tag),
+            (js_line_tmpl, extra_js_fpaths + js_files, js_l_tag, js_r_tag),]:
         for rel_fpath in files:
             info('Embedding ' + rel_fpath + '...', ending=' ')
-            with open(join(static_dirpath, join(*rel_fpath.split('/')))) as f:
+            if verify_file(rel_fpath, silent=True):
+                fpath = rel_fpath
+                rel_fpath = basename(fpath)
+            else:
+                fpath = join(static_dirpath, join(*rel_fpath.split('/')))
+                if not verify_file(fpath):
+                    continue
+            with open(fpath) as f:
                 contents = f.read()
                 contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
 
@@ -1419,14 +1431,16 @@ def _insert_into_html(html, text, keyword):
     return html
 
 
-def write_static_html_report(work_dir, data_dict, html_fpath, tmpl_fpath=None):
+def write_static_html_report(work_dir, data_dict, html_fpath,
+        tmpl_fpath=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
     tmpl_fpath = tmpl_fpath or static_template_fpath
     with open(tmpl_fpath) as f:
         html = f.read()
 
     html = jsontemplate.expand(html, data_dict)
 
-    html = _embed_css_and_scripts(html)
+    html = _embed_css_and_scripts(html,
+        extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
 
     with file_transaction(work_dir, html_fpath) as tx:
         with open(tx, 'w') as f:

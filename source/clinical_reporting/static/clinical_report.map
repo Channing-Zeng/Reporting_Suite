@@ -1,0 +1,10 @@
+{
+  "version": 3,
+  "file": "clinical_report.js",
+  "sourceRoot": "",
+  "sources": [
+    "clinical_report.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;AAAA;AAAA"
+}

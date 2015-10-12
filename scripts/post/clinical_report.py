@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import __check_python_version
 
 import sys
 import shutil
@@ -8,12 +7,11 @@ from source import BaseSample, info, verify_file
 from source.clinical_reporting import seq2c_plot
 from source.clinical_reporting.clinical_reporting import make_key_gene_cov_report, make_mutations_report, \
     make_clinical_html_report, get_target_fraction, get_ave_coverage, get_gender, get_total_variants_number, \
-    get_min_coverage, make_actionable_genes_report, proc_actionable_genes
+    proc_actionable_genes
 from source.file_utils import verify_module
 from source.logger import warn
 from source.prepare_args_and_cnf import check_system_resources, check_genome_resources
 from source.main import read_opts_and_cnfs
-from os.path import join
 
 
 def main(args):
