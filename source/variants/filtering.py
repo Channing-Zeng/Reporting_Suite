@@ -264,7 +264,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
         info('Done postprocessing all filtered VCFs.')
 
     except OSError:
-        traceback.print_exc()
+        err(traceback.format_exc())
         warn('Running sequencially instead in ' + str(threads_num) + ' threads')
         try:
             Parallel(n_jobs=1) \
@@ -275,7 +275,7 @@ def write_vcfs(cnf, sample_names, samples, anno_vcf_fpaths, caller_name, vcf2txt
             info('Done postprocessing all filtered VCFs.')
 
         except OSError:
-            traceback.print_exc()
+            err(traceback.format_exc())
             err('Cannot postprocess VCF - skipping')
             err()
 

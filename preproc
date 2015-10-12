@@ -10,6 +10,7 @@ from collections import OrderedDict, namedtuple
 import subprocess
 from joblib import Parallel, delayed
 import source
+import traceback
 
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
@@ -81,7 +82,11 @@ def proc_opts():
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
-    subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+    try:
+        subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+    except OSError:
+        err(traceback.format_exc())
+        pass
 
     info(' '.join(sys.argv))
     info()

@@ -3,6 +3,7 @@
 from collections import OrderedDict, defaultdict
 from os.path import join, basename, isfile, abspath, realpath, splitext, normpath, dirname, relpath
 import shutil
+import traceback
 
 import source
 from source.bcbio_structure import BCBioStructure
@@ -432,7 +433,10 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
 
     if exons_no_genes_bed or target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
-        shutil.copy(target_bed or exons_bed, ready_target_bed)
+        try:
+            shutil.copy(target_bed or exons_bed, ready_target_bed)
+        except OSError:
+            err(traceback.format_exc())
 
         info()
         info('Calculation of coverage statistics for the regions in the input BED file...')

@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+
 import os
 import sys
 from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir, isfile
 from optparse import OptionParser
 from shutil import rmtree
-from traceback import print_exc
+from traceback import print_exc, format_exc
 from source.bcbio_structure import ungzip_if_needed
 
 from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path, \
@@ -92,7 +93,7 @@ def read_opts_and_cnfs(extra_opts,
             if kwargs['dest'] in required_keys:
                 req_keys_usage += '\n  ' + '/'.join(args)
         except:
-            print_exc()
+            err(format_exc())
             pass
     parser.set_usage(parser.get_usage() + req_keys_usage)
 

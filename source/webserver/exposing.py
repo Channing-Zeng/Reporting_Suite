@@ -254,7 +254,10 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
 
         with open(tx_fpath, 'w') as f:
             os.umask(0002)
-            os.chmod(tx_fpath, 0666)
+            try:
+                os.chmod(tx_fpath, 0666)
+            except OSError:
+                err(format_exc())
             for l in lines:
                 if not l:
                     pass

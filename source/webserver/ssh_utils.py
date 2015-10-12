@@ -1,5 +1,5 @@
 from os.path import join, dirname
-from traceback import print_exc
+from traceback import format_exc
 
 from source.logger import info, err, warn
 from source.tools_from_cnf import get_system_path
@@ -17,7 +17,7 @@ def connect_to_server(server_url, username, password):
     try:
         from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
     except ImportError as e:
-        print_exc()
+        err(format_exc())
         warn()
         err('Cannot improt SSHClient - skipping trasnferring symlinking to the ngs-website')
         warn()
@@ -31,7 +31,7 @@ def connect_to_server(server_url, username, password):
         except Exception, e:
             warn('Cannot read RSAKey from ' + rsa_key_path)
             warn()
-            print_exc()
+            err(format_exc())
             warn()
         else:
             info('Succesfully read RSAKey from ' + rsa_key_path)
@@ -40,7 +40,7 @@ def connect_to_server(server_url, username, password):
             except Exception, e:
                 warn('Cannot connect to ' + server_url + ':')
                 warn()
-                print_exc()
+                err(format_exc())
                 warn()
             else:
                 info('Succesfully connected to ' + server_url)
