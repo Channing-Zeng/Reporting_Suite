@@ -306,7 +306,8 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     else:
         target_info.bases_num = target_stats['reference_size']
 
-    sample.dedup_bam = add_suffix(bam_fpath, source.dedup_bam)
+    # sample.dedup_bam = add_suffix(bam_fpath, source.dedup_bam)
+    sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
     remove_dups(cnf, bam_fpath, sample.dedup_bam)
     bam_fpath = sample.dedup_bam
 

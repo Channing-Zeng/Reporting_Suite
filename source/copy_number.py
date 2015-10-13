@@ -15,7 +15,7 @@ from source.calling_process import call_subprocess, call_pipe, call
 from source.clinical_reporting.seq2c_plot import draw_seq2c_plot
 from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser, file_transaction, \
-    add_suffix, splitext_plus, verify_module
+    add_suffix, splitext_plus, verify_module, intermediate_fname
 from source.logger import info, err, step_greetings, critical, send_email, warn
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.qsub_utils import submit_job, wait_for_jobs
@@ -109,7 +109,8 @@ def _seq2c(cnf, bcbio_structure):
     dedupped_bam_by_sample = dict()
     dedup_jobs = []
     for s in bcbio_structure.samples:
-        s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
+        s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
+        # s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
         dedupped_bam_by_sample[s.name] = s.dedup_bam
         if verify_bam(s.dedup_bam, silent=True):
             info(s.dedup_bam + ' exists')
