@@ -27,13 +27,25 @@ def read_opts_and_cnfs(extra_opts,
                        dir_keys=list(),
                        description='',
                        extra_msg=None,
-                       proc_name=None):
-    options = extra_opts + [
-        (['-o', '--output_dir'], dict(
-             dest='output_dir',
-             metavar='DIR',
-             help='output directory (or directory name in case of bcbio final dir)')
-         ),
+                       proc_name=None,
+                       fpath_for_sample_name=None,
+                       output_fpath_not_dir=False):
+    options = extra_opts
+    if not output_fpath_not_dir:
+        options += [
+            (['-o', '--output-dir'], dict(
+                 dest='output_dir',
+                 metavar='DIR',
+                 help='output directory (or directory name in case of bcbio final dir)')
+             )]
+    else:
+        options += [
+            (['-o', '--output-file'], dict(
+                 dest='output_file',
+                 metavar='FILE',
+                 help='output file')
+             )]
+    options += [
         (['-s', '--sample', '--name'], dict(
              dest='sample',
              metavar='NAME',
@@ -113,14 +125,16 @@ def read_opts_and_cnfs(extra_opts,
     if cnf.sample:
         cnf.sample = remove_quotes(cnf.sample)
     else:
-        if key_for_sample_name:
-            if cnf[key_for_sample_name]:
-                key_fname = basename(cnf[key_for_sample_name])
-                cnf.sample = key_fname.split('.')[0]
-            else:
+        if not fpath_for_sample_name:
+            if not key_for_sample_name:
+                critical('Error: --sample must be provided in options.')
+
+            fpath_for_sample_name = cnf[key_for_sample_name]
+            if not fpath_for_sample_name:
                 critical('Error: --sample or ' + (str(key_for_sample_name)) + ' must be provided in options.')
-        else:
-            critical('Error: --sample must be provided in options.')
+
+            key_fname = basename(cnf[key_for_sample_name])
+            cnf.sample = key_fname.split('.')[0]
 
     if cnf.caller:
         cnf.caller = remove_quotes(cnf.caller)

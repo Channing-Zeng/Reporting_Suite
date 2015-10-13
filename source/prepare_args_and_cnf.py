@@ -6,6 +6,7 @@ import os
 from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, basename
 from os import getcwd
 import datetime
+import tempfile
 from source import logger
 
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path, \
@@ -62,7 +63,6 @@ def check_genome_resources(cnf):
                         #     warn('   Warn: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
                 # else:
                 #     info(key + ': ' + genome_cnf[key])
-        info()
         genome_cnf['name'] = build_name
 
     cnf.genome = cnf.genomes[cnf.genome]
@@ -168,9 +168,10 @@ def check_system_resources(cnf, required=list(), optional=list()):
 def set_up_dirs(cnf):
     """ Creates output_dir, work_dir; sets up log
     """
-    cnf.output_dir = adjust_path(cnf.output_dir)
-    safe_mkdir(cnf.output_dir, 'output_dir')
-    info('Saving into ' + cnf.output_dir)
+    if cnf.output_dir:
+        cnf.output_dir = adjust_path(cnf.output_dir)
+        safe_mkdir(cnf.output_dir, 'output_dir')
+        info('Saving into ' + cnf.output_dir)
 
     set_up_work_dir(cnf)
 
@@ -192,12 +193,18 @@ def set_up_work_dir(cnf):
     # path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-1]
 
     if not cnf.work_dir:
-        work_dir_name = 'work' + ('_' + cnf.sample if cnf.sample else '')
-        cnf.work_dir = join(cnf.output_dir, work_dir_name)
-        # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
-        #     rmtree(cnf.work_dir)
+        if cnf.output_dir:
+            work_dir_name = 'work' + ('_' + cnf.sample if cnf.sample else '')
+            cnf.work_dir = join(cnf.output_dir, work_dir_name)
+            info('Work dir: ' + cnf.work_dir)
+            # if not cnf.reuse_intermediate and isdir(cnf.work_dir):
+            #     rmtree(cnf.work_dir)
+        else:
+            cnf.work_dir = tempfile.mkdtemp()
+            info('Creating temprorary directory for work dir: ' + cnf.work_dir)
     else:
         cnf.work_dir = adjust_path(cnf.work_dir)
+        info('Work dir: ' + cnf.work_dir)
 
     safe_mkdir(cnf.work_dir, 'working directory')
 

@@ -6,14 +6,20 @@ import sys
 import os
 import tempfile
 import shutil
-from os.path import abspath, dirname, realpath, join, exists
+from os.path import abspath, dirname, realpath, join, exists, basename, splitext
+from source.calling_process import call
 
 from source.logger import critical
+from source.main import read_opts_and_cnfs
+from source.prepare_args_and_cnf import check_system_resources
+from source.prepare_args_and_cnf import check_genome_resources
 from source.targetcov.Region import SortableByChrom
+from source.targetcov.bam_and_bed_utils import intersect_bed
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 from os.path import getsize
-from source.file_utils import verify_file
+from source.file_utils import verify_file, adjust_path
+from pybedtools import BedTool
 
 
 usage = """
@@ -23,8 +29,8 @@ usage = """
         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
         If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
 
-    Usage: python annotate_bed Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
-"""
+    Usage: python %s Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
+""" % __file__
 
 
 def _read_args(args):
@@ -57,20 +63,44 @@ def _read_args(args):
 
 
 def main():
-    input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools = _read_args(sys.argv[1:])
+    if len(sys.argv[1]) < 0:
+        critical('Usage: ' + __file__ + ' Input_BED_file -o Annotated_BED_file')
+    input_bed_fpath = verify_file(sys.argv[1], is_critical=True, description='Input BED file for ' + __file__)
 
-    ref_bed_no_genes_fpath, ref_bed_genes_fpath = _split_reference(work_dirpath, ref_bed_fpath)
+    cnf = read_opts_and_cnfs(
+        description='Annotating BED file based on Ensemble exons and genes annotations.',
+        extra_opts=[
+            (['--reference'], dict(
+                dest='reference')
+            ),
+        ],
+        required_keys=['output_file'],
+        file_keys=['reference'],
+        key_for_sample_name=None,
+        fpath_for_sample_name=input_bed_fpath,
+        output_fpath_not_dir=True
+    )
+    check_system_resources(cnf)
+    check_genome_resources(cnf)
+
+    exons_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
+    if not verify_file(exons_fpath, 'Ensemble file with exons w/genes for annotate_bed'):
+        critical('Ensemble file with exons w/genes for annotate_bed is required')
+
+    genes_exons_bed, no_genes_exons_bed = _split_reference(cnf, exons_fpath)
+    bed = BedTool(input_bed_fpath).cut([0, 1, 2])
 
     log('Annotating based on CDS and exons...')
-    annotated, off_targets = _annotate(bedtools, input_bed_fpath, ref_bed_no_genes_fpath)
+
+    annotated, off_targets = _annotate(cnf, bed, no_genes_exons_bed)
 
     if off_targets:
-        off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
-        log('Saved off target1 to ' + str(off_target_fpath))
-
+        off_target_bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
+        # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
+        # log('Saved off target1 to ' + str(off_target_fpath))
         log()
         log('Trying to annotate based on genes rather than CDS and exons...')
-        annotated_2, off_targets = _annotate(bedtools, off_target_fpath, ref_bed_genes_fpath)
+        annotated_2, off_targets = _annotate(cnf, off_target_bed, genes_exons_bed)
 
         for a in annotated_2:
             a.feature = 'UTR/Intron/Decay'
@@ -79,9 +109,10 @@ def main():
         annotated.extend(off_targets)
 
     log()
-    log('Saving annotated regions...')
-    for region in sorted(annotated, key=lambda r: r.get_key()):
-        sys.stdout.write(str(region))
+    log('Saving annotated regions to ' + str(cnf.output_file))
+    with open(cnf.output_file, 'w') as out:
+        for region in sorted(annotated, key=lambda r: r.get_key()):
+            out.write(str(region))
 
         # for r, overlap_size in overlaps:
         #     sys.stdout.write('\t' + '\t'.join([
@@ -90,10 +121,6 @@ def main():
         #         '{:.2f}%'.format(100.0 * overlap_size / (r.end - r.start))
         #     ]))
         # sys.stdout.write('\n')
-    try:
-        shutil.rmtree(work_dirpath)
-    except OSError:
-        pass
     log('Done.')
 
 
@@ -102,12 +129,12 @@ def log(msg=''):
 
 
 class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, genome=None, symbol=None, exon=None, strand=None, feature=None, biotype=None):
-        SortableByChrom.__init__(self, chrom, genome)
+    def __init__(self, chrom, start, end, genome_build=None, gene_symbol=None, exon=None, strand=None, feature=None, biotype=None):
+        SortableByChrom.__init__(self, chrom, genome_build)
         self.chrom = chrom
         self.start = start
         self.end = end
-        self.symbol = symbol
+        self.symbol = gene_symbol
         self.exon = exon
         self.strand = strand
         self.feature = feature
@@ -134,7 +161,7 @@ def _resolve_ambiguities(annotated_by_loc_by_gene):
     annotated = []
     for (chrom, start, end), overlaps_by_gene in annotated_by_loc_by_gene.iteritems():
         for g_name, overlaps in overlaps_by_gene.iteritems():
-            consensus = Region(chrom, start, end, symbol=g_name, exon='', strand='', feature='', biotype='')
+            consensus = Region(chrom, start, end, gene_symbol=g_name, exon='', strand='', feature='', biotype='')
             for r, overlap_size in overlaps:
                 if consensus.strand:
                     # RefSeq has exons from different strands with the same gene name (e.g. CTAGE4 for hg19),
@@ -155,29 +182,21 @@ def _resolve_ambiguities(annotated_by_loc_by_gene):
     return annotated
 
 
-def _annotate(bedtools, bed_fpath, ref_fpath):
-    if getsize(bed_fpath) <= 0:
-        log('Warning: input BED file is empty: ' + bed_fpath + '.')
-        return [], []
+def _annotate(cnf, bed, ref_bed):
+        # off_targets = []
+        # with open(bed_fpath) as f:
+        #     for l in f:
+        #         if l.startswith('#'):
+        #             continue
+        #         a_chr, a_start, a_end = l.strip().split('\t')[:3]
+        #         off_targets.append(Region(a_chr, int(a_start), int(a_end)))
+        # return [], off_targets
 
-    if getsize(ref_fpath) <= 0:
-        log('Warning: reference BED file is empty: ' + ref_fpath + '; all regions are marked as not annotated.')
-        off_targets = []
-        with open(bed_fpath) as f:
-            for l in f:
-                if l.startswith('#'):
-                    continue
-                a_chr, a_start, a_end = l.strip().split('\t')[:3]
-                off_targets.append(Region(a_chr, int(a_start), int(a_end)))
-        return [], off_targets
-
-    cmdline = 'cut -f1,2,3 ' + bed_fpath
-    sys.stderr.write(cmdline)
-    p = subprocess.Popen(cmdline.split(), stdout=subprocess.PIPE)
-    cmdline = '{bedtools} intersect -a - -b {ref_fpath} -wao'.format(**locals())
-    sys.stderr.write(' | ' + cmdline + '\n')
-    log()
-    p = subprocess.Popen(cmdline.split(), stdin=p.stdout, stdout=subprocess.PIPE)
+    # intersect_bed(cnf, '<(cut -f1,2,3 ' + bed_fpath + ')', ref_fpath, output_fpath=)
+    # cmdline = '{bedtools} intersect -a - -b {ref_fpath} -wao'.format(**locals())
+    # call(cnf, cmdline, output_fpath=)
+    # p = subprocess.Popen(cmdline.split(), stdin=p.stdout, stdout=subprocess.PIPE)
+    intersection = bed.intersect(ref_bed, wao=True)
 
     total_lines = 0
     total_uniq_lines = 0
@@ -189,9 +208,9 @@ def _annotate(bedtools, bed_fpath, ref_fpath):
     annotated_by_loc_by_gene = OrderedDefaultDict(lambda: defaultdict(list))
     off_targets = list()
 
-    for l in p.stdout:
+    for fs in intersection:
         a_chr, a_start, a_end, e_chr, e_start, e_end, e_gene, e_exon, e_strand, \
-            e_feature, e_biotype, overlap_size = l.strip().split('\t')
+            e_feature, e_biotype, overlap_size = fs
         assert e_chr == '.' or a_chr == e_chr, str((a_chr + ', ' + e_chr))
         total_lines += 1
         if (a_chr, a_start, a_end) not in met:
@@ -205,7 +224,8 @@ def _annotate(bedtools, bed_fpath, ref_fpath):
                 total_uniq_annotated += 1
 
             annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
-                Region(e_chr, int(e_start), int(e_end), e_gene, e_exon, e_strand, e_feature, e_biotype),
+                Region(chrom=e_chr, start=int(e_start), end=int(e_end), genome_build=cnf.genome.name,
+                       gene_symbol=e_gene, exon=e_exon, strand=e_strand, feature=e_feature, biotype=e_biotype),
                 int(overlap_size)))
 
         met.add((a_chr, a_start, a_end))
@@ -231,27 +251,33 @@ def _save_regions(regions, fpath):
     return fpath
 
 
-def _split_reference(work_dirpath, ref_bed_fpath):
+def _split_reference(cnf, exons_bed_fpath):
     log('Splitting reference file into genes and non-genes:')
-    ref_bed_no_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__no_whole_genes')
-    ref_bed_genes_fpath = join(work_dirpath, os.path.basename(ref_bed_fpath) + '__whole_genes')
-    if verify_file(ref_bed_no_genes_fpath, silent=True, is_critical=False):
-        log('Reusing existing ' + ref_bed_no_genes_fpath)
-    else:
-        with open(ref_bed_no_genes_fpath, 'w') as out:
-            cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
-            log(cmdline + ' > ' + ref_bed_no_genes_fpath)
-            subprocess.call(cmdline, shell=True, stdout=out)
-    if verify_file(ref_bed_genes_fpath, silent=True, is_critical=False):
-        log('Reusing existing ' + ref_bed_genes_fpath)
-    else:
-        with open(ref_bed_genes_fpath, 'w') as out:
-            cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
-            log(cmdline + ' > ' + ref_bed_genes_fpath)
-            subprocess.call(cmdline, shell=True, stdout=out)
-    log()
+    exons_bed = BedTool(exons_bed_fpath)
+    genes_exons_bed = exons_bed.filter(lambda x: x[6] in ['Gene'])
+    no_genes_exons_bed = exons_bed.filter(lambda x: x[6] not in ['Gene', 'Multi_Gene'])
 
-    return ref_bed_no_genes_fpath, ref_bed_genes_fpath
+    # ref_bed_no_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__no_whole_genes')
+    # ref_bed_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__whole_genes')
+    # cmdline = 'grep -wv Gene {exons_fpath} | grep -wv Multi_Gene'.format(**locals())
+
+    # if cnf.reuse_intermediate and verify_file(ref_bed_no_genes_fpath, silent=True, is_critical=False):
+    #     log('Reusing existing ' + ref_bed_no_genes_fpath)
+    # else:
+    #     with open(ref_bed_no_genes_fpath, 'w') as out:
+    #         cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
+    #         log(cmdline + ' > ' + ref_bed_no_genes_fpath)
+    #         subprocess.call(cmdline, shell=True, stdout=out)
+    # if verify_file(ref_bed_genes_fpath, silent=True, is_critical=False):
+    #     log('Reusing existing ' + ref_bed_genes_fpath)
+    # else:
+    #     with open(ref_bed_genes_fpath, 'w') as out:
+    #         cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
+    #         log(cmdline + ' > ' + ref_bed_genes_fpath)
+    #         subprocess.call(cmdline, shell=True, stdout=out)
+    # log()
+
+    return genes_exons_bed, no_genes_exons_bed
 
 
 if __name__ == '__main__':

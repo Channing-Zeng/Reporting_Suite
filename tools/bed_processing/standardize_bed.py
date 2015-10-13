@@ -19,7 +19,7 @@ from tools.bed_processing import annotate_bed
 """ Input: Any BED file
     Output:
         BED file with regions from input and with exactly 4 columns (or exactly 8 columns for BEDs with primers info).
-        The forth column ("gene symbol") is generated with annotate_bed.py script. If no annotation is found
+        The 4th column ("gene symbol") is generated with annotate_bed.py script. If no annotation is found
         gene symbol is set to "not_a_gene_%d". If more than one annotation is found for region only one is remained
         (priory from highest to lowest: key gene, approved gene, first gene).
         Output BED is sorted using by chromosome name -> start -> end. Run standardize_bed.py --help for details about
@@ -253,8 +253,8 @@ def _annotate(bed_fpath, work_dirpath, cnf):
         log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
         annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
 
-        cmdline = '{annotate_bed_py} {input_fpath} {db_bed_fpath} {cnf.bedtools}'.format(**locals())
-        __call(cnf, cmdline, output_fpath)
+        cmdline = '{annotate_bed_py} {input_fpath} --reference {db_bed_fpath} -o {output_fpath}'.format(**locals())
+        __call(cnf, cmdline)
 
         if id < len(references) - 1:
             if cnf.debug:

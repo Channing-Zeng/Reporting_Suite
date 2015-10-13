@@ -2,6 +2,7 @@ import subprocess
 from genericpath import exists
 from os.path import join
 from distutils.version import LooseVersion
+import sys
 
 from source.file_utils import code_base_path, adjust_system_path, verify_obj_by_path
 from source.logger import info, err, critical
@@ -63,6 +64,9 @@ def system_path(*args, **kwargs):
 
 def get_script_cmdline(cnf, interpreter, script, interpreter_params='',
                        extra_warning='', suppress_warn=False, is_critical=False):
+    # if interpreter == 'python':
+    #     interp_path = sys.executable
+    # else:
     interp_path = get_system_path(cnf, interpreter, is_critical=is_critical)
     if not interp_path:
         return None

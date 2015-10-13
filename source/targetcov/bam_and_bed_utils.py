@@ -193,8 +193,10 @@ def annotate_amplicons(cnf, amplicons_bed, exons_bed):
     annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')
 
-    cmdline = '{annotate_bed_py} {amplicons_bed} {cnf.work_dir} {exons_bed} {bedtools}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
+    cmdline = '{annotate_bed_py} {amplicons_bed} --work-dir {cnf.work_dir} --reference {exons_bed} ' \
+              '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
+              '-o {output_fpath}'.format(**locals())
+    call(cnf, cmdline, output_fpath, stdout_to_outputfile=False)
 
     return output_fpath
 
