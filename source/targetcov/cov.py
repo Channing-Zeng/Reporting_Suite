@@ -25,7 +25,7 @@ from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
-chr_y_bed = '~/git/Reporting_Suite/source/targetcov/chrY.bed'
+chr_y_bed = join(dirname(abspath(__file__)), 'chrY.bed')
 
 def get_header_metric_storage(depth_thresholds, is_wgs=False):
     sections = [
