@@ -25,7 +25,9 @@ from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
 
+
 chr_y_bed = join(dirname(abspath(__file__)), 'chrY.bed')
+
 
 def get_header_metric_storage(depth_thresholds, is_wgs=False):
     sections = [
@@ -230,6 +232,8 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
 
 
 def _get_gender(sample, bam_fpath, cnf):
+    thres = 100
+    info('Detecting gender by chrY key regions coverage. The read number threshold mapped on the regions is ' + str(thres))
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
     if not isfile(bam_fpath + '.bai'):
@@ -237,10 +241,12 @@ def _get_gender(sample, bam_fpath, cnf):
         index_bam(cnf, bam_fpath)
 
     reads_mapped_on_chr_y = number_mapped_reads_on_target(cnf, chr_y_bed, bam_fpath)
-    if reads_mapped_on_chr_y > 100:
-        return 'M'
-    else:
-        return 'F'
+    info('Number of reads mapped on chrY key genes is ' + str(reads_mapped_on_chr_y))
+    gender = 'F'
+    if reads_mapped_on_chr_y > thres:
+        gender = 'M'
+    info('Gender is ' + gender)
+    return gender
 
 
 def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list):
