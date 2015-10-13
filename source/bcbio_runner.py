@@ -626,6 +626,7 @@ class BCBioRunner:
                 wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
                 wait_for_steps += [self.varqc.job_name(sample.name, caller=self.clinical_report_caller.name)] if self.varqc in self.steps else []
                 wait_for_steps += [self.varfilter.job_name(caller=self.clinical_report_caller.name)] if self.varfilter in self.steps else []
+                wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
                 self._submit_job(
                     self.clin_report,
                     sample.name,
