@@ -1,26 +1,26 @@
-.long_line
+.long_line, .long_line span
     //white-space: nowrap
     overflow: hidden              /* "overflow" value must be different from  visible"*/
     -o-text-overflow: ellipsis    /* Opera < 11*/
-    text-overflow: ellipsis    /* IE, Safari (WebKit), Opera >= 11, FF > 6 */
+    text-overflow: ellipsis       /* IE, Safari (WebKit), Opera >= 11, FF > 6 */
     //padding-right: 4px
 
-.long_line:hover
-    white-space: normal
-    *
-        position: absolute
-        width: inherit
+//.long_line:hover
+//    white-space: normal
+//    *
+//        position: absolute
+//        width: inherit
 
-    //.long_line span:hover {
-    //  overflow: visible;
-    //  -o-text-overflow: unset;
-    //  text-overflow: unset;
-    //  z-index:100;
-    //  background: white;
-    //  border: 1px solid black;
-    //  position: absolute;
-    //}
-
+.long_line span:hover
+    overflow: visible
+    -o-text-overflow: unset
+    text-overflow: unset
+    z-index: 100
+    background: white
+    border: 1px solid black
+    position: absolute
+    margin-top: -8px
+    margin-left: -1px
 
 
 //.long_line:hover, .long_line *:hover
