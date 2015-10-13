@@ -1,6 +1,5 @@
 from os.path import join, splitext
 from collections import OrderedDict
-import source
 from source.file_utils import verify_file, add_suffix
 from source.logger import info
 from source import targetcov

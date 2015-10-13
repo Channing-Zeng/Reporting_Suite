@@ -1,5 +1,4 @@
 #!/usr/bin/python
-
 import __check_python_version
 
 import sys

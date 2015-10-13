@@ -48,9 +48,9 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
             ReportSection('target_metrics', 'Target coverage', [
                 Metric('Covered bases in target', short_name='Trg covered', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%'),
-                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better'),
-                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%'),
+                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%', description='Percentage of reads overlapping target at least by 1 base'),
+                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better', description='Percentage of reads that don\'t overlap target even by 1 base'),
+                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%', description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
                 Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
             ]),
         ])
