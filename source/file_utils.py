@@ -607,7 +607,7 @@ def _log(msg, silent, is_critical):
     if not silent:
         warn(msg)
 
-def verify_obj_by_path(path, description='', silent=False, is_critical=False):
+def verify_obj_by_path(path, description='', silent=False, is_critical=False, verify_size=True):
     if path is None:
         msg = (description + ': i' if description else 'I') + 's not specified (None).'
         _log(msg, silent, is_critical)
@@ -625,7 +625,7 @@ def verify_obj_by_path(path, description='', silent=False, is_critical=False):
         return None
 
     if isfile(path):
-        return verify_file(path, description, silent)
+        return verify_file(path, description, silent, verify_size=verify_size)
     elif isdir(path):
         return verify_dir(path, description, silent)
     else:
@@ -633,7 +633,7 @@ def verify_obj_by_path(path, description='', silent=False, is_critical=False):
         _log(msg, silent, is_critical)
         return None
 
-def verify_file(fpath, description='', silent=False, is_critical=False):
+def verify_file(fpath, description='', silent=False, is_critical=False, verify_size=True):
     if fpath is None:
         msg = (description + ': ' if description else ' ') + 'File is None.'
         _log(msg, silent, is_critical)
@@ -655,7 +655,7 @@ def verify_file(fpath, description='', silent=False, is_critical=False):
         _log(msg, silent, is_critical)
         return None
 
-    if getsize(fpath) <= 0:
+    if verify_size and getsize(fpath) <= 0:
         msg = (description + ': ' if description else '') + fpath + ' is empty.'
         _log(msg, silent, is_critical)
         return None

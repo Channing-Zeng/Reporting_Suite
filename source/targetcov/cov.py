@@ -20,13 +20,11 @@ from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo, calc_
     calc_rate_within_normal, build_gene_objects_list
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
     total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed, fix_bed_for_qualimap, \
-    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number
+    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
+    intersect_bed, calc_sum_of_regions
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_chr_len_fpath
-
-
-chr_y_bed = join(dirname(abspath(__file__)), 'chrY.bed')
 
 
 def get_header_metric_storage(depth_thresholds, is_wgs=False):
@@ -231,19 +229,43 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
     return depth_stats, reads_stats, mm_indels_stats, target_stats
 
 
-def _get_gender(sample, bam_fpath, cnf):
-    thres = 100
-    info('Detecting gender by chrY key regions coverage. The read number threshold mapped on the regions is ' + str(thres))
+MALE_GENES_BED_FPATH = join(dirname(abspath(__file__)), 'chrY.bed')
+MALE_READS_THRES = 100
+MALE_TARGET_REGIONS_FACTOR = 0.5
+
+def _get_gender(cnf, sample, bam_fpath, target_bed=None):
+    male_genes_bed = total_merge_bed(cnf, sort_bed(cnf, MALE_GENES_BED_FPATH))
+    male_area_size = calc_sum_of_regions(male_genes_bed)
+    info('Male region total size: ' + str(male_area_size))
+
+    if target_bed:
+        target_male_regions_bed = intersect_bed(cnf, target_bed, male_genes_bed)
+        target_male_area_size = calc_sum_of_regions(target_male_regions_bed)
+        if target_male_area_size < male_area_size * MALE_TARGET_REGIONS_FACTOR:
+            info('Target male region total size is ' + str(target_male_area_size) + ', which is less than the ' +
+                 'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
+                 ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + ') - cannot determine gender')
+            return 'Undetermined'
+        else:
+            info('Target male region total size is ' + str(target_male_area_size) + ', which is higher than the ' +
+                 'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
+                 ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + '). ' +
+                 'Determining gender based on coverage in those regions.')
+    else:
+        info('WGS, determining gender based on chrY key regions coverage.')
+
+    info('Detecting gender by chrY key regions coverage. The read number threshold mapped on the '
+         'regions is ' + str(MALE_READS_THRES))
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
     if not isfile(bam_fpath + '.bai'):
         info('Indexing bam ' + bam_fpath)
         index_bam(cnf, bam_fpath)
 
-    reads_mapped_on_chr_y = number_mapped_reads_on_target(cnf, chr_y_bed, bam_fpath)
-    info('Number of reads mapped on chrY key genes is ' + str(reads_mapped_on_chr_y))
+    reads_mapped_on_male_genes = number_mapped_reads_on_target(cnf, MALE_GENES_BED_FPATH, bam_fpath)
+    info('Number of reads mapped on chrY key genes is ' + str(reads_mapped_on_male_genes))
     gender = 'F'
-    if reads_mapped_on_chr_y > thres:
+    if reads_mapped_on_male_genes > MALE_READS_THRES:
         gender = 'M'
     info('Gender is ' + gender)
     return gender
@@ -265,7 +287,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
-    reads_stats['gender'] = _get_gender(sample, cnf.bam, cnf)
+    reads_stats['gender'] = _get_gender(cnf, sample, cnf.bam, target_bed)
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(

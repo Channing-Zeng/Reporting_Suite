@@ -28,7 +28,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdout_to_outputfile=True, to_remove=list(), output_is_dir=False,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
-         overwrite=False, check_output=False, return_proc=False, print_stderr=True,
+         overwrite=False, check_output=False, verify_output_not_empty=True, return_proc=False, print_stderr=True,
          return_err_code=False, stderr_dump=None,
 
          env_vars=None):
@@ -315,7 +315,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     if res:
         if output_fpath and not output_is_dir:
             info('Saved to ' + output_fpath)
-            if not verify_file(output_fpath):
+            if not verify_file(output_fpath, verify_size=verify_output_not_empty):
                 if exit_on_error:
                     clean()
                     critical('Error: the output file for the program is empty or do not exist; exiting.')

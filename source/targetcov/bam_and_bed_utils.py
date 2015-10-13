@@ -645,8 +645,9 @@ def intersect_bed(cnf, bed1, bed2):
     output_fpath = join(cnf['work_dir'], bed1_fname + '__' + bed2_fname + '.bed')
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} intersect -u -a {bed1} -b {bed2}'.format(**locals())
-    call(cnf, cmdline, output_fpath)
+    call(cnf, cmdline, output_fpath, verify_output_not_empty=False)
     return output_fpath
+
 
 def verify_bam(fpath, description='', is_critical=False, silent=False):
     if not verify_file(fpath, description, is_critical=is_critical, silent=silent):
