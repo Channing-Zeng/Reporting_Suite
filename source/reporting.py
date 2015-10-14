@@ -133,6 +133,7 @@ class Metric:
             style='',
             class_='',
             align=None,  # TODO: legacy, remove
+            width=None,
 
             numbers=None,
             values=None,
@@ -156,6 +157,7 @@ class Metric:
         self.with_heatmap = with_heatmap
         self.style = style
         self.class_ = class_
+        self.width = width
 
         self.numbers = []
         self.values = []
@@ -932,10 +934,10 @@ def make_cell_th(metric, pos=''):
         direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
         html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
                  ' data-direction=' + direction + ' position=' + str(pos) + '>' +
-                 '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+                 '<div class="metricName">' + __get_metric_name_html(metric) + '</div></th>')
     elif metric.values:
         html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td">' +
-                 '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
+                 '<div class="metricName">' + __get_metric_name_html(metric) + '</div></th>')
     return html
 
 
@@ -943,7 +945,7 @@ def make_cell_td(rec, td_classes=''):
     html = ''
 
     if rec is None:
-        html += "\n<td>-</td>"
+        html += "\n<td><div>-</div></td>"
         return html
 
     if not rec.metric:
@@ -956,11 +958,15 @@ def make_cell_td(rec, td_classes=''):
     html += ('\n<td metric="' + rec.metric.name +
              '" style="background-color: ' + rec.color + '; color: ' + rec.text_color +
              '; ' + rec.metric.style)
+    if rec.metric.width is not None:
+        html += ' min-width: {w}px; max-width: {w}px; width: {w}px;'.format(w=rec.metric.width)
     html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' ' + rec.metric.class_ + ' '
     if rec.num:
-        html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value) + '">'
-    else:
-        html += '">'
+        html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value)
+    html += '"'
+    if rec.metric.width is not None:
+        html += ' width=' + str(rec.metric.width)
+    html += '>'
 
     if rec.right_shift:
         padding_style = 'margin-left: ' + str(rec.right_shift) + 'px; margin-right: -' + str(rec.right_shift) + 'px;'
@@ -983,8 +989,8 @@ def make_cell_td(rec, td_classes=''):
                 html += rec.cell_contents + '(' + caller_links + ')</td>'
 
     else:
-        html += '<span style="' + str(padding_style) + '" ' + \
-                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</span></td>'
+        html += '<div style="' + str(padding_style) + '" ' + \
+                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</div></td>'
     return html
 
 

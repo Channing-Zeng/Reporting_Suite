@@ -132,22 +132,23 @@ def is_sample_presents_in_file(sample_name, mutations_fpath):
 def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
+    width = '85'
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', style='max-width: 80px; min-width: 80px;', class_='long_line'),            # c.244G>A
-            Metric('AA chg', style='max-width: 80px; min-width: 80px;', class_='long_line'),            # p.Glu82Lys
+            Metric('Codon chg', width=width, style='', class_='long_line'),            # c.244G>A
+            Metric('AA chg', width=width, style='', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change', style='max-width: 80px; min-width: 80px;', class_='long_line'),       # G>A
+            Metric('Change', width=width, style='', class_='long_line'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
             Metric('AA length', with_heatmap=False),          # 128
-            Metric('dbSNP', class_='long_line', style="max-width: 80px; min-width: 80px;"),                 # rs352343, COSM2123
-            Metric('COSMIC', class_='long_line', style="max-width: 80px; min-width: 80px;"),                 # rs352343, COSM2123
-            Metric('Type', style='max-width: 100px; min-width: 100px;', class_='long_line'),               # Frameshift
+            Metric('dbSNP', width=width, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('COSMIC', width=width, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Type', width='100', style='', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
