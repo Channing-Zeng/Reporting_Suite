@@ -135,17 +135,17 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', style='max-width: 80px;'),            # c.244G>A
-            Metric('AA chg', style='max-width: 80px;'),            # p.Glu82Lys
+            Metric('Codon chg', style='max-width: 80px;', class_='long_line'),            # c.244G>A
+            Metric('AA chg', style='max-width: 80px;', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change', style='max-width: 80px;'),       # G>A
+            Metric('Change', style='max-width: 80px;', class_='long_line'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
             Metric('AA length', with_heatmap=False),          # 128
-            Metric('ID'),                 # rs352343, COSM2123
-            Metric('Type'),               # Frameshift
+            Metric('ID', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Type', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
@@ -227,8 +227,8 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     clinical_action_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
-            Metric('Variant', style='min-width: 80px; max-width: 80px; white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
-            Metric('Type', style='min-width: 120px; white-space: pre; !important', class_='long_line'),               # Frameshift
+            Metric('Variant', style='min-width: 80px; max-width: 80px; white-space: pre !important;', class_='long_line_ellipsis'),            # p.Glu82Lys
+            Metric('Type', style='min-width: 120px; white-space: pre; !important', class_='long_line_ellipsis'),               # Frameshift
             Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations', style='min-width: 100px; white-space: pre;'),  # Mutation
             Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
             Metric('Therapeutic Agents'),  # Sorafenib
@@ -320,7 +320,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
         calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
         mutations_dict['metric_names'] = [make_cell_th(m) for m in mutations_report.metric_storage.get_metrics()]
         mutations_dict['rows'] = [
-            dict(records=[make_cell_td(r, td_classes='long_line') for r in region.records])
+            dict(records=[make_cell_td(r, td_classes='') for r in region.records])
                 for region in mutations_report.regions]
 
     coverage_dict = dict(columns=[])
