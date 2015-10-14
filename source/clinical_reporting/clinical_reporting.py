@@ -11,6 +11,7 @@ from source.reporting import MetricStorage, Metric, PerRegionSampleReport, Repor
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
+from source.utils import is_local
 
 
 def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
@@ -135,17 +136,18 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', style='max-width: 80px;', class_='long_line'),            # c.244G>A
-            Metric('AA chg', style='max-width: 80px;', class_='long_line'),            # p.Glu82Lys
+            Metric('Codon chg', style='max-width: 80px; min-width: 80px;', class_='long_line'),            # c.244G>A
+            Metric('AA chg', style='max-width: 80px; min-width: 80px;', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change', style='max-width: 80px;', class_='long_line'),       # G>A
+            Metric('Change', style='max-width: 80px; min-width: 80px;', class_='long_line'),       # G>A
             Metric('Depth'),              # 658
             Metric('Frequency', unit='%', with_heatmap=False),          # .19
             Metric('AA length', with_heatmap=False),          # 128
-            Metric('ID', class_='long_line'),                 # rs352343, COSM2123
-            Metric('Type', class_='long_line'),               # Frameshift
+            Metric('dbSNP', class_='long_line', style="max-width: 80px; min-width: 80px;"),                 # rs352343, COSM2123
+            Metric('COSMIC', class_='long_line', style="max-width: 80px; min-width: 80px;"),                 # rs352343, COSM2123
+            Metric('Type', style='max-width: 100px; min-width: 100px;', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
@@ -187,15 +189,16 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Gene', gene)
                 reg.add_record('Transcript', transcript)
                 reg.add_record('Codon chg', codon_change)
-                reg.add_record('AA chg', 'p.' + aa_change if aa_change else None)
+                reg.add_record('AA chg', 'p.' + aa_change if aa_change else '')
                 # reg.add_record('Allele', allele_record)
-                reg.add_record('Chr', chrom.replace('chr', '') if chrom else None)
+                reg.add_record('Chr', chrom.replace('chr', '') if chrom else '')
                 reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
                 reg.add_record('Change', ref + '>' + alt)
                 reg.add_record('Depth', depth)
                 reg.add_record('Frequency', af)
                 reg.add_record('AA length', aa_len)
-                reg.add_record('ID', ' '.join(id.split(';')))
+                reg.add_record('dbSNP', ' '.join(i for i in id.split(';') if i.startswith('rs')) if id != '.' else '')
+                reg.add_record('COSMIC', ' '.join(i for i in id.split(';') if i.startswith('COS')) if id != '.' else '')
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
                 if status == 'likely':
                     status += ' pathogenic'
@@ -317,6 +320,8 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     mutations_dict = dict()
     if mutations_report.regions:
         # mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
+        if is_local():
+            mutations_report.regions = mutations_report.regions[:4]
         calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
         mutations_dict['metric_names'] = [make_cell_th(m) for m in mutations_report.metric_storage.get_metrics()]
         mutations_dict['rows'] = [

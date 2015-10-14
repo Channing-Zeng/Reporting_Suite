@@ -930,11 +930,11 @@ def make_cell_th(metric, pos=''):
     if metric.numbers:
         sort_by = 'nosort' if metric.all_values_equal else 'numeric'
         direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td ' + metric.class_ + '" data-sortBy=' + sort_by +
+        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
                  ' data-direction=' + direction + ' position=' + str(pos) + '>' +
                  '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
     elif metric.values:
-        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td ' + metric.class_ + '">' +
+        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td">' +
                  '<span class="metricName">' + __get_metric_name_html(metric) + '</span></th>')
     return html
 
@@ -1375,8 +1375,9 @@ def _embed_css_and_scripts(html, extra_js_fpaths=list(), extra_css_fpaths=list()
     css_r_tag = '    </style>'
 
     for line_tmpl, files, l_tag, r_tag in [
+            (js_line_tmpl, extra_js_fpaths + js_files, js_l_tag, js_r_tag),
             (css_line_tmpl, extra_css_fpaths + css_files, css_l_tag, css_r_tag),
-            (js_line_tmpl, extra_js_fpaths + js_files, js_l_tag, js_r_tag),]:
+        ]:
         for rel_fpath in files:
             info('Embedding ' + rel_fpath + '...', ending=' ')
             if verify_file(rel_fpath, silent=True):

@@ -355,7 +355,7 @@ class BCBioRunner:
                 interpreter='python',
                 script=join('scripts', 'post', 'clinical_report.py'),
                 dir_name=source.clinreport_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, source.clinreport_name + '.log'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.clinreport_name  + '.log'),
                 paramln=clinreport_paramline
             )
 
