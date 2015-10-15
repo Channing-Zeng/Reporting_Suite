@@ -34,7 +34,7 @@ def _read_args(args_list):
         (['-k', '--key-genes'], dict(
             dest='key_genes_fpath',
             help='list of key genes (they are at top priority when choosing one of multiple annotations)',
-            default='/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt')
+            default='/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.300.txt')
          ),
         (['-a', '--approved-genes'], dict(
             dest='approved_genes_fpath',
@@ -64,7 +64,7 @@ def _read_args(args_list):
          ),
         (['--output-hg'], dict(
             dest='output_hg',
-            help='output chromosome names in hg-style (chr1, .., chr22, chrX, chrY, chrM)',
+            help='output chromosome names in hg-style (chrM, chr1, .., chr22, chrX, chrY)',
             default=False,
             action='store_true')
          ),
