@@ -53,7 +53,7 @@ def read_opts_and_cnfs(extra_opts,
          ),
         (['-c', '--caller'], dict(
              dest='caller',
-             metavar='CELLR',
+             metavar='CALLER',
              help='variant caller name (default is part of name of the first parameter between the first - and following .')
          ),
         (['-t', '--nt', '--threads'], dict(
