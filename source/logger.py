@@ -15,7 +15,7 @@ project_name = None
 project_fpath = None
 proc_name = None
 my_address = 'Vlad.Saveliev@astrazeneca.com'
-address = None
+cnf_address = None
 
 smtp_host = None  # set up in source/config.py and system_info.yaml
 
@@ -66,69 +66,86 @@ email_by_prid = {
     'kxjn734': 'Justin.Johnson@astrazeneca.com'
 }
 
-def send_email(msg='', subj='', only_me=False):
+def send_email(msg_other='', subj='', only_me=False):
     # for addr in [my_address, ]
-    if msg and smtp_host:
-        addresses = []
-        if address:
-            addresses.append(address)
-        prid = getpass.getuser()
-        if not only_me:
-            if prid in email_by_prid:
-                addresses.append(email_by_prid[prid])
+    if not msg_other or not smtp_host:
+        return
 
-        msg += '\n'
-        msg += '\n'
-        msg += 'Ran by ' + prid + '\n'
-        msg += '\n'
+    prid = getpass.getuser()
+
+    me_address = email_by_prid['klpf990']
+
+    other_addresses = []
+    if not only_me:
+        if cnf_address:
+            other_addresses.append(cnf_address)
+        if prid in email_by_prid:
+            other_addresses.append(email_by_prid[prid])
+    other_addresses = [a for a in other_addresses if a !=  me_address]
+
+    msg_other += '\n'
+    msg_other += '\n'
+    msg_other += 'Ran by ' + prid + '\n'
+    msg_other += '\n'
+    if critical_msgs:
+        msg_other += 'Critical errors during the processing:\n'
+        for m in critical_msgs:
+            msg_other += '  ' + m + '\n'
+        msg_other += '\n'
+
+    if error_msgs:
         if critical_msgs:
-            msg += 'Critical errors during the processing:\n'
-            for m in critical_msgs:
-                msg += '  ' + m + '\n'
-            msg += '\n'
+            msg_other += 'Other e'
+        else:
+            msg_other += 'E'
+        msg_other += 'rrors during the processing:\n'
+        for m in error_msgs:
+            msg_other += '  ' + m + '\n'
 
-        if error_msgs:
-            if critical_msgs:
-                msg += 'Other e'
-            else:
-                msg += 'E'
-            msg += 'rrors during the processing:\n'
-            for m in error_msgs:
-                msg += '  ' + m + '\n'
+    msg_me = msg_other[:]
+    if warning_msgs:
+        msg_me += 'Warnings during the processing:\n'
+        for m in warning_msgs:
+            msg_me += '  ' + m + '\n'
 
-        msg = MIMEText(msg)
-        if not subj:
-            if project_name:
-                subj += project_name
-            else:
-                subj += 'Reporting'
-            if proc_name:
-                subj += ' - ' + proc_name
-        msg['Subject'] = subj
+    if not subj:
+        if project_name:
+            subj += project_name
+        else:
+            subj += 'Reporting'
+        if proc_name:
+            subj += ' - ' + proc_name
 
-        msg['From'] = 'klpf990@rask.usbod.astrazeneca.com'
-        msg['To'] = ','.join(addresses)
+    msg_other = MIMEText(msg_other)
+    msg_me = MIMEText(msg_me)
 
-        def try_send(host):
-            s = smtplib.SMTP(host)
-            s.sendmail(msg['From'], addresses, msg.as_string())
-            s.quit()
-            info('Mail sent to ' + email_by_prid[prid] + ' using ' + host)
+    msg_other['Subject'] = msg_me['Subject'] = subj
 
-        def print_msg():
-            for line in msg.as_string().split('\n'):
-                print '   | ' + line
-            print ''
+    msg_other['From'] = msg_me['From'] = 'klpf990@rask.usbod.astrazeneca.com'
+    msg_other['To'] = ','.join(other_addresses)
+    msg_me['To'] = me_address
 
+    def try_send(host, msg_):
+        s = smtplib.SMTP(host)
+        s.sendmail(msg_['From'], msg_['To'].split(','), msg_.as_string())
+        s.quit()
+        info('Mail sent to ' + msg_['To'] + ' using ' + host)
+
+    def print_msg():
+        for line in msg_other.as_string().split('\n'):
+            print '   | ' + line
+        print ''
+
+    for msg in [msg_other, msg_me]:
         try:
-            try_send(smtp_host)
+            try_send(smtp_host, msg)
         except:
             warn('Could not send email using the sever "' + smtp_host + '" with exception: ')
             warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))
             if smtp_host != 'localhost':
                 warn('Trying "localhost" as a server...')
                 try:
-                    try_send('localhost')
+                    try_send('localhost', msg)
                 except:
                     warn('Could not send email using the sever "localhost" with exception: ')
                     warn('  ' + '; '.join(traceback.format_exception_only(sys.exc_type, sys.exc_value)))

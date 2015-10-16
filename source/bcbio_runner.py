@@ -630,7 +630,7 @@ class BCBioRunner:
                 self._submit_job(
                     self.clin_report,
                     sample.name,
-                    sample=sample.name, genome=sample.genome, varqc=sample.find_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                    sample=sample.name, genome=sample.genome, varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
                     wait_for_steps=wait_for_steps,
                     threads=self.filtering_threads)
             else:

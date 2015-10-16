@@ -145,7 +145,7 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
             if tries < MAX_TRIES:
                 msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
 
-            send_email(msg=msg,
+            send_email(msg_other=msg,
                        subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
                        only_me=True)
             err(msg)

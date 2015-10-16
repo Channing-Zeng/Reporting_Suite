@@ -213,7 +213,7 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
     logger.proc_name = proc_name
     logger.project_name = project_name
     logger.project_fpath = project_fpath or output_dir
-    logger.address = remove_quotes(cnf.email) if cnf.email else ''
+    logger.cnf_address = remove_quotes(cnf.email) if cnf.email else ''
     logger.smtp_host = cnf.smtp_host
 
     if cnf.log_dir:

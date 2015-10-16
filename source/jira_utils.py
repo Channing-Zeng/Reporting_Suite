@@ -1,5 +1,5 @@
 from traceback import format_exc
-from source.logger import err, info
+from source.logger import err, info, warn
 
 
 JIRA_SERVER = 'https://jira.rd.astrazeneca.net'
@@ -27,7 +27,7 @@ def retrieve_jira_info(url):
     try:
         from ext_modules.jira import JIRA
     except ImportError, e:
-        err('Cannot import JIRA: ' + str(e))
+        warn('Cannot import JIRA: ' + str(e))
         return None
 
     """
@@ -41,8 +41,8 @@ def retrieve_jira_info(url):
                     basic_auth=('klpf990', '123qweasd'),
                     options={'verify': False})
     except:
-        err('Cannot create JIRA obj:')
-        err(format_exc())
+        warn('Cannot create JIRA obj:')
+        warn(format_exc())
         return None
 
     case_id = __parse_id(url)
