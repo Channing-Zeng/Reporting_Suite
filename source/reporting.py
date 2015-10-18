@@ -134,6 +134,8 @@ class Metric:
             class_='',
             align=None,  # TODO: legacy, remove
             width=None,
+            max_width=None,
+            min_width=None,
 
             numbers=None,
             values=None,
@@ -157,7 +159,8 @@ class Metric:
         self.with_heatmap = with_heatmap
         self.style = style
         self.class_ = class_
-        self.width = width
+        self.max_width = max_width
+        self.min_width = min_width
 
         self.numbers = []
         self.values = []
@@ -253,7 +256,7 @@ class Report:
         self.tsv_fpath = fpath
         return fpath
 
-    def save_html(self, output_fpath, caption='', type_=None,
+    def save_html(self, cnf, output_fpath, caption='', type_=None,
                   extra_js_fpaths=list(), extra_css_fpaths=list()):
         # class Encoder(JSONEncoder):
         #     def default(self, o):
@@ -266,7 +269,7 @@ class Report:
         #     report=self,
         #     type_=type_,
         # ), separators=(',', ':'), cls=Encoder)
-        fpath = write_html_report(self, type_, output_fpath, caption=caption,
+        fpath = write_html_report(cnf, self, type_, output_fpath, caption=caption,
               extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
         self.html_fpath = fpath
         return fpath
@@ -375,8 +378,8 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, output_fpath, caption='', type_=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
-        return Report.save_html(self, output_fpath, caption=caption, type_='SampleReport',
+    def save_html(self, cnf, output_fpath, caption='', type_=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
+        return Report.save_html(self, cnf, output_fpath, caption=caption, type_='SampleReport',
                                 extra_js_fpaths=list(), extra_css_fpaths=list())
 
     def __repr__(self):
@@ -401,7 +404,7 @@ class PerRegionSampleReport(SampleReport):
             self.records = []
 
         def add_record(self, metric_name, value, meta=None, parse=True):
-            metric = self.__parent_report.metric_storage.find_metric(metric_name.strip())
+            metric = self.__parent_report.metric_storage.find_metric(metric_name)
             assert metric, metric_name
             rec = Record(metric, value, meta, parse=parse)
             self.records.append(rec)
@@ -466,7 +469,7 @@ class PerRegionSampleReport(SampleReport):
 
         return rows
 
-    def save_html(self, output_fpath, caption='', type_=None,
+    def save_html(self, cnf, output_fpath, caption='', type_=None,
                   extra_js_fpaths=list(), extra_css_fpaths=list()):
         return None
         # sample_reports = []
@@ -602,19 +605,19 @@ class FullReport(Report):
 
         return full_report
 
-    def save_into_files(self, base_path, caption, sections=None):
+    def save_into_files(self, cnf, base_path, caption, sections=None):
         return \
             self.save_txt(base_path + '.txt', sections), \
             self.save_tsv(base_path + '.tsv', sections), \
-            self.save_html(base_path + '.html', caption)
+            self.save_html(cnf, base_path + '.html', caption)
 
-    def save_html(self, output_fpath, caption='', type_=None, display_name=None,
+    def save_html(self, cnf, output_fpath, caption='', type_=None, display_name=None,
                   extra_js_fpaths=list(), extra_css_fpaths=list()):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
-        return Report.save_html(self, output_fpath, caption=caption, type_='FullReport',
+        return Report.save_html(self, cnf, output_fpath, caption=caption, type_='FullReport',
             extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
 
     def __repr__(self):
@@ -865,7 +868,7 @@ js_files = [
     'jquery-1.8.2.min.js',
     # 'flot/jquery.flot.min.js',
     # 'flot/jquery.flot.dashes.js',
-    'scripts/hsvToRgb.js',
+    # 'scripts/hsvToRgb.js',
     'scripts/utils.js',
     # 'scripts/build_total_report.js',
     # 'scripts/build_report.js',
@@ -878,8 +881,8 @@ js_files = [
     'table_sorter/tsort.js',
 ]
 image_files = [
-    'table_sorter/arrow_asc.png',
-    'table_sorter/arrow_desc.png',
+    # 'table_sorter/arrow_asc.png',
+    # 'table_sorter/arrow_desc.png',
     # 'img/draggable.png',
 ]
 
@@ -925,27 +928,37 @@ def __get_metric_name_html(metric, use_full_name=False):
 
 def make_cell_th(metric, pos=''):
     # return '<th class="' + metric.class_ + '" style="' + metric.style + '">' + metric.name + '</th>'
-    if metric.is_hidden:
-        return ''
-
     html = ''
+
+    if metric.is_hidden or not metric.values:
+        return html
+
+    style = metric.style
+    if metric.max_width is not None:
+        style += '; max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
+    if metric.min_width is not None:
+        style += '; min-width: {w}px;'.format(w=metric.min_width)
+    html += '\n<th style="' + style + '" class="second_through_last_col_headers_td"'
+
     if metric.numbers:
         sort_by = 'nosort' if metric.all_values_equal else 'numeric'
         direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td" data-sortBy=' + sort_by +
-                 ' data-direction=' + direction + ' position=' + str(pos) + '>' +
-                 '<div class="metricName">' + __get_metric_name_html(metric) + '</div></th>')
-    elif metric.values:
-        html += ('\n<th style="' + metric.style + '" class="second_through_last_col_headers_td">' +
-                 '<div class="metricName">' + __get_metric_name_html(metric) + '</div></th>')
+        html += ' data-sortBy=' + sort_by + ' data-direction=' + direction + ' position=' + str(pos)
+
+    # if metric.width is not None:
+    #     html += ' width=' + str(metric.width)
+    html += '><span class="metricName">' + __get_metric_name_html(metric) + '</span></th>'
     return html
 
 
 def make_cell_td(rec, td_classes=''):
     html = ''
 
+    if not rec.metric.values:
+        return html
+
     if rec is None:
-        html += "\n<td><div>-</div></td>"
+        html += "\n<td><span>-</span></td>"
         return html
 
     if not rec.metric:
@@ -955,17 +968,19 @@ def make_cell_td(rec, td_classes=''):
     if rec.metric.is_hidden:
         return ''
 
-    html += ('\n<td metric="' + rec.metric.name +
-             '" style="background-color: ' + rec.color + '; color: ' + rec.text_color +
-             '; ' + rec.metric.style)
-    if rec.metric.width is not None:
-        html += ' min-width: {w}px; max-width: {w}px; width: {w}px;'.format(w=rec.metric.width)
-    html += '" quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' ' + rec.metric.class_ + ' '
+    style = 'background-color: ' + rec.color + '; color: ' + rec.text_color + '; ' + rec.metric.style
+    if rec.metric.max_width is not None:
+        style += '; max-width: {w}px; width: {w}px;'.format(w=rec.metric.max_width)
+    if rec.metric.min_width is not None:
+        style += '; min-width: {w}px;'.format(w=rec.metric.min_width)
+
+    html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
+    html += ' quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' ' + rec.metric.class_ + ' '
     if rec.num:
         html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value)
     html += '"'
-    if rec.metric.width is not None:
-        html += ' width=' + str(rec.metric.width)
+    # if rec.metric.width is not None:
+    #     html += ' width=' + str(rec.metric.width)
     html += '>'
 
     if rec.right_shift:
@@ -989,8 +1004,8 @@ def make_cell_td(rec, td_classes=''):
                 html += rec.cell_contents + '(' + caller_links + ')</td>'
 
     else:
-        html += '<div style="' + str(padding_style) + '" ' + \
-                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</div></td>'
+        html += '<span style="' + str(padding_style) + '" ' + \
+                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</span></td>'
     return html
 
 
@@ -1300,9 +1315,10 @@ def calc_cell_contents(report, rows, section):
     return report
 
 
-def write_html_report(report, type_, html_fpath, caption='', extra_js_fpaths=list(), extra_css_fpaths=list()):
-    with open(template_fpath) as template_file:
-        html = template_file.read()
+def write_html_report(cnf, report, type_, html_fpath, caption='',
+        extra_js_fpaths=list(), extra_css_fpaths=list(), image_by_key=dict()):
+
+    with open(template_fpath) as f: html = f.read()
 
     html = _insert_into_html(html, caption, 'caption')
     html = _insert_into_html(html, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
@@ -1313,12 +1329,8 @@ def write_html_report(report, type_, html_fpath, caption='', extra_js_fpaths=lis
     plots_html = ''.join('<img src="' + plot + '"/>' for plot in report.plots)
     html = _insert_into_html(html, plots_html, 'plots')
 
-    html = _embed_css_and_scripts(html, extra_js_fpaths, extra_css_fpaths)
-    html = _embed_images(html, dirname(html_fpath))
-
-    with open(html_fpath, 'w') as f:
-        f.write(html)
-    return html_fpath
+    return __write_html(cnf, html, html_fpath,
+        extra_js_fpaths, extra_css_fpaths, image_by_key)
 
 
 # def _copy_aux_files(results_dirpath, extra_files=list()):
@@ -1362,26 +1374,45 @@ def write_html_report(report, type_, html_fpath, caption='', extra_js_fpaths=lis
 #             copy_aux_file(aux_f_relpath)
 
 
-def _embed_images(html, report_dirpath):
-    # TODO: search for <img> tags and replace with code64, as follows:
-    # import base64
-    # with open(seq2c_plot_fpath, 'rb') as f:
-    #     encoded_string = base64.b64encode(f.read())
-    # contents = 'data:image/png;base64,' + encoded_string
+import base64
+
+def _embed_images(html, report_dirpath, image_by_key, debug=False):
+    ptrn = '<img src="{key}"'
+
+    for key, fpath in image_by_key.items():
+        info('Embedding image ' + fpath + '...', ending=' ')
+        if not verify_file(fpath, silent=True):
+            fpath = join(static_dirpath, join(*fpath.split('/')))
+            if not verify_file(fpath):
+                continue
+
+        old_piece = ptrn.format(key=key)
+        if debug:  # Not embedding, just adding links
+            new_piece = old_piece.replace(key, relpath(fpath, report_dirpath))
+        else:
+            with open(fpath, 'rb') as f:
+                encoded_string = base64.b64encode(f.read())
+            binary_image = 'data:image/png;base64,' + encoded_string
+            new_piece = old_piece.replace(key, binary_image)
+
+        html = html.replace(old_piece, new_piece)
+        info('Done.', print_date=False)
+
     return html
 
 
-def _embed_css_and_scripts(html, extra_js_fpaths=list(), extra_css_fpaths=list()):
-    js_line_tmpl = '<script type="text/javascript" src="/static/{file_rel_path}"></script>'
-    js_l_tag = '<script type="text/javascript" name="{}">'
+def _embed_css_and_scripts(html, report_dirpath,
+       extra_js_fpaths=list(), extra_css_fpaths=list(), debug=False):
+    js_line_tmpl = '<script type="text/javascript" src="{file_rel_path}"></script>'
+    js_l_tag = '<script type="text/javascript" name="{name}">'
     js_r_tag = '    </script>'
 
-    css_line_tmpl = '<link rel="stylesheet" type="text/css" href="/static/{file_rel_path}" />'
-    css_l_tag = '<style type="text/css" rel="stylesheet" name="{}">'
+    css_line_tmpl = '<link rel="stylesheet" type="text/css" href="{file_rel_path}" />'
+    css_l_tag = '<style type="text/css" rel="stylesheet" name="{name}">'
     css_r_tag = '    </style>'
 
     for line_tmpl, files, l_tag, r_tag in [
-            (js_line_tmpl, extra_js_fpaths + js_files, js_l_tag, js_r_tag),
+            (js_line_tmpl,  extra_js_fpaths  + js_files,  js_l_tag,  js_r_tag),
             (css_line_tmpl, extra_css_fpaths + css_files, css_l_tag, css_r_tag),
         ]:
         for rel_fpath in files:
@@ -1393,32 +1424,39 @@ def _embed_css_and_scripts(html, extra_js_fpaths=list(), extra_css_fpaths=list()
                 fpath = join(static_dirpath, join(*rel_fpath.split('/')))
                 if not verify_file(fpath):
                     continue
-            with open(fpath) as f:
-                contents = f.read()
-                contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
 
-                line = line_tmpl.format(file_rel_path=rel_fpath)
-                l_tag_fmt = l_tag.format(rel_fpath)
-                # line_ascii = line.encode('ascii', 'ignore')
-                # html = html.decode('utf-8', 'ignore').encode('ascii')
-                # try:
-                #     html_ascii = html.decode('utf-8', 'ignore').encode('ascii')  #.encode('ascii', 'ignore')
-                # except:
-                #     pass
-                try:
-                    html = ''.join(i for i in html if ord(i) < 128)
-                    contents = ''.join(i for i in contents if ord(i) < 128)
-                    html = html.replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)
-                except:
-                    err()
-                    # print contents
-                    err()
-                    err(traceback.format_exc())
-                    err()
-                    err('Encoding problem embeding this file into html: ' + rel_fpath)
-                    err()
-                else:
-                    info('Done.', print_date=False)
+            line = line_tmpl.format(file_rel_path=rel_fpath)
+            l_tag_formatted = l_tag.format(name=rel_fpath)
+
+            if debug:  # Not embedding, just adding links
+                fpath = relpath(fpath, report_dirpath)
+                line_formatted = line.replace(rel_fpath, fpath)
+                html = html.replace(line, line_formatted)
+
+            else:
+                with open(fpath) as f:
+                    contents = f.read()
+                    contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))
+
+                    # line_ascii = line.encode('ascii', 'ignore')
+                    # html = html.decode('utf-8', 'ignore').encode('ascii')
+                    # try:
+                    #     html_ascii = html.decode('utf-8', 'ignore').encode('ascii')  #.encode('ascii', 'ignore')
+                    # except:
+                    #     pass
+                    try:
+                        html = ''.join(i for i in html if ord(i) < 128)
+                        contents = ''.join(i for i in contents if ord(i) < 128)
+                        html = html.replace(line, l_tag_formatted + '\n' + contents + '\n' + r_tag)
+                    except:
+                        err()
+                        # print contents
+                        err()
+                        err(traceback.format_exc())
+                        err()
+                        err('Encoding problem embeding this file into html: ' + rel_fpath, print_date=False)
+                        err()
+                        continue
 
                 # try:
                 #     html = html_ascii.encode('ascii').replace(line, l_tag_fmt + '\n' + contents + '\n' + r_tag)
@@ -1426,6 +1464,7 @@ def _embed_css_and_scripts(html, extra_js_fpaths=list(), extra_css_fpaths=list()
                 #     pass
                     # err('line - cannot replace')  # + str(l_tag_fmt + '\n' + contents + '\n' + r_tag))
 
+            info('Done.', print_date=False)
     return html
 
 
@@ -1438,18 +1477,23 @@ def _insert_into_html(html, text, keyword):
     return html
 
 
-def write_static_html_report(work_dir, data_dict, html_fpath,
-        tmpl_fpath=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
+def write_static_html_report(cnf, data_dict, html_fpath, tmpl_fpath=None,
+        extra_js_fpaths=list(), extra_css_fpaths=list(), image_by_key=dict()):
+
     tmpl_fpath = tmpl_fpath or static_template_fpath
-    with open(tmpl_fpath) as f:
-        html = f.read()
+    with open(tmpl_fpath) as f: html = f.read()
 
     html = jsontemplate.expand(html, data_dict)
 
-    html = _embed_css_and_scripts(html,
-        extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
+    return __write_html(cnf, html, html_fpath,
+        extra_js_fpaths, extra_css_fpaths, image_by_key)
 
-    with file_transaction(work_dir, html_fpath) as tx:
+
+def __write_html(cnf, html, html_fpath, extra_js_fpaths, extra_css_fpaths, image_by_key):
+    html = _embed_css_and_scripts(html, dirname(html_fpath), extra_js_fpaths, extra_css_fpaths, cnf.debug)
+    html = _embed_images(html, dirname(html_fpath), image_by_key, cnf.debug)
+
+    with file_transaction(cnf.work_dir, html_fpath) as tx:
         with open(tx, 'w') as f:
             f.write(html)
 

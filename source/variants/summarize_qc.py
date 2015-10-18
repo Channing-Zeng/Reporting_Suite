@@ -13,8 +13,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
         report = _full_report_for_caller(cnf, samples, output_dir,
             jsons_by_sample_by_caller.values()[0], htmls_by_sample_by_caller.values()[0])
 
-        full_summary_fpaths = report.save_into_files(
-            join(output_dir, varqc_name), caption=caption)
+        full_summary_fpaths = report.save_into_files(cnf, join(output_dir, varqc_name), caption=caption)
 
         info()
         info('*' * 70)
@@ -32,6 +31,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
                     s_report.set_project_tag(tag_by_sample[s_report.sample.name])
 
             caller.summary_qc_report_fpaths = caller.summary_qc_report.save_into_files(
+                cnf,
                 join(output_dir, caller.suf + '.' + varqc_name),
                 caption=caption + ' for ' + caller.name)
 
@@ -46,7 +46,7 @@ def make_summary_reports(cnf, threads, output_dir, callers, samples,
 
         combined_full_report = FullReport('', sample_reports)
         full_summary_fpaths = combined_full_report.save_into_files(
-            join(output_dir, varqc_name), caption=caption)
+            cnf, join(output_dir, varqc_name), caption=caption)
 
         info()
         info('*' * 70)

@@ -1,9 +1,12 @@
 #report {
   margin: 0 100px 50px 0;
   min-width: 532px;
-  font-size: 1em; }
+  font-size: 1em;
+  max-width: 100%; }
   #report .table_name {
     margin-bottom: 5px; }
+  #report table {
+    max-width: 100%; }
   #report table.common_table {
     padding-right: 50px !important; }
     #report table.common_table span.metric_name {

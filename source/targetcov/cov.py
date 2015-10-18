@@ -245,7 +245,7 @@ def _get_gender(cnf, sample, bam_fpath, target_bed=None):
             info('Target male region total size is ' + str(target_male_area_size) + ', which is less than the ' +
                  'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
                  ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + ') - cannot determine gender')
-            return 'Undetermined'
+            return None
         else:
             info('Target male region total size is ' + str(target_male_area_size) + ', which is higher than the ' +
                  'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
@@ -450,7 +450,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     report.save_json(join(output_dir, sample.name + '.' + source.targetseq_name + '.json'))
     report.save_txt (join(output_dir, sample.name + '.' + source.targetseq_name + '.txt'))
-    report.save_html(join(output_dir, sample.name + '.' + source.targetseq_name + '.html'), caption='Target coverage statistics for ' + sample.name)
+    report.save_html(cnf, join(output_dir, sample.name + '.' + source.targetseq_name + '.html'), caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
     info('  ' + report.txt_fpath)

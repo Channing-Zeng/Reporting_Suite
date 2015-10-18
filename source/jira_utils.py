@@ -32,7 +32,7 @@ def retrieve_jira_info(url):
 
     """
     :param jira_url:  https://jira.rd.astrazeneca.net/i#browse/NGSG-38
-                      https://jira.rd.astrazeneca.net/browse/NGSG-196
+                      https://jira.rd.astrazeneca.net/browse/NGSG-38
                       https://jira.rd.astrazeneca.net/i#browse/NGSG-38?filter=-1
     :return: instance of JiraCase
     """

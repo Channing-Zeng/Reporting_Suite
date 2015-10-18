@@ -66,6 +66,11 @@ def read_opts_and_cnfs(extra_opts,
              help='do not store work directory',
              action='store_false')
          ),
+        (['--debug'], dict(
+             dest='debug',
+             action='store_true',
+             default=False)
+         ),
         (['--reuse'], dict(
              dest='reuse_intermediate',
              help='reuse intermediate non-empty files in the work dir from previous run',

@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr', with_heatmap=False, style="text-align: right"),
+        Metric('Chr', with_heatmap=False, max_width=15, style="text-align: right"),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -50,7 +50,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
                 if fs[0] == sample.name and gene_name in key_gene_names and fs[9] in ['Del', 'Amp']:
                     seq2c_data_by_genename[gene_name] = fs[9] + ', ' + fs[8]
         if seq2c_data_by_genename:
-            clinical_cov_metrics.append(Metric('SNV'))
+            clinical_cov_metrics.append(Metric('CNV', short_name='&nbsp;&nbsp;CNV'))  # short name is hack for IE9 who doesn't have "text-align: left" and tries to stick "CNV" to the previous col header
 
     clinical_cov_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=clinical_cov_metrics)])
@@ -64,7 +64,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
         m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(depth_cutoff))
         reg.add_record(m.name, depth_in_thresh)
         if seq2c_data_by_genename:
-            reg.add_record('SNV', seq2c_data_by_genename[gene_name] if gene_name in seq2c_data_by_genename else '')
+            reg.add_record('CNV', seq2c_data_by_genename[gene_name] if gene_name in seq2c_data_by_genename else '')
 
     key_genes_report.save_tsv(sample.clinical_targqc_tsv, human_readable=True)
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
@@ -132,23 +132,23 @@ def is_sample_presents_in_file(sample_name, mutations_fpath):
 def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
-    width = '85'
+    max_width = '85'
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', width=width, style='', class_='long_line'),            # c.244G>A
-            Metric('AA chg', width=width, style='', class_='long_line'),            # p.Glu82Lys
+            Metric('Codon chg', max_width=max_width, style='', class_='long_line'),            # c.244G>A
+            Metric('AA chg', max_width=max_width, style='', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
-            Metric('Chr', with_heatmap=False, style="text-align: right"),       # chr11
+            Metric('Chr', max_width=15, with_heatmap=False, style="text-align: right"),       # chr11
             Metric('Position'),       # g.47364249
-            Metric('Change', width=width, style='', class_='long_line'),       # G>A
-            Metric('Depth'),              # 658
-            Metric('Frequency', unit='%', with_heatmap=False),          # .19
-            Metric('AA length', with_heatmap=False),          # 128
-            Metric('dbSNP', width=width, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('COSMIC', width=width, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('Type', width='100', style='', class_='long_line'),               # Frameshift
+            Metric('Change', max_width=max_width, style='', class_='long_line'),       # G>A
+            Metric('Depth', max_width=40),              # 658
+            Metric('Freq', max_width=40, unit='%', with_heatmap=False),          # .19
+            Metric('AA len', max_width=40, with_heatmap=False),          # 128
+            Metric('dbSNP', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('COSMIC', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Type', max_width='100', style='', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
@@ -196,8 +196,8 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
                 reg.add_record('Change', ref + '>' + alt)
                 reg.add_record('Depth', depth)
-                reg.add_record('Frequency', af)
-                reg.add_record('AA length', aa_len)
+                reg.add_record('Freq', af)
+                reg.add_record('AA len', aa_len)
                 reg.add_record('dbSNP', ' '.join(i for i in id.split(';') if i.startswith('rs')) if id != '.' else '')
                 reg.add_record('COSMIC', ' '.join(i for i in id.split(';') if i.startswith('COS')) if id != '.' else '')
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
@@ -230,10 +230,11 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
 
     clinical_action_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
-            Metric('Gene'),  # Gene & Transcript
-            Metric('Variant', style='min-width: 80px; max-width: 80px; white-space: pre !important;', class_='long_line_ellipsis'),            # p.Glu82Lys
-            Metric('Type', style='min-width: 120px; white-space: pre; !important', class_='long_line_ellipsis'),               # Frameshift
-            Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations', style='min-width: 100px; white-space: pre;'),  # Mutation
+            Metric('Gene', min_width=70, max_width=70),  # Gene & Transcript
+            Metric('Variant', min_width=80, max_width=80, style='white-space: pre !important;', class_='long_line_ellipsis'),            # p.Glu82Lys
+            Metric('Type', min_width=120, max_width=120, style='white-space: pre; !important', class_='long_line_ellipsis'),               # Frameshift
+            Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations',
+                   min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
             Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
             Metric('Therapeutic Agents'),  # Sorafenib
         ])])
@@ -311,7 +312,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     sample_dict['genome_build'] = cnf.genome.name
 
     approach_dict = dict()
-    approach_dict['target_type'] = cnf.target_type
+    approach_dict['target_type'] = target_type
     approach_dict['target_fraction'] = Metric.format_value(target_fraction, is_html=True, unit='%')
     # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
     approach_dict['ave_depth'] = Metric.format_value(ave_depth, is_html=True)
@@ -342,13 +343,9 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
                 for region in coverage_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
         coverage_dict['columns'].append(column_dict)
 
-    seq2c_plot_dict = dict()
+    image_by_key = dict()
     if seq2c_plot_fpath:
-        # seq2c_plot_dict['plot_src'] = relpath(seq2c_plot_fpath, cnf.output_dir)
-        import base64
-        with open(seq2c_plot_fpath, 'rb') as f:
-            encoded_string = base64.b64encode(f.read())
-        seq2c_plot_dict['plot_src'] = 'data:image/png;base64,' + encoded_string
+        image_by_key['seq2c_plot'] = seq2c_plot_fpath
 
     actionable_genes_dict = dict()
     if actionable_genes_report:
@@ -358,18 +355,19 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
             dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
                 for region in actionable_genes_report.regions]
 
-    sample.clinical_html = write_static_html_report(cnf.work_dir, {
+    sample.clinical_html = write_static_html_report(cnf, {
         'sample': sample_dict,
         'approach': approach_dict,
         'variants': mutations_dict,
         'coverage': coverage_dict,
-        'seq2c_plot': seq2c_plot_dict,
         'actionable_genes': actionable_genes_dict,
+        'seq2c_plot': True,
     }, sample.clinical_html,
        tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
        extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js')],
        extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
-                         join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
+                         join(dirname(abspath(__file__)), 'static', 'header_picture.css')],
+       image_by_key=image_by_key)
 
     clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
     if islink(clin_rep_symlink):

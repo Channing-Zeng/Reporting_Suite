@@ -1,10 +1,6 @@
-//$(function() {
-//   $("#report").find('.long_line').load(function(e){
-//       var self = $(this);
-//       //var elId = target.attr('id');
-//       if (self.is(".long_line")) {
-//           self.css("min_width", self.css("width"));
-//           //alert('The mouse was over'+ elId);
-//       }
-//   });
-//});
+if (msieversion() != 0) {
+   $(function() {
+       $(".long_line").style("width: 80px; overflow: clip; text-overflow: clip; white-space: wrap");
+       $(".long_line span").style("width: 80px; overflow: clip; text-overflow: clip; white-space: wrap");
+    });
+}

@@ -86,7 +86,7 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None)
         project_report_html_fpath = bcbio_structure.project_report_html_fpath
         project_name = bcbio_structure.project_name
 
-    _save_static_html(cnf.work_dir, full_report, project_report_html_fpath, project_name)
+    _save_static_html(cnf, full_report, project_report_html_fpath, project_name)
 
     info()
     info('*' * 70)
@@ -328,7 +328,7 @@ def _relpath_all(value, base_dirpath):
         return value
 
 
-def _save_static_html(work_dir, full_report, html_fpath, project_name):
+def _save_static_html(cnf, full_report, html_fpath, project_name):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -404,4 +404,4 @@ def _save_static_html(work_dir, full_report, html_fpath, project_name):
             sample_report_dict["sample_name"] = sample_report.get_display_name()
             main_dict["sample_reports"].append(sample_report_dict)
 
-    return write_static_html_report(work_dir, {"common": common_dict, "main": main_dict}, html_fpath)
+    return write_static_html_report(cnf, {"common": common_dict, "main": main_dict}, html_fpath)

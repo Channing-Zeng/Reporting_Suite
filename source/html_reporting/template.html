@@ -4,44 +4,33 @@
 <head>
     <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
     <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
-    
-    <link rel="stylesheet" type="text/css" href="/static/bootstrap/bootstrap.min.css" />
-    <link rel="stylesheet" type="text/css" href="/static/common.css" />
-    <link rel="stylesheet" type="text/css" href="/static/report.css" />
-    <link rel="stylesheet" type="text/css" href="/static/table_sorter/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="common.css" />
+    <link rel="stylesheet" type="text/css" href="report.css" />
+    <link rel="stylesheet" type="text/css" href="table_sorter/style.css" />
+    <!--[if IE]>
+    <style>
+        table {
+            table-layout: fixed;
+            width: 100px;
+        }
+    </style>
+    <![endif]-->
 
     <script type="text/javascript">
         window.reporting = {};
         window.console = {log: function() {}};
     </script>
-
-    <script type="text/javascript" src="/static/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="scripts/utils.js"></script>
+    <script type="text/javascript" src="table_sorter/tsort.js"></script>
     <!--<script type="text/javascript" src="/static/flot/jquery.flot.min.js"></script>-->
     <!--<script type="text/javascript" src="/static/flot/jquery.flot.dashes.js"></script>-->
-    <script type="text/javascript" src="/static/bootstrap/bootstrap.min.js"></script>
-    <script type="text/javascript" src="/static/bootstrap/bootstrap-tooltip-vlad.js"></script>
-
-    <script type="text/javascript" src="/static/scripts/hsvToRgb.js"></script>
-    <script type="text/javascript" src="/static/scripts/utils.js"></script>
-    <script type="text/javascript" src="/static/scripts/build_total_report.js"></script>
-    <script type="text/javascript" src="/static/scripts/build_report.js"></script>
-
-    <script type="text/javascript" src="/static/dragtable.js"></script>
-    <script type="text/javascript" src="/static/table_sorter/tsort.js"></script>
 
     <script type="text/javascript">
-        function msieversion() {
-            var ua = window.navigator.userAgent;
-            var msie = ua.indexOf("MSIE ");
-
-            if (msie > 0 || !!navigator.userAgent.match(/Trident.*rv\:11\./))
-                // If Internet Explorer, return version number
-                return parseInt(ua.substring(msie + 5, ua.indexOf(".", msie)));
-            else
-                // If another browser, return 0
-                return 0;
-        }
-
         $(function() {
 //            reporting.buildReport();
 
@@ -49,8 +38,9 @@
 
             $("[rel=tooltip]").tooltip({ animation: false });
 
-            if (msieversion() == 0)
+            if (msieversion() == 0) {
                 $('table.tableSorter').tableSort();
+            }
         });
     </script>
 

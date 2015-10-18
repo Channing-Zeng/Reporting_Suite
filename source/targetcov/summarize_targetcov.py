@@ -124,7 +124,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
         if verify_file(sample_report.sample.qualimap_html_fpath):
             r = sample_report.find_record(sample_report.records, 'Qualimap')
             if r:
-                r.html_fpath = sample_report.sample.qualimap_html_fpath
+                r.html_fpath = relpath(sample_report.sample.qualimap_html_fpath, output_dir)
             else:
                 sample_report.add_record(metric_name='Qualimap', value='Qualimap', html_fpath=sample_report.sample.qualimap_html_fpath, silent=True)
         # targqc_full_report.sample_reports.append(sample_report)
@@ -149,7 +149,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
 
     txt_fpath = targqc_full_report.save_txt(join(output_dir, BCBioStructure.targqc_name + '.txt'))
     tsv_fpath = targqc_full_report.save_tsv(join(output_dir, BCBioStructure.targqc_name + '.tsv'))
-    html_fpath = targqc_full_report.save_html(join(output_dir, BCBioStructure.targqc_name + '.html'), 'TargQC')
+    html_fpath = targqc_full_report.save_html(cnf, join(output_dir, BCBioStructure.targqc_name + '.html'), 'TargQC')
 
     return txt_fpath, tsv_fpath, html_fpath
 
