@@ -1,30 +1,21 @@
-.long_line, .long_line span {
+.long_line {
   overflow: hidden;
   -o-text-overflow: ellipsis;
   text-overflow: ellipsis; }
 
-.long_line span:hover {
+.long_line:hover {
   overflow: visible;
   -o-text-overflow: unset;
-  text-overflow: unset;
-  z-index: 100;
-  background: white;
-  border: 1px solid black;
-  position: absolute;
-  margin-top: -8px;
-  margin-left: -1px; }
+  text-overflow: unset; }
+  .long_line:hover span {
+    border: 1px solid black;
+    position: absolute;
+    margin-top: -8px;
+    margin-left: -1px;
+    background: white; }
 
-.long_line_ellipsis, .long_line_ellipsis span {
-  overflow: hidden;
-  -o-text-overflow: ellipsis;
-  text-overflow: ellipsis; }
-
-.long_line_ellipsis:hover, .long_line_ellipsis *:hover {
-  overflow: visible;
-  -o-text-overflow: unset;
-  text-overflow: unset;
-  z-index: 100;
-  background: white; }
+.actionable_table .long_line:hover span {
+  margin-top: -1px !important; }
 
 .clinical_report table.report_table td, .clinical_report table.report_table th {
   max-width: 160px;

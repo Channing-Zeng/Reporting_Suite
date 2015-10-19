@@ -231,8 +231,8 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     clinical_action_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene', min_width=70, max_width=70),  # Gene & Transcript
-            Metric('Variant', min_width=80, max_width=80, style='white-space: pre !important;', class_='long_line_ellipsis'),            # p.Glu82Lys
-            Metric('Type', min_width=120, max_width=120, style='white-space: pre; !important', class_='long_line_ellipsis'),               # Frameshift
+            Metric('Variant', min_width=80, max_width=80, style='white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
+            Metric('Type', min_width=120, max_width=120, style='white-space: pre; !important', class_='long_line'),               # Frameshift
             Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations',
                    min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
             Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
