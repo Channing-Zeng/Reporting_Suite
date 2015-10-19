@@ -1,8 +1,7 @@
 #report {
   margin: 0 100px 50px 0;
   min-width: 532px;
-  font-size: 1em;
-  max-width: 100%; }
+  font-size: 1em; }
   #report .table_name {
     margin-bottom: 5px; }
   #report table {
@@ -23,7 +22,7 @@
     #report table.report_table td, #report table.report_table th {
       white-space: nowrap;
       text-align: left;
-      padding: 2px 3px 2px 3px; }
+      padding: 2px 6px 2px 2px; }
     #report table.report_table td.number {
       padding-top: 0;
       padding-bottom: 0; }

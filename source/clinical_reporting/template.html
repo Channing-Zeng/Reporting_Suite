@@ -28,6 +28,7 @@
     <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
     <script type="text/javascript" src="scripts/utils.js"></script>
+    <script type="text/javascript" src="table_sorter/tsort.js"></script>
     <script type="text/javascript" src="clinical_report.js"></script>
 </head>
 
@@ -108,24 +109,7 @@
         <h1>Detailed variant analysis</h1>
         {.section variants}
             <div>
-                <table class="report_table static_report">
-                    <thead>
-                        <tr class="top_row_tr">
-                            {.repeated section metric_names}
-                                {@}
-                            {.end}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {.repeated section rows}
-                            <tr>
-                                {.repeated section records}
-                                    {@}
-                                {.end}
-                            </tr>
-                        {.end}
-                    </tbody>
-                </table>
+                {table}
             </div>
         {.or}
             <p>No variants detected in key regions.</p>
@@ -178,25 +162,8 @@
         <a name="actionable"></a>
         <h1>Mutations in actionable genes</h1>
         {.section actionable_genes}
-            <div>
-                <table class="report_table static_report actionable_table">
-                    <thead>
-                        <tr class="top_row_tr">
-                            {.repeated section metric_names}
-                                {@}
-                            {.end}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {.repeated section rows}
-                            <tr>
-                                {.repeated section records}
-                                    {@}
-                                {.end}
-                            </tr>
-                        {.end}
-                    </tbody>
-                </table>
+            <div class="actionable_table">
+                {table}
             </div>
         {.or}
             <p>Actionable genes are no available.</p>

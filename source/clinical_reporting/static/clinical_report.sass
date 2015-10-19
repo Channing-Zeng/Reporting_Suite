@@ -1,8 +1,8 @@
-.long_line
+td.long_line
     overflow: hidden              /* "overflow" value must be different from  visible" */
     -o-text-overflow: ellipsis    /* Opera < 11 */
     text-overflow: ellipsis       /* IE, Safari (WebKit), Opera >= 11, FF > 6 */
-.long_line:hover
+td.long_line:hover
     overflow: visible
     -o-text-overflow: unset
     text-overflow: unset
@@ -13,7 +13,7 @@
         margin-left: -1px
         background: white
 
-.actionable_table .long_line:hover span
+.actionable_table td.long_line:hover span
     margin-top: -1px !important
 
 
@@ -36,12 +36,14 @@
     overflow: hidden
     width: 100%
 
-table.actionable_table
-    td
-        vertical-align: top
-    th
+.actionable_table
+    th, th *
+        overflow: auto
+        white-space: normal
         vertical-align: bottom
-//        white-space: normal
-    //overflow: hidden              /* "overflow" value must be different from  visible"*/
-    //-o-text-overflow: ellipsis    /* Opera < 11*/
-    //text-overflow: ellipsis
+    //th span
+    //    padding-right: 10px
+    td, td *
+        vertical-align: top
+    //td span
+        //padding-right: 10px

@@ -136,6 +136,7 @@ class Metric:
             width=None,
             max_width=None,
             min_width=None,
+            sort_by=None,
 
             numbers=None,
             values=None,
@@ -161,6 +162,7 @@ class Metric:
         self.class_ = class_
         self.max_width = max_width
         self.min_width = min_width
+        self.sort_by = sort_by
 
         self.numbers = []
         self.values = []
@@ -241,6 +243,9 @@ class Report:
     def flatten(self, sections=None, human_readable=True):
         raise NotImplementedError()
 
+    def get_rows_of_records(self, sections=list()):  # TODO: move logic from flatten here, use this method both in flatten and save_html
+        return NotImplementedError()
+
     def save_txt(self, output_fpath, sections=None):
         fpath = write_txt_rows(self.flatten(sections, human_readable=True), output_fpath)
         self.txt_fpath = fpath
@@ -256,7 +261,7 @@ class Report:
         self.tsv_fpath = fpath
         return fpath
 
-    def save_html(self, cnf, output_fpath, caption='', type_=None,
+    def save_html(self, cnf, output_fpath, caption='', #type_=None,
                   extra_js_fpaths=list(), extra_css_fpaths=list()):
         # class Encoder(JSONEncoder):
         #     def default(self, o):
@@ -269,7 +274,7 @@ class Report:
         #     report=self,
         #     type_=type_,
         # ), separators=(',', ':'), cls=Encoder)
-        fpath = write_html_report(cnf, self, type_, output_fpath, caption=caption,
+        fpath = write_html_report(cnf, self, output_fpath, caption=caption,
               extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
         self.html_fpath = fpath
         return fpath
@@ -348,6 +353,9 @@ class SampleReport(Report):
     #         name = name + ' ' + self.caller_tag
     #     return name
 
+    def get_rows_of_records(self, sections=list()):  # TODO: move logic from flatten here, use this method both in flatten and save_html
+        return [self.records]
+
     def add_record(self, metric_name, value, meta=None, html_fpath=None, silent=False, parse=True):
         metric = self.metric_storage.find_metric(metric_name.strip())
         if not metric:
@@ -378,9 +386,10 @@ class SampleReport(Report):
             rows.append(row)
         return rows
 
-    def save_html(self, cnf, output_fpath, caption='', type_=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
-        return Report.save_html(self, cnf, output_fpath, caption=caption, type_='SampleReport',
-                                extra_js_fpaths=list(), extra_css_fpaths=list())
+    def save_html(self, cnf, output_fpath, caption='', #type_=None,
+            extra_js_fpaths=list(), extra_css_fpaths=list()):
+        return Report.save_html(self, cnf, output_fpath, caption=caption, #type_='SampleReport',
+            extra_js_fpaths=list(), extra_css_fpaths=list())
 
     def __repr__(self):
         return self.get_display_name() + (', ' + self.report_name if self.report_name else '')
@@ -469,7 +478,10 @@ class PerRegionSampleReport(SampleReport):
 
         return rows
 
-    def save_html(self, cnf, output_fpath, caption='', type_=None,
+    def get_rows_of_records(self, sections=list()):  # TODO: move logic from flatten here, use this method both in flatten and save_html
+        return [r.records for r in self.regions]
+
+    def save_html(self, cnf, output_fpath, caption='', #type_=None,
                   extra_js_fpaths=list(), extra_css_fpaths=list()):
         return None
         # sample_reports = []
@@ -549,6 +561,8 @@ class FullReport(Report):
 
         some_rep = self.sample_reports[0]
         for m in self.metric_storage.general_section.metrics:
+            if m.is_hidden: continue
+
             rec = Report.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
@@ -558,11 +572,29 @@ class FullReport(Report):
 
         rows.append(['Sample'] + [rep.get_display_name() for rep in self.sample_reports])
 
+        # rows_of_records = self.get_rows_of_records(sections) # TODO: use logic from get_rows_of_records
+
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             for sr in self.sample_reports:
                 rec = Report.find_record(sr.records, metric.name)
                 row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
+            rows.append(row)
+        return rows
+
+    def get_rows_of_records(self, sections=list()):  # TODO: move logic from flatten here, use this method both in flatten and save_html
+        if isinstance(sections, ReportSection):
+            sections = [sections]
+
+        rows = []
+        sample_metric = Metric(name='Sample', with_heatmap=False)
+        for i, sr in enumerate(self.sample_reports):
+            row = [Record(metric=sample_metric, value=sr.display_name,
+                          html_fpath=sr.html_fpath, parse=False, num=len(self.sample_reports) - i)]
+            for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
+                if not metric.is_hidden:
+                    rec = Report.find_record(sr.records, metric.name)
+                    row.append(rec)
             rows.append(row)
         return rows
 
@@ -611,13 +643,13 @@ class FullReport(Report):
             self.save_tsv(base_path + '.tsv', sections), \
             self.save_html(cnf, base_path + '.html', caption)
 
-    def save_html(self, cnf, output_fpath, caption='', type_=None, display_name=None,
-                  extra_js_fpaths=list(), extra_css_fpaths=list()):
+    def save_html(self, cnf, output_fpath, caption='', #type_=None,
+                  display_name=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
-        return Report.save_html(self, cnf, output_fpath, caption=caption, type_='FullReport',
+        return Report.save_html(self, cnf, output_fpath, caption=caption, #type_='FullReport',
             extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
 
     def __repr__(self):
@@ -886,35 +918,35 @@ image_files = [
     # 'img/draggable.png',
 ]
 
-def _build_report(report, type_):
+def build_report_html(report, sortable=True):
     report_html = ''
     report_html += _build_common_records(report.get_common_records())
 
     for section in report.metric_storage.sections:
         column_names = [m.name for m in section.metrics]
-        # columnOrder = (recoverOrderFromCookies section.name) or report.order or [0...columnNames.length]
-        column_order = range(len(column_names))  # TODO: read column order
-
-        report_html += _build_total_report(report, section, column_order)
+        report_html += build_section_html(report, section, sortable=sortable)
 
     return report_html
 
 
 def _build_common_records(general_records):
-    for rec in general_records:
-        _calc_record_cell_contents(rec)
+    if not general_records:
+        return ''
+    else:
+        for rec in general_records:
+            _calc_record_cell_contents(rec)
 
-    table = '<table cellspacing="0" class="common_table" id="common_table">'
-    for rec in general_records:
-        table += '\n<tr><td>'
-        if rec.html_fpath:
-            table += '<a href="' + rec.html_fpath + '>' + rec.cell_contents + '</a>'
-        else:
-            table += '<span class="metric_name">' + __get_metric_name_html(rec.metric, use_full_name=True) + ': </span>' + rec.cell_contents
-        table += '</td></tr>'
-    table += '\n</table>\n'
-    table += '<div class="space_30px"></div>'
-    return table
+        table = '<table cellspacing="0" class="common_table" id="common_table">'
+        for rec in general_records:
+            table += '\n<tr><td>'
+            if rec.html_fpath:
+                table += '<a href="' + rec.html_fpath + '>' + rec.cell_contents + '</a>'
+            else:
+                table += '<span class="metric_name">' + __get_metric_name_html(rec.metric, use_full_name=True) + ': </span>' + rec.cell_contents
+            table += '</td></tr>'
+        table += '\n</table>\n'
+        table += '<div class="space_30px"></div>'
+        return table
 
 
 def __get_metric_name_html(metric, use_full_name=False):
@@ -926,32 +958,40 @@ def __get_metric_name_html(metric, use_full_name=False):
         return metric.name
 
 
-def make_cell_th(metric, pos=''):
+def make_cell_th(metric, class_='', sortable=True):
     # return '<th class="' + metric.class_ + '" style="' + metric.style + '">' + metric.name + '</th>'
     html = ''
 
     if metric.is_hidden or not metric.values:
         return html
 
-    style = metric.style
+    style = ''  #metric.style
+    class_ = class_  # + ' ' + metric.class_
     if metric.max_width is not None:
         style += '; max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
     if metric.min_width is not None:
         style += '; min-width: {w}px;'.format(w=metric.min_width)
-    html += '\n<th style="' + style + '" class="second_through_last_col_headers_td"'
+    html += '\n<th style="' + style + '" class="' + class_ + '"'
 
     if metric.numbers:
         sort_by = 'nosort' if metric.all_values_equal else 'numeric'
-        direction = 'ascending' if metric.quality == 'Less is better' else 'descending'
-        html += ' data-sortBy=' + sort_by + ' data-direction=' + direction + ' position=' + str(pos)
+        direction = 'descending'  # 'ascending' if metric.quality == 'Less is better' else 'descending'
+        html += ' data-sortBy=' + sort_by + ' data-direction=' + direction
+    else:
+        sort_by = 'nosort' if metric.all_values_equal else 'text'
+        direction = 'descending'
+        html += ' data-sortBy=' + sort_by + ' data-direction=' + direction
 
     # if metric.width is not None:
     #     html += ' width=' + str(metric.width)
-    html += '><span class="metricName">' + __get_metric_name_html(metric) + '</span></th>'
+    html += '><span class="metricName">' + __get_metric_name_html(metric) + '</span>'
+    # if sortable:
+    #     html += '<div class="sortArrow"><div class="sortArrowDescending"></div></div>'
+    html += '</th>'
     return html
 
 
-def make_cell_td(rec, td_classes=''):
+def make_cell_td(rec, class_=''):
     html = ''
 
     if not rec.metric.values:
@@ -975,7 +1015,8 @@ def make_cell_td(rec, td_classes=''):
         style += '; min-width: {w}px;'.format(w=rec.metric.min_width)
 
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
-    html += ' quality="' + str(rec.metric.quality) + '" class="td ' + td_classes + ' ' + rec.metric.class_ + ' '
+    html += ' quality="' + str(rec.metric.quality) + '"'
+    html += ' class="td ' + class_ + ' ' + rec.metric.class_ + ' '
     if rec.num:
         html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value)
     html += '"'
@@ -990,87 +1031,55 @@ def make_cell_td(rec, td_classes=''):
 
     if rec.html_fpath:
         if isinstance(rec.html_fpath, basestring):
-            html += '<a href="' + rec.html_fpath + '">' + rec.cell_contents + '</a></td>'
+            html += '<a href="' + rec.html_fpath + '">' + rec.cell_contents + '</a>'
         else:  # varQC -- several variant callers for one sample are possible
             if len(rec.html_fpath) == 0:
                 rec.value = None
                 _calc_record_cell_contents(rec)
-                html += rec.cell_contents + '</td>'
+                html += rec.cell_contents
             else:
                 caller_links = ', '.join(
                     '<a href="' + html_fpath + '">' + caller + '</a>'
                     for caller, html_fpath in rec.html_fpath.items()
                     if html_fpath)
-                html += rec.cell_contents + '(' + caller_links + ')</td>'
+                html += rec.cell_contents + '(' + caller_links + ')'
 
     else:
         html += '<span style="' + str(padding_style) + '" ' + \
-                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</span></td>'
+                __get_meta_tag_contents(rec) + '>' + rec.cell_contents + '</span>'
+    html += '</td>'
     return html
 
 
-def _build_total_report(report, section, column_order):
+def build_section_html(report, section, sortable=True):
     html = ''
 
     if section.title:
         html += '\n<h3 class="table_name">' + section.title + '</h3>'
-    calc_cell_contents(report, report.sample_reports if 'sample_reports' in report.__dict__ else [report], section)
 
-    table = '\n<table cellspacing="0" class="report_table tableSorter fix-align-char" id="report_table_' + section.name + '">'
+    rows_of_records = report.get_rows_of_records(sections=[section])
+
+    calc_cell_contents(report, rows_of_records, section)
+
+    rows_of_records.sort(key=lambda recs: recs[0].num if recs[0].metric.numbers else recs[0].value)
+
+    table = '\n<table cellspacing="0" class="report_table fix-align-char' + (' tableSorter' if sortable else '') + '" id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
-    table += '\n<th class="top_left_td left_column_td" data-sortBy="numeric"><span>Sample</span></th>'
 
-    for col_num in range(len(section.metrics)):
-        pos = column_order[col_num]
-        metric = section.metrics[pos]
-        table += make_cell_th(metric, pos)
+    for col_num, metric in enumerate(section.metrics):
+        table += make_cell_th(metric, class_='left_column_td' if col_num == 0 else '', sortable=sortable)
 
     table += '\n</tr>\n</thead>\n<tbody>'
 
-    i = 0
-    if 'sample_reports' not in report.__dict__:
-        sample_reports = [report]
-    else:
-        sample_reports = report.sample_reports
-    sample_reports_length = len(sample_reports)
+    for row_num, records in enumerate(rows_of_records):
+        second_row_tr = 'second_row_tr' if row_num == 0 else ''
+        table += '\n<tr class="' + second_row_tr + '">'
 
-    for sample_report in sample_reports:
-        line_caption = sample_report.display_name  # sample name
-        max_sample_name_len = 50
-        if len(line_caption) > max_sample_name_len:
-            line_caption = '<span title="' + line_caption + '">' + line_caption[:max_sample_name_len] + '...</span>'
-
-        second_row_tr = 'second_row_tr' if i == 0 else ''
-        table += '\n<tr class="' + second_row_tr + '">\n<td class="left_column_td td" data-sortAs=' + str(sample_reports_length - i) + '>'
-        if sample_reports_length == 1:
-            table += '<span class="sample_name">' + line_caption + '</span>'
-        else:
-            if sample_report.html_fpath:
-                if isinstance(sample_report.html_fpath, basestring):
-                    table += '<a class="sample_name" href="' + sample_report.html_fpath + '">' + line_caption + '</a>'
-                else:  # several links for one sample are possible multi-reports (e.g. TargQC)
-                    if len(sample_report.html_fpath) == 0:
-                        table += '<span class="sample_name">' + line_caption + '</span>'
-                    else:
-                        links = ', '.join('<a href="' + html_fpath + '">' + report_name + '</a>'
-                                          for report_name, html_fpath in sample_report.html_fpath.items()
-                                          if html_fpath)
-                        table += '<span class="sample_name">' + line_caption + '(' + links + ')</span>'
-            else:
-                table += '<span class="sample_name">' + line_caption + '</span>'
-        table += '\n</td>'
-
-        for col_num in range(len(section.metrics)):
-            pos = column_order[col_num]
-            metric = section.metrics[pos]
-            if not metric.values: continue
-            if metric.is_hidden: continue
-            rec = sample_report.find_record(sample_report.records, metric.name)
-            if rec:
-                table += make_cell_td(rec)
+        for col_num, rec in enumerate(records):
+            if not rec.metric.values: continue
+            table += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
 
         table += '\n</tr>'
-        i += 1
     table += '\n</tbody>\n</table>\n'
 
     html += table
@@ -1124,7 +1133,14 @@ def __get_meta_tag_contents(rec):
 
 def _calc_record_cell_contents(rec):
     rec.cell_contents = rec.format_html()
-    if rec.value is not None and (isinstance(rec.value, int) or isinstance(rec.value, float)):
+    if rec.metric.sort_by and rec.value:
+        try:
+            rec.num = rec.metric.sort_by(rec.value)
+        except:
+            pass
+        rec.metric.with_heatmap = False
+
+    elif rec.value is not None and (isinstance(rec.value, int) or isinstance(rec.value, float)):
         rec.num = rec.value
 
     #TODO: intPartTextWidth
@@ -1179,16 +1195,16 @@ def get_color(hue, lightness):
     return '#' + ''.join(hex_rgb)
 
 
-def calc_cell_contents(report, rows, section):
+def calc_cell_contents(report, rows_of_records, section):
     max_frac_widths_by_metric = dict()
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
-    for row in rows:
-        for rec in row.records:
+    for records in rows_of_records:
+        for rec in records:
             if rec.metric.name in section.metrics_by_name:
                 _calc_record_cell_contents(rec)
 
-        for rec in row.records:
+        for rec in records:
             if rec.metric.name in section.metrics_by_name:
                 if rec.metric.name not in max_frac_widths_by_metric or \
                                 rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
@@ -1243,8 +1259,8 @@ def calc_cell_contents(report, rows, section):
             metric.top_outer_fence = metric.top_outer_fence if metric.top_outer_fence is not None else q3 + 3   * d
 
     # Second round: setting shift and color properties based on max/min widths and vals
-    for row in rows:
-        for rec in row.records:
+    for records in rows_of_records:
+        for rec in records:
             if rec.metric and rec.metric.name in section.metrics_by_name:
                 # Padding based on frac width
                 if rec.frac_width:
@@ -1302,20 +1318,20 @@ def calc_cell_contents(report, rows, section):
                             brt = round(MEDIAN_BRT - (rec.num - metric.med) * k)
                             rec.color = get_color(top_hue, brt)
 
-        for rec in row.records:
+        for rec in records:
             if rec.metric and rec.metric.name in section.metrics_by_name:
                 metric = rec.metric
 
                 if metric.ok_threshold is not None:
                     if isinstance(metric.ok_threshold, basestring):
-                        rec_to_align_with = Report.find_record(row.records, metric.ok_threshold)
+                        rec_to_align_with = Report.find_record(records, metric.ok_threshold)
                         if rec_to_align_with:
                             rec.text_color = rec_to_align_with.text_color
                             rec.color = rec_to_align_with.color
     return report
 
 
-def write_html_report(cnf, report, type_, html_fpath, caption='',
+def write_html_report(cnf, report, html_fpath, caption='',
         extra_js_fpaths=list(), extra_css_fpaths=list(), image_by_key=dict()):
 
     with open(template_fpath) as f: html = f.read()
@@ -1323,7 +1339,7 @@ def write_html_report(cnf, report, type_, html_fpath, caption='',
     html = _insert_into_html(html, caption, 'caption')
     html = _insert_into_html(html, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
 
-    report_html = _build_report(report, type_)
+    report_html = build_report_html(report)
     html = _insert_into_html(html, report_html, 'report')
 
     plots_html = ''.join('<img src="' + plot + '"/>' for plot in report.plots)

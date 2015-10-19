@@ -8,7 +8,7 @@ from source import verify_file, info
 from source.file_utils import add_suffix, verify_module
 from source.file_utils import adjust_path
 from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
-    calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th
+    calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from source.utils import is_local
@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr', with_heatmap=False, max_width=15, style="text-align: right"),
+        Metric('Chr', with_heatmap=False, max_width=20, style='text-align: right'),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -132,7 +132,7 @@ def is_sample_presents_in_file(sample_name, mutations_fpath):
 def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
-    max_width = '85'
+    max_width = '90'
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
@@ -140,12 +140,12 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('Codon chg', max_width=max_width, style='', class_='long_line'),            # c.244G>A
             Metric('AA chg', max_width=max_width, style='', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
-            Metric('Chr', max_width=15, with_heatmap=False, style="text-align: right"),       # chr11
-            Metric('Position'),       # g.47364249
+            # Metric('Chr', max_width=33, with_heatmap=False, style='text-align: right'),       # chr11
+            Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isnumeric())))),       # g.47364249
             Metric('Change', max_width=max_width, style='', class_='long_line'),       # G>A
-            Metric('Depth', max_width=40),              # 658
-            Metric('Freq', max_width=40, unit='%', with_heatmap=False),          # .19
-            Metric('AA len', max_width=40, with_heatmap=False),          # 128
+            Metric('Depth', max_width=48),              # 658
+            Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
+            Metric('AA len', max_width=50, with_heatmap=False),          # 128
             Metric('dbSNP', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('COSMIC', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Type', max_width='100', style='', class_='long_line'),               # Frameshift
@@ -192,8 +192,10 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Codon chg', codon_change)
                 reg.add_record('AA chg', 'p.' + aa_change if aa_change else '')
                 # reg.add_record('Allele', allele_record)
-                reg.add_record('Chr', chrom.replace('chr', '') if chrom else '')
-                reg.add_record('Position', 'g.' + (Metric.format_value(int(start), human_readable=True) if start else ''))
+                # reg.add_record('Chr', chrom.replace('chr', '') if chrom else '')
+                c = chrom.replace('chr', '') if chrom else ''
+                p = 'g.' + Metric.format_value(int(start), human_readable=True) if start else ''
+                reg.add_record('Position', c + ':' + p)
                 reg.add_record('Change', ref + '>' + alt)
                 reg.add_record('Depth', depth)
                 reg.add_record('Freq', af)
@@ -321,25 +323,20 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
 
     mutations_dict = dict()
     if mutations_report.regions:
-        # mutations_dict['first_col_header'] = mutations_report.metric_storage.get_metrics()[0].name
-        if is_local():
-            mutations_report.regions = mutations_report.regions[:4]
-        calc_cell_contents(mutations_report, mutations_report.regions, mutations_report.metric_storage.sections[0])
-        mutations_dict['metric_names'] = [make_cell_th(m) for m in mutations_report.metric_storage.get_metrics()]
-        mutations_dict['rows'] = [
-            dict(records=[make_cell_td(r, td_classes='') for r in region.records])
-                for region in mutations_report.regions]
+        if cnf.debug:
+            mutations_report.regions = mutations_report.regions[:]
+        mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
 
     coverage_dict = dict(columns=[])
     GENE_COL_NUM = 3
     genes_in_col = len(coverage_report.regions) / GENE_COL_NUM
-    calc_cell_contents(coverage_report, coverage_report.regions, coverage_report.metric_storage.sections[0])
+    calc_cell_contents(coverage_report, coverage_report.get_rows_of_records(), coverage_report.metric_storage.sections[0])
     for i in range(GENE_COL_NUM):
         column_dict = dict()
-        # column_dict['first_col_header'] = coverage_report.metric_storage.get_metrics()[0].name
+        # column_dict['table'] = build_report_html(coverage_report)
         column_dict['metric_names'] = [make_cell_th(m) for m in coverage_report.metric_storage.get_metrics()]
         column_dict['rows'] = [
-            dict(records=[make_cell_td(r, td_classes='') for r in region.records])
+            dict(records=[make_cell_td(r) for r in region.records])
                 for region in coverage_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
         coverage_dict['columns'].append(column_dict)
 
@@ -349,11 +346,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
 
     actionable_genes_dict = dict()
     if actionable_genes_report:
-        calc_cell_contents(actionable_genes_report, actionable_genes_report.regions, actionable_genes_report.metric_storage.sections[0])
-        actionable_genes_dict['metric_names'] = [make_cell_th(m) for m in actionable_genes_report.metric_storage.get_metrics()]
-        actionable_genes_dict['rows'] = [
-            dict(records=[make_cell_td(r, td_classes='short_line') for r in region.records])
-                for region in actionable_genes_report.regions]
+        actionable_genes_dict['table'] = build_report_html(actionable_genes_report, sortable=False)
 
     sample.clinical_html = write_static_html_report(cnf, {
         'sample': sample_dict,

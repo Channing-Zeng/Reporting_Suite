@@ -50,6 +50,8 @@ Array - Specifc table
 				settings['delay'] = 1;
 			}
 
+			//alert(column_widths);
+
 			/* GET SORTING CRITERIA */
 			$(table).find('th').each(function(index) {
                 // And set directions (added by Vlad)
@@ -133,16 +135,14 @@ Array - Specifc table
 			}
 
 			/* STYLE TABLE */
-			// Set table to position relatarrowive
+			// Set table to position relative
 			$(table).css('position', 'relative');
 
 			// Add divs for directional arrows
 			$(table).find('th').each(function(index) {
-				//if ( sorting_criteria[index] != 'nosort' ) {
-				$('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
-				//} else {
-                 //   $('<div class="sortArrow"><div class="sortArrowAscending"></div><div class="sortArrowDescending"></div></div>').appendTo($(this));
-				//}
+				if ( sorting_criteria[index] != 'nosort' ) {
+					$('<div class="sortArrow"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
+				}
 			});
 
 			// Set each td's width
@@ -150,9 +150,10 @@ Array - Specifc table
 				column_widths.push($(this).outerWidth(true));
 			});
 
+			var padding = 6;
 			$(table).find('tr td, tr th').each(function() {
 				$(this).css( {
-					minWidth: column_widths[$(this).index()]
+					minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
 				} );
 			});
 
@@ -217,7 +218,15 @@ Array - Specifc table
 
 					} else if (sorting_criteria[th_index_selected] == 'text') { // Sort text
 						sort_fn = function(a, b) {
-							return a.td[th_index_selected].localeCompare(b.td[th_index_selected]);
+							a = a.td[th_index_selected];
+							b = b.td[th_index_selected];
+							if (trim(a) == '' && trim(b) != '') {
+								return 1
+							} else if (trim(b) == '' && trim(a) != '') {
+								return -1
+							} else {
+								return a.localeCompare(b);
+							}
 						};
 					}
 
@@ -255,11 +264,22 @@ Array - Specifc table
 
 			// Display arrow direction
 			function display_arrow(column_index) {
-				$(table).find('th div.sortArrow div').fadeOut(settings['speed'], 'swing');
+				$(table).find('th div.sortArrow div')
+					.fadeTo(settings['speed'], 0, 'swing', function(){$('th div.sortArrow div')
+						.css("visibility", "hidden");
+					});   //.fadeOut(settings['speed'], 'swing');
                 if (is_ascending[column_index]) {
-                    $(table).find('th div.sortArrow div.sortArrowAscending').eq(column_index).fadeIn(settings['speed'], 'swing');
+                    $(table).find('th div.sortArrow div.sortArrowAscending')
+						.eq(column_index)
+						.fadeTo(settings['speed'], 1, 'swing', function(){$('th div.sortArrow div')
+							.css("visibility", "visible")
+						});   //.fadeIn(settings['speed'], 'swing');
                 } else {
-                    $(table).find('th div.sortArrow div.sortArrowDescending').eq(column_index).fadeIn(settings['speed'], 'swing');
+                    $(table).find('th div.sortArrow div.sortArrowDescending')
+						.eq(column_index)
+						.fadeTo(settings['speed'], 1, 'swing', function(){$('th div.sortArrow div')
+							.css("visibility", "visible")
+						});   //.fadeIn(settings['speed'], 'swing');
                 }
 			}
             display_arrow(0);

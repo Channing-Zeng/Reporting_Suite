@@ -216,7 +216,7 @@ function getContigNumberTickFormatter(maxX) {
 }
 
 function trim(str) {
-    return str.replace(/^\s+/g, '');
+    return String(str).replace(/^\s+/g, '');
 }
 
 function nbsp(str, metricName) {
