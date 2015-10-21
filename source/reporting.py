@@ -132,7 +132,7 @@ class Metric:
             with_heatmap=True,
             style='',
             class_='',
-            align=None,  # TODO: legacy, remove
+            align=None,
             width=None,
             max_width=None,
             min_width=None,
@@ -160,6 +160,7 @@ class Metric:
         self.with_heatmap = with_heatmap
         self.style = style
         self.class_ = class_
+        self.align = align
         self.max_width = max_width
         self.min_width = min_width
         self.sort_by = sort_by
@@ -594,7 +595,10 @@ class FullReport(Report):
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden:
                     rec = Report.find_record(sr.records, metric.name)
-                    row.append(rec)
+                    if rec:
+                        row.append(rec)
+                    else:
+                        row.append(Record(metric=metric, value=None))
             rows.append(row)
         return rows
 
@@ -971,6 +975,16 @@ def make_cell_th(metric, class_='', sortable=True):
         style += '; max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
     if metric.min_width is not None:
         style += '; min-width: {w}px;'.format(w=metric.min_width)
+
+    if metric.align:
+        style += ' text-align: ' + metric.align
+    elif metric.numbers:
+        style += ' text-align: right'
+        metric.align = 'right'
+    else:
+        style += ' text-align: left'
+        metric.align = 'left'
+
     html += '\n<th style="' + style + '" class="' + class_ + '"'
 
     if metric.numbers:
@@ -1013,6 +1027,9 @@ def make_cell_td(rec, class_=''):
         style += '; max-width: {w}px; width: {w}px;'.format(w=rec.metric.max_width)
     if rec.metric.min_width is not None:
         style += '; min-width: {w}px;'.format(w=rec.metric.min_width)
+
+    if rec.metric.align:
+        style += ' text-align: ' + rec.metric.align
 
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
     html += ' quality="' + str(rec.metric.quality) + '"'
@@ -1059,14 +1076,15 @@ def build_section_html(report, section, sortable=True):
 
     rows_of_records = report.get_rows_of_records(sections=[section])
 
-    calc_cell_contents(report, rows_of_records, section)
+    calc_cell_contents(report, rows_of_records)
 
     rows_of_records.sort(key=lambda recs: recs[0].num if recs[0].metric.numbers else recs[0].value)
 
     table = '\n<table cellspacing="0" class="report_table fix-align-char' + (' tableSorter' if sortable else '') + '" id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
 
-    for col_num, metric in enumerate(section.metrics):
+    metrics = [rec.metric for rec in rows_of_records[0]]
+    for col_num, metric in enumerate(metrics):
         table += make_cell_th(metric, class_='left_column_td' if col_num == 0 else '', sortable=sortable)
 
     table += '\n</tr>\n</thead>\n<tbody>'
@@ -1195,24 +1213,26 @@ def get_color(hue, lightness):
     return '#' + ''.join(hex_rgb)
 
 
-def calc_cell_contents(report, rows_of_records, section):
+def calc_cell_contents(report, rows_of_records):
+    metrics = set(rec.metric for rec in rows_of_records[0])
+
     max_frac_widths_by_metric = dict()
 
     # First round: calculatings max/min integral/fractional widths (for decimal alingment) and max/min values (for heatmaps)
     for records in rows_of_records:
         for rec in records:
-            if rec.metric.name in section.metrics_by_name:
-                _calc_record_cell_contents(rec)
+            # if rec.metric.name in section.metrics_by_name:
+            _calc_record_cell_contents(rec)
 
         for rec in records:
-            if rec.metric.name in section.metrics_by_name:
-                if rec.metric.name not in max_frac_widths_by_metric or \
-                                rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
-                    max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
-                if rec.num:
-                    rec.metric.numbers.append(rec.num)
-                if rec.value is not None:
-                    rec.metric.values.append(rec.value)
+            # if rec.metric.name in section.metrics_by_name:
+            if rec.metric.name not in max_frac_widths_by_metric or \
+                            rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
+                max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
+            if rec.num:
+                rec.metric.numbers.append(rec.num)
+            if rec.value is not None:
+                rec.metric.values.append(rec.value)
     # else:
     #     for rec in report.records:
     #         if rec.metric.name in section.metrics_by_name:
@@ -1221,7 +1241,7 @@ def calc_cell_contents(report, rows_of_records, section):
     #                     rec.metric.values = []
     #                 rec.metric.values.append(rec.num)
 
-    for metric in section.metrics:
+    for metric in metrics:
         if metric.numbers and metric.with_heatmap:
             # For metrics where we know the "normal value" - we want to color everything above normal white,
             #   and everything below - red, starting from normal, finishing with bottom
@@ -1261,73 +1281,71 @@ def calc_cell_contents(report, rows_of_records, section):
     # Second round: setting shift and color properties based on max/min widths and vals
     for records in rows_of_records:
         for rec in records:
-            if rec.metric and rec.metric.name in section.metrics_by_name:
-                # Padding based on frac width
-                if rec.frac_width:
-                    rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
+            # Padding based on frac width
+            if rec.frac_width:
+                rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
 
-                metric = rec.metric
+            metric = rec.metric
 
-                # Color heatmap
-                if rec.num and metric.with_heatmap:
-                    [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
-                    [low_hue, inner_low_brt, outer_low_brt] = [RED_HUE, RED_INNER_BRT, RED_OUTER_BRT]
+            # Color heatmap
+            if rec.num and metric.with_heatmap:
+                [top_hue, inner_top_brt, outer_top_brt] = [BLUE_HUE, BLUE_INNER_BRT, BLUE_OUTER_BRT]
+                [low_hue, inner_low_brt, outer_low_brt] = [RED_HUE, RED_INNER_BRT, RED_OUTER_BRT]
 
-                    if metric.quality == 'Less is better':  # then swap colors
-                        [top_hue, low_hue] = [low_hue, top_hue]
-                        [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
-                        [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
-
-                    if metric.ok_threshold is not None:
-                        if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
-                            if rec.num >= metric.ok_threshold:
-                                continue  # white on blak
-
-                            # rec_to_align_with = sample_report.find_record(sample_report.records, metric.threshold)
-                            # if rec_to_align_with:
-                            #     rec.text_color = lambda: rec_to_align_with.text_color()
-                            #     continue
-
-                    if not metric.all_values_equal:
-                        rec.text_color = 'black'
-
-                        # Low outliers
-                        if rec.num < rec.metric.low_outer_fence:
-                            rec.color = get_color(low_hue, outer_low_brt)
-                            rec.text_color = 'white'
-
-                        elif rec.num < rec.metric.low_inner_fence:
-                            rec.color = get_color(low_hue, inner_low_brt)
-
-                        # Normal values
-                        elif rec.num < metric.med:
-                            k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (metric.med - rec.metric.low_inner_fence)
-                            brt = round(MEDIAN_BRT - (metric.med - rec.num) * k)
-                            rec.color = get_color(low_hue, brt)
-
-                        # High outliers
-                        elif rec.num > rec.metric.top_inner_fence:
-                            rec.color = get_color(top_hue, inner_top_brt)
-
-                        elif rec.num > rec.metric.top_outer_fence:
-                            rec.color = get_color(top_hue, outer_top_brt)
-                            rec.text_color = 'white'
-
-                        elif rec.num > metric.med:
-                            k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
-                            brt = round(MEDIAN_BRT - (rec.num - metric.med) * k)
-                            rec.color = get_color(top_hue, brt)
-
-        for rec in records:
-            if rec.metric and rec.metric.name in section.metrics_by_name:
-                metric = rec.metric
+                if metric.quality == 'Less is better':  # then swap colors
+                    [top_hue, low_hue] = [low_hue, top_hue]
+                    [inner_top_brt, inner_low_brt] = [inner_low_brt, inner_top_brt]
+                    [outer_top_brt, outer_low_brt] = [outer_low_brt, outer_top_brt]
 
                 if metric.ok_threshold is not None:
-                    if isinstance(metric.ok_threshold, basestring):
-                        rec_to_align_with = Report.find_record(records, metric.ok_threshold)
-                        if rec_to_align_with:
-                            rec.text_color = rec_to_align_with.text_color
-                            rec.color = rec_to_align_with.color
+                    if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
+                        if rec.num >= metric.ok_threshold:
+                            continue  # white on blak
+
+                        # rec_to_align_with = sample_report.find_record(sample_report.records, metric.threshold)
+                        # if rec_to_align_with:
+                        #     rec.text_color = lambda: rec_to_align_with.text_color()
+                        #     continue
+
+                if not metric.all_values_equal:
+                    rec.text_color = 'black'
+
+                    # Low outliers
+                    if rec.num < rec.metric.low_outer_fence:
+                        rec.color = get_color(low_hue, outer_low_brt)
+                        rec.text_color = 'white'
+
+                    elif rec.num < rec.metric.low_inner_fence:
+                        rec.color = get_color(low_hue, inner_low_brt)
+
+                    # Normal values
+                    elif rec.num < metric.med:
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (metric.med - rec.metric.low_inner_fence)
+                        brt = round(MEDIAN_BRT - (metric.med - rec.num) * k)
+                        rec.color = get_color(low_hue, brt)
+
+                    # High outliers
+                    elif rec.num > rec.metric.top_inner_fence:
+                        rec.color = get_color(top_hue, inner_top_brt)
+
+                    elif rec.num > rec.metric.top_outer_fence:
+                        rec.color = get_color(top_hue, outer_top_brt)
+                        rec.text_color = 'white'
+
+                    elif rec.num > metric.med:
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
+                        brt = round(MEDIAN_BRT - (rec.num - metric.med) * k)
+                        rec.color = get_color(top_hue, brt)
+
+        for rec in records:
+            metric = rec.metric
+
+            if metric.ok_threshold is not None:
+                if isinstance(metric.ok_threshold, basestring):
+                    rec_to_align_with = Report.find_record(records, metric.ok_threshold)
+                    if rec_to_align_with:
+                        rec.text_color = rec_to_align_with.text_color
+                        rec.color = rec_to_align_with.color
     return report
 
 

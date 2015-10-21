@@ -5,6 +5,13 @@ table.tableSorter th div.sortArrow {
     vertical-align: 2px;
     position: relative;
     padding-left: 2px;
+}
+
+table.tableSorter th div.sortArrowLeft {
+    margin-left: -8px;
+}
+
+table.tableSorter th div.sortArrowRight {
     margin-right: -8px;
 }
 

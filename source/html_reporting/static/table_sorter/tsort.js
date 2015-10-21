@@ -141,7 +141,13 @@ Array - Specifc table
 			// Add divs for directional arrows
 			$(table).find('th').each(function(index) {
 				if ( sorting_criteria[index] != 'nosort' ) {
-					$('<div class="sortArrow"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
+					var computedStyle = getComputedStyle(this, null);
+					console.log(computedStyle.textAlign);
+					if (computedStyle.textAlign == 'left') {
+						$('<div class="sortArrow sortArrowRight"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
+					} else {
+						$('<div class="sortArrow sortArrowLeft"><div class="sortArrowDescending"></div></div>').prependTo($(this));   //<div class="sortArrowAscending"></div>
+					}
 				}
 			});
 
@@ -150,7 +156,7 @@ Array - Specifc table
 				column_widths.push($(this).outerWidth(true));
 			});
 
-			var padding = 6;  // for some reason, minWidth setting doesn't properly act with cell paddings
+			var padding = 1;  // for some reason, minWidth setting doesn't properly act with cell paddings
 			$(table).find('tr td, tr th').each(function() {
 				$(this).css( {
 					minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)

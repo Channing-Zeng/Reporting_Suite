@@ -35,7 +35,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
 
     clinical_cov_metrics = [
         Metric('Gene'),
-        Metric('Chr', with_heatmap=False, max_width=20, style='text-align: right'),
+        Metric('Chr', with_heatmap=False, max_width=20, align='right'),
         Metric('Ave depth', med=ave_depth),
         Metric('% cov at {}x'.format(depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1)]
     seq2c_tsv = cnf.seq2c_tsv_fpath
@@ -137,18 +137,19 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            Metric('Codon chg', max_width=max_width, style='', class_='long_line'),            # c.244G>A
-            Metric('AA chg', max_width=max_width, style='', class_='long_line'),            # p.Glu82Lys
+            Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+            Metric('AA chg', max_width=max_width, class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
-            # Metric('Chr', max_width=33, with_heatmap=False, style='text-align: right'),       # chr11
-            Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit())))),       # g.47364249
-            Metric('Change', max_width=max_width, style='', class_='long_line'),       # G>A
+            # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
+            Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
+                   align='left'),       # g.47364249
+            Metric('Change', max_width=max_width, class_='long_line'),       # G>A
             Metric('Depth', max_width=48),              # 658
             Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
             Metric('AA len', max_width=50, with_heatmap=False),          # 128
-            Metric('DB', max_width=80, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('DB', max_width=80, class_='long_line'),                 # rs352343, COSM2123
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('Type', max_width='100', style='', class_='long_line'),               # Frameshift
+            Metric('Type', max_width='100', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
     report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
@@ -342,7 +343,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     coverage_dict = dict(columns=[])
     GENE_COL_NUM = 3
     genes_in_col = len(coverage_report.regions) / GENE_COL_NUM
-    calc_cell_contents(coverage_report, coverage_report.get_rows_of_records(), coverage_report.metric_storage.sections[0])
+    calc_cell_contents(coverage_report, coverage_report.get_rows_of_records())
     for i in range(GENE_COL_NUM):
         column_dict = dict()
         # column_dict['table'] = build_report_html(coverage_report)
