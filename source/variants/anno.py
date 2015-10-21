@@ -147,10 +147,10 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
            if dbname in cnf.annotation)
 
     to_delete_id_ref = []
-    if 'dbsnp' in db_section_by_name:
+    if 'dbsnp' in db_section_by_name.keys():
         info('Removing IDs from dbsnp as rs*')
         to_delete_id_ref.append('rs')
-    if 'cosmic' in db_section_by_name:
+    if 'cosmic' in db_section_by_name.keys():
         info('Removing IDs from dbsnp as COS*')
         to_delete_id_ref.append('COS')
 
@@ -167,7 +167,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 
         return rec
 
-    info('Removing previous rs and cosmic IDs')
+    info('Removing previous rs* and COS* IDs')
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
     for dbname, dbconf in db_section_by_name.items():
