@@ -207,11 +207,10 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Depth', depth)
                 reg.add_record('Freq', af)
                 reg.add_record('AA len', aa_len)
-                if id != '.':
-                    val = ''
-
+                val = ''
+                if ids != '.':
                     rs_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
-                    val += ', '.join('<a href="' + rid + '">dbSNP</a>' for rid in rs_ids)
+                    val += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in rs_ids)
 
                     cosm_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
                     if rs_ids and cosm_ids:
@@ -219,7 +218,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                     if cosm_ids:
                         val += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + cid + '">COSM</a>' for cid in cosm_ids)
 
-                    reg.add_record('DB', val, parse=False)
+                reg.add_record('DB', val, parse=False)
 
                 mut_type = type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
@@ -358,7 +357,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, depth_cutoff, mutati
     sample_dict['bed_path'] = ''
     if cnf.debug:
         sample_dict['panel'] = cnf.target_type + ', AZ300 IDT panel'
-        sample_dict['bed_path'] = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+        sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
     if gender:
         if gender.startswith('M'):
