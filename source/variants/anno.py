@@ -142,14 +142,16 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     annotated = False
     original_vcf = cnf.vcf
 
-    dbs = [(dbname, cnf.annotation[dbname])
+    db_section_by_name = OrderedDict((dbname, cnf.annotation[dbname])
            for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
-           if dbname in cnf.annotation]
+           if dbname in cnf.annotation)
 
     to_delete_id_ref = []
-    if 'dbsnp' in dbs:
+    if 'dbsnp' in db_section_by_name:
+        info('Removing IDs from dbsnp as rs*')
         to_delete_id_ref.append('rs')
-    if 'cosmic' in dbs:
+    if 'cosmic' in db_section_by_name:
+        info('Removing IDs from dbsnp as COS*')
         to_delete_id_ref.append('COS')
 
     def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
@@ -168,7 +170,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     info('Removing previous rs and cosmic IDs')
     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
-    for dbname, dbconf in dbs:
+    for dbname, dbconf in db_section_by_name.items():
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
         if res:
             vcf_fpath = res
