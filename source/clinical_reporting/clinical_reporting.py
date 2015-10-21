@@ -141,13 +141,13 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('AA chg', max_width=max_width, style='', class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             # Metric('Chr', max_width=33, with_heatmap=False, style='text-align: right'),       # chr11
-            Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isnumeric())))),       # g.47364249
+            Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit())))),       # g.47364249
             Metric('Change', max_width=max_width, style='', class_='long_line'),       # G>A
             Metric('Depth', max_width=48),              # 658
             Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
             Metric('AA len', max_width=50, with_heatmap=False),          # 128
-            Metric('dbSNP', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('COSMIC', max_width=max_width, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('DB', max_width=80, style='', class_='long_line'),                 # rs352343, COSM2123
+            # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Type', max_width='100', style='', class_='long_line'),               # Frameshift
             Metric('Classification'),     # Likely Pathogenic
         ])])
@@ -168,14 +168,14 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 continue
             fs = l.strip().split('\t')
             if len(fs) > 60:
-                sample_name, chrom, start, id, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
+                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                     aa_len, gene, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                     cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                     mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
                     m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
                     n_sample, n_var, pcnt_sample, ave_af, filter_, var_type, var_class, status = fs[:67]  # 67 of them
             else:
-                sample_name, chrom, start, id, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
+                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                     aa_len, gene, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                     cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                     mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
@@ -200,8 +200,20 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
                 reg.add_record('Depth', depth)
                 reg.add_record('Freq', af)
                 reg.add_record('AA len', aa_len)
-                reg.add_record('dbSNP', ' '.join(i for i in id.split(';') if i.startswith('rs')) if id != '.' else '')
-                reg.add_record('COSMIC', ' '.join(i for i in id.split(';') if i.startswith('COS')) if id != '.' else '')
+                if id != '.':
+                    val = ''
+
+                    rs_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
+                    val += ', '.join('<a href="' + rid + '">dbSNP</a>' for rid in rs_ids)
+
+                    cosm_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
+                    if rs_ids and cosm_ids:
+                        val += ', '
+                    if cosm_ids:
+                        val += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + cid + '">COSM</a>' for cid in cosm_ids)
+
+                    reg.add_record('DB', val, parse=False)
+
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
                 if status == 'likely':
                     status += ' pathogenic'
@@ -324,7 +336,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     mutations_dict = dict()
     if mutations_report.regions:
         if cnf.debug:
-            mutations_report.regions = mutations_report.regions[:]
+            mutations_report.regions = mutations_report.regions[::6]
         mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
 
     coverage_dict = dict(columns=[])
@@ -362,15 +374,15 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
                          join(dirname(abspath(__file__)), 'static', 'header_picture.css')],
        image_by_key=image_by_key)
 
-    clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
-    if islink(clin_rep_symlink):
-        os.unlink(clin_rep_symlink)
-    os.symlink(sample.clinical_html, clin_rep_symlink)
+    # clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
+    # if islink(clin_rep_symlink):
+    #     os.unlink(clin_rep_symlink)
+    # os.symlink(sample.clinical_html, clin_rep_symlink)
 
-    info('Saved clinical report to ' + clin_rep_symlink)
+    info('Saved clinical report to ' + sample.clinical_html)
     info('-' * 70)
     info()
-    return clin_rep_symlink
+    return sample.clinical_html
 
 
 def tooltip_long(string, max_len=30):

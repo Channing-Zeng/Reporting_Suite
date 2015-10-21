@@ -150,7 +150,7 @@ Array - Specifc table
 				column_widths.push($(this).outerWidth(true));
 			});
 
-			var padding = 6;
+			var padding = 6;  // for some reason, minWidth setting doesn't properly act with cell paddings
 			$(table).find('tr td, tr th').each(function() {
 				$(this).css( {
 					minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
