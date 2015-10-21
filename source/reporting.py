@@ -902,7 +902,7 @@ css_files = [
 ]
 js_files = [
     'jquery-1.8.2.min.js',
-    # 'flot/jquery.flot.min.js',
+    'flot/jquery.flot.min.js',
     # 'flot/jquery.flot.dashes.js',
     # 'scripts/hsvToRgb.js',
     'scripts/utils.js',

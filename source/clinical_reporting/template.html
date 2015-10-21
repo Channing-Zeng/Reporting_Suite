@@ -25,6 +25,7 @@
     <![endif]-->
 
     <script type="text/javascript" src="jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
     <script type="text/javascript" src="scripts/utils.js"></script>
@@ -125,6 +126,31 @@
             <p>Seq2C plot is not available</p>
         {.end}
 
+        <a name="cov_plot"></a>
+        <h1>Coverage plot</h1>
+        {.section cov_plot}
+            <div class="gene_plot" style="margin-left: -20px;">
+                <table width="1241px">
+                    <tr>
+                        <td colspan="2">
+                            <div id='plot-placeholder' style=''>
+                            </div>
+                        </td>
+                        <td>
+                            <div id='legend-placeholder'></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="json-code">
+                <div id="genes-data-json">
+                    {data}
+                </div>
+            </div>
+        {.or}
+            <p>Plot is not available</p>
+        {.end}
+
         <a name="coverage"></a>
         {.section coverage}
             <h1>Coverage analysis</h1>
@@ -171,4 +197,5 @@
     </div>
 </div>
 </body>
+<script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
 </html>

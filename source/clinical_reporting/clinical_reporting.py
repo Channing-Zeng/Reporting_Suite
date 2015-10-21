@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from json import load, dump, JSONEncoder, dumps
+import json
 import os
 from os.path import join, islink, dirname, abspath, relpath
 
@@ -12,6 +13,7 @@ from source.reporting import MetricStorage, Metric, PerRegionSampleReport, Repor
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from source.utils import is_local
+from source.utils import get_chr_lengths
 
 
 def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
@@ -27,10 +29,11 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
                 chrom = get_val(fs[0])
                 gene_name = get_val(fs[4])
                 gene_ave_depth = get_float_val(fs[9])
+                gene_pos = int(get_float_val(fs[1]) + get_float_val(fs[2])) / 2
                 if gene_name in key_gene_names:
                     for t, field in zip(cnf.coverage_reports.depth_thresholds, fs[12:]):
                         if int(t) == depth_cutoff:
-                            stats_by_genename[gene_name] = chrom, gene_ave_depth, get_float_val(field)
+                            stats_by_genename[gene_name] = chrom, gene_ave_depth, get_float_val(field), gene_pos
                             continue
 
     clinical_cov_metrics = [
@@ -56,7 +59,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
         sections=[ReportSection(metrics=clinical_cov_metrics)])
     key_genes_report = PerRegionSampleReport(sample=sample, metric_storage=clinical_cov_metric_storage)
     for gene_name in sorted(key_gene_names):
-        chrom, gene_ave_depth, depth_in_thresh = stats_by_genename.get(gene_name, (None, None, None))
+        chrom, gene_ave_depth, depth_in_thresh, gene_pos = stats_by_genename.get(gene_name, (None, None, None, None))
         reg = key_genes_report.add_region()
         reg.add_record('Gene', gene_name)
         reg.add_record('Chr', chrom.replace('chr', '') if chrom else None)
@@ -70,7 +73,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
     info('-' * 70)
     info()
-    return key_genes_report, seq2c_data_by_genename
+    return key_genes_report, seq2c_data_by_genename, stats_by_genename
 
 
 def get_target_fraction(sample, targqc_json_fpath):
@@ -133,6 +136,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
     max_width = '90'
+    mutations_dict = {}
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
@@ -215,16 +219,21 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
                     reg.add_record('DB', val, parse=False)
 
+                mut_type = type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
                 if status == 'likely':
                     status += ' pathogenic'
                 reg.add_record('Classification', status[0].upper() + status[1:] if status else status)
+                if gene not in mutations_dict:
+                    mutations_dict[gene] = []
+                mutations = ['p.' + aa_change if aa_change else '', mut_type]
+                mutations_dict[gene].append([mutation for mutation in mutations if mutation])
 
     report.save_tsv(sample.clinical_mutation_tsv, human_readable=True)
     info('Saved mutations report to ' + report.tsv_fpath)
     info('-' * 70)
     info()
-    return report
+    return report, mutations_dict
 
 
 ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
@@ -296,9 +305,28 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     return report
 
 
+def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mutations_dict):
+    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (get_chr_lengths(cnf)).items()
+                                    if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
+    chr_names = chr_names_lengths.keys()
+    chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
+    chr_lengths = [chrom for chrom in chr_names_lengths.values()]
+    chr_cum_lens = [sum(chr_lengths[:i]) for i in range(len(chr_lengths)+1)]
+    ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i+1])/2,chr_short_names[i]] for i in range(len(chr_names))]
+
+    key_genes = stats_by_genename.keys()
+    gene_ave_depths = [stats_by_genename[gene_name][1] for gene_name in key_genes]
+    cov_in_thresh = [stats_by_genename[gene_name][2] for gene_name in key_genes]
+    coord_x = [chr_cum_lens[chr_names.index(stats_by_genename[gene_name][0])] + stats_by_genename[gene_name][3] for gene_name in key_genes]
+    json_txt = '{"coord_x":%s, "coord_y":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, "lines_x":%s}'\
+               % (json.dumps(coord_x), json.dumps(gene_ave_depths), json.dumps(cov_in_thresh), json.dumps(key_genes),
+                   json.dumps(mutations_dict), json.dumps(ticks_x), json.dumps(chr_cum_lens))
+    cov_plot_dict = {'data': json_txt}
+    return cov_plot_dict
+
 def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
           target_type, ave_depth, target_fraction, gender, total_variants,
-          key_gene_names, actionable_genes_report, seq2c_plot_fpath=None):
+          key_gene_names, actionable_genes_report, seq2c_plot_fpath=None, cov_plot_dict=None):
     # def __process_record(rec, short=False):
     #     d = rec.__dict__.copy()
     #
@@ -368,9 +396,11 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
         'coverage': coverage_dict,
         'actionable_genes': actionable_genes_dict,
         'seq2c_plot': True,
+        'cov_plot': cov_plot_dict
     }, sample.clinical_html,
        tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
-       extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js')],
+       extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
+                        join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js')],
        extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
                          join(dirname(abspath(__file__)), 'static', 'header_picture.css')],
        image_by_key=image_by_key)
