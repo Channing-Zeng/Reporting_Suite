@@ -239,8 +239,48 @@ class Metric:
         return Metric(**data)
 
 
-# noinspection PyClassHasNoInit
-class Report:
+class BaseReport:
+    def __init__(self, sample=None, html_fpath=None, json_fpath=None,
+                 records=None, plots=None, metric_storage=None,
+                 report_name='', display_name=None,
+                 caller_tag=None, project_tag=None, **kwargs):
+        self.sample = sample
+        self.html_fpath = html_fpath
+        self.records = [r for r in records if r.metric] if records else []
+        self.metric_storage = metric_storage
+        self.report_name = report_name
+        self.plots = plots or []  # TODO: make real JS plots, not just included PNG
+        self.json_fpath = json_fpath
+
+        self.display_name = display_name or (self.sample if isinstance(self.sample, basestring) else self.sample.name)
+        self.caller_tag = None
+        self.set_caller_tag(caller_tag)
+        self.project_tag = None
+        self.set_project_tag(project_tag)
+
+        self.display_name = self.get_display_name()  # filled in only in save_html()!!!
+
+        self.hide_rows_by = None
+
+    def set_project_tag(self, tag):
+        if not self.project_tag and tag:
+            self.display_name = '[' + tag + ']' + ' ' + self.display_name
+            self.project_tag = tag
+
+    def set_caller_tag(self, tag):
+        if not self.caller_tag and tag:
+            self.display_name = self.display_name + ' ' + tag
+            self.project_tag = tag
+
+    def get_display_name(self):
+        return self.display_name
+    #     name = self.sample if isinstance(self.sample, basestring) else self.sample.name
+    #     if self.project_tag:
+    #         name = self.sample.project_tag + ' ' + name
+    #     if self.caller_tag:
+    #         name = name + ' ' + self.caller_tag
+    #     return name
+
     def flatten(self, sections=None, human_readable=True):
         raise NotImplementedError()
 
@@ -299,34 +339,9 @@ class Report:
         raise NotImplementedError()
 
 
-class SampleReport(Report):
-    def __init__(self, sample=None, html_fpath=None,
-                 records=None, metric_storage=None,
-                 report_name='', plots=None, json_fpath=None,
-                 display_name=None, caller_tag=None, project_tag=None,
-                 **kwargs):
-        self.sample = sample
-        self.html_fpath = html_fpath
-        self.records = [r for r in records if r.metric] if records else []
-        self.metric_storage = metric_storage
-        self.report_name = report_name
-        self.plots = plots or []  # TODO: make real JS plots, not just included PNG
-        self.json_fpath = json_fpath
-
-        self.display_name = display_name or (self.sample if isinstance(self.sample, basestring) else self.sample.name)
-        self.caller_tag = None
-        self.set_caller_tag(caller_tag)
-        self.project_tag = None
-        self.set_project_tag(project_tag)
-
-        self.display_name = self.get_display_name()  # filled in only in save_html()!!!
-        # self.display_name = sample if isinstance(sample, basestring) else sample.name
-        # if self.sample.project_tag:
-        #     self.display_name = self.sample.project_tag + ' ' + self.display_name
-
-    # def set_display_name(self, name):
-    #     self.display_name = name
-    #     return self
+class SampleReport(BaseReport):
+    def __init__(self, **kwargs):
+        BaseReport.__init__(self, **kwargs)
 
     def get_common_records(self):
         common_records = []
@@ -334,25 +349,6 @@ class SampleReport(Report):
             if record.metric.common:
                 common_records.append(record)
         return common_records
-
-    def set_project_tag(self, tag):
-        if not self.project_tag and tag:
-            self.display_name = '[' + tag + ']' + ' ' + self.display_name
-            self.project_tag = tag
-
-    def set_caller_tag(self, tag):
-        if not self.caller_tag and tag:
-            self.display_name = self.display_name + ' ' + tag
-            self.project_tag = tag
-
-    def get_display_name(self):
-        return self.display_name
-    #     name = self.sample if isinstance(self.sample, basestring) else self.sample.name
-    #     if self.project_tag:
-    #         name = self.sample.project_tag + ' ' + name
-    #     if self.caller_tag:
-    #         name = name + ' ' + self.caller_tag
-    #     return name
 
     def get_rows_of_records(self, sections=list()):  # TODO: move logic from flatten here, use this method both in flatten and save_html
         return [self.records]
@@ -372,7 +368,7 @@ class SampleReport(Report):
         rows = []
 
         for m in self.metric_storage.general_section.metrics:
-            r = Report.find_record(self.records, m.name)
+            r = BaseReport.find_record(self.records, m.name)
             if r:
                 if human_readable:
                     rows.append(['## ' + m.name + ': ' + r.format(human_readable=True)])
@@ -382,14 +378,14 @@ class SampleReport(Report):
         rows.append(['Sample', self.get_display_name()])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
-            rec = Report.find_record(self.records, metric.name)
+            rec = BaseReport.find_record(self.records, metric.name)
             row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
             rows.append(row)
         return rows
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
             extra_js_fpaths=list(), extra_css_fpaths=list()):
-        return Report.save_html(self, cnf, output_fpath, caption=caption, #type_='SampleReport',
+        return BaseReport.save_html(self, cnf, output_fpath, caption=caption, #type_='SampleReport',
             extra_js_fpaths=list(), extra_css_fpaths=list())
 
     def __repr__(self):
@@ -420,10 +416,12 @@ class PerRegionSampleReport(SampleReport):
             self.records.append(rec)
             return rec
 
-    def __init__(self, *args, **kwargs):
-        SampleReport.__init__(self, *args, **kwargs)
+    def __init__(self, hide_rows_by=None, highlight_by=None, **kwargs):
+        SampleReport.__init__(self, **kwargs)
         self.records = []
         self.regions = []
+        self.hide_rows_by = hide_rows_by
+        self.highlight_by = highlight_by
 
     def add_region(self):
         region = PerRegionSampleReport.Region(self)
@@ -434,7 +432,7 @@ class PerRegionSampleReport(SampleReport):
         rows = []
 
         for m in self.metric_storage.general_section.metrics:
-            rec = Report.find_record(self.records, m.name)
+            rec = BaseReport.find_record(self.records, m.name)
             if rec:
                 if human_readable:
                     rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
@@ -450,7 +448,7 @@ class PerRegionSampleReport(SampleReport):
         for reg in self.regions:
             row = []
             for m in self.metric_storage.get_metrics(sections, skip_general_section=True):
-                rec = Report.find_record(reg.records, m.name)
+                rec = BaseReport.find_record(reg.records, m.name)
                 if rec:
                     row.append(rec.format(human_readable=human_readable))
                 else:
@@ -522,14 +520,18 @@ class PerRegionSampleReport(SampleReport):
     #     return rec
 
 
-class FullReport(Report):
-    def __init__(self, name='', sample_reports=None, metric_storage=None, general_records=None, base_fname=None):
+class FullReport(BaseReport):
+    def __init__(self, name='',
+                 sample_reports=None,
+                 metric_storage=None,
+                 general_records=None,
+                 base_fname=None, **kwargs):
+        BaseReport.__init__(self, **kwargs)
         self.name = name
         self.sample_reports = sample_reports or []
         self.metric_storage = metric_storage
         self._general_records = general_records
         self.base_fname = base_fname
-        self.plots = []
 
         if metric_storage:
             for sample_report in sample_reports:
@@ -564,7 +566,7 @@ class FullReport(Report):
         for m in self.metric_storage.general_section.metrics:
             if m.is_hidden: continue
 
-            rec = Report.find_record(some_rep.records, m.name)
+            rec = BaseReport.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
                     rows.append(['## ' + m.name + ': ' + rec.format(human_readable=True)])
@@ -578,7 +580,7 @@ class FullReport(Report):
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             for sr in self.sample_reports:
-                rec = Report.find_record(sr.records, metric.name)
+                rec = BaseReport.find_record(sr.records, metric.name)
                 row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
             rows.append(row)
         return rows
@@ -594,7 +596,7 @@ class FullReport(Report):
                           html_fpath=sr.html_fpath, parse=False, num=len(self.sample_reports) - i)]
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden:
-                    rec = Report.find_record(sr.records, metric.name)
+                    rec = BaseReport.find_record(sr.records, metric.name)
                     if rec:
                         row.append(rec)
                     else:
@@ -647,13 +649,13 @@ class FullReport(Report):
             self.save_tsv(base_path + '.tsv', sections), \
             self.save_html(cnf, base_path + '.html', caption)
 
-    def save_html(self, cnf, output_fpath, caption='', #type_=None,
+    def save_html(self, cnf, output_fpath, caption='',  #type_=None,
                   display_name=None, extra_js_fpaths=list(), extra_css_fpaths=list()):
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
-        return Report.save_html(self, cnf, output_fpath, caption=caption, #type_='FullReport',
+        return BaseReport.save_html(self, cnf, output_fpath, caption=caption,  #type_='FullReport',
             extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
 
     def __repr__(self):
@@ -1080,7 +1082,13 @@ def build_section_html(report, section, sortable=True):
 
     rows_of_records.sort(key=lambda recs: recs[0].num if recs[0].metric.numbers else recs[0].value)
 
-    table = '\n<table cellspacing="0" class="report_table fix-align-char' + (' tableSorter' if sortable else '') + '" id="report_table_' + section.name + '">'
+    table_class = 'report_table fix-align-char'
+    if sortable:
+        table_class += ' tableSorter'
+    if report.hide_rows_by:
+        table_class += ' table_short'
+
+    table = '\n<table cellspacing="0" class="' + table_class + ' id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
 
     metrics = [rec.metric for rec in rows_of_records[0]]
@@ -1089,18 +1097,36 @@ def build_section_html(report, section, sortable=True):
 
     table += '\n</tr>\n</thead>\n<tbody>'
 
-    for row_num, records in enumerate(rows_of_records):
-        second_row_tr = 'second_row_tr' if row_num == 0 else ''
-        table += '\n<tr class="' + second_row_tr + '">'
+    full_table = None
+    if report.hide_rows_by:
+        full_table = table.replace('table_short', 'table_full')
 
+    for row_num, records in enumerate(rows_of_records):
+        tr_class_ = 'second_row_tr' if row_num == 0 else ''
+
+        if report.highlight_by and any(report.highlight_by(r) for r in records):
+            tr_class_ += ' highlighted_row'
+
+        tr = '<tr class="' + tr_class_ + '">'
         for col_num, rec in enumerate(records):
             if not rec.metric.values: continue
-            table += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
+            tr += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
+        tr += '\n</tr>'
 
-        table += '\n</tr>'
+        if report.hide_rows_by:
+            full_table += '\n' + tr
+            if not any(report.hide_rows_by(r) for r in records):
+                table += '\n' + tr
+        else:
+            table += '\n' + tr
+
     table += '\n</tbody>\n</table>\n'
-
     html += table
+
+    if full_table:
+        full_table += '\n</tbody>\n</table>\n'
+        html += '\n' + full_table + '\n'
+
     return html
 
 
@@ -1342,7 +1368,7 @@ def calc_cell_contents(report, rows_of_records):
 
             if metric.ok_threshold is not None:
                 if isinstance(metric.ok_threshold, basestring):
-                    rec_to_align_with = Report.find_record(records, metric.ok_threshold)
+                    rec_to_align_with = BaseReport.find_record(records, metric.ok_threshold)
                     if rec_to_align_with:
                         rec.text_color = rec_to_align_with.text_color
                         rec.color = rec_to_align_with.color

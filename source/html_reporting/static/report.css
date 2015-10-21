@@ -10,6 +10,8 @@
     padding-right: 50px !important; }
     #report table.common_table span.metric_name {
       font-weight: bold; }
+  #report table.report_table.table_full {
+    display: none; }
   #report table.report_table {
     padding-right: 50px !important;
     margin-bottom: 30px;
@@ -39,12 +41,15 @@
       border-bottom: none;
       color: black; }
     #report table.report_table tr.top_row_tr td, #report table.report_table tr.top_row_tr th, #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
-      font-weight: bold; }
+      font-weight: bold;
+      border-bottom: 1px solid #bbb; }
     #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       height: 20px;
       vertical-align: bottom; }
     #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
       display: none; }
+    #report table.report_table tr.highlighted_row td {
+      background-color: #f5ffa3 !important; }
   #report table.static_report td, #report table.static_report th {
     padding-right: 10px; }
 
@@ -93,26 +98,10 @@ table.draggable {
   table.draggable td.top_cell_of_empty_space {
     border-top: 1px solid #888888 !important; }
 
-.plot-switch {
-  margin-left: 10px; }
+.json_code {
+  display: none; }
 
-.plot-wrapper {
-  padding-right: 80px; }
-
-.plot-header {
-  margin-left: 0;
-  font-weight: bold;
-  height: 1.5em;
-  display: block; }
-
-.plots {
-  margin-top: 2px;
-  margin-bottom: 0; }
-  .plots td {
-    vertical-align: top;
-    white-space: nowrap; }
-
-#legend-placeholder {
+.legend_placeholder {
   margin-top: -2px;
   margin-left: -5px;
   position: relative;
@@ -121,17 +110,14 @@ table.draggable {
 .legendColorBox div {
   display: none; }
 
-#legend-placeholder td {
+.legend_placeholder td {
   vertical-align: top;
   white-space: nowrap; }
 
-#plot-placeholder {
-  min-width: 500px;
-  width: 100%;
+.plot_placeholder {
+  width: 1341px;
   min-height: 400px;
-  height: 50%;
   margin-left: -125px;
-  margin-right: 20px;
   z-index: 2; }
 
 #plot_tip {

@@ -73,7 +73,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
     info('-' * 70)
     info()
-    return key_genes_report, seq2c_data_by_genename, stats_by_genename
+    return key_genes_report, seq2c_data_by_genename, stats_by_genename, depth_cutoff
 
 
 def get_target_fraction(sample, targqc_json_fpath):
@@ -136,7 +136,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
     info('Preparing mutations stats for key gene tables')
 
     max_width = '90'
-    mutations_dict = {}
+    mut_info_by_gene = {}
     clinical_mut_metric_storage = MetricStorage(
         sections=[ReportSection(metrics=[
             Metric('Gene'),  # Gene & Transcript
@@ -154,9 +154,11 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('DB', max_width=80, class_='long_line'),                 # rs352343, COSM2123
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Type', max_width='100', class_='long_line'),               # Frameshift
-            Metric('Classification'),     # Likely Pathogenic
+            Metric('Status'),     # Likely Pathogenic
         ])])
-    report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage)
+    report = PerRegionSampleReport(sample=sample, metric_storage=clinical_mut_metric_storage,
+        hide_rows_by=lambda r: r.metric.name == 'Status' and r.value and r.value.lower() == 'unknown',
+        highlight_by=lambda r: r.metric.name == 'Status' and r.value and r.value.lower() == 'known')
     if not verify_file(mutations_fpath, silent=True):
         single_mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
         paired_mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
@@ -221,19 +223,20 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
 
                 mut_type = type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_
                 reg.add_record('Type', type_[0] + type_[1:].lower().replace('_', ' ') if type_ else type_)
-                if status == 'likely':
-                    status += ' pathogenic'
-                reg.add_record('Classification', status[0].upper() + status[1:] if status else status)
-                if gene not in mutations_dict:
-                    mutations_dict[gene] = []
-                mutations = ['p.' + aa_change if aa_change else '', mut_type]
-                mutations_dict[gene].append([mutation for mutation in mutations if mutation])
+                # if status == 'likely':
+                #     status += ' pathogenic'
+                reg.add_record('Status', status.lower() if status else status)
+                
+                if gene not in mut_info_by_gene:
+                    mut_info_by_gene[gene] = []
+                mut_infos = ['p.' + aa_change if aa_change else '', mut_type]
+                mut_info_by_gene[gene].append([mutation for mutation in mut_infos if mutation])
 
     report.save_tsv(sample.clinical_mutation_tsv, human_readable=True)
     info('Saved mutations report to ' + report.tsv_fpath)
     info('-' * 70)
     info()
-    return report, mutations_dict
+    return report, mut_info_by_gene
 
 
 ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
@@ -305,14 +308,14 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     return report
 
 
-def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mutations_dict):
+def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene):
     chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (get_chr_lengths(cnf)).items()
                                     if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
     chr_names = chr_names_lengths.keys()
     chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
     chr_lengths = [chrom for chrom in chr_names_lengths.values()]
     chr_cum_lens = [sum(chr_lengths[:i]) for i in range(len(chr_lengths)+1)]
-    ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i+1])/2,chr_short_names[i]] for i in range(len(chr_names))]
+    ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i+1])/2, chr_short_names[i]] for i in range(len(chr_names))]
 
     key_genes = stats_by_genename.keys()
     gene_ave_depths = [stats_by_genename[gene_name][1] for gene_name in key_genes]
@@ -320,13 +323,13 @@ def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mutations_di
     coord_x = [chr_cum_lens[chr_names.index(stats_by_genename[gene_name][0])] + stats_by_genename[gene_name][3] for gene_name in key_genes]
     json_txt = '{"coord_x":%s, "coord_y":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, "lines_x":%s}'\
                % (json.dumps(coord_x), json.dumps(gene_ave_depths), json.dumps(cov_in_thresh), json.dumps(key_genes),
-                   json.dumps(mutations_dict), json.dumps(ticks_x), json.dumps(chr_cum_lens))
-    cov_plot_dict = {'data': json_txt}
-    return cov_plot_dict
+                   json.dumps(mut_info_by_gene), json.dumps(ticks_x), json.dumps(chr_cum_lens))
+    return json_txt
 
-def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
+
+def make_clinical_html_report(cnf, sample, coverage_report, depth_cutoff, mutations_report,
           target_type, ave_depth, target_fraction, gender, total_variants,
-          key_gene_names, actionable_genes_report, seq2c_plot_fpath=None, cov_plot_dict=None):
+          key_gene_names, actionable_genes_report, seq2c_plot_fpath=None, cov_plot_data=None):
     # def __process_record(rec, short=False):
     #     d = rec.__dict__.copy()
     #
@@ -351,24 +354,33 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
     sample_dict = dict()
     sample_dict['sample'] = sample.name.replace('_', ' ')
     sample_dict['project_name'] = cnf.project_name.replace('_', ' ')
-    sample_dict['sex'] = gender
-    sample_dict['genome_build'] = cnf.genome.name
+    if cnf.debug:
+        sample_dict['panel'] = 'AZ300 IDT panel'
+        sample_dict['bed_path'] = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+    if gender:
+        if gender.startswith('M'):
+            sample_dict['sex'] = 'Male'
+        if gender.startswith('F'):
+            sample_dict['sex'] = 'Female'
+    sample_dict['sample_type'] = 'unpaired'
+    if cnf.debug:
+        sample_dict['sample_type'] = 'plasma, unpaired'
 
-    approach_dict = dict()
-    approach_dict['target_type'] = target_type
-    approach_dict['target_fraction'] = Metric.format_value(target_fraction, is_html=True, unit='%')
+    sample_dict['genome_build'] =  cnf.genome.name
+    sample_dict['target_type'] = target_type
+    sample_dict['target_fraction'] = Metric.format_value(target_fraction, is_html=True, unit='%')
     # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-    approach_dict['ave_depth'] = Metric.format_value(ave_depth, is_html=True)
-    approach_dict['total_variants'] = Metric.format_value(total_variants, is_html=True)
-    approach_dict['total_key_genes'] = Metric.format_value(len(key_gene_names), is_html=True)
+    sample_dict['ave_depth'] = Metric.format_value(ave_depth, is_html=True)
 
     mutations_dict = dict()
     if mutations_report.regions:
-        if cnf.debug:
-            mutations_report.regions = mutations_report.regions[::6]
+        # if cnf.debug:
+        #     mutations_report.regions = mutations_report.regions[::20]
         mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
+        mutations_dict['total_variants'] = Metric.format_value(total_variants, is_html=True)
+        mutations_dict['total_key_genes'] = Metric.format_value(len(key_gene_names), is_html=True)
 
-    coverage_dict = dict(columns=[])
+    coverage_dict = dict(depth_cutoff=depth_cutoff, columns=[])
     GENE_COL_NUM = 3
     genes_in_col = len(coverage_report.regions) / GENE_COL_NUM
     calc_cell_contents(coverage_report, coverage_report.get_rows_of_records())
@@ -380,6 +392,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
             dict(records=[make_cell_td(r) for r in region.records])
                 for region in coverage_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
         coverage_dict['columns'].append(column_dict)
+    coverage_dict['plot_data'] = cov_plot_data
 
     image_by_key = dict()
     if seq2c_plot_fpath:
@@ -391,12 +404,10 @@ def make_clinical_html_report(cnf, sample, coverage_report, mutations_report,
 
     sample.clinical_html = write_static_html_report(cnf, {
         'sample': sample_dict,
-        'approach': approach_dict,
         'variants': mutations_dict,
         'coverage': coverage_dict,
         'actionable_genes': actionable_genes_dict,
         'seq2c_plot': True,
-        'cov_plot': cov_plot_dict
     }, sample.clinical_html,
        tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
        extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),

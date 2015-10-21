@@ -3,6 +3,7 @@ from itertools import chain
 from source.logger import warn
 
 import matplotlib
+from source.reporting import BaseReport
 matplotlib.use('Agg')
 import matplotlib.ticker as ticker
 import matplotlib.pyplot
@@ -13,7 +14,86 @@ from source.utils import get_chr_lengths
 cnv_plot_ending = '.seq2c.png'
 
 
-def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_names=None, chr_lens=None):
+def draw_gene_cov_plot(cnf, key_genes_report, sample_name, output_dir,
+                    key_gene_names=None, chr_lens=None):
+    return None
+
+    plot_fpath = join(output_dir, sample_name + cnv_plot_ending)
+    if cnf.reuse_intermediate and verify_file(plot_fpath, silent=True):
+        info('Gene cov plot ' + plot_fpath + ' exists, reusing...')
+        return plot_fpath
+
+    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (chr_lens or get_chr_lengths(cnf)).items()
+                                    if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
+    chr_names = chr_names_lengths.keys()
+    chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
+    chr_lengths = [chrom for chrom in chr_names_lengths.values()]
+
+    fig = matplotlib.pyplot.figure(figsize=(25, 10))
+    matplotlib.pyplot.xlim([0, len(chr_lengths) + 1])
+    chr_cum_lens = [sum(chr_lengths[:i]) for i in range(len(chr_lengths)+1)]
+    matplotlib.pyplot.xticks(chr_cum_lens, [])
+
+    ax = matplotlib.pyplot.gca()
+    chr_names_coords = [chr_cum_lens[i+1] - chr_lengths[i]/2 for i in range(len(chr_lengths))]
+    ax.xaxis.set_minor_locator(ticker.FixedLocator(chr_names_coords))
+    ax.xaxis.set_minor_formatter(ticker.FixedFormatter(chr_short_names))
+
+    # def add_rec_to_plot(chr_, start, end, log2r, max_y, min_y, marker, color, label=None):
+    #     x_vals = [chr_cum_lengths[chr_names.index(chr_)] + (int(start) + int(end))/2]
+    #     point_y = float(log2r)
+    #     y_vals = [point_y]
+    #     max_y = max(max_y, point_y)
+    #     min_y = min(min_y, point_y)
+    #     if label:
+    #         matplotlib.pyplot.plot(x_vals, y_vals, marker, markersize=2, label=label)
+    #     else:
+    #         matplotlib.pyplot.plot(x_vals, y_vals, marker, markersize=2)
+    #     return max_y, min_y
+
+    chr_cum_len_by_chrom = dict(zip(chr_names, chr_cum_lens))
+
+
+    for region in key_genes_report.regions:
+        gname = BaseReport.find_record(regions.records, 'Gene')
+        gname = BaseReport.find_record(regions.records, 'Gene')
+
+    matplotlib.pyplot.scatter(nrm_xs, nrm_ys, marker='.', color='k', s=1)
+    matplotlib.pyplot.scatter(amp_xs, amp_ys, marker='o', color='b', s=2)
+    matplotlib.pyplot.scatter(del_xs, del_ys, marker='o', color='r', s=2)
+    if len(amp_xs) <= 10 or len(amp_xs) + len(del_xs) < 40:
+        for x, y, g in zip(amp_xs, amp_ys, amp_gs):
+            ax.text(x, y, g, fontsize=9, color='g',
+                    verticalalignment='center',
+                    horizontalalignment='center')
+    if len(del_xs) <= 10 or len(amp_xs) + len(del_xs) < 40:
+        for x, y, g in zip(del_xs, del_ys, del_gs):
+            ax.text(x, y, g, fontsize=9, color='r',
+                    verticalalignment='center',
+                    horizontalalignment='center')
+
+    matplotlib.pyplot.ylim(
+        ymax=max(chain(nrm_ys, amp_ys, del_ys, [2])) * 1.05,
+        ymin=min(chain(nrm_ys, amp_ys, del_ys, [-2])) * 1.05)
+    matplotlib.pyplot.tick_params(
+        axis='x',
+        which='minor',
+        bottom='off',
+        top='off',
+        labelbottom='on')
+    info('Saving plot to ' + plot_fpath)
+    matplotlib.pyplot.tight_layout()
+    fig.savefig(plot_fpath, bbox_inches='tight')
+    matplotlib.pyplot.close(fig)
+
+    info('Done')
+    info('-' * 70)
+
+    return plot_fpath
+
+
+def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir,
+        key_gene_names=None, chr_lens=None, key_genes_report=None):
     info('Seq2C plot builder')
     plot_fpath = join(output_dir, sample_name + cnv_plot_ending)
     if cnf.reuse_intermediate and verify_file(plot_fpath, silent=True):
@@ -130,4 +210,5 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
 
     info('Done')
     info('-' * 70)
+
     return plot_fpath

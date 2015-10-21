@@ -62,9 +62,10 @@ def main(args):
     gender = get_gender(sample, sample.targetcov_json_fpath)
     total_variants = get_total_variants_number(sample, cnf.varqc_json_fpath)
 
-    key_genes_report, seq2c_data_by_genename, stats_by_genename = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
-    mutations_report, mutations_dict = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
+    mutations_report, mut_info_by_gene = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
+    key_genes_report, seq2c_data_by_genename, stats_by_genename, depth_cutoff = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
     actionable_genes_report = proc_actionable_genes(cnf, sample, key_gene_names, mutations_report, seq2c_data_by_genename)
+    cov_plot_data = save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene)
 
     seq2c_plot_fpath = None
     if not cnf.seq2c_tsv_fpath:
@@ -75,10 +76,9 @@ def main(args):
         else:
             seq2c_plot_fpath = seq2c_plot.draw_seq2c_plot(cnf, cnf.seq2c_tsv_fpath, sample.name, cnf.output_dir, key_gene_names)
 
-    cov_plot_dict = save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mutations_dict)
-    html_fpath = make_clinical_html_report(cnf, sample, key_genes_report, mutations_report,
+    html_fpath = make_clinical_html_report(cnf, sample, key_genes_report, depth_cutoff, mutations_report,
         cnf.target_type, ave_depth, target_fraction, gender, total_variants,
-        key_gene_names, actionable_genes_report, seq2c_plot_fpath, cov_plot_dict)
+        key_gene_names, actionable_genes_report, seq2c_plot_fpath, cov_plot_data)
     info('Clinical report: ' + html_fpath)
 
     if not cnf['keep_intermediate']:

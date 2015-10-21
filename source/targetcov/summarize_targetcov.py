@@ -6,7 +6,7 @@ from collections import OrderedDict, defaultdict
 
 import source
 from source.targetcov.bam_and_bed_utils import verify_bed
-from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, PerRegionSampleReport, Report
+from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, PerRegionSampleReport, BaseReport
 from source.logger import step_greetings, info, warn, err
 from source.qualimap import report_parser as qualimap_report_parser
 from source.ngscat import report_parser as ngscat_report_parser
@@ -348,7 +348,7 @@ def _prep_comb_report(metric_storage, samples, shared_general_metrics, shared_me
 
     m = metric_storage.find_metric('Average sample depth')
     for s in samples:
-        val = Report.find_record(s.report.records, m.name).value
+        val = BaseReport.find_record(s.report.records, m.name).value
         report.add_record(s.name + ' ave depth', val)
 
     return report
@@ -360,7 +360,7 @@ def _prep_best_report(metric_storage, samples):
     report.add_record('Sample', 'contains best values from all samples: ' + ', '.join([s.name for s in samples]))
 
     m = metric_storage.find_metric('Average sample depth')
-    ave_sample_depth = max(Report.find_record(s.report.records, m.name).value for s in samples)
+    ave_sample_depth = max(BaseReport.find_record(s.report.records, m.name).value for s in samples)
     report.add_record('Average sample depth', ave_sample_depth)
 
     return report

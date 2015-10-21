@@ -48,12 +48,18 @@
 
     <div id='report' class="clinical_report">
         <div style="width: 1127px">
-            <div style="float: left; margin-right: 55px;">
+            <div style="">
             {.section sample}
                 <h1 class="report-header">{sample}</h1>
-                <p><b>Project:</b> {project_name}</p>
-                <p><b>Sex:</b> {sex}</p>
-                <p><b>Genome reference:</b> {genome_build}</p>
+                <p style="line-height: 1.5em;">
+                <b>Project: </b><a href="../../2015-09-30_bcbio/Dev_0132_HiSeq4000_AURA.html">{project_name}</a>, {genome_build}<br>
+                <b>Patient: </b>{sex}<br>
+                <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
+                <b>Sample type: </b>{sample_type}<br>
+                <b>Target: </b><a href="{bed_path}">{panel}</a>,
+                    covered {target_fraction} of all positions
+                    at {ave_depth} average coverage<br>
+                </p>
 
                 <!--<div class="row placeholders">-->
                     <!--<div class="col-xs-6 col-sm-3 placeholder">-->
@@ -97,9 +103,9 @@
 
         <div>
             <a class="dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
         </div>
 
         <div class="space_8px"></div>
@@ -109,51 +115,72 @@
         <a name="variants"></a>
         <h1>Detailed variant analysis</h1>
         {.section variants}
-            <div>
-                {table}
+            <div id="variants_div">
+                <p>{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
+                    These data were analyzed to identify previously reported and novel variants
+                    in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
+                </p>
+                <p id="variants_switch">
+                    <!--<span>Known and likely known</span>-->
+                    <!--/-->
+                    <!--<a class="dotted-link" id="extend_link" onclick="extendClick($(this))">-->
+                        <!--all variants</a>-->
+                </p>
+                <div id="variants_table_div">
+                    {table}
+                </div>
             </div>
         {.or}
             <p>No variants detected in key regions.</p>
         {.end}
 
+        <a name="actionable"></a>
+        <h1>Mutations in actionable genes</h1>
+        {.section actionable_genes}
+            <div class="actionable_table">
+                {table}
+            </div>
+        {.or}
+            <p>Actionable genes are no available.</p>
+        {.end}
+
         <a name="seq2c"></a>
         <h1>Seq2C log2 ratios (CNV)</h1>
         {.section seq2c_plot}
-            <div class="cnv_plot" style="margin-left: -20px;">
+            <div class="seq2c_plot" style="margin-left: -20px;">
                 <img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>
             </div>
         {.or}
             <p>Seq2C plot is not available</p>
         {.end}
 
-        <a name="cov_plot"></a>
-        <h1>Coverage plot</h1>
-        {.section cov_plot}
-            <div class="gene_plot" style="margin-left: -20px;">
-                <table width="1241px">
-                    <tr>
-                        <td colspan="2">
-                            <div id='plot-placeholder' style=''>
-                            </div>
-                        </td>
-                        <td>
-                            <div id='legend-placeholder'></div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-            <div class="json-code">
-                <div id="genes-data-json">
-                    {data}
-                </div>
-            </div>
-        {.or}
-            <p>Plot is not available</p>
-        {.end}
+        <div class="space_8px"></div>
 
         <a name="coverage"></a>
         {.section coverage}
             <h1>Coverage analysis</h1>
+            <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
+            <div class="js_plot" id="gene_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder' id="gene_plot_placeholder">
+                            </div>
+                        </td>
+                        <td>
+                            <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="json_code">
+                    <div id="gene_plot_data_json">
+                        {plot_data}
+                    </div>
+                </div>
+            </div>
+
+            <div class="space_30px"></div>
+
             <table width="100%">
                 <tr>
                 <!--<div class="multi-col-layout">-->
@@ -184,18 +211,10 @@
                 </tr>
             </table>
         {.end}
-
-        <a name="actionable"></a>
-        <h1>Mutations in actionable genes</h1>
-        {.section actionable_genes}
-            <div class="actionable_table">
-                {table}
-            </div>
-        {.or}
-            <p>Actionable genes are no available.</p>
-        {.end}
     </div>
 </div>
 </body>
+
 <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
+
 </html>

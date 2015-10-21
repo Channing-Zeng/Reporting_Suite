@@ -18,6 +18,9 @@
         span.metric_name
             font-weight: bold
 
+    table.report_table.table_full
+        display: none
+
     table.report_table
         padding-right: 50px !important
         margin-bottom: 30px
@@ -57,7 +60,7 @@
         tr.top_row_tr, tr.group_header
             td, th
                 font-weight: bold
-                //border-bottom: 1px solid #bbb
+                border-bottom: 1px solid #bbb
 
         tr.group_header
             td, th
@@ -66,6 +69,9 @@
 
         tr.row_hidden, tr.group_empty
             display: none
+
+        tr.highlighted_row td
+            background-color: #f5ffa3 !important
 
         //.report-table-header
         //    font-weight: bold
@@ -144,26 +150,29 @@ table.draggable
 
 //////////////
 // PLOTTING //
-.plot-switch
-    margin-left: 10px
+//.plot-switch
+//    margin-left: 10px
+//
+//.plot-wrapper
+//    padding-right: 80px
+//
+//.plot-header
+//    margin-left: 0
+//    font-weight: bold
+//    height: 1.5em
+//    display: block
+//
+//.plots
+//    margin-top: 2px
+//    margin-bottom: 0
+//    td
+//        vertical-align: top
+//        white-space: nowrap
 
-.plot-wrapper
-    padding-right: 80px
+.json_code
+    display: none
 
-.plot-header
-    margin-left: 0
-    font-weight: bold
-    height: 1.5em
-    display: block
-
-.plots
-    margin-top: 2px
-    margin-bottom: 0
-    td
-        vertical-align: top
-        white-space: nowrap
-
-#legend-placeholder
+.legend_placeholder
     margin-top: -2px
     margin-left: -5px
     position: relative
@@ -172,19 +181,17 @@ table.draggable
 .legendColorBox div
     display: none
 
-#legend-placeholder td
+.legend_placeholder td
     vertical-align: top
     white-space: nowrap
 
-#plot-placeholder
+.plot_placeholder
     // for auto sizing plots when resizing the page
-    min-width: 500px
-    width: 100%
+    //width:
+    width: 1341px
     min-height: 400px
-    height: 50%
 
     margin-left: -125px
-    margin-right: 20px
 
     z-index: 2
 
