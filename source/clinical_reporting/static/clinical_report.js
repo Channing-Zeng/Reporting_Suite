@@ -3,7 +3,14 @@ $(function() {
 
     if (msieversion() == 0) {
         //$('table.tableSorter').tableSort();
+
+    } else {
+        $('.coverage_plot').hide();
     }
+
+    //if ($.browser.msie) {
+    //
+    //}
 });
 
 var table_short_clone = null;

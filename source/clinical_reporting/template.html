@@ -31,6 +31,7 @@
     <script type="text/javascript" src="scripts/utils.js"></script>
     <script type="text/javascript" src="table_sorter/tsort.js"></script>
     <script type="text/javascript" src="clinical_report.js"></script>
+    <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
 </head>
 
 <body>
@@ -159,27 +160,29 @@
         <a name="coverage"></a>
         {.section coverage}
             <h1>Coverage analysis</h1>
-            <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
-            <div class="js_plot" id="gene_plot">
-                <table>
-                    <tr>
-                        <td colspan="2">
-                            <div class='plot_placeholder' id="gene_plot_placeholder">
-                            </div>
-                        </td>
-                        <td>
-                            <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
-                        </td>
-                    </tr>
-                </table>
-                <div class="json_code">
-                    <div id="gene_plot_data_json">
-                        {plot_data}
+
+            <div class="coverage_plot">
+                <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
+                <div class="js_plot" id="gene_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <div class='plot_placeholder' id="gene_plot_placeholder">
+                                </div>
+                            </td>
+                            <td>
+                                <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="json_code">
+                        <div id="gene_plot_data_json">
+                            {plot_data}
+                        </div>
                     </div>
                 </div>
+                <div class="space_30px"></div>
             </div>
-
-            <div class="space_30px"></div>
 
             <table width="100%">
                 <tr>
@@ -214,7 +217,5 @@
     </div>
 </div>
 </body>
-
-<script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
 
 </html>

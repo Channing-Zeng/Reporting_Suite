@@ -238,3 +238,4 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
         }).appendTo('#plot_tip');
     }
 }
+

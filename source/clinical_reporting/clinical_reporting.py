@@ -354,9 +354,12 @@ def make_clinical_html_report(cnf, sample, coverage_report, depth_cutoff, mutati
     sample_dict = dict()
     sample_dict['sample'] = sample.name.replace('_', ' ')
     sample_dict['project_name'] = cnf.project_name.replace('_', ' ')
+    sample_dict['panel'] = cnf.target_type
+    sample_dict['bed_path'] = ''
     if cnf.debug:
-        sample_dict['panel'] = 'AZ300 IDT panel'
+        sample_dict['panel'] = cnf.target_type + ', AZ300 IDT panel'
         sample_dict['bed_path'] = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+
     if gender:
         if gender.startswith('M'):
             sample_dict['sex'] = 'Male'
