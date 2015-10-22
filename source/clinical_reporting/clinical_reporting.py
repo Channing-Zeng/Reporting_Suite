@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from json import load, dump, JSONEncoder, dumps
+from json import load
 import json
 import os
 from os.path import join, islink, dirname, abspath, relpath
@@ -22,8 +22,20 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     depth_cutoff = get_depth_cutoff(ave_depth, cnf.coverage_reports.depth_thresholds)
 
     stats_by_genename = dict()
+    detailed_cov_by_gene = dict()
     with open(sample.targetcov_detailed_tsv) as f_inp:
         for l in f_inp:
+            if not l.startswith('#') and ('CDS' in l):
+                fs = l.split('\t')
+                gene_name = get_val(fs[4])
+                gene_ave_depth = get_float_val(fs[9])
+                if gene_name in key_gene_names:
+                    if gene_name not in detailed_cov_by_gene:
+                        detailed_cov_by_gene[gene_name] = []
+                    for t, field in zip(cnf.coverage_reports.depth_thresholds, fs[12:]):
+                        if int(t) == depth_cutoff:
+                            detailed_cov_by_gene[gene_name].append([get_float_val(fs[2]) - get_float_val(fs[1]),
+                                                                    gene_ave_depth, get_float_val(field)])
             if not l.startswith('#') and ('Whole-Gene' in l or 'Gene-Exon' in l):
                 fs = l.split('\t')
                 chrom = get_val(fs[0])
@@ -73,7 +85,7 @@ def make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth):
     info('Saved coverage report to ' + key_genes_report.tsv_fpath)
     info('-' * 70)
     info()
-    return key_genes_report, seq2c_data_by_genename, stats_by_genename, depth_cutoff
+    return key_genes_report, seq2c_data_by_genename, stats_by_genename, detailed_cov_by_gene, depth_cutoff
 
 
 def get_target_fraction(sample, targqc_json_fpath):
@@ -307,9 +319,15 @@ def make_actionable_genes_report(cnf, sample, key_gene_names, actionable_genes, 
     return report
 
 
-def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene):
-    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (get_chr_lengths(cnf)).items()
-                                    if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
+def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene, seq2c_data_by_genename, detailed_cov_by_gene):
+    for gene in seq2c_data_by_genename.keys():
+        if gene not in mut_info_by_gene:
+            mut_info_by_gene[gene] = []
+        mut_info_by_gene[gene].append([seq2c_data_by_genename[gene]])
+
+    #chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (get_chr_lengths(cnf)).items()
+    #                                if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
+    chr_names_lengths = OrderedDict([('chrM', 16571), ('chr1', 249250621), ('chr2', 243199373), ('chr3', 198022430), ('chr4', 191154276), ('chr5', 180915260), ('chr6', 171115067), ('chr7', 159138663), ('chr8', 146364022), ('chr9', 141213431), ('chr10', 135534747), ('chr11', 135006516), ('chr12', 133851895), ('chr13', 115169878), ('chr14', 107349540), ('chr15', 102531392), ('chr16', 90354753), ('chr17', 81195210), ('chr18', 78077248), ('chr19', 59128983), ('chr20', 63025520), ('chr21', 48129895), ('chr22', 51304566), ('chrX', 155270560), ('chrY', 59373566)])
     chr_names = chr_names_lengths.keys()
     chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]
     chr_lengths = [chrom for chrom in chr_names_lengths.values()]
@@ -320,9 +338,10 @@ def save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_
     gene_ave_depths = [stats_by_genename[gene_name][1] for gene_name in key_genes]
     cov_in_thresh = [stats_by_genename[gene_name][2] for gene_name in key_genes]
     coord_x = [chr_cum_lens[chr_names.index(stats_by_genename[gene_name][0])] + stats_by_genename[gene_name][3] for gene_name in key_genes]
-    json_txt = '{"coord_x":%s, "coord_y":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, "lines_x":%s}'\
+    json_txt = '{"coord_x":%s, "coord_y":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, ' \
+               '"lines_x":%s, "detailed_cov":%s}'\
                % (json.dumps(coord_x), json.dumps(gene_ave_depths), json.dumps(cov_in_thresh), json.dumps(key_genes),
-                   json.dumps(mut_info_by_gene), json.dumps(ticks_x), json.dumps(chr_cum_lens))
+                   json.dumps(mut_info_by_gene), json.dumps(ticks_x), json.dumps(chr_cum_lens), json.dumps(detailed_cov_by_gene))
     return json_txt
 
 

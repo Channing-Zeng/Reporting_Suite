@@ -15,6 +15,7 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
     var linesX = data.lines_x;
 
     var mutations = data.mutations;
+    var detailedCoverage = data.detailed_cov;
     var info = {
         isInitialized: false,
         maxY: 0,
@@ -85,7 +86,7 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
             var firstLabel = $('.yAxis .tickLabel').last();
             firstLabel.prepend('Ave depth' + '<span class="rhs">&nbsp;</span>=<span class="rhs">&nbsp;</span>');
 
-            bindTip(placeholder_el, series, mutations, plot, ordinalNumberToPrettyString, 1, '', 'top right');
+            bindTip(placeholder_el, series, mutations, detailedCoverage, plot, toPrettyString, 1, '', 'top right');
         };
 
         info.isInitialized = true;
@@ -112,7 +113,7 @@ function showPlotWithInfo(info, index) {
 
 function getColor (value) {
     var hue = Math.max(0, (value - 50) * 2.4);
-    lightness = 45;
+    var lightness = 45;
     var rgb = hslToRgb(hue / 360, 0.8, lightness / 100);
     return '#' + rgb[0].toString(16) + rgb[1].toString(16) + rgb[2].toString(16);
 }
@@ -152,7 +153,7 @@ function readJsonFromElement(element) {
     return result;
 }
 
-function bindTip(placeholder, series, mutations, plot, xToPrettyStringFunction, tickX, xUnit, position, summaryPlots) {
+function bindTip(placeholder, series, mutations, detailedCoverage, plot, xToPrettyStringFunction, tickX, xUnit, position, summaryPlots) {
     var prevPoint = null;
 
     $(placeholder).bind("plothover", function(event, pos, item) {
@@ -164,7 +165,7 @@ function bindTip(placeholder, series, mutations, plot, xToPrettyStringFunction, 
                   plot.width(), plot.height(),
                   series, item.seriesIndex, x, item.dataIndex,
                   xToPrettyStringFunction(x, xUnit, tickX) + ':',
-                  position, mutations);
+                  position, mutations, detailedCoverage);
             }
         } else {
             $('#plot_tip').hide();
@@ -176,7 +177,7 @@ function bindTip(placeholder, series, mutations, plot, xToPrettyStringFunction, 
 }
 
 function showTip(pageX, pageY, offset, plotWidth, plotHeight,
-    series, centralSeriesIndex, xPos, xIndex, xStr, position, mutations) {
+    series, centralSeriesIndex, xPos, xIndex, xStr, position, mutations, detailedCoverage) {
     var LINE_HEIGHT = 16; // pixels
 
     position = ((position != null) ? position : 'bottom right');
@@ -187,12 +188,11 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
     var item = {
         y: series[centralSeriesIndex].data[xIndex][1],
         color: series[centralSeriesIndex].color,
-        label: series[centralSeriesIndex].label,
-        isCurrent: true
+        label: series[centralSeriesIndex].label
     };
-    var geneMutations = mutations[item.label];
+    var geneName = item.label;
+    var geneMutations = mutations[geneName];
     if (!geneMutations) geneMutations = [];
-    console.log(mutations, geneMutations);
 
     if (!tipElementExists) {
         $('<div id="plot_tip" class="white_stroked"></div>').appendTo('body');
@@ -211,6 +211,7 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
     $('#plot_tip').html('').css({
         top: pageY + 5 - ((directions[0] == 'top') ? LINE_HEIGHT * (geneMutations.length + 2) : 0),
         left: pageX + 10,
+        zIndex: 1000
     }).show();
 
     $('#plot_tip_vertical_rule').html('').css({
@@ -227,15 +228,71 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
         height: LINE_HEIGHT,
     }).appendTo('#plot_tip');*/
 
-
-    $('<div id="tip_line0">' + toPrettyString(item.y) + ', <span style="color: ' + item.color + ';">' + item.label + '</span></div>').css({
+    $('<div id="tip_line0"><span style="color: ' + item.color + ';">' + geneName + '</span></div>').css({
         height: LINE_HEIGHT,
-        "font-weight": item.isCurrent ? "bold" : "normal",
+        "font-weight": "bold"
     }).appendTo('#plot_tip');
     for (var m = 0; m < geneMutations.length; m++) {
-        $('<div id="tip_line0"><span>' + geneMutations[m].join(', ') + '</span></div>').css({
-          height: LINE_HEIGHT,
+        $('<div id="tip_line"' + m + '><span>' + geneMutations[m].join(', ') + '</span></div>').css({
+          height: LINE_HEIGHT
         }).appendTo('#plot_tip');
     }
+     $('<div id="tip_line"' + (m + 1) + '><span> Gene coverage plot: </span></div>').css({
+          height: LINE_HEIGHT
+        }).appendTo('#plot_tip');
+    var geneCoverage = detailedCoverage[geneName];
+    var miniSeries = [];
+    var minY = 100000;
+    var maxY = 0;
+    var prevX = 0;
+
+    for (var k = 0; k < geneCoverage.length; k++) {
+        var depth = geneCoverage[k][2] * 100;
+        var curColor = getColor(depth);
+        var y = geneCoverage[k][1];
+        minY = Math.min(y, minY);
+        maxY = Math.max(y, maxY);
+        var series = {
+            data: [[prevX, geneCoverage[k][1]], [prevX + geneCoverage[k][0], y]],
+            color: curColor
+        };
+        series.lines = {
+            show: true,
+            lineWidth: 2
+        };
+        prevX = prevX + geneCoverage[k][0];
+        miniSeries.push(series);
+    }
+
+    var geneLength = prevX;
+    var miniPlotWidth = Math.max(200, geneLength / 15);
+    $('<div class="mini_plot_placeholder" id="mini_gene_plot_placeholder" style="width:' + miniPlotWidth + 'px; height:60px;""></div>').appendTo('#plot_tip');
+
+    $.plot($("#mini_gene_plot_placeholder"), miniSeries, {
+        shadowSize: 0,
+        grid: {
+            borderWidth: 1,
+            hoverable: true,
+            autoHighlight: false,
+            mouseActiveRadius: 1000,
+            backgroundColor: '#FFF',
+        },
+        yaxis: {
+            min: minY * 0.9,
+            max: maxY * 1.1,
+            labelWidth: 0,
+            reserveSpace: true,
+            ticks: [],
+            lineWidth: 0.5,
+            minTickSize: 1
+        },
+        xaxis: {
+            min: 0,
+            max: prevX,
+            ticks: [],
+            tickLength: 0,
+            lineWidth: 0.5
+        }
+    });
 }
 

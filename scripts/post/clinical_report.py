@@ -63,9 +63,9 @@ def main(args):
     total_variants = get_total_variants_number(sample, cnf.varqc_json_fpath)
 
     mutations_report, mut_info_by_gene = make_mutations_report(cnf, sample, key_gene_names, cnf.mutations_fpath)
-    key_genes_report, seq2c_data_by_genename, stats_by_genename, depth_cutoff = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
+    key_genes_report, seq2c_data_by_genename, stats_by_genename, detailed_cov_by_gene, depth_cutoff = make_key_gene_cov_report(cnf, sample, key_gene_names, ave_depth)
     actionable_genes_report = proc_actionable_genes(cnf, sample, key_gene_names, mutations_report, seq2c_data_by_genename)
-    cov_plot_data = save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene)
+    cov_plot_data = save_key_genes_cov_json(cnf, key_gene_names, stats_by_genename, mut_info_by_gene, seq2c_data_by_genename, detailed_cov_by_gene)
 
     seq2c_plot_fpath = None
     if not cnf.seq2c_tsv_fpath:
