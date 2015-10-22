@@ -7,9 +7,8 @@ import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings
 from source.file_utils import verify_file, add_suffix
-from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
+from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
-
 
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr

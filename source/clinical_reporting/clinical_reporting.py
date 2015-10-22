@@ -1,18 +1,15 @@
 from collections import OrderedDict
 from json import load
 import json
-import os
-from os.path import join, islink, dirname, abspath, relpath
+from os.path import join, dirname, abspath
 
 import source
 from source import verify_file, info
-from source.file_utils import add_suffix, verify_module
-from source.file_utils import adjust_path
-from source.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
+from source.file_utils import add_suffix
+from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
-from source.utils import is_local
 from source.utils import get_chr_lengths
 
 

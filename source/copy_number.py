@@ -19,7 +19,7 @@ from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, 
 from source.logger import info, err, step_greetings, critical, warn
 from source.targetcov.bam_and_bed_utils import verify_bam
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.reporting import SampleReport
+from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path

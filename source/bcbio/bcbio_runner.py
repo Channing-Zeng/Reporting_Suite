@@ -11,7 +11,7 @@ import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
-from source.project_level_report import make_project_level_report
+from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import del_jobs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import safe_mkdir

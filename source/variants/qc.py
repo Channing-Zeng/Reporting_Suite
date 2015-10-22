@@ -1,11 +1,11 @@
 from os.path import join
-from source.calling_process import call_subprocess
+
+from ext_modules import vcf_parser
 
 from source.logger import step_greetings, warn
 from source.file_utils import open_gzipsafe
-from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport
-from ext_modules import vcf_parser
-from source.variants.vcf_processing import get_sample_column_index, iterate_vcf
+from source.reporting.reporting import Metric, MetricStorage, ReportSection, SampleReport
+from source.variants.vcf_processing import get_sample_column_index
 import source.variants.vcf_processing as vcf_processing
 
 

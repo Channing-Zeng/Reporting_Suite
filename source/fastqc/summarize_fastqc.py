@@ -96,7 +96,7 @@ def _print_js():
     l_tag = '<script type="text/javascript" name="{}">'
     r_tag = '    </script>'
 
-    static_dirpath = get_system_path(None, join('source', 'html_reporting', 'static'))
+    static_dirpath = get_system_path(None, join('source', 'reporting', 'static'))
     with open(join(static_dirpath, jquery_fname)) as f:
         contents = f.read()
         contents = '\n'.join(' ' * 8 + l for l in contents.split('\n'))

@@ -1,4 +1,4 @@
-from source.reporting import Metric, Record, MetricStorage, ReportSection
+from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection
 
 
 metric_storage = MetricStorage(

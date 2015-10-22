@@ -32,6 +32,8 @@ $(function() {
 
 function extendClick() {
     // Showing full
+    var switch_el = $('#variants_switch');
+    switch_el.html('<a class="dotted-link" id="reduce_link" onclick="reduceClick($(this))">Known and likely known</a> / <span>all variants</span>')
     var var_table_div = $('#variants_table_div');
     $('.table_short').remove();
     var_table_div.prepend(table_full_clone);
@@ -39,13 +41,13 @@ function extendClick() {
     if (msieversion() == 0) {
         $('table.tableSorter.table_full').tableSort();
     }
-    var switch_el = $('#variants_switch');
-    switch_el.html('<a class="dotted-link" id="reduce_link" onclick="reduceClick($(this))">Known and likely known</a> / <span>all variants</span>')
     table_full_clone = table_full_clone.clone();
 }
 
 function reduceClick() {
     // Showing reduced
+    var switch_el = $('#variants_switch');
+    switch_el.html('<span>Known and likely known</span> / <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">all variants</a>')
     var var_table_div = $('#variants_table_div');
     $('.table_full').remove();
     var_table_div.prepend(table_short_clone);
@@ -53,8 +55,6 @@ function reduceClick() {
     if (msieversion() == 0) {
         $('table.tableSorter.table_short').tableSort();
     }
-    var switch_el = $('#variants_switch');
-    switch_el.html('<span>Known and likely known</span> / <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">all variants</a>')
     table_short_clone = table_short_clone.clone();
 }
 

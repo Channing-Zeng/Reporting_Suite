@@ -1,9 +1,11 @@
 from collections import OrderedDict
 from itertools import chain
-from source.logger import warn
 
 import matplotlib
-from source.reporting import BaseReport
+
+from source.logger import warn
+from source.reporting.reporting import BaseReport
+
 matplotlib.use('Agg')
 import matplotlib.ticker as ticker
 import matplotlib.pyplot

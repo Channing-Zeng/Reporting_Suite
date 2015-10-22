@@ -37,8 +37,8 @@ class Record:
             cell_contents = None,
             frac_width = None,
             right_shift = None,
-            color = 'white',
-            text_color = 'black'):  #TODO: get rid of those
+            color = None,
+            text_color = None):  #TODO: get rid of those
 
         self.metric = metric
         if parse:
@@ -52,8 +52,8 @@ class Record:
         self.cell_contents = None
         self.frac_width = None
         self.right_shift = None
-        self.color = 'white'
-        self.text_color = 'black'
+        self.color = color
+        self.text_color = text_color
         # self.color = lambda: self._color
         # self.text_color = lambda: self._text_color
 
@@ -408,6 +408,9 @@ class PerRegionSampleReport(SampleReport):
             rec = Record(metric, value, meta, parse=parse)
             self.records.append(rec)
             return rec
+
+    def get_common_records(self):
+        return []
 
     def __init__(self, hide_rows_by=None, highlight_by=None, **kwargs):
         SampleReport.__init__(self, **kwargs)
@@ -881,11 +884,11 @@ def write_tsv_rows(rows, output_fpath):
 
 scripts_inserted = False
 
-template_fpath = get_real_path(join('html_reporting', 'template.html'))
-static_template_fpath = get_real_path(join('html_reporting', 'static_template.html'))
+template_fpath = get_real_path('template.html')
+static_template_fpath = get_real_path('static_template.html')
 
 static_dirname = 'static'
-static_dirpath = get_real_path(join('html_reporting', static_dirname))
+static_dirpath = get_real_path(static_dirname)
 
 aux_dirname = 'html_aux'
 
@@ -1017,7 +1020,11 @@ def make_cell_td(rec, class_=''):
     if rec.metric.is_hidden:
         return ''
 
-    style = 'background-color: ' + rec.color + '; color: ' + rec.text_color + '; ' + rec.metric.style
+    style = rec.metric.style
+    if rec.color:
+        style += '; background-color: ' + rec.color
+    if rec.text_color:
+        style += '; color: ' + rec.text_color
     if rec.metric.max_width is not None:
         style += '; max-width: {w}px; width: {w}px;'.format(w=rec.metric.max_width)
     if rec.metric.min_width is not None:
@@ -1324,7 +1331,7 @@ def calc_cell_contents(report, rows_of_records):
                 if metric.ok_threshold is not None:
                     if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
                         if rec.num >= metric.ok_threshold:
-                            continue  # white on blak
+                            continue  # white on black
 
                         # rec_to_align_with = sample_report.find_record(sample_report.records, metric.threshold)
                         # if rec_to_align_with:

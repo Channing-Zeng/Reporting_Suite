@@ -11,7 +11,7 @@ import source.targetcov
 from source.calling_process import call
 from source.file_utils import intermediate_fname, verify_file, safe_mkdir
 from source.logger import critical, info, err
-from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
+from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
 from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \

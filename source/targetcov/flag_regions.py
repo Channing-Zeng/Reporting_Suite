@@ -6,14 +6,13 @@ from os.path import join, splitext, basename
 from source.calling_process import call
 from source.file_utils import intermediate_fname
 from source.logger import info, err, step_greetings
-from source.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
+from source.reporting.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
 import source
 from source.targetcov.Region import save_regions_to_bed
 from source.targetcov.bam_and_bed_utils import count_bed_cols
 from source.targetcov.cov import get_detailed_metric_storage, make_flat_region_report
 from source.tools_from_cnf import get_system_path
 from source.variants.vcf_processing import bgzip_and_tabix
-
 
 DEPTH_THRESH_FROM_AVE_COV = 0.5
 MIN_DEPTH_PERCENT_AT_THRESH = 0.8

@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import bcbio_postproc  # checking for python version and adding site dirs inside
 
 import os
 import sys
@@ -8,28 +7,27 @@ from optparse import OptionParser
 from os.path import join, isfile, basename, isdir, exists, dirname, splitext
 from collections import OrderedDict, namedtuple
 import subprocess
-from joblib import Parallel, delayed
-import source
 import traceback
 
+from joblib import Parallel, delayed
+import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
-from source.preproc.dataset_structure import DatasetStructure, MiSeqStructure, HiSeqStructure, HiSeq4000Structure
-from source.project_level_report import make_project_level_report
+from source.preproc.dataset_structure import DatasetStructure
+from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds
+from source.targetcov.bam_and_bed_utils import index_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source.logger import info, critical, err, is_local, warn, send_email
 from source.utils import is_az
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
-from source.file_utils import safe_mkdir, verify_dir, verify_file, make_tmpfile, adjust_system_path, adjust_path, \
-    add_suffix, file_transaction, splitext_plus
+from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
+    add_suffix, file_transaction
 from source.webserver.exposing import sync_with_ngs_server
-
 
 NGS_WEBSERVER_PREPROC_DIR = '/opt/lampp/htdocs/reports'
 if is_local():

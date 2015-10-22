@@ -6,10 +6,11 @@ from collections import OrderedDict, defaultdict
 
 import source
 from source.targetcov.bam_and_bed_utils import verify_bed
-from source.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport
+from source.reporting.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport
 from source.logger import step_greetings, info, warn, err
 from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.targetcov.cov import get_detailed_metric_storage, get_header_metric_storage
+
 
 
 # from source.targetcov.flag_regions import DepthsMetric

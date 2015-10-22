@@ -1,8 +1,10 @@
-from ext_modules.simplejson import load
 from os.path import join
+
+from ext_modules.simplejson import load
+
 import source
 from source.logger import info
-from source.reporting import FullReport, SampleReport
+from source.reporting.reporting import FullReport, SampleReport
 
 
 def make_summary_reports(cnf, threads, output_dir, callers, samples,

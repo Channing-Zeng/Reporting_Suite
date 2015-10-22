@@ -1,7 +1,8 @@
 from os.path import relpath, join
+
 import source
-from source.reporting import FullReport, SampleReport
-from source.logger import step_greetings, info, send_email
+from source.reporting.reporting import FullReport, SampleReport
+from source.logger import step_greetings, info
 from source.ngscat import report_parser
 
 
