@@ -34,8 +34,8 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
         info.series = [];
 
         for (var k = 0; k < coordX.length; k++) {
-            var depth = depthInThreshold[k] * 100;
-            var curColor = getColor(depth);
+            var percentDepthInThreshold = depthInThreshold[k] * 100;
+            var curColor = getColorFromPercentCovered(percentDepthInThreshold);
             var series = {
                 data: [[coordX[k], coordY[k]]],
                 label: geneNames[k],
@@ -50,6 +50,7 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
             info.series.push(series);
         }
 
+        var maxDepth = Math.max.apply(Math, coordY);
         info.showWithData = function (series, colors) {
             var plot = $.plot(placeholder_el, series, {
                 shadowSize: 0,
@@ -66,7 +67,7 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
                 },
                 yaxis: {
                     min: 0,
-                    max: Math.max.apply(Math, coordY) * 1.1,
+                    max: maxDepth * 1.1,
                     labelWidth: 120,
                     reserveSpace: true,
                     lineWidth: 0.5,
@@ -86,7 +87,7 @@ function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
             var firstLabel = $('.yAxis .tickLabel').last();
             firstLabel.prepend('Ave depth' + '<span class="rhs">&nbsp;</span>=<span class="rhs">&nbsp;</span>');
 
-            bindTip(placeholder_el, series, mutations, detailedCoverage, plot, toPrettyString, 1, '', 'top right');
+            bindTip(placeholder_el, series, mutations, detailedCoverage, plot, toPrettyString, 1, '', 'top right', maxDepth);
         };
 
         info.isInitialized = true;
@@ -111,9 +112,9 @@ function showPlotWithInfo(info, index) {
 
 }
 
-function getColor (value) {
-    var hue = Math.max(0, (value - 50) * 2.4);
-    var lightness = 45;
+function getColorFromPercentCovered(percentCovered) {
+    var hue = Math.max(0, (percentCovered - 50) * 2.4);
+    var lightness = 33;
     var rgb = hslToRgb(hue / 360, 0.8, lightness / 100);
     return '#' + rgb[0].toString(16) + rgb[1].toString(16) + rgb[2].toString(16);
 }
@@ -153,19 +154,19 @@ function readJsonFromElement(element) {
     return result;
 }
 
-function bindTip(placeholder, series, mutations, detailedCoverage, plot, xToPrettyStringFunction, tickX, xUnit, position, summaryPlots) {
+function bindTip(placeholder, series, mutations, detailedCoverage, plot, xToPrettyStringFunction, tickX, xUnit, position, maxDepth) {
     var prevPoint = null;
 
     $(placeholder).bind("plothover", function(event, pos, item) {
         if (item) {
           if (prevPoint != item.seriesIndex) {
               prevPoint = item.seriesIndex;
-              x = item.datapoint[0];
+              var x = item.datapoint[0];
               showTip(item.pageX, item.pageY, plot.offset(),
                   plot.width(), plot.height(),
                   series, item.seriesIndex, x, item.dataIndex,
                   xToPrettyStringFunction(x, xUnit, tickX) + ':',
-                  position, mutations, detailedCoverage);
+                  position, mutations, detailedCoverage, maxDepth);
             }
         } else {
             $('#plot_tip').hide();
@@ -177,7 +178,7 @@ function bindTip(placeholder, series, mutations, detailedCoverage, plot, xToPret
 }
 
 function showTip(pageX, pageY, offset, plotWidth, plotHeight,
-    series, centralSeriesIndex, xPos, xIndex, xStr, position, mutations, detailedCoverage) {
+    series, centralSeriesIndex, xPos, xIndex, xStr, position, mutations, detailedCoverage, maxDepth) {
     var LINE_HEIGHT = 16; // pixels
 
     position = ((position != null) ? position : 'bottom right');
@@ -186,7 +187,7 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
     var directions = position.split(' ');
 
     var item = {
-        y: series[centralSeriesIndex].data[xIndex][1],
+        aveDepth: series[centralSeriesIndex].data[xIndex][1],
         color: series[centralSeriesIndex].color,
         label: series[centralSeriesIndex].label
     };
@@ -228,7 +229,9 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
         height: LINE_HEIGHT,
     }).appendTo('#plot_tip');*/
 
-    $('<div id="tip_line0"><span style="color: ' + item.color + ';">' + geneName + '</span></div>').css({
+    var newEl = '<div id="tip_line0"><span style="z-index: 100; color: ' + item.color + ';">' + geneName + '</span> - ' + toPrettyString(item.aveDepth) + 'x ave depth</div>';
+    console.log(newEl);
+    $(newEl).css({
         height: LINE_HEIGHT,
         "font-weight": "bold"
     }).appendTo('#plot_tip');
@@ -237,36 +240,39 @@ function showTip(pageX, pageY, offset, plotWidth, plotHeight,
           height: LINE_HEIGHT
         }).appendTo('#plot_tip');
     }
-     $('<div id="tip_line"' + (m + 1) + '><span> Gene coverage plot: </span></div>').css({
-          height: LINE_HEIGHT
-        }).appendTo('#plot_tip');
+    $('<div id="tip_line"' + (m + 1) + ' style="margin-top: 5px;"><span>CDS coverage (' + '0' + '...' + toPrettyString(maxDepth) + 'x) accross the gene</span></div>').css({
+        height: LINE_HEIGHT
+    }).appendTo('#plot_tip');
     var geneCoverage = detailedCoverage[geneName];
     var miniSeries = [];
-    var minY = 100000;
-    var maxY = 0;
+    var minY = 0;
+    var maxY = maxDepth;
+    console.log(maxDepth);
     var prevX = 0;
 
     for (var k = 0; k < geneCoverage.length; k++) {
-        var depth = geneCoverage[k][2] * 100;
-        var curColor = getColor(depth);
-        var y = geneCoverage[k][1];
-        minY = Math.min(y, minY);
-        maxY = Math.max(y, maxY);
-        var series = {
-            data: [[prevX, geneCoverage[k][1]], [prevX + geneCoverage[k][0], y]],
+        var percentageInThreshold = geneCoverage[k][2] * 100;
+        var curColor = getColorFromPercentCovered(percentageInThreshold);
+        var aveDepth = geneCoverage[k][1];
+        //minY = Math.min(y, minY);
+        //maxY = Math.max(y, maxY);
+        var bar = {
+            data: [[prevX, geneCoverage[k][1]], [prevX + geneCoverage[k][0], aveDepth]],
             color: curColor
         };
-        series.lines = {
+        bar.lines = {
             show: true,
-            lineWidth: 2
+            lineWidth: 1
         };
         prevX = prevX + geneCoverage[k][0];
-        miniSeries.push(series);
+        miniSeries.push(bar);
     }
 
     var geneLength = prevX;
-    var miniPlotWidth = Math.max(200, geneLength / 15);
-    $('<div class="mini_plot_placeholder" id="mini_gene_plot_placeholder" style="width:' + miniPlotWidth + 'px; height:60px;""></div>').appendTo('#plot_tip');
+    var miniPlotWidth = Math.max(geneLength / 15);
+    $('<div class="mini_plot_placeholder" ' +
+        'id="mini_gene_plot_placeholder" ' +
+        'style="width:' + miniPlotWidth + 'px; height: 60px; margin-left: -5px;"></div>').appendTo('#plot_tip');
 
     $.plot($("#mini_gene_plot_placeholder"), miniSeries, {
         shadowSize: 0,
