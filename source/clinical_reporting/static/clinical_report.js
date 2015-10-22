@@ -5,7 +5,7 @@ $(function() {
         //$('table.tableSorter').tableSort();
 
     } else {
-        $('.coverage_plot').hide();
+        //$('.coverage_plot').hide();
     }
 
     //if ($.browser.msie) {

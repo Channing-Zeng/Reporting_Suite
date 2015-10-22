@@ -177,7 +177,7 @@ function bindTip(placeholder, series, mutations, plot, xToPrettyStringFunction, 
 
 function showTip(pageX, pageY, offset, plotWidth, plotHeight,
     series, centralSeriesIndex, xPos, xIndex, xStr, position, mutations) {
-    const LINE_HEIGHT = 16; // pixels
+    var LINE_HEIGHT = 16; // pixels
 
     position = ((position != null) ? position : 'bottom right');
     //    pageY -= LINE_HEIGHT * (centralSeriesIndex + 1.5);
