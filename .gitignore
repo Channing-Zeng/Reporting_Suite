@@ -78,3 +78,6 @@ test/clinical_reporting/Dev_0132_HiSeq4000_AURA/final/AURA-155_S7/clinical
 test/clinical_reporting/Dev_0132_HiSeq4000_AURA/final/2015-09-30_bcbio/*.html
 
 .sass-cache
+
+az-reporting.py
+bcbio_postproc
