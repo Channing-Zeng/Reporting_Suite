@@ -151,7 +151,7 @@ def make_mutations_report(cnf, sample, key_gene_names, mutations_fpath):
             Metric('Depth', max_width=48),              # 658
             Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
             Metric('AA len', max_width=50, with_heatmap=False),          # 128
-            Metric('DB', max_width=80, class_='long_line'),                 # rs352343, COSM2123
+            Metric('DB', max_width=90, class_='long_line'),                 # rs352343, COSM2123
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Type', max_width='100', class_='long_line'),               # Frameshift
             Metric('Status'),     # Likely Pathogenic
