@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
+import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 
 import subprocess
 import sys

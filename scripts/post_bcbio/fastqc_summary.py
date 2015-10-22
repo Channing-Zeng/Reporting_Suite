@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import sys
 from os.path import join
-import source
 
+import source
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.logger import info, step_greetings
 
 

@@ -19,13 +19,14 @@ td.long_line:hover {
 
 .clinical_report table.report_table td, .clinical_report table.report_table th {
   max-width: 160px; }
-
 .clinical_report .multi-col-layout {
   column-count: 4;
   -moz-column-count: 4;
   -webkit-column-count: 4; }
   .clinical_report .multi-col-layout tr td.right_column_td {
     border-right: 1px solid #bbb; }
+.clinical_report h1 {
+  margin-top: 30px; }
 
 #clinical_report_header_container {
   overflow: hidden;
@@ -37,5 +38,3 @@ td.long_line:hover {
   vertical-align: bottom; }
 .actionable_table td, .actionable_table td * {
   vertical-align: top; }
-
-/*# sourceMappingURL=clinical_report.css.map */

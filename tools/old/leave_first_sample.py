@@ -12,7 +12,7 @@ addsitedir(join(source_dir, 'ext_modules'))
 
 import os
 from source.logger import info
-from source.bcbio_structure import BCBioStructure
+from source.bcbio.bcbio_structure import BCBioStructure
 from source.summary import summary_script_proc_params
 
 

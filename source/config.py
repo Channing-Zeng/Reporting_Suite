@@ -16,18 +16,19 @@ else:
 
 this_script_dirpath = dirname(abspath(__file__))
 
+configs_dirpath = abspath(join(this_script_dirpath, pardir, 'configs'))
 
 defaults = dict(
     sys_cnfs = dict(
-        us=abspath(join(this_script_dirpath, pardir, 'system_info_Waltham.yaml')),
-        uk=abspath(join(this_script_dirpath, pardir, 'system_info_AP.yaml')),
-        china=abspath(join(this_script_dirpath, pardir, 'system_info_China.yaml')),
-        cloud=abspath(join(this_script_dirpath, pardir, 'system_info_cloud.yaml')),
+        us=join(configs_dirpath, 'system_info_Waltham.yaml'),
+        uk=join(configs_dirpath, 'system_info_AP.yaml'),
+        china=join(configs_dirpath, 'system_info_China.yaml'),
+        cloud=join(configs_dirpath, 'system_info_cloud.yaml'),
         local=abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
-    run_cnf_exome_seq = abspath(join(this_script_dirpath, pardir, 'run_info_ExomeSeq.yaml')),
-    run_cnf_wgs = abspath(join(this_script_dirpath, pardir, 'run_info_WGS.yaml')),
-    run_cnf_deep_seq = abspath(join(this_script_dirpath, pardir, 'run_info_DeepSeq.yaml')),
+    run_cnf_exome_seq = join(configs_dirpath,  'run_info_ExomeSeq.yaml'),
+    run_cnf_wgs = join(configs_dirpath, 'run_info_WGS.yaml'),
+    run_cnf_deep_seq = join(configs_dirpath, 'run_info_DeepSeq.yaml'),
 
     load_mongo = False,  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh',
@@ -39,7 +40,7 @@ defaults = dict(
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
 
-defaults_yaml_fpath = abspath(join(this_script_dirpath, pardir, 'RUNINFO_DEFAULTS.yaml'))
+defaults_yaml_fpath = join(configs_dirpath, 'RUNINFO_DEFAULTS.yaml')
 verify_file(defaults_yaml_fpath, is_critical=True)
 run_info_defaults = load_yaml(open(defaults_yaml_fpath), Loader=Loader)
 for k, v in run_info_defaults.items():

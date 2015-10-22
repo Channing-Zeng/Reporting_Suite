@@ -6,23 +6,22 @@ from os.path import join, splitext, basename, dirname, abspath, isfile
 from shutil import copyfile
 from time import sleep
 from traceback import format_exc
-import sys
+
 from ext_modules.simplejson import load
-from subprocess import check_output
+
 from joblib import Parallel, delayed
-from source.bcbio_structure import BCBioStructure
-from source.calling_process import call_subprocess, call_pipe, call
+from source.bcbio.bcbio_structure import BCBioStructure
+from source.calling_process import call
 from source.clinical_reporting.seq2c_plot import draw_seq2c_plot
 from source.config import CallCnf
-from source.file_utils import verify_file, adjust_path, iterate_file, safe_mkdir, expanduser, file_transaction, \
-    add_suffix, splitext_plus, verify_module, intermediate_fname
-from source.logger import info, err, step_greetings, critical, send_email, warn
-from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
+from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
+    verify_module, intermediate_fname
+from source.logger import info, err, step_greetings, critical, warn
+from source.targetcov.bam_and_bed_utils import verify_bam
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.reporting import write_tsv_rows, Record, SampleReport
-from source.targetcov.Region import Region, GeneInfo
-from source.targetcov.bam_and_bed_utils import sort_bed, count_bed_cols, annotate_amplicons, cut, \
-    group_and_merge_regions_by_gene, bedtools_version, prepare_beds, remove_dups
+from source.reporting import SampleReport
+from source.targetcov.Region import Region
+from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths
 from source.utils import median, mean

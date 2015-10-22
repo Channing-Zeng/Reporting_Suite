@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-import tempfile
-import shutil
-
-import __check_python_version  # do not remove it: checking for python version and adding site dirs inside
+import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
+import tempfile
+import shutil
 import os
 from os.path import abspath, dirname, realpath, join
 import subprocess

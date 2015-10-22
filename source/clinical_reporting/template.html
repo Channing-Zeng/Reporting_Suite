@@ -79,7 +79,7 @@
                         <!--{.end}-->
                     <!--</div>-->
                 <!--</div>-->
-                <div class="space_30px"></div>
+                <!--<div class="space_30px"></div>-->
             {.end}
             </div>
 
@@ -102,16 +102,15 @@
             <div style="clear: both"></div>
         </div>
 
+        <div class="space_8px"></div>
+        <div class="space_8px"></div>
         <div>
             <a class="dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
-
-        <div class="space_8px"></div>
-        <div class="space_8px"></div>
-        <div class="space_8px"></div>
+        <div class="space_4px"></div>
 
         <a name="variants"></a>
         <h1>Detailed variant analysis</h1>
@@ -142,7 +141,7 @@
                 {table}
             </div>
         {.or}
-            <p>Actionable genes are no available.</p>
+            <p>No mutations found in actionable genes.</p>
         {.end}
 
         <a name="seq2c"></a>
@@ -152,67 +151,63 @@
                 <img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>
             </div>
         {.or}
-            <p>Seq2C plot is not available</p>
         {.end}
-
-        <div class="space_8px"></div>
 
         <a name="coverage"></a>
         {.section coverage}
-            <h1>Coverage analysis</h1>
-
-            <div class="coverage_plot">
-                <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
-                <div class="js_plot" id="gene_plot">
-                    <table>
-                        <tr>
-                            <td colspan="2">
-                                <div class='plot_placeholder' id="gene_plot_placeholder">
-                                </div>
-                            </td>
-                            <td>
-                                <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
-                            </td>
-                        </tr>
-                    </table>
-                    <div class="json_code">
-                        <div id="gene_plot_data_json">
-                            {plot_data}
-                        </div>
+        <h1>Coverage analysis</h1>
+        <div class="coverage_plot">
+            <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
+            <div class="js_plot" id="gene_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder' id="gene_plot_placeholder">
+                            </div>
+                        </td>
+                        <td>
+                            <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="json_code">
+                    <div id="gene_plot_data_json">
+                        {plot_data}
                     </div>
                 </div>
-                <div class="space_30px"></div>
             </div>
+            <!--<div class="space_30px"></div>-->
+        </div>
 
-            <table width="100%">
-                <tr>
-                <!--<div class="multi-col-layout">-->
-                {.repeated section columns}
-                    <td style="">
-                        <table class="report_table static_report"
-                               style="margin-right: 40px;">
-                            <thead>
-                                <tr class="top_row_tr">
-                                    {.repeated section metric_names}
+        <table width="100%">
+            <tr>
+            <!--<div class="multi-col-layout">-->
+            {.repeated section columns}
+                <td style="">
+                    <table class="report_table static_report"
+                           style="margin-right: 40px;">
+                        <thead>
+                            <tr class="top_row_tr">
+                                {.repeated section metric_names}
+                                    {@}
+                                {.end}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {.repeated section rows}
+                                <tr>
+                                    {.repeated section records}
                                         {@}
                                     {.end}
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {.repeated section rows}
-                                    <tr>
-                                        {.repeated section records}
-                                            {@}
-                                        {.end}
-                                    </tr>
-                                {.end}
-                            </tbody>
-                        </table>
-                    </td>
-                {.end}
-                <!--</div>-->
-                </tr>
-            </table>
+                            {.end}
+                        </tbody>
+                    </table>
+                </td>
+            {.end}
+            <!--</div>-->
+            </tr>
+        </table>
         {.end}
     </div>
 </div>

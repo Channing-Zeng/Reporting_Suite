@@ -1,18 +1,19 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import sys
 import os
 from traceback import format_exc
+from os.path import join, basename, islink, isdir, isfile
+
 from joblib import Parallel, delayed
-from os.path import join, pardir, basename, dirname, islink, isdir, isfile
 from source.calling_process import call
-from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
+from source.tools_from_cnf import get_java_tool_cmdline
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
-from source.logger import info, err, send_email, critical, warn
-from source.bcbio_structure import BCBioStructure, summary_script_proc_params
-from source.file_utils import safe_mkdir, symlink_plus, file_exists, num_lines, verify_file
+from source.logger import info, err, critical, warn
+from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.file_utils import safe_mkdir, symlink_plus, num_lines, verify_file
 from source.variants.vcf_processing import igvtools_index
 from source.variants.vcf_processing import bgzip_and_tabix
 

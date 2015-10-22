@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import os
 from os.path import isfile, join, basename, splitext, dirname
@@ -112,7 +112,7 @@ def main(args):
     elif exons_bed:
         info('WGS, taking CDS as target')
 
-    run_one(cnf, process_one, finalize_one, multiple_samples=False, output_dir=cnf.output_dir,
+    run_one(cnf, process_one, finalize_one, output_dir=cnf.output_dir,
         exons_bed=exons_bed, exons_no_genes_bed=cnf.exons_no_genes, genes_fpath=genes_fpath)
 
     if not cnf['keep_intermediate']:

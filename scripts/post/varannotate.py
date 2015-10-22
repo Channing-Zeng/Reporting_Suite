@@ -1,23 +1,21 @@
 #!/usr/bin/env python
+import bcbio_postproc
+
 import gzip
 import os
-
-import __check_python_version
-
 import sys
 import shutil
+
 import source
 from source import VarSample
-from source.bcbio_structure import BCBioStructure
 from source.file_utils import iterate_file, open_gzipsafe
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.variants.vcf_processing import remove_rejected, fix_chromosome_names, iterate_vcf, \
-    read_sample_names_from_vcf, get_sample_column_index, bgzip_and_tabix
+from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
-from source.logger import err, send_email, warn
+from source.logger import err, warn
 
 
 def main(args):

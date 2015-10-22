@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-
-import __check_python_version
+import bcbio_postproc
 
 import sys
-from os.path import abspath
-from source.bcbio_structure import BCBioStructure, summary_script_proc_params
-from source.file_utils import adjust_path
+from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.logger import info
 from source.targetcov.summarize_targetcov import summarize_targqc, get_bed_targqc_inputs
 

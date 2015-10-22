@@ -1,11 +1,9 @@
 #!/usr/bin/python
-import __check_python_version
+import bcbio_postproc
 
 import sys
-from source.bcbio_structure import BCBioStructure
-from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.targetcov.bam_and_bed_utils import index_bam
 from os.path import isfile
+
 from source.logger import err
 
 try:
@@ -19,7 +17,11 @@ except ImportError:
 import shutil
 from os.path import dirname
 
-from source.logger import info, critical, err
+from source.bcbio.bcbio_structure import BCBioStructure
+from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
+from source.targetcov.bam_and_bed_utils import index_bam
+
+from source.logger import info, critical
 from source.main import read_opts_and_cnfs
 from source.config import defaults
 from source.runner import run_one

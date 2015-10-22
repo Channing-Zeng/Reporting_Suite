@@ -1,13 +1,5 @@
 #!/usr/bin/env python
-
-from os.path import abspath, dirname, realpath, join
-
-from site import addsitedir
-
-project_dir = abspath(dirname(dirname(dirname(realpath(__file__)))))
-addsitedir(join(project_dir))
-addsitedir(join(project_dir, 'ext_modules'))
-# import scripts.__check_python_version  # do not remove it: checking for python version and adding site dirs inside
+import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
 from tools.bed_processing.make_exons import read_approved_genes, get_approved_gene_symbol

@@ -1,16 +1,11 @@
 #!/usr/bin/env python
 
-import os
 import sys
-from os.path import isdir, join, realpath, expanduser, basename, abspath, dirname, pardir, isfile
+from os.path import join, basename, abspath, dirname, pardir
 from optparse import OptionParser
-from shutil import rmtree
-from traceback import print_exc, format_exc
-from source.bcbio_structure import ungzip_if_needed
+from traceback import format_exc
 
-from source.file_utils import verify_file, verify_dir, adjust_path, remove_quotes, adjust_system_path, \
-    verify_obj_by_path
-from source import logger
+from source.file_utils import remove_quotes
 from source.config import Config, defaults
 from source.logger import info, err, critical
 from source.prepare_args_and_cnf import set_up_dirs, check_inputs, check_keys, determine_run_cnf, \

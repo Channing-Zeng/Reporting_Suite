@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 from source import info
 from source.clinical_reporting.seq2c_plot import draw_seq2c_plot

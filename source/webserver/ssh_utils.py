@@ -28,7 +28,7 @@ def connect_to_server(server_url, username, password):
         ssh.set_missing_host_key_policy(AutoAddPolicy())
         try:
             key = RSAKey(filename=rsa_key_path, password='%1!6vLaD')
-        except Exception, e:
+        except:
             warn('Cannot read RSAKey from ' + rsa_key_path)
             warn()
             err(format_exc())
@@ -37,7 +37,7 @@ def connect_to_server(server_url, username, password):
             info('Succesfully read RSAKey from ' + rsa_key_path)
             try:
                 ssh.connect(server_url, username=username, password=password, pkey=key)
-            except Exception, e:
+            except:
                 warn('Cannot connect to ' + server_url + ':')
                 warn()
                 err(format_exc())

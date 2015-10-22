@@ -1,23 +1,17 @@
-#!/usr/bin/env python
-import __check_python_version  # checking for python version and adding site dirs inside
-
+from collections import defaultdict
 import os
 import sys
-from time import sleep
-from os.path import join, isfile
+from os.path import join
 from optparse import OptionParser
-from collections import OrderedDict, defaultdict
 
-from source.targetcov import summarize_targetcov
-from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
-from source.variants import summarize_qc
-from source.bcbio_runner import BCBioRunner
+from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
+from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
-from source.bcbio_structure import BCBioStructure, process_post_bcbio_args, VariantCaller
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, set_up_log
-from source.variants.vcf_processing import get_trasncripts_fpath
-from source.file_utils import safe_mkdir, adjust_path, verify_dir
+from source.file_utils import safe_mkdir, adjust_path
+from source.targetcov import summarize_targetcov
+from source.variants import summarize_qc
 
 
 def main():
@@ -155,8 +149,4 @@ def combine_projects(cnf, bcbio_structures, tags=None):
     combine_targqc(cnf, bcbio_structures, tag_by_sample)
 
     cnf.reuse_intermediate = reuse
-
-
-if __name__ == '__main__':
-    main()
 

@@ -1,22 +1,20 @@
 import getpass
 import os
-import shutil
-import sys
 import hashlib
 import base64
-from os.path import join, dirname, abspath, expanduser, basename, pardir, isfile, isdir, exists, islink, relpath
+from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink
 import datetime
 from time import sleep
 from traceback import format_exc
+
 import source
-from source.bcbio_structure import BCBioStructure
+from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.file_utils import verify_dir, verify_file, add_suffix, symlink_plus, remove_quotes
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
 from source.project_level_report import make_project_level_report
 from source.qsub_utils import del_jobs
 from source.tools_from_cnf import get_system_path
-
-from source.file_utils import file_exists, safe_mkdir
+from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam
 from source.utils import is_us

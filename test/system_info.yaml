@@ -27,8 +27,8 @@ resources:
     path: /usr/local/bin/seqtk
   qualimap:
     path: ext_tools/qualimap/qualimap
-  python:
-    path: /usr/local/bin/python
+#  python:
+#    path: /usr/local/bin/python
 
 
 genomes:

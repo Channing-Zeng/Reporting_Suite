@@ -1,17 +1,12 @@
 import hashlib
 import base64
-import sys
-import os
-from os.path import splitext, abspath, basename, join, isfile, dirname, pardir
-from os import listdir
+from os.path import basename, join
 
 import source
-from source.logger import info, err, warn, critical
-from source.bcbio_runner import Step
-from source.file_utils import safe_mkdir, verify_file, verify_dir
+from source.logger import info
+from source.bcbio.bcbio_runner import Step
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import fix_bed_for_qualimap, prepare_beds, extract_gene_names_and_filter_exons
-from source.calling_process import call
 from source.targetcov.summarize_targetcov import summarize_targqc
 from source.tools_from_cnf import get_system_path
 

@@ -1,29 +1,24 @@
 # coding=utf-8
 
-from collections import OrderedDict, defaultdict
-from os.path import join, basename, isfile, abspath, realpath, splitext, normpath, dirname, relpath
+from collections import OrderedDict
+from os.path import join, isfile, abspath, realpath, dirname, relpath
 import shutil
 import traceback
 
 import source
-from source.bcbio_structure import BCBioStructure
-from source.qsub_utils import submit_job, wait_for_jobs
 from source.qualimap.report_parser import parse_qualimap_sample_report
 import source.targetcov
-from source.calling_process import call, call_pipe
-from source.file_utils import intermediate_fname, splitext_plus, verify_file, file_exists, iterate_file, tmpfile, \
-    safe_mkdir, add_suffix
-from source.logger import step_greetings, critical, info, err, warn
-from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, write_txt_rows, write_tsv_rows, \
-    load_records
-from source.targetcov.Region import Region, save_regions_to_bed, GeneInfo, calc_bases_within_threshs, \
+from source.calling_process import call
+from source.file_utils import intermediate_fname, verify_file, safe_mkdir
+from source.logger import critical, info, err
+from source.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
+from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list
-from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, filter_bed_with_gene_set, get_total_bed_size, \
-    total_merge_bed, count_bed_cols, annotate_amplicons, group_and_merge_regions_by_gene, sort_bed, fix_bed_for_qualimap, \
+from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
     intersect_bed, calc_sum_of_regions
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
-from source.tools_from_cnf import get_system_path, get_script_cmdline
+from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
 
 

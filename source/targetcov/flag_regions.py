@@ -1,22 +1,17 @@
 # coding=utf-8
 
-from collections import OrderedDict, defaultdict
-import os
+from collections import defaultdict
 from os.path import join, splitext, basename
-import shutil
-from ext_modules import vcf_parser
-from source.bcbio_structure import BCBioStructure
-from source.calling_process import call
-from source.file_utils import add_suffix, verify_file, intermediate_fname
 
+from source.calling_process import call
+from source.file_utils import intermediate_fname
 from source.logger import info, err, step_greetings
-from source.reporting import Metric, MetricStorage, ReportSection, Record, PerRegionSampleReport, load_records
+from source.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
 import source
-from source.targetcov.Region import Region, proc_regions, save_regions_to_bed
+from source.targetcov.Region import save_regions_to_bed
 from source.targetcov.bam_and_bed_utils import count_bed_cols
 from source.targetcov.cov import get_detailed_metric_storage, make_flat_region_report
 from source.tools_from_cnf import get_system_path
-from source.utils import median
 from source.variants.vcf_processing import bgzip_and_tabix
 
 

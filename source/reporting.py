@@ -1,18 +1,17 @@
 # coding: utf-8
 
-from collections import OrderedDict, defaultdict
-from itertools import repeat, izip, chain
-import os
-from os.path import join, relpath, dirname, abspath, splitext, isdir, basename
-from json import load, dump, JSONEncoder, dumps
+from collections import OrderedDict
+from itertools import repeat, izip
+from os.path import join, relpath, dirname, abspath, basename
+from json import load, dump
 from math import floor
 import traceback
 import datetime
-from ext_modules.jsontemplate import jsontemplate
-import shutil
 
-from source.bcbio_structure import BCBioSample
-from source.file_utils import file_transaction, file_exists, verify_file
+from ext_modules.jsontemplate import jsontemplate
+
+from source.bcbio.bcbio_structure import BCBioSample
+from source.file_utils import file_transaction, verify_file
 from source.logger import critical, info, err, warn
 from source.utils import mean
 
@@ -241,24 +240,27 @@ class Metric:
 
 class BaseReport:
     def __init__(self, sample=None, html_fpath=None, json_fpath=None,
-                 records=None, plots=None, metric_storage=None,
-                 report_name='', display_name=None,
-                 caller_tag=None, project_tag=None, **kwargs):
+                 records=None, plots=None, metric_storage=None, display_name='',
+                 report_name='', caller_tag=None, project_tag=None, **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
-        self.records = [r for r in records if r.metric] if records else []
-        self.metric_storage = metric_storage
-        self.report_name = report_name
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
         self.json_fpath = json_fpath
+        self.records = [r for r in records if r.metric] if records else []
+        self.metric_storage = metric_storage
 
-        self.display_name = display_name or (self.sample if isinstance(self.sample, basestring) else self.sample.name)
+        self.report_name = report_name
+        self.display_name = display_name
+        if not display_name:
+            if sample:
+                if isinstance(sample, basestring):
+                    self.display_name = sample
+                else:
+                    self.display_name = sample.name
         self.caller_tag = None
         self.set_caller_tag(caller_tag)
         self.project_tag = None
         self.set_project_tag(project_tag)
-
-        self.display_name = self.get_display_name()  # filled in only in save_html()!!!
 
         self.hide_rows_by = None
 
@@ -271,15 +273,6 @@ class BaseReport:
         if not self.caller_tag and tag:
             self.display_name = self.display_name + ' ' + tag
             self.project_tag = tag
-
-    def get_display_name(self):
-        return self.display_name
-    #     name = self.sample if isinstance(self.sample, basestring) else self.sample.name
-    #     if self.project_tag:
-    #         name = self.sample.project_tag + ' ' + name
-    #     if self.caller_tag:
-    #         name = name + ' ' + self.caller_tag
-    #     return name
 
     def flatten(self, sections=None, human_readable=True):
         raise NotImplementedError()
@@ -340,8 +333,8 @@ class BaseReport:
 
 
 class SampleReport(BaseReport):
-    def __init__(self, **kwargs):
-        BaseReport.__init__(self, **kwargs)
+    def __init__(self, *args, **kwargs):
+        BaseReport.__init__(self, *args, **kwargs)
 
     def get_common_records(self):
         common_records = []
@@ -375,7 +368,7 @@ class SampleReport(BaseReport):
                 else:
                     rows.append(['##' + m.name + '=' + r.format(human_readable=False)])
 
-        rows.append(['Sample', self.get_display_name()])
+        rows.append(['Sample', self.display_name])
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
             row = [metric.name]
             rec = BaseReport.find_record(self.records, metric.name)
@@ -389,7 +382,7 @@ class SampleReport(BaseReport):
             extra_js_fpaths=list(), extra_css_fpaths=list())
 
     def __repr__(self):
-        return self.get_display_name() + (', ' + self.report_name if self.report_name else '')
+        return self.display_name + (', ' + self.report_name if self.report_name else '')
 
     @staticmethod
     def load(data, sample=None, bcbio_structure=None):
@@ -573,7 +566,7 @@ class FullReport(BaseReport):
                 else:
                     rows.append(['##' + m.name + '=' + rec.format(human_readable=False)])
 
-        rows.append(['Sample'] + [rep.get_display_name() for rep in self.sample_reports])
+        rows.append(['Sample'] + [rep.display_name for rep in self.sample_reports])
 
         # rows_of_records = self.get_rows_of_records(sections) # TODO: use logic from get_rows_of_records
 
@@ -1077,6 +1070,8 @@ def build_section_html(report, section, sortable=True):
         html += '\n<h3 class="table_name">' + section.title + '</h3>'
 
     rows_of_records = report.get_rows_of_records(sections=[section])
+    if not rows_of_records:
+        return ''
 
     calc_cell_contents(report, rows_of_records)
 
@@ -1104,7 +1099,7 @@ def build_section_html(report, section, sortable=True):
     for row_num, records in enumerate(rows_of_records):
         tr_class_ = 'second_row_tr' if row_num == 0 else ''
 
-        if report.highlight_by and any(report.highlight_by(r) for r in records):
+        if 'highlight_by' in report.__dict__ and report.highlight_by and any(report.highlight_by(r) for r in records):
             tr_class_ += ' highlighted_row'
 
         tr = '<tr class="' + tr_class_ + '">'
@@ -1113,7 +1108,7 @@ def build_section_html(report, section, sortable=True):
             tr += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
         tr += '\n</tr>'
 
-        if report.hide_rows_by:
+        if 'hide_rows_by' in report.__dict__ and report.hide_rows_by:
             full_table += '\n' + tr
             if not any(report.hide_rows_by(r) for r in records):
                 table += '\n' + tr
@@ -1240,6 +1235,9 @@ def get_color(hue, lightness):
 
 
 def calc_cell_contents(report, rows_of_records):
+    if not rows_of_records:
+        return report
+
     metrics = set(rec.metric for rec in rows_of_records[0])
 
     max_frac_widths_by_metric = dict()

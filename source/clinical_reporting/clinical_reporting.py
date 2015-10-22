@@ -377,11 +377,13 @@ def make_clinical_html_report(cnf, sample, coverage_report, depth_cutoff, mutati
         sample_dict['panel'] = cnf.target_type + ', AZ300 IDT panel'
         sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
+    sample_dict['sex'] = 'Undetermined'
     if gender:
         if gender.startswith('M'):
             sample_dict['sex'] = 'Male'
-        if gender.startswith('F'):
+        elif gender.startswith('F'):
             sample_dict['sex'] = 'Female'
+
     sample_dict['sample_type'] = 'unpaired'
     if cnf.debug:
         sample_dict['sample_type'] = 'plasma, unpaired'
@@ -419,7 +421,7 @@ def make_clinical_html_report(cnf, sample, coverage_report, depth_cutoff, mutati
         image_by_key['seq2c_plot'] = seq2c_plot_fpath
 
     actionable_genes_dict = dict()
-    if actionable_genes_report:
+    if actionable_genes_report.regions:
         actionable_genes_dict['table'] = build_report_html(actionable_genes_report, sortable=False)
 
     sample.clinical_html = write_static_html_report(cnf, {

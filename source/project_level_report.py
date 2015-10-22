@@ -1,17 +1,12 @@
 import json
-import os
-from os.path import join, relpath, dirname, basename, pardir, normpath, realpath
-from collections import OrderedDict, namedtuple
-import getpass
-from traceback import format_exc
+from os.path import join, relpath, dirname, basename
+from collections import OrderedDict
 from collections import defaultdict
 
 import source
-from source.preproc.dataset_structure import DatasetStructure
-from source.bcbio_structure import BCBioStructure
-from source.jira_utils import JiraCase
-from source.logger import info, step_greetings, send_email, warn, err
-from source.file_utils import verify_file, file_transaction, adjust_path, safe_mkdir, add_suffix
+from source.bcbio.bcbio_structure import BCBioStructure
+from source.logger import info, step_greetings
+from source.file_utils import verify_file, add_suffix
 from source.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
 
@@ -401,7 +396,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
 
             sample_report_dict = dict()
             sample_report_dict["records"] = ready_records
-            sample_report_dict["sample_name"] = sample_report.get_display_name()
+            sample_report_dict["sample_name"] = sample_report.display_name
             main_dict["sample_reports"].append(sample_report_dict)
 
     return write_static_html_report(cnf, {"common": common_dict, "main": main_dict}, html_fpath)

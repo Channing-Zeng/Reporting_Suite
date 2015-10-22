@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import sys
 from os.path import join
 
-from source.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.calling_process import call
 from source.copy_number import cnv_reports
 from source.logger import info

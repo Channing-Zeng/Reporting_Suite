@@ -1,13 +1,11 @@
 #!/usr/bin/python
+import bcbio_postproc
 
-import __check_python_version
-
-import sys
-from source.bcbio_structure import BCBioStructure
-from source.calling_process import call
-from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.targetcov.bam_and_bed_utils import index_bam, number_of_dup_reads
 from os.path import isfile, join
+
+from source.bcbio.bcbio_structure import BCBioStructure
+from source.calling_process import call
+from source.targetcov.bam_and_bed_utils import index_bam, number_of_dup_reads
 from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
 from source.main import read_opts_and_cnfs

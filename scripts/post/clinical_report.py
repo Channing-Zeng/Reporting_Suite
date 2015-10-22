@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import sys
 import shutil

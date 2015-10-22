@@ -6,12 +6,11 @@ from collections import OrderedDict, defaultdict
 
 import source
 from source.targetcov.bam_and_bed_utils import verify_bed
-from source.reporting import SampleReport, FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, load_records, PerRegionSampleReport, BaseReport
+from source.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport
 from source.logger import step_greetings, info, warn, err
-from source.qualimap import report_parser as qualimap_report_parser
-from source.ngscat import report_parser as ngscat_report_parser
 from source.targetcov.bam_and_bed_utils import prepare_beds
-from source.targetcov.cov import make_flat_region_report, get_detailed_metric_storage, get_header_metric_storage
+from source.targetcov.cov import get_detailed_metric_storage, get_header_metric_storage
+
 
 # from source.targetcov.flag_regions import DepthsMetric
 from source.targetcov.flag_regions import DepthsMetric
@@ -19,7 +18,7 @@ from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
     file_transaction
-from source.bcbio_structure import BCBioStructure
+from source.bcbio.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
 
 

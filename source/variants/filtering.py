@@ -1,21 +1,18 @@
 from collections import OrderedDict, defaultdict
 import os
-from os.path import basename, join, isfile, dirname, islink, abspath, isdir, splitext
+from os.path import basename, join, isfile, islink, splitext
 from random import random
 from time import sleep
 import traceback
-
-from joblib import Parallel, delayed
 import shutil
 
+from joblib import Parallel, delayed
 import source
-
-from source.bcbio_structure import BCBioStructure
+from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.config import defaults
 from source.tools_from_cnf import get_script_cmdline
-from source.logger import critical, err, warn, is_local, send_email
-from source.utils import is_us
+from source.logger import err, warn, send_email
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus, file_transaction

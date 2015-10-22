@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import __check_python_version
+import bcbio_postproc
 
 import sys
 from collections import defaultdict
+
 from source.variants.summarize_qc import make_summary_reports
-from source.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
 from source.logger import info
 
 
