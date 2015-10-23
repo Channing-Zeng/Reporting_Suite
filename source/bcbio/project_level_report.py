@@ -129,7 +129,7 @@ def _mutations_records(general_section, bcbio_structure):
 
 
 def _make_path_record(html_fpath_value, metric, base_dirpath):
-    info('Adding paths to the report: ' + str(html_fpath_value))
+    # info('Adding paths to the report: ' + str(html_fpath_value))
     if isinstance(html_fpath_value, basestring):
         html_fpath = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
         return Record(metric=metric, value=metric.name, html_fpath=html_fpath)
