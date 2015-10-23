@@ -976,5 +976,5 @@ def _extract_project_summary(project_summary_fpath, dst_fpath):
         err('Cannot extract project summary')
         err()
     else:
-        if verify_file(dst_fpath):
+        if not verify_file(dst_fpath):
             err('Could not extract project summary')
