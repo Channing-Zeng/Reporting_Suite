@@ -30,6 +30,9 @@ def main(args):
             (['--target-type'], dict(
                 dest='target_type',
             )),
+            (['--bed'], dict(
+                dest='bed_fpath',
+            )),
             (['--seq2c'], dict(
                 dest='seq2c_tsv_fpath',
             )),

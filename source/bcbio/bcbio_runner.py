@@ -340,7 +340,9 @@ class BCBioRunner:
                ' --varqc {varqc}' +
                ' --seq2c ' + self.bcbio_structure.seq2c_fpath +
                ' --target-type ' + self.bcbio_structure.target_type +
+              (' --bed ' + self.bcbio_structure.bed if self.bcbio_structure.bed else '') +
                ' -s {sample} -o {output_dir} ' +
+               ' {match_cmdl} ' +
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
 
             self.clin_report = Step(cnf, run_id,
@@ -620,10 +622,11 @@ class BCBioRunner:
                 wait_for_steps += [self.varqc.job_name(sample.name, caller=self.clinical_report_caller.name)] if self.varqc in self.steps else []
                 wait_for_steps += [self.varfilter.job_name(caller=self.clinical_report_caller.name)] if self.varfilter in self.steps else []
                 wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
+                match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                 self._submit_job(
                     self.clin_report,
                     sample.name,
-                    sample=sample.name, genome=sample.genome, varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                    sample=sample.name, match_cmdl=match_cmdl, genome=sample.genome, varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
                     wait_for_steps=wait_for_steps,
                     threads=self.filtering_threads)
             else:

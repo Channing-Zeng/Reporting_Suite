@@ -970,17 +970,17 @@ def make_cell_th(metric, class_='', sortable=True):
     style = ''  #metric.style
     class_ = class_  # + ' ' + metric.class_
     if metric.max_width is not None:
-        style += '; max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
+        style += 'max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
     if metric.min_width is not None:
-        style += '; min-width: {w}px;'.format(w=metric.min_width)
+        style += 'min-width: {w}px;'.format(w=metric.min_width)
 
     if metric.align:
-        style += ' text-align: ' + metric.align
+        style += ' text-align: ' + metric.align + '; '
     elif metric.numbers:
-        style += ' text-align: right'
+        style += ' text-align: right; '
         metric.align = 'right'
     else:
-        style += ' text-align: left'
+        style += ' text-align: left; '
         metric.align = 'left'
 
     html += '\n<th style="' + style + '" class="' + class_ + '"'
@@ -1020,18 +1020,18 @@ def make_cell_td(rec, class_=''):
     if rec.metric.is_hidden:
         return ''
 
-    style = rec.metric.style
+    style = rec.metric.style + '; ' if rec.metric.style else ''
     if rec.color:
-        style += '; background-color: ' + rec.color
+        style += 'background-color: ' + rec.color + '; '
     if rec.text_color:
-        style += '; color: ' + rec.text_color
+        style += 'color: ' + rec.text_color + '; '
     if rec.metric.max_width is not None:
-        style += '; max-width: {w}px; width: {w}px;'.format(w=rec.metric.max_width)
+        style += 'max-width: {w}px; width: {w}px; '.format(w=rec.metric.max_width)
     if rec.metric.min_width is not None:
-        style += '; min-width: {w}px;'.format(w=rec.metric.min_width)
+        style += 'min-width: {w}px; '.format(w=rec.metric.min_width)
 
     if rec.metric.align:
-        style += ' text-align: ' + rec.metric.align
+        style += 'text-align: ' + rec.metric.align + '; '
 
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
     html += ' quality="' + str(rec.metric.quality) + '"'
