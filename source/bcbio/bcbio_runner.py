@@ -327,14 +327,9 @@ class BCBioRunner:
             paramln=varfilter_paramline
         )
 
-        self.clinical_report_caller = self.bcbio_structure.variant_callers.get('vardict') or \
-                                 self.bcbio_structure.variant_callers.get('vardict-java')
-        target_type = 'genome'
-        if self.bcbio_structure.bed:
-            target_type = 'exome'
-            if cnf.deep_seq:
-                target_type = 'target'
-
+        self.clinical_report_caller = \
+            self.bcbio_structure.variant_callers.get('vardict') or \
+            self.bcbio_structure.variant_callers.get('vardict-java')
         if self.clinical_report_caller:
             vardict_txt_fname = source.mut_fname_template.format(caller_name=self.clinical_report_caller.name)
             vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
@@ -343,8 +338,8 @@ class BCBioRunner:
                ' --targqc-dir ' + join(self.final_dir, '{sample}', BCBioStructure.targqc_dir) +
                ' --mutations ' + mutations_fpath + ' -s {sample}' +
                ' --varqc {varqc}' +
-               ' --seq2c ' + join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv') +
-               ' --target-type ' + target_type +
+               ' --seq2c ' + self.bcbio_structure.seq2c_fpath +
+               ' --target-type ' + self.bcbio_structure.target_type +
                ' -s {sample} -o {output_dir} ' +
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
 
