@@ -61,7 +61,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
 
     trg_name = 'target' if not is_wgs else 'genome'
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
-        Metric('Average ' + trg_name + ' coverage depth', short_name='Avg'),
+        Metric('Average ' + trg_name + ' coverage depth', short_name='Ave'),
         Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='Std dev', quality='Less is better'),
         # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
         # Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max', is_hidden=True),
@@ -228,7 +228,7 @@ MALE_GENES_BED_FPATH = join(dirname(abspath(__file__)), 'chrY.bed')
 MALE_READS_THRES = 100
 MALE_TARGET_REGIONS_FACTOR = 0.5
 
-def _get_gender(cnf, sample, bam_fpath, target_bed=None):
+def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
     male_genes_bed = total_merge_bed(cnf, sort_bed(cnf, MALE_GENES_BED_FPATH))
     male_area_size = calc_sum_of_regions(male_genes_bed)
     info('Male region total size: ' + str(male_area_size))
@@ -282,7 +282,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
-    reads_stats['gender'] = _get_gender(cnf, sample, cnf.bam, target_bed)
+    reads_stats['gender'] = _determine_gender(cnf, sample, cnf.bam, target_bed)
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
@@ -338,12 +338,13 @@ def get_records_by_metrics(records, metrics):
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
     report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
-    report.add_record('Gender', reads_stats['gender'], silent=True)
+    if reads_stats.get('gender') is not None:
+        report.add_record('Gender', reads_stats['gender'], silent=True)
 
     info('* General coverage statistics *')
     report.add_record('Reads', reads_stats['total'])
     report.add_record('Mapped reads', reads_stats['mapped'])
-    # report.add_record('Unmapped reads', reads_stats['total'] - reads_stats['mapped'])
+    # report.add_record('Unmapped reads', reads_stats['totaAvgl'] - reads_stats['mapped'])
     percent_mapped = 1.0 * (reads_stats['mapped'] or 0) / reads_stats['total'] if reads_stats['total'] else None
     assert percent_mapped <= 1.0 or percent_mapped is None, str(percent_mapped)
     report.add_record('Percentage of mapped reads', percent_mapped)
