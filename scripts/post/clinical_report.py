@@ -44,7 +44,7 @@ def main(args):
             )),
         ],
         required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath'],
-        file_keys=['varqc_json_fpath', 'mutations_fpath', 'varqc_after_json_fpath', 'seq2c_tsv_fpath'],
+        file_keys=['varqc_json_fpath', 'varqc_after_json_fpath', 'seq2c_tsv_fpath'],  # do not check mutations_fpath! could be vardict.PASS.txt, vardict-java.PASS.txt, vardict.single.PASS.txt, vardict.paired.PASS.txt,
         dir_keys=['targqc_dirpath'],
         key_for_sample_name=None
     )
