@@ -364,8 +364,8 @@ class BCBioRunner:
         )
 
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
-        if self.bcbio_structure.sv_bed:
-            seq2c_cmdline += ' --bed ' + self.bcbio_structure.sv_bed
+        if self.bcbio_structure.bed:
+            seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
         normals = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
         if normals:
             seq2c_cmdline += ' -c ' + ':'.join(normals)

@@ -132,9 +132,10 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
         if target_bed:
             info()
             gene_names_set, gene_names_list = get_gene_names(target_bed)
-            info('Using genes from amplicons list, trying filtering exons with this genes.')
+            info('Using genes from the amplicons list.')
             if exons_bed:
-                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+                info('Trying filtering exons with these genes.')
+                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set, suffix='filt_genes_1st_round')
                 if not verify_file(exons_anno_bed):
                     info()
                     warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
@@ -147,10 +148,11 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
                     gene_names_set, gene_names_list = get_gene_names(target_bed)
                     info()
                     info('Using genes from the new amplicons list, filtering exons with this genes.')
-                    exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set)
+                    exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_names_set, suffix='filt_genes_2nd_round')
                     if not verify_file(exons_anno_bed):
                         critical('No gene symbols from the capture bed file was found in Ensemble.')
                 exons_bed = exons_anno_bed
+                info('Filtering the full exons file including gene records.')
                 exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_names_set)
         elif exons_no_genes_bed:
             info()
@@ -246,7 +248,7 @@ def prep_bed_for_seq2c(cnf, bed_fpath):
     return seq2c_bed
 
 
-def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
+def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set, suffix=None):
     def fn(l, i):
         if l:
             fs = l.split('\t')
@@ -257,7 +259,7 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set):
             if new_gns:
                 return l.replace(fs[3], ','.join(new_gns))
 
-    return iterate_file(cnf, bed_fpath, fn, suffix='key', check_result=False)
+    return iterate_file(cnf, bed_fpath, fn, suffix=suffix or 'filt_genes', check_result=False)
 
 
 def sort_bed(cnf, bed_fpath, genome=None):

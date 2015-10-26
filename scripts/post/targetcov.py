@@ -77,6 +77,11 @@ def main(args):
                      'Default is ' + str(defaults['coverage_reports']['padding']),
                 type='int')
              ),
+            # (['--pcr'], dict(
+            #     dest='pcr',
+            #     action='store_true',
+            #     help='deduplication was not perfome, thud do not try to dedup')
+            #  ),
         ],
         required_keys=['bam'],
         file_keys=['bam', 'bed'],

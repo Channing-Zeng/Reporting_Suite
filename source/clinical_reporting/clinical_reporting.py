@@ -83,7 +83,7 @@ class ClinicalReporting:
             targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
             match=cnf.match_sample_name)
 
-        info('Building clinical report for AZ 300 key genes ' + str(self.cnf.key_genes) + ', sample ' + self.sample.name)
+        info('Preparing data for a clinical report for AZ 300 key genes ' + str(self.cnf.key_genes) + ', sample ' + self.sample.name)
         self.key_gene_by_name = dict()
         for gene_name in get_key_genes(self.cnf.key_genes):
             self.key_gene_by_name[gene_name] = ClinicalReporting.KeyGene(gene_name)
@@ -104,6 +104,8 @@ class ClinicalReporting:
 
 
     def write_report(self):
+        info('')
+        info('Building report')
         total_variants = get_total_variants_number(self.sample, self.cnf.varqc_json_fpath)
         mutations_report = self.make_mutations_report(self.mutations)
         actionable_genes_dict = self.parse_broad_actionable()
@@ -224,7 +226,6 @@ class ClinicalReporting:
 
     def parse_targetseq_detailed_report(self):
         info('Preparing coverage stats key gene tables')
-
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
@@ -254,7 +255,7 @@ class ClinicalReporting:
                     gene.ave_depth = ave_depth
                     gene.cov_by_threshs = cov_by_threshs
 
-                if feature in ['CDS', 'Exon']:
+                elif feature in ['CDS', 'Exon']:
                     cds = ClinicalReporting.CDS()
                     cds.start = start
                     cds.end = end
@@ -262,6 +263,12 @@ class ClinicalReporting:
                     cds.cov_by_threshs = cov_by_threshs
                     gene = self.key_gene_by_name.get(symbol)
                     gene.cdss.append(cds)
+
+        # Cleaning up records that are not found in the target gene panel,
+        # so we don't know about them and don't even want to report them
+        for gene in self.key_gene_by_name.values():
+            if not gene.chrom and gene.name in self.key_gene_by_name:
+                del self.key_gene_by_name[gene.name]
 
 
     def parse_broad_actionable(self):

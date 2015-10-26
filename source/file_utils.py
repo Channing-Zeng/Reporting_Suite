@@ -774,8 +774,6 @@ def remove_quotes(s):
 
 def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
                  overwrite=False, reuse_intermediate=True, ctx=None):
-    info('inside convert_file: overwrite=' + str(overwrite))
-
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
     if output_fpath.endswith('.gz'):
         output_fpath = output_fpath[:-3]

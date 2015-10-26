@@ -22,6 +22,11 @@ def main():
                 dest='bed',
                 help='capture panel/amplicons')
              ),
+            (['--pcr'], dict(
+                dest='pcr',
+                action='store_true',
+                help='deduplication was not perfome, thud do not try to dedup')
+             ),
         ],
         required_keys=['bam'],
         file_keys=['bam', 'bed'],
@@ -42,7 +47,8 @@ def main():
     if not qualimap:
         critical('Cannot find qualimap')
 
-    sd_opt = '--skip-duplicated'
+    if not cnf.pcr:
+        sd_opt = '--skip-duplicated'
     dup_num = number_of_dup_reads(cnf, cnf.bam)
     if dup_num and dup_num == 0:
         sd_opt = ''

@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from collections import OrderedDict
+from genericpath import getsize
 from os.path import join, isfile, abspath, realpath, dirname, relpath
 import shutil
 import traceback
@@ -114,7 +115,7 @@ class TargetInfo:
         self.type = None  # 'Regional', 'WGS'
 
 
-def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None):
+def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None, pcr=False):
     safe_mkdir(dirname(sample.qualimap_dirpath))  # do not create the directory itself!!! it will be check for reuse
 
     bed = ''
@@ -126,6 +127,9 @@ def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None):
     qm = get_system_path(cnf, 'python', join('scripts', 'post', 'qualimap.py'))
     cmdl = '{qm} --project-name {cnf.project_name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
            '--bam {bam_fpath} {bed} -o {sample.qualimap_dirpath} -t {cnf.threads}'.format(**locals())
+    if pcr:
+        info('PCR: BAM files are not deduplicated')
+        cmdl += ' --pcr'
     call(cnf, cmdl, sample.qualimap_html_fpath, stdout_to_outputfile=False)
     return sample.qualimap_dirpath
 
@@ -278,7 +282,9 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if target_bed:
         target_info.regions_num = calc_region_number(target_bed)
 
-    _run_qualimap(cnf, sample, bam_fpath, target_bed)
+    sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
+    remove_dups(cnf, bam_fpath, sample.dedup_bam)
+    _run_qualimap(cnf, sample, bam_fpath, target_bed, pcr=(getsize(bam_fpath) == getsize(sample.dedup_bam)))
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
@@ -301,9 +307,6 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     else:
         target_info.bases_num = target_stats['reference_size']
 
-    # sample.dedup_bam = add_suffix(bam_fpath, source.dedup_bam)
-    sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
-    remove_dups(cnf, bam_fpath, sample.dedup_bam)
     bam_fpath = sample.dedup_bam
 
     if target_info.bed:
