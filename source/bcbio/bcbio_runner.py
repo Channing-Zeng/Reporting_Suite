@@ -164,8 +164,8 @@ class BCBioRunner:
         elif Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
 
-        if Steps.contains(cnf.steps, 'Summary'):
-            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
+        # if Steps.contains(cnf.steps, 'Summary'):
+        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
 
         # self.vardict_steps.extend(
         #     [s for s in [
