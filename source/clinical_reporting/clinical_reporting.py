@@ -106,7 +106,10 @@ class ClinicalReporting:
         self.cnf = cnf
         self.sample = source.BaseSample(cnf.sample, cnf.output_dir,
             targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
-            match=cnf.match_sample_name)
+            normal_match=cnf.match_sample_name)
+        info('Sample: ' + str(cnf.sample))
+        info('Match sample name: ' + str(cnf.match_sample_name))
+        info()
 
         info('Preparing data for a clinical report for AZ 300 key genes ' + str(self.cnf.key_genes) + ', sample ' + self.sample.name)
         self.key_gene_by_name = dict()
@@ -157,7 +160,7 @@ class ClinicalReporting:
             sample_dict['panel'] = self.cnf.target_type + ', AZ300 IDT panel'
             sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
-        sample_dict['sample_type'] = self.sample.match if self.sample.match else 'unpaired'  # plasma, unpaired'
+        sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
         sample_dict['genome_build'] = self.cnf.genome.name
         sample_dict['target_type'] = self.target.type
         sample_dict['target_fraction'] = Metric.format_value(self.target.coverage_percent, is_html=True, unit='%')
@@ -418,7 +421,7 @@ class ClinicalReporting:
         info('Preparing mutations stats for key gene tables')
         info('Checking ' + mutations_fpath)
         if not verify_file(mutations_fpath):
-            if self.sample.match:
+            if self.sample.normal_match:
                 mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
             else:
                 mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
@@ -575,7 +578,6 @@ class ClinicalReporting:
         data['minY'] = min([e['logRatio'] for e in data['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
 
         j = json.dumps(data)
-        print j
         return json.dumps(data)
 
 

@@ -162,7 +162,7 @@ $(function() {
             .show();
 
         $('<div id="' + key + '_tip_line0">' +
-            '<span style="z-index: 100; font-weigth: bold; white-space: nowrap; color: ' + item.color + ';">' +
+            '<span style="z-index: 100; font-weight: bold; white-space: nowrap; color: ' + color + ';">' +
                 geneName +
             '</span><br>' +
             '<span>' +

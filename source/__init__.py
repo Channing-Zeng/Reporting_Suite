@@ -61,7 +61,7 @@ class BaseSample:
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
                  targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None,
                  fastqc_dirpath=None, picard_dirpath=None, clinical_report_dirpath=None,
-                 match=None):
+                 normal_match=None):
         self.name = name
         self.bam = bam
         self.dedup_bam = None
@@ -73,10 +73,8 @@ class BaseSample:
         self.phenotype = None
         self.genome = None
         self.var_dirpath = None
-        self.normal_match = None
+        self.normal_match = normal_match
         self.min_af = None
-
-        self.match = None
 
         if targqc_dirpath:
             self.targqc_dirpath = targqc_dirpath

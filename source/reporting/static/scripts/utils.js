@@ -58,11 +58,17 @@ function isFractional(num) {
 }
 
 function toPrettyString(num, unit) {
+    var str = '';
+
     if (unit == '%')
         num *= 100;
 
-    var str,
-        frac_digits = 0;
+    if (num < 0) {
+        num *= -1;
+        str = '–';
+    }
+
+    var frac_digits = 0;
 
     if (typeof num === 'number') {
         if (num <= 999) {
@@ -89,17 +95,17 @@ function toPrettyString(num, unit) {
                     }
                 }
             }
-            str = num.toFixed(frac_digits);
+            str += num.toFixed(frac_digits);
         } else {
             if (num > 9999) {
-                str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1<span class=\'hs\'></span>');
+                str += num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1<span class=\'hs\'></span>');
             } else {
-                str = num.toFixed(0);
+                str += num.toFixed(0);
             }
         }
         str += (unit ? '<span class=\'rhs\'>&nbsp;</span>' + unit : '');
     } else {
-        str = num;
+        str += num;
     }
     return str;
 }

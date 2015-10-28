@@ -84,40 +84,40 @@
             {.end}
             </div>
 
-            <div style="float: left; margin-left: 10px;">
-            {.section approach}
-                <h1 class="report-header">Approach</h1>
-                <p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's
-                    {target_type} was performed and covered {target_fraction}
-                    of all positions at {ave_depth} average coverage,
-                    resulting in {total_variants} variants compared to a reference genome.
-                    These data were analyzed to identify previously reported and novel variants
-                    in {total_key_genes} genes that have been previously implicated
-                    in various cancers (see Supplement for a list of genes and coverage information).
-                    <!--All genes relevant to the indication had adequate coverage (>95% at 8X).-->
-                    <!--Please note that the presence of pathogenic variants in genes not analyzed-->
-                    <!--or with incomplete coverage cannot be fully excluded.-->
-                </p>
-            {.end}
-            </div>
-            <div style="clear: both"></div>
+            <!--<div style="float: left; margin-left: 10px;">-->
+            <!--{.section approach}-->
+                <!--<h1 class="report-header">Approach</h1>-->
+                <!--<p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's-->
+                    <!--{target_type} was performed and covered {target_fraction}-->
+                    <!--of all positions at {ave_depth} average coverage,-->
+                    <!--resulting in {total_variants} variants compared to a reference genome.-->
+                    <!--These data were analyzed to identify previously reported and novel variants-->
+                    <!--in {total_key_genes} genes that have been previously implicated-->
+                    <!--in various cancers (see Supplement for a list of genes and coverage information).-->
+                    <!--&lt;!&ndash;All genes relevant to the indication had adequate coverage (>95% at 8X).&ndash;&gt;-->
+                    <!--&lt;!&ndash;Please note that the presence of pathogenic variants in genes not analyzed&ndash;&gt;-->
+                    <!--&lt;!&ndash;or with incomplete coverage cannot be fully excluded.&ndash;&gt;-->
+                <!--</p>-->
+            <!--{.end}-->
+            <!--</div>-->
+            <!--<div style="clear: both"></div>-->
         </div>
 
         <div class="space_8px"></div>
         <div class="space_8px"></div>
         <div>
-            <a class="dotted-link" href="#variants">Detailed variant analysis</a><span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#actionable">Mutations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#seq2c">Seq2C plot</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Actionable key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#coverage">Coverage analysis for the key genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
 
         <a name="variants"></a>
-        <h1>Detailed variant analysis</h1>
+        <h1>Mutations in key genes</h1>
         {.section variants}
             <div id="variants_div">
-                <p>{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
+                <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
@@ -136,8 +136,9 @@
         {.end}
 
         <a name="actionable"></a>
-        <h1>Mutations in actionable genes</h1>
+        <h1>Actionable key genes</h1>
         {.section actionable_genes}
+            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
             <div class="actionable_table">
                 {table}
             </div>
@@ -148,6 +149,10 @@
         <a name="seq2c"></a>
         <h1>Seq2C log2 ratios (CNV)</h1>
         {.section seq2c}
+            <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
+                <span style="color: green;">Green</span> means amplification,
+                <span style="color: red;">red</span> means deletion,
+                <b>black</b> means no event.</p>
             <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
                 <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
             <!--</div>-->
@@ -174,9 +179,12 @@
 
         <a name="coverage"></a>
         {.section coverage}
-        <h1>Coverage analysis</h1>
+        <h1>Coverage analysis for the key genes</h1>
         <div class="coverage_plot">
-            <p>Height corresponds to the average coverage, color indicates % coverage of a gene at {depth_cutoff}x (half of global average coverage)</p>
+            <p style="margin-top: -5px;">
+                Height inidicates gene average coverage,
+                <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage),
+            </p>
             <div class="js_plot" id="gene_plot">
                 <table>
                     <tr>
