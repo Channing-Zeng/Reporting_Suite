@@ -347,10 +347,8 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 
-        elif rec.metric.name == 'Gender':
-            d['contents'] = rec.value
         else:
-            d['contents'] = '-'
+            d['contents'] = rec.metric.format_value(rec.value)
 
         d['metric'] = rec.metric.__dict__
         return d

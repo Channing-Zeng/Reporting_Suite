@@ -29,6 +29,7 @@ def main():
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='Count duplicates in coverage metrics')
     parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
     parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='Use run_info_DeepSeq.yaml')
+    parser.add_option('--only-summary', dest='only_summary', action='store_true', default=False, help='Only generate project-level report')
     parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')

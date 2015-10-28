@@ -158,14 +158,20 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'AbnormalCovReport'):
             self.steps.append(self.abnormal_regions)
 
-        # fastqc summary -- special case (turn on if user uses default steps)
-        if cmp(defaults['steps'], cnf.steps) == 0:
-            self.steps.extend([self.fastqc_summary])
-        elif Steps.contains(cnf.steps, 'FastQC'):
+        if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
 
-        # if Steps.contains(cnf.steps, 'Summary'):
-        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
+        if Steps.contains(cnf.steps, 'ClinicalReport'):
+            self.steps.extend([self.clin_report])
+
+        if Steps.contains(cnf.steps, 'Summary'):
+            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
+
+        # fastqc summary and clinical report -- special case (turn on if user uses default steps)
+        if set(defaults['steps']) == set(cnf.steps):
+            self.steps.extend([self.fastqc_summary, self.clin_report])
+
+        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -618,23 +624,24 @@ class BCBioRunner:
                     if not self.bcbio_structure.bed:  # WGS
                         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
-            for sample in self.clinical_report_caller.samples:
-                wait_for_steps = []
-                wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
-                wait_for_steps += [self.varqc.job_name(sample.name, caller=self.clinical_report_caller.name)] if self.varqc in self.steps else []
-                wait_for_steps += [self.varfilter.job_name(caller=self.clinical_report_caller.name)] if self.varfilter in self.steps else []
-                wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
-                match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
-                self._submit_job(
-                    self.clin_report,
-                    sample.name,
-                    sample=sample.name, match_cmdl=match_cmdl, genome=sample.genome,
-                    varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
-                    project_report_path=self.bcbio_structure.project_report_html_fpath,
-                    wait_for_steps=wait_for_steps,
-                    threads=self.filtering_threads)
-            else:
-                warn('Warning: Clinical report cannot be created.')
+            if self.clin_report in self.steps:
+                for sample in self.clinical_report_caller.samples:
+                    wait_for_steps = []
+                    wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
+                    wait_for_steps += [self.varqc.job_name(sample.name, caller=self.clinical_report_caller.name)] if self.varqc in self.steps else []
+                    wait_for_steps += [self.varfilter.job_name(caller=self.clinical_report_caller.name)] if self.varfilter in self.steps else []
+                    wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
+                    match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
+                    self._submit_job(
+                        self.clin_report,
+                        sample.name,
+                        sample=sample.name, match_cmdl=match_cmdl, genome=sample.genome,
+                        varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                        project_report_path=self.bcbio_structure.project_report_html_fpath,
+                        wait_for_steps=wait_for_steps,
+                        threads=self.filtering_threads)
+                else:
+                    warn('Warning: Clinical report cannot be created.')
 
             # TargetSeq reports
             # if self.abnormal_regions in self.steps:

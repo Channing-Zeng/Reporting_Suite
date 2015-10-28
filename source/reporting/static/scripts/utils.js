@@ -58,6 +58,10 @@ function isFractional(num) {
 }
 
 function toPrettyString(num, unit) {
+    if (num == null) {
+        return '-';
+    }
+
     var str = '';
 
     if (unit == '%')
