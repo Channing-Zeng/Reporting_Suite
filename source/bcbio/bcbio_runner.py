@@ -330,6 +330,7 @@ class BCBioRunner:
         self.clinical_report_caller = \
             self.bcbio_structure.variant_callers.get('vardict') or \
             self.bcbio_structure.variant_callers.get('vardict-java')
+
         if self.clinical_report_caller:
             vardict_txt_fname = source.mut_fname_template.format(caller_name=self.clinical_report_caller.name)
             vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
@@ -818,6 +819,7 @@ class BCBioRunner:
         steps = steps or self.steps
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
+
         normal_match_cmdline = ''
         if sample.normal_match:
             normal_match_cmdline = ' --match-normal-sample-name ' + sample.normal_match.name + ' '

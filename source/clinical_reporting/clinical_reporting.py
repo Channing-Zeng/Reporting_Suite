@@ -416,16 +416,16 @@ class ClinicalReporting:
         mutations = []
 
         info('Preparing mutations stats for key gene tables')
-        if not verify_file(mutations_fpath, silent=True):
-            single_mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
-            paired_mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
-            if verify_file(single_mutations_fpath, silent=True) and is_sample_presents_in_file(self.sample.name, single_mutations_fpath):
-                mutations_fpath = single_mutations_fpath
-            elif verify_file(paired_mutations_fpath, silent=True):
-                mutations_fpath = paired_mutations_fpath
+        info('Checking ' + mutations_fpath)
+        if not verify_file(mutations_fpath):
+            if self.sample.match:
+                mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
             else:
-                info('Cannot find PASSed mutations fpath')
-                return None
+                mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
+            info('Checking ' + mutations_fpath)
+            if not verify_file(mutations_fpath):
+                err('Cannot find PASSed mutations fpath')
+                return []
 
         info('Reading mutations from ' + mutations_fpath)
         alts_met_before = set()
@@ -677,17 +677,6 @@ def get_total_variants_number(sample, varqc_json_fpath):
     sr = SampleReport.load(data, sample, None)
     r = sr.find_record(sr.records, 'Total with rejected')
     return r.value if r else None
-
-
-def is_sample_presents_in_file(sample_name, mutations_fpath):
-    with open(mutations_fpath) as f:
-        for i, l in enumerate(f):
-            if i == 0:
-                continue
-            fs = l.strip().split('\t')
-            if fs[0] == sample_name:
-                return True
-    return False
 
 
 def tooltip_long(string, max_len=30):
