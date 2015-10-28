@@ -142,7 +142,6 @@ Array - Specifc table
 			$(table).find('th').each(function(index) {
 				if ( sorting_criteria[index] != 'nosort' ) {
 					var computedStyle = getComputedStyle(this, null);
-					console.log(computedStyle.textAlign);
 					if (computedStyle.textAlign == 'left') {
 						$('<div class="sortArrow sortArrowRight"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
 					} else {

@@ -25,13 +25,14 @@
     <![endif]-->
 
     <script type="text/javascript" src="jquery-1.8.2.min.js"></script>
-    <script type="text/javascript" src="flot/jquery.flot.min.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
     <script type="text/javascript" src="scripts/utils.js"></script>
     <script type="text/javascript" src="table_sorter/tsort.js"></script>
     <script type="text/javascript" src="clinical_report.js"></script>
     <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
+    <script type="text/javascript" src="draw_seq2c_plot.js"></script>
 </head>
 
 <body>
@@ -146,9 +147,27 @@
 
         <a name="seq2c"></a>
         <h1>Seq2C log2 ratios (CNV)</h1>
-        {.section seq2c_plot}
-            <div class="seq2c_plot" style="margin-left: -20px;">
-                <img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>
+        {.section seq2c}
+            <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
+                <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
+            <!--</div>-->
+            <div class="js_plot" id="seq2c_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder' id="seq2c_plot_placeholder">
+                            </div>
+                        </td>
+                        <td>
+                            <div class='legend_placeholder' id="seq2c_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="json_code">
+                    <div id="seq2c_plot_data_json">
+                        {plot_data}
+                    </div>
+                </div>
             </div>
         {.or}
         {.end}

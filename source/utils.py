@@ -104,14 +104,14 @@ def get_chr_lengths(cnf):
     if not chr_len_fpath:
         return None
 
-    chr_lengths = OrderedDict()
+    chr_length_by_name = OrderedDict()
     with open(chr_len_fpath, 'r') as f:
         for line in f:
             if len(line.split()) == 2:
                 chr_name = line.split()[0]
                 chr_length = int(line.split()[1])
-                chr_lengths[chr_name] = chr_length
-    return chr_lengths
+                chr_length_by_name[chr_name] = chr_length
+    return chr_length_by_name
 
 
 def format_integer(name, value, unit=''):

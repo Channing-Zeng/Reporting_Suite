@@ -91,7 +91,11 @@ function toPrettyString(num, unit) {
             }
             str = num.toFixed(frac_digits);
         } else {
-            str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g,'$1<span class=\'hs\'></span>');
+            if (num > 9999) {
+                str = num.toFixed(0).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1<span class=\'hs\'></span>');
+            } else {
+                str = num.toFixed(0);
+            }
         }
         str += (unit ? '<span class=\'rhs\'>&nbsp;</span>' + unit : '');
     } else {
@@ -120,6 +124,41 @@ function ordinalNumberToPrettyString(num, unit) {
     res += (unit ? '<span class="rhs">&nbsp;</span>' + unit : '');
 
     return res;
+}
+
+function hslToRgb(h, s, l){
+    var r, g, b;
+
+    if(s == 0) {
+        r = g = b = l; // achromatic
+    } else {
+        function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function readJsonFromElement(element) {
+    var result;
+    try {
+        result = JSON.parse($(element).html());
+    } catch (e) {
+        result = null;
+    }
+    return result;
 }
 
 function getMaxDecimalTick(maxY) {
@@ -251,100 +290,34 @@ function addTooltipIfDefinitionExists(glossary, metricName) {
 }
 
 /*************/
-/* PLOT TIPS */
-function bindTip(placeholder, series, plot, xToPrettyStringFunction, xUnit, position) {
+/* PLOTs     */
+function bindTip(placeholder, key, showTipFn, plot, direction, generalData) {
     var prevPoint = null;
 
     $(placeholder).bind("plothover", function(event, pos, item) {
-        if (dragTable && dragTable.isDragging)
-            return;
-
         if (item) {
-            if (prevPoint != item.dataIndex) {
-                prevPoint = item.dataIndex;
-
-                var x = item.datapoint[0];
-
-                showTip(item.pageX, item.pageY, plot.offset(),
-                    plot.width(), plot.height(),
-                    series, item.seriesIndex, item.dataIndex,
-                    xToPrettyStringFunction(x, xUnit) + ':',
-                    position);
+            if (prevPoint != item.seriesIndex) {
+                prevPoint = item.seriesIndex;
+                showTipFn(item, plot, direction, generalData);
             }
         } else {
-            $('#plot_tip').hide();
-            $('#plot_tip_vertical_rule').hide();
-            $('#plot_tip_horizontal_rule').hide();
-            prevPoint = null;
+            var hideDuration = 200;
+            $('#' + key + '_plot_tip').hide(hideDuration);
+            $('#' + key + '_plot_tip_vertical_rule').hide(hideDuration);
+            $('#' + key + '_plot_tip_horizontal_rule').hide(hideDuration);
         }
     });
 }
 
-var tipElementExists = false;
-function showTip(pageX, pageY, offset, plotWidth, plotHeight,
-                 series, centralSeriesIndex, xIndex, xStr, position) {
-    var LINE_HEIGHT = 16; // pixels
 
-    position = ((position != null) ? position : 'bottom right');
-//    pageY -= LINE_HEIGHT * (centralSeriesIndex + 1.5);
-
-    var directions = position.split(' ');
-
-    if (!tipElementExists) {
-        $('<div id="plot_tip" class="white_stroked"></div>').appendTo('body');
-
-        $('<div id="plot_tip_vertical_rule"></div>').css({
-            height: plotHeight
-        }).appendTo('body');
-
-        $('<div id="plot_tip_horizontal_rule"></div>').css({
-            width: plotWidth
-        }).appendTo('body');
-
-        tipElementExists = true;
-    }
-
-    $('#plot_tip').html('').css({
-        top: pageY + 5 - ((directions[0] == 'top') ? LINE_HEIGHT * (series.length + 2) : 0),
-        left: pageX + 10
-    }).show();
-
-    $('#plot_tip_vertical_rule').html('').css({
-        top: offset.top,
-        left: pageX
-    }).show();
-
-    $('#plot_tip_horizontal_rule').html('').css({
-        top: pageY,
-        left: offset.left
-    }).show();
-
-    $('<div>' + xStr + '</div>').css({
-        height: LINE_HEIGHT
-    }).appendTo('#plot_tip');
-
-    var sortedYsAndColors = [];
+function showPlotWithInfo(info, index) {
+    var series = info.series;
+    var colors = [];
     for (var i = 0; i < series.length; i++) {
-        sortedYsAndColors.push({
-            y: (series[i].data[xIndex] || series[i].data[series[i].data.length - 1])[1],
-            color: series[i].color,
-            label: (series[i].isReference ? 'Reference' : series[i].label),
-            isCurrent: i == centralSeriesIndex
-        });
+        colors.push(series[i].color);
     }
-    sortedYsAndColors.sort(function(a, b) { return a.y < b.y;});
-
-    for (i = 0; i < sortedYsAndColors.length; i++) {
-        var item =sortedYsAndColors[i];
-
-        $('<div id="tip_line' + i + '">' + toPrettyString(item.y)
-            + ', <span style="color: ' + item.color + ';">' + item.label + '</span></div>').css({
-                height: LINE_HEIGHT,
-                "font-weight": item.isCurrent ? "bold" : "normal"
-            }).appendTo('#plot_tip');
-    }
+    info.showWithData(info.series, colors);
 }
-
 
 
 // Cookie functions based on http://www.quirksmode.org/js/cookies.html

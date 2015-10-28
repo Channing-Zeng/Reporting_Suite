@@ -116,25 +116,28 @@ table.draggable {
 
 .plot_placeholder {
   width: 1341px;
-  min-height: 400px;
   margin-left: -125px;
   z-index: 2; }
+#gene_plot_placeholder {
+  min-height: 400px; }
+#seq2c_plot_placeholder {
+  min-height: 200px; }
 
-#plot_tip {
+.plot_tip {
   position: absolute;
   opacity: 1;
   padding: 2px 5px 2px 5px;
   z-index: 1; }
 
-#plot_tip_vertical_rule, #plot_tip_horizontal_rule {
+.plot_tip_vertical_rule, .plot_tip_horizontal_rule {
   position: absolute;
   border: 1px solid #BBB;
   z-index: -2; }
 
-#plot_tip_vertical_rule {
+.plot_tip_vertical_rule {
   border-left: 1px; }
 
-#plot_tip_horizontal_rule {
+.plot_tip_horizontal_rule {
   border-top: 1px; }
 
 .white_stroked {
