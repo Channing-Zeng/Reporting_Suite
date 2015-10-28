@@ -24,7 +24,14 @@ $(function() {
 
     table_short.remove();
     table_full.remove();
-    reduceClick();
+
+    if (table_short.find('tr').length > 1 &&
+        table_full.find('tr').length > 15) {
+        reduceClick();
+    } else {
+        extendClick();
+    }
+
     //if (msieversion() == 0) {
     //    $('table.tableSorter.table_short').tableSort();
     //}

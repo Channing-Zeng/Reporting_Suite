@@ -421,10 +421,12 @@ class ClinicalReporting:
         info('Preparing mutations stats for key gene tables')
         info('Checking ' + mutations_fpath)
         if not verify_file(mutations_fpath):
+            mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
+            mut_basename = mutations_fpath.split('.' + mut_pass_ending)[0]
             if self.sample.normal_match:
-                mutations_fpath = add_suffix(mutations_fpath, source.mut_paired_suffix)
+                mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
             else:
-                mutations_fpath = add_suffix(mutations_fpath, source.mut_single_suffix)
+                mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
             info('Checking ' + mutations_fpath)
             if not verify_file(mutations_fpath):
                 err('Cannot find PASSed mutations fpath')
@@ -474,6 +476,7 @@ class ClinicalReporting:
                     mut.status = status
 
                     mutations.append(mut)
+        info('Found ' + str(len(mutations)) + ' mutations')
         return mutations
 
 
