@@ -37,7 +37,7 @@ def main(args):
                 dest='seq2c_tsv_fpath',
             )),
             (['--project-level-report'], dict(
-                dest='project_level_report_fpath',
+                dest='project_report_path',
             )),
             (['--match'], dict(
                 dest='match_sample_name',

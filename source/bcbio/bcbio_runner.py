@@ -344,6 +344,7 @@ class BCBioRunner:
               (' --bed ' + self.bcbio_structure.bed if self.bcbio_structure.bed else '') +
                ' -s {sample} -o {output_dir} ' +
                ' {match_cmdl} ' +
+               ' --project-level-report {project_report_path}' +
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
 
             self.clin_report = Step(cnf, run_id,
@@ -627,7 +628,9 @@ class BCBioRunner:
                 self._submit_job(
                     self.clin_report,
                     sample.name,
-                    sample=sample.name, match_cmdl=match_cmdl, genome=sample.genome, varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                    sample=sample.name, match_cmdl=match_cmdl, genome=sample.genome,
+                    varqc=sample.get_varqc_fpath_by_callername(self.clinical_report_caller.name, ext='.json'),
+                    project_report_path=self.bcbio_structure.project_report_html_fpath,
                     wait_for_steps=wait_for_steps,
                     threads=self.filtering_threads)
             else:

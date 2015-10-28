@@ -2,7 +2,7 @@ from collections import OrderedDict, defaultdict
 from itertools import izip, chain
 from json import load
 import json
-from os.path import join, dirname, abspath
+from os.path import join, dirname, abspath, relpath
 
 import source
 from source import verify_file, info
@@ -152,8 +152,11 @@ class ClinicalReporting:
 
         sample_dict = dict()
         sample_dict['sample'] = self.sample.name.replace('_', ' ')
-        sample_dict['sex'] = self.patient.gender
+        if self.patient.gender:
+            sample_dict['patient'] = {'sex': self.patient.gender}
         sample_dict['project_name'] = self.cnf.project_name.replace('_', ' ')
+        if self.cnf.project_report_path:
+            sample_dict['project_report_rel_path'] = relpath(self.cnf.project_report_path, dirname(self.sample.clinical_html))
         sample_dict['panel'] = self.target.type
         sample_dict['bed_path'] = self.target.bed_fpath or ''
         if self.cnf.debug:
@@ -201,7 +204,7 @@ class ClinicalReporting:
         if actionable_genes_report.regions:
             actionable_genes_dict['table'] = build_report_html(actionable_genes_report, sortable=False)
 
-        self.sample.clinical_html = write_static_html_report(self.cnf, {
+        write_static_html_report(self.cnf, {
             'sample': sample_dict,
             'variants': mutations_dict,
             'seq2c': seq2c_dict,
