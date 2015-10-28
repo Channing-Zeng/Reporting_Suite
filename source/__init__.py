@@ -72,6 +72,7 @@ class BaseSample:
         self.vcf = vcf
         self.dirpath = dirpath
         self.phenotype = None
+        self.gender = None
         self.genome = None
         self.var_dirpath = None
         self.normal_match = normal_match

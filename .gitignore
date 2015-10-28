@@ -81,3 +81,5 @@ test/clinical_reporting/Dev_0132_HiSeq4000_AURA/final/2015-09-30_bcbio/*.html
 
 az-reporting.py
 bcbio_postproc
+
+virtualenv

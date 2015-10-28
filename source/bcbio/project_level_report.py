@@ -46,7 +46,7 @@ metric_storage = MetricStorage(
         # Metric(MUTATIONS_NAME),
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
-        Metric(GENDER),
+        Metric(GENDER, description='If not defined, means that the target does not contain key male Y genes that we could check'),
         Metric(CLINICAL_NAME),
     ])])
 
@@ -198,6 +198,19 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             ])
 
     if bcbio_structure:
+        gender_record_by_sample = dict()
+
+        for s in bcbio_structure.samples:
+            if verify_file(s.targetcov_json_fpath):
+                targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
+                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
+                gender_rec = sample_report.find_record(sample_report.records, GENDER)
+                if gender_rec and gender_rec.value:
+                    gender_record_by_sample[s.name] = gender_rec
+
+        # if not gender_record_by_sample:
+        #     individual_reports_section.
+
         for s in bcbio_structure.samples:
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)])
             varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
@@ -214,12 +227,8 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                 sample_reports_records[s.name].append(_make_path_record(s.clinical_html,
                     individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath))
 
-            if verify_file(s.targetcov_json_fpath):
-                targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
-                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
-                gender_rec = sample_report.find_record(sample_report.records, GENDER)
-                if gender_rec:
-                    sample_reports_records[s.name].append(gender_rec)
+            if gender_record_by_sample.get(s.name):
+                sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
 
     # for (repr_name, links_by_sample) in to_add:
     #     cur_metric = Metric(repr_name)

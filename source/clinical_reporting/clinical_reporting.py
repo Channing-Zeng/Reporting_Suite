@@ -6,7 +6,6 @@ from os.path import join, dirname, abspath, relpath
 
 import source
 from source import verify_file, info
-from source.file_utils import add_suffix, verify_module
 from source.logger import warn, err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
