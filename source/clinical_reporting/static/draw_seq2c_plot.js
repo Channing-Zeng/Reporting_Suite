@@ -38,8 +38,19 @@ $(function() {
 
             for (var k = 0; k < data.events.length; k++) {
                 var color = 'black';
-                if (data.events[k].ampDel == 'Amp') color = 'green';
-                if (data.events[k].ampDel == 'Del') color = 'red';
+                var radius = 1;
+
+                if (data.events.length <= 10) {
+                    radius = 2;
+                }
+                if (data.events[k].ampDel == 'Amp') {
+                    color = 'green';
+                    radius = 2;
+                }
+                if (data.events[k].ampDel == 'Del') {
+                    color = 'red';
+                    radius = 2;
+                }
 
                 var series = {
                     data: [[data.events[k].x, data.events[k].logRatio]],
@@ -53,7 +64,7 @@ $(function() {
                     show: true,
                     fill: true,
                     fillColor: color,
-                    radius: 1
+                    radius: radius
                 };
                 info.series.push(series);
             }
