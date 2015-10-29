@@ -6,6 +6,7 @@ from os.path import join, dirname, abspath, relpath
 
 import source
 from source import verify_file, info
+from source.clinical_reporting import solvebio
 from source.logger import warn, err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
@@ -125,11 +126,16 @@ class ClinicalReporting:
         self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
         self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
         self.parse_targetseq_detailed_report()
+
         self.mutations = self.parse_mutations(self.cnf.mutations_fpath)
         for mut in self.mutations:
             self.key_gene_by_name[mut.gene].mutations.append(mut)
+        self.get_mut_info_from_solvebio()
 
         self.chromosomes_by_name = ClinicalReporting.Chromosome.build_chr_dict(self.cnf)
+
+    def get_mut_info_from_solvebio(self):
+        solvebio.search_mutations(self.mutations)
 
     def write_report(self):
         info('')
