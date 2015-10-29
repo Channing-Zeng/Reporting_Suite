@@ -340,7 +340,7 @@ def get_records_by_metrics(records, metrics):
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
-    report.add_record('Qualimap', value='Qualimap', html_fpath=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
+    report.add_record('Qualimap', value='Qualimap', url=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
     if reads_stats.get('gender') is not None:
         report.add_record('Gender', reads_stats['gender'], silent=True)
 
@@ -604,7 +604,7 @@ def make_flat_region_report(sample, regions, depth_threshs):
         if i % 10000 == 0:
             info('Processed {0:,} regions.'.format(i))
 
-        rep_region = report.add_region()
+        rep_region = report.add_row()
         rep_region.add_record('Chr', region.chrom)
         rep_region.add_record('Start', region.start)
         rep_region.add_record('End', region.end)

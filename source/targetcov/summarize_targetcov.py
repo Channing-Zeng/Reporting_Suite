@@ -122,11 +122,12 @@ def _make_tarqc_html_report(cnf, output_dir, samples, tag_by_sample=None):
         if verify_file(sample_report.sample.ngscat_html_fpath):
             sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
         if verify_file(sample_report.sample.qualimap_html_fpath):
+            url = relpath(sample_report.sample.qualimap_html_fpath, output_dir)
             r = sample_report.find_record(sample_report.records, 'Qualimap')
             if r:
-                r.html_fpath = relpath(sample_report.sample.qualimap_html_fpath, output_dir)
+                r.url = url
             else:
-                sample_report.add_record(metric_name='Qualimap', value='Qualimap', html_fpath=sample_report.sample.qualimap_html_fpath, silent=True)
+                sample_report.add_record(metric_name='Qualimap', value='Qualimap', url=url, silent=True)
         # targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
@@ -641,7 +642,7 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
 
         if all([not l.startswith('#') and ('Whole-Gene' in l or 'Gene-Exon' in l) for l in lines_for_each_sample]):
             shared_fields = lines_for_each_sample[0].split('\t')[first_col:first_col+8]
-            reg = report.add_region()
+            reg = report.add_row()
             reg.add_record('Chr', get_val(shared_fields[0]))
             reg.add_record('Start', get_int_val(shared_fields[1]))
             reg.add_record('End', get_int_val(shared_fields[2]))

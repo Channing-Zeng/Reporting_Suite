@@ -6,7 +6,7 @@ from os.path import join, dirname, abspath, relpath
 
 import source
 from source import verify_file, info
-from source.clinical_reporting import solvebio
+from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
@@ -52,19 +52,58 @@ class ClinicalReporting:
             self.mutations = []
             self.seq2c_event = None
 
-    class Seq2CEvent:
+        def __str__(self):
+            return self.name
+
+        def __hash__(self):
+            return hash(self.name)
+
+    class Mutation:
         def __init__(self):
-            self.gene_name = None
-            self.amp_del = None  # Del, Amp
-            self.fragment = None  # Whole, BP
-            self.ab_log2r = None
-            self.log2r = None
+            self.gene = None
+            self.transcript = None
+            self.codon_change = None
+            self.chrom = None
+            self.pos = None
+            self.ref = None
+            self.alt = None
+            self.depth = None
+            self.freq = None
+            self.aa_change = None
+            self.aa_len = None
+            self.eff_type = None
+            self.status = None
+            self.cosmic_ids = []
+            self.dbsnp_ids = []
+            self.solvebio = None
+
+        def __str__(self):
+            return str(self.gene) + ' ' + str(self.chrom) + ':' + \
+                   str(self.pos) + ' ' + str(self.ref) + '>' + str(self.alt)
+
+        def __hash__(self):
+            return hash((self.pos, self.ref, self.alt))
+
+    class Seq2CEvent:
+        def __init__(self, gene=None, amp_del=None, fragment=None, ab_log2r=None, log2r=None):
+            self.gene = gene
+            self.amp_del = amp_del  # Del, Amp
+            self.fragment = fragment  # Whole, BP
+            self.ab_log2r = ab_log2r
+            self.log2r = log2r
 
         def is_amp(self):
             return self.amp_del == 'Amp'
 
         def is_del(self):
             return self.amp_del == 'Del'
+
+        def __str__(self):
+            return str(self.gene) + ' ' + str(self.log2r if self.log2r is not None else self.ab_log2r)\
+                   + ' ' + str(self.amp_del) + ' ' + str(self.fragment)
+
+        def __hash__(self):
+            return hash((self.gene, self.fragment, self.amp_del))
 
     class CDS:
         def __init__(self):
@@ -129,13 +168,13 @@ class ClinicalReporting:
 
         self.mutations = self.parse_mutations(self.cnf.mutations_fpath)
         for mut in self.mutations:
-            self.key_gene_by_name[mut.gene].mutations.append(mut)
+            self.key_gene_by_name[mut.gene.name].mutations.append(mut)
         self.get_mut_info_from_solvebio()
 
         self.chromosomes_by_name = ClinicalReporting.Chromosome.build_chr_dict(self.cnf)
 
     def get_mut_info_from_solvebio(self):
-        solvebio.search_mutations(self.mutations)
+        query_mutations(self.cnf, self.mutations)
 
     def write_report(self):
         info('')
@@ -176,7 +215,7 @@ class ClinicalReporting:
         sample_dict['ave_depth'] = Metric.format_value(self.ave_depth, is_html=True)
 
         mutations_dict = dict()
-        if mutations_report.regions:
+        if mutations_report.rows:
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
@@ -185,7 +224,7 @@ class ClinicalReporting:
 
         coverage_dict = dict(depth_cutoff=self.depth_cutoff, columns=[])
         GENE_COL_NUM = 3
-        genes_in_col = len(key_genes_report.regions) / GENE_COL_NUM
+        genes_in_col = len(key_genes_report.rows) / GENE_COL_NUM
         calc_cell_contents(key_genes_report, key_genes_report.get_rows_of_records())
         for i in range(GENE_COL_NUM):
             column_dict = dict()
@@ -193,7 +232,7 @@ class ClinicalReporting:
             column_dict['metric_names'] = [make_cell_th(m) for m in key_genes_report.metric_storage.get_metrics()]
             column_dict['rows'] = [
                 dict(records=[make_cell_td(r) for r in region.records])
-                    for region in key_genes_report.regions[i * genes_in_col:(i+1) * genes_in_col]]
+                    for region in key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
             coverage_dict['columns'].append(column_dict)
         coverage_dict['plot_data'] = cov_plot_data
 
@@ -206,7 +245,7 @@ class ClinicalReporting:
         #     image_by_key['seq2c_plot'] = seq2c_plot_fpath
 
         actionable_genes_dict = dict()
-        if actionable_genes_report.regions:
+        if actionable_genes_report.rows:
             actionable_genes_dict['table'] = build_report_html(actionable_genes_report, sortable=False)
 
         write_static_html_report(self.cnf, {
@@ -251,13 +290,13 @@ class ClinicalReporting:
                 sname, gname, chrom, start, end, length, log2r, sig, fragment, amp_del, ab_seg, total_seg, \
                     ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
 
-                event = ClinicalReporting.Seq2CEvent()
-                event.gene = self.key_gene_by_name[gname]
-                event.fragment = fragment or None
-                event.ab_log2r = float(ab_log2r) if ab_log2r else None
-                event.log2r = float(log2r) if log2r else None
+                event = ClinicalReporting.Seq2CEvent(
+                    gene=self.key_gene_by_name[gname],
+                    fragment=fragment or None,
+                    ab_log2r=float(ab_log2r) if ab_log2r else None,
+                    log2r=float(log2r) if log2r else None,
+                    amp_del=amp_del or None)
                 seq2c_events_by_gene_name[gname] = event
-                event.amp_del = amp_del or None
 
         for gn, event in seq2c_events_by_gene_name.items():
             self.key_gene_by_name[gn].seq2c_event = event
@@ -310,7 +349,8 @@ class ClinicalReporting:
                 del self.key_gene_by_name[gene.name]
 
 
-    def parse_broad_actionable(self):
+    @staticmethod
+    def parse_broad_actionable():
         act_fpath = verify_file(ClinicalReporting.ACTIONABLE_GENES_FPATH, is_critical=False, description='Actionable genes')
         if act_fpath:
             with open(act_fpath) as f:
@@ -332,7 +372,7 @@ class ClinicalReporting:
         key_genes_report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_cov_metric_storage)
 
         for gene in sorted(key_gene_by_name.values(), key=lambda g: g.name):
-            reg = key_genes_report.add_region()
+            reg = key_genes_report.add_row()
             reg.add_record('Gene', gene.name)
             reg.add_record('Chr', gene.chrom.replace('chr', ''))
             reg.add_record('Ave depth', gene.ave_depth)
@@ -347,36 +387,18 @@ class ClinicalReporting:
         info()
         return key_genes_report
 
-
-    class Mutation:
-        def __init__(self):
-            self.gene = None
-            self.transcript = None
-            self.codon_change = None
-            self.chrom = None
-            self.pos = None
-            self.ref = None
-            self.alt = None
-            self.depth = None
-            self.freq = None
-            self.aa_change = None
-            self.aa_len = None
-            self.type = None
-            self.status = None
-            self.cosmic_ids = []
-            self.dbsnp_ids = []
-
     def make_mutations_report(self, mutations):
         max_width = '90'
         clinical_mut_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
                 Metric('Gene'),  # Gene & Transcript
                 Metric('Transcript'),  # Gene & Transcript
-                Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+                # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
                 Metric('AA chg', max_width=max_width, class_='long_line'),            # p.Glu82Lys
                 # Metric('Allele'),             # Het.
                 # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
-                Metric('Position', sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
+                Metric('Position',
+                       sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
                        align='left'),       # g.47364249
                 Metric('Change', max_width=max_width, class_='long_line'),       # G>A
                 Metric('Depth', max_width=48),              # 658
@@ -384,28 +406,36 @@ class ClinicalReporting:
                 Metric('AA len', max_width=50, with_heatmap=False),          # 128
                 Metric('DB', max_width=90, class_='long_line'),                 # rs352343, COSM2123
                 # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-                Metric('Type', max_width='100', class_='long_line'),               # Frameshift
-                Metric('Status'),     # Likely Pathogenic
+                Metric('Effect', max_width='100', class_='long_line'),               # Frameshift
+                Metric('VarDict class', short_name='VarDict class'),     # dbSNP
+                Metric('VarDict status', short_name='VarDict status'),     # Likely
+                Metric('SolveBio', short_name='SolveBio\nClinVar'),    # Pathogenic?, URL
             ])])
-        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage,
-            hide_rows_by=lambda r: r.metric.name == 'Status' and r.value and r.value.lower() == 'unknown',
-            highlight_by=lambda r: r.metric.name == 'Status' and r.value and r.value.lower() == 'known')
+
+        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
 
         for mut in mutations:
-            reg = report.add_region()
-            reg.add_record('Gene', mut.gene)
-            reg.add_record('Transcript', mut.transcript)
-            reg.add_record('Codon chg', mut.codon_change)
-            reg.add_record('AA chg', 'p.' + mut.aa_change if mut.aa_change else '')
+            row = report.add_row()
+            row.add_record('Gene', mut.gene.name)
+            row.add_record('Transcript', mut.transcript)
+            # row.add_record('Codon chg', mut.codon_change)
+            row.add_record('AA chg', '<span style="color: gray">p.</span>' + mut.aa_change if mut.aa_change else '')
             # reg.add_record('Allele', allele_record)
             # reg.add_record('Chr', chrom.replace('chr', '') if chrom else '')
-            c = mut.chrom.replace('chr', '') if mut.chrom else ''
-            p = 'g.' + Metric.format_value(mut.start, human_readable=True) if mut.start else ''
-            reg.add_record('Position', c + ':' + p)
-            reg.add_record('Change', mut.ref + '>' + mut.alt)
-            reg.add_record('Depth', mut.depth)
-            reg.add_record('Freq', mut.freq)
-            reg.add_record('AA len', mut.aa_len)
+            c = '<span style="color: gray">' + mut.chrom.replace('chr', '') + '</span>' if mut.chrom else ''
+            p = Metric.format_value(mut.pos, human_readable=True) if mut.pos else ''
+            row.add_record('Position', c + ':' + p)
+
+            chg = mut.ref + '>' + mut.alt
+            if mut.var_type:
+                t = mut.var_type
+                if t in ['Insertion', 'Deletion']:
+                    t = t[:3]
+                chg = '<span style="color: gray">' + t + '</span> ' + chg
+            row.add_record('Change', chg)
+            row.add_record('Depth', mut.depth)
+            row.add_record('Freq', mut.freq)
+            row.add_record('AA len', mut.aa_len)
             db = ''
             if mut.dbsnp_ids:
                 db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
@@ -413,9 +443,24 @@ class ClinicalReporting:
                 db += ', '
             if mut.cosmic_ids:
                 db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + cid + '">COSM</a>' for cid in mut.cosmic_ids)
-            reg.add_record('DB', db, parse=False)
-            reg.add_record('Type', mut.type)
-            reg.add_record('Status', mut.status.lower() if mut.status else mut.status)
+            row.add_record('DB', db, parse=False)
+            row.add_record('Effect', mut.var_type)
+            row.add_record('VarDict class', mut.var_class)
+            row.add_record('VarDict status', mut.status)  #  .lower() if mut.status else mut.status
+            if mut.solvebio:
+                row.add_record('SolveBio', mut.solvebio.clinsig, url=mut.solvebio.url)
+
+            # Highlighting or hiding:
+            if not mut.status or mut.status.lower() == 'unknown':
+                if mut.solvebio:
+                    warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
+                else:
+                    row.hidden = True
+            else:
+                if mut.status and mut.status.lower() == 'known':
+                    row.highlighted = True
+                if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
+                    row.highlighted = True
 
         report.save_tsv(self.sample.clinical_mutation_tsv, human_readable=True)
         info('Saved mutations report to ' + report.tsv_fpath)
@@ -449,38 +494,40 @@ class ClinicalReporting:
                 fs = l.strip().split('\t')
                 if len(fs) > 60:
                     sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                        aa_len, gene, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
+                        aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                         cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                         mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
                         m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
-                        n_sample, n_var, pcnt_sample, ave_af, filter_, var_type, var_class, status = fs[:67]  # 67 of them
+                        n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
                 else:
                     sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                        aa_len, gene, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
+                        aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                         cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                         mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
-                        n_sample, n_var, pcnt_sample, ave_af, filter_, var_type, var_class, status = fs[:50]  # 50 of them
+                        n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
 
-                if sample_name == self.sample.name and gene in self.key_gene_by_name:
+                if sample_name == self.sample.name and gname in self.key_gene_by_name:
                     if (chrom, start, ref, alt) in alts_met_before:
                         continue
                     alts_met_before.add((chrom, start, ref, alt))
 
                     mut = ClinicalReporting.Mutation()
-                    mut.gene = gene
+                    mut.gene = self.key_gene_by_name[gname]
                     mut.transcript = transcript
                     mut.codon_change = codon_change
                     mut.aa_change = aa_change
                     mut.aa_len = aa_len
                     mut.chrom = chrom
-                    mut.start = start
+                    mut.pos = int(start)
                     mut.ref = ref
                     mut.alt = alt
-                    mut.depth = depth
-                    mut.freq = af
+                    mut.depth = int(depth)
+                    mut.freq = float(af)
                     mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
                     mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
-                    mut.type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
+                    mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
+                    mut.var_type = var_type
+                    mut.var_class = var_class
                     mut.status = status
 
                     mutations.append(mut)
@@ -521,9 +568,9 @@ class ClinicalReporting:
             vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
             if vardict_mut_types:
                 for mut in self.mutations:
-                    if mut.gene == gene.name:
+                    if mut.gene.name == gene.name:
                         variants.append(mut.aa_change if mut.aa_change else '.')
-                        types.append(mut.type)
+                        types.append(mut.var_type)
 
             if cnv_mutation_types and gene.seq2c_event:
                 if 'Amplification' in possible_mutation_types and gene.seq2c_event.amp_del == 'Amp' or \
@@ -534,7 +581,7 @@ class ClinicalReporting:
             if not variants:
                 continue
 
-            reg = report.add_region()
+            reg = report.add_row()
             reg.add_record('Gene', gene.name)
             reg.add_record('Variant', '\n'.join(variants))
             reg.add_record('Type', '\n'.join(types))

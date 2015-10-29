@@ -356,7 +356,7 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sa
         total_regions += 1
 
         (chrom, start, end, symbol, strand, feature, biotype) = r
-        rep_region = sample.report.add_region()
+        rep_region = sample.report.add_row()
         rep_region.add_record('Chr', chrom)
         rep_region.add_record('Start', start)
         rep_region.add_record('End', end)

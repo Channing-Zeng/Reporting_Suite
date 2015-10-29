@@ -7,14 +7,14 @@ td.long_line:hover {
   overflow: visible;
   -o-text-overflow: unset;
   text-overflow: unset; }
-  td.long_line:hover span {
+  td.long_line:hover>span {
     border: 1px solid black;
     position: absolute;
     margin-top: -8px;
     margin-left: -1px;
     background: white; }
 
-.actionable_table td.long_line:hover span {
+.actionable_table td.long_line:hover>span {
   margin-top: -1px !important; }
 
 .clinical_report table.report_table td, .clinical_report table.report_table th {

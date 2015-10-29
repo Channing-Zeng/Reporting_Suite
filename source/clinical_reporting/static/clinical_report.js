@@ -40,7 +40,7 @@ $(function() {
 function extendClick() {
     // Showing full
     var switch_el = $('#variants_switch');
-    switch_el.html('<a class="dotted-link" id="reduce_link" onclick="reduceClick($(this))">Known and likely known</a> / <span>all variants</span>')
+    switch_el.html('<a class="dotted-link" id="reduce_link" onclick="reduceClick($(this))">Likely pathogenic</a> / <span>all variants</span>')
     var var_table_div = $('#variants_table_div');
     $('.table_short').remove();
     var_table_div.prepend(table_full_clone);
@@ -54,7 +54,7 @@ function extendClick() {
 function reduceClick() {
     // Showing reduced
     var switch_el = $('#variants_switch');
-    switch_el.html('<span>Known and likely known</span> / <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">all variants</a>')
+    switch_el.html('<span>Likely pathogenic</span> / <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">all variants</a>')
     var var_table_div = $('#variants_table_div');
     $('.table_full').remove();
     var_table_div.prepend(table_short_clone);

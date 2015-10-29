@@ -16,7 +16,8 @@ def summary_reports(cnf, bcbio_structure):
     full_report = FullReport(source.ngscat_repr, [
         SampleReport(sample,
                      records=report_parser.parse_ngscat_sample_report(htmls_by_sample[sample.name]),
-                     html_fpath=relpath(htmls_by_sample[sample.name], cnf.output_dir),
+                     html_fpath=htmls_by_sample[sample.name],
+                     url=relpath(htmls_by_sample[sample.name], cnf.output_dir),
                      metric_storage=report_parser.metric_storage)
             for sample in bcbio_structure.samples
             if sample.name in htmls_by_sample],

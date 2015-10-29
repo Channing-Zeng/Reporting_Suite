@@ -121,21 +121,21 @@ def _mutations_records(general_section, bcbio_structure):
             rec = Record(
                 metric=metric,
                 value=metric.name,
-                html_fpath=_relpath_all(val, bcbio_structure.date_dirpath))
+                url=_relpath_all(val, bcbio_structure.date_dirpath))
             general_section.add_metric(metric)
             records.append(rec)
 
     return records
 
 
-def _make_path_record(html_fpath_value, metric, base_dirpath):
+def _make_url_record(html_fpath_value, metric, base_dirpath):
     # info('Adding paths to the report: ' + str(html_fpath_value))
     if isinstance(html_fpath_value, basestring):
-        html_fpath = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
-        return Record(metric=metric, value=metric.name, html_fpath=html_fpath)
+        url = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
+        return Record(metric=metric, value=metric.name, url=url)
     elif isinstance(html_fpath_value, dict):
-        html_fpath_value = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
-        return Record(metric=metric, value=metric.name, html_fpath=html_fpath_value)
+        url = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
+        return Record(metric=metric, value=metric.name, url=url)
     else:
         pass
 
@@ -155,9 +155,9 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     if dataset_structure:
         if dataset_structure.basecall_stat_html_reports:
             val = OrderedDict([(basename(fpath), fpath) for fpath in dataset_structure.basecall_stat_html_reports])
-            recs.append(_make_path_record(val, general_section.find_metric(BASECALLS_NAME), base_dirpath))
-        recs.append(_make_path_record(dataset_structure.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
-        recs.append(_make_path_record(dataset_structure.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
+            recs.append(_make_url_record(val, general_section.find_metric(BASECALLS_NAME), base_dirpath))
+        recs.append(_make_url_record(dataset_structure.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
+        recs.append(_make_url_record(dataset_structure.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
         recs.extend(_mutations_records(general_section, bcbio_structure))
@@ -168,10 +168,10 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
         varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
 
-        recs.append(_make_path_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
-        recs.append(_make_path_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
-        recs.append(_make_path_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
-        recs.append(_make_path_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
+        recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
+        recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
+        recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
+        recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
 
     return recs
 
@@ -189,10 +189,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
     if dataset_structure:
         for s in dataset_structure.samples:
             sample_reports_records[s.name].extend([
-                _make_path_record(
+                _make_url_record(
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
                     individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath),
-                _make_path_record(
+                _make_url_record(
                     OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
                     individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath)
             ])
@@ -217,14 +217,14 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
 
             sample_reports_records[s.name].extend([
-                _make_path_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
-                _make_path_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
-                _make_path_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
-                _make_path_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
+                _make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
+                _make_url_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
+                _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
+                _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
             ])
 
             if s.clinical_html:
-                sample_reports_records[s.name].append(_make_path_record(s.clinical_html,
+                sample_reports_records[s.name].append(_make_url_record(s.clinical_html,
                     individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath))
 
             if gender_record_by_sample.get(s.name):
@@ -348,11 +348,11 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
     def __process_record(rec, short=False):
         d = rec.__dict__.copy()
 
-        if isinstance(rec.html_fpath, basestring):
-            d['contents'] = '<a href="' + rec.html_fpath + '">' + rec.value + '</a>'
+        if isinstance(rec.url, basestring):
+            d['contents'] = '<a href="' + rec.url + '">' + rec.value + '</a>'
 
-        elif isinstance(rec.html_fpath, dict):
-            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.html_fpath.items()) if rec.html_fpath else '-'
+        elif isinstance(rec.url, dict):
+            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.url.items()) if rec.html_fpath else '-'
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 
