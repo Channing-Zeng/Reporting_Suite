@@ -50,7 +50,8 @@ def query_mutations(cnf, mutations):
                 for mut, l in zip(mutations, f):
                     if l:
                         l = l.strip().split('\t')
-                        mut.solvebio = SolvebioRecord(clinsig=l[0], url=l[1])
+                        if len(l) == 2:
+                            mut.solvebio = SolvebioRecord(clinsig=l[0], url=l[1])
             info('Done, read ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
             return mutations
 
@@ -64,7 +65,7 @@ def query_mutations(cnf, mutations):
             .filter(allele=m.alt, reference_allele=m.ref)
         for m in mutations]
 
-    info('Querying mutations against SolveBio ClinVar depository')
+    info('Querying mutations against SolveBio ClinVar depository...')
     for mut, res in zip(mutations, BatchQuery(queries).execute()):
         if res['results']:
             solvbio_record = parse_response(res['results'][0], mut)
@@ -79,7 +80,7 @@ def query_mutations(cnf, mutations):
                     f.write(mut.solvebio.clinsig)
                     f.write('\t')
                     f.write(mut.solvebio.url)
-                    f.write('\n')
+                f.write('\n')
         info('Saved to ' + saves_fpath)
 
     info('-' * 70)

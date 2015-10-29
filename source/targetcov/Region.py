@@ -36,7 +36,7 @@ class SortableByChrom:
                 return i + 25
 
         err('Cannot parse chromosome ' + self.chrom + '\n')
-        return None
+        return 99
 
     def get_key(self):
         return self._chrom_key

@@ -221,10 +221,15 @@ Array - Specifc table
                             };
                         }
 
-					} else if (sorting_criteria[th_index_selected] == 'text') { // Sort text
+					} else if (sorting_criteria[th_index_selected] == 'text') {  // Sort text
 						sort_fn = function(a, b) {
 							a = a.td[th_index_selected];
 							b = b.td[th_index_selected];
+                            if (a === undefined)
+                                a = '';
+                            if (b === undefined)
+                                b = '';
+
 							if (trim(a) == '' && trim(b) != '') {
 								return 1
 							} else if (trim(b) == '' && trim(a) != '') {

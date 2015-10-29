@@ -10,6 +10,7 @@ from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
     calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
+from source.targetcov.Region import SortableByChrom
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from source.utils import get_chr_lengths
@@ -45,7 +46,6 @@ class ClinicalReporting:
             self.chrom = None
             self.start = None
             self.end = None
-
             self.cdss = []
             self.ave_depth = ave_depth
             self.cov_by_threshs = dict()
@@ -58,12 +58,13 @@ class ClinicalReporting:
         def __hash__(self):
             return hash(self.name)
 
-    class Mutation:
-        def __init__(self):
+    class Mutation(SortableByChrom):
+        def __init__(self, chrom, genome):
+            SortableByChrom.__init__(self, chrom, genome=genome)
             self.gene = None
             self.transcript = None
             self.codon_change = None
-            self.chrom = None
+            self.chrom = chrom
             self.pos = None
             self.ref = None
             self.alt = None
@@ -82,7 +83,13 @@ class ClinicalReporting:
                    str(self.pos) + ' ' + str(self.ref) + '>' + str(self.alt)
 
         def __hash__(self):
-            return hash((self.pos, self.ref, self.alt))
+            return hash((self.chrom, self.pos, self.ref, self.alt))
+
+        def get_chrom_key(self):
+            return SortableByChrom.get_key(self)
+
+        def get_key(self):
+            return SortableByChrom.get_key(self), self.pos, self.ref, self.alt
 
     class Seq2CEvent:
         def __init__(self, gene=None, amp_del=None, fragment=None, ab_log2r=None, log2r=None):
@@ -387,6 +394,17 @@ class ClinicalReporting:
         info()
         return key_genes_report
 
+    @staticmethod
+    def make_db_html(mut):
+        db = ''
+        if mut.dbsnp_ids:
+            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
+        if db and mut.cosmic_ids:
+            db += ', '
+        if mut.cosmic_ids:
+            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + cid + '">COSM</a>' for cid in mut.cosmic_ids)
+        return db
+
     def make_mutations_report(self, mutations):
         max_width = '90'
         clinical_mut_metric_storage = MetricStorage(
@@ -394,22 +412,22 @@ class ClinicalReporting:
                 Metric('Gene'),  # Gene & Transcript
                 Metric('Transcript'),  # Gene & Transcript
                 # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
-                Metric('AA chg', max_width=max_width, class_='long_line'),            # p.Glu82Lys
+                Metric('AA chg', max_width=70, class_='long_line'),            # p.Glu82Lys
                 # Metric('Allele'),             # Het.
                 # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
                 Metric('Position',
-                       sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
-                       align='left'),       # g.47364249
-                Metric('Change', max_width=max_width, class_='long_line'),       # G>A
+                       # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
+                       with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                Metric('Change', max_width=95, class_='long_line'),       # G>A
                 Metric('Depth', max_width=48),              # 658
                 Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
                 Metric('AA len', max_width=50, with_heatmap=False),          # 128
-                Metric('DB', max_width=90, class_='long_line'),                 # rs352343, COSM2123
                 # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-                Metric('Effect', max_width='100', class_='long_line'),               # Frameshift
+                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
                 Metric('VarDict class', short_name='VarDict class'),     # dbSNP
                 Metric('VarDict status', short_name='VarDict status'),     # Likely
-                Metric('SolveBio', short_name='SolveBio\nClinVar'),    # Pathogenic?, URL
+                Metric('ClinVar', short_name='SolveBio\nClinVar'),    # Pathogenic?, URL
+                Metric('Databases'),                 # rs352343, COSM2123
             ])])
 
         report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
@@ -419,36 +437,31 @@ class ClinicalReporting:
             row.add_record('Gene', mut.gene.name)
             row.add_record('Transcript', mut.transcript)
             # row.add_record('Codon chg', mut.codon_change)
-            row.add_record('AA chg', '<span style="color: gray">p.</span>' + mut.aa_change if mut.aa_change else '')
-            # reg.add_record('Allele', allele_record)
-            # reg.add_record('Chr', chrom.replace('chr', '') if chrom else '')
-            c = '<span style="color: gray">' + mut.chrom.replace('chr', '') + '</span>' if mut.chrom else ''
-            p = Metric.format_value(mut.pos, human_readable=True) if mut.pos else ''
-            row.add_record('Position', c + ':' + p)
+
+            aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
+            row.add_record('AA chg', aa_chg)
+
+            c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
+            p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+            row.add_record('Position', gray(c + ':') + p,
+                           num=mut.get_chrom_key() * 100000000000 + mut.pos)
 
             chg = mut.ref + '>' + mut.alt
             if mut.var_type:
                 t = mut.var_type
                 if t in ['Insertion', 'Deletion']:
                     t = t[:3]
-                chg = '<span style="color: gray">' + t + '</span> ' + chg
+                chg = gray(t) + ' ' + chg
             row.add_record('Change', chg)
+
             row.add_record('Depth', mut.depth)
             row.add_record('Freq', mut.freq)
             row.add_record('AA len', mut.aa_len)
-            db = ''
-            if mut.dbsnp_ids:
-                db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
-            if db and mut.cosmic_ids:
-                db += ', '
-            if mut.cosmic_ids:
-                db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + cid + '">COSM</a>' for cid in mut.cosmic_ids)
-            row.add_record('DB', db, parse=False)
-            row.add_record('Effect', mut.var_type)
+            row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict class', mut.var_class)
             row.add_record('VarDict status', mut.status)  #  .lower() if mut.status else mut.status
-            if mut.solvebio:
-                row.add_record('SolveBio', mut.solvebio.clinsig, url=mut.solvebio.url)
+            row.add_record('ClinVar', mut.solvebio.clinsig if mut.solvebio else '', url=mut.solvebio.url if mut.solvebio else None)
+            row.add_record('Databases', self.make_db_html(mut), parse=False)
 
             # Highlighting or hiding:
             if not mut.status or mut.status.lower() == 'unknown':
@@ -511,13 +524,12 @@ class ClinicalReporting:
                         continue
                     alts_met_before.add((chrom, start, ref, alt))
 
-                    mut = ClinicalReporting.Mutation()
+                    mut = ClinicalReporting.Mutation(chrom=chrom, genome=self.cnf.genome.name)
                     mut.gene = self.key_gene_by_name[gname]
                     mut.transcript = transcript
                     mut.codon_change = codon_change
                     mut.aa_change = aa_change
                     mut.aa_len = aa_len
-                    mut.chrom = chrom
                     mut.pos = int(start)
                     mut.ref = ref
                     mut.alt = alt
@@ -635,7 +647,6 @@ class ClinicalReporting:
         data['maxY'] = max([e['logRatio'] for e in data['events']] + [2])  # max(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [2]))
         data['minY'] = min([e['logRatio'] for e in data['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
 
-        j = json.dumps(data)
         return json.dumps(data)
 
 
@@ -746,4 +757,5 @@ def tooltip_long(string, max_len=30):
         return '<a class="tooltip-link" rel="tooltip" title="' + string + '">' + string[:max_len - 2] + '...</a>'
 
 
-
+def gray(text):
+    return '<span style="color: gray">' + text + '</span>'

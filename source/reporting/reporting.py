@@ -33,13 +33,14 @@ class Record:
             html_fpath=None,
             url=None,
             parse=True,
+            sort_as=None,
 
-            num = None,
-            cell_contents = None,
-            frac_width = None,
-            right_shift = None,
-            color = None,
-            text_color = None):  #TODO: get rid of those
+            num=None,
+            cell_contents=None,
+            frac_width=None,
+            right_shift=None,
+            color=None,
+            text_color=None):  # TODO: get rid of those
 
         self.metric = metric
         if parse:
@@ -50,7 +51,11 @@ class Record:
         self.html_fpath = html_fpath
         self.url = url
 
-        self.num = None
+        self.num = num
+        # if sort_as is not None:
+        #     self.num = sort_as
+        #     self.
+
         self.cell_contents = None
         self.frac_width = None
         self.right_shift = None
@@ -137,7 +142,7 @@ class Metric:
             width=None,
             max_width=None,
             min_width=None,
-            sort_by=None,
+            sort_direction=None,
 
             numbers=None,
             values=None,
@@ -164,7 +169,7 @@ class Metric:
         self.align = align
         self.max_width = max_width
         self.min_width = min_width
-        self.sort_by = sort_by
+        self.sort_direction = sort_direction
 
         self.numbers = []
         self.values = []
@@ -365,12 +370,12 @@ class SampleReport(BaseReport):
     def get_rows_of_records(self, sections=None):  # TODO: move logic from flatten here, use this method both in flatten and save_html
         return [Row(parent_report=self, records=self.records)]
 
-    def add_record(self, metric_name, value, meta=None, html_fpath=None, url=None, silent=False, parse=True):
+    def add_record(self, metric_name, value, silent=False, **kwargs):
         metric = self.metric_storage.find_metric(metric_name.strip())
         if not metric:
             err('Could not find metric ' + metric_name)
             return None
-        rec = Record(metric, value, meta, html_fpath=html_fpath, url=url, parse=parse)
+        rec = Record(metric, value, **kwargs)
         self.records.append(rec)
         if not silent:
             info(metric_name + ': ' + rec.format(human_readable=True))
@@ -996,11 +1001,11 @@ def make_cell_th(metric, class_='', sortable=True):
 
     if metric.numbers:
         sort_by = 'nosort' if metric.all_values_equal else 'numeric'
-        direction = 'descending'  # 'ascending' if metric.quality == 'Less is better' else 'descending'
+        direction = metric.sort_direction or 'descending'  # 'ascending' if metric.quality == 'Less is better' else 'descending'
         html += ' data-sortBy=' + sort_by + ' data-direction=' + direction
     else:
         sort_by = 'nosort' if metric.all_values_equal else 'text'
-        direction = 'descending'
+        direction = metric.sort_direction or 'descending'
         html += ' data-sortBy=' + sort_by + ' data-direction=' + direction
 
     # if metric.width is not None:
@@ -1045,8 +1050,25 @@ def make_cell_td(rec, class_=''):
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
     html += ' quality="' + str(rec.metric.quality) + '"'
     html += ' class="td ' + class_ + ' ' + rec.metric.class_ + ' '
+
     if rec.num:
-        html += ' number" number="' + str(rec.value) + '" data-sortAs="' + str(rec.value)
+        html += ' number" number="' + str(rec.num)
+    # if rec.sort_as:
+    #     if isinstance(rec.sort_as, int):
+    #         v = rec.sort_as
+    #         s = ''
+    #         while True:  # convert int to string
+    #             s = str(v % 10) + s
+    #             v /= 10
+    #             if v == 0:
+    #                 break
+    #         html += '" data-sortAs="' + s
+    #         print rec.metric.name, s
+    #     else:
+    #         html += '" data-sortAs="' + str(rec.sort_as)
+    if rec.num:
+        html += '" data-sortAs="' + str(rec.num)
+
     html += '"'
     # if rec.metric.width is not None:
     #     html += ' width=' + str(rec.metric.width)
@@ -1187,14 +1209,14 @@ def __get_meta_tag_contents(rec):
 
 def _calc_record_cell_contents(rec):
     rec.cell_contents = rec.format_html()
-    if rec.metric.sort_by and rec.value:
-        try:
-            rec.num = rec.metric.sort_by(rec.value)
-        except:
-            pass
-        rec.metric.with_heatmap = False
+    # if rec.metric.sort_by and rec.value:
+    #     try:
+    #         rec.num = rec.metric.sort_by(rec.value)
+    #     except:
+    #         pass
+    #     rec.metric.with_heatmap = False
 
-    elif rec.value is not None and (isinstance(rec.value, int) or isinstance(rec.value, float)):
+    if rec.value is not None and (isinstance(rec.value, int) or isinstance(rec.value, float)):
         rec.num = rec.value
 
     #TODO: intPartTextWidth
@@ -1270,6 +1292,8 @@ def calc_cell_contents(report, rows):
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             if rec.num:
                 rec.metric.numbers.append(rec.num)
+            # elif rec.sort_as:
+            #     rec.metric.numbers.append(rec.sort_as)
             if rec.value is not None:
                 rec.metric.values.append(rec.value)
     # else:

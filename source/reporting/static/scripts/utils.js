@@ -166,7 +166,9 @@ function readJsonFromElement(element) {
     try {
         result = JSON.parse($(element).html());
     } catch (e) {
+        //console.log(e);
         result = null;
+        throw e;
     }
     return result;
 }
