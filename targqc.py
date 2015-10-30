@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import bcbio_postproc  # checking for python version and adding site dirs inside
+# noinspection PyUnresolvedReferences
+import bcbio_postproc
 
 import sys
 import os

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
+
 
 import sys
 from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params

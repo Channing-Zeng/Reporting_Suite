@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
 
 import sys

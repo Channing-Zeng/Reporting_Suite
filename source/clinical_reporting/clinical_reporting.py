@@ -1,121 +1,251 @@
 from collections import OrderedDict, defaultdict
-from itertools import izip, chain
-from json import load
 import json
 from os.path import join, dirname, abspath, relpath
 
-import source
-from source import verify_file, info
-from source.clinical_reporting.solvebio_mutations import query_mutations
-from source.logger import warn, err
-from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, SampleReport, \
-    calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
-from source.targetcov.Region import SortableByChrom
-from source.targetcov.flag_regions import get_depth_cutoff
-from source.targetcov.summarize_targetcov import get_float_val, get_val
+from source import info
+from source.logger import warn
+from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.utils import get_chr_lengths
+
+
+def make_clinical_report(clinical_sample_info):
+    return ClinicalReporting(clinical_sample_info).write_report()
+
+
+class Chromosome:
+    def __init__(self, name, length=None):
+        self.name = name
+        self.short_name = name[3:] if name.startswith('chr') else name
+        self.length = length
+
+    @staticmethod
+    def build_chr_section(cnf):
+        chr_by_name = OrderedDict(
+            (chr_name, Chromosome(chr_name, length=l)) for chr_name, l in get_chr_lengths(cnf).items()
+            if '_' not in chr_name)  # not drawing extra chromosomes chr1_blablabla
+        return chr_by_name
+
+    @staticmethod
+    def get_cum_lengths(chromosomes_by_name):
+        return [sum(c.length for c in chromosomes_by_name.values()[:i])
+            for i in range(len(chromosomes_by_name.keys()) + 1)]
 
 
 class ClinicalReporting:
     def __init__(self, clinical_sample_info):
         self.info = clinical_sample_info
+        self.sample = clinical_sample_info.sample
+        self.cnf = clinical_sample_info.cnf
+        self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
+
+        info('Preparing data...')
+        self.mutations_report = self.make_mutations_report(self.info.mutations)
+        self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
+        self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
+        self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
+        self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
 
     def write_report(self):
         info('')
-        info('Building report')
-        total_variants = get_total_variants_number(self.sample, self.cnf.varqc_json_fpath)
-        mutations_report = self.make_mutations_report(self.mutations)
-        actionable_genes_dict = parse_broad_actionable()
-        actionable_genes_report = self.make_actionable_genes_report(actionable_genes_dict)
-
-        seq2c_events_by_gene_name, seq2c_plot_data = None, None
-        if not self.cnf.seq2c_tsv_fpath:
-            warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
-        else:
-            self.parse_seq2c_report(self.cnf.seq2c_tsv_fpath)
-            seq2c_plot_data = self.make_seq2c_plot_json()
-
-        key_genes_report = self.make_key_genes_cov_report(self.key_gene_by_name, self.ave_depth)
-        cov_plot_data = self.make_key_genes_cov_json(self.key_gene_by_name)
-
-        sample_dict = dict()
-        sample_dict['sample'] = self.sample.name.replace('_', ' ')
-        if self.patient.gender:
-            sample_dict['patient'] = {'sex': self.patient.gender}
-        sample_dict['project_name'] = self.cnf.project_name.replace('_', ' ')
-        if self.cnf.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(self.cnf.project_report_path, dirname(self.sample.clinical_html))
-        sample_dict['panel'] = self.target.type
-        sample_dict['bed_path'] = self.target.bed_fpath or ''
-        if self.cnf.debug:
-            sample_dict['panel'] = self.cnf.target_type + ', AZ300 IDT panel'
-            sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
-
-        sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
-        sample_dict['genome_build'] = self.cnf.genome.name
-        sample_dict['target_type'] = self.target.type
-        sample_dict['target_fraction'] = Metric.format_value(self.target.coverage_percent, is_html=True, unit='%')
-        # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-        sample_dict['ave_depth'] = Metric.format_value(self.ave_depth, is_html=True)
-
-        mutations_dict = dict()
-        if mutations_report.rows:
-            # if cnf.debug:
-            #     mutations_report.regions = mutations_report.regions[::20]
-            mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
-            mutations_dict['total_variants'] = Metric.format_value(total_variants, is_html=True)
-            mutations_dict['total_key_genes'] = Metric.format_value(len(self.key_gene_by_name), is_html=True)
-
-        coverage_dict = dict(depth_cutoff=self.depth_cutoff, columns=[])
-        GENE_COL_NUM = 3
-        genes_in_col = len(key_genes_report.rows) / GENE_COL_NUM
-        calc_cell_contents(key_genes_report, key_genes_report.get_rows_of_records())
-        for i in range(GENE_COL_NUM):
-            column_dict = dict()
-            # column_dict['table'] = build_report_html(coverage_report)
-            column_dict['metric_names'] = [make_cell_th(m) for m in key_genes_report.metric_storage.get_metrics()]
-            column_dict['rows'] = [
-                dict(records=[make_cell_td(r) for r in region.records])
-                    for region in key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
-            coverage_dict['columns'].append(column_dict)
-        coverage_dict['plot_data'] = cov_plot_data
-
-        seq2c_dict = dict()
-        if seq2c_plot_data:
-            seq2c_dict['plot_data'] = seq2c_plot_data
-
-        image_by_key = dict()
-        # if seq2c_plot_fpath:
-        #     image_by_key['seq2c_plot'] = seq2c_plot_fpath
-
-        actionable_genes_dict = dict()
-        if actionable_genes_report.rows:
-            actionable_genes_dict['table'] = build_report_html(actionable_genes_report, sortable=False)
 
         write_static_html_report(self.cnf, {
-            'sample': sample_dict,
-            'variants': mutations_dict,
-            'seq2c': seq2c_dict,
-            'coverage': coverage_dict,
-            'actionable_genes': actionable_genes_dict
+            'sample': self.__sample_section(),
+            'variants': self.__mutations_section(),
+            'seq2c': self.__seq2c_section(),
+            'coverage': self.__coverage_section(),
+            'actionable_genes': self.__actionable_genes_section()
         }, self.sample.clinical_html,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
-                             join(dirname(abspath(__file__)), 'static', 'header_picture.css')],
-           image_by_key=image_by_key)
-
-        # clin_rep_symlink = adjust_path(join(sample.dirpath, '..', sample.name + '.clinical_report.html'))
-        # if islink(clin_rep_symlink):
-        #     os.unlink(clin_rep_symlink)
-        # os.symlink(sample.clinical_html, clin_rep_symlink)
+                             join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
 
         info('Saved clinical report to ' + self.sample.clinical_html)
         info('-' * 70)
         info()
         return self.sample.clinical_html
+
+    def __sample_section(self):
+        sample_dict = dict()
+        sample_dict['sample'] = self.sample.name.replace('_', ' ')
+        if self.info.patient.gender:
+            sample_dict['patient'] = {'sex': self.info.patient.gender}
+        sample_dict['project_name'] = self.cnf.project_name.replace('_', ' ')
+        if self.cnf.project_report_path:
+            sample_dict['project_report_rel_path'] = relpath(self.cnf.project_report_path, dirname(self.sample.clinical_html))
+        sample_dict['panel'] = self.info.target.type
+        sample_dict['bed_path'] = self.info.target.bed_fpath or ''
+        if self.cnf.debug:
+            sample_dict['panel'] = self.cnf.target_type + ', AZ300 IDT panel'
+            sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+
+        sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
+        sample_dict['genome_build'] = self.cnf.genome.name
+        sample_dict['target_type'] = self.info.target.type
+        sample_dict['target_fraction'] = Metric.format_value(self.info.target.coverage_percent, is_html=True, unit='%')
+        # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
+        sample_dict['ave_depth'] = Metric.format_value(self.info.ave_depth, is_html=True)
+        return sample_dict
+
+    def __mutations_section(self):
+        mutations_dict = dict()
+        if self.mutations_report.rows:
+            # if cnf.debug:
+            #     mutations_report.regions = mutations_report.regions[::20]
+            mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
+            mutations_dict['total_variants'] = Metric.format_value(self.info.total_variants, is_html=True)
+            mutations_dict['total_key_genes'] = Metric.format_value(len(self.info.key_gene_by_name), is_html=True)
+        return mutations_dict
+
+    def __coverage_section(self):
+        coverage_dict = dict(depth_cutoff=self.info.depth_cutoff, columns=[])
+        GENE_COL_NUM = 3
+        genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
+        calc_cell_contents(self.key_genes_report, self.key_genes_report.get_rows_of_records())
+        for i in range(GENE_COL_NUM):
+            column_dict = dict()
+            # column_dict['table'] = build_report_html(coverage_report)
+            column_dict['metric_names'] = [make_cell_th(m) for m in self.key_genes_report.metric_storage.get_metrics()]
+            column_dict['rows'] = [
+                dict(records=[make_cell_td(r) for r in region.records])
+                    for region in self.key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
+            coverage_dict['columns'].append(column_dict)
+        coverage_dict['plot_data'] = self.cov_plot_data
+        return coverage_dict
+
+    def __seq2c_section(self):
+        seq2c_dict = dict()
+        if self.seq2c_plot_data:
+            seq2c_dict['plot_data'] = self.seq2c_plot_data
+        return seq2c_dict
+
+    def __actionable_genes_section(self):
+        actionable_genes_dict = dict()
+        if self.actionable_genes_report.rows:
+            actionable_genes_dict['table'] = build_report_html(self.actionable_genes_report, sortable=False)
+        return actionable_genes_dict
+
+    def make_key_genes_cov_report(self, key_gene_by_name, ave_depth):
+        info('Making key genes coverage report...')
+        clinical_cov_metrics = [
+            Metric('Gene'),
+            Metric('Chr', with_heatmap=False, max_width=20, align='right'),
+            Metric('Ave depth', med=ave_depth),
+            Metric('% cov at {}x'.format(self.info.depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1),
+            Metric('CNV', short_name='&nbsp;&nbsp;CNV')]  # short name is hack for IE9 who doesn't have "text-align: left" and tries to stick "CNV" to the previous col header
+
+        clinical_cov_metric_storage = MetricStorage(sections=[ReportSection(metrics=clinical_cov_metrics)])
+
+        key_genes_report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_cov_metric_storage)
+
+        for gene in sorted(key_gene_by_name.values(), key=lambda g: g.name):
+            reg = key_genes_report.add_row()
+            reg.add_record('Gene', gene.name)
+            reg.add_record('Chr', gene.chrom.replace('chr', ''))
+            reg.add_record('Ave depth', gene.ave_depth)
+            m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(self.info.depth_cutoff))
+            reg.add_record(m.name, next((cov for cutoff, cov in gene.cov_by_threshs.items() if cutoff == self.info.depth_cutoff), None))
+            if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
+                reg.add_record('CNV', gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
+
+        key_genes_report.save_tsv(self.sample.clinical_targqc_tsv, human_readable=True)
+        info('Saved coverage report to ' + key_genes_report.tsv_fpath)
+        info('-' * 70)
+        info()
+        return key_genes_report
+
+    @staticmethod
+    def make_db_html(mut):
+        db = ''
+        if mut.dbsnp_ids:
+            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search'
+                             '&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
+        if db and mut.cosmic_ids:
+            db += ', '
+        if mut.cosmic_ids:
+            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' +
+                            cid + '">COSM</a>' for cid in mut.cosmic_ids)
+        return db
+
+    def make_mutations_report(self, mutations):
+        clinical_mut_metric_storage = MetricStorage(
+            sections=[ReportSection(metrics=[
+                Metric('Gene'),  # Gene & Transcript
+                Metric('Transcript'),  # Gene & Transcript
+                # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+                Metric('AA chg', max_width=70, class_='long_line'),            # p.Glu82Lys
+                # Metric('Allele'),             # Het.
+                # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
+                Metric('Position',
+                       # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
+                       with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                Metric('Change', max_width=95, class_='long_line'),       # G>A
+                Metric('Depth', max_width=48),              # 658
+                Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
+                Metric('AA len', max_width=50, with_heatmap=False),          # 128
+                # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
+                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+                Metric('VarDict status', short_name='Pathogenic,\nreported by VarDict'),     # Likely
+                # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
+                Metric('Databases'),                 # rs352343, COSM2123
+                Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
+            ])])
+
+        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
+
+        for mut in mutations:
+            row = report.add_row()
+            row.add_record('Gene', mut.gene.name)
+            row.add_record('Transcript', mut.transcript)
+            # row.add_record('Codon chg', mut.codon_change)
+
+            aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
+            row.add_record('AA chg', aa_chg)
+
+            c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
+            p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+            row.add_record('Position', gray(c + ':') + p,
+                           num=mut.get_chrom_key() * 100000000000 + mut.pos)
+
+            chg = mut.ref + '>' + mut.alt
+            if mut.var_type:
+                t = mut.var_type
+                if t in ['Insertion', 'Deletion']:
+                    t = t[:3]
+                chg = gray(t) + ' ' + chg
+            row.add_record('Change', chg)
+
+            row.add_record('Depth', mut.depth)
+            row.add_record('Freq', mut.freq)
+            row.add_record('AA len', mut.aa_len)
+            row.add_record('Effect', mut.eff_type)
+
+            status = mut.status
+            if mut.reason:
+                status += gray(' (' + mut.reason + ')')
+            row.add_record('VarDict status', status)
+            # row.add_record('VarDict reason', mut.reason)
+            row.add_record('Databases', self.make_db_html(mut), parse=False)
+            row.add_record('ClinVar', mut.solvebio.clinsig if mut.solvebio else '', url=mut.solvebio.url if mut.solvebio else None)
+
+            # Highlighting or hiding:
+            if not mut.status or mut.status.lower() == 'unknown':
+                if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
+                    warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
+                row.hidden = True
+            else:
+                if mut.status and mut.status.lower() == 'known':
+                    row.highlighted = True
+                # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
+                #     row.highlighted = True
+
+        report.save_tsv(self.sample.clinical_mutation_tsv, human_readable=True)
+        info('Saved mutations report to ' + report.tsv_fpath)
+        info('-' * 70)
+        info()
+        return report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
         info('Preparing mutations stats for key gene tables')
@@ -137,7 +267,7 @@ class ClinicalReporting:
         sv_mutation_types = {'Rearrangement', 'Fusion'}
         cnv_mutation_types = {'Amplification', 'Deletion'}
 
-        for gene in self.key_gene_by_name.values():
+        for gene in self.info.key_gene_by_name.values():
             if gene.name not in actionable_gene_names:
                 continue
             possible_mutation_types = set(actionable_genes_dict[gene.name][1].split('; '))
@@ -149,7 +279,7 @@ class ClinicalReporting:
 
             vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
             if vardict_mut_types:
-                for mut in self.mutations:
+                for mut in self.info.mutations:
                     if mut.gene.name == gene.name:
                         variants.append(mut.aa_change if mut.aa_change else '.')
                         types.append(mut.var_type)
@@ -179,12 +309,8 @@ class ClinicalReporting:
 
 
     def make_seq2c_plot_json(self):
-        chr_cum_lens = ClinicalReporting.Chromosome.get_cum_lengths(self.chromosomes_by_name)
+        chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
         chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
-
-        # {'nrm': {'xs': [], 'ys': []},
-        #         'amp': {'xs': [], 'ys': [], 'gs': []},
-        #         'del': {'xs': [], 'ys': [], 'gs': []},
 
         data = dict(
             events=[],
@@ -193,7 +319,7 @@ class ClinicalReporting:
             linesX=chr_cum_lens
         )
 
-        for gene in self.key_gene_by_name.values():
+        for gene in self.info.key_gene_by_name.values():
             if gene.seq2c_event:
                 data['events'].append(dict(
                     x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
@@ -204,16 +330,6 @@ class ClinicalReporting:
 
                 # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
 
-                # gene.seq2c_event.log2r
-                # if gene.seq2c_event.ab_log2r:
-                #     if gene.seq2c_event.is_amp() or gene.seq2c_event.is_del():
-                #         d = data[gene.seq2c_event.amp_del.lower()]
-                #         d['xs'].append(x)
-                #         d['ys'].append(gene.seq2c_event.ab_log2r)
-                #         d['gs'].append(gene.name)
-                #     else:
-                #         warn('Event is not Amp or Del, it\'s ' + gene.seq2c_event.amp_del)
-
         data['maxY'] = max([e['logRatio'] for e in data['events']] + [2])  # max(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [2]))
         data['minY'] = min([e['logRatio'] for e in data['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
 
@@ -221,7 +337,7 @@ class ClinicalReporting:
 
 
     def make_key_genes_cov_json(self, key_gene_by_name):
-        chr_cum_lens = ClinicalReporting.Chromosome.get_cum_lengths(self.chromosomes_by_name)
+        chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
         chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
 
         mut_info_by_gene = dict()
@@ -242,13 +358,13 @@ class ClinicalReporting:
         for gene in key_gene_by_name.values():
             gene_names.append(gene.name)
             gene_ave_depths.append(gene.ave_depth)
-            cov_in_thresh.append(gene.cov_by_threshs.get(self.depth_cutoff))
+            cov_in_thresh.append(gene.cov_by_threshs.get(self.info.depth_cutoff))
             coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
             cds_cov_by_gene[gene.name] = [dict(
                 start=cds.start,
                 end=cds.end,
                 aveDepth=cds.ave_depth,
-                percentInThreshold=cds.cov_by_threshs.get(self.depth_cutoff)
+                percentInThreshold=cds.cov_by_threshs.get(self.info.depth_cutoff)
             ) for cds in gene.cdss]
 
         json_txt = '{"coords_x":%s, "ave_depths":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, ' \
@@ -256,3 +372,14 @@ class ClinicalReporting:
                    % (json.dumps(coord_x), json.dumps(gene_ave_depths), json.dumps(cov_in_thresh), json.dumps(gene_names),
                       json.dumps(mut_info_by_gene), json.dumps(ticks_x), json.dumps(chr_cum_lens), json.dumps(cds_cov_by_gene))
         return json_txt
+
+
+def tooltip_long(string, max_len=30):
+    if len(string) < max_len:
+        return string
+    else:
+        return '<a class="tooltip-link" rel="tooltip" title="' + string + '">' + string[:max_len - 2] + '...</a>'
+
+
+def gray(text):
+    return '<span style="color: gray">' + text + '</span>'

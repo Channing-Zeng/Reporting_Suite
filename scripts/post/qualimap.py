@@ -1,5 +1,7 @@
 #!/usr/bin/python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
+
 
 from os.path import isfile, join
 

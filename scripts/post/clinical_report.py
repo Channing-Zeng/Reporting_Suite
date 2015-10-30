@@ -1,18 +1,17 @@
 #!/usr/bin/env python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
 
-import sys
 import shutil
+from source.clinical_reporting.clinical_parser import ClinicalSampleInfo
 
-import source
-from source.clinical_reporting.clinical_reporting import run_sample_clinical_reporting
-from source.file_utils import verify_module, verify_file
-from source.logger import warn, info
+from source.clinical_reporting.clinical_reporting import make_clinical_report
+from source.logger import info
 from source.prepare_args_and_cnf import check_system_resources, check_genome_resources
 from source.main import read_opts_and_cnfs
 
 
-def main(args):
+def main():
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--targqc-dir'], dict(
@@ -60,7 +59,8 @@ def main(args):
         required=['samtools', 'bedtools'],
         optional=[])
 
-    html_fpath = run_sample_clinical_reporting(cnf)
+    clin_info = ClinicalSampleInfo(cnf)
+    html_fpath = make_clinical_report(clin_info)
     info('Clinical report: ' + html_fpath)
 
     if not cnf['keep_intermediate']:
@@ -68,4 +68,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

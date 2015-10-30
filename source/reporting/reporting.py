@@ -997,6 +997,9 @@ def make_cell_th(metric, class_='', sortable=True):
         style += ' text-align: left; '
         metric.align = 'left'
 
+    if '\n' in __get_metric_name_html(metric):
+        style += ' white-space: pre;'
+
     html += '\n<th style="' + style + '" class="' + class_ + '"'
 
     if metric.numbers:

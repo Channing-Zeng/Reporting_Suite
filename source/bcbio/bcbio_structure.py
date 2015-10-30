@@ -905,7 +905,7 @@ def load_bcbio_cnf(config_dirpath):
 
     yaml_fpath = config_fpaths[0]
     if len(config_fpaths) > 1:
-        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in config_dirpath]
+        some_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in config_dirpath if not f.endswith('-template.yaml')]
         if len(some_yaml_files) == 0:
             critical('More than one YAML file in the config directory ' +
                      config_dirpath + ': ' + ' '.join(config_fpaths) +

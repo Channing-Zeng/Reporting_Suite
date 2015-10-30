@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
+
 
 import os
 from os.path import isfile, join, basename, splitext, dirname

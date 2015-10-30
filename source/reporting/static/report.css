@@ -25,6 +25,8 @@
       white-space: nowrap;
       text-align: left;
       padding: 2px 6px 2px 2px; }
+    #report table.report_table th {
+      vertical-align: bottom; }
     #report table.report_table td.number {
       padding-top: 0;
       padding-bottom: 0; }
@@ -44,8 +46,7 @@
       font-weight: bold;
       border-bottom: 1px solid #bbb; }
     #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
-      height: 20px;
-      vertical-align: bottom; }
+      height: 20px; }
     #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
       display: none; }
     #report table.report_table tr.highlighted_row td {

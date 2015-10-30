@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+# noinspection PyUnresolvedReferences
 import bcbio_postproc
+
 
 import gzip
 import os

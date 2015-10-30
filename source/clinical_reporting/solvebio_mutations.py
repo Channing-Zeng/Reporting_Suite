@@ -1,4 +1,4 @@
-from os.path import join, expanduser
+from os.path import join
 from source.file_utils import verify_module, verify_file
 from source.logger import err, info, warn
 
@@ -35,9 +35,8 @@ def parse_response(res, mut):
 
     return rec
 
+
 def query_mutations(cnf, mutations):
-    info('')
-    info('SolveBio')
     if not verify_module('solvebio'):
         err('Cannot import solvebio')
         return None
@@ -55,7 +54,7 @@ def query_mutations(cnf, mutations):
             info('Done, read ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
             return mutations
 
-    from solvebio import login, Depository, Dataset, BatchQuery
+    from solvebio import login, Dataset, BatchQuery
     login()
     ds = Dataset.retrieve('ClinVar/Variants')
 
@@ -85,4 +84,3 @@ def query_mutations(cnf, mutations):
 
     info('-' * 70)
     return mutations
-

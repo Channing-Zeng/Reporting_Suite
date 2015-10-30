@@ -51,6 +51,7 @@ class Mutation(SortableByChrom):
         self.aa_len = None
         self.eff_type = None
         self.status = None
+        self.reason = None
         self.cosmic_ids = []
         self.dbsnp_ids = []
         self.solvebio = None
@@ -263,19 +264,24 @@ class ClinicalSampleInfo:
                 if i == 0:
                     continue
                 fs = l.strip().split('\t')
-                if len(fs) > 60:
+                reason = None
+                if len(fs) >= 67:
                     sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                         aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                         cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                         mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
                         m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
                         n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
+                    if len(fs) == 68:
+                        reason = fs[67]
                 else:
                     sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                         aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
                         cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                         mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
                         n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
+                    if len(fs) == 51:
+                        reason = fs[50]
 
                 if sample_name == self.sample.name and gname in self.key_gene_by_name:
                     if (chrom, start, ref, alt) in alts_met_before:
@@ -299,9 +305,15 @@ class ClinicalSampleInfo:
                     mut.var_type = var_type
                     mut.var_class = var_class
                     mut.status = status
+                    if reason:
+                        mut.reason = reason.replace('_', ' ')
+                        if mut.reason == 'Act gemline':
+                            mut.reason = 'Actionable germ.'
+                        if mut.reason == 'Act somatic':
+                            mut.reason = 'Actionable som.'
 
                     mutations.append(mut)
-        info('Found ' + str(len(mutations)) + ' mutations')
+        info('Found ' + str(len(mutations)) + ' mutations in key genes')
         return mutations
 
 

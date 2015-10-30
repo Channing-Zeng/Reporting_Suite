@@ -109,7 +109,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
-    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} '
+    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} --report_reason '
     if cnf.min_hotspot_freq is not None and cnf.min_hotspot_freq != 'default':
         cmdline += '-F ' + str(cnf.min_hotspot_freq)
     cmdline += ' {vcf2txt_res_fpath} '
