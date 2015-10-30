@@ -306,11 +306,13 @@ class ClinicalSampleInfo:
                     mut.var_class = var_class
                     mut.status = status
                     if reason:
-                        mut.reason = reason.replace('_', ' ')
-                        if mut.reason == 'Act gemline':
-                            mut.reason = 'Actionable germ.'
-                        if mut.reason == 'Act somatic':
-                            mut.reason = 'Actionable som.'
+                        reason = reason.replace('_', ' ')
+                        if reason == 'actionable somatic':
+                            reason = 'actionable som.'
+                        if reason == 'actionable germline':
+                            reason = 'actionable germ.'
+                        reason = reason.replace('change', 'chg.')
+                    mut.reason = reason
 
                     mutations.append(mut)
         info('Found ' + str(len(mutations)) + ' mutations in key genes')
