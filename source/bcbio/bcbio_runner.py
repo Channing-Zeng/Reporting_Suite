@@ -118,7 +118,7 @@ class BCBioRunner:
         self.max_threads = self.cnf.threads
         total_samples_num = len(self.bcbio_structure.samples)
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
-        self.filtering_threads = min(self.max_threads, total_samples_num)
+        self.filtering_threads = min(self.max_threads, total_samples_num) if self.bcbio_structure.bed else 1  #
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self._init_steps(cnf, self.run_id)
@@ -321,8 +321,7 @@ class BCBioRunner:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
         if cnf.min_freq is not None:
             varfilter_paramline += ' --freq ' + str(cnf.min_freq)
-        if self.bcbio_structure.bed:  # unless WGS
-            varfilter_paramline += ' -t ' + str(self.filtering_threads) + ' --wgs '
+        varfilter_paramline += ' -t ' + str(self.filtering_threads) + ' --wgs '
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',
