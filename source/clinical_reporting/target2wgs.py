@@ -1,6 +1,9 @@
 from os.path import join
 from source import info
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure
+from source.clinical_reporting.clinical_reporting import Chromosome
+from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport
+from source.reporting.reporting import ReportSection
 
 
 def run_clinical_target2wgs(cnf, wgs_bs, target_bs, shared_sample_names, output_dirpath):
@@ -19,25 +22,27 @@ def run_clinical_target2wgs(cnf, wgs_bs, target_bs, shared_sample_names, output_
 
         info('')
         info('*' * 70)
-        run_sample_clinreport_target2wgs(clinsample_target_info, clinsample_wgs_info, output_dirpath)
+        run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs_info, output_dirpath)
         info('*' * 70)
         info('Successfully finished.')
 
 
-def run_sample_clinreport_target2wgs(clinsample_target_info, clinsample_wgs_info, output_dirpath):
-    ComparisonClinicalReporting(clinsample_target_info, clinsample_wgs_info).write_report(
+def run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs_info, output_dirpath):
+    ComparisonClinicalReporting(cnf, clinsample_target_info, clinsample_wgs_info).write_report(
         join(output_dirpath, 'clinical_report.html'))
 
 
 class ComparisonClinicalReporting:
-    def __init__(self, clinsample_target_info, clinsample_wgs_info):
-        self.info = clinical_sample_info
-        self.sample = clinical_sample_info.sample
-        self.cnf = clinical_sample_info.cnf
+    def __init__(self, cnf, target_info, wgs_info):
+        self.target_info = target_info
+        self.wgs_info = wgs_info
+        self.target_sample = target_info.sample
+        self.wgs_sample = wgs_info.sample
+        self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
 
         info('Preparing data...')
-        self.mutations_report = self.make_mutations_report(self.info.mutations)
+        self.mutations_report = self.make_mutations_report()
         self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
         self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
         self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
@@ -163,7 +168,7 @@ class ComparisonClinicalReporting:
                             cid + '">COSM</a>' for cid in mut.cosmic_ids)
         return db
 
-    def make_mutations_report(self, mutations):
+    def make_mutations_report(self):
         clinical_mut_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
                 Metric('Gene'),  # Gene & Transcript
@@ -176,8 +181,10 @@ class ComparisonClinicalReporting:
                        # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
                        with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
                 Metric('Change', max_width=95, class_='long_line'),       # G>A
-                Metric('Depth', max_width=48),              # 658
-                Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
+                Metric('DP Target', max_width=48),              # 658
+                Metric('DP WGS', max_width=48),              # 658
+                Metric('AF Target', max_width=45, unit='%', with_heatmap=False),          # .19
+                Metric('AF WGS', max_width=45, unit='%', with_heatmap=False),          # .19
                 Metric('AA len', max_width=50, with_heatmap=False),          # 128
                 # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
                 Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
@@ -187,7 +194,7 @@ class ComparisonClinicalReporting:
                 Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
             ])])
 
-        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
+        report = PerRegionSampleReport(sample=self.target_info.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
 
         for mut in mutations:
             row = report.add_row()
