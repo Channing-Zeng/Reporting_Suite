@@ -1,4 +1,6 @@
 from os.path import join
+from traceback import format_exc
+from solvebio import SolveError
 from source.file_utils import verify_module, verify_file
 from source.logger import err, info, warn
 
@@ -65,12 +67,16 @@ def query_mutations(cnf, mutations):
         for m in mutations]
 
     info('Querying mutations against SolveBio ClinVar depository...')
-    for mut, res in zip(mutations, BatchQuery(queries).execute()):
-        if res['results']:
-            solvbio_record = parse_response(res['results'][0], mut)
-            if solvbio_record:
-                mut.solvebio = solvbio_record
-    info('Done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
+    try:
+        for mut, res in zip(mutations, BatchQuery(queries).execute()):
+            if res['results']:
+                solvbio_record = parse_response(res['results'][0], mut)
+                if solvbio_record:
+                    mut.solvebio = solvbio_record
+        info('Done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
+    except SolveError:
+        err(format_exc)
+        err('Could not retrieve information for SolveBio, skipping')
 
     if cnf.debug:
         with open(saves_fpath, 'w') as f:

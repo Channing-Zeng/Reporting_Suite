@@ -623,6 +623,7 @@ class BCBioRunner:
                     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
                     vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
                     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+                    
                     for sample in clinical_report_caller.samples:
                         wait_for_steps = []
                         wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
