@@ -1,0 +1,246 @@
+<!--<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">-->
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="common.css" />
+    <link rel="stylesheet" type="text/css" href="report.css" />
+    <link rel="stylesheet" type="text/css" href="table_sorter/style.css" />
+
+    <link rel="stylesheet" type="text/css" href="clinical_report.css" />
+    <link rel="stylesheet" type="text/css" href="header_picture.css" />
+
+    <!--[if IE]>
+        <style>
+            table.report_table {
+                table-layout: fixed;
+                width: 100%;
+            }
+            table.report_table td {
+            }
+        </style>
+    <![endif]-->
+
+    <script type="text/javascript" src="jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="scripts/utils.js"></script>
+    <script type="text/javascript" src="table_sorter/tsort.js"></script>
+    <script type="text/javascript" src="clinical_report.js"></script>
+    <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
+    <script type="text/javascript" src="draw_seq2c_plot.js"></script>
+</head>
+
+<body>
+
+<div id="clinical_report_header_container">
+    <!--<div style="width: 100%; height: 30px; padding: 5px;">Internet Explorer is not supported </div>-->
+    <div id="clinical_report_header_image"></div>
+</div>
+
+<div class="content">
+    <div style="margin-top: -150px; margin-bottom: 45px; color: white;">
+        <h1 style="">Clinical report</h1>
+        <span style="color: #CCC;">For research use only</span>
+    </div>
+
+    <div id='report' class="clinical_report">
+        <div style="width: 1127px">
+            <div style="">
+            {.section sample}
+                <h1 class="report-header">{sample}</h1>
+                <p style="line-height: 1.5em;">
+                <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
+                {.section patient}
+                    <b>Patient: </b>{sex}<br>
+                {.end}
+                <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
+                <b>Sample type: </b>{sample_type}<br>
+                <b>Target: </b><a href="{bed_path}">{panel}</a>,
+                    covered {target_fraction} of all positions
+                    at {ave_depth} average coverage<br>
+                </p>
+
+                <!--<div class="row placeholders">-->
+                    <!--<div class="col-xs-6 col-sm-3 placeholder">-->
+                        <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
+                        <!--<h4 class="section_header">Gender</h4>-->
+                        <!--{.section basecalls}-->
+                        <!--<span class="text-muted">{contents}<br></span>-->
+                        <!--{.end}-->
+                        <!--{.section raw_fastqc}-->
+                        <!--<span class="text-muted">{contents}<br></span>-->
+                        <!--{.end}-->
+                        <!--{.section fastqc}-->
+                        <!--<span class="text-muted">{contents}</span>-->
+                        <!--{.or}-->
+                        <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
+                        <!--{.end}-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="space_30px"></div>-->
+            {.end}
+            </div>
+
+            <!--<div style="float: left; margin-left: 10px;">-->
+            <!--{.section approach}-->
+                <!--<h1 class="report-header">Approach</h1>-->
+                <!--<p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's-->
+                    <!--{target_type} was performed and covered {target_fraction}-->
+                    <!--of all positions at {ave_depth} average coverage,-->
+                    <!--resulting in {total_variants} variants compared to a reference genome.-->
+                    <!--These data were analyzed to identify previously reported and novel variants-->
+                    <!--in {total_key_genes} genes that have been previously implicated-->
+                    <!--in various cancers (see Supplement for a list of genes and coverage information).-->
+                    <!--&lt;!&ndash;All genes relevant to the indication had adequate coverage (>95% at 8X).&ndash;&gt;-->
+                    <!--&lt;!&ndash;Please note that the presence of pathogenic variants in genes not analyzed&ndash;&gt;-->
+                    <!--&lt;!&ndash;or with incomplete coverage cannot be fully excluded.&ndash;&gt;-->
+                <!--</p>-->
+            <!--{.end}-->
+            <!--</div>-->
+            <!--<div style="clear: both"></div>-->
+        </div>
+
+        <div class="space_8px"></div>
+        <div class="space_8px"></div>
+        <div>
+            <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Actionable key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#coverage">Coverage analysis for the key genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+        </div>
+        <div class="space_4px"></div>
+
+        <a name="variants"></a>
+        <h1>Mutations in key genes</h1>
+        {.section variants}
+            <div id="variants_div" style="width: 800px;">
+                <p style="margin-top: -5px;">{total_target_variants} targetseq variants and {total_wgs_variants} WGS variants were
+                    found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
+                    These data were analyzed to identify previously reported and novel variants
+                    in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
+                </p>
+                <p id="variants_switch">
+                    <span>Likely pathogenic</span>
+                    /
+                    <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">
+                        all variants</a>
+                </p>
+                <div id="variants_table_div">
+                    {table}
+                </div>
+            </div>
+        {.or}
+            <p>No variants detected in key regions.</p>
+        {.end}
+
+        <a name="actionable"></a>
+        <h1>Actionable key genes</h1>
+        {.section actionable_genes}
+            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
+            <div class="actionable_table">
+                {table}
+            </div>
+        {.or}
+            <p>No mutations found in actionable genes.</p>
+        {.end}
+
+        <a name="seq2c"></a>
+        <h1>Seq2C log2 ratios (CNV)</h1>
+        {.section seq2c}
+            <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
+                <span style="color: green;">Green</span> means amplification,
+                <span style="color: red;">red</span> means deletion,
+                <b>black</b> means no event.</p>
+            <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
+                <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
+            <!--</div>-->
+            <div class="js_plot" id="seq2c_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder' id="seq2c_plot_placeholder">
+                            </div>
+                        </td>
+                        <td>
+                            <div class='legend_placeholder' id="seq2c_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="json_code">
+                    <div id="seq2c_plot_data_json">
+                        {plot_data}
+                    </div>
+                </div>
+            </div>
+        {.or}
+        {.end}
+
+        <a name="coverage"></a>
+        {.section coverage}
+        <h1>Coverage analysis for the key genes</h1>
+        <div class="coverage_plot">
+            <p style="margin-top: -5px;">
+                Height inidicates gene average coverage,
+                <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage),
+            </p>
+            <div class="js_plot" id="gene_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder' id="gene_plot_placeholder">
+                            </div>
+                        </td>
+                        <td>
+                            <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="json_code">
+                    <div id="gene_plot_data_json">
+                        {plot_data}
+                    </div>
+                </div>
+            </div>
+            <!--<div class="space_30px"></div>-->
+        </div>
+
+        <table width="100%">
+            <tr>
+            <!--<div class="multi-col-layout">-->
+            {.repeated section columns}
+                <td style="">
+                    <table class="report_table static_report"
+                           style="margin-right: 40px;">
+                        <thead>
+                            <tr class="top_row_tr">
+                                {.repeated section metric_names}
+                                    {@}
+                                {.end}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {.repeated section rows}
+                                <tr>
+                                    {.repeated section records}
+                                        {@}
+                                    {.end}
+                                </tr>
+                            {.end}
+                        </tbody>
+                    </table>
+                </td>
+            {.end}
+            <!--</div>-->
+            </tr>
+        </table>
+        {.end}
+    </div>
+</div>
+</body>
+
+</html>

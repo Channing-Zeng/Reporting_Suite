@@ -60,7 +60,7 @@ def main():
         optional=[])
 
     clin_info = clinical_sample_info_from_cnf(cnf)
-    html_fpath = make_clinical_report(clin_info, clin_info.sample.clinical_html)
+    html_fpath = make_clinical_report(cnf, clin_info, clin_info.sample.clinical_html)
     info('Clinical report: ' + html_fpath)
 
     if not cnf['keep_intermediate']:

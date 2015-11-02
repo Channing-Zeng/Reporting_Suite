@@ -1,8 +1,10 @@
-from os.path import join
+from collections import OrderedDict
+from os.path import join, abspath, dirname
 from source import info
-from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure
-from source.clinical_reporting.clinical_reporting import Chromosome
-from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport
+from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation
+from source.clinical_reporting.clinical_reporting import Chromosome, gray, ClinicalReporting, BaseClinicalReporting
+from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
+    build_report_html
 from source.reporting.reporting import ReportSection
 
 
@@ -11,11 +13,11 @@ def run_clinical_target2wgs(cnf, wgs_bs, target_bs, shared_sample_names, output_
 
     for sname in shared_sample_names:
         info('Preparing ' + sname + '...')
-        target_sample = next(s for s in target_bs.samples if s.name == sname)
+        trg_sample = next(s for s in target_bs.samples if s.name == sname)
         wgs_sample = next(s for s in wgs_bs.samples if s.name == sname)
 
         info('-' * 70)
-        clinsample_target_info = clinical_sample_info_from_bcbio_structure(cnf, target_bs, target_sample)
+        clinsample_target_info = clinical_sample_info_from_bcbio_structure(cnf, target_bs, trg_sample)
         info('')
         info('-' * 70)
         clinsample_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample)
@@ -32,33 +34,52 @@ def run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs
         join(output_dirpath, 'clinical_report.html'))
 
 
-class ComparisonClinicalReporting:
-    def __init__(self, cnf, target_info, wgs_info):
-        self.target_info = target_info
+# class ComparisonMutation(Mutation):
+#     def __init__(self, target_match=None, wgs_match=None, *args, **kwargs):
+#         Mutation.__init__(self, *args, **kwargs)
+#         self.target_match = target_match
+#         self.wgs_match = wgs_match
+
+
+class ComparisonClinicalReporting(BaseClinicalReporting):
+    def __init__(self, cnf, targetseq_info, wgs_info, *args):
+        BaseClinicalReporting.__init__(self, cnf, *args)
+
+        self.trg_info = targetseq_info
         self.wgs_info = wgs_info
-        self.target_sample = target_info.sample
+        self.trg_sample = targetseq_info.sample
         self.wgs_sample = wgs_info.sample
-        self.cnf = cnf
-        self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
 
         info('Preparing data...')
-        self.mutations_report = self.make_mutations_report()
-        self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
-        self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
-        self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
-        self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
+        self.combined_mutations = self.combine_mutations()
+        self.mutations_report = self.make_mutations_report(self.combined_mutations)
+        # self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
+        # self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
+        # self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
+        # self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
+
+    def combine_mutations(self):
+        comb_muts = OrderedDict()
+        for trg_mut in self.trg_info.mutations:
+            comb_muts[trg_mut.get_key()] = [trg_mut, None]
+
+        for wgs_mut in self.wgs_info.mutations:
+            v = comb_muts.get(wgs_mut.get_key())
+            comb_muts[wgs_mut.get_key()] = [v[0] if v else None, wgs_mut]
+
+        return comb_muts
 
     def write_report(self, output_fpath):
         info('')
 
         write_static_html_report(self.cnf, {
-            'sample': self.__sample_section(),
+            # 'sample': self.__sample_section(),
             'variants': self.__mutations_section(),
-            'seq2c': self.__seq2c_section(),
-            'coverage': self.__coverage_section(),
-            'actionable_genes': self.__actionable_genes_section()
+            # 'seq2c': self.__seq2c_section(),
+            # 'coverage': self.__coverage_section(),
+            # 'actionable_genes': self.__actionable_genes_section()
         }, output_fpath,
-           tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
+           tmpl_fpath=join(dirname(abspath(__file__)), 'template_target2wgs.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
@@ -98,8 +119,9 @@ class ComparisonClinicalReporting:
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
-            mutations_dict['total_variants'] = Metric.format_value(self.info.total_variants, is_html=True)
-            mutations_dict['total_key_genes'] = Metric.format_value(len(self.info.key_gene_by_name), is_html=True)
+            mutations_dict['total_target_variants'] = Metric.format_value(self.trg_info.total_variants, is_html=True)
+            mutations_dict['total_wgs_variants'] = Metric.format_value(self.wgs_info.total_variants, is_html=True)
+            mutations_dict['total_key_genes'] = Metric.format_value(len(self.trg_info.key_gene_by_name), is_html=True)
         return mutations_dict
 
     def __coverage_section(self):
@@ -168,7 +190,7 @@ class ComparisonClinicalReporting:
                             cid + '">COSM</a>' for cid in mut.cosmic_ids)
         return db
 
-    def make_mutations_report(self):
+    def make_mutations_report(self, combined_mutations):
         clinical_mut_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
                 Metric('Gene'),  # Gene & Transcript
@@ -179,7 +201,7 @@ class ComparisonClinicalReporting:
                 # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
                 Metric('Position',
                        # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
-                       with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                    with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
                 Metric('Change', max_width=95, class_='long_line'),       # G>A
                 Metric('DP Target', max_width=48),              # 658
                 Metric('DP WGS', max_width=48),              # 658
@@ -194,53 +216,30 @@ class ComparisonClinicalReporting:
                 Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
             ])])
 
-        report = PerRegionSampleReport(sample=self.target_info.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
+        report = PerRegionSampleReport(sample=self.trg_info.sample,
+            metric_storage=clinical_mut_metric_storage, expandable=True)
 
-        for mut in mutations:
+        for trg_mut, wgs_mut in self.combined_mutations.values():
+            mut = trg_mut or wgs_mut
+
             row = report.add_row()
             row.add_record('Gene', mut.gene.name)
             row.add_record('Transcript', mut.transcript)
-            # row.add_record('Codon chg', mut.codon_change)
-
-            aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
-            row.add_record('AA chg', aa_chg)
-
-            c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
-            p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
-            row.add_record('Position', gray(c + ':') + p,
-                           num=mut.get_chrom_key() * 100000000000 + mut.pos)
-
-            chg = mut.ref + '>' + mut.alt
-            if mut.var_type:
-                t = mut.var_type
-                if t in ['Insertion', 'Deletion']:
-                    t = t[:3]
-                chg = gray(t) + ' ' + chg
-            row.add_record('Change', chg)
-
-            row.add_record('Depth', mut.depth)
-            row.add_record('Freq', mut.freq)
+            row.add_record('AA chg', **self._aa_chg_recargs(mut))
+            row.add_record('Position', **self._pos_recargs(mut))
+            row.add_record('Change', **self._chg_recargs(mut))
+            row.add_record('DP Target', trg_mut.depth if trg_mut else None)
+            row.add_record('DP WGS', wgs_mut.depth if wgs_mut else None)
+            row.add_record('AF Target', trg_mut.freq if trg_mut else None)
+            row.add_record('AF WGS', wgs_mut.freq if wgs_mut else None)
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
-
-            status = mut.status
-            if mut.reason:
-                status += gray(' (' + mut.reason + ')')
-            row.add_record('VarDict status', status)
+            row.add_record('VarDict status', **self._status_field(mut))
             # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', self.make_db_html(mut), parse=False)
-            row.add_record('ClinVar', mut.solvebio.clinsig if mut.solvebio else '', url=mut.solvebio.url if mut.solvebio else None)
+            row.add_record('Databases', self._db_recargs(mut))
+            row.add_record('ClinVar', self._clinvar_recargs(mut))
 
-            # Highlighting or hiding:
-            if not mut.status or mut.status.lower() == 'unknown':
-                if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
-                    warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
-                row.hidden = True
-            else:
-                if mut.status and mut.status.lower() == 'known':
-                    row.highlighted = True
-                # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
-                #     row.highlighted = True
+            self._highlighting_and_hiding_mut_row(row, mut)
 
         return report
 

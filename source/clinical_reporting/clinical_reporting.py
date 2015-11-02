@@ -8,8 +8,8 @@ from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleRep
 from source.utils import get_chr_lengths
 
 
-def make_clinical_report(clinical_sample_info, output_fpath):
-    return ClinicalReporting(clinical_sample_info).write_report(output_fpath)
+def make_clinical_report(cnf, clinical_sample_info, output_fpath):
+    return ClinicalReporting(cnf, clinical_sample_info).write_report(output_fpath)
 
 
 class Chromosome:
@@ -31,12 +31,77 @@ class Chromosome:
             for i in range(len(chromosomes_by_name.keys()) + 1)]
 
 
-class ClinicalReporting:
-    def __init__(self, clinical_sample_info):
+class BaseClinicalReporting:
+    def __init__(self, cnf, *args):
+        self.cnf = cnf
+        self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
+
+    @staticmethod
+    def _db_recargs(mut):
+        db = ''
+        if mut.dbsnp_ids:
+            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search'
+                             '&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
+        if db and mut.cosmic_ids:
+            db += ', '
+        if mut.cosmic_ids:
+            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' +
+                            cid + '">COSM</a>' for cid in mut.cosmic_ids)
+        return dict(value=db)
+
+    @staticmethod
+    def _aa_chg_recargs(mut):
+        aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
+        return dict(value=aa_chg)
+
+    @staticmethod
+    def _pos_recargs(mut):
+        c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
+        p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+        return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
+
+    @staticmethod
+    def _chg_recargs(mut):
+        chg = mut.ref + '>' + mut.alt
+        if mut.var_type:
+            t = mut.var_type
+            if t in ['Insertion', 'Deletion']:
+                t = t[:3]
+            chg = gray(t) + ' ' + chg
+        return dict(value=chg)
+
+    @staticmethod
+    def _status_field(mut):
+        status = mut.status
+        if mut.reason:
+            status += gray(' (' + mut.reason + ')')
+        return dict(value=status)
+
+    @staticmethod
+    def _clinvar_recargs(mut):
+        if mut.solvebio:
+            return dict(value=mut.solvebio.clinsig, url=mut.solvebio.url)
+        else:
+            return dict(value='')
+
+    @staticmethod
+    def _highlighting_and_hiding_mut_row(row, mut):
+        if not mut.status or mut.status.lower() == 'unknown':
+            if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
+                warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
+            row.hidden = True
+        else:
+            if mut.status and mut.status.lower() == 'known':
+                row.highlighted = True
+        return row
+
+
+class ClinicalReporting(BaseClinicalReporting):
+    def __init__(self, cnf, clinical_sample_info):
+        BaseClinicalReporting.__init__(self, cnf)
+
         self.info = clinical_sample_info
         self.sample = clinical_sample_info.sample
-        self.cnf = clinical_sample_info.cnf
-        self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
 
         info('Preparing data...')
         self.mutations_report = self.make_mutations_report(self.info.mutations)
@@ -152,19 +217,6 @@ class ClinicalReporting:
 
         return key_genes_report
 
-    @staticmethod
-    def make_db_html(mut):
-        db = ''
-        if mut.dbsnp_ids:
-            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search'
-                             '&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
-        if db and mut.cosmic_ids:
-            db += ', '
-        if mut.cosmic_ids:
-            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' +
-                            cid + '">COSM</a>' for cid in mut.cosmic_ids)
-        return db
-
     def make_mutations_report(self, mutations):
         clinical_mut_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
@@ -176,7 +228,7 @@ class ClinicalReporting:
                 # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
                 Metric('Position',
                        # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
-                       with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                    with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
                 Metric('Change', max_width=95, class_='long_line'),       # G>A
                 Metric('Depth', max_width=48),              # 658
                 Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
@@ -185,7 +237,7 @@ class ClinicalReporting:
                 Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
                 Metric('VarDict status', short_name='Pathogenic,\nreported by VarDict'),     # Likely
                 # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
-                Metric('Databases'),                 # rs352343, COSM2123
+                Metric('Databases', parse=False),                 # rs352343, COSM2123
                 Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
             ])])
 
@@ -195,47 +247,19 @@ class ClinicalReporting:
             row = report.add_row()
             row.add_record('Gene', mut.gene.name)
             row.add_record('Transcript', mut.transcript)
-            # row.add_record('Codon chg', mut.codon_change)
-
-            aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
-            row.add_record('AA chg', aa_chg)
-
-            c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
-            p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
-            row.add_record('Position', gray(c + ':') + p,
-                           num=mut.get_chrom_key() * 100000000000 + mut.pos)
-
-            chg = mut.ref + '>' + mut.alt
-            if mut.var_type:
-                t = mut.var_type
-                if t in ['Insertion', 'Deletion']:
-                    t = t[:3]
-                chg = gray(t) + ' ' + chg
-            row.add_record('Change', chg)
-
+            row.add_record('AA chg', **self._aa_chg_recargs(mut))
+            row.add_record('Position', **self._pos_recargs(mut))
+            row.add_record('Change', **self._chg_recargs(mut))
             row.add_record('Depth', mut.depth)
             row.add_record('Freq', mut.freq)
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
-
-            status = mut.status
-            if mut.reason:
-                status += gray(' (' + mut.reason + ')')
-            row.add_record('VarDict status', status)
+            row.add_record('VarDict status', **self._status_field(mut))
             # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', self.make_db_html(mut), parse=False)
-            row.add_record('ClinVar', mut.solvebio.clinsig if mut.solvebio else '', url=mut.solvebio.url if mut.solvebio else None)
+            row.add_record('Databases', self._db_recargs(mut))
+            row.add_record('ClinVar', self._clinvar_recargs(mut))
 
-            # Highlighting or hiding:
-            if not mut.status or mut.status.lower() == 'unknown':
-                if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
-                    warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
-                row.hidden = True
-            else:
-                if mut.status and mut.status.lower() == 'known':
-                    row.highlighted = True
-                # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
-                #     row.highlighted = True
+            self._highlighting_and_hiding_mut_row(row, mut)
 
         return report
 
@@ -248,7 +272,7 @@ class ClinicalReporting:
                 Metric('Variant', min_width=80, max_width=80, style='white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
                 Metric('Type', min_width=120, max_width=120, style='white-space: pre; !important', class_='long_line'),               # Frameshift
                 Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations',
-                       min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
+                    min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
                 Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
                 Metric('Therapeutic Agents'),  # Sorafenib
             ])])

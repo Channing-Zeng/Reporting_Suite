@@ -43,7 +43,7 @@ class Record:
             text_color=None):  # TODO: get rid of those
 
         self.metric = metric
-        if parse:
+        if self.metric.parse:
             self.set_value(value)
         else:
             self.value = value
@@ -143,6 +143,7 @@ class Metric:
             max_width=None,
             min_width=None,
             sort_direction=None,
+            parse=True,
 
             sort_by=None,  # legacy
 
@@ -172,6 +173,7 @@ class Metric:
         self.max_width = max_width
         self.min_width = min_width
         self.sort_direction = sort_direction
+        self.parse = parse
 
         self.numbers = []
         self.values = []
@@ -550,7 +552,7 @@ class FullReport(BaseReport):
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
 
-        self.sample_metric = Metric(name='Sample', with_heatmap=False, align='left')
+        self.sample_metric = Metric(name='Sample', with_heatmap=False, align='left', parse=False)
         if self.metric_storage:
             for section in self.metric_storage.sections:
                 # section.get_metrics = lambda: [self.sample_metric] + section.metrics
@@ -610,7 +612,7 @@ class FullReport(BaseReport):
         for i, sr in enumerate(self.sample_reports):
             recs = []
             recs.append(Record(metric=self.sample_metric, value=sr.display_name,
-                url=sr.url, html_fpath=sr.html_fpath, parse=False, num=len(self.sample_reports) - i))
+                url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i))
 
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden and not metric.name == 'Sample':
