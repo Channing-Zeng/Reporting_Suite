@@ -118,9 +118,8 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
     clinical_report_caller = \
         bs.variant_callers.get('vardict') or \
         bs.variant_callers.get('vardict-java')
-
     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
-    vardict_txt_fpath = join(bs.date_dirpath, vardict_txt_fname)
+    vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
 
     return ClinicalSampleInfo(
@@ -192,6 +191,9 @@ class ClinicalSampleInfo:
             warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
         else:
             self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
+
+        info()
+        info('Done parsing data.')
 
 
     def get_mut_info_from_solvebio(self):

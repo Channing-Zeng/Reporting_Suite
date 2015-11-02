@@ -12,7 +12,6 @@ from ext_modules.simplejson import load
 from joblib import Parallel, delayed
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.clinical_reporting.seq2c_plot import draw_seq2c_plot
 from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
     verify_module, intermediate_fname
@@ -35,16 +34,16 @@ def cnv_reports(cnf, bcbio_structure):
     info('Calculating normalized coverages for CNV...')
     cnv_report_fpath = _seq2c(cnf, bcbio_structure)
 
-    if not verify_module('matplotlib'):
-        warn('No matplotlib, skipping plotting Seq2C')
-    else:
-        Parallel(n_jobs=cnf.threads) \
-            (delayed(draw_seq2c_plot)(CallCnf(cnf.__dict__), cnv_report_fpath, s.name,
-                    cnf.output_dir, chr_lens=get_chr_lengths(cnf))
-                for s in bcbio_structure.samples)
-
-        for s in bcbio_structure.samples:
-            plot_fpath = draw_seq2c_plot(cnf, cnv_report_fpath, s.name, cnf.output_dir)
+    # if not verify_module('matplotlib'):
+    #     warn('No matplotlib, skipping plotting Seq2C')
+    # else:
+    #     Parallel(n_jobs=cnf.threads) \
+    #         (delayed(draw_seq2c_plot)(CallCnf(cnf.__dict__), cnv_report_fpath, s.name,
+    #                 cnf.output_dir, chr_lens=get_chr_lengths(cnf))
+    #             for s in bcbio_structure.samples)
+    #
+    #     for s in bcbio_structure.samples:
+    #         plot_fpath = draw_seq2c_plot(cnf, cnv_report_fpath, s.name, cnf.output_dir)
     info()
     info('*' * 70)
     if cnv_report_fpath:

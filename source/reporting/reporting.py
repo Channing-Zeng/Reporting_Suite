@@ -545,16 +545,16 @@ class FullReport(BaseReport):
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
 
-            self.sample_metric = Metric(name='Sample', with_heatmap=False, align='left')
-            for section in self.metric_storage.sections:
-                # section.get_metrics = lambda: [self.sample_metric] + section.metrics
-                section.add_metric(self.sample_metric, prepend=True)
-
         elif sample_reports and sample_reports[0].metric_storage:
             self.metric_storage = sample_reports[0].metric_storage
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
 
+        self.sample_metric = Metric(name='Sample', with_heatmap=False, align='left')
+        if self.metric_storage:
+            for section in self.metric_storage.sections:
+                # section.get_metrics = lambda: [self.sample_metric] + section.metrics
+                section.add_metric(self.sample_metric, prepend=True)
 
     def get_common_records(self):
         common_records = []
