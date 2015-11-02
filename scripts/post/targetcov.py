@@ -195,7 +195,7 @@ def finalize_one(cnf, *args):
 
     if gene_report:
         if gene_report.txt_fpath:
-            info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.regions)) + ' regions)')
+            info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.rows)) + ' regions)')
 
     if len(args) > 2:
         # key_genes_report = args[2]
@@ -204,7 +204,7 @@ def finalize_one(cnf, *args):
         selected_regions_report = args[2]
         if selected_regions_report.txt_fpath:
             info('Flagged regions: ' + selected_regions_report.txt_fpath +
-                 ' (' + str(len(selected_regions_report.regions)) + ' regions)')
+                 ' (' + str(len(selected_regions_report.rows)) + ' regions)')
 
 
 if __name__ == '__main__':
