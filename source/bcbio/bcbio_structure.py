@@ -19,7 +19,7 @@ from source.calling_process import call
 from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, set_up_log, set_up_work_dir, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log, set_up_work_dir, \
     detect_sys_cnf_by_location, check_genome_resources, check_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
@@ -29,7 +29,7 @@ from source.utils import OrderedDefaultDict
 def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + proc_name + ' reports.'
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--varqc-dir', dest='proc_dir_name', default=proc_dir_name, help='Optional - to distinguish VarQC_summary and VarQC_after_summary')

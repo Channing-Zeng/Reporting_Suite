@@ -25,7 +25,7 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source.logger import info, critical, err, is_local, warn, send_email
 from source.utils import is_az
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, determine_sys_cnf, determine_run_cnf, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
     add_suffix, file_transaction
@@ -40,7 +40,7 @@ def proc_opts():
     description = 'This script runs preprocessing. ' + usage
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
     parser.add_option('--bed', dest='bed', help='BED file (used for downsampled TargQC reports)')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')

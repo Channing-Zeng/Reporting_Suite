@@ -14,7 +14,7 @@ from source.config import Config
 from source.fastqc.fastq_utils import downsample
 from source.file_utils import adjust_path, verify_dir, workdir, open_gzipsafe
 from source.logger import critical, warn, err
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, determine_sys_cnf, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_sys_cnf, \
     determine_run_cnf
 from source.tools_from_cnf import get_system_path
 
@@ -41,7 +41,7 @@ def main():
     parser.add_option('--downsample-to', dest='downsample_to', default=None, type='int',
         help='Downsample reads to avoid excessive processing times with large files. '
              'Default is 1 million. Set to 0 to turn off downsampling.')
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     (opts, args) = parser.parse_args()
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))

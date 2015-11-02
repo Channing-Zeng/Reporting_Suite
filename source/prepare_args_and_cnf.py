@@ -20,7 +20,7 @@ from source.utils import is_china
 from source.utils import is_local
 
 
-def add_cnf_t_reuse_prjname_reuse_marker_genome(parser):
+def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
     parser.add_option('-t', dest='threads', type='int', help='Max number of threads', default=40)

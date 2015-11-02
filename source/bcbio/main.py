@@ -8,7 +8,7 @@ from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, set_up_log
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
 from source.file_utils import safe_mkdir, adjust_path
 from source.targetcov import summarize_targetcov
 from source.variants import summarize_qc
@@ -20,7 +20,7 @@ def main():
     description = 'This script runs reporting suite on the bcbio final directory.'
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--load-mongo', '--mongo-loader', dest='load_mongo', action='store_true', default=defaults['load_mongo'], help='Load to Mongo DB')
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')

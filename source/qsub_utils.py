@@ -12,7 +12,7 @@ from source.file_utils import make_tmpfile, adjust_system_path, verify_file
 
 class JobRunning:
     def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker_fpath, error_marker_fpath,
-                 output_fpath=None, tx_output_fpath=None, sample=None, **kwargs):
+                 output_fpath=None, tx_output_fpath=None, stdout_to_outputfile=True, sample=None, **kwargs):
         self.job_id = job_id
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
@@ -22,6 +22,7 @@ class JobRunning:
         self.is_done = False
         self.output_fpath = output_fpath
         self.tx_output_fpath = tx_output_fpath
+        self.stdout_to_outputfile = stdout_to_outputfile
         self.sample = sample
         for k, v in kwargs.items():
             self.__dict__[k] = v
@@ -29,21 +30,19 @@ class JobRunning:
 
 def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
                output_fpath=None, stdout_to_outputfile=True, **kwargs):
-    out_fpath = None
+    tx_output_fpath = None
     if output_fpath:
         if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
             info(output_fpath + ' exists, reusing')
             return None
         if stdout_to_outputfile:
-            out_fpath = output_fpath + '.tx'
-            if isfile(out_fpath):
-                os.remove(out_fpath)
+            tx_output_fpath = output_fpath + '.tx'
+            if isfile(tx_output_fpath):
+                os.remove(tx_output_fpath)
+            cmdline += ' > ' + tx_output_fpath
         else:
             if isfile(output_fpath):
                 os.remove(output_fpath)
-        if not out_fpath:
-            return None
-        cmdline += ' > ' + out_fpath
 
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
@@ -70,7 +69,8 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     info('Submitting job ' + job_id)
     info(qsub_cmdline)
     job = JobRunning(job_id, log_fpath, qsub_cmdline, done_marker_fpath, error_marker_fpath,
-                     output_fpath=output_fpath, tx_output_fpath=out_fpath, **kwargs)
+                     output_fpath=output_fpath, tx_output_fpath=tx_output_fpath,
+                     stdout_to_outputfile=stdout_to_outputfile, **kwargs)
     call(cnf, qsub_cmdline, silent=True)
     return job
 
@@ -89,13 +89,21 @@ def wait_for_jobs(cnf, jobs):
                     if waiting:
                         info('', print_date=False)
                     if j.output_fpath:
-                        if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.repr)):
-                            err('Job ' + j.repr + ' was unsuccessful: ' + j.tx_output_fpath + ' does not exist or empty.' +
-                               ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                        if j.stdout_to_outputfile:
+                            if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.repr)):
+                                err('Job ' + j.repr + ' was unsuccessful: ' + str(j.tx_output_fpath) + ' does not exist or empty.' +
+                                   ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                            else:
+                                os.rename(j.tx_output_fpath, j.output_fpath)
+                                info('Done ' + j.repr + ', saved to ' + j.output_fpath +
+                                    ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
                         else:
-                            os.rename(j.tx_output_fpath, j.output_fpath)
-                            info('Done ' + j.repr + ', saved to ' + j.output_fpath +
-                                ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                            if not verify_file(j.output_fpath, description='j.output_fpath for ' + str(j.repr)):
+                                err('Job ' + j.repr + ' was unsuccessful: ' + str(j.output_fpath) + ' does not exist or empty.' +
+                                   ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                            else:
+                                info('Done ' + j.repr + ', saved to ' + j.output_fpath +
+                                    ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
 
                     else:
                         info('Done ' + j.repr + ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))

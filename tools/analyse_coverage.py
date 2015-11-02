@@ -8,7 +8,7 @@ from optparse import OptionParser
 
 from source import logger
 from source.config import Config, defaults
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_genome_resources, determine_sys_cnf, \
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_genome_resources, determine_sys_cnf, \
     determine_run_cnf
 from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
@@ -24,7 +24,7 @@ def main():
 
     description = 'This script generates target QC reports for each BAM provided as an input.'
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')

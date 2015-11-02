@@ -13,7 +13,7 @@ from source.bcbio.bcbio_runner import BCBioRunner
 from source.clinical_reporting.target2wgs import run_clinical_target2wgs
 from source.config import defaults
 from source.logger import info, critical, err
-from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_reuse_marker_genome, check_system_resources, set_up_log
+from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
 from source.file_utils import safe_mkdir, adjust_path
 
 
@@ -23,7 +23,7 @@ def main():
     description = 'This script makes paired WGS-target clincial reports based on 2 bcbio projects.'
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_reuse_marker_genome(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
     parser.add_option('--jira', dest='jira', help='JIRA case path')
@@ -34,12 +34,14 @@ def main():
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
 
     if len(bcbio_project_dirpaths) < 2 or len(bcbio_project_dirpaths) > 2:
-        critical('Usage: ' + __file__ + ' wgs_project_project_bcbio_path targetseq_project_bcbio_path [-o output_dir]')
+        critical('Usage: ' + __file__ + ' wgs_project_project_bcbio_path '
+                 'targetseq_project_bcbio_path [-o output_dir]')
 
     info()
     info('*' * 70)
     bcbio_structures = []
-    for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
+    for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
+            bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
         bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
         bcbio_structures.append(bs)
 
