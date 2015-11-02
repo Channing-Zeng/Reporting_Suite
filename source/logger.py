@@ -166,6 +166,8 @@ def critical(msg=''):
 
 
 def _log(out, msg='', ending='\n', print_date=True, severity=None):
+    msg = str(msg)
+    
     if print_date:
         msg = timestamp() + msg
 

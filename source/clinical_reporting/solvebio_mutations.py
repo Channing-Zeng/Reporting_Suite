@@ -75,7 +75,7 @@ def query_mutations(cnf, mutations):
                     mut.solvebio = solvbio_record
         info('Done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
     except SolveError:
-        err(format_exc)
+        err(format_exc())
         err('Could not retrieve information for SolveBio, skipping')
 
     if cnf.debug:
