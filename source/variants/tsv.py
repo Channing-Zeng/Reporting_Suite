@@ -64,6 +64,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
     with open(vcf_fpath) as inp:
         reader = vcf.Reader(inp)
 
+        info('TSV saver: Building field list')
         for f in [rec.keys()[0] for rec in manual_tsv_fields]:
             if f.startswith('GEN'):
                 _f = f.split('.')[1]
@@ -93,6 +94,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                 else:
                     warn('Warning: ' + f + ' is not in VCF header INFO records')
 
+        info('TSV saver: Iterating over records...')
         d = OrderedDict()
         for rec in reader:
             for f in basic_fields:
@@ -141,6 +143,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                 fs.append(v if v != '.' else '')
             lines.append(fs)
 
+    info('TSV saver: Adding GEN[*] fields both for sample and for matched normal...')
     field_map = dict()
     for rec in manual_tsv_fields:
         k = rec.keys()[0]
@@ -152,6 +155,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
         else:
             field_map[k] = v
 
+    info('TSV saver: Writing TSV to ' + tsv_fpath)
     with file_transaction(cnf.work_dir, tsv_fpath) as tx:
         with open(tx, 'w') as out:
             out.write('\t'.join(field_map[f] for f in all_fields) + '\n')
@@ -166,6 +170,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                         new_fs.append(str(f))
                 out.write('\t'.join(new_fs) + '\n')
 
+    info('TSV saver: saved ' + tsv_fpath)
     return tsv_fpath
 
 

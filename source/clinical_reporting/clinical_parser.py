@@ -5,6 +5,7 @@ from os.path import join
 
 import source
 from source import verify_file, info
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
 from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err
 from source.reporting.reporting import SampleReport
@@ -113,28 +114,60 @@ class Target:
         self.bed_fpath = bed_fpath
 
 
+def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
+    clinical_report_caller = \
+        bs.variant_callers.get('vardict') or \
+        bs.variant_callers.get('vardict-java')
+
+    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
+    vardict_txt_fpath = join(bs.date_dirpath, vardict_txt_fname)
+    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+
+    return ClinicalSampleInfo(
+        cnf, sample=sample, key_genes=cnf.key_genes,
+        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
+        varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
+        seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
+        project_report_path=bs.project_report_html_fpath)
+
+
+def clinical_sample_info_from_cnf(cnf):
+    sample = source.BaseSample(cnf.sample, cnf.output_dir,
+        targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
+        normal_match=cnf.match_sample_name)
+
+    return ClinicalSampleInfo(cnf, sample=sample,
+        key_genes=cnf.key_genes, target_type=cnf.target_type,
+        bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath,
+        varqc_json_fpath=cnf.varqc_json_fpath, seq2c_tsv_fpath=cnf.seq2c_tsv_fpath,
+        project_name=cnf.project_name, project_report_path=cnf.project_report_path)
+
+
 class ClinicalSampleInfo:
-    def __init__(self, cnf):
+    def __init__(self, cnf, sample, key_genes, target_type,
+                 bed_fpath, mutations_fpath, varqc_json_fpath,
+                 project_report_path, project_name, seq2c_tsv_fpath=None):
         self.cnf = cnf
-        self.sample = source.BaseSample(cnf.sample, cnf.output_dir,
-            targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
-            normal_match=cnf.match_sample_name)
-        info('Sample: ' + str(cnf.sample))
-        info('Match sample name: ' + str(cnf.match_sample_name))
+        self.sample = sample
+        self.project_report_path = project_report_path
+        self.project_name = project_name
+
+        info('Sample: ' + str(sample.name))
+        info('Match sample name: ' + str(sample.normal_match))
         info()
 
-        info('Preparing data for a clinical report for AZ 300 key genes ' + str(self.cnf.key_genes) + ', sample ' + self.sample.name)
+        info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
         self.key_gene_by_name = dict()
-        for gene_name in get_key_genes(self.cnf.key_genes):
+        for gene_name in get_key_genes(key_genes):
             self.key_gene_by_name[gene_name] = KeyGene(gene_name)
 
         info('Parsing target and patient info...')
         self.depth_cutoff = None
         self.patient = Patient(gender=get_gender(self.sample, self.sample.targetcov_json_fpath))
         self.target = Target(
-            type_=cnf.target_type,
+            type_=target_type,
             coverage_percent=get_target_fraction(self.sample, self.sample.targetcov_json_fpath),
-            bed_fpath=self.cnf.bed_fpath)
+            bed_fpath=bed_fpath)
 
         info('Parsing TargetCov key genes stats...')
         self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
@@ -145,8 +178,8 @@ class ClinicalSampleInfo:
         self.actionable_genes_dict = parse_broad_actionable()
 
         info('Parsing mutations...')
-        self.total_variants = get_total_variants_number(self.sample, self.cnf.varqc_json_fpath)
-        self.mutations = self.parse_mutations(self.cnf.mutations_fpath)
+        self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
+        self.mutations = self.parse_mutations(mutations_fpath)
         for mut in self.mutations:
             self.key_gene_by_name[mut.gene.name].mutations.append(mut)
 
@@ -155,10 +188,10 @@ class ClinicalSampleInfo:
 
         info('Parsing Seq2C...')
         self.seq2c_events_by_gene_name = None
-        if not self.cnf.seq2c_tsv_fpath:
+        if not seq2c_tsv_fpath:
             warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
         else:
-            self.seq2c_events_by_gene_name = self.parse_seq2c_report(self.cnf.seq2c_tsv_fpath)
+            self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
 
 
     def get_mut_info_from_solvebio(self):

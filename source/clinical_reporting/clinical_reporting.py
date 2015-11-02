@@ -8,8 +8,8 @@ from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleRep
 from source.utils import get_chr_lengths
 
 
-def make_clinical_report(clinical_sample_info):
-    return ClinicalReporting(clinical_sample_info).write_report()
+def make_clinical_report(clinical_sample_info, output_fpath):
+    return ClinicalReporting(clinical_sample_info).write_report(output_fpath)
 
 
 class Chromosome:
@@ -45,7 +45,7 @@ class ClinicalReporting:
         self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
         self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
 
-    def write_report(self):
+    def write_report(self, output_fpath):
         info('')
 
         write_static_html_report(self.cnf, {
@@ -54,7 +54,7 @@ class ClinicalReporting:
             'seq2c': self.__seq2c_section(),
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section()
-        }, self.sample.clinical_html,
+        }, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
@@ -62,23 +62,23 @@ class ClinicalReporting:
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
                              join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
 
-        info('Saved clinical report to ' + self.sample.clinical_html)
+        info('Saved clinical report to ' + output_fpath)
         info('-' * 70)
         info()
-        return self.sample.clinical_html
+        return output_fpath
 
     def __sample_section(self):
         sample_dict = dict()
         sample_dict['sample'] = self.sample.name.replace('_', ' ')
         if self.info.patient.gender:
             sample_dict['patient'] = {'sex': self.info.patient.gender}
-        sample_dict['project_name'] = self.cnf.project_name.replace('_', ' ')
-        if self.cnf.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(self.cnf.project_report_path, dirname(self.sample.clinical_html))
+        sample_dict['project_name'] = self.info.project_name.replace('_', ' ')
+        if self.info.project_report_path:
+            sample_dict['project_report_rel_path'] = relpath(self.info.project_report_path, dirname(self.sample.clinical_html))
         sample_dict['panel'] = self.info.target.type
         sample_dict['bed_path'] = self.info.target.bed_fpath or ''
         if self.cnf.debug:
-            sample_dict['panel'] = self.cnf.target_type + ', AZ300 IDT panel'
+            sample_dict['panel'] = self.info.target.type + ', AZ300 IDT panel'
             sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
         sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
@@ -150,10 +150,6 @@ class ClinicalReporting:
             if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
                 reg.add_record('CNV', gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
 
-        key_genes_report.save_tsv(self.sample.clinical_targqc_tsv, human_readable=True)
-        info('Saved coverage report to ' + key_genes_report.tsv_fpath)
-        info('-' * 70)
-        info()
         return key_genes_report
 
     @staticmethod
@@ -241,10 +237,6 @@ class ClinicalReporting:
                 # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 #     row.highlighted = True
 
-        report.save_tsv(self.sample.clinical_mutation_tsv, human_readable=True)
-        info('Saved mutations report to ' + report.tsv_fpath)
-        info('-' * 70)
-        info()
         return report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
@@ -301,12 +293,7 @@ class ClinicalReporting:
             reg.add_record('Rationale', actionable_genes_dict[gene.name][0])
             reg.add_record('Therapeutic Agents', actionable_genes_dict[gene.name][2])
 
-        report.save_tsv(self.sample.clinical_target_tsv, human_readable=True)
-        info('Saved report for actionable genes to ' + report.tsv_fpath)
-        info('-' * 70)
-        info()
         return report
-
 
     def make_seq2c_plot_json(self):
         chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)

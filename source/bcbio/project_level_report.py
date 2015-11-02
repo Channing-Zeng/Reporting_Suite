@@ -130,14 +130,12 @@ def _mutations_records(general_section, bcbio_structure):
 
 def _make_url_record(html_fpath_value, metric, base_dirpath):
     # info('Adding paths to the report: ' + str(html_fpath_value))
-    if isinstance(html_fpath_value, basestring):
-        url = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
-        return Record(metric=metric, value=metric.name, url=url)
-    elif isinstance(html_fpath_value, dict):
+    if isinstance(html_fpath_value, dict):
         url = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
         return Record(metric=metric, value=metric.name, url=url)
     else:
-        pass
+        url = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
+        return Record(metric=metric, value=metric.name, url=url)
 
 
 def _add_summary_reports(general_section, bcbio_structure=None, dataset_structure=None):
@@ -223,9 +221,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                 _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
             ])
 
-            if s.clinical_html:
-                sample_reports_records[s.name].append(_make_url_record(s.clinical_html,
-                    individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath))
+            if s.phenotype != 'normal':
+                rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
+                if rec:
+                    sample_reports_records[s.name].append(rec)
 
             if gender_record_by_sample.get(s.name):
                 sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
@@ -352,7 +351,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
             d['contents'] = '<a href="' + rec.url + '">' + rec.value + '</a>'
 
         elif isinstance(rec.url, dict):
-            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.url.items()) if rec.html_fpath else '-'
+            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.url.items()) if rec.url else '-'
             if not short:
                 d['contents'] = rec.metric.name + ': ' + d['contents']
 

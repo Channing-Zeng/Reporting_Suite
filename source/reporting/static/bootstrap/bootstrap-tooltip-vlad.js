@@ -70,7 +70,7 @@
     }
 
   , enter: function (e) {
-      if (dragTable && dragTable.isDragging)
+      if (typeof dragTable !== 'undefined' && dragTable.isDragging)
           return;
 
       var self = $(e.currentTarget)[this.type](this._options).data(this.type);

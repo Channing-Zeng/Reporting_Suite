@@ -144,6 +144,8 @@ class Metric:
             min_width=None,
             sort_direction=None,
 
+            sort_by=None,  # legacy
+
             numbers=None,
             values=None,
             min=None,
@@ -543,10 +545,16 @@ class FullReport(BaseReport):
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
 
+            self.sample_metric = Metric(name='Sample', with_heatmap=False, align='left')
+            for section in self.metric_storage.sections:
+                # section.get_metrics = lambda: [self.sample_metric] + section.metrics
+                section.add_metric(self.sample_metric, prepend=True)
+
         elif sample_reports and sample_reports[0].metric_storage:
             self.metric_storage = sample_reports[0].metric_storage
             for sample_report in sample_reports:
                 sample_report.metric_storage = metric_storage
+
 
     def get_common_records(self):
         common_records = []
@@ -599,13 +607,15 @@ class FullReport(BaseReport):
             sections = [sections]
 
         rows = []
-        sample_metric = Metric(name='Sample', with_heatmap=False)
         for i, sr in enumerate(self.sample_reports):
-            recs = [Record(metric=sample_metric, value=sr.display_name,
-                          url=sr.url, html_fpath=sr.html_fpath, parse=False, num=len(self.sample_reports) - i)]
+            recs = []
+            recs.append(Record(metric=self.sample_metric, value=sr.display_name,
+                url=sr.url, html_fpath=sr.html_fpath, parse=False, num=len(self.sample_reports) - i))
+
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
-                if not metric.is_hidden:
+                if not metric.is_hidden and not metric.name == 'Sample':
                     rec = BaseReport.find_record(sr.records, metric.name)
+
                     if rec:
                         recs.append(rec)
                     else:
@@ -622,8 +632,8 @@ class FullReport(BaseReport):
     @staticmethod
     def construct_from_sample_report_jsons(samples, output_dirpath,
             jsons_by_sample, htmls_by_sample, bcbio_structure=None):
-        fr = FullReport()
         ms = None
+        sample_reports = []
         for sample in samples:
             if sample.name in jsons_by_sample:
                 with open(jsons_by_sample[sample.name]) as f:
@@ -632,7 +642,7 @@ class FullReport(BaseReport):
                     sr.html_fpath = htmls_by_sample.get(sample.name)
                     if sr.html_fpath:
                         sr.url = relpath(sr.html_fpath, output_dirpath)
-                    fr.sample_reports.append(sr)
+                    sample_reports.append(sr)
                     if ms is None:
                         ms = sr.metric_storage
                     else:  # Maximize metric storage
@@ -643,13 +653,13 @@ class FullReport(BaseReport):
                             else:
                                 FullReport._sync_sections(ms.sections_by_name[section.name], section)
 
-        for sr in fr.sample_reports:
+        for sr in sample_reports:
             sr.metric_storage = ms
             for rec in sr.records:
                 rec.metric = ms.find_metric(rec.metric.name)
             sr.records = [r for r in sr.records if r.metric is not None]
 
-        fr.metric_storage = ms
+        fr = FullReport(sample_reports=sample_reports, metric_storage=ms)
 
         return fr
 
@@ -692,8 +702,11 @@ class ReportSection:
         self.metrics = metrics or []
         self.metrics_by_name = dict((m.name, m) for m in metrics)
 
-    def add_metric(self, metric):
-        self.metrics.append(metric)
+    def add_metric(self, metric, prepend=False):
+        if not prepend:
+            self.metrics.append(metric)
+        else:
+            self.metrics = [metric] + self.metrics
         self.metrics_by_name[metric.name] = metric
 
     def get_metrics(self):
@@ -715,6 +728,11 @@ class ReportSection:
     def load(data):
         data['metrics'] = [Metric.load(m_data) for m_data in data['metrics']]
         return ReportSection(**data)
+
+
+# class FullReportSection(ReportSection):
+#     def __init__(self, samples, *args, **kwargs):
+#         ReportSection.__init__(self, *args, **kwargs)
 
 
 class MetricStorage:
@@ -1127,7 +1145,7 @@ def build_section_html(report, section, sortable=True):
     table = '\n<table cellspacing="0" class="' + table_class + ' id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
 
-    for col_num, metric in enumerate(section.metrics):
+    for col_num, metric in enumerate(section.get_metrics()):
         table += make_cell_th(metric, class_='left_column_td' if col_num == 0 else '', sortable=sortable)
 
     table += '\n</tr>\n</thead>\n<tbody>'

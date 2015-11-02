@@ -27,12 +27,6 @@
       padding: 2px 6px 2px 2px; }
     #report table.report_table th {
       vertical-align: bottom; }
-    #report table.report_table td.number {
-      padding-top: 0;
-      padding-bottom: 0; }
-      #report table.report_table td.number a {
-        padding-top: 2px;
-        padding-bottom: 2px; }
     #report table.report_table tbody tr:first-child td {
       border-top: 1px solid #bbb; }
     #report table.report_table td.left_column_td, #report table.report_table th.left_column_td, #report table.report_table tr.td:first-child, #report table.report_table tr.th:first-child {
@@ -43,8 +37,7 @@
       border-bottom: none;
       color: black; }
     #report table.report_table tr.top_row_tr td, #report table.report_table tr.top_row_tr th, #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
-      font-weight: bold;
-      border-bottom: 1px solid #bbb; }
+      font-weight: bold; }
     #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       height: 20px; }
     #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
@@ -116,11 +109,13 @@ table.draggable {
   white-space: nowrap; }
 
 .plot_placeholder {
-  width: 1341px;
+  width: 1300px;
   margin-left: -125px;
   z-index: 2; }
+
 #gene_plot_placeholder {
   min-height: 400px; }
+
 #seq2c_plot_placeholder {
   min-height: 200px; }
 
@@ -156,3 +151,5 @@ table.draggable {
 
 .qc_meta_table td {
   padding-right: 5px; }
+
+/*# sourceMappingURL=report.css.map */

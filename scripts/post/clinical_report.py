@@ -3,7 +3,7 @@
 import bcbio_postproc
 
 import shutil
-from source.clinical_reporting.clinical_parser import ClinicalSampleInfo
+from source.clinical_reporting.clinical_parser import ClinicalSampleInfo, clinical_sample_info_from_cnf
 
 from source.clinical_reporting.clinical_reporting import make_clinical_report
 from source.logger import info
@@ -59,8 +59,8 @@ def main():
         required=['samtools', 'bedtools'],
         optional=[])
 
-    clin_info = ClinicalSampleInfo(cnf)
-    html_fpath = make_clinical_report(clin_info)
+    clin_info = clinical_sample_info_from_cnf(cnf)
+    html_fpath = make_clinical_report(clin_info, clin_info.sample.clinical_html)
     info('Clinical report: ' + html_fpath)
 
     if not cnf['keep_intermediate']:

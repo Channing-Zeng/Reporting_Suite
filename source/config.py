@@ -1,6 +1,7 @@
 import sys
 from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
+from traceback import format_exc
 from source.file_utils import verify_file, verify_module, adjust_path
 
 from source.logger import info, err, critical
@@ -146,8 +147,13 @@ class CallCnf:
 
 def load_yaml_config(fpath):
     verify_file(fpath, is_critical=True)
-    dic = load_yaml(open(fpath), Loader=Loader)
-    return dic
+    try:
+        dic = load_yaml(open(fpath), Loader=Loader)
+    except:
+        err(format_exc())
+        critical('Could not parse bcbio YAML ' + fpath)
+    else:
+        return dic
 
 
 def _load(sys_cnf_fpath, run_cnf_fpath):

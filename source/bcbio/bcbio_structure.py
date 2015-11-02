@@ -233,7 +233,7 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
                  config_dirpath + ', using the default one.')
 
             # using one of the default ones.
-            if opts.deep_seq:
+            if 'deep_seq' in opts.__dict__ and opts.deep_seq:
                 opts.run_cnf = defaults['run_cnf_deep_seq']
             elif is_wgs:
                 opts.run_cnf = defaults['run_cnf_wgs']
@@ -788,7 +788,7 @@ class BCBioStructure:
             #         warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(bed))
 
             if sample_info['algorithm'].get('sv_regions'):  # SV regions?
-                bed = adjust_path(sample_info['algorithm']['sv_regions'])
+                bed = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['sv_regions']))
                 if bed and bed.endswith('.bed'):
                     verify_bed(bed, is_critical=True)
                     sample.bed = bed

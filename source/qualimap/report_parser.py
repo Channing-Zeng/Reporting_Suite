@@ -57,7 +57,7 @@ metric_storage = MetricStorage(
             Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions', quality='Less is better'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions', quality='Less is better'),
-            Metric('Homopolymer indels',                            'Homopolymer indels',          'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
+            Metric('Homopolymer indels',                            'Homopol indels',              'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
             # Metric('Duplication rate',                              'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]
