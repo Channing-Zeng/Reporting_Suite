@@ -63,7 +63,7 @@ def remove_comments(cnf, bed_fpath):
 
 def prepare_beds(cnf, exons_bed=None, target_bed=None):
     if exons_bed is None and target_bed is None:
-        warn('No bed specified (WGS?) and no exons in the system config; cannot run on target.')
+        warn('No bed and no exons in the system config. Not making detailed per-gene reports.')
         return None, None, None, None
 
     if exons_bed and target_bed and abspath(exons_bed) == abspath(target_bed):

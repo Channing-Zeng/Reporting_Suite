@@ -21,6 +21,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
+from source.targetcov.coverage_hist import launch_bedcoverage_hist
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths
 from source.utils import median, mean
@@ -233,20 +234,12 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             info(s.name + ': submitting bedcoverage hist')
             bam_fpath = dedupped_bam_by_sample[s.name]
             # Need to convert BAM to BED to make bedtools histogram
-            bam_bed_fpath = bam_to_bed(cnf, bam_fpath)
-            job_name = s.name + '_bedcov'
-            bedcov_output = join(seq2c_work_dirpath, job_name + '.txt')
+            bedcov_output = join(seq2c_work_dirpath, s.name + '_bedcov' + '.txt')
             bedcov_output_by_sample[s.name] = bedcov_output
             if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
                 info(bedcov_output + ' exists, reusing')
             else:
-                bedtools = get_system_path(cnf, 'bedtools')
-                v = bedtools_version(bedtools)
-                if v and v >= 24:
-                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {seq2c_bed} -b {bam_bed_fpath} -hist'.format(**locals())
-                else:
-                    cmdline = '{bedtools} coverage -a {bam_bed_fpath} -b {seq2c_bed} -hist'.format(**locals())
-                j = submit_job(cnf, cmdline, job_name, sample=s, output_fpath=bedcov_output)
+                j = launch_bedcoverage_hist(cnf, seq2c_bed, bam_fpath, qsub=True)
                 jobs_to_wait.append(j)
         info()
     info('*' * 50)
@@ -357,8 +350,8 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
         qsub_cmdline = (
             '{qsub} -pe smp 1 -S {bash} -q {queue} '
             '-j n -o {seq2cov_output_log} -e {seq2cov_output_log} -hold_jid \'_\' '
-            '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} {done_marker} "{cmdline}"'
-        ).format(**locals())
+            '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} {done_marker} '
+            '"{cmdline}"').format(**locals())
 
         info('Sumbitting seq2cov.pl for ' + s.name)
         info(qsub_cmdline)

@@ -6,30 +6,12 @@ from time import sleep
 from source.calling_process import call
 from source.file_utils import splitext_plus, add_suffix, safe_mkdir, file_transaction, verify_file, intermediate_fname
 from source.logger import critical, info, warn, send_email, err
-# from source.ngscat import coverageHisto
-from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
+from source.qsub_utils import submit_job
+from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, bam_to_bed
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath, get_chr_lengths
-
-
-# def ngscat_bedcov_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
-#     cov_out_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'coverage')
-#     bedgraph_fpath = join(cnf.work_dir, basename(bam_fpath)[:-len('bam')] + 'bedgraph')
-#
-#     info('Coveragefile = ' + cov_out_fpath)
-#     from source.ngscat import bam_file
-#     bam = bam_file.BamFile(bam_fpath, 'rb')
-#
-#     info('Launching coverageBed...')
-#     bam.myCoverageBed(cnf, bed_fpath, writeToFile=cov_out_fpath, bedGraphFile=bedgraph_fpath)
-#     info('\tDone.')
-#
-#     cov_hist_dirpath = join(cnf.work_dir, 'cov_hist')
-#     safe_mkdir(cov_hist_dirpath)
-#     info('Launching coverage distribution calculation...')
-#     coverageHisto.histo_CV(cov_out_fpath, cov_hist_dirpath)
 
 
 class BedCov:
@@ -61,21 +43,14 @@ def split_bed_by_chrom(cnf, bed_fpath):
     return bed_fpath_by_chrom
 
 
-def bedcoverage_hist_stats(cnf, sample_name, bam_bed_fpath, bed_fpath, reuse=False):
-    if not bam_bed_fpath or not bed_fpath:
+def bedcoverage_hist_stats(cnf, sample_name, bed, bam):
+    if not bam or not bed:
         info()
         msgs = []
-        if not bam_bed_fpath: msgs.append('BAM file is required.')
-        if not bed_fpath: msgs.append('BED file is required.')
+        if not bam: msgs.append('BAM file is required.')
+        if not bed: msgs.append('BED file is required.')
         if msgs:
             critical(msgs)
-
-    bedcov_output_fpath = join(cnf.work_dir,
-        splitext_plus(basename(bed_fpath))[0] + '__' +
-        splitext_plus(basename(bam_bed_fpath))[0] + '_bedcov_output.txt')
-    if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
-        info(bedcov_output_fpath + ' exists, reusing.')
-        return bedcov_output_fpath
 
     # bedtools = get_system_path(cnf, 'bedtools')
     # gzip = get_system_path(cnf, 'gzip')
@@ -85,10 +60,10 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_bed_fpath, bed_fpath, reuse=Fal
     # bamtools = get_system_path(cnf, 'bamtools')
     # if not bamtools:
     info('Running bedcoverage -hist...')
-    bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_bed_fpath, bedcov_output_fpath)
+    bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed, bam)
     info()
     info('Analysing bedcoverage -hist output...')
-    regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, count_bed_cols(bed_fpath))
+    regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, count_bed_cols(bed))
 
     # else:
     #     chroms = get_chr_lengths(cnf).keys()
@@ -124,8 +99,6 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_bed_fpath, bed_fpath, reuse=Fal
         #     for chrom, bedov_output in bedcov_by_chrom.items():
 
     # for r in regions:
-    #TODO Sync real regions in {bed} and {regions}
-
     return regions
 
 
@@ -139,53 +112,62 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_bed_fpath, bed_fpath, reuse=Fal
 #     res =
 
 
-def launch_bedcoverage_hist(cnf, bed_fpath, bam_bed_fpath, bedcov_output_fpath=None):
+def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False):
     # import pybedtools
     # bed = pybedtools.BedTool(bed_fpath)
     # bam = pybedtools.BedTool(bam_fpath)
     # return bed.coverage(bam)
 
+    if not bedcov_output_fpath:
+        bedcov_output_fpath = join(cnf.work_dir,
+            splitext_plus(basename(bed))[0] + '__' +
+            splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
+
+    if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
+        info(bedcov_output_fpath + ' exists, reusing.')
+        return bedcov_output_fpath
+
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
-    if not bedcov_output_fpath:
-        bedcov_output_fpath = join(cnf.work_dir,
-            splitext_plus(basename(bed_fpath))[0] + '__' +
-            splitext_plus(basename(bam_bed_fpath))[0] + '_bedcov_output.txt')
+    if bam.endswith('bam'):
+        bam = bam_to_bed(cnf, bam)
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
-        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_bed_fpath} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
     else:
-        cmdline = '{bedtools} coverage -a {bam_bed_fpath} -b {bed_fpath} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -a {bam} -b {bed} -hist'.format(**locals())
 
     res = None
     tries = 0
     MAX_TRIES = 2
     WAIT_MINUTES = int(random() * 60) + 30
     err_fpath = join(cnf.work_dir, 'bedtools_cov_' + splitext(basename(bedcov_output_fpath))[0] + '.err')
-    while True:
-        stderr_dump = []
-        res = call(cnf, cmdline, bedcov_output_fpath, stderr_dump=stderr_dump, exit_on_error=False)
-        if isfile(bedcov_output_fpath):
-            return bedcov_output_fpath
-        else:
-            tries += 1
-            msg = 'bedtools coverage crashed:\n' + cmdline + ' > ' + bedcov_output_fpath + '\n' + \
-                  (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
-            if tries < MAX_TRIES:
-                msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
 
-            send_email(msg_other=msg,
-                       subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
-                       only_me=True)
-            err(msg)
-            if tries == MAX_TRIES:
-                break
-            sleep(WAIT_MINUTES * 60)
-            info()
-
-    return bedcov_output_fpath
+    if qsub:
+        job_name = splitext_plus(basename(bed))[0] + '__' +\
+                   splitext_plus(basename(bam))[0] + '_bedcov'
+        return submit_job(cnf, cmdline, job_name, output_fpath=bedcov_output_fpath)
+    else:
+        return call(cnf, cmdline, bedcov_output_fpath, exit_on_error=False)
+        # if isfile(bedcov_output_fpath):
+        #     return bedcov_output_fpath
+        # else:
+        #     tries += 1
+        #     msg = 'bedtools coverage crashed:\n' + cmdline + ' > ' + bedcov_output_fpath + '\n' + \
+        #           (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
+        #     if tries < MAX_TRIES:
+        #         msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
+        #
+        #     send_email(msg_other=msg,
+        #                subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
+        #                only_me=True)
+        #     err(msg)
+        #     if tries == MAX_TRIES:
+        #         break
+        #     sleep(WAIT_MINUTES * 60)
+        #     info()
 
 
 def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num):
