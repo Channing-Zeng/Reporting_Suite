@@ -103,7 +103,7 @@ class CDS:
 
 
 class Patient:
-    def __init__(self, gender):
+    def __init__(self, gender=None):
         self.gender = gender
 
 

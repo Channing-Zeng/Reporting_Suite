@@ -49,60 +49,41 @@
     </div>
 
     <div id='report' class="clinical_report">
+        {.section patient}
+            <b>Patient: </b>{gender}<br>
+        {.or}
+        {.end}
+
         <div style="width: 1127px">
             <div style="">
-            {.section sample}
+            {.section trg_sample}
                 <h1 class="report-header">{sample}</h1>
                 <p style="line-height: 1.5em;">
                 <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
-                {.section patient}
-                    <b>Patient: </b>{sex}<br>
-                {.end}
                 <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
                 <b>Sample type: </b>{sample_type}<br>
                 <b>Target: </b><a href="{bed_path}">{panel}</a>,
                     covered {target_fraction} of all positions
                     at {ave_depth} average coverage<br>
                 </p>
-
-                <!--<div class="row placeholders">-->
-                    <!--<div class="col-xs-6 col-sm-3 placeholder">-->
-                        <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->
-                        <!--<h4 class="section_header">Gender</h4>-->
-                        <!--{.section basecalls}-->
-                        <!--<span class="text-muted">{contents}<br></span>-->
-                        <!--{.end}-->
-                        <!--{.section raw_fastqc}-->
-                        <!--<span class="text-muted">{contents}<br></span>-->
-                        <!--{.end}-->
-                        <!--{.section fastqc}-->
-                        <!--<span class="text-muted">{contents}</span>-->
-                        <!--{.or}-->
-                        <!--&lt;!&ndash;<span class="text-muted not-available">FastQC reports are not available</span>&ndash;&gt;-->
-                        <!--{.end}-->
-                    <!--</div>-->
-                <!--</div>-->
-                <!--<div class="space_30px"></div>-->
             {.end}
             </div>
 
-            <!--<div style="float: left; margin-left: 10px;">-->
-            <!--{.section approach}-->
-                <!--<h1 class="report-header">Approach</h1>-->
-                <!--<p style="max-width: 600px; line-height: 1.5em;">Sequencing of this individual's-->
-                    <!--{target_type} was performed and covered {target_fraction}-->
-                    <!--of all positions at {ave_depth} average coverage,-->
-                    <!--resulting in {total_variants} variants compared to a reference genome.-->
-                    <!--These data were analyzed to identify previously reported and novel variants-->
-                    <!--in {total_key_genes} genes that have been previously implicated-->
-                    <!--in various cancers (see Supplement for a list of genes and coverage information).-->
-                    <!--&lt;!&ndash;All genes relevant to the indication had adequate coverage (>95% at 8X).&ndash;&gt;-->
-                    <!--&lt;!&ndash;Please note that the presence of pathogenic variants in genes not analyzed&ndash;&gt;-->
-                    <!--&lt;!&ndash;or with incomplete coverage cannot be fully excluded.&ndash;&gt;-->
-                <!--</p>-->
-            <!--{.end}-->
-            <!--</div>-->
-            <!--<div style="clear: both"></div>-->
+            <div style="float: left; margin-left: 30px;">
+            {.section wgs_sample}
+                <h1 class="report-header">{sample}</h1>
+                <p style="line-height: 1.5em;">
+                <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
+                <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
+                <b>Sample type: </b>{sample_type}<br>
+                <b>Target: </b><a href="{bed_path}">{panel}</a>,
+                    covered {target_fraction} of all positions
+                    at {ave_depth} average coverage<br>
+                </p>
+            {.end}
+            </div>
+
+            <div style="clear: both;"></div>
         </div>
 
         <div class="space_8px"></div>

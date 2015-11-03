@@ -1,8 +1,9 @@
 from collections import OrderedDict
 from os.path import join, abspath, dirname, relpath
 from source import info
-from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation
+from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation, Patient
 from source.clinical_reporting.clinical_reporting import Chromosome, gray, ClinicalReporting, BaseClinicalReporting
+from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html
 from source.reporting.reporting import ReportSection
@@ -49,6 +50,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         self.wgs_info = wgs_info
         self.trg_sample = targetseq_info.sample
         self.wgs_sample = wgs_info.sample
+        self.patient = self.merge_patients(self.trg_info.patient, self.wgs_info.patient)
 
         info('Preparing data...')
         self.combined_mutations = self.combine_mutations()
@@ -57,6 +59,15 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         # self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
         # self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
         # self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
+
+    @staticmethod
+    def merge_patients(p1, p2):
+        gender = None
+        if p1.gender or p2.gender:
+            if p1.gender and p2.gender and p1.gender != p2.gender:
+                err('Genders for WGS and target are not equal: ' + str(p1.gender) + ', ' + str(p2.gender))
+            gender = p1.gender
+        return Patient(gender)
 
     def combine_mutations(self):
         comb_muts = OrderedDict()
@@ -73,8 +84,9 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info('')
 
         write_static_html_report(self.cnf, {
-            'trg_sample': self.__sample_section(self.trg_sample),
-            'wgs_sample': self.__sample_section(self.wgs_sample),
+            'patient': self.__patient_section(self.patient),
+            'trg_sample': self.__sample_section(self.trg_sample, self.trg_info),
+            'wgs_sample': self.__sample_section(self.wgs_sample, self.wgs_info),
             'variants': self.__mutations_section(),
             # 'seq2c': self.__seq2c_section(),
             # 'coverage': self.__coverage_section(),
@@ -92,26 +104,30 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info()
         return output_fpath
 
-    def __sample_section(self, sample, clin_info):
-        sample_dict = dict()
-        sample_dict['sample'] = sample.name.replace('_', ' ')
+    def __patient_section(self, patient):
+        patient_dict = dict()
         if self.patient.gender:
-            sample_dict['patient'] = {'sex': self.patient.gender}
-        sample_dict['project_name'] = self.project_name.replace('_', ' ')
-        if info.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(info.project_report_path, dirname(sample.clinical_html))
-        sample_dict['panel'] = self.clin_info.target.type
-        sample_dict['bed_path'] = self.clin_info.target.bed_fpath or ''
+            patient_dict['gender'] = self.patient.gender
+        return patient_dict
+
+    def __sample_section(self, sample, clin_info, sample_type=None):
+        sample_dict = dict()
+        sample_dict[(sample_type + '_' if sample_type else '') + 'sample'] = sample.name.replace('_', ' ')
+        sample_dict['project_name'] = clin_info.project_name.replace('_', ' ')
+        if clin_info.project_report_path:
+            sample_dict['project_report_rel_path'] = relpath(clin_info.project_report_path, dirname(sample.clinical_html))
+        sample_dict['panel'] = clin_info.target.type
+        sample_dict['bed_path'] = clin_info.target.bed_fpath or ''
         if self.cnf.debug:
-            sample_dict['panel'] = self.clin_info.target.type + ', AZ300 IDT panel'
+            sample_dict['panel'] = clin_info.target.type + ', AZ300 IDT panel'
             sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
-        sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
-        sample_dict['genome_build'] = self.cnf.genome.name
-        sample_dict['target_type'] = self.info.target.type
-        sample_dict['target_fraction'] = Metric.format_value(self.info.target.coverage_percent, is_html=True, unit='%')
+        sample_dict['sample_type'] = sample.normal_match if sample.normal_match else 'unpaired'  # plasma, unpaired'
+        sample_dict['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
+        sample_dict['target_type'] = clin_info.target.type
+        sample_dict['target_fraction'] = Metric.format_value(clin_info.target.coverage_percent, is_html=True, unit='%')
         # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-        sample_dict['ave_depth'] = Metric.format_value(self.info.ave_depth, is_html=True)
+        sample_dict['ave_depth'] = Metric.format_value(clin_info.ave_depth, is_html=True)
         return sample_dict
 
     def __mutations_section(self):
@@ -239,6 +255,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             self._highlighting_and_hiding_mut_row(row, mut)
+            if trg_mut and wgs_mut:
+                row.highlighted = '#'
 
         return report
 

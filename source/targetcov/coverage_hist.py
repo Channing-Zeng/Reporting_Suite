@@ -40,6 +40,7 @@ class BedCov:
 
 
 def split_bed_by_chrom(cnf, bed_fpath):
+    info('Splitting the BED file ' + bed_fpath + ' by chromosome: ', ending='')
     bed_fpath_by_chrom = dict()
     cur_chr_f = None
     cur_chr = None
@@ -49,10 +50,14 @@ def split_bed_by_chrom(cnf, bed_fpath):
             fs = l.strip().split('\t')
             if fs:
                 if fs[0] != cur_chr:
+                    if cur_chr:
+                        info(str(cur_chr), ending=', ', print_date=False)
+                    cur_chr = fs[0]
                     cur_chr_fpath = intermediate_fname(cnf, bed_fpath, cur_chr)
                     cur_chr_f = open(cur_chr_fpath, 'w')
                     bed_fpath_by_chrom[cur_chr] = cur_chr_fpath
                 cur_chr_f.write(l)
+    info('Done.', print_date=False)
     return bed_fpath_by_chrom
 
 

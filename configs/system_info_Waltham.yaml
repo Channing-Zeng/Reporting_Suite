@@ -50,6 +50,8 @@ resources:
   seqtk:
     path: /group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/bin/seqtk
 #    path: /opt/az/local/seqtk/seqtk-master/seqtk
+  bamtools:
+    path: /opt/az/local/bamtools/bamtools-master/bin/bamtools
 
 genomes:
   hg38:
