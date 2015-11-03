@@ -372,7 +372,19 @@ class SampleReport(BaseReport):
         return common_records
 
     def get_rows_of_records(self, sections=None):  # TODO: move logic from flatten here, use this method both in flatten and save_html
-        return [Row(parent_report=self, records=self.records)]
+        if sections:
+            recs = []
+            for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
+                if not metric.is_hidden and not metric.name == 'Sample':
+                    rec = BaseReport.find_record(self.records, metric.name)
+                    if rec:
+                        recs.append(rec)
+                    else:
+                        recs.append(Record(metric=metric, value=None))
+        else:
+            recs = self.records
+        return [Row(parent_report=self, records=recs)]
+
 
     def add_record(self, metric_name, value, silent=False, **kwargs):
         metric = self.metric_storage.find_metric(metric_name.strip())

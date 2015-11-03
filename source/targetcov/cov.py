@@ -448,7 +448,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     report.add_record('Homopolymer indels', mm_indels_stats['homo_indels'])
 
     report.save_json(join(output_dir, sample.name + '.' + source.targetseq_name + '.json'))
-    report.save_txt (join(output_dir, sample.name + '.' + source.targetseq_name + '.txt'))
+    report.save_txt(join(output_dir, sample.name + '.' + source.targetseq_name + '.txt'))
     report.save_html(cnf, join(output_dir, sample.name + '.' + source.targetseq_name + '.html'), caption='Target coverage statistics for ' + sample.name)
     info()
     info('Saved to ')
