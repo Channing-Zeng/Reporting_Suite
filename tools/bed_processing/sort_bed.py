@@ -33,7 +33,7 @@ def main(args):
         if l.strip().startswith('#'):
             sys.stdout.write(l)
 
-        fs = l[:-1].split('\t')
+        fs = l.strip().split('\t')
         chrom = fs[0]
         start = int(fs[1])
         end = int(fs[2])
