@@ -4,14 +4,14 @@ from random import random
 from time import sleep
 
 from source.calling_process import call
-from source.file_utils import splitext_plus, add_suffix, safe_mkdir, file_transaction, verify_file
+from source.file_utils import splitext_plus, add_suffix, safe_mkdir, file_transaction, verify_file, intermediate_fname
 from source.logger import critical, info, warn, send_email, err
 # from source.ngscat import coverageHisto
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version
 from source.tools_from_cnf import get_system_path
-from source.utils import get_chr_len_fpath
+from source.utils import get_chr_len_fpath, get_chr_lengths
 
 
 # def ngscat_bedcov_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
@@ -39,6 +39,23 @@ class BedCov:
         self.bedcov_output_fpath = bedcov_output_fpath
 
 
+def split_bed_by_chrom(cnf, bed_fpath):
+    bed_fpath_by_chrom = dict()
+    cur_chr_f = None
+    cur_chr = None
+
+    with open(bed_fpath) as f:
+        for l in f:
+            fs = l.strip().split('\t')
+            if fs:
+                if fs[0] != cur_chr:
+                    cur_chr_fpath = intermediate_fname(cnf, bed_fpath, cur_chr)
+                    cur_chr_f = open(cur_chr_fpath, 'w')
+                    bed_fpath_by_chrom[cur_chr] = cur_chr_fpath
+                cur_chr_f.write(l)
+    return bed_fpath_by_chrom
+
+
 def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
     if not bam_fpath or not bed_fpath:
         info()
@@ -64,7 +81,9 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
         regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
 
     else:
-        chroms = [l.split()[0] for l in open(get_chr_len_fpath(cnf)).readlines()]
+        chroms = get_chr_lengths(cnf).keys()
+
+        bed_fpath_by_chrom = split_bed_by_chrom(cnf, bed_fpath)
 
         stub = join(cnf.work_dir, basename(splitext_plus(bam_fpath)[0]))
         if cnf.reuse_intermediate and all(verify_bam(stub + '.REF_' + chrom + '.bam', silent=True) for chrom in chroms):
@@ -75,13 +94,14 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
             call(cnf, cmdline)
 
         for chrom in chroms:
-            # chrom_bed_fpath = add_suffix(bed_fpath, chrom)
-            chrom_bed_fpath = '<(grep "^{chrom}\t" {bed_fpath})'.format(**locals())  # Note: "\t" will be converted to "	"
-            # grep = get_system_path(cnf, 'grep')
-            # cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
-            # call(cnf, cmdl, output_fpath=chrom_bed_fpath, exit_on_error=False)
-            chrom_bam_fpath = stub + '.REF_' + chrom + '.bam'
-            if verify_bam(chrom_bam_fpath, silent=True):
+            chrom_bed_fpath = verify_bed(bed_fpath_by_chrom.get(chrom), silent=True)
+            chrom_bam_fpath = verify_bam(stub + '.REF_' + chrom + '.bam', silent=True)
+
+            if not chrom_bed_fpath:
+                info('No regions for ' + chrom)
+            if not chrom_bam_fpath:
+                info('No coverage for ' + chrom)
+            if chrom_bed_fpath and chrom_bam_fpath:
                 bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
                 if not verify_file(bedcov_output_fpath):
                     info('No coverage for ' + chrom)
@@ -89,7 +109,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
                     info('Anylising bedcoverage output for ' + str(chrom) + '...')
                     rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
                     regions.extend(rs)
-
+            
         # with open(bedcov_output_fpath, 'w') as f:
         #     for chrom, bedov_output in bedcov_by_chrom.items():
 
