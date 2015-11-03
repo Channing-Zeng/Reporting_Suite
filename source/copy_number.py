@@ -16,7 +16,7 @@ from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
     verify_module, intermediate_fname
 from source.logger import info, err, step_greetings, critical, warn
-from source.targetcov.bam_and_bed_utils import verify_bam
+from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
@@ -232,6 +232,8 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         else:
             info(s.name + ': submitting bedcoverage hist')
             bam_fpath = dedupped_bam_by_sample[s.name]
+            # Need to convert BAM to BED to make bedtools histogram
+            bam_bed_fpath = bam_to_bed(cnf, bam_fpath)
             job_name = s.name + '_bedcov'
             bedcov_output = join(seq2c_work_dirpath, job_name + '.txt')
             bedcov_output_by_sample[s.name] = bedcov_output
@@ -241,9 +243,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
                 bedtools = get_system_path(cnf, 'bedtools')
                 v = bedtools_version(bedtools)
                 if v and v >= 24:
-                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {seq2c_bed} -b {bam_fpath} -hist'.format(**locals())
+                    cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {seq2c_bed} -b {bam_bed_fpath} -hist'.format(**locals())
                 else:
-                    cmdline = '{bedtools} coverage -abam {bam_fpath} -b {seq2c_bed} -hist'.format(**locals())
+                    cmdline = '{bedtools} coverage -a {bam_bed_fpath} -b {seq2c_bed} -hist'.format(**locals())
                 j = submit_job(cnf, cmdline, job_name, sample=s, output_fpath=bedcov_output)
                 jobs_to_wait.append(j)
         info()

@@ -53,6 +53,7 @@ def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, 
     # Single project, running as usually
     if len(bcbio_structures) == 1:
         bcbio_structure = bcbio_structures[0]
+        cnf.project_name = bcbio_structure.project_name
         cnf.output_dir = join(bcbio_structure.date_dirpath, cnf.proc_dir_name) if cnf.proc_dir_name else None
         cnf.work_dir = cnf.work_dir or join(bcbio_structure.work_dir, cnf.proc_name)
         set_up_work_dir(cnf)
@@ -527,7 +528,6 @@ class BCBioStructure:
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
         safe_mkdir(self.date_dirpath)
 
-        cnf.project_name = self.project_name
         info('Project name: ' + self.project_name)
         # self.cnf.name = proc_name or self.project_name
 

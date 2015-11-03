@@ -45,11 +45,11 @@ def main():
         bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
         bcbio_structures.append(bs)
 
-    target_bs = next((bs for bs in bcbio_structures if bs.bed), None)
+    trg_bs = next((bs for bs in bcbio_structures if bs.bed), None)
     wgs_bs = next((bs for bs in bcbio_structures if not bs.bed), None)
-    if not target_bs and not wgs_bs:
+    if not trg_bs and not wgs_bs:
         critical('One of the projects must be targeted, and one must be WGS')
-    if not target_bs:
+    if not trg_bs:
         critical('One of the projects must be targeted.')
     if not wgs_bs:
         critical('One of the projects must be WGS.')
@@ -69,16 +69,16 @@ def main():
     cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
     safe_mkdir(cnf.work_dir)
 
-    shared_sample_names = set(s.name for s in wgs_bs.samples) & set(s.name for s in target_bs.samples)
+    shared_sample_names = set(s.name for s in wgs_bs.samples) & set(s.name for s in trg_bs.samples)
     if not shared_sample_names:
         critical('Not shared samples in target and WGS projects.\n'
-                 'Target: ' + ', '.join(s.name for s in target_bs.samples) +
+                 'Target: ' + ', '.join(s.name for s in trg_bs.samples) +
                  'WGS: ' + ', '.join(s.name for s in wgs_bs.samples))
     info('Shared samples: ' + ', '.join(shared_sample_names))
 
     info('')
     info('*' * 70)
-    run_clinical_target2wgs(cnf, wgs_bs, target_bs, shared_sample_names, cnf.output_dir)
+    run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, cnf.output_dir)
 
 
 if __name__ == '__main__':

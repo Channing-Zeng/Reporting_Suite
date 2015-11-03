@@ -10,14 +10,14 @@ import source
 from source.qualimap.report_parser import parse_qualimap_sample_report
 import source.targetcov
 from source.calling_process import call
-from source.file_utils import intermediate_fname, verify_file, safe_mkdir
+from source.file_utils import intermediate_fname, verify_file, safe_mkdir, splitext_plus
 from source.logger import critical, info, err
 from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
 from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
-    intersect_bed, calc_sum_of_regions
+    intersect_bed, calc_sum_of_regions, bam_to_bed
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
@@ -459,6 +459,9 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no_genes_bed, output_dir, gene_by_name):
     targets_or_exons = []
 
+    # Need to convert BAM to BED to make bedtools histogram
+    bam_bed_fpath = bam_to_bed(cnf, bam_fpath)
+
     if exons_no_genes_bed or target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
         try:
@@ -468,7 +471,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
 
         info()
         info('Calculation of coverage statistics for the regions in the input BED file...')
-        targets_or_exons = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, target_bed or exons_no_genes_bed)
+        targets_or_exons = bedcoverage_hist_stats(cnf, sample.name, bam_bed_fpath, target_bed or exons_no_genes_bed)
         info()
         # info('Merging capture BED file to get total target cov statistics...')
         # total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
@@ -486,7 +489,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
         else:
             info()
             info('Calculating coverage statistics for exons...')
-            exons_with_optional_genes = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, exons_no_genes_bed)
+            exons_with_optional_genes = bedcoverage_hist_stats(cnf, sample.name, bam_bed_fpath, exons_no_genes_bed)
 
         for exon_or_gene in exons_with_optional_genes:
             exon_or_gene.sample_name = sample.name

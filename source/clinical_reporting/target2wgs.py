@@ -7,31 +7,32 @@ from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html
 from source.reporting.reporting import ReportSection
+from source.utils import is_local
 
 
-def run_clinical_target2wgs(cnf, wgs_bs, target_bs, shared_sample_names, output_dirpath):
+def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dirpath):
     info('Running clinical reporting comparison')
 
     for sname in shared_sample_names:
         info('Preparing ' + sname + '...')
-        trg_sample = next(s for s in target_bs.samples if s.name == sname)
+        trg_sample = next(s for s in trg_bs.samples if s.name == sname)
         wgs_sample = next(s for s in wgs_bs.samples if s.name == sname)
 
         info('-' * 70)
-        clinsample_target_info = clinical_sample_info_from_bcbio_structure(cnf, target_bs, trg_sample)
+        clinsample_trg_info = clinical_sample_info_from_bcbio_structure(cnf, trg_bs, trg_sample)
         info('')
         info('-' * 70)
         clinsample_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample)
 
         info('')
         info('*' * 70)
-        run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs_info, output_dirpath)
+        run_sample_clinreport_target2wgs(cnf, clinsample_trg_info, clinsample_wgs_info, output_dirpath)
         info('*' * 70)
         info('Successfully finished.')
 
 
-def run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs_info, output_dirpath):
-    ComparisonClinicalReporting(cnf, clinsample_target_info, clinsample_wgs_info).write_report(
+def run_sample_clinreport_target2wgs(cnf, clinsample_trg_info, clinsample_wgs_info, output_dirpath):
+    ComparisonClinicalReporting(cnf, clinsample_trg_info, clinsample_wgs_info).write_report(
         join(output_dirpath, 'clinical_report.html'))
 
 
@@ -43,12 +44,13 @@ def run_sample_clinreport_target2wgs(cnf, clinsample_target_info, clinsample_wgs
 
 
 class ComparisonClinicalReporting(BaseClinicalReporting):
-    def __init__(self, cnf, targetseq_info, wgs_info, *args):
+    def __init__(self, cnf, trg_info, wgs_info, *args):
         BaseClinicalReporting.__init__(self, cnf, *args)
 
-        self.trg_info = targetseq_info
+        self.sample_name = trg_info.sample.name
+        self.trg_info = trg_info
         self.wgs_info = wgs_info
-        self.trg_sample = targetseq_info.sample
+        self.trg_sample = trg_info.sample
         self.wgs_sample = wgs_info.sample
         self.patient = self.merge_patients(self.trg_info.patient, self.wgs_info.patient)
 
@@ -85,6 +87,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
         write_static_html_report(self.cnf, {
             'patient': self.__patient_section(self.patient),
+            'sample_name': self.sample_name,
             'trg_sample': self.__sample_section(self.trg_sample, self.trg_info),
             'wgs_sample': self.__sample_section(self.wgs_sample, self.wgs_info),
             'variants': self.__mutations_section(),
@@ -208,28 +211,31 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         return db
 
     def make_mutations_report(self, combined_mutations):
-        clinical_mut_metric_storage = MetricStorage(
-            sections=[ReportSection(metrics=[
-                Metric('Gene'),  # Gene & Transcript
-                Metric('Transcript'),  # Gene & Transcript
-                # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
-                Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
-                # Metric('Allele'),             # Het.
-                # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
-                Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-                Metric('Change', max_width=95, class_='long_line'),       # G>A
-                Metric('DP Target', short_name='Depth,\nTarget', max_width=48),              # 658
-                Metric('DP WGS', short_name='Depth,\nWGS', max_width=48),              # 658
-                Metric('AF Target', short_name='Freq,\nTarget', max_width=55, unit='%', with_heatmap=False),          # .19
-                Metric('AF WGS', short_name='Freq,\nWGS', max_width=55, unit='%', with_heatmap=False),          # .19
-                Metric('AA len', max_width=50, with_heatmap=False),          # 128
-                # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-                Metric('VarDict status', short_name='Pathogenicity,\nby VarDict'),     # Likely
-                # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
-                Metric('Databases'),                 # rs352343, COSM2123
-                Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
-            ])])
+        ms = [
+            Metric('Gene'),  # Gene & Transcript
+            Metric('Transcript'),  # Gene & Transcript
+            # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+            Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
+            # Metric('Allele'),             # Het.
+            # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
+            Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+            Metric('Change', max_width=95, class_='long_line'),       # G>A
+            Metric('AA len', max_width=50, with_heatmap=False),          # 128
+            # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+            Metric('VarDict status', short_name='Pathogenicity,\nby VarDict'),     # Likely
+            # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
+            Metric('Databases'),                 # rs352343, COSM2123
+            Metric('blank', short_name='   '),                 # rs352343, COSM2123
+            Metric('DP Target', short_name='Depth,\nTarget', max_width=48),              # 658
+            Metric('DP WGS', short_name='Depth,\nWGS', max_width=48),              # 658
+            Metric('blank', short_name='   '),                 # rs352343, COSM2123
+            Metric('AF Target', short_name='Freq,\nTarget', max_width=55, unit='%', with_heatmap=False),          # .19
+            Metric('AF WGS', short_name='Freq,\nWGS', max_width=55, unit='%', with_heatmap=False),          # .19
+        ]
+        if is_local():
+            ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
+        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
 
         report = PerRegionSampleReport(sample=self.trg_info.sample,
             metric_storage=clinical_mut_metric_storage, expandable=True)
@@ -252,11 +258,12 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             row.add_record('VarDict status', **self._status_field(mut))
             # row.add_record('VarDict reason', mut.reason)
             row.add_record('Databases', **self._db_recargs(mut))
-            row.add_record('ClinVar', **self._clinvar_recargs(mut))
+            if is_local():
+                row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             self._highlighting_and_hiding_mut_row(row, mut)
             if trg_mut and wgs_mut:
-                row.highlighted = '#'
+                row.highlighted_green = True
 
         return report
 

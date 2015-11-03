@@ -346,10 +346,12 @@ class BaseReport:
 
 
 class Row:
-    def __init__(self, parent_report, records=None, highlighted=False, hidden=False):
+    def __init__(self, parent_report, records=None, highlighted=False, highlighted_green=False, color=None, hidden=False):
         self.__parent_report = parent_report
         self.records = records or []
         self.highlighted = highlighted
+        self.highlighted_green = highlighted_green
+        self.color = color
         self.hidden = hidden
 
     def add_record(self, metric_name, value, **kwargs):
@@ -384,7 +386,6 @@ class SampleReport(BaseReport):
         else:
             recs = self.records
         return [Row(parent_report=self, records=recs)]
-
 
     def add_record(self, metric_name, value, silent=False, **kwargs):
         metric = self.metric_storage.find_metric(metric_name.strip())
@@ -1170,11 +1171,16 @@ def build_section_html(report, section, sortable=True):
 
     for row_num, row in enumerate(rows):
         tr_class_ = 'second_row_tr' if row_num == 0 else ''
+        tr_style = ''
 
-        if row.highlighted:
+        if row.color:
+            tr_style += ' background-color: ' + row.color
+        elif row.highlighted:
             tr_class_ += ' highlighted_row'
+        elif row.highlighted_green:
+            tr_class_ += ' highlighted_green_row'
 
-        tr = '<tr class="' + tr_class_ + '">'
+        tr = '<tr class="' + tr_class_ + '" style="' + tr_style + '">'
         for col_num, rec in enumerate(row.records):
             if not rec.metric.values: continue
             tr += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')

@@ -61,59 +61,64 @@ def split_bed_by_chrom(cnf, bed_fpath):
     return bed_fpath_by_chrom
 
 
-def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
-    if not bam_fpath or not bed_fpath:
+def bedcoverage_hist_stats(cnf, sample_name, bam_bed_fpath, bed_fpath, reuse=False):
+    if not bam_bed_fpath or not bed_fpath:
         info()
         msgs = []
-        if not bam_fpath: msgs.append('BAM file is required.')
+        if not bam_bed_fpath: msgs.append('BAM file is required.')
         if not bed_fpath: msgs.append('BED file is required.')
         if msgs:
             critical(msgs)
 
-    bed_col_num = count_bed_cols(bed_fpath)
-
     bedcov_output_fpath = join(cnf.work_dir,
         splitext_plus(basename(bed_fpath))[0] + '__' +
-        splitext_plus(basename(bam_fpath))[0] + '_bedcov_output.txt')
+        splitext_plus(basename(bam_bed_fpath))[0] + '_bedcov_output.txt')
+    if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
+        info(bedcov_output_fpath + ' exists, reusing.')
+        return bedcov_output_fpath
 
-    regions = []
-    bamtools = get_system_path(cnf, 'bamtools')
-    if not bamtools:
-        info('Running bedcoverage -hist...')
-        bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath)
-        info()
-        info('Analysing bedcoverage -hist output...')
-        regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
+    # bedtools = get_system_path(cnf, 'bedtools')
+    # gzip = get_system_path(cnf, 'gzip')
+    # chr_lengths = get_chr_len_fpath(cnf)
 
-    else:
-        chroms = get_chr_lengths(cnf).keys()
+    # regions = []
+    # bamtools = get_system_path(cnf, 'bamtools')
+    # if not bamtools:
+    info('Running bedcoverage -hist...')
+    bedcov_output_fpath = launch_bedcoverage_hist(cnf, bed_fpath, bam_bed_fpath, bedcov_output_fpath)
+    info()
+    info('Analysing bedcoverage -hist output...')
+    regions = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, count_bed_cols(bed_fpath))
 
-        bed_fpath_by_chrom = split_bed_by_chrom(cnf, bed_fpath)
-
-        stub = join(cnf.work_dir, basename(splitext_plus(bam_fpath)[0]))
-        if cnf.reuse_intermediate and all(verify_bam(stub + '.REF_' + chrom + '.bam', silent=True) for chrom in chroms):
-            info('BAM ' + bam_fpath + ' is split, reusing...')
-        else:
-            info('Splitting the BAM file, writing as ' + stub + '.REF_#.bam')
-            cmdline = '{bamtools} split -in {bam_fpath} -stub {stub} -reference'.format(**locals())
-            call(cnf, cmdline)
-
-        for chrom in chroms:
-            chrom_bed_fpath = verify_bed(bed_fpath_by_chrom.get(chrom), silent=True)
-            chrom_bam_fpath = verify_bam(stub + '.REF_' + chrom + '.bam', silent=True)
-
-            if not chrom_bed_fpath:
-                info('No regions for ' + chrom)
-            if not chrom_bam_fpath:
-                info('No coverage for ' + chrom)
-            if chrom_bed_fpath and chrom_bam_fpath:
-                bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
-                if not verify_file(bedcov_output_fpath):
-                    info('No coverage for ' + chrom)
-                else:
-                    info('Anylising bedcoverage output for ' + str(chrom) + '...')
-                    rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
-                    regions.extend(rs)
+    # else:
+    #     chroms = get_chr_lengths(cnf).keys()
+    #
+    #     bed_fpath_by_chrom = split_bed_by_chrom(cnf, bed_fpath)
+    #
+    #     stub = join(cnf.work_dir, basename(splitext_plus(bam_fpath)[0]))
+    #     if cnf.reuse_intermediate and all(verify_bam(stub + '.REF_' + chrom + '.bam', silent=True) for chrom in chroms):
+    #         info('BAM ' + bam_fpath + ' is split, reusing...')
+    #     else:
+    #         info('Splitting the BAM file, writing as ' + stub + '.REF_#.bam')  # TODO do spltting once in a run (not for exome then for target)
+    #         cmdline = '{bamtools} split -in {bam_fpath} -stub {stub} -reference'.format(**locals())
+    #         call(cnf, cmdline)
+    #
+    #     for chrom in chroms:
+    #         chrom_bed_fpath = verify_bed(bed_fpath_by_chrom.get(chrom), silent=True)
+    #         chrom_bam_fpath = verify_bam(stub + '.REF_' + chrom + '.bam', silent=True)
+    #
+    #         if not chrom_bed_fpath:
+    #             info('No regions for ' + chrom)
+    #         if not chrom_bam_fpath:
+    #             info('No coverage for ' + chrom)
+    #         if chrom_bed_fpath and chrom_bam_fpath:
+    #             bedcov_output_fpath = launch_bedcoverage_hist(cnf, chrom_bed_fpath, chrom_bam_fpath)
+    #             if not verify_file(bedcov_output_fpath):
+    #                 info('No coverage for ' + chrom)
+    #             else:
+    #                 info('Anylising bedcoverage output for ' + str(chrom) + '...')
+    #                 rs = summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num)
+    #                 regions.extend(rs)
             
         # with open(bedcov_output_fpath, 'w') as f:
         #     for chrom, bedov_output in bedcov_by_chrom.items():
@@ -134,7 +139,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
 #     res =
 
 
-def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None):
+def launch_bedcoverage_hist(cnf, bed_fpath, bam_bed_fpath, bedcov_output_fpath=None):
     # import pybedtools
     # bed = pybedtools.BedTool(bed_fpath)
     # bam = pybedtools.BedTool(bam_fpath)
@@ -143,15 +148,16 @@ def launch_bedcoverage_hist(cnf, bed_fpath, bam_fpath, bedcov_output_fpath=None)
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
 
-    bedcov_output_fpath = bedcov_output_fpath or join(cnf.work_dir,
-        splitext_plus(basename(bed_fpath))[0] + '__' +
-        splitext_plus(basename(bam_fpath))[0] + '_bedcov_output.txt')
+    if not bedcov_output_fpath:
+        bedcov_output_fpath = join(cnf.work_dir,
+            splitext_plus(basename(bed_fpath))[0] + '__' +
+            splitext_plus(basename(bam_bed_fpath))[0] + '_bedcov_output.txt')
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
-        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_fpath} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed_fpath} -b {bam_bed_fpath} -hist'.format(**locals())
     else:
-        cmdline = '{bedtools} coverage -abam {bam_fpath} -b {bed_fpath} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -a {bam_bed_fpath} -b {bed_fpath} -hist'.format(**locals())
 
     res = None
     tries = 0

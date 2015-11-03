@@ -32,6 +32,14 @@ def index_bam_grid(cnf, bam, samtools=None):
     return j
 
 
+def bam_to_bed(cnf, bam_fpath):
+    info('Converting the BAM to BED to save some memory.')  # from here: http://davetang.org/muse/2015/08/05/creating-a-coverage-plot-using-bedtools-and-r/
+    bam_bed_fpath = splitext_plus(bam_fpath)[0] + '.bed.gz'
+    cmdline = '{bedtools} bamtobed -i {bam_fpath} | {gzip}'.format(**locals())
+    call(cnf, cmdline, output_fpath=bam_bed_fpath)
+    return bam_bed_fpath
+
+
 def count_bed_cols(bed_fpath):
     with open(bed_fpath) as f:
         for l in f:
