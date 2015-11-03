@@ -137,7 +137,9 @@ class Metric:
             is_hidden=False,
             with_heatmap=True,
             style='',
+            td_style='',
             class_='',
+            td_class='',
             align=None,
             width=None,
             max_width=None,
@@ -146,6 +148,7 @@ class Metric:
             parse=True,
 
             sort_by=None,  # legacy
+            header_length=1,
 
             numbers=None,
             values=None,
@@ -168,12 +171,15 @@ class Metric:
         self.is_hidden = is_hidden
         self.with_heatmap = with_heatmap
         self.style = style
+        self.td_style = td_style
         self.class_ = class_
+        self.td_class = td_class
         self.align = align
         self.max_width = max_width
         self.min_width = min_width
         self.sort_direction = sort_direction
         self.parse = parse
+        self.header_length = header_length
 
         self.numbers = []
         self.values = []
@@ -501,7 +507,24 @@ class PerRegionSampleReport(SampleReport):
         return flat_rows
 
     def get_rows_of_records(self, sections=None):  # TODO: move logic from flatten here, use this method both in flatten and save_html
-        return self.rows
+        if not sections:
+            sections = []
+
+        elif isinstance(sections, ReportSection):
+            sections = [sections]
+
+        rows = []
+        for i, sr in enumerate(self.rows):
+            recs = []
+            for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
+                if not metric.is_hidden:
+                    rec = BaseReport.find_record(sr.records, metric.name)
+                    if rec:
+                        recs.append(rec)
+                    else:
+                        recs.append(Record(metric=metric, value=None))
+            rows.append(Row(parent_report=self, records=recs))
+        return rows
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
                   extra_js_fpaths=None, extra_css_fpaths=None):
@@ -1015,7 +1038,7 @@ def make_cell_th(metric, class_='', sortable=True):
         return html
 
     style = ''  #metric.style
-    class_ = class_  # + ' ' + metric.class_
+    class_ = class_  + ' ' + metric.class_
     if metric.max_width is not None:
         style += 'max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
     if metric.min_width is not None:
@@ -1070,7 +1093,11 @@ def make_cell_td(rec, class_=''):
     if rec.metric.is_hidden:
         return ''
 
-    style = rec.metric.style + '; ' if rec.metric.style else ''
+    style = ''
+    if rec.metric.style:
+        style += rec.metric.style + '; '
+    if rec.metric.td_style:
+        style += rec.metric.td_style + '; '
     if rec.color:
         style += 'background-color: ' + rec.color + '; '
     if rec.text_color:
@@ -1085,7 +1112,7 @@ def make_cell_td(rec, class_=''):
 
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
     html += ' quality="' + str(rec.metric.quality) + '"'
-    html += ' class="td ' + class_ + ' ' + rec.metric.class_ + ' '
+    html += ' class="td ' + class_ + ' ' + rec.metric.td_class + ' ' + rec.metric.class_ + ' '
 
     if rec.num:
         html += ' number" number="' + str(rec.num)
@@ -1160,8 +1187,14 @@ def build_section_html(report, section, sortable=True):
     table = '\n<table cellspacing="0" class="' + table_class + ' id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
 
+    # spanning = 0
     for col_num, metric in enumerate(section.get_metrics()):
+        # if spanning > 0:
+        #     spanning -= 1
+        #     continue
         table += make_cell_th(metric, class_='left_column_td' if col_num == 0 else '', sortable=sortable)
+        # if metric.header_length > 1:
+        #     spanning = metric.header_length - 1
 
     table += '\n</tr>\n</thead>\n<tbody>'
 

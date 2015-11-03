@@ -25,6 +25,10 @@
       white-space: nowrap;
       text-align: left;
       padding: 2px 6px 2px 4px; }
+    #report table.report_table td.shifted_column, #report table.report_table th.shifted_column {
+      padding-left: 0;
+      border-left: 20px solid white;
+      border-collapse: separate; }
     #report table.report_table th {
       vertical-align: bottom; }
     #report table.report_table tbody tr:first-child td {

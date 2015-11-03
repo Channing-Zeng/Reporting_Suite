@@ -239,7 +239,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
                 info(bedcov_output + ' exists, reusing')
             else:
-                j = launch_bedcoverage_hist(cnf, seq2c_bed, bam_fpath, qsub=True)
+                j = launch_bedcoverage_hist(cnf, seq2c_bed, bam_fpath, qsub=True, sample=s)
                 jobs_to_wait.append(j)
         info()
     info('*' * 50)

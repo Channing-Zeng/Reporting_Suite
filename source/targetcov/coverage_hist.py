@@ -112,7 +112,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bed, bam):
 #     res =
 
 
-def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False):
+def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False, **kwargs):
     # import pybedtools
     # bed = pybedtools.BedTool(bed_fpath)
     # bam = pybedtools.BedTool(bam_fpath)
@@ -148,7 +148,7 @@ def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False)
     if qsub:
         job_name = splitext_plus(basename(bed))[0] + '__' +\
                    splitext_plus(basename(bam))[0] + '_bedcov'
-        return submit_job(cnf, cmdline, job_name, output_fpath=bedcov_output_fpath)
+        return submit_job(cnf, cmdline, job_name, output_fpath=bedcov_output_fpath, **kwargs)
     else:
         return call(cnf, cmdline, bedcov_output_fpath, exit_on_error=False)
         # if isfile(bedcov_output_fpath):

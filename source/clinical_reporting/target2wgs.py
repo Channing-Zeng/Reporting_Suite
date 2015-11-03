@@ -215,28 +215,34 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
             # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+            Metric('AA len', max_width=50, style='padding-left: 0px;', with_heatmap=False),          # 128
             Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
             # Metric('Allele'),             # Het.
             # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=95, class_='long_line'),       # G>A
-            Metric('AA len', max_width=50, with_heatmap=False),          # 128
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-            Metric('VarDict status', short_name='Pathogenicity,\nby VarDict'),     # Likely
+            Metric('VarDict status', short_name='Pathogenicity'),     # Likely
             # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
             Metric('Databases'),                 # rs352343, COSM2123
-            Metric('blank', short_name='   '),                 # rs352343, COSM2123
-            Metric('DP Target', short_name='Depth,\nTarget', max_width=48),              # 658
-            Metric('DP WGS', short_name='Depth,\nWGS', max_width=48),              # 658
-            Metric('blank', short_name='   '),                 # rs352343, COSM2123
-            Metric('AF Target', short_name='Freq,\nTarget', max_width=55, unit='%', with_heatmap=False),          # .19
-            Metric('AF WGS', short_name='Freq,\nWGS', max_width=55, unit='%', with_heatmap=False),          # .19
         ]
-        if is_local():
-            ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
-        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
+        # if is_local():
+        #     ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
 
+                # padding-left: 0 !important
+                # border-left: 20px solid white !important
+                # border-collapse: separate !important
+
+        ms.extend([
+            Metric('AF Target', short_name='Target\nfreq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
+            Metric('DP Target', short_name='depth', max_width=48, med=self.trg_info.ave_depth),              # 658
+
+            Metric('AF WGS', short_name='WGS\nfreq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
+            Metric('DP WGS', short_name='depth', max_width=48, med=self.trg_info.ave_depth),              # 658
+        ])
+
+        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
         report = PerRegionSampleReport(sample=self.trg_info.sample,
             metric_storage=clinical_mut_metric_storage, expandable=True)
 
@@ -258,8 +264,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             row.add_record('VarDict status', **self._status_field(mut))
             # row.add_record('VarDict reason', mut.reason)
             row.add_record('Databases', **self._db_recargs(mut))
-            if is_local():
-                row.add_record('ClinVar', **self._clinvar_recargs(mut))
+            # if is_local():
+            #     row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             self._highlighting_and_hiding_mut_row(row, mut)
             if trg_mut and wgs_mut:
