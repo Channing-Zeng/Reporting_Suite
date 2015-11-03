@@ -125,7 +125,10 @@ def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False,
 
     if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
         info(bedcov_output_fpath + ' exists, reusing.')
-        return bedcov_output_fpath
+        if qsub:
+            return None
+        else:
+            return bedcov_output_fpath
 
     bedtools = get_system_path(cnf, 'bedtools')
     chr_lengths = get_chr_len_fpath(cnf)
