@@ -76,7 +76,7 @@ def bedcoverage_hist_stats(cnf, sample_name, bam_fpath, bed_fpath, reuse=False):
 
         for chrom in chroms:
             # chrom_bed_fpath = add_suffix(bed_fpath, chrom)
-            chrom_bed_fpath = '<(grep "^{chrom}" {bed_fpath})'.format(**locals())
+            chrom_bed_fpath = '<(grep -P "^{chrom}\t" {bed_fpath})'.format(**locals())
             # grep = get_system_path(cnf, 'grep')
             # cmdl = '{grep} "^{chrom}" {bed_fpath}'.format(**locals())
             # call(cnf, cmdl, output_fpath=chrom_bed_fpath, exit_on_error=False)
