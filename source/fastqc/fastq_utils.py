@@ -3,7 +3,8 @@ import os
 from os.path import splitext, dirname, join
 import random
 import gzip
-from source.file_utils import open_gzipsafe, file_transaction, file_exists, intermediate_fname
+from source import info
+from source.file_utils import open_gzipsafe, file_transaction, file_exists, intermediate_fname, verify_file
 
 
 def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
@@ -26,11 +27,9 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     outf1 = intermediate_fname(cnf, fastq_L_fpath, 'subset')
     outf2 = intermediate_fname(cnf, fastq_R_fpath, 'subset')
 
-    if file_exists(outf1):
-        if not outf2:
-            return outf1, outf2
-        elif file_exists(outf2):
-            return outf1, outf2
+    if cnf.reuse_intermediate and verify_file(outf1) and verify_file(outf2):
+        info(outf1 + ' and ' + outf2 + ' exist, reusing.')
+        return outf1, outf2
 
     out_files = (outf1, outf2) if outf2 else (outf1)
 

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from os.path import join, abspath, dirname
+from os.path import join, abspath, dirname, relpath
 from source import info
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation
 from source.clinical_reporting.clinical_reporting import Chromosome, gray, ClinicalReporting, BaseClinicalReporting
@@ -73,7 +73,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info('')
 
         write_static_html_report(self.cnf, {
-            # 'sample': self.__sample_section(),
+            'trg_sample': self.__sample_section(self.trg_sample),
+            'wgs_sample': self.__sample_section(self.wgs_sample),
             'variants': self.__mutations_section(),
             # 'seq2c': self.__seq2c_section(),
             # 'coverage': self.__coverage_section(),
@@ -91,18 +92,18 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info()
         return output_fpath
 
-    def __sample_section(self):
+    def __sample_section(self, sample, clin_info):
         sample_dict = dict()
-        sample_dict['sample'] = self.sample.name.replace('_', ' ')
-        if self.info.patient.gender:
-            sample_dict['patient'] = {'sex': self.info.patient.gender}
-        sample_dict['project_name'] = self.info.project_name.replace('_', ' ')
-        if self.info.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(self.info.project_report_path, dirname(self.sample.clinical_html))
-        sample_dict['panel'] = self.info.target.type
-        sample_dict['bed_path'] = self.info.target.bed_fpath or ''
+        sample_dict['sample'] = sample.name.replace('_', ' ')
+        if self.patient.gender:
+            sample_dict['patient'] = {'sex': self.patient.gender}
+        sample_dict['project_name'] = self.project_name.replace('_', ' ')
+        if info.project_report_path:
+            sample_dict['project_report_rel_path'] = relpath(info.project_report_path, dirname(sample.clinical_html))
+        sample_dict['panel'] = self.clin_info.target.type
+        sample_dict['bed_path'] = self.clin_info.target.bed_fpath or ''
         if self.cnf.debug:
-            sample_dict['panel'] = self.info.target.type + ', AZ300 IDT panel'
+            sample_dict['panel'] = self.clin_info.target.type + ', AZ300 IDT panel'
             sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
         sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
@@ -196,21 +197,19 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                 Metric('Gene'),  # Gene & Transcript
                 Metric('Transcript'),  # Gene & Transcript
                 # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
-                Metric('AA chg', max_width=70, class_='long_line'),            # p.Glu82Lys
+                Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
                 # Metric('Allele'),             # Het.
                 # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
-                Metric('Position',
-                       # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
-                    with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
                 Metric('Change', max_width=95, class_='long_line'),       # G>A
-                Metric('DP Target', max_width=48),              # 658
-                Metric('DP WGS', max_width=48),              # 658
-                Metric('AF Target', max_width=45, unit='%', with_heatmap=False),          # .19
-                Metric('AF WGS', max_width=45, unit='%', with_heatmap=False),          # .19
+                Metric('DP Target', short_name='Depth,\nTarget', max_width=48),              # 658
+                Metric('DP WGS', short_name='Depth,\nWGS', max_width=48),              # 658
+                Metric('AF Target', short_name='Freq,\nTarget', max_width=55, unit='%', with_heatmap=False),          # .19
+                Metric('AF WGS', short_name='Freq,\nWGS', max_width=55, unit='%', with_heatmap=False),          # .19
                 Metric('AA len', max_width=50, with_heatmap=False),          # 128
                 # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
                 Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-                Metric('VarDict status', short_name='Pathogenic,\nreported by VarDict'),     # Likely
+                Metric('VarDict status', short_name='Pathogenicity,\nby VarDict'),     # Likely
                 # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
                 Metric('Databases'),                 # rs352343, COSM2123
                 Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
@@ -228,16 +227,16 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
             row.add_record('Change', **self._chg_recargs(mut))
-            row.add_record('DP Target', trg_mut.depth if trg_mut else 'a')
-            row.add_record('DP WGS', wgs_mut.depth if wgs_mut else 'a')
-            row.add_record('AF Target', trg_mut.freq if trg_mut else 'a')
-            row.add_record('AF WGS', wgs_mut.freq if wgs_mut else 'a')
+            row.add_record('DP Target', trg_mut.depth if trg_mut else None)
+            row.add_record('DP WGS', wgs_mut.depth if wgs_mut else None)
+            row.add_record('AF Target', trg_mut.freq if trg_mut else None)
+            row.add_record('AF WGS', wgs_mut.freq if wgs_mut else None)
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._status_field(mut))
             # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', self._db_recargs(mut))
-            row.add_record('ClinVar', self._clinvar_recargs(mut))
+            row.add_record('Databases', **self._db_recargs(mut))
+            row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             self._highlighting_and_hiding_mut_row(row, mut)
 

@@ -254,18 +254,19 @@ def downsample_fastq(cnf, sample, reads_num=5e5):
 
 
 def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
-    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {ref} -'.format(**locals())
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
+    bam_fpath = splitext(sam_fpath)[0] + '.bam'
+    sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
+
+    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {ref} -'.format(**locals())
     call(cnf, bwa_cmdline, output_fpath=sam_fpath)
 
-    bam_fpath = join(cnf.work_dir, sample.name + '_downsampled.bam')
     cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=bam_fpath)
 
-    sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
     prefix = splitext(sorted_bam_fpath)[0]
     cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
-    call(cnf, cmdline)
+    call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
 
     index_bam(cnf, sorted_bam_fpath, samtools=samtools)
 
@@ -316,7 +317,7 @@ def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     fastqc = get_system_path(cnf, 'fastqc', is_critical=True)
     java = get_system_path(cnf, 'java', is_critical=True)
     cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.l_fpath}'.format(**locals())
-    cmdline_r = '{fastqc} --eonly_mextract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
+    cmdline_r = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
     j_l = submit_job(cnf, cmdline_l, 'FastQC_' + sample.l_fastqc_base_name, stdout_to_outputfile=False,
         output_fpath=join(sample.ds.fastqc_dirpath, sample.l_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
     j_r = submit_job(cnf, cmdline_r, 'FastQC_' + sample.r_fastqc_base_name, stdout_to_outputfile=False,

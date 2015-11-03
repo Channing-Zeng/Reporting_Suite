@@ -235,7 +235,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 Metric('AA len', max_width=50, with_heatmap=False),          # 128
                 # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
                 Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-                Metric('VarDict status', short_name='Pathogenic,\nreported by VarDict'),     # Likely
+                Metric('VarDict status', short_name='Pathogenic,\nby VarDict'),     # Likely
                 # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
                 Metric('Databases', parse=False),                 # rs352343, COSM2123
                 Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL

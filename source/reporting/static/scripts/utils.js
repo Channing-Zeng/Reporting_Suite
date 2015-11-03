@@ -168,7 +168,7 @@ function readJsonFromElement(element) {
     } catch (e) {
         //console.log(e);
         result = null;
-        throw e;
+        console.log(e);
     }
     return result;
 }
