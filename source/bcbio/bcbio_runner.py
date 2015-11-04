@@ -547,7 +547,7 @@ class BCBioRunner:
 
                         # ngsCAT reports
                         if (self.ngscat in self.steps) and (not sample.bed or not verify_file(sample.bed)):
-                            err('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
+                            warn('Warning: no BED file, assuming WGS, thus skipping ngsCAT reports.')
                         else:
                             if self.ngscat in self.steps:
                                 self._submit_job(

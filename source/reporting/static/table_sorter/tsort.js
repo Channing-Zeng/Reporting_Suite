@@ -36,6 +36,7 @@ Array - Specifc table
 			var sorting_history = new Array();
 			var tsort_id = 0; // For applying classes for rows
 			var column_widths = new Array();
+			var column_paddings = new Array();
 			var sorting_criteria = new Array(); // User defined sorting methods
 			var is_ascending = new Array(); // User defined sorting direction  # Vlad
 			var th_index_selected; // The header index that was clicked on
@@ -151,15 +152,24 @@ Array - Specifc table
 			});
 
 			// Set each td's width
+			//var padding = 6;  // for some reason, minWidth setting doesn't properly act with cell paddings
 			$(table).find('th').each(function() {
-				column_widths.push($(this).outerWidth(true));
+                var width = parseInt($(this).outerWidth(true));
+                var pad = parseInt($(this).css('padding-right')) + parseInt($(this).css('padding-left'));
+                if ($(this).css('text-align') == 'right') {
+                    console.log($(this).text() + ' pad: ' + pad);
+                }
+				column_widths.push(width);
+				column_paddings.push(pad);
 			});
 
-			var padding = 1;  // for some reason, minWidth setting doesn't properly act with cell paddings
 			$(table).find('tr td, tr th').each(function() {
 				$(this).css( {
-					minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
+					minWidth: column_widths[$(this).index()] - column_paddings[$(this).index()] //- ($(this).index() == 0 ? padding + 5 : padding + 7)
 				} );
+				//$(this).css( {
+				//	minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
+				//} );
 			});
 
 			// Set each row's height and width

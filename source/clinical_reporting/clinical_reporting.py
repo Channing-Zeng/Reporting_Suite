@@ -5,7 +5,7 @@ from os.path import join, dirname, abspath, relpath
 from source import info
 from source.logger import warn
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
-from source.utils import get_chr_lengths
+from source.utils import get_chr_lengths, OrderedDefaultDict
 
 
 def make_clinical_report(cnf, clinical_sample_info, output_fpath):
@@ -35,6 +35,97 @@ class BaseClinicalReporting:
     def __init__(self, cnf, *args):
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
+
+    def make_mutations_report(self, mutations_by_experiment):
+        muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        for e, muts in mutations_by_experiment.items():
+            for mut in muts:
+                muts_by_key_by_experiment[mut.get_key()][e] = mut
+
+        ms = [
+            Metric('Gene'),  # Gene & Transcript
+            Metric('Transcript'),  # Gene & Transcript
+            # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
+            Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
+            Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
+            # Metric('Allele'),             # Het.
+            # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
+            Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+            Metric('Change', max_width=95, class_='long_line'),       # G>A
+            # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+            Metric('VarDict status', short_name='Pathogenicity'),     # Likely
+            # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
+            Metric('Databases'),                 # rs352343, COSM2123
+        ]
+        # if is_local():
+        #     ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
+
+        if len(mutations_by_experiment) == 1:
+            ms.extend([
+                Metric('Freq', short_name='Freq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
+                Metric('Depth', short_name='Depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth),              # 658
+            ])
+        else:
+            for e in mutations_by_experiment.keys():
+                ms.extend([
+                    Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
+                    Metric(e.key + ' Depth', short_name='depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth),              # 658
+                ])
+
+        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
+        report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
+            metric_storage=clinical_mut_metric_storage, expandable=True)
+
+        for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
+            mut = next((m for m in mut_by_experiment.values() if m is not None), None)
+
+            row = report.add_row()
+            row.add_record('Gene', mut.gene.name)
+            row.add_record('Transcript', mut.transcript)
+            row.add_record('AA chg', **self._aa_chg_recargs(mut))
+            row.add_record('Position', **self._pos_recargs(mut))
+            row.add_record('Change', **self._chg_recargs(mut))
+            row.add_record('AA len', mut.aa_len)
+            row.add_record('Effect', mut.eff_type)
+            row.add_record('VarDict status', **self._status_field(mut))
+            # row.add_record('VarDict reason', mut.reason)
+            row.add_record('Databases', **self._db_recargs(mut))
+            # if is_local():
+            #     row.add_record('ClinVar', **self._clinvar_recargs(mut))
+
+            for e, m in mut_by_experiment.items():
+                row.add_record(e.key + ' Freq', m.freq if m else None)
+                row.add_record(e.key + ' Depth', m.depth if m else None)
+
+            self._highlighting_and_hiding_mut_row(row, mut)
+            if len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
+                row.highlighted_green = True
+
+        return report
+
+    def sample_section(self, experiment):
+        d = dict()
+        d['key'] = experiment.key
+        d['sample'] = experiment.sample.name.replace('_', ' ')
+        if experiment.patient.gender:
+            d['patient'] = {'sex': experiment.patient.gender}
+        d['project_name'] = experiment.project_name.replace('_', ' ')
+        if experiment.project_report_path:
+            d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
+        d['panel'] = experiment.target.type
+        d['bed_path'] = experiment.target.bed_fpath or ''
+        if self.cnf.debug:
+            d['panel'] = experiment.target.type + ', AZ300 IDT panel'
+            d['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+
+        d['sample_type'] = experiment.sample.normal_match if experiment.sample.normal_match else 'unpaired'  # plasma, unpaired'
+        d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
+        d['target_type'] = experiment.target.type
+        d['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
+        # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
+        d['ave_depth'] = Metric.format_value(experiment.ave_depth, is_html=True)
+        return d
 
     @staticmethod
     def _db_recargs(mut):
@@ -97,24 +188,24 @@ class BaseClinicalReporting:
 
 
 class ClinicalReporting(BaseClinicalReporting):
-    def __init__(self, cnf, clinical_sample_info):
+    def __init__(self, cnf, clinical_experiment_info):
         BaseClinicalReporting.__init__(self, cnf)
 
-        self.info = clinical_sample_info
-        self.sample = clinical_sample_info.sample
+        self.experiment = clinical_experiment_info
+        self.sample = clinical_experiment_info.sample
 
         info('Preparing data...')
-        self.mutations_report = self.make_mutations_report(self.info.mutations)
-        self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
-        self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
-        self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
-        self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
+        self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
+        self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
+        self.seq2c_plot_data = self.make_seq2c_plot_json() if self.experiment.seq2c_events_by_gene_name is not None else None
+        self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
+        self.cov_plot_data = self.make_key_genes_cov_json(self.experiment.key_gene_by_name)
 
     def write_report(self, output_fpath):
         info('')
 
         write_static_html_report(self.cnf, {
-            'sample': self.__sample_section(),
+            'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
             'seq2c': self.__seq2c_section(),
             'coverage': self.__coverage_section(),
@@ -132,40 +223,18 @@ class ClinicalReporting(BaseClinicalReporting):
         info()
         return output_fpath
 
-    def __sample_section(self):
-        sample_dict = dict()
-        sample_dict['sample'] = self.sample.name.replace('_', ' ')
-        if self.info.patient.gender:
-            sample_dict['patient'] = {'sex': self.info.patient.gender}
-        sample_dict['project_name'] = self.info.project_name.replace('_', ' ')
-        if self.info.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(self.info.project_report_path, dirname(self.sample.clinical_html))
-        sample_dict['panel'] = self.info.target.type
-        sample_dict['bed_path'] = self.info.target.bed_fpath or ''
-        if self.cnf.debug:
-            sample_dict['panel'] = self.info.target.type + ', AZ300 IDT panel'
-            sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
-
-        sample_dict['sample_type'] = self.sample.normal_match if self.sample.normal_match else 'unpaired'  # plasma, unpaired'
-        sample_dict['genome_build'] = self.cnf.genome.name
-        sample_dict['target_type'] = self.info.target.type
-        sample_dict['target_fraction'] = Metric.format_value(self.info.target.coverage_percent, is_html=True, unit='%')
-        # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-        sample_dict['ave_depth'] = Metric.format_value(self.info.ave_depth, is_html=True)
-        return sample_dict
-
     def __mutations_section(self):
         mutations_dict = dict()
         if self.mutations_report.rows:
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
-            mutations_dict['total_variants'] = Metric.format_value(self.info.total_variants, is_html=True)
-            mutations_dict['total_key_genes'] = Metric.format_value(len(self.info.key_gene_by_name), is_html=True)
+            mutations_dict['total_variants'] = Metric.format_value(self.experiment.total_variants, is_html=True)
+            mutations_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
         return mutations_dict
 
     def __coverage_section(self):
-        coverage_dict = dict(depth_cutoff=self.info.depth_cutoff, columns=[])
+        coverage_dict = dict(depth_cutoff=self.experiment.depth_cutoff, columns=[])
         GENE_COL_NUM = 3
         genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
         calc_cell_contents(self.key_genes_report, self.key_genes_report.get_rows_of_records())
@@ -198,7 +267,7 @@ class ClinicalReporting(BaseClinicalReporting):
             Metric('Gene'),
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
             Metric('Ave depth', med=ave_depth),
-            Metric('% cov at {}x'.format(self.info.depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1),
+            Metric('% cov at {}x'.format(self.experiment.depth_cutoff), unit='%', med=1, low_inner_fence=0.5, low_outer_fence=0.1),
             Metric('CNV', short_name='&nbsp;&nbsp;CNV')]  # short name is hack for IE9 who doesn't have "text-align: left" and tries to stick "CNV" to the previous col header
 
         clinical_cov_metric_storage = MetricStorage(sections=[ReportSection(metrics=clinical_cov_metrics)])
@@ -210,58 +279,12 @@ class ClinicalReporting(BaseClinicalReporting):
             reg.add_record('Gene', gene.name)
             reg.add_record('Chr', gene.chrom.replace('chr', ''))
             reg.add_record('Ave depth', gene.ave_depth)
-            m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(self.info.depth_cutoff))
-            reg.add_record(m.name, next((cov for cutoff, cov in gene.cov_by_threshs.items() if cutoff == self.info.depth_cutoff), None))
+            m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(self.experiment.depth_cutoff))
+            reg.add_record(m.name, next((cov for cutoff, cov in gene.cov_by_threshs.items() if cutoff == self.experiment.depth_cutoff), None))
             if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
                 reg.add_record('CNV', gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
 
         return key_genes_report
-
-    def make_mutations_report(self, mutations):
-        clinical_mut_metric_storage = MetricStorage(
-            sections=[ReportSection(metrics=[
-                Metric('Gene'),  # Gene & Transcript
-                Metric('Transcript'),  # Gene & Transcript
-                # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
-                Metric('AA chg', max_width=70, class_='long_line'),            # p.Glu82Lys
-                # Metric('Allele'),             # Het.
-                # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
-                Metric('Position',
-                       # sort_by=lambda v: (v.split(':')[0], int(''.join(ch for ch in v.split(':')[1] if ch.isdigit()))),
-                    with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-                Metric('Change', max_width=95, class_='long_line'),       # G>A
-                Metric('Depth', max_width=48),              # 658
-                Metric('Freq', max_width=45, unit='%', with_heatmap=False),          # .19
-                Metric('AA len', max_width=50, with_heatmap=False),          # 128
-                # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-                Metric('VarDict status', short_name='Pathogenic,\nby VarDict'),     # Likely
-                # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
-                Metric('Databases', parse=False),                 # rs352343, COSM2123
-                Metric('ClinVar', short_name='SolveBio ClinVar'),    # Pathogenic?, URL
-            ])])
-
-        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_mut_metric_storage, expandable=True)
-
-        for mut in mutations:
-            row = report.add_row()
-            row.add_record('Gene', mut.gene.name)
-            row.add_record('Transcript', mut.transcript)
-            row.add_record('AA chg', **self._aa_chg_recargs(mut))
-            row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', **self._chg_recargs(mut))
-            row.add_record('Depth', mut.depth)
-            row.add_record('Freq', mut.freq)
-            row.add_record('AA len', mut.aa_len)
-            row.add_record('Effect', mut.eff_type)
-            row.add_record('VarDict status', **self._status_field(mut))
-            # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', self._db_recargs(mut))
-            row.add_record('ClinVar', self._clinvar_recargs(mut))
-
-            self._highlighting_and_hiding_mut_row(row, mut)
-
-        return report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
         info('Preparing mutations stats for key gene tables')
@@ -283,7 +306,7 @@ class ClinicalReporting(BaseClinicalReporting):
         sv_mutation_types = {'Rearrangement', 'Fusion'}
         cnv_mutation_types = {'Amplification', 'Deletion'}
 
-        for gene in self.info.key_gene_by_name.values():
+        for gene in self.experiment.key_gene_by_name.values():
             if gene.name not in actionable_gene_names:
                 continue
             possible_mutation_types = set(actionable_genes_dict[gene.name][1].split('; '))
@@ -295,7 +318,7 @@ class ClinicalReporting(BaseClinicalReporting):
 
             vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
             if vardict_mut_types:
-                for mut in self.info.mutations:
+                for mut in self.experiment.mutations:
                     if mut.gene.name == gene.name:
                         variants.append(mut.aa_change if mut.aa_change else '.')
                         types.append(mut.var_type)
@@ -330,7 +353,7 @@ class ClinicalReporting(BaseClinicalReporting):
             linesX=chr_cum_lens
         )
 
-        for gene in self.info.key_gene_by_name.values():
+        for gene in self.experiment.key_gene_by_name.values():
             if gene.seq2c_event:
                 data['events'].append(dict(
                     x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
@@ -369,13 +392,13 @@ class ClinicalReporting(BaseClinicalReporting):
         for gene in key_gene_by_name.values():
             gene_names.append(gene.name)
             gene_ave_depths.append(gene.ave_depth)
-            cov_in_thresh.append(gene.cov_by_threshs.get(self.info.depth_cutoff))
+            cov_in_thresh.append(gene.cov_by_threshs.get(self.experiment.depth_cutoff))
             coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
             cds_cov_by_gene[gene.name] = [dict(
                 start=cds.start,
                 end=cds.end,
                 aveDepth=cds.ave_depth,
-                percentInThreshold=cds.cov_by_threshs.get(self.info.depth_cutoff)
+                percentInThreshold=cds.cov_by_threshs.get(self.experiment.depth_cutoff)
             ) for cds in gene.cdss]
 
         json_txt = '{"coords_x":%s, "ave_depths":%s, "cov_in_thresh":%s, "gene_names":%s, "mutations":%s, "ticks_x":%s, ' \

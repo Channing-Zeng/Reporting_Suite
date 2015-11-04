@@ -24,7 +24,7 @@
         </style>
     <![endif]-->
 
-    <script type="text/javascript" src="jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="flot/jquery.flot.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
@@ -49,44 +49,49 @@
     </div>
 
     <div id='report' class="clinical_report">
-        {.section patient}
-            <b>Patient: </b>{gender}<br>
-        {.or}
-        {.end}
+        <!--{.section patient}-->
+        <!--{.or}-->
+        <!--{.end}-->
 
-        <h1 class="report-header">Sample: {sample_name}</h1>
-
+        {.section sample}
         <div style="width: 1127px">
-            <div style="float: left; width: 400px;">
-            {.section trg_sample}
-                <h3 style="margin-bottom: -10px">Target</h3>
-                <p style="line-height: 1.5em;">
-                    <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
-                    <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
-                    <b>Sample type: </b>{sample_type}<br>
-                    <b>Target: </b><a href="{bed_path}">{panel}</a>,
-                        covered {target_fraction} of all positions
-                        at {ave_depth} average coverage<br>
-                </p>
+            {.section experiments}
+                {.repeated section @}
+                <div style="float: left; width: 400px; margin-left: 30px;">
+                    <h3 style="margin-bottom: -10px">{key}</h3>
+                    <p style="line-height: 1.5em;">
+                        <b>Sample: </b>{sample}</p><br>
+                        {.section patient}
+                            <b>Patient: </b>{sex}<br>
+                        {.end}
+                        <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
+                        <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
+                        <b>Sample type: </b>{sample_type}<br>
+                        <b>Target: </b><a href="{bed_path}">{panel}</a>,
+                            covered {target_fraction} of all positions
+                            at {ave_depth} average coverage<br>
+                    </p>
+                </div>
+                {.end}
+                <div style="clear: left;"></div>
             {.end}
-            </div>
 
-            <div style="float: left; width: 400px; margin-left: 50px;">
-            {.section wgs_sample}
-                <h3 style="margin-bottom: -10px">WGS</h3>
-                <p style="line-height: 1.5em;">
-                    <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
-                    <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
-                    <b>Sample type: </b>{sample_type}<br>
-                    <b>Target: </b><a href="{bed_path}">{panel}</a>,
-                        covered {target_fraction} of all positions
-                        at {ave_depth} average coverage<br>
-                </p>
-            {.end}
-            </div>
+            <!--<div style="float: left; width: 400px; margin-left: 50px;">-->
+            <!--{.section wgs_sample}-->
+                <!--<h3 style="margin-bottom: -10px">WGS</h3>-->
+                <!--<p style="line-height: 1.5em;">-->
+                    <!--<b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>-->
+                    <!--&lt;!&ndash;<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>&ndash;&gt;-->
+                    <!--<b>Sample type: </b>{sample_type}<br>-->
+                    <!--<b>Target: </b><a href="{bed_path}">{panel}</a>,-->
+                        <!--covered {target_fraction} of all positions-->
+                        <!--at {ave_depth} average coverage<br>-->
+                <!--</p>-->
+            <!--{.end}-->
+            <!--</div>-->
 
-            <div style="clear: both;"></div>
         </div>
+        {.end}
 
         <div class="space_8px"></div>
         <div class="space_8px"></div>
@@ -102,7 +107,8 @@
         <h1>Mutations in key genes</h1>
         {.section variants}
             <div id="variants_div" style="width: 800px;">
-                <p style="margin-top: -5px;">{total_target_variants} targetseq variants and {total_wgs_variants} WGS variants were
+                <p style="margin-top: -5px;">
+                    {total_target_variants} targetseq variants and {total_wgs_variants} WGS variants were
                     found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).

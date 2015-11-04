@@ -514,16 +514,17 @@ class PerRegionSampleReport(SampleReport):
             sections = [sections]
 
         rows = []
-        for i, sr in enumerate(self.rows):
+        for i, row in enumerate(self.rows):
             recs = []
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden:
-                    rec = BaseReport.find_record(sr.records, metric.name)
+                    rec = BaseReport.find_record(row.records, metric.name)
                     if rec:
                         recs.append(rec)
                     else:
                         recs.append(Record(metric=metric, value=None))
-            rows.append(Row(parent_report=self, records=recs))
+            row.records = recs
+            rows.append(row)
         return rows
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
@@ -1037,21 +1038,19 @@ def make_cell_th(metric, class_='', sortable=True):
     if metric.is_hidden or not metric.values:
         return html
 
-    style = ''  #metric.style
+    style = metric.style
     class_ = class_  + ' ' + metric.class_
     if metric.max_width is not None:
         style += 'max-width: {w}px; width: {w}px;'.format(w=metric.max_width)
     if metric.min_width is not None:
         style += 'min-width: {w}px;'.format(w=metric.min_width)
 
-    if metric.align:
-        style += ' text-align: ' + metric.align + '; '
-    elif metric.numbers:
-        style += ' text-align: right; '
-        metric.align = 'right'
-    else:
-        style += ' text-align: left; '
-        metric.align = 'left'
+    if not metric.align:
+        if metric.numbers:
+            metric.align = 'right'
+        else:
+            metric.align = 'left'
+    style += ' text-align: ' + metric.align + '; '
 
     if '\n' in __get_metric_name_html(metric):
         style += ' white-space: pre;'
@@ -1106,7 +1105,6 @@ def make_cell_td(rec, class_=''):
         style += 'max-width: {w}px; width: {w}px; '.format(w=rec.metric.max_width)
     if rec.metric.min_width is not None:
         style += 'min-width: {w}px; '.format(w=rec.metric.min_width)
-
     if rec.metric.align:
         style += 'text-align: ' + rec.metric.align + '; '
 
@@ -1208,7 +1206,7 @@ def build_section_html(report, section, sortable=True):
 
         if row.color:
             tr_style += ' background-color: ' + row.color
-        elif row.highlighted:
+        if row.highlighted:
             tr_class_ += ' highlighted_row'
         elif row.highlighted_green:
             tr_class_ += ' highlighted_green_row'

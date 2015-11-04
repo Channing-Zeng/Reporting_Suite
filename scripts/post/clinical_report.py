@@ -3,7 +3,7 @@
 import bcbio_postproc
 
 import shutil
-from source.clinical_reporting.clinical_parser import ClinicalSampleInfo, clinical_sample_info_from_cnf
+from source.clinical_reporting.clinical_parser import ClinicalExperimentInfo, clinical_sample_info_from_cnf
 
 from source.clinical_reporting.clinical_reporting import make_clinical_report
 from source.logger import info

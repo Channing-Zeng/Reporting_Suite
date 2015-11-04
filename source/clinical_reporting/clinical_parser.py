@@ -46,8 +46,6 @@ class Mutation(SortableByChrom):
         self.pos = None
         self.ref = None
         self.alt = None
-        self.depth = None
-        self.freq = None
         self.aa_change = None
         self.aa_len = None
         self.eff_type = None
@@ -56,6 +54,9 @@ class Mutation(SortableByChrom):
         self.cosmic_ids = []
         self.dbsnp_ids = []
         self.solvebio = None
+
+        self.depth = None
+        self.freq = None
 
     def __str__(self):
         return str(self.gene) + ' ' + str(self.chrom) + ':' + \
@@ -122,7 +123,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
     vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
 
-    return ClinicalSampleInfo(
+    return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
@@ -135,14 +136,14 @@ def clinical_sample_info_from_cnf(cnf):
         targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
         normal_match=cnf.match_sample_name)
 
-    return ClinicalSampleInfo(cnf, sample=sample,
+    return ClinicalExperimentInfo(cnf, sample=sample,
         key_genes=cnf.key_genes, target_type=cnf.target_type,
         bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath,
         varqc_json_fpath=cnf.varqc_json_fpath, seq2c_tsv_fpath=cnf.seq2c_tsv_fpath,
         project_name=cnf.project_name, project_report_path=cnf.project_report_path)
 
 
-class ClinicalSampleInfo:
+class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
                  bed_fpath, mutations_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None):
@@ -150,6 +151,7 @@ class ClinicalSampleInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
+        self.key = None
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
@@ -195,6 +197,8 @@ class ClinicalSampleInfo:
         info()
         info('Done parsing data.')
 
+    def __hash__(self):
+        return hash((self.sample.name, self.project_name))
 
     def get_mut_info_from_solvebio(self):
         query_mutations(self.cnf, self.mutations)

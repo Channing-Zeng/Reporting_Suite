@@ -2,12 +2,12 @@ from collections import OrderedDict
 from os.path import join, abspath, dirname, relpath
 from source import info
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation, Patient
-from source.clinical_reporting.clinical_reporting import Chromosome, gray, ClinicalReporting, BaseClinicalReporting
+from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html
 from source.reporting.reporting import ReportSection
-from source.utils import is_local
+from source.utils import OrderedDefaultDict
 
 
 def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dirpath):
@@ -19,20 +19,21 @@ def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dir
         wgs_sample = next(s for s in wgs_bs.samples if s.name == sname)
 
         info('-' * 70)
-        clinsample_trg_info = clinical_sample_info_from_bcbio_structure(cnf, trg_bs, trg_sample)
+        clin_trg_info = clinical_sample_info_from_bcbio_structure(cnf, trg_bs, trg_sample)
         info('')
         info('-' * 70)
-        clinsample_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample)
+        clin_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample)
 
         info('')
         info('*' * 70)
-        run_sample_clinreport_target2wgs(cnf, clinsample_trg_info, clinsample_wgs_info, output_dirpath)
+        infos_by_key = {'Target': clin_trg_info, 'WGS': clin_wgs_info}
+        run_sample_clinreport_target2wgs(cnf, infos_by_key, output_dirpath)
         info('*' * 70)
         info('Successfully finished.')
 
 
-def run_sample_clinreport_target2wgs(cnf, clinsample_trg_info, clinsample_wgs_info, output_dirpath):
-    ComparisonClinicalReporting(cnf, clinsample_trg_info, clinsample_wgs_info).write_report(
+def run_sample_clinreport_target2wgs(cnf, infos_by_key, output_dirpath):
+    ComparisonClinicalReporting(cnf, infos_by_key).write_report(
         join(output_dirpath, 'clinical_report.html'))
 
 
@@ -43,58 +44,64 @@ def run_sample_clinreport_target2wgs(cnf, clinsample_trg_info, clinsample_wgs_in
 #         self.wgs_match = wgs_match
 
 
+# class MultiSampleMutation:
+#     def __init__(self, muts_by_sample):
+#         Mutation.__init__(self, muts_by_sample)
+
+
 class ComparisonClinicalReporting(BaseClinicalReporting):
-    def __init__(self, cnf, trg_info, wgs_info, *args):
+    def __init__(self, cnf, experiment_by_key, *args):
         BaseClinicalReporting.__init__(self, cnf, *args)
 
-        self.sample_name = trg_info.sample.name
-        self.trg_info = trg_info
-        self.wgs_info = wgs_info
-        self.trg_sample = trg_info.sample
-        self.wgs_sample = wgs_info.sample
-        self.patient = self.merge_patients(self.trg_info.patient, self.wgs_info.patient)
+        self.experiment_by_key = experiment_by_key
+        for k, e in experiment_by_key.items():
+            e.key = k
+        # self.patient = self.merge_patients(self.infos)
 
         info('Preparing data...')
-        self.combined_mutations = self.combine_mutations()
-        self.mutations_report = self.make_mutations_report(self.combined_mutations)
+        # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
+        self.mutations_report = self.make_mutations_report({e: e.mutations for e in experiment_by_key.values()})
         # self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
         # self.seq2c_plot_data = self.make_seq2c_plot_json() if self.info.seq2c_events_by_gene_name is not None else None
         # self.key_genes_report = self.make_key_genes_cov_report(self.info.key_gene_by_name, self.info.ave_depth)
         # self.cov_plot_data = self.make_key_genes_cov_json(self.info.key_gene_by_name)
 
     @staticmethod
-    def merge_patients(p1, p2):
+    def merge_patients(patients):
         gender = None
-        if p1.gender or p2.gender:
-            if p1.gender and p2.gender and p1.gender != p2.gender:
-                err('Genders for WGS and target are not equal: ' + str(p1.gender) + ', ' + str(p2.gender))
-            gender = p1.gender
+        genders = set(p.gender for p in patients if p.gender)
+        if genders:
+            if len(genders) > 1:
+                err('Different genders detected for the same sample: ' + str(genders))
+            gender = next(genders)
         return Patient(gender)
 
-    def combine_mutations(self):
-        comb_muts = OrderedDict()
-        for trg_mut in self.trg_info.mutations:
-            comb_muts[trg_mut.get_key()] = [trg_mut, None]
-
-        for wgs_mut in self.wgs_info.mutations:
-            v = comb_muts.get(wgs_mut.get_key())
-            comb_muts[wgs_mut.get_key()] = [v[0] if v else None, wgs_mut]
-
-        return comb_muts
+    # @staticmethod
+    # def arrange_mutations(muts_by_experiment):
+    #     muts_by_key_by_exper = OrderedDefaultDict(OrderedDict)
+    #
+    #     for experiment_key, muts in muts_by_experiment.items():
+    #         for mut in muts:
+    #             muts_by_key_by_exper[mut.get_key()][experiment_key] = mut
+    #
+    #     return muts_by_key_by_exper
 
     def write_report(self, output_fpath):
         info('')
 
-        write_static_html_report(self.cnf, {
-            'patient': self.__patient_section(self.patient),
-            'sample_name': self.sample_name,
-            'trg_sample': self.__sample_section(self.trg_sample, self.trg_info),
-            'wgs_sample': self.__sample_section(self.wgs_sample, self.wgs_info),
+        data = {
+            'sample': {
+                'experiments': [self.sample_section(e) for k, e in self.experiment_by_key.items()],
+            },
+            # 'patient': self.__patient_section(self.patient),
+            # 'sample_name': self.sample_name,
             'variants': self.__mutations_section(),
             # 'seq2c': self.__seq2c_section(),
             # 'coverage': self.__coverage_section(),
             # 'actionable_genes': self.__actionable_genes_section()
-        }, output_fpath,
+        }
+
+        write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template_target2wgs.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
@@ -107,31 +114,11 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info()
         return output_fpath
 
-    def __patient_section(self, patient):
-        patient_dict = dict()
-        if self.patient.gender:
-            patient_dict['gender'] = self.patient.gender
-        return patient_dict
-
-    def __sample_section(self, sample, clin_info, sample_type=None):
-        sample_dict = dict()
-        sample_dict[(sample_type + '_' if sample_type else '') + 'sample'] = sample.name.replace('_', ' ')
-        sample_dict['project_name'] = clin_info.project_name.replace('_', ' ')
-        if clin_info.project_report_path:
-            sample_dict['project_report_rel_path'] = relpath(clin_info.project_report_path, dirname(sample.clinical_html))
-        sample_dict['panel'] = clin_info.target.type
-        sample_dict['bed_path'] = clin_info.target.bed_fpath or ''
-        if self.cnf.debug:
-            sample_dict['panel'] = clin_info.target.type + ', AZ300 IDT panel'
-            sample_dict['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
-
-        sample_dict['sample_type'] = sample.normal_match if sample.normal_match else 'unpaired'  # plasma, unpaired'
-        sample_dict['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
-        sample_dict['target_type'] = clin_info.target.type
-        sample_dict['target_fraction'] = Metric.format_value(clin_info.target.coverage_percent, is_html=True, unit='%')
-        # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-        sample_dict['ave_depth'] = Metric.format_value(clin_info.ave_depth, is_html=True)
-        return sample_dict
+    # def __patient_section(self, patient):
+    #     patient_dict = dict()
+    #     if self.patient.gender:
+    #         patient_dict['gender'] = self.patient.gender
+    #     return patient_dict
 
     def __mutations_section(self):
         mutations_dict = dict()
@@ -139,9 +126,9 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
-            mutations_dict['total_target_variants'] = Metric.format_value(self.trg_info.total_variants, is_html=True)
-            mutations_dict['total_wgs_variants'] = Metric.format_value(self.wgs_info.total_variants, is_html=True)
-            mutations_dict['total_key_genes'] = Metric.format_value(len(self.trg_info.key_gene_by_name), is_html=True)
+            mutations_dict['total_target_variants'] = 0 #Metric.format_value(self.trg_info.total_variants, is_html=True)
+            mutations_dict['total_wgs_variants'] = 0 #Metric.format_value(self.wgs_info.total_variants, is_html=True)
+            mutations_dict['total_key_genes'] = 0 #Metric.format_value(len(self.trg_info.key_gene_by_name), is_html=True)
         return mutations_dict
 
     def __coverage_section(self):
@@ -210,68 +197,6 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                             cid + '">COSM</a>' for cid in mut.cosmic_ids)
         return db
 
-    def make_mutations_report(self, combined_mutations):
-        ms = [
-            Metric('Gene'),  # Gene & Transcript
-            Metric('Transcript'),  # Gene & Transcript
-            # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
-            Metric('AA len', max_width=50, style='padding-left: 0px;', with_heatmap=False),          # 128
-            Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
-            # Metric('Allele'),             # Het.
-            # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
-            Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-            Metric('Change', max_width=95, class_='long_line'),       # G>A
-            # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-            Metric('VarDict status', short_name='Pathogenicity'),     # Likely
-            # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
-            Metric('Databases'),                 # rs352343, COSM2123
-        ]
-        # if is_local():
-        #     ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
-
-                # padding-left: 0 !important
-                # border-left: 20px solid white !important
-                # border-collapse: separate !important
-
-        ms.extend([
-            Metric('AF Target', short_name='Target\nfreq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
-            Metric('DP Target', short_name='depth', max_width=48, med=self.trg_info.ave_depth),              # 658
-
-            Metric('AF WGS', short_name='WGS\nfreq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
-            Metric('DP WGS', short_name='depth', max_width=48, med=self.trg_info.ave_depth),              # 658
-        ])
-
-        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
-        report = PerRegionSampleReport(sample=self.trg_info.sample,
-            metric_storage=clinical_mut_metric_storage, expandable=True)
-
-        for trg_mut, wgs_mut in self.combined_mutations.values():
-            mut = trg_mut or wgs_mut
-
-            row = report.add_row()
-            row.add_record('Gene', mut.gene.name)
-            row.add_record('Transcript', mut.transcript)
-            row.add_record('AA chg', **self._aa_chg_recargs(mut))
-            row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', **self._chg_recargs(mut))
-            row.add_record('DP Target', trg_mut.depth if trg_mut else None)
-            row.add_record('DP WGS', wgs_mut.depth if wgs_mut else None)
-            row.add_record('AF Target', trg_mut.freq if trg_mut else None)
-            row.add_record('AF WGS', wgs_mut.freq if wgs_mut else None)
-            row.add_record('AA len', mut.aa_len)
-            row.add_record('Effect', mut.eff_type)
-            row.add_record('VarDict status', **self._status_field(mut))
-            # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', **self._db_recargs(mut))
-            # if is_local():
-            #     row.add_record('ClinVar', **self._clinvar_recargs(mut))
-
-            self._highlighting_and_hiding_mut_row(row, mut)
-            if trg_mut and wgs_mut:
-                row.highlighted_green = True
-
-        return report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
         info('Preparing mutations stats for key gene tables')

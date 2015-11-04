@@ -26,23 +26,26 @@
         margin-bottom: 30px
         border-width: 0
         border-spacing: 0
-        border-collapse: collapse
+        //border-collapse: collapse
         *
             border-spacing: 0
-            border-collapse: collapse
+            //border-collapse: collapse
 
         td, th
             white-space: nowrap
             text-align: left
             padding: 2px 6px 2px 4px
 
+        th
+            vertical-align: bottom
+
         td.shifted_column, th.shifted_column
             padding-left: 0
             border-left: 20px solid white
-            border-collapse: separate
+            //border-collapse: separate
 
-        th
-            vertical-align: bottom
+        td.stick_to_left, th.stick_to_left
+            padding-left: 0 !important
 
         tbody
             tr:first-child
@@ -81,9 +84,9 @@
         //thead td
         //    border-bottom: 1px solid #bbb
 
-    table.static_report
-        td, th
-            padding-right: 10px
+    //table.static_report
+    //    td, th
+    //        padding-right: 10px
 
 //#report_legend
 //    padding-left: 15px  // compensate drag handles
