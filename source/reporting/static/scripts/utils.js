@@ -21,16 +21,16 @@ function msieversion() {
 
 // var colors = ["#FF5900", "#008FFF", "#168A16", "#7C00FF", "#00B7FF", "#FF0080", "#7AE01B", "#782400", "#E01B6A"];
 var colors = [
+    '#008000', //green
+    '#00CCCC', //aqua
+    '#800080', //purple
+    '#FFA500', //orange
     '#FF0000', //red
     '#0000FF', //blue
-    '#008000', //green
-    '#FFA500', //orange
     '#FF00FF', //fushua
     '#CCCC00', //yellow
     '#800000', //maroon
-    '#00CCCC', //aqua
     '#808080', //gray
-    '#800080', //purple
     '#808000', //olive
     '#000080', //navy
     '#008080', //team
@@ -38,13 +38,14 @@ var colors = [
 ];
 
 function distinctColors(count) {
-    var colors = [];
-    for(var hue = 0; hue < 360; hue += 360 / count) {
-        var color = hsvToRgb(hue, 100, 100);
-        var colorStr = '#' + color[0].toString(16) + color[1].toString(16) + color[2].toString(16);
-        colors.push();
-    }
     return colors;
+    //var colors = [];
+    //for(var hue = 0; hue < 360; hue += 360 / count) {
+    //    var color = hsvToRgb(hue, 100, 100);
+    //    var colorStr = '#' + color[0].toString(16) + color[1].toString(16) + color[2].toString(16);
+    //    colors.push(colorStr);
+    //}
+    //return colors;
 }
 
 /**************/
@@ -310,7 +311,7 @@ function bindTip(placeholder, key, showTipFn, plot, direction, generalData) {
         if (item) {
             if (prevPoint != item.seriesIndex) {
                 prevPoint = item.seriesIndex;
-                showTipFn(item, plot, direction, generalData);
+                showTipFn(key, item, plot, direction, generalData);
             }
         } else {
             var hideDuration = 200;

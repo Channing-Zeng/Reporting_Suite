@@ -1,6 +1,5 @@
 from os.path import join
 from traceback import format_exc
-from solvebio import SolveError
 from source.file_utils import verify_module, verify_file
 from source.logger import err, info, warn
 
@@ -56,7 +55,7 @@ def query_mutations(cnf, mutations):
             info('Done, read ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
             return mutations
 
-    from solvebio import login, Dataset, BatchQuery
+    from solvebio import login, Dataset, BatchQuery, SolveError
     login()
     ds = Dataset.retrieve('ClinVar/Variants')
 

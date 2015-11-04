@@ -156,9 +156,9 @@ Array - Specifc table
 			$(table).find('th').each(function() {
                 var width = parseInt($(this).outerWidth(true));
                 var pad = parseInt($(this).css('padding-right')) + parseInt($(this).css('padding-left'));
-                if ($(this).css('text-align') == 'right') {
-                    console.log($(this).text() + ' pad: ' + pad);
-                }
+                //if ($(this).css('text-align') == 'right') {
+                //    console.log($(this).text() + ' pad: ' + pad);
+                //}
 				column_widths.push(width);
 				column_paddings.push(pad);
 			});

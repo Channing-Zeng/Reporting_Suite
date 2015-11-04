@@ -151,7 +151,7 @@ class ClinicalExperimentInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
-        self.key = None
+        self.key = ''
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
@@ -319,6 +319,8 @@ class ClinicalExperimentInfo:
                         cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
                         mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
                         n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
+                    if len(fs) == 52:  # this is just for buggy local data
+                        reason = fs[51]
                     if len(fs) == 51:
                         reason = fs[50]
 

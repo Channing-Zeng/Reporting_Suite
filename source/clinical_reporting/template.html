@@ -24,7 +24,7 @@
         </style>
     <![endif]-->
 
-    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="flot/jquery.flot.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
     <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
@@ -162,7 +162,7 @@
                 <table>
                     <tr>
                         <td colspan="2">
-                            <div class='plot_placeholder' id="seq2c_plot_placeholder">
+                            <div class='plot_placeholder seq2c_plot_placeholder' id="seq2c_plot_placeholder">
                             </div>
                         </td>
                         <td>
@@ -185,13 +185,13 @@
         <div class="coverage_plot">
             <p style="margin-top: -5px;">
                 Height inidicates gene average coverage,
-                <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage),
+                <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage).
             </p>
             <div class="js_plot" id="gene_plot">
                 <table>
                     <tr>
                         <td colspan="2">
-                            <div class='plot_placeholder' id="gene_plot_placeholder">
+                            <div class='plot_placeholder gene_plot_placeholder' id="gene_plot_placeholder">
                             </div>
                         </td>
                         <td>

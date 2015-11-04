@@ -47,8 +47,8 @@
       display: none; }
     #report table.report_table tr.highlighted_row td {
       background-color: #f5ffa3; }
-    #report table.report_table tr.highlighted_green_row td {
-      background-color: #daffde; }
+    #report table.report_table tr.highlighted_green_row td:last-child {
+      border-right: 1px solid black; }
 
 #contigs_are_ordered {
   z-index: 0;
@@ -116,10 +116,10 @@ table.draggable {
   margin-left: -125px;
   z-index: 2; }
 
-#gene_plot_placeholder {
+.gene_plot_placeholder {
   min-height: 400px; }
 
-#seq2c_plot_placeholder {
+.seq2c_plot_placeholder {
   min-height: 200px; }
 
 .plot_tip {

@@ -6,15 +6,10 @@ $(function() {
         var data = readJsonFromElement(data_el);
 
         var geneNames = data.gene_names;
-
         var coordsX = data.coords_x;
-        var aveDepths = data.ave_depths;
-        var depthInThreshold = data.cov_in_thresh;
-        var mutations = data.mutations;
-        var cdsCovByGene = data.cds_cov_by_gene;
-
         var ticksX = data.ticks_x;
         var linesX = data.lines_x;
+        var hits = data.hits;
 
         var info = {
             isInitialized: false,
@@ -31,30 +26,41 @@ $(function() {
         }
 
         if (!info.isInitialized) {
+            var maxDepth = 0;
             info.series = [];
+            var colors = distinctColors();
 
-            for (var k = 0; k < coordsX.length; k++) {
-                var percentDepthInThreshold = depthInThreshold[k] * 100;
-                var curColor = getColorFromPercentCovered(percentDepthInThreshold);
-                var series = {
-                    data: [[coordsX[k], aveDepths[k]]],
-                    label: geneNames[k],
-                    color: curColor,
-                    geneName: geneNames[k],
-                    aveDepth: aveDepths[k],
-                    mutations: mutations[geneNames[k]],
-                    cdsDetails: cdsCovByGene[geneNames[k]],
-                };
-                series.points = {
-                    show: true,
-                    fill: true,
-                    fillColor: curColor,
-                    radius: 2
-                };
-                info.series.push(series);
+            for (var e = 0; e < (hits ? hits.length : 1); e++) {
+                var hit = hits ? hits[e] : data;
+                var aveDepths = hit.gene_ave_depths;
+                var depthInThreshold = hit.covs_in_thresh;
+                var mutInfoByGene = hit.mut_info_by_gene;
+                var cdsCovByGene = hit.cds_cov_by_gene;
+
+                for (var k = 0; k < coordsX.length; k++) {
+                    var percentDepthInThreshold = depthInThreshold[k] * 100;
+                    var curColor = hits ? colors[e] : getColorFromPercentCovered(percentDepthInThreshold);
+                    var series = {
+                        data: [[coordsX[k], aveDepths[k]]],
+                        label: geneNames[k],
+                        color: curColor,
+                        geneName: geneNames[k],
+                        aveDepth: aveDepths[k],
+                        mutations: mutInfoByGene[geneNames[k]],
+                        cdsDetails: cdsCovByGene[geneNames[k]],
+                    };
+                    series.points = {
+                        show: true,
+                        fill: true,
+                        fillColor: curColor,
+                        radius: 2
+                    };
+                    info.series.push(series);
+                }
+
+                maxDepth = Math.max(maxDepth, Math.max.apply(Math, aveDepths));
             }
 
-            var maxDepth = Math.max.apply(Math, aveDepths);
             info.showWithData = function(series, colors) {
                 var plot = $.plot(placeholder_el, series, {
                     shadowSize: 0,
@@ -91,9 +97,8 @@ $(function() {
                 var firstLabel = placeholder_el.find('.yAxis .tickLabel').last();
                 firstLabel.prepend('Ave depth' +
                     '<span class="rhs">&nbsp;</span>=<span class="rhs">&nbsp;</span>');
-
                 bindTip(placeholder_el, key, showTip, plot, 'top right', {maxDepth: maxDepth});
-            };
+            }
 
             info.isInitialized = true;
         }
@@ -126,7 +131,7 @@ $(function() {
     //};
 
 
-    function showTip(item, plot, direction, generalData) {
+    function showTip(key, item, plot, direction, generalData) {
         var LINE_HEIGHT = 16; // pixels
 
         direction = ((direction != null) ? direction : 'bottom right');
