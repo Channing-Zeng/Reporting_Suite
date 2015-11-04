@@ -121,6 +121,9 @@ def process_post_bcbio_args(parser):
             if errors:
                 critical(errors)
 
+    if cnf.project_name:
+        cnf.project_name = ''.join((c if (c.isalnum() or c in '-') else '_') for c in cnf.project_name)
+
     return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags
 
 
