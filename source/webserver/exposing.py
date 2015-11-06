@@ -177,7 +177,8 @@ def symlink_to_ngs(src_path, dst_fpath):
     for cmd in ['mkdir ' + dirname(dirname(dst_fpath)),
                 'mkdir ' + dirname(dst_fpath),
                 'rm ' + dst_fpath,
-                'ln -s ' + src_path + ' ' + dst_fpath]:
+                'ln -s ' + src_path + ' ' + dst_fpath,
+                'chmod -R g+w ' + dirname(dirname(dst_fpath))]:
         info('Executing on the server:  ' + cmd)
         try:
             ssh.exec_command(cmd)

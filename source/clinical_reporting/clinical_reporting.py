@@ -19,7 +19,7 @@ class Chromosome:
         self.length = length
 
     @staticmethod
-    def build_chr_section(cnf):
+    def build_chr_by_name(cnf):
         chr_by_name = OrderedDict(
             (chr_name, Chromosome(chr_name, length=l)) for chr_name, l in get_chr_lengths(cnf).items()
             if '_' not in chr_name)  # not drawing extra chromosomes chr1_blablabla
@@ -34,7 +34,7 @@ class Chromosome:
 class BaseClinicalReporting:
     def __init__(self, cnf, *args):
         self.cnf = cnf
-        self.chromosomes_by_name = Chromosome.build_chr_section(self.cnf)
+        self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
     def make_mutations_report(self, mutations_by_experiment):
         ms = [
