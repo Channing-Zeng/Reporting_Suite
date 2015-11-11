@@ -46,7 +46,7 @@ resources:
   fastqc:
     path: /opt/az/local/fastqc/11.3/FastQC/fastqc
   bwa:
-      path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
+    path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
   seqtk:
     path: /group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/bin/seqtk
 #    path: /opt/az/local/seqtk/seqtk-master/seqtk
