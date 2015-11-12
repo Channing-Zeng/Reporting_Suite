@@ -27,7 +27,7 @@ resources:
   bgzip:
     path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/bgzip
   gatk:
-    path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.4-8-gf14306c/GenomeAnalysisTK.jar
+    path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.3-24-g7dfb931/GenomeAnalysisTK.jar
 
 genomes:
   hg19:
