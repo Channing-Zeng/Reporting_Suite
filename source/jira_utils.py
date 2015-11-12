@@ -38,7 +38,7 @@ def retrieve_jira_info(url):
     """
     try:
         jira_inst = JIRA(server=JIRA_SERVER,
-                    basic_auth=('klpf990', '123qweasd'),
+                    basic_auth=('NGSG_user', 'todngs'),
                     options={'verify': False})
     except:
         warn('Cannot create JIRA obj:')
