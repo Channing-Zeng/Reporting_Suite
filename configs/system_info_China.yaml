@@ -1,11 +1,11 @@
 resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /ngs/RDI/PROGRAMS/snpEff4.0/snpEff.jar
-    config: /ngs/RDI/PROGRAMS/snpEff4.0/snpEff.config
+    path: /ngs/RDI/PROGRAMS/snpEff/snpEff.jar
+    config: /ngs/RDI/PROGRAMS/snpEff/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /ngs/RDI/PROGRAMS/snpEff4.0/SnpSift.jar
+    path: /ngs/RDI/PROGRAMS/snpEff/SnpSift.jar
   qualimap:
     path: /ngs/RDI/PROGRAMS/qualimap/qualimap
   vcfannotate:
@@ -34,19 +34,21 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbsnp_latest.vcf
-    cosmic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg19/variation/clinvar_latest.vcf
-    oncomine: /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine.vcf
-    dbnsfp: /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
+    dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
+    snpeff:
+      reference: hg19
 #    snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
 #    snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/transcripts.txt  # used if -canon is not set for snpEff
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
-#    refseq:   /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
+    refseq:   /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
 
     polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/hg19/variation/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
@@ -59,6 +61,8 @@ genomes:
     1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
 #    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
 
+    snpeff:
+      reference: GRCh37.75
 #    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
 #    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
 
