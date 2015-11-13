@@ -9,7 +9,7 @@ resources:
   gatk:
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
   vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
+    path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/bin/vcfannotate
   qualimap:
     path: /group/ngs/src/qualimap/qualimap
   samtools:
