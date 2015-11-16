@@ -81,7 +81,6 @@ def get_chr_len_fpath(cnf):
         if not genome_seq_fpath:
             return None
 
-        chr_lengths = []
         if verify_file(genome_seq_fpath + '.fai'):
             info('Reading genome index file (.fai) to get chromosome lengths')
             with open(genome_seq_fpath + '.fai', 'r') as handle:

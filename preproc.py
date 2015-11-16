@@ -36,7 +36,11 @@ if is_local():
     NGS_WEBSERVER_PREPROC_DIR = '/Users/vlad/Sites/reports'
 
 def proc_opts():
-    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--bed BED] [--project-name STR] [--expose-only]'
+    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--bed BED] [--project-name STR] [--expose-only]\n' \
+                                   '\tNote that DATASET_DIR_LOCATION can be either the root of a Illumina run ' \
+                                   '(in witch case multiple projects may be detected and processed, or ' \
+                                   'a specific project in <root>/Unalign/<Project>'
+
     description = 'This script runs preprocessing. ' + usage
 
     parser = OptionParser(description=description)
@@ -120,122 +124,130 @@ def main():
     info()
     info('*' * 60)
     ds = DatasetStructure.create(project_dirpath, cnf.project_name)
-    if not ds.samples:
-        critical('No samples found')
+    if not ds.project_by_name:
+        critical('No projects found')
+    for project in ds.project_by_name.values():
+        if not project.sample_by_name:
+            critical('No samples for project ' + project.name + ' found')
 
-    ds.concat_fastqs(cnf.work_dir)
+    for project in ds.project_by_name.values():
+        samples = project.sample_by_name.values()
+        threads = len(samples) if not is_local() else 1
+        project.concat_fastqs(cnf.work_dir)
 
-    if cnf.targqc or cnf.metamapping:
-        info()
-        ds_to = 1e6
-        info('Downsampling the reads to ' + str(ds_to))
-        bam_by_sample = dict()
-        fastqs = Parallel(n_jobs=len(ds.samples)) \
-            (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample, reads_num=ds_to/2) \
-                for sample in ds.samples)
-        lefts = [l for l, r in fastqs]
-        rights = [r for l, r in fastqs]
-
-        samtools = get_system_path(cnf, 'samtools')
-        bwa = get_system_path(cnf, 'bwa')
-        seqtk = get_system_path(cnf, 'seqtk')
-        if samtools and bwa and seqtk:
+        if cnf.targqc or cnf.metamapping:
             info()
-            info('Alignming ' + str(ds_to) + ' random reads to the reference')
-            aligned = Parallel(n_jobs=len(ds.samples))(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
-                samtools,
-                bwa,
-                seqtk,
-                cnf.genome.seq) for s, l, r in zip(ds.samples, lefts, rights))
-            for sample, bam_fpath in zip(ds.samples, aligned):
-                bam_by_sample[sample.name] = bam_fpath
+            downsample_to = 1e6
+            info('Downsampling the reads to ' + str(downsample_to))
+            bam_by_sample = dict()
+            fastqs = Parallel(n_jobs=threads) \
+                (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample, reads_num=downsample_to/2) \
+                    for sample in samples)
+            lefts = [l for l, r in fastqs]
+            rights = [r for l, r in fastqs]
 
-            if cnf.metamapping:
+            samtools = get_system_path(cnf, 'samtools')
+            bwa = get_system_path(cnf, 'bwa')
+            seqtk = get_system_path(cnf, 'seqtk')
+            if samtools and bwa and seqtk:
                 info()
-                info('Metamapping for contamination')
-                safe_mkdir(ds.downsample_metamapping_dirpath)
-                run_metamapping(cnf, ds.samples, bam_by_sample, ds.downsample_metamapping_dirpath)
+                info('Alignming ' + str(downsample_to) + ' random reads to the reference')
+                aligned = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
+                    samtools,
+                    bwa,
+                    seqtk,
+                    cnf.genome.seq) for s, l, r in zip(samples, lefts, rights))
+                for sample, bam_fpath in zip(samples, aligned):
+                    bam_by_sample[sample.name] = bam_fpath
+                if any(a is None for a in aligned):
+                    pass
+                else:
+                    if cnf.metamapping:
+                        info()
+                        info('Metamapping for contamination')
+                        safe_mkdir(ds.downsample_metamapping_dirpath)
+                        run_metamapping(cnf, samples, bam_by_sample, project.downsample_metamapping_dirpath)
 
-            if cnf.targqc:
-                info()
-                cnf.work_dir = join(cnf.work_dir, source.targqc_name)
-                safe_mkdir(cnf.work_dir)
-                info('Making TargQC reports for BAMs from ' + str(ds_to) + ' reads')
-                safe_mkdir(ds.downsample_targqc_dirpath)
-                ds.downsample_targqc_report_fpath = run_targqc(cnf, ds, bam_by_sample)
-                cnf.work_dir = dirname(cnf.work_dir)
-        else:
-            err('For downsampled targqc and metamappint, bwa, samtools and seqtk are required.')
+                    if cnf.targqc:
+                        info()
+                        cnf.work_dir = join(cnf.work_dir, source.targqc_name)
+                        safe_mkdir(cnf.work_dir)
+                        info('Making TargQC reports for BAMs from ' + str(downsample_to) + ' reads')
+                        safe_mkdir(project.downsample_targqc_dirpath)
+                        project.downsample_targqc_report_fpath = run_targqc(cnf, project, bam_by_sample)
+                        cnf.work_dir = dirname(cnf.work_dir)
+            else:
+                err('For downsampled targqc and metamappint, bwa, samtools and seqtk are required.')
 
-    if cnf.fastqc:
-        if not cnf.expose_to_ngs_server_only:
-            info('Making FastQC reports')
-            safe_mkdir(ds.fastqc_dirpath)
-            make_fastqc_reports(cnf, ds.samples, ds.fastq_dirpath, ds.fastqc_dirpath, ds.comb_fastqc_fpath)
+        if cnf.fastqc:
+            if not cnf.expose_to_ngs_server_only:
+                info('Making FastQC reports')
+                safe_mkdir(project.fastqc_dirpath)
+                make_fastqc_reports(cnf, samples, project.fastq_dirpath, project.fastqc_dirpath, project.comb_fastqc_fpath)
 
-    new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
-    if not exists(new_project_symlink):
+        new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
+        if not exists(new_project_symlink):
+            info()
+            info('Creating symlink in Datasets now called as project-name: ' + project_dirpath + ' -> ' + new_project_symlink)
+            os.symlink(project_dirpath, new_project_symlink)
+
+        # Creating analysis directory
+        __prepare_analysis_directory(cnf.work_dir, cnf.project_name, project_dirpath, samples)
+
+        # Making project-level report
+        make_project_level_report(cnf, dataset_structure=ds, dataset_project=project)
+
+        # Exposing
         info()
-        info('Creating symlink in Datasets now called as project-name: ' + project_dirpath + ' -> ' + new_project_symlink)
-        os.symlink(project_dirpath, new_project_symlink)
+        info('Synking with the NGS webserver')
+        sync_with_ngs_server(cnf,
+            jira_url=cnf.jira,
+            project_name=cnf.project_name,
+            sample_names=[s.name for s in samples],
+            dataset_dirpath=project_dirpath,
+            summary_report_fpath=project.project_report_html_fpath,
+            jira_case=jira_case)
 
-    # Creating analysis directory
-    __prepare_analysis_directory(cnf.work_dir, cnf.project_name, project_dirpath, ds.samples)
+            # FastQC
+            # symlink_to_ngs(project_dirpath, NGS_WEBSERVER_PREPROC_DIR)
 
-    # Making project-level report
-    make_project_level_report(cnf, ds)
+            # if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_project_dirpath) is None:
+            #     err('Error: cannot connect to the ngs server and make symlinks')
+            # else:
+            #     # BaseCalls
+            #     basecall_stats_dirnames = [fname for fname in os.listdir(basecalls_dirpath) if fname.startswith('Basecall_Stats_')]
+            #     if len(basecall_stats_dirnames) > 1:
+            #         err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
+            #     if len(basecall_stats_dirnames) == 0:
+            #         err('No Basecall_Stats_* dirs found in unalign_dirpath')
+            #     if len(basecall_stats_dirnames) == 1:
+            #         basecall_stats_dirpath = join(basecalls_dirpath, basecall_stats_dirnames[0])
+            #         fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname)
+            #             for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
+            #         symlink_to_ngs(fpaths, ngs_webserver_project_dirpath)
+            #
+            #     # Sample sheet
+            #     symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_project_dirpath)
+            #
+            #     # TargQC downsampled
+            #     symlink_to_ngs(targqc_html_fpath, ngs_webserver_project_dirpath)
 
-    # Exposing
-    info()
-    info('Synking with the NGS webserver')
-    sync_with_ngs_server(cnf,
-        jira_url=cnf.jira,
-        project_name=cnf.project_name,
-        sample_names=[s.name for s in ds.samples],
-        dataset_dirpath=project_dirpath,
-        summary_report_fpath=ds.project_report_html_fpath,
-        jira_case=jira_case)
+            # jira_case = None
+            # if jira_url:
+            #     # Add to the NGS list
+            #     jira_case = retrieve_jira_info(jira_url)
+            #
+            # sync_with_ngs_server(cnf, jira_case=jira_case,
+            #     project_name=cnf.project_name, sample_names=[s.name for s in samples])
 
-        # FastQC
-        # symlink_to_ngs(project_dirpath, NGS_WEBSERVER_PREPROC_DIR)
-
-        # if symlink_to_ngs(comb_fastqc_fpath, ngs_webserver_project_dirpath) is None:
-        #     err('Error: cannot connect to the ngs server and make symlinks')
-        # else:
-        #     # BaseCalls
-        #     basecall_stats_dirnames = [fname for fname in os.listdir(basecalls_dirpath) if fname.startswith('Basecall_Stats_')]
-        #     if len(basecall_stats_dirnames) > 1:
-        #         err('More than 1 Basecall_Stats_* dirs found in unalign_dirpath')
-        #     if len(basecall_stats_dirnames) == 0:
-        #         err('No Basecall_Stats_* dirs found in unalign_dirpath')
-        #     if len(basecall_stats_dirnames) == 1:
-        #         basecall_stats_dirpath = join(basecalls_dirpath, basecall_stats_dirnames[0])
-        #         fpaths = filter(None, (verify_file(join(basecall_stats_dirpath, html_fname)
-        #             for html_fname in ['Demultiplex_Stats.htm', 'All.htm', 'IVC.htm'])))
-        #         symlink_to_ngs(fpaths, ngs_webserver_project_dirpath)
-        #
-        #     # Sample sheet
-        #     symlink_to_ngs(sample_sheet_csv_fpath, ngs_webserver_project_dirpath)
-        #
-        #     # TargQC downsampled
-        #     symlink_to_ngs(targqc_html_fpath, ngs_webserver_project_dirpath)
-
-        # jira_case = None
-        # if jira_url:
-        #     # Add to the NGS list
-        #     jira_case = retrieve_jira_info(jira_url)
-        #
-        # sync_with_ngs_server(cnf, jira_case=jira_case,
-        #     project_name=cnf.project_name, sample_names=[s.name for s in samples])
-
-    subj = ds.project_report_html_fpath or ds.project_name
-    txt = 'Preproc finished for ' + ds.project_name + '\n'
-    txt += '\n'
-    txt += 'Path: ' + ds.dirpath + '\n'
-    txt += 'Report: ' + str(ds.project_report_html_fpath) + '\n'
-    if jira_url:
-        txt += 'Jira: ' + jira_url
-    send_email(txt, subj)
+        subj = project.project_report_html_fpath or project.name
+        txt = 'Preproc finished for ' + project.name + '\n'
+        txt += '\n'
+        txt += 'Path: ' + project.dirpath + '\n'
+        txt += 'Report: ' + str(project.project_report_html_fpath) + '\n'
+        if jira_url:
+            txt += 'Jira: ' + jira_url
+        send_email(txt, subj)
 
     info()
     info('*' * 70)
@@ -259,7 +271,9 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
 
     bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {ref} -'.format(**locals())
-    call(cnf, bwa_cmdline, output_fpath=sam_fpath)
+    res = call(cnf, bwa_cmdline, output_fpath=sam_fpath, exit_on_error=False)
+    if not res:
+        return None
 
     cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=bam_fpath)
@@ -277,23 +291,23 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
     info('Running MetaMapping for downsampled BAMs')
 
 
-def run_targqc(cnf, ds, bam_by_sample):
+def run_targqc(cnf, project, bam_by_sample):
     info('Running TargQC for downsampled BAMs')
 
     targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
-    bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in ds.samples)
+    bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in project.sample_by_name.values())
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
            '--work-dir {cnf.work_dir} --log-dir {cnf.log_dir} --project-name {cnf.project_name} ' \
-           '-o {ds.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
+           '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
     if cnf.reuse:
         cmdl += ' --reuse'
     call(cnf, cmdl)
     info('Waiting for targqc to be done...')
     while True:
-        if isfile(ds.downsample_targqc_report_fpath):
+        if isfile(project.downsample_targqc_report_fpath):
             break
-    verify_file(ds.downsample_targqc_report_fpath, is_critical=True)
-    return ds.downsample_targqc_report_fpath
+    verify_file(project.downsample_targqc_report_fpath, is_critical=True)
+    return project.downsample_targqc_report_fpath
 
     # samples = [TargQCSample(
     #     s.name,
@@ -302,7 +316,7 @@ def run_targqc(cnf, ds, bam_by_sample):
     #     bam=bam_by_sample[s.name])
     #            for s in samples]
 
-    # Parallel(n_jobs=len(samples))(delayed(make_targetseq_reports(
+    # Parallel(n_jobs=threads)(delayed(make_targetseq_reports(
     #     CallCnf(cnf.__dict__), sample.dirpath, sample,
     #     sample.bam, exons_bed, exons_no_genes_bed, target_bed
     # )(CallCnf(cnf.__dict__), sample) for sample in samples))
@@ -319,9 +333,9 @@ def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
     cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.l_fpath}'.format(**locals())
     cmdline_r = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
     j_l = submit_job(cnf, cmdline_l, 'FastQC_' + sample.l_fastqc_base_name, stdout_to_outputfile=False,
-        output_fpath=join(sample.ds.fastqc_dirpath, sample.l_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
+        output_fpath=join(sample.fastqc_dirpath, sample.l_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
     j_r = submit_job(cnf, cmdline_r, 'FastQC_' + sample.r_fastqc_base_name, stdout_to_outputfile=False,
-        output_fpath=join(sample.ds.fastqc_dirpath, sample.r_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
+        output_fpath=join(sample.fastqc_dirpath, sample.r_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
 
     return j_l, j_r
 

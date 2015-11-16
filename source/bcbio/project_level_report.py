@@ -51,7 +51,7 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None):
+def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None):
     step_greetings('Making the preproc project-level report')
 
     # if dataset_structure is None and bcbio_structure:
@@ -59,23 +59,24 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None)
     #     dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
     #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
-    general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure, dataset_structure)
-    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure)
+    general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
+    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
 
     sample_reports = []
-    for sample in (bcbio_structure or dataset_structure).samples:
+    for sample in dataset_project.sample_by_name.values() or bcbio_structure.samples:
         sample_reports.append(SampleReport(sample,
             records=sample_reports_records[sample.name],
             html_fpath=None,
             metric_storage=metric_storage))
 
-    full_report = FullReport(cnf.project_name, sample_reports, metric_storage=metric_storage, general_records=general_records)
+    full_report = FullReport(cnf.project_name, sample_reports,
+                             metric_storage=metric_storage, general_records=general_records)
 
     project_report_html_fpath = None
     project_name = None
-    if dataset_structure:
-        project_report_html_fpath = dataset_structure.project_report_html_fpath
-        project_name = dataset_structure.project_name
+    if dataset_structure and dataset_project:
+        project_report_html_fpath = dataset_project.project_report_html_fpath
+        project_name = dataset_project.name
     if bcbio_structure:
         project_report_html_fpath = bcbio_structure.project_report_html_fpath
         project_name = bcbio_structure.project_name
@@ -138,7 +139,7 @@ def _make_url_record(html_fpath_value, metric, base_dirpath):
         return Record(metric=metric, value=metric.name, url=url)
 
 
-def _add_summary_reports(general_section, bcbio_structure=None, dataset_structure=None):
+def _add_summary_reports(general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     """ We want links to be relative, so we make paths relative to the project-level-report parent directory.
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
@@ -146,16 +147,16 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     if bcbio_structure:
         base_dirpath = bcbio_structure.date_dirpath
     else:
-        base_dirpath = dirname(dataset_structure.project_report_html_fpath)
+        base_dirpath = dirname(dataset_project.project_report_html_fpath)
 
     recs = []
 
-    if dataset_structure:
+    if dataset_structure and dataset_project:
         if dataset_structure.basecall_stat_html_reports:
             val = OrderedDict([(basename(fpath), fpath) for fpath in dataset_structure.basecall_stat_html_reports])
             recs.append(_make_url_record(val, general_section.find_metric(BASECALLS_NAME), base_dirpath))
-        recs.append(_make_url_record(dataset_structure.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
-        recs.append(_make_url_record(dataset_structure.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
+        recs.append(_make_url_record(dataset_project.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
+        recs.append(_make_url_record(dataset_project.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
         recs.extend(_mutations_records(general_section, bcbio_structure))
@@ -174,18 +175,18 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     return recs
 
 
-def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, dataset_structure=None):
+def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     base_dirpath = None
-    if dataset_structure:
-        base_dirpath = dirname(dataset_structure.project_report_html_fpath)
+    if dataset_project:
+        base_dirpath = dirname(dataset_project.project_report_html_fpath)
 
     if bcbio_structure:
         base_dirpath = dirname(bcbio_structure.project_report_html_fpath)
 
     sample_reports_records = defaultdict(list)
 
-    if dataset_structure:
-        for s in dataset_structure.samples:
+    if dataset_project:
+        for s in dataset_project.sample_by_name.values():
             sample_reports_records[s.name].extend([
                 _make_url_record(
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
