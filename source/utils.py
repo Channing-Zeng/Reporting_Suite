@@ -64,13 +64,12 @@ def get_chr_len_fpath(cnf):
 
     chr_lengths = []
 
-    chr_len_fpath = cnf.genome.get('chr_lengths')
-    if chr_len_fpath:
-        if not verify_file(chr_len_fpath):
+    if cnf.genome.get('chr_lengths'):
+        if not verify_file(cnf.genome.get('chr_lengths')):
             critical('Could not open a file with chromosome lengths provided in system config. '
                      'Remove it from the config to generate it automatically.')
-        info('Reading ' + chr_len_fpath + ' to get chromosome lengths')
-        with open(chr_len_fpath) as handle:
+        info('Reading ' + cnf.genome.get('chr_lengths') + ' to get chromosome lengths')
+        with open(cnf.genome.get('chr_lengths')) as handle:
             for line in handle:
                 line = line.strip()
                 if line:
@@ -78,8 +77,7 @@ def get_chr_len_fpath(cnf):
                     chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
     else:
         genome_seq_fpath = cnf['genome'].get('seq')
-        if not genome_seq_fpath:
-            return None
+        verify_file(genome_seq_fpath, is_critical=True)
 
         if verify_file(genome_seq_fpath + '.fai'):
             info('Reading genome index file (.fai) to get chromosome lengths')
