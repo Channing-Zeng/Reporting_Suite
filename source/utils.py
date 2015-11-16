@@ -72,8 +72,10 @@ def get_chr_len_fpath(cnf):
         info('Reading ' + chr_len_fpath + ' to get chromosome lengths')
         with open(chr_len_fpath) as handle:
             for line in handle:
-                chrom, length = line.split()[0], line.split()[1]
-                chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
+                line = line.strip()
+                if line:
+                    chrom, length = line.split()[0], line.split()[1]
+                    chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
     else:
         genome_seq_fpath = cnf['genome'].get('seq')
         if not genome_seq_fpath:
@@ -84,8 +86,10 @@ def get_chr_len_fpath(cnf):
             info('Reading genome index file (.fai) to get chromosome lengths')
             with open(genome_seq_fpath + '.fai', 'r') as handle:
                 for line in handle:
-                    chrom, length = line.split()[0], line.split()[1]
-                    chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
+                    line = line.strip()
+                    if line:
+                        chrom, length = line.split()[0], line.split()[1]
+                        chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
         else:
             info('Reading genome sequence (.fa) to get chromosome lengths')
             with open(genome_seq_fpath, 'r') as handle:
