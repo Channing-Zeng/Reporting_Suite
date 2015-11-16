@@ -32,13 +32,13 @@ class DatasetStructure:
 
         illumina_project_name = None
         if '/Unalign/' in dirpath:
-            verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
             self.dirpath = dirpath.split('/Unalign/')[0]
+            self.unaligned_dirpath = self.__find_unaligned_dir()
+            verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
             illumina_project_name = dirpath.split('/Unalign/')[1]  # something like AURA.FFPE.AZ300, in contast with project_name which is something like Bio_123_AURA_FFPE_AZ300
         else:
             self.dirpath = dirpath
-
-        self.unaligned_dirpath = self.__find_unaligned_dir()
+            self.unaligned_dirpath = self.__find_unaligned_dir()
 
         self.basecalls_dirpath = join(self.dirpath, 'Data/Intensities/BaseCalls')
         verify_dir(self.basecalls_dirpath, is_critical=True)
@@ -50,9 +50,9 @@ class DatasetStructure:
         self.project_by_name = self._parse_sample_sheet(self.samplesheet_fpath)
 
         if illumina_project_name:  # we want only a specific project
-            if illumina_project_name not in self.sample_names_by_project:
+            if illumina_project_name not in self.project_by_name:
                 critical('Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
-            self.sample_names_by_project = {illumina_project_name: self.sample_names_by_project[illumina_project_name]}
+            self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
 
     def __find_unaligned_dir(self):
         unaligned_dirpath = join(self.dirpath, 'Unalign')

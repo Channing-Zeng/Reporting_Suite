@@ -61,16 +61,14 @@ def proc_opts():
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
 
     (opts, args) = parser.parse_args()
-    jira_url = None
-    if len(args) < 1:
-        critical(usage)
     if len(args) < 2:
-        info('No dataset path specified, assuming it is the current working directory')
-        dataset_dirpath = adjust_path(os.getcwd())
-        jira_url = args[0]
-    else:
-        dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
-        jira_url = args[1]
+        critical(usage)
+    # if len(args) < 2:
+    #     info('No dataset path specified, assuming it is the current working directory')
+    #     dataset_dirpath = adjust_path(os.getcwd())
+    #     jira_url = args[0]
+    dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
+    jira_url = args[1]
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)

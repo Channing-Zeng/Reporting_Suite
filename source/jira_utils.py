@@ -46,7 +46,12 @@ def retrieve_jira_info(url):
         return None
 
     case_id = __parse_id(url)
-    info('Parsing the JIRA case ' + case_id)
+    if case_id:
+        info('Parsing the JIRA case ' + case_id)
+    else:
+        err('Could not parse JIRA case from ' + str(url) + ', skipping connecting to JIRA.')
+        return None
+
     issue = jira_inst.issue('NGSG-' + case_id)
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
