@@ -127,8 +127,8 @@ def read_hgnc_genes(hgnc_fpath):
         i = 0
         for l in f:
             if l and not l.startswith('#'):
-                symbol, locus_group, cytoband, entrez_gene_id, ensembl_id = l[:-1].split('\t')
-                approved_gene = ApprovedGene(symbol, cytoband, locus_group, entrez_gene_id, ensembl_id)
+                symbol, locus_group, cytoband, entrez_gene_id, ensembl_id, entrez_gene_id_ncbi = l[:-1].split('\t')
+                approved_gene = ApprovedGene(symbol, cytoband, locus_group, entrez_gene_id_ncbi, ensembl_id)
                 approved_gene_by_name[symbol] = approved_gene
 
             i += 1
