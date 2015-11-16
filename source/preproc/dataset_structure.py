@@ -126,10 +126,10 @@ class HiSeqStructure(DatasetStructure):
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
         for pname, project in self.project_by_name.items():
-            proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.name.replace(' ', '-').replace('_', '-').replace('.', '-'))
+            proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.replace(' ', '_').replace('-', '_').replace('.', '_'))
             project.set_dirpath(proj_dirpath, self.az_project_name)
             for sname, sample in project.sample_by_name.items():
-                sample.source_fastq_dirpath = join(project.dirpath, 'Sample_' + sname.replace(' ', '-').replace('_', '-').replace('.', '-'))
+                sample.source_fastq_dirpath = join(project.dirpath, 'Sample_' + sname.replace(' ', '_').replace('-', '_').replace('.', '_'))
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
@@ -220,7 +220,7 @@ class DatasetProject:
         verify_dir(self.dirpath, is_critical=True)
 
         merged_dirpath = join(self.dirpath, 'merged')
-        if verify_dir(merged_dirpath):
+        if verify_dir(merged_dirpath, silent=True):
             self.mergred_dir_found = True
             self.fastq_dirpath = self.fastqc_dirpath = merged_dirpath
         else:
@@ -239,13 +239,18 @@ class DatasetProject:
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
     def concat_fastqs(self, work_dir):
-        if not self.mergred_dir_found and self.sample_by_name and self.fastqc_dirpath and not isdir(self.fastq_dirpath):
-            info('Merging fastq files...')
-            safe_mkdir(self.fastq_dirpath)
-            for s in self.sample_by_name.values():
-                _concat_fastq(work_dir, s.find_raw_fastq('R1'), s.l_fpath)
-                _concat_fastq(work_dir, s.find_raw_fastq('R2'), s.r_fpath)
-            info()
+        info('Concatenating fastqc files for ' + self.name)
+        if self.mergred_dir_found:
+            info('  found already merged fastq dir, skipping.')
+            return
+        if not self.sample_by_name:
+            err('  no samples found.')
+            return
+        safe_mkdir(self.fastq_dirpath)
+        for s in self.sample_by_name.values():
+            _concat_fastq(work_dir, s.find_raw_fastq('R1'), s.l_fpath)
+            _concat_fastq(work_dir, s.find_raw_fastq('R2'), s.r_fpath)
+        info()
 
 class DatasetSample:
     def __init__(self, name, index=None, source_fastq_dirpath=None):
@@ -287,7 +292,8 @@ class DatasetSample:
                             '.*_' + suf + '.*\.fastq\.gz', fname)]
         fastq_fpaths = sorted(fastq_fpaths)
         if not fastq_fpaths:
-            critical('Error: no fastq files for the sample ' + self.name + ' were found inside ' + self.source_fastq_dirpath)
+            critical('Error: no fastq files for the sample ' + self.name +
+                     ' were found inside ' + self.source_fastq_dirpath)
         info(self.name + ': found raw fastq files ' + ', '.join(fastq_fpaths))
         return fastq_fpaths
 
@@ -305,7 +311,7 @@ class DatasetSample:
 
 
 def _concat_fastq(work_dir, fastq_fpaths, output_fpath):
-    info('Merging ' + ', '.join(fastq_fpaths))
+    info('  merging ' + ', '.join(fastq_fpaths))
     with file_transaction(work_dir, output_fpath) as tx:
         with open(tx, 'w') as out:
             for fq_fpath in fastq_fpaths:
