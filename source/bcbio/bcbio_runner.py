@@ -25,7 +25,7 @@ from source.config import defaults
 class Step:
     def __init__(self, cnf, run_id, name, script, dir_name=None,
                  interpreter=None, short_name=None, paramln='', env_vars=None,
-                 log_fpath_template=None):
+                 log_fpath_template=None, run_on_chara=False):
         self.name = name
         self.dir_name = dir_name
         self.cnf = cnf
@@ -38,6 +38,7 @@ class Step:
         self.interpreter = interpreter
         self.env_vars = env_vars
         self.log_fpath_template = log_fpath_template
+        self.run_on_chara = run_on_chara
 
     def job_name(self, sample=None, caller=None):
         jn = self.short_name.upper() + '_' + self.run_id_ + \
@@ -329,7 +330,8 @@ class BCBioRunner:
             script=join('scripts', 'post_bcbio', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
-            paramln=varfilter_paramline
+            paramln=varfilter_paramline,
+            run_on_chara=True,
         )
 
         clinreport_paramline = (params_for_one_sample +
@@ -470,8 +472,11 @@ class BCBioRunner:
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         bash = get_system_path(self.cnf, 'bash')
+        extra_qsub_opts = ''
+        if step.run_on_chara and is_us():
+            extra_qsub_opts += '-l h=chara'
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} -S {bash} -q {queue} -j n '
+            '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} -j n '
             '-o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} -N {job_name} '
             '{runner_script} {done_marker_fpath} {error_marker_fpath} '
             '"{cmdline}"'.format(**locals()))
