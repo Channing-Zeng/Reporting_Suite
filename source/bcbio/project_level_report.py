@@ -63,7 +63,12 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
     sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
 
     sample_reports = []
-    for sample in dataset_project.sample_by_name.values() or bcbio_structure.samples:
+    samples = []
+    if dataset_project:
+        samples = dataset_project.sample_by_name.values()
+    if bcbio_structure:
+        samples = bcbio_structure.samples
+    for sample in samples:
         sample_reports.append(SampleReport(sample,
             records=sample_reports_records[sample.name],
             html_fpath=None,

@@ -183,14 +183,14 @@ def main():
                 safe_mkdir(project.fastqc_dirpath)
                 make_fastqc_reports(cnf, samples, project.fastq_dirpath, project.fastqc_dirpath, project.comb_fastqc_fpath)
 
-        new_project_symlink = join(dirname(project_dirpath), cnf.project_name)
+        new_project_symlink = join(dirname(project_dirpath), project.az_project_name)
         if not exists(new_project_symlink):
             info()
             info('Creating symlink in Datasets now called as project-name: ' + project_dirpath + ' -> ' + new_project_symlink)
             os.symlink(project_dirpath, new_project_symlink)
 
         # Creating analysis directory
-        __prepare_analysis_directory(cnf.work_dir, cnf.project_name, project_dirpath, samples)
+        __prepare_analysis_directory(cnf.work_dir, project.az_project_name, project_dirpath, samples)
 
         # Making project-level report
         make_project_level_report(cnf, dataset_structure=ds, dataset_project=project)
@@ -200,7 +200,7 @@ def main():
         info('Synking with the NGS webserver')
         sync_with_ngs_server(cnf,
             jira_url=cnf.jira,
-            project_name=cnf.project_name,
+            project_name=project.az_project_name,
             sample_names=[s.name for s in samples],
             dataset_dirpath=project_dirpath,
             summary_report_fpath=project.project_report_html_fpath,

@@ -51,7 +51,8 @@ class DatasetStructure:
 
         if illumina_project_name:  # we want only a specific project
             if illumina_project_name not in self.project_by_name:
-                critical('Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
+                info()
+                critical('ERROR: Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
             self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
 
     def __find_unaligned_dir(self):
@@ -190,7 +191,10 @@ class HiSeq4000Structure(DatasetStructure):
 
         for proj_name, project in self.project_by_name.items():
             proj_dirpath = join(self.unaligned_dirpath, proj_name)
-            project.set_dirpath(proj_dirpath, self.az_project_name)
+            az_project_name = self.az_project_name
+            if len(self.project_by_name) > 1:
+                az_project_name += '_' + proj_name.replace(' ', '_').replace('-', '_').replace('.', '_')
+            project.set_dirpath(proj_dirpath, az_project_name)
             for sample in project.sample_by_name.values():
                 sample.source_fastq_dirpath = project.dirpath
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
@@ -217,6 +221,7 @@ class DatasetProject:
 
     def set_dirpath(self, dirpath, az_project_name):
         self.dirpath = dirpath
+        self.az_project_name = az_project_name
         verify_dir(self.dirpath, is_critical=True)
 
         merged_dirpath = join(self.dirpath, 'merged')
