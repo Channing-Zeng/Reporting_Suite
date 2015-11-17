@@ -322,20 +322,29 @@ def run_targqc(cnf, project, bam_by_sample):
     # return summarize_targqc(cnf, 1, targqc_dirpath, samples, bed_fpath, exons_bed)
 
 
-def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
-    # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
-    # cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
-    # cmdline += (' --sys-cnf {cnf.sys_cnf} --sample {sample.name} -1 {sample.l_fpath} -2 {sample.r_fpath} -o {fastqc_dirpath}'.format(**locals()))
+def run_fastqc(cnf, fastq_fpath, output_basename, fastqc_dirpath, need_downsample=True):
     fastqc = get_system_path(cnf, 'fastqc', is_critical=True)
     java = get_system_path(cnf, 'java', is_critical=True)
-    cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.l_fpath}'.format(**locals())
-    cmdline_r = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
-    j_l = submit_job(cnf, cmdline_l, 'FastQC_' + sample.l_fastqc_base_name, stdout_to_outputfile=False,
-        output_fpath=join(sample.fastqc_dirpath, sample.l_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
-    j_r = submit_job(cnf, cmdline_r, 'FastQC_' + sample.r_fastqc_base_name, stdout_to_outputfile=False,
-        output_fpath=join(sample.fastqc_dirpath, sample.r_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
+    cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {fastq_fpath}'.format(**locals())
+    j = submit_job(cnf, cmdline_l, 'FastQC_' + output_basename, stdout_to_outputfile=False,
+        output_fpath=join(fastqc_dirpath, output_basename + '_fastqc', 'fastqc_report.html'))
+    return j
 
-    return j_l, j_r
+
+# def run_fastqc(cnf, sample, fastqc_dirpath, need_downsample=True):
+#     # with tx_tmpdir(fastqc_work_dir, fastqc_dirpath) as fastqc_out_tx_dirpath:
+#     # cmdline = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'fastqc.py'))
+#     # cmdline += (' --sys-cnf {cnf.sys_cnf} --sample {sample.name} -1 {sample.l_fpath} -2 {sample.r_fpath} -o {fastqc_dirpath}'.format(**locals()))
+#     fastqc = get_system_path(cnf, 'fastqc', is_critical=True)
+#     java = get_system_path(cnf, 'java', is_critical=True)
+#     cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.l_fpath}'.format(**locals())
+#     cmdline_r = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {sample.r_fpath}'.format(**locals())
+#     j_l = submit_job(cnf, cmdline_l, 'FastQC_' + sample.l_fastqc_base_name, stdout_to_outputfile=False,
+#         output_fpath=join(sample.fastqc_dirpath, sample.l_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
+#     j_r = submit_job(cnf, cmdline_r, 'FastQC_' + sample.r_fastqc_base_name, stdout_to_outputfile=False,
+#         output_fpath=join(sample.fastqc_dirpath, sample.r_fastqc_base_name + '_fastqc', 'fastqc_report.html'))
+#
+#     return j_l, j_r
 
     # parser = FastQCParser(fastqc_out, data["name"][-1])
     # stats = parser.get_fastqc_summary()
@@ -361,7 +370,7 @@ def find_fastq_pairs_by_sample_names(fastq_fpaths, sample_names):
     return fastq_by_sn
 
 
-FQC_Sample = namedtuple('FQC_Sample', 'name fastqc_html_fpath')
+FQC_Sample = namedtuple('FQC_Sample', 'name fastq_fpath fastqc_html_fpath')
 
 
 def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc_fpath):
@@ -388,28 +397,45 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
         fqc_samples = []
         fastqc_jobs = []
         for s in samples:
-            l_fastqc_html = s.find_fastqc_html(s.l_fastqc_base_name)
-            r_fastqc_html = s.find_fastqc_html(s.r_fastqc_base_name)
-            if cnf.reuse_intermediate and verify_file(l_fastqc_html, silent=True) and verify_file(r_fastqc_html, silent=True):
-                info(l_fastqc_html + ' and ' + r_fastqc_html + ' exist, reusing')
+            fqc_samples.extend([
+                FQC_Sample(name=s.l_fastqc_base_name, fastq_fpath=s.l_fpath,
+                           fastqc_html_fpath=s.find_fastqc_html(s.l_fastqc_base_name)),
+                FQC_Sample(name=s.r_fastqc_base_name, fastq_fpath=s.r_fpath,
+                           fastqc_html_fpath=s.find_fastqc_html(s.r_fastqc_base_name))])
+
+        for fqc_s in fqc_samples:
+            if cnf.reuse_intermediate and verify_file(fqc_s.fastqc_html_fpath, silent=True):
+                info(fqc_s.fastqc_html_fpath + ' exists, reusing')
             else:
-                jobs = run_fastqc(cnf, s, fastqc_dirpath)
-                fastqc_jobs.extend(jobs)
+                fastqc_jobs.append(run_fastqc(cnf, fqc_s.fastq_fpath, fqc_s.name, fastqc_dirpath))
             info()
+
         wait_for_jobs(cnf, fastqc_jobs)
 
-        for s in samples:
-            for end_name in [s.l_fastqc_base_name, s.r_fastqc_base_name]:
-                fastqc_html_fpath = s.find_fastqc_html(end_name)
-                verify_file(fastqc_html_fpath, is_critical=True, description='fastqc_html_fpath for ' + s.name + ', ' + end_name)
-                fqc_samples.append(FQC_Sample(name=end_name, fastqc_html_fpath=fastqc_html_fpath))
+        fastqc_jobs = []
+        while True:
+            not_done_fqc = [fqc_s for fqc_s in fqc_samples
+                if not verify_file(fqc_s.fastqc_html_fpath, description='fastqc_html_fpath for ' + fqc_s.name)]
+            if not not_done_fqc:
+                info('')
+                info('Every FastQC job is done, moving on.')
+                info('-' * 70)
+                break
+            else:
+                info('')
+                info('Some FastQC jobs are not done (' + ', '.join(f.name for f in not_done_fqc) + '). Retrying them.')
+                info('')
+                for fqc_s in not_done_fqc:
+                    fastqc_jobs.append(run_fastqc(cnf, fqc_s.fastq_fpath, fqc_s.name, fastqc_dirpath))
+                wait_for_jobs(cnf, fastqc_jobs)
 
-                sample_fastqc_dirpath = join(fastqc_dirpath, end_name + '_fastqc')
-                if isfile(sample_fastqc_dirpath + '.zip'):
-                    try:
-                        os.remove(sample_fastqc_dirpath + '.zip')
-                    except OSError:
-                        pass
+        for fqc_s in fqc_samples:
+            sample_fastqc_dirpath = join(fastqc_dirpath, fqc_s.name + '_fastqc')
+            if isfile(sample_fastqc_dirpath + '.zip'):
+                try:
+                    os.remove(sample_fastqc_dirpath + '.zip')
+                except OSError:
+                    pass
 
         write_fastqc_combo_report(comb_fastqc_fpath, fqc_samples)
         verify_file(comb_fastqc_fpath, is_critical=True)
