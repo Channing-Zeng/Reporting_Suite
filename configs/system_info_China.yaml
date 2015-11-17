@@ -72,4 +72,4 @@ queue: all.q
 
 qsub_runner: scripts/runner_China.sh
 
-#smtp_host: 'uw26.usuwb.astrazeneca.net'
+smtp_host: '156.71.152.132'
