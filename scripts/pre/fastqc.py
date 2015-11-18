@@ -12,7 +12,7 @@ from optparse import OptionParser
 from source.calling_process import call
 from source.config import Config
 from source.fastqc.fastq_utils import downsample
-from source.file_utils import adjust_path, verify_dir, workdir, open_gzipsafe
+from source.file_utils import adjust_path, verify_dir, workdir, open_gzipsafe, safe_mkdir
 from source.logger import critical, warn, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_sys_cnf, \
     determine_run_cnf
@@ -80,7 +80,9 @@ def run_fastq(cnf, sample_name, l_r_fpath, r_r_fpath, output_dirpath, downsample
 
     # Running FastQC
     info('Running FastQC')
-    cmdline = '{fastqc} --extract -o {output_dirpath} -f fastq -j {java} {fastqc_fpath}'.format(**locals())
+    tmp_dirpath = join(cnf.work_dir, 'FastQC_' + sample_name + '_tmp')
+    safe_mkdir(tmp_dirpath)
+    cmdline = '{fastqc} --dir {tmp_dirpath} --extract -o {output_dirpath} -f fastq -j {java} {fastqc_fpath}'.format(**locals())
     call(cnf, cmdline)
 
     # Cleaning and getting report

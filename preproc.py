@@ -131,6 +131,7 @@ def main():
     for project in ds.project_by_name.values():
         samples = project.sample_by_name.values()
         threads = len(samples) if not is_local() else 1
+        info('Threads number: ' + str(threads))
         project.concat_fastqs(cnf.work_dir)
 
         if cnf.targqc or cnf.metamapping:
@@ -325,7 +326,9 @@ def run_targqc(cnf, project, bam_by_sample):
 def run_fastqc(cnf, fastq_fpath, output_basename, fastqc_dirpath, need_downsample=True):
     fastqc = get_system_path(cnf, 'fastqc', is_critical=True)
     java = get_system_path(cnf, 'java', is_critical=True)
-    cmdline_l = '{fastqc} --extract -o {fastqc_dirpath} -f fastq -j {java} {fastq_fpath}'.format(**locals())
+    tmp_dirpath = join(cnf.work_dir, 'FastQC_' + output_basename + '_tmp')
+    safe_mkdir(tmp_dirpath)
+    cmdline_l = '{fastqc} --dir {tmp_dirpath} --extract -o {fastqc_dirpath} -f fastq -j {java} {fastq_fpath}'.format(**locals())
     j = submit_job(cnf, cmdline_l, 'FastQC_' + output_basename, stdout_to_outputfile=False,
         output_fpath=join(fastqc_dirpath, output_basename + '_fastqc', 'fastqc_report.html'))
     return j
