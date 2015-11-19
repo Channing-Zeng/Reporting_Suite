@@ -198,6 +198,98 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
         return key_genes_report
 
+    def make_seq2c_plot_json(self, experiment_by_key):
+        data = dict()
+
+        for k, e in experiment_by_key.items():
+            chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
+            chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
+
+            d = dict(
+                events=[],
+                ticksX=[[(chr_cum_lens[i] + chr_cum_lens[i + 1])/2, self.chromosomes_by_name.values()[i].short_name]
+                        for i in range(len(self.chromosomes_by_name.keys()))],
+                linesX=chr_cum_lens
+            )
+
+            for gene in e.key_gene_by_name.values():
+                if gene.seq2c_event:
+                    d['events'].append(dict(
+                        x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
+                        geneName=gene.name,
+                        logRatio=gene.seq2c_event.ab_log2r if gene.seq2c_event.ab_log2r is not None else gene.seq2c_event.log2r,
+                        ampDel=gene.seq2c_event.amp_del,
+                        fragment=gene.seq2c_event.fragment))
+
+                    # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
+
+            d['maxY'] = max([e['logRatio'] for e in d['events']] + [2])  # max(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [2]))
+            d['minY'] = min([e['logRatio'] for e in d['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
+
+            data[k.lower()] = d
+
+        if len(experiment_by_key.keys()) == 1:
+            return json.dumps(data.values()[0])
+        else:
+            return json.dumps(data)
+
+    def make_key_genes_cov_json(self, experiment_by_key):
+        chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
+        chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
+
+        gene_names = []
+        coord_x = []
+
+        ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i + 1])/2, self.chromosomes_by_name.values()[i].short_name]
+                   for i in range(len(self.chromosomes_by_name.keys()))]
+
+        hits = list()
+        for key, e in experiment_by_key.items():
+            gene_ave_depths = []
+            covs_in_thresh = []
+            cds_cov_by_gene = defaultdict(list)
+            mut_info_by_gene = dict()
+
+            for gene in e.key_gene_by_name.values():
+                mut_info_by_gene[gene.name] = [('p.' + m.aa_change if m.aa_change else '.') for m in gene.mutations]
+                if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
+                    mut_info_by_gene[gene.name].append(gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
+
+            for gene in e.key_gene_by_name.values():
+                gene_names.append(gene.name)
+                gene_ave_depths.append(gene.ave_depth)
+                covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
+                coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
+                cds_cov_by_gene[gene.name] = [dict(
+                    start=cds.start,
+                    end=cds.end,
+                    aveDepth=cds.ave_depth,
+                    percentInThreshold=cds.cov_by_threshs.get(e.depth_cutoff),
+                ) for cds in gene.cdss]
+
+            hits.append(dict(
+                gene_ave_depths=gene_ave_depths,
+                covs_in_thresh=covs_in_thresh,
+                cds_cov_by_gene=cds_cov_by_gene,
+                mut_info_by_gene=mut_info_by_gene
+            ))
+
+        data = dict(
+            coords_x=coord_x,
+            gene_names=gene_names,
+            ticks_x=ticks_x,
+            lines_x=chr_cum_lens,
+        )
+
+        if len(hits) == 1:
+            for k, v in hits[0].items():
+                data[k] = v
+            data['color'] = None
+        else:
+            data['hits'] = hits
+
+        return json.dumps(data)
+
     @staticmethod
     def make_db_html(mut):
         db = ''

@@ -48,7 +48,7 @@
     #report table.report_table tr.highlighted_row td {
       background-color: #f5ffa3; }
     #report table.report_table tr.highlighted_green_row td:last-child {
-      border-right: 1px solid black; }
+      border-right: 1px solid #bbb; }
 
 #contigs_are_ordered {
   z-index: 0;

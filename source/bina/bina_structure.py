@@ -14,6 +14,7 @@ import yaml
 
 import source
 from source import logger, BaseSample
+from source.bcbio.bcbio_structure import BaseProjectStructure
 from source.logger import info, err, critical, warn
 from source.calling_process import call
 from source.config import load_yaml_config, Config, defaults
@@ -447,10 +448,7 @@ class Batch:
         return self.name
 
 
-class BaseProjectStructure:
-    def __init__(self):
-        pass
-
+class BinaRaveStructure(BaseProjectStructure):
     varfilter_name   = varfilter_dir   = 'varFilter'
     varannotate_name = varannotate_dir = 'varAnnotate'
 
@@ -485,13 +483,11 @@ class BaseProjectStructure:
     pass_filt_vcf_ending = '.anno.filt.pass.vcf'
     filt_tsv_ending = '.anno.filt.tsv'
 
-
-class BCBioStructure(BaseProjectStructure):
-    def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
+    def __init__(self, cnf, project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
         BaseProjectStructure.__init__(self)
 
-        self.bcbio_project_dirpath = bcbio_project_dirpath
-        self._set_final_dir(bcbio_cnf, bcbio_project_dirpath, final_dirpath)
+        self.project_dirpath = project_dirpath
+        self._set_final_dir(bcbio_cnf, project_dirpath, final_dirpath)
 
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
