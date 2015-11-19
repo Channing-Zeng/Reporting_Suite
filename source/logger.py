@@ -60,10 +60,12 @@ def err(msg='', ending='\n', print_date=True, severity='error'):
 email_by_prid = {
     'klpf990': 'Vlad.Saveliev@astrazeneca.com',
     'kjgk478': 'Alexey.Gurevich@astrazeneca.com',
+    'kxjn734': 'Justin.Johnson@astrazeneca.com',
     'knfz728': 'Alla.Bushoy@astrazeneca.com',
     'klrl262': 'Miika.Ahdesmaki@astrazeneca.com',
     'kmtc481': 'Sakina.Saif@astrazeneca.com',
-    'kxjn734': 'Justin.Johnson@astrazeneca.com'
+    'kxqf517': 'Tristan.Lubinski@astrazeneca.com',
+    'kdqq790': 'Sally.Luke@astrazeneca.com',
 }
 
 def send_email(msg_other='', subj='', only_me=False):

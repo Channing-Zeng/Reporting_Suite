@@ -83,7 +83,7 @@ genomes:
     dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf
     snpeff:
       reference: GRCm38.78
-
+a
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
