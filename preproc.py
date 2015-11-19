@@ -373,7 +373,12 @@ def find_fastq_pairs_by_sample_names(fastq_fpaths, sample_names):
     return fastq_by_sn
 
 
-FQC_Sample = namedtuple('FQC_Sample', 'name fastq_fpath fastqc_html_fpath')
+class FQC_Sample:
+    def __init__(self, name, fastq_fpath, sample):
+        self.name = name
+        self.fastq_fpath = fastq_fpath
+        self.sample = sample
+        self.fastqc_html_fpath = sample.find_fastqc_html(name)
 
 
 def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc_fpath):
@@ -401,10 +406,8 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
         fastqc_jobs = []
         for s in samples:
             fqc_samples.extend([
-                FQC_Sample(name=s.l_fastqc_base_name, fastq_fpath=s.l_fpath,
-                           fastqc_html_fpath=s.find_fastqc_html(s.l_fastqc_base_name)),
-                FQC_Sample(name=s.r_fastqc_base_name, fastq_fpath=s.r_fpath,
-                           fastqc_html_fpath=s.find_fastqc_html(s.r_fastqc_base_name))])
+                FQC_Sample(name=s.l_fastqc_base_name, fastq_fpath=s.l_fpath, sample=s),
+                FQC_Sample(name=s.r_fastqc_base_name, fastq_fpath=s.r_fpath, sample=s)])
 
         for fqc_s in fqc_samples:
             if cnf.reuse_intermediate and verify_file(fqc_s.fastqc_html_fpath, silent=True):
@@ -417,8 +420,10 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
 
         fastqc_jobs = []
         while True:
+            for fqc_s in fqc_samples:
+                fqc_s.fastqc_html_fpath = fqc_s.sample.find_fastqc_html(fqc_s.name)
             not_done_fqc = [fqc_s for fqc_s in fqc_samples
-                if not verify_file(fqc_s.fastqc_html_fpath, description='fastqc_html_fpath for ' + fqc_s.name)]
+                if not verify_file(fqc_s.fastqc_html_fpath, description='Not found FastQC html for ' + fqc_s.name)]
             if not not_done_fqc:
                 info('')
                 info('Every FastQC job is done, moving on.')
