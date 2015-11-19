@@ -127,10 +127,10 @@ class HiSeqStructure(DatasetStructure):
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
         for pname, project in self.project_by_name.items():
-            proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.replace(' ', '_').replace('-', '_').replace('.', '_'))
+            proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.replace(' ', '-'))  #.replace('-', '_').replace('.', '_'))
             project.set_dirpath(proj_dirpath, self.az_project_name)
             for sname, sample in project.sample_by_name.items():
-                sample.source_fastq_dirpath = join(project.dirpath, 'Sample_' + sname.replace(' ', '_').replace('-', '_').replace('.', '_'))
+                sample.source_fastq_dirpath = join(project.dirpath, 'Sample_' + sname.replace(' ', '-'))  #.replace('-', '_').replace('.', '_'))
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()

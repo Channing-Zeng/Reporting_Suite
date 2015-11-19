@@ -261,14 +261,14 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 class BCBioSample(BaseSample):
     def __init__(self, sample_name, final_dir, **kwargs):
         dirpath = join(final_dir, sample_name)
-        targqc_dirpath = join(dirpath, BCBioStructure.targqc_dir)
+        targqc_dirpath = join(dirpath, BaseProjectStructure.targqc_dir)
 
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
-            fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
+            fastqc_dirpath=join(dirpath, BaseProjectStructure.fastqc_dir),
             targqc_dirpath=targqc_dirpath,
-            ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
-            qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
-            picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
+            ngscat_dirpath=join(targqc_dirpath, BaseProjectStructure.ngscat_name),
+            qualimap_dirpath=join(targqc_dirpath, BaseProjectStructure.qualimap_name),
+            picard_dirpath=join(targqc_dirpath, BaseProjectStructure.picard_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
 
@@ -276,10 +276,10 @@ class BCBioSample(BaseSample):
 
     # ----------
     def annotated_vcfs_dirpath(self):
-        return join(self.dirpath, BCBioStructure.varannotate_dir)
+        return join(self.dirpath, BaseProjectStructure.varannotate_dir)
 
     def get_filtered_vcfs_dirpath(self):
-        return join(self.dirpath, BCBioStructure.varfilter_dir)
+        return join(self.dirpath, BaseProjectStructure.varfilter_dir)
 
     # raw variants
     def find_raw_vcf_by_callername(self, callername):
@@ -293,7 +293,7 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_raw_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, BCBioStructure.var_dir,
+        return join(self.dirpath, BaseProjectStructure.var_dir,
                     self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
 
     def get_rawest_vcf_fpath_by_callername(self, callername, gz):
@@ -307,8 +307,8 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_anno_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, BCBioStructure.varannotate_dir,
-                    self.name + '-' + callername + BCBioStructure.anno_vcf_ending +
+        return join(self.dirpath, BaseProjectStructure.varannotate_dir,
+                    self.name + '-' + callername + BaseProjectStructure.anno_vcf_ending +
                     ('.gz' if gz else ''))
 
     # varqc
@@ -317,8 +317,8 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_varqc_fpath_by_callername(self, callername, ext='.html'):
-        return join(self.dirpath, BCBioStructure.varqc_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.varqc_name + ext)
+        return join(self.dirpath, BaseProjectStructure.varqc_dir,
+                    self.name + '-' + callername + '.' + BaseProjectStructure.varqc_name + ext)
 
     # filtered
     def find_filt_vcf_by_callername(self, callername):
@@ -328,8 +328,8 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_filt_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.filt_vcf_ending +
+        return join(self.dirpath, BaseProjectStructure.varfilter_dir,
+                    self.name + '-' + callername + BaseProjectStructure.filt_vcf_ending +
                     ('.gz' if gz else ''))
 
     # varqc after filtering
@@ -338,8 +338,8 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_varqc_after_fpath_by_callername(self, callername, ext='.html'):
-        return join(self.dirpath, BCBioStructure.varqc_after_dir,
-                    self.name + '-' + callername + '.' + BCBioStructure.varqc_after_name + ext)
+        return join(self.dirpath, BaseProjectStructure.varqc_after_dir,
+                    self.name + '-' + callername + '.' + BaseProjectStructure.varqc_after_name + ext)
 
     # filtered passed
     def find_pass_filt_vcf_by_callername(self, callername):
@@ -349,14 +349,14 @@ class BCBioSample(BaseSample):
         return verify_file(fpath)
 
     def get_pass_filt_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending +
+        return join(self.dirpath, BaseProjectStructure.varfilter_dir,
+                    self.name + '-' + callername + BaseProjectStructure.pass_filt_vcf_ending +
                     ('.gz' if gz else ''))
 
     # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
-        return join(self.dirpath, BCBioStructure.varfilter_dir,
-                    self.name + '-' + callername + BCBioStructure.filt_tsv_ending)
+        return join(self.dirpath, BaseProjectStructure.varfilter_dir,
+                    self.name + '-' + callername + BaseProjectStructure.filt_tsv_ending)
 
     # ...other
     def for_json(self):
@@ -392,13 +392,13 @@ class VariantCaller:
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext, final_dirpaths)
 
     def find_anno_vcf_by_sample(self):
-        return self._find_files_by_sample(BCBioStructure.varannotate_dir, BCBioStructure.anno_vcf_ending)
+        return self._find_files_by_sample(BaseProjectStructure.varannotate_dir, BaseProjectStructure.anno_vcf_ending)
 
     def get_filt_vcf_by_sample(self):
-        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.filt_vcf_ending)
+        return self._find_files_by_sample(BaseProjectStructure.varfilter_dir, BaseProjectStructure.filt_vcf_ending)
 
     def find_pass_filt_vcf_by_sample(self):
-        return self._find_files_by_sample(BCBioStructure.varfilter_dir, BCBioStructure.pass_filt_vcf_ending)
+        return self._find_files_by_sample(BaseProjectStructure.varfilter_dir, BaseProjectStructure.pass_filt_vcf_ending)
 
     def _find_files_by_sample(self, dir_name, ending, final_dirpaths=None):
         if final_dirpaths is None:
@@ -501,8 +501,8 @@ class BinaRaveStructure(BaseProjectStructure):
         self.target_type = None
 
         self.small_project_path = None
-        if '/ngs/oncology/analysis/' in realpath(bcbio_project_dirpath):
-            short_path = realpath(bcbio_project_dirpath).split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
+        if '/ngs/oncology/analysis/' in realpath(project_dirpath):
+            short_path = realpath(project_dirpath).split('/ngs/oncology/analysis/')[1]  # bioscience/Bio_0031_Heme_MRL_DLBCL_IRAK4/bcbio_Dev_0079
             self.small_project_path = '/'.join(short_path.split('/')[1:])
 
         if cnf.project_name:
@@ -529,7 +529,7 @@ class BinaRaveStructure(BaseProjectStructure):
         else:
             self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + self.project_name)
 
-        self.seq2c_fpath = join(self.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
+        self.seq2c_fpath = join(self.date_dirpath, BaseProjectStructure.cnv_dir, BaseProjectStructure.seq2c_name + '.tsv')
 
         if not verify_dir(self.date_dirpath):
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
@@ -559,7 +559,7 @@ class BinaRaveStructure(BaseProjectStructure):
         self.work_dir = self.cnf.work_dir = self.cnf.work_dir or abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         set_up_work_dir(cnf)
 
-        self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
+        self.var_dirpath = join(self.date_dirpath, BaseProjectStructure.var_dir)
 
         # Moving raw variants in the date dir to var/raw
         raw_dirpath = join(self.var_dirpath, 'raw')
@@ -606,10 +606,10 @@ class BinaRaveStructure(BaseProjectStructure):
             caller.samples.sort(key=lambda _s: _s.key_to_sort())
 
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
-        self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
-        self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
-        self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
-        self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
+        self.fastqc_summary_fpath =       join(self.date_dirpath, BaseProjectStructure.fastqc_summary_dir,      BaseProjectStructure.fastqc_name + '.html')
+        self.targqc_summary_fpath =       join(self.date_dirpath, BaseProjectStructure.targqc_summary_dir,      BaseProjectStructure.targqc_name + '.html')
+        self.varqc_report_fpath =         join(self.date_dirpath, BaseProjectStructure.varqc_summary_dir,       BaseProjectStructure.varqc_name + '.html')
+        self.varqc_after_report_fpath =   join(self.date_dirpath, BaseProjectStructure.varqc_after_summary_dir, BaseProjectStructure.varqc_name + '.html')
         self.varqc_report_fpath_by_caller =       OrderedDict([(k, join(dirname(self.varqc_report_fpath),       k + '.' + basename(self.varqc_report_fpath)))       for k in self.variant_callers.keys()])
         self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath), k + '.' + basename(self.varqc_after_report_fpath))) for k in self.variant_callers.keys()])
 
@@ -665,10 +665,10 @@ class BinaRaveStructure(BaseProjectStructure):
         fpaths_to_move = []
         for fname in os.listdir(sample.dirpath):
             if any(fname.endswith(ending) for ending in
-                   [BCBioStructure.filt_tsv_ending,
-                    BCBioStructure.filt_vcf_ending,
-                    BCBioStructure.filt_vcf_ending + '.gz',
-                    BCBioStructure.filt_vcf_ending + '.idx']):
+                   [BaseProjectStructure.filt_tsv_ending,
+                    BaseProjectStructure.filt_vcf_ending,
+                    BaseProjectStructure.filt_vcf_ending + '.gz',
+                    BaseProjectStructure.filt_vcf_ending + '.idx']):
                 continue
 
             if 'vcf' in fname.split('.') and not (islink(fname) and '.anno.filt' in fname):
@@ -740,7 +740,7 @@ class BinaRaveStructure(BaseProjectStructure):
                 elif sample.phenotype == 'tumor':
                     self.batches[batch_name].tumor.append(sample)
 
-        sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
+        sample.var_dirpath = adjust_path(join(sample.dirpath, BaseProjectStructure.var_dir))
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
@@ -870,24 +870,24 @@ class BinaRaveStructure(BaseProjectStructure):
                     fpath = join(sample.var_dirpath, fname)
                     os.rename(fpath, join(sample.dirpath, fname))
 
-            for dir_name in [BCBioStructure.varannotate_dir,
-                            BCBioStructure.varfilter_dir,
-                            BCBioStructure.varqc_dir,
-                            BCBioStructure.varqc_after_dir,
-                            BCBioStructure.ngscat_dir,
-                            BCBioStructure.qualimap_dir,
-                            BCBioStructure.targqc_dir,
-                            BCBioStructure.var_dir]:
+            for dir_name in [BaseProjectStructure.varannotate_dir,
+                             BaseProjectStructure.varfilter_dir,
+                             BaseProjectStructure.varqc_dir,
+                             BaseProjectStructure.varqc_after_dir,
+                             BaseProjectStructure.ngscat_dir,
+                             BaseProjectStructure.qualimap_dir,
+                             BaseProjectStructure.targqc_dir,
+                             BaseProjectStructure.var_dir]:
                 dirpath = join(sample.dirpath, dir_name)
                 if isdir(dirpath):
                     info('  removing ' + dirpath)
                     shutil.rmtree(dirpath)
             info()
 
-        for dir_name in [BCBioStructure.targqc_summary_dir,
-                         BCBioStructure.cnv_summary_dir,
-                         BCBioStructure.varqc_summary_dir,
-                         BCBioStructure.varqc_after_summary_dir]:
+        for dir_name in [BaseProjectStructure.targqc_summary_dir,
+                         BaseProjectStructure.cnv_summary_dir,
+                         BaseProjectStructure.varqc_summary_dir,
+                         BaseProjectStructure.varqc_after_summary_dir]:
             dirpath = join(self.date_dirpath, dir_name)
             if isdir(dirpath):
                 info('  removing ' + dirpath)

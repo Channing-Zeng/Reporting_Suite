@@ -379,7 +379,8 @@ class BCBioRunner:
             script=join('scripts', 'post_bcbio', 'seq2c.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
             dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=seq2c_cmdline
+            paramln=seq2c_cmdline,
+            run_on_chara=True
         )
 
         targqc_cmdline = summaries_cmdline_params + ' ' + self.final_dir
