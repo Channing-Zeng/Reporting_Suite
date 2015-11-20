@@ -7,7 +7,7 @@ import source
 from source import verify_file, info
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
 from source.clinical_reporting.solvebio_mutations import query_mutations
-from source.logger import warn, err
+from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import SortableByChrom
 from source.targetcov.flag_regions import get_depth_cutoff
@@ -119,6 +119,8 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
     clinical_report_caller = \
         bs.variant_callers.get('vardict') or \
         bs.variant_callers.get('vardict-java')
+    if not clinical_report_caller:
+        critical('No vardict or vardict-java variant caller in ' + str(bs.variant_callers.keys()))
     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
     vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
