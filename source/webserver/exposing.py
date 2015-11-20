@@ -12,8 +12,8 @@ from source.webserver.ssh_utils import connect_to_server
 from source.jira_utils import retrieve_jira_info
 
 ngs_server_url = '172.18.47.33'
-ngs_server_username = 'klpf990'
-ngs_server_password = '123werasd'
+ngs_server_username = 'ngsall'
+ngs_server_password = 'astra123'
 
 class Location:
     def __init__(self, loc_id, report_url_base, website_url_base, csv_fpath, reports_dirpath, proper_path_should_contain):
