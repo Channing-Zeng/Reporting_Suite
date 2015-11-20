@@ -119,7 +119,9 @@ class BCBioRunner:
         self.max_threads = self.cnf.threads
         total_samples_num = len(self.bcbio_structure.samples)
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
-        self.filtering_threads = min(self.max_threads, total_samples_num) if self.bcbio_structure.bed else 1  #
+        self.filtering_threads = min(self.max_threads, total_samples_num)
+        if not is_us():
+            self.filtering_threads = min(self.max_threads, total_samples_num, 10)
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self._init_steps(cnf, self.run_id)
@@ -644,7 +646,7 @@ class BCBioRunner:
                             varqc=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
                             project_report_path=self.bcbio_structure.project_report_html_fpath,
                             wait_for_steps=wait_for_steps,
-                            threads=self.filtering_threads)
+                            threads=self.threads_per_sample)
                 else:
                     warn('Warning: Clinical report cannot be created.')
 
@@ -792,9 +794,10 @@ class BCBioRunner:
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()
-        num_occupied = sum(j.threads for j in self.jobs_running if not j.is_done)
-        info('Waiting for ' + str(num_occupied - number_of_jobs_allowed_to_left_running) + ' jobs to finish '
-                              'out of ' + str(num_occupied) + ' occupied')
+        num_occupied_slots = sum(j.threads for j in self.jobs_running if not j.is_done)
+        num_occupied_jobs = sum(1 for j in self.jobs_running if not j.is_done)
+        info('Waiting for ' + str(num_occupied_slots - number_of_jobs_allowed_to_left_running) + ' slots to free '
+                              'out of ' + str(num_occupied_slots) + ' occupied (by ' + str(num_occupied_jobs) + ' jobs)')
         is_waiting = False  # just we don't want to print info that we are waiting if nothing changed
         while True:
             # set flags for all done jobs
