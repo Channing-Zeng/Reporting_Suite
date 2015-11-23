@@ -614,8 +614,12 @@ class BCBioStructure(BaseProjectStructure):
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
         self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
-        self.varqc_report_fpath_by_caller =       OrderedDict([(k, join(dirname(self.varqc_report_fpath),       k + '.' + basename(self.varqc_report_fpath)))       for k in self.variant_callers.keys()])
-        self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath), k + '.' + basename(self.varqc_after_report_fpath))) for k in self.variant_callers.keys()])
+        self.varqc_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_report_fpath),
+            ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_report_fpath)))
+            for k in self.variant_callers.keys()])
+        self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath),
+            ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_after_report_fpath)))
+            for k in self.variant_callers.keys()])
 
         # setting bed files for samples
         if cnf.bed:

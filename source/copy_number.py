@@ -222,8 +222,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif ((target_bed == seq2c_bed) and  # same bed files for targqc and seqc - can use ave coverages from targqc
-                verify_file(s.targetcov_detailed_tsv, silent=True)):
+        elif target_bed == seq2c_bed and verify_file(s.targetcov_detailed_tsv, silent=True):
             info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
             amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(bcbio_structure.bed is None))
@@ -231,6 +230,11 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:
+            if target_bed != seq2c_bed:
+                info('target_bed ' + seq2c_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' + s.targetcov_detailed_tsv + ' for Seq2C')
+            if not verify_file(s.targetcov_detailed_tsv, silent=True):
+                info(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C')
+
             info(s.name + ': submitting bedcoverage hist')
             bam_fpath = dedupped_bam_by_sample[s.name]
             # Need to convert BAM to BED to make bedtools histogram
