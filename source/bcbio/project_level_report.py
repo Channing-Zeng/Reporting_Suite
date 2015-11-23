@@ -228,6 +228,7 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
             ])
 
             if s.phenotype != 'normal':
+                verify_file(s.clinical_html, is_critical=False)
                 rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
                 if rec and rec.value:
                     sample_reports_records[s.name].append(rec)

@@ -8,6 +8,7 @@ from source.calling_process import call
 from source.tools_from_cnf import get_system_path
 from source.logger import info, err, warn
 from source.file_utils import make_tmpfile, adjust_system_path, verify_file
+from source.utils import is_us
 
 
 class JobRunning:
@@ -29,7 +30,7 @@ class JobRunning:
 
 
 def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
-               output_fpath=None, stdout_to_outputfile=True, **kwargs):
+               output_fpath=None, stdout_to_outputfile=True, run_on_chara=False, **kwargs):
     tx_output_fpath = None
     if output_fpath:
         if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
@@ -62,8 +63,11 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     runner_script = adjust_system_path(cnf.qsub_runner)
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     mem = threads * 15
+    extra_qsub_opts = ''
+    if run_on_chara and is_us():
+        extra_qsub_opts += '-l h=chara'
     qsub_cmdline = (
-        '{qsub} -pe smp {threads} -S {bash} -q {queue} '
+        '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '
         '-N {job_id} {runner_script} {done_marker_fpath} {error_marker_fpath} "{cmdline}"'.format(**locals()))
     info('Submitting job ' + job_id)

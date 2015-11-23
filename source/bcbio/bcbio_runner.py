@@ -693,7 +693,7 @@ class BCBioRunner:
                                     caller.name + '". Phenotype = ' + sample.phenotype + '.')
                         else:
                             filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
-                            if not self.varfilter and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath):
+                            if not self.varfilter and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath, silent=True):
                                 err('Error: filtered VCF does not exist: sample ' + sample.name + ', caller "' +
                                     caller.name + '". Phenotype = ' + sample.phenotype + '.' +
                                     ' Note that you need to run VarFilter first, and this step is not in config.')

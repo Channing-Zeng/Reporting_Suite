@@ -61,14 +61,16 @@ def proc_opts():
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
 
     (opts, args) = parser.parse_args()
-    if len(args) < 2:
+    if len(args) < 1:
         critical(usage)
     # if len(args) < 2:
     #     info('No dataset path specified, assuming it is the current working directory')
     #     dataset_dirpath = adjust_path(os.getcwd())
     #     jira_url = args[0]
     dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
-    jira_url = args[1]
+    jira_url = ''
+    if len(args) > 1:
+        jira_url = args[1]
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -114,7 +116,7 @@ def main():
         if not cnf.project_name:
             cnf.project_name = jira_case.project_name
     elif not cnf.project_name:
-        critical('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
+        err('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
     cnf.project_name = cnf.project_name.replace(' ', '_')
 
     set_up_log(cnf, proc_name='preproc', project_name=cnf.project_name)
@@ -329,7 +331,7 @@ def run_fastqc(cnf, fastq_fpath, output_basename, fastqc_dirpath, need_downsampl
     tmp_dirpath = join(cnf.work_dir, 'FastQC_' + output_basename + '_tmp')
     safe_mkdir(tmp_dirpath)
     cmdline_l = '{fastqc} --dir {tmp_dirpath} --extract -o {fastqc_dirpath} -f fastq -j {java} {fastq_fpath}'.format(**locals())
-    j = submit_job(cnf, cmdline_l, 'FastQC_' + output_basename, stdout_to_outputfile=False,
+    j = submit_job(cnf, cmdline_l, 'FastQC_' + output_basename, run_on_chara=True, stdout_to_outputfile=False,
         output_fpath=join(fastqc_dirpath, output_basename + '_fastqc', 'fastqc_report.html'))
     return j
 
