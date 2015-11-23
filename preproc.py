@@ -67,7 +67,8 @@ def proc_opts():
     #     info('No dataset path specified, assuming it is the current working directory')
     #     dataset_dirpath = adjust_path(os.getcwd())
     #     jira_url = args[0]
-    dataset_dirpath = verify_dir(args[0])  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
+    dataset_dirpath = verify_dir(args[0], is_critical=True, description='Dataset directory')  # /ngs/oncology/datasets/hiseq/150521_D00443_0159_AHK2KTADXX
+
     jira_url = ''
     if len(args) > 1:
         jira_url = args[1]
@@ -210,7 +211,7 @@ def main():
         # Exposing
         info()
         info('Synking with the NGS webserver')
-        sync_with_ngs_server(cnf,
+        html_report_url = sync_with_ngs_server(cnf,
             jira_url=cnf.jira,
             project_name=project.az_project_name,
             sample_names=[s.name for s in samples],
@@ -254,7 +255,7 @@ def main():
         txt = 'Preproc finished for ' + project.name + '\n'
         txt += '\n'
         txt += 'Path: ' + project.dirpath + '\n'
-        txt += 'Report: ' + str(project.project_report_html_fpath) + '\n'
+        txt += 'Report: ' + str(html_report_url) + '\n'
         if jira_url:
             txt += 'Jira: ' + jira_url
         send_email(txt, subj)
