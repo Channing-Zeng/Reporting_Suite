@@ -2,10 +2,9 @@ from collections import defaultdict, OrderedDict
 import math
 import os
 from os.path import isfile
-from source.file_utils import file_transaction
+from source.file_utils import file_transaction, verify_file
 
 from source.logger import info, err, critical
-from source.targetcov.bam_and_bed_utils import verify_bed
 
 
 HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]
@@ -348,7 +347,7 @@ def proc_regions(regions, fn, *args, **kwargs):
 def save_regions_to_bed(cnf, regions, bed_fpath, save_original_fields=False):
     if isfile(bed_fpath):
         if cnf.reuse_intermediate:
-            verify_bed(bed_fpath, is_critical=True)
+            verify_file(bed_fpath, is_critical=True)
             return bed_fpath
         else:
             os.remove(bed_fpath)

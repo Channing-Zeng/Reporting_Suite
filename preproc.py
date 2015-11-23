@@ -6,7 +6,7 @@ import os
 import sys
 import datetime
 from optparse import OptionParser
-from os.path import join, isfile, basename, isdir, exists, dirname, splitext
+from os.path import join, isfile, basename, isdir, exists, dirname, splitext, islink
 from collections import OrderedDict, namedtuple
 import subprocess
 import traceback
@@ -80,8 +80,17 @@ def proc_opts():
     else:
         all_work_dir = join(dataset_dirpath, 'work')
         safe_mkdir(all_work_dir)
-        cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
-        # cnf.work_dir = tempfile.mkdtemp(dir=all_work_dir)
+
+        latest_fpath = join(all_work_dir, 'latest')
+
+        if cnf.reuse_intermediate:
+            cnf.work_dir = latest_fpath
+        else:
+            cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
+            if islink(latest_fpath):
+                os.remove(latest_fpath)
+            os.symlink(cnf.work_dir, latest_fpath)
+
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
@@ -300,7 +309,7 @@ def run_targqc(cnf, project, bam_by_sample):
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
            '--work-dir {cnf.work_dir} --log-dir {cnf.log_dir} --project-name {cnf.project_name} ' \
            '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
-    if cnf.reuse:
+    if cnf.reuse_intermediate:
         cmdl += ' --reuse'
     call(cnf, cmdl)
     info('Waiting for targqc to be done...')
