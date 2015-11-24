@@ -179,7 +179,7 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
-key_genes: /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.300.txt
+key_genes: /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 
 queue: batch.q
 

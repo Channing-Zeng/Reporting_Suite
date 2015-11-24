@@ -114,12 +114,12 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
         cmdline += '-F ' + str(cnf.min_hotspot_freq)
     cmdline += ' {vcf2txt_res_fpath} '
     if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
-    if cnf.genome.filter_common_snp: cmdline += '--ruledir {cnf.genome.filter_common_snp} '
-    if cnf.genome.snpeffect_export_polymorphic: cmdline += '--ruledir {cnf.genome.snpeffect_export_polymorphic} '
-    if cnf.genome.filter_common_artifacts: cmdline += '--ruledir {cnf.genome.filter_common_artifacts} '
-    if cnf.genome.actionable_hotspot: cmdline += '--ruledir {cnf.genome.actionable_hotspot} '
-    if cnf.genome.actionable: cmdline += '--ruledir {cnf.genome.actionable} '
-    if cnf.genome.compendia_ms7_hotspot: cmdline += '--ruledir {cnf.genome.compendia_ms7_hotspot} '
+    if cnf.genome.filter_common_snp: cmdline += '--filter_common_snp {cnf.genome.filter_common_snp} '
+    if cnf.genome.snpeffect_export_polymorphic: cmdline += '--snpeffect_export_polymorphic {cnf.genome.snpeffect_export_polymorphic} '
+    if cnf.genome.filter_common_artifacts: cmdline += '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
+    if cnf.genome.actionable_hotspot: cmdline += '--actionable_hotspot {cnf.genome.actionable_hotspot} '
+    if cnf.genome.actionable: cmdline += '--actionable {cnf.genome.actionable} '
+    if cnf.genome.compendia_ms7_hotspot: cmdline += '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
 
     # else:
     #     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
