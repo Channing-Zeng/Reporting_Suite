@@ -27,7 +27,7 @@ def main():
             (['--pcr'], dict(
                 dest='pcr',
                 action='store_true',
-                help='deduplication was not perfome, thud do not try to dedup')
+                help='deduplication was not perfomed, thus do not try to dedup')
              ),
         ],
         required_keys=['bam'],
