@@ -369,8 +369,8 @@ class BCBioRunner:
         if self.bcbio_structure.bed:
             seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
         normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-        if normal_snames or cnf.seq2c_contols:
-            controls = (normal_snames or []) + (cnf.seq2c_contols.split(':') or [])
+        if normal_snames or cnf.seq2c_controls:
+            controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') or [])
             seq2c_cmdline += ' -c ' + ':'.join(controls)
         if cnf.seq2c_opts:
             seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts

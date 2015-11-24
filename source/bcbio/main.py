@@ -28,7 +28,7 @@ def main():
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='Re-annotate BED file with gene names')
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='Count duplicates in coverage metrics')
     parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
-    parser.add_option('--seq2c-contols', dest='seq2c_contols', help='Additional controls for Seq2C.')
+    parser.add_option('--seq2c-controls', dest='seq2c_controls', help='Additional controls for Seq2C.')
     parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='Use run_info_DeepSeq.yaml')
     parser.add_option('--only-summary', dest='only_summary', action='store_true', default=False, help='Only generate project-level report')
     parser.add_option('--jira', dest='jira', help='JIRA case path')
