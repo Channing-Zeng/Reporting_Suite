@@ -148,7 +148,7 @@ class BCBioRunner:
             self.steps.extend([self.varqc_after, self.varqc_after_summary])
 
         if Steps.contains(cnf.steps, 'TargQC'):
-            self.steps.extend([self.targetcov, self.ngscat, self.targqc_summary])
+            self.steps.extend([self.targetcov, self.targqc_summary])
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
         # if Steps.contains(cnf.steps, 'Qualimap'):
@@ -368,9 +368,10 @@ class BCBioRunner:
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         if self.bcbio_structure.bed:
             seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
-        normals = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-        if normals:
-            seq2c_cmdline += ' -c ' + ':'.join(normals)
+        normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
+        if normal_snames or cnf.seq2c_contols:
+            controls = (normal_snames or []) + (cnf.seq2c_contols.split(':') or [])
+            seq2c_cmdline += ' -c ' + ':'.join(controls)
         if cnf.seq2c_opts:
             seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
         if cnf.reannotate:

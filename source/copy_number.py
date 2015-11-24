@@ -125,7 +125,8 @@ def _seq2c(cnf, bcbio_structure):
 
     combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
     # __cov2cnv(cnf, bcbio_structure.sv_bed or bcbio_structure.bed, bcbio_structure.samples, dedupped_bam_by_sample, combined_gene_depths_fpath)
-    __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, bcbio_structure.samples, dedupped_bam_by_sample, combined_gene_depths_fpath)
+    __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, bcbio_structure.samples,
+                                  dedupped_bam_by_sample, combined_gene_depths_fpath)
     info()
 
     seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
@@ -225,13 +226,15 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         elif target_bed == seq2c_bed and verify_file(s.targetcov_detailed_tsv, silent=True):
             info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
-            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=(bcbio_structure.bed is None))
+            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv,
+                                                              is_wgs=(bcbio_structure.bed is None))
             amplicons = (a for a in amplicons if a.gene_name and a.gene_name != '.')
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:
             if target_bed != seq2c_bed:
-                info('target_bed ' + seq2c_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' + s.targetcov_detailed_tsv + ' for Seq2C')
+                info('target_bed ' + target_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' +
+                     s.targetcov_detailed_tsv + ' for Seq2C')
             if not verify_file(s.targetcov_detailed_tsv, silent=True):
                 info(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C')
 
@@ -258,11 +261,13 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if not verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(s.name + ': summarizing bedcoverage output ' + bedcov_output_by_sample[s.name])
 
-            script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'), is_critical=True)
+            script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
+                                        is_critical=True)
             bedcov_hist_fpath = bedcov_output_by_sample[s.name]
             bed_col_num = count_bed_cols(seq2c_bed)
             cmdline = '{script} {bedcov_hist_fpath} {s.name} {bed_col_num}'.format(**locals())
-            j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s, output_fpath=seq2cov_output_by_sample[s.name])
+            j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s,
+                           output_fpath=seq2cov_output_by_sample[s.name])
             sum_jobs_to_wait.append(j)
 
     sum_jobs_to_wait = wait_for_jobs(cnf, sum_jobs_to_wait)
@@ -311,7 +316,8 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     exons_bed_fpath = adjust_path(cnf.exons) or adjust_path(cnf.genome.exons)
     # print any(not verify_file(seq2cov_fpath_by_sample[s.name], silent=True) for s in samples)
     seq2c_bed = None
-    if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name, silent=True) for s in samples) or not cnf.reuse_intermediate:
+    if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
+                           silent=True) for s in samples) or not cnf.reuse_intermediate:
         _, _, _, seq2c_bed = \
             prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
 
