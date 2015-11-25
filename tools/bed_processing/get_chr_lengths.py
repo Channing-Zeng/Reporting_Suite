@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
+
 import sys
 
 from source.logger import info, critical

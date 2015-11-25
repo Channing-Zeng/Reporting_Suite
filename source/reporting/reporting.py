@@ -631,11 +631,12 @@ class FullReport(BaseReport):
         # rows_of_records = self.get_rows_of_records(sections) # TODO: use logic from get_rows_of_records
 
         for metric in self.metric_storage.get_metrics(sections, skip_general_section=True):
-            row = [metric.name]
-            for sr in self.sample_reports:
-                rec = BaseReport.find_record(sr.records, metric.name)
-                row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
-            rows.append(row)
+            if not metric.name == 'Sample':
+                row = [metric.name]
+                for sr in self.sample_reports:
+                    rec = BaseReport.find_record(sr.records, metric.name)
+                    row.append(rec.format(human_readable=human_readable) if rec is not None else '.')
+                rows.append(row)
         return rows
 
     def get_rows_of_records(self, sections=None):  # TODO: move logic from flatten here, use this method both in flatten and save_html
@@ -654,7 +655,6 @@ class FullReport(BaseReport):
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden and not metric.name == 'Sample':
                     rec = BaseReport.find_record(sr.records, metric.name)
-
                     if rec:
                         recs.append(rec)
                     else:
