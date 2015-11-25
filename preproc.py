@@ -97,6 +97,7 @@ def proc_opts():
     safe_mkdir(cnf.work_dir)
     cnf.log_dir = join(cnf.work_dir, 'log')
     safe_mkdir(cnf.log_dir)
+    set_up_log(cnf)
     try:
         subprocess.call(['chmod', '-R', '777', cnf.work_dir])
     except OSError:
@@ -129,8 +130,6 @@ def main():
     elif not cnf.project_name:
         err('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
     cnf.project_name = cnf.project_name.replace(' ', '_')
-
-    set_up_log(cnf, proc_name='preproc', project_name=cnf.project_name)
 
     info()
     info('*' * 60)
@@ -315,8 +314,12 @@ def run_targqc(cnf, project, bam_by_sample):
 
     targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
     bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in project.sample_by_name.values())
+    targqc_work_dir = join(cnf.work_dir, 'TargQC')
+    targqc_log_dir = join(cnf.log_dir, 'TargQC')
+    safe_mkdir(targqc_work_dir)
+    safe_mkdir(targqc_log_dir)
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
-           '--work-dir {cnf.work_dir} --log-dir {cnf.log_dir} --project-name {cnf.project_name} ' \
+           '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
            '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
     if cnf.reuse_intermediate:
         cmdl += ' --reuse'
