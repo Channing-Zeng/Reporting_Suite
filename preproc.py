@@ -59,6 +59,7 @@ def proc_opts():
     parser.add_option('--no-metamapping', dest='metamapping', action='store_false', default=False, help='')
     parser.add_option('--fastqc', dest='fastqc', action='store_true', default=True, help='')
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
+    parser.add_option('--pcr', dest='is_pcr', action='store_true', default=False, help='')
 
     (opts, args) = parser.parse_args()
     if len(args) < 1:
@@ -169,7 +170,8 @@ def main():
                     bwa,
                     seqtk,
                     bammarkduplicates,
-                    cnf.genome.seq) for s, l, r in zip(samples, lefts, rights))
+                    cnf.genome.seq,
+                    cnf.is_pcr) for s, l, r in zip(samples, lefts, rights))
                 for sample, bam_fpath in zip(samples, aligned):
                     bam_by_sample[sample.name] = bam_fpath
                 if any(a is None for a in aligned):
@@ -278,7 +280,7 @@ def downsample_fastq(cnf, sample, reads_num=5e5):
     return l_fpath, r_fpath
 
 
-def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, ref):
+def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, ref, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
@@ -295,9 +297,12 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates
     cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
     call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
 
-    markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath)
-    index_bam(cnf, markdup_bam_fpath, samtools=samtools)
+    if not is_pcr:
+        markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath)
+        if markdup_bam_fpath:
+            sorted_bam_fpath = markdup_bam_fpath
 
+    index_bam(cnf, sorted_bam_fpath, samtools=samtools)
     return sorted_bam_fpath
 
 
