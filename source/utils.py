@@ -1,13 +1,9 @@
-import base64
-import getpass
-import hashlib
 from os import environ
 import socket
-import sys
 import re
-
 from collections import OrderedDict
 from os.path import join, basename
+
 from source.logger import info, critical
 from source.file_utils import file_exists, verify_file, file_transaction
 from source.targetcov.Region import SortableByChrom
