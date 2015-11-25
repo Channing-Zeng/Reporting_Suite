@@ -133,7 +133,10 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
 
     info()
     if vcf_fpath:
+        info('Renaming ' + vcf_fpath + ' -> ' + input_fpath)
         os.rename(vcf_fpath, input_fpath)
+    else:
+        warn('Intersection with ' + key + ' didn\'t work')
     return input_fpath
 
 

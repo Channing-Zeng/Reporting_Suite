@@ -1,10 +1,11 @@
 from itertools import dropwhile
-from os.path import isfile, join, abspath, basename
+from os.path import isfile, join, abspath, basename, dirname
 import sys
 from subprocess import check_output
 from collections import OrderedDict
 from source.calling_process import call, call_pipe
-from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path
+from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
+    safe_mkdir
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -27,9 +28,30 @@ def index_bam_grid(cnf, bam, samtools=None):
     if samtools is None:
         samtools = get_system_path(cnf, 'samtools', is_critical=True)
     cmdline = '{samtools} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    j = submit_job(cnf, cmdline, basename(bam) + '_dedup', output_fpath=bam + '.bai', stdout_to_outputfile=False)
+    j = submit_job(cnf, cmdline, basename(bam) + '_index', output_fpath=bam + '.bai', stdout_to_outputfile=False)
     info()
     return j
+
+
+def markdup_bam(cnf, in_bam_fpath, bammarkduplicates=None):
+    """Perform non-stream based deduplication of BAM input files using biobambam.
+    """
+    if not bammarkduplicates:
+        bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
+        if not bammarkduplicates:
+            warn('No biobambam bammarkduplicates, can\'t mark duplicates.')
+            return None
+
+    out_bam_fpath = add_suffix(in_bam_fpath, 'markdup')
+    tmp_fpath = join(cnf.work_dir, splitext_plus(basename(in_bam_fpath))[0] + '_markdup')
+    safe_mkdir(dirname(tmp_fpath))
+    cmdline = ('{bammarkduplicates} tmpfile={tmp_fpath} I={in_bam_fpath} O={out_bam_fpath}'
+           ).format(**locals())
+    res = call(cnf, cmdline, output_fpath=out_bam_fpath, stdout_to_outputfile=False, exit_on_error=False)
+    if res:
+        return out_bam_fpath
+    else:
+        return None
 
 
 def bam_to_bed(cnf, bam_fpath):

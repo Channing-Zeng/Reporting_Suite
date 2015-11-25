@@ -20,7 +20,7 @@ from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure
 from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.targetcov.bam_and_bed_utils import index_bam
+from source.targetcov.bam_and_bed_utils import index_bam, markdup_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source.logger import info, critical, err, is_local, warn, send_email
@@ -88,7 +88,7 @@ def proc_opts():
             cnf.work_dir = latest_fpath
         else:
             cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
-            if islink(latest_fpath):
+            if exists(latest_fpath):
                 os.remove(latest_fpath)
             os.symlink(cnf.work_dir, latest_fpath)
 
@@ -160,6 +160,7 @@ def main():
             samtools = get_system_path(cnf, 'samtools')
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
+            bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
             if samtools and bwa and seqtk:
                 info()
                 info('Alignming ' + str(downsample_to) + ' random reads to the reference')
@@ -167,6 +168,7 @@ def main():
                     samtools,
                     bwa,
                     seqtk,
+                    bammarkduplicates,
                     cnf.genome.seq) for s, l, r in zip(samples, lefts, rights))
                 for sample, bam_fpath in zip(samples, aligned):
                     bam_by_sample[sample.name] = bam_fpath
@@ -276,7 +278,7 @@ def downsample_fastq(cnf, sample, reads_num=5e5):
     return l_fpath, r_fpath
 
 
-def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
+def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, ref):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
@@ -293,7 +295,8 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, ref):
     cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
     call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
 
-    index_bam(cnf, sorted_bam_fpath, samtools=samtools)
+    markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath)
+    index_bam(cnf, markdup_bam_fpath, samtools=samtools)
 
     return sorted_bam_fpath
 

@@ -52,6 +52,10 @@ resources:
 #    path: /opt/az/local/seqtk/seqtk-master/seqtk
   bamtools:
     path: /opt/az/local/bamtools/bamtools-master/bin/bamtools
+  bammarkduplicates:
+    path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/Cellar/biobambam/2.0.14/bin/bammarkduplicates
+  bamdownsamplerandom:
+    path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/Cellar/biobambam/2.0.14/bin/bamdownsamplerandom
 
 genomes:
   hg38:
@@ -82,7 +86,7 @@ genomes:
 
     dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf
     snpeff:
-      reference: GRCm38.78
+      reference: mm10  #GRCm38.78
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
