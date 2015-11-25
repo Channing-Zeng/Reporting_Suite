@@ -127,9 +127,11 @@ def main():
         jira_case = retrieve_jira_info(jira_url)
         if not cnf.project_name:
             cnf.project_name = jira_case.project_name
+            info('Setting project name from JIRA: ' + cnf.project_name)
     elif not cnf.project_name:
-        err('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide project name.')
+        critical('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide a project name.')
     cnf.project_name = cnf.project_name.replace(' ', '_')
+    info('Fixed final project name: ' + cnf.project_name)
 
     info()
     info('*' * 60)
