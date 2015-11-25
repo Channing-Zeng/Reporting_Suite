@@ -370,7 +370,7 @@ class BCBioRunner:
             seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
         normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
         if normal_snames or cnf.seq2c_controls:
-            controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') or [])
+            controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
             seq2c_cmdline += ' -c ' + ':'.join(controls)
         if cnf.seq2c_opts:
             seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
@@ -478,7 +478,7 @@ class BCBioRunner:
         bash = get_system_path(self.cnf, 'bash')
         extra_qsub_opts = ''
         if step.run_on_chara and is_us():
-            extra_qsub_opts += '-l h=chara'
+            extra_qsub_opts += '-l h="chara|rask" '
         qsub_cmdline = (
             '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} -j n '
             '-o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} -N {job_name} '

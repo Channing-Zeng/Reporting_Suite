@@ -65,7 +65,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     mem = threads * 15
     extra_qsub_opts = ''
     if run_on_chara and is_us():
-        extra_qsub_opts += '-l h=chara'
+        extra_qsub_opts += '-l h="chara|rask"'
     qsub_cmdline = (
         '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '

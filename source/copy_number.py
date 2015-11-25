@@ -223,8 +223,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif target_bed == seq2c_bed and verify_file(s.targetcov_detailed_tsv, silent=True):
-            info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
+        elif verify_file(s.targetcov_detailed_tsv, silent=True):
+            info('Using bedcoverage output for Seq2C coverage.')
+            # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
             amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv,
                                                               is_wgs=(bcbio_structure.bed is None))

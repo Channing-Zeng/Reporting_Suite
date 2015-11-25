@@ -121,6 +121,9 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
     if cnf.genome.actionable: cmdline += '--actionable {cnf.genome.actionable} '
     if cnf.genome.compendia_ms7_hotspot: cmdline += '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
 
+    if cnf.suppressors: cmdline += '--suppressors {cnf.suppressors} '
+    if cnf.oncogenes: cmdline += '--oncogenes {cnf.oncogenes} '
+
     # else:
     #     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
     #

@@ -49,9 +49,8 @@ genomes:
     seq: ~/Dropbox/az/reference_data/hg19.fa
 
 key_genes: ~/Dropbox/az/reference_data/az_key_genes.txt
-
-suppressors: ~/Dropbox/az/reference_data/variation/suppressors.txt
-oncogenes: ~/Dropbox/az/reference_data/variation/oncogenes.txt
+suppressors: ~/Dropbox/az/reference_data/suppressors.txt
+oncogenes: ~/Dropbox/az/reference_data/oncogenes.txt
 
 queue: ngs.q
 
