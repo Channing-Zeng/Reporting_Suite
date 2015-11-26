@@ -3,7 +3,7 @@ import bcbio_postproc  # do not remove it: checking for python version and addin
 
 import sys
 
-from source.logger import info, critical
+from source.logger import err
 from source.file_utils import file_exists, verify_file, file_transaction
 from source.targetcov.Region import SortableByChrom
 
@@ -23,7 +23,7 @@ def get_chr_lengths(seq_fpath):
     verify_file(seq_fpath, is_critical=True)
 
     if verify_file(seq_fpath + '.fai'):
-        info('Reading genome index file (.fai) to get chromosome lengths')
+        err('Reading genome index file (.fai) to get chromosome lengths')
         with open(seq_fpath + '.fai', 'r') as handle:
             for line in handle:
                 line = line.strip()
@@ -31,7 +31,7 @@ def get_chr_lengths(seq_fpath):
                     chrom, length = line.split()[0], line.split()[1]
                     chr_lengths.append([SortableByChrom(chrom), length])
     else:
-        info('Reading genome sequence (.fa) to get chromosome lengths')
+        err('Reading genome sequence (.fa) to get chromosome lengths')
         with open(seq_fpath, 'r') as handle:
             from Bio import SeqIO
             reference_records = SeqIO.parse(handle, 'fasta')
